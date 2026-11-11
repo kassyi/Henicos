@@ -5,6 +5,7 @@ using System.Reflection;
 using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Hashing;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
@@ -18,7 +19,8 @@ public class DeviceExportTests
 {
     private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
 
-    private static readonly string s_library = RoslynTestUtility.ReadTestCase("Generators/DeviceExportLibrary.cs");
+    private static readonly SyntaxTree s_libraryTree =
+        RoslynTestUtility.GetTestCaseContext("Generators/DeviceExportLibrary.cs").Tree;
 
     [Theory]
     [InlineData("Cpu")]
@@ -274,7 +276,7 @@ public class DeviceExportTests
     [Scenario(TestScenario.Boundary)]
     public void StructRecord_MissingNamedStructs_FailsWithoutNamedStructs(string dialect)
     {
-        var records = Run(dialect, out _, out _, s_structs);
+        var records = Run(dialect, out _, out _, s_structsTree);
 
         var holder = records.Single(static r => r.Id == "T:DeviceExportStructsCase.Holder");
         var cell = records.Single(static r => r.Id == "T:DeviceExportStructsCase.Cell{System.Int32}");
@@ -289,7 +291,7 @@ public class DeviceExportTests
     [Scenario(TestScenario.Boundary)]
     public void StructRecord_FunctionEmission_DoesNotFailWithFunction(string dialect)
     {
-        var records = Run(dialect, out _, out _, s_structs);
+        var records = Run(dialect, out _, out _, s_structsTree);
 
         var bad = records.Single(static r => r.Id == "M:DeviceExportStructsCase.LibVector.Bad(System.Int32)");
         var mark = records.Single(static r => r.Id == "T:DeviceExportStructsCase.LibVector.Mark");
@@ -362,22 +364,29 @@ public class DeviceExportTests
     [Scenario(TestScenario.HappyPath)]
     public void DeviceExportAttributeNames_AllNames_AreTheSettablePropertiesOfTheAttribute()
     {
-        var constants = new[]
-            {
-                typeof(DeviceExportAttributeNames),
-                typeof(DeviceExportAttributeNames.Names),
-                typeof(DeviceExportAttributeNames.Traits)
-            }
-            .SelectMany(static t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
-            .Where(static f => f.IsLiteral)
-            .Select(static f => f.GetRawConstantValue() as string ?? throw new InvalidOperationException(f.Name))
+        var compilation = RoslynTestUtility.SharedCompilation;
+        var attrSymbol = compilation.GetTypeByMetadataName("Kassyi.GSharp.Core.GpuDeviceExportAttribute")
+            ?? throw new InvalidOperationException("GpuDeviceExportAttribute symbol not found");
+        var namesSymbol = compilation.GetTypeByMetadataName("Kassyi.GSharp.Compiler.Models.DeviceExportAttributeNames")
+            ?? throw new InvalidOperationException("DeviceExportAttributeNames symbol not found");
+        var nestedNamesSymbol = compilation.GetTypeByMetadataName("Kassyi.GSharp.Compiler.Models.DeviceExportAttributeNames+Names")
+            ?? throw new InvalidOperationException("Names symbol not found");
+        var traitsSymbol = compilation.GetTypeByMetadataName("Kassyi.GSharp.Compiler.Models.DeviceExportAttributeNames+Traits")
+            ?? throw new InvalidOperationException("Traits symbol not found");
+
+        var constantSymbols = new[] { namesSymbol, nestedNamesSymbol, traitsSymbol };
+        var constants = constantSymbols
+            .SelectMany(static t => t.GetMembers().OfType<IFieldSymbol>())
+            .Where(static f => f.HasConstantValue && f.ConstantValue is string)
+            .Select(static f => (string)f.ConstantValue!)
             .Concat(GetDialectNames(DeviceExportAttributeNames.Cuda))
             .Concat(GetDialectNames(DeviceExportAttributeNames.Cpp))
             .Order(StringComparer.Ordinal)
             .ToArray();
-        var properties = typeof(Kassyi.GSharp.Core.GpuDeviceExportAttribute)
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(static p => p.SetMethod is { IsPublic: true })
+        var properties = attrSymbol
+            .GetMembers()
+            .OfType<IPropertySymbol>()
+            .Where(static p => p.SetMethod is { DeclaredAccessibility: Accessibility.Public })
             .Select(static p => p.Name)
             .Order(StringComparer.Ordinal)
             .ToArray();
@@ -418,10 +427,11 @@ public class DeviceExportTests
 
     private const string Float3Guard = "#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Core__Float3__";
 
-    private static readonly string s_structs = RoslynTestUtility.ReadTestCase("Generators/DeviceExportStructs.cs");
+    private static readonly SyntaxTree s_structsTree =
+        RoslynTestUtility.GetTestCaseContext("Generators/DeviceExportStructs.cs").Tree;
 
-    private static readonly string s_managedVersions =
-        RoslynTestUtility.ReadTestCase("Generators/DeviceExportManagedVersionLibrary.cs");
+    private static readonly SyntaxTree s_managedVersionsTree =
+        RoslynTestUtility.GetTestCaseContext("Generators/DeviceExportManagedVersionLibrary.cs").Tree;
 
     // #711: a library emits the managed versions of its functions that expand an operator macro on every dialect, with
     // the function's own accessibility, and records which functions have one; a consumer's managed code calls them
@@ -431,7 +441,7 @@ public class DeviceExportTests
     [Scenario(TestScenario.HappyPath)]
     public void DeviceExport_ManagedCodeGeneration_RecordsAndEmitsManagedVersions(string dialect)
     {
-        var records = Run(dialect, out var result, out var output, s_managedVersions);
+        var records = Run(dialect, out var result, out var output, s_managedVersionsTree);
 
         Assert.Null(result.Exception);
         Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
@@ -458,7 +468,7 @@ public class DeviceExportTests
 
     private static List<ExportedRecord> RunStructs(string dialect)
     {
-        var records = Run(dialect, out var result, out var output, s_structs);
+        var records = Run(dialect, out var result, out var output, s_structsTree);
         Assert.Null(result.Exception);
         Assert.DoesNotContain(result.Diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
         Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
@@ -476,8 +486,7 @@ public class DeviceExportTests
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: false,
                 nullableContextOptions: NullableContextOptions.Enable))
             .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase("Generators/StateMachineVisibility.cs"),
-                s_parseOptions, path: "library.cs"));
+            .AddSyntaxTrees(RoslynTestUtility.GetTestCaseContext("Generators/StateMachineVisibility.cs").Tree);
         var driver = CreateDriver("Cuda", null).RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
         var result = driver.GetRunResult().Results.Single();
 
@@ -508,13 +517,13 @@ public class DeviceExportTests
         Assert.DoesNotContain("unsafe", machines, StringComparison.Ordinal);
         Assert.DoesNotContain("WaitPrivate", machines, StringComparison.Ordinal);
         Assert.DoesNotContain("WaitClosed", machines, StringComparison.Ordinal);
-        Assert.Contains("partial class LibSm\n{\npublic partial class Inner", machines.Replace("\r\n", "\n"), StringComparison.Ordinal);
+        Assert.True(machines.Contains("partial class LibSm\r\n{\r\npublic partial class Inner", StringComparison.Ordinal) || machines.Contains("partial class LibSm\n{\npublic partial class Inner", StringComparison.Ordinal));
     }
 
     private static List<ExportedRecord> Run(string dialect, out GeneratorRunResult result, out Compilation output,
-        string? source = null)
+        SyntaxTree? tree = null)
     {
-        var driver = CreateDriver(dialect, null).RunGeneratorsAndUpdateCompilation(CreateCompilation(source), out output, out _);
+        var driver = CreateDriver(dialect, null).RunGeneratorsAndUpdateCompilation(CreateCompilation(tree), out output, out _);
         result = driver.GetRunResult().Results.Single();
         return output.Assembly.GetAttributes()
             .Where(static a => a.AttributeClass?.Name == "GpuDeviceExportAttribute")
@@ -522,11 +531,11 @@ public class DeviceExportTests
             .ToList();
     }
 
-    private static CSharpCompilation CreateCompilation(string? source = null) =>
+    private static CSharpCompilation CreateCompilation(SyntaxTree? tree = null) =>
         CSharpCompilation.Create("DeviceExportLibrary")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
             .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(source ?? s_library, s_parseOptions, path: "library.cs"));
+            .AddSyntaxTrees(tree ?? s_libraryTree);
 
     private static GeneratorDriver CreateDriver(string dialect, Dictionary<string, string>? options) =>
         CSharpGeneratorDriver.Create(

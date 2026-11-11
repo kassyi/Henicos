@@ -39,7 +39,7 @@ public class StructAbiMembersTests
         var checkedFiles = new List<string>();
         var checkedStructs = 0;
         foreach (var relativePath in Directory.GetFiles(s_testCasesDirectory, "*.cs", SearchOption.AllDirectories)
-                     .Select(file => Path.GetRelativePath(s_testCasesDirectory, file).Replace(Path.DirectorySeparatorChar, '/'))
+                     .Select(file => NormalizePath(Path.GetRelativePath(s_testCasesDirectory, file)))
                      .Order(StringComparer.Ordinal))
         {
             var (compilation, tree, model) = RoslynTestUtility.GetTestCaseContext(relativePath);
@@ -78,7 +78,7 @@ public class StructAbiMembersTests
     public void Get_SharedCompilationStructs_ListEveryEmittedInstanceField()
     {
         var structs = new List<INamedTypeSymbol>();
-        CollectStructs(MegaCompilationCache.Compilation.Assembly.GlobalNamespace, structs);
+        CollectStructs(RoslynTestUtility.SharedCompilation.Assembly.GlobalNamespace, structs);
         var assembly = typeof(StructAbiMembersTests).Assembly;
 
         var checkedCount = 0;
@@ -110,7 +110,7 @@ public class StructAbiMembersTests
 
         Assert.Equal(["A", "Changed"], members.Select(static m => m.Name));
         Assert.Equal(StructAbiMemberKind.EventBackingField, members[1].Kind);
-        Assert.Equal("System.Action", members[1].Type.ToDisplayString());
+        Assert.Equal(RoslynTestUtility.SharedCompilation.GetTypeByMetadataName("System.Action"), members[1].Type, SymbolEqualityComparer.Default);
         Assert.IsAssignableFrom<IEventSymbol>(members[1].Symbol);
         // Roslyn does not list the event's field, so the member has no storage field to hand over
         Assert.IsAssignableFrom<IFieldSymbol>(members[0].StorageField);
@@ -281,11 +281,27 @@ public class StructAbiMembersTests
 
         Assert.True(
             fieldCount == members.Count,
-            $"{structType.ToDisplayString()}: {fieldCount} emitted instance fields, {members.Count} members " +
+            $"{GetMetadataFullName(structType)}: {fieldCount} emitted instance fields, {members.Count} members " +
             $"({string.Join(", ", members.Select(static m => $"{m.Name}:{m.Kind}"))})");
         Assert.True(
             members.All(static m => m.Kind != StructAbiMemberKind.UnknownHiddenField),
-            $"{structType.ToDisplayString()} has a compiler-generated field that StructAbiMembers does not know");
+            $"{GetMetadataFullName(structType)} has a compiler-generated field that StructAbiMembers does not know");
+    }
+
+    private static string NormalizePath(string relativePath)
+    {
+        if (Path.DirectorySeparatorChar == '/')
+        {
+            return relativePath;
+        }
+
+        return string.Create(relativePath.Length, relativePath, static (span, src) =>
+        {
+            for (int i = 0; i < src.Length; i++)
+            {
+                span[i] = src[i] == '\\' ? '/' : src[i];
+            }
+        });
     }
 
     // The number of instance fields of each type in the metadata-only image of the compilation, by full metadata name

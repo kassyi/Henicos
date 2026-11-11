@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
+using Kassyi.ZeroAlloc.Linq;
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -60,17 +63,11 @@ public class GpuBigIntContextTests
         using var c = new GpuBigUInt(context, new uint[6]);
         provider.Mul(context, a, b, c);
 
-        var advancedMathField = typeof(GSharpKernelProvider).GetField(
-            "_advancedMath", BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.NotNull(advancedMathField);
-        var advancedMath = advancedMathField.GetValue(provider);
+        var advancedMath = provider.KernelAdvancedMath;
         Assert.NotNull(advancedMath);
 
-        var twiddleCacheField = advancedMath.GetType().GetField(
-            "_twiddleCache",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.NotNull(twiddleCacheField);
-        var twiddleCache = Assert.IsAssignableFrom<IDictionary>(twiddleCacheField.GetValue(advancedMath));
+        var twiddleCache = GetTwiddleCache(advancedMath);
+        Assert.NotNull(twiddleCache);
 
         Assert.True(twiddleCache.Count > 0, "Cache should be populated after multiplication.");
         int cachedCountBefore = twiddleCache.Count;
@@ -323,4 +320,7 @@ public class GpuBigIntContextTests
             base.Dispose(disposing);
         }
     }
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_twiddleCache")]
+    private static extern ref ConcurrentDictionary<(long ContextId, int Length), Lazy<KernelAdvancedMathHandler.TwiddleCache>> GetTwiddleCache(KernelAdvancedMathHandler handler);
 }

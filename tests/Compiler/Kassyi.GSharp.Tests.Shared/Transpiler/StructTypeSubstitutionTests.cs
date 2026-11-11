@@ -33,7 +33,23 @@ public class StructTypeSubstitutionTests
 
         var actual = SubstituteTypeParameters(DefinitionFieldType(field), closed, s_compilation.Value);
 
-        Assert.Equal(expected, actual?.ToDisplayString());
+        Assert.Equal(ExpectedType(field), actual, SymbolEqualityComparer.Default);
+    }
+
+    private static ITypeSymbol ExpectedType(string field)
+    {
+        var compilation = s_compilation.Value;
+        var single = compilation.GetSpecialType(SpecialType.System_Single);
+        var int32 = compilation.GetSpecialType(SpecialType.System_Int32);
+        return field switch
+        {
+            "Plain" => single,
+            "Pointer" => compilation.CreatePointerTypeSymbol(single),
+            "Array" => compilation.CreateArrayTypeSymbol(single),
+            "Nested" => compilation.GetTypeByMetadataName("Kassyi.GSharp.Tests.TestCases.StructTranspiler.Inner`1")!.Construct(single),
+            "SecondArgument" => compilation.GetTypeByMetadataName("Kassyi.GSharp.Tests.TestCases.StructTranspiler.Pair`2")!.Construct(int32, single),
+            _ => throw new ArgumentOutOfRangeException(nameof(field), field, null)
+        };
     }
 
     [Theory]
@@ -68,8 +84,8 @@ public class StructTypeSubstitutionTests
         var pair = ParameterType("pair");
         var definition = pair.OriginalDefinition;
 
-        Assert.Equal("int", SubstituteTypeParameters(FieldType(definition, "A"), pair)?.ToDisplayString());
-        Assert.Equal("float", SubstituteTypeParameters(FieldType(definition, "B"), pair)?.ToDisplayString());
+        Assert.Equal(s_compilation.Value.GetSpecialType(SpecialType.System_Int32), SubstituteTypeParameters(FieldType(definition, "A"), pair), SymbolEqualityComparer.Default);
+        Assert.Equal(s_compilation.Value.GetSpecialType(SpecialType.System_Single), SubstituteTypeParameters(FieldType(definition, "B"), pair), SymbolEqualityComparer.Default);
     }
 
     [Fact]

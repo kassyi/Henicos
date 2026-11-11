@@ -39,7 +39,7 @@ public class TransferPlanGuardsTests
                 var actual = TransferPlanGuards.Collect([.. plans], method.ContainingAssembly.Name);
                 Assert.True(
                     expected == actual,
-                    $"{method.ToDisplayString()} ({dialect.GetType().Name}):{Environment.NewLine}" +
+                    $"{method.ContainingType?.Name}.{method.Name} ({dialect.GetType().Name}):{Environment.NewLine}" +
                     $"expected {expected}{Environment.NewLine}actual   {actual}");
                 launches++;
                 guardCount += actual.Length;
