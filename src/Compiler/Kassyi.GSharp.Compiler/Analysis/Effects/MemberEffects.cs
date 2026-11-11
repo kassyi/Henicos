@@ -108,9 +108,10 @@ internal static class MemberEffects
     }
 
     /// <summary>
-    /// Whether reading <paramref name="expression"/> calls a getter whose result is a temporary: a computed property
-    /// (<c>s.P</c>, or <c>P</c> through the implicit <c>this</c>), or an indexer that returns by value (an element of
-    /// an <c>ImmutableArray&lt;T&gt;</c> or an <c>ArraySegment&lt;T&gt;</c> lives in memory, not in the struct).
+    /// Whether reading <paramref name="expression"/> calls a getter, so that the location of its result is memory (a
+    /// temporary, or wherever a ref-returning getter points): a computed property (<c>s.P</c>, or <c>P</c> through the
+    /// implicit <c>this</c>), or an indexer that returns by value (an element of an <c>ImmutableArray&lt;T&gt;</c> or
+    /// an <c>ArraySegment&lt;T&gt;</c> lives in memory, not in the struct).
     /// </summary>
     public static bool IsGetterCall(ExpressionSyntax expression, SemanticModel model)
     {

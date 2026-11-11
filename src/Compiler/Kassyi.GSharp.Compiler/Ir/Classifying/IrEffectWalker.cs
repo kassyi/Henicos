@@ -202,15 +202,25 @@ internal sealed class IrEffectWalker(Compilation compilation)
         }
 
         WriteRoot(root);
-        if (assignment.Target is IrPropertyReference { Property: var property } &&
-            MemberEffects.IsUserAccessorProperty(property))
+        AddSetterCall(assignment.Target);
+    }
+
+    /// <summary>
+    /// Adds the call of the setter when <paramref name="target"/> is a computed property of a user struct: it may read
+    /// anything, and writes what <see cref="DeviceFunctionEffects"/> says.
+    /// </summary>
+    public void AddSetterCall(IrExpression target)
+    {
+        if (target is not IrPropertyReference { Property: var property } ||
+            !MemberEffects.IsUserAccessorProperty(property))
         {
-            // The setter may read anything
-            ReadMemory();
-            if (MayWriteMemory(property.SetMethod))
-            {
-                WriteMemory();
-            }
+            return;
+        }
+
+        ReadMemory();
+        if (MayWriteMemory(property.SetMethod))
+        {
+            WriteMemory();
         }
     }
 

@@ -93,8 +93,9 @@ internal static class OperatorEffects
     }
 
     // The accessors that assigning a computed property calls: the setter, after the getter when the old value is read
-    // (a compound assignment, an increment). Each may read anything and writes what DeviceFunctionEffects says.
-    private static void AddAccessorCalls(ref EffectWalker walker, ExpressionSyntax target, bool callsGetter)
+    // (a compound assignment, an increment). Each may read anything and writes what DeviceFunctionEffects says. An
+    // object initializer and a with expression call the setter of each computed property they assign.
+    public static void AddAccessorCalls(ref EffectWalker walker, ExpressionSyntax target, bool callsGetter)
     {
         if (walker.Model.GetSymbol(target) is not IPropertySymbol property ||
             !MemberEffects.IsUserAccessorProperty(property))

@@ -37,6 +37,8 @@ public class EvaluationOrderAnalysisTests
     [InlineData("ImplicitThisReceiverGetterRead", 1)]
     [InlineData("CompoundMemoryWritingGetter", 1)]
     [InlineData("SetterReadingMemory", 1)]
+    [InlineData("InitializerSetterWritingMemory", 1)]
+    [InlineData("WithSetterWritingMemory", 1)]
     [InlineData("FieldThenWrite", 1)]
     public void LastSpilledOperand_InterferingOperands_IsTheLastOneThatInterferes(string method, int expected) =>
         Assert.Equal(expected, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));

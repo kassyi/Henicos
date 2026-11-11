@@ -70,6 +70,17 @@ public struct OrderView
         readonly get => Stored;
         set => Stored = value + Data[0];
     }
+
+    // The setter writes memory
+    public int Poke
+    {
+        readonly get => Stored;
+        set
+        {
+            Data[0] += 1;
+            Stored = value;
+        }
+    }
 }
 public struct OrderPair
 {
@@ -424,6 +435,16 @@ public static class Order
     public static void ReceiverMemoryWritingGetterRead(OrderView v, int[] d) { var result = d[0] + v.Touch.V; }
     public static void CompoundMemoryWritingGetter(OrderView v, int[] d) { var result = d[0] + (v.Mark += 1); }
     public static void SetterReadingMemory(OrderView v, int[] d) { var result = Sub(v.Load = 1, Store(d, 5)); }
+    public static void InitializerSetterWritingMemory(int[] d)
+    {
+        var result = d[0] + new OrderView { Data = d, Poke = 1 }.Stored;
+    }
+
+    public static void WithSetterWritingMemory(OrderView v, int[] d)
+    {
+        var result = d[0] + (v with { Poke = 1 }).Stored;
+    }
+
 public static void LocalFunctionCall()
     {
         int i = 0;

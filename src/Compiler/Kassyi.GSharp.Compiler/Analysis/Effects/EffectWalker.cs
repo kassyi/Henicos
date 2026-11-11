@@ -180,8 +180,8 @@ internal struct EffectWalker(SemanticModel model)
 
     /// <summary>
     /// Adds the evaluation of <paramref name="receiver"/>, the receiver of a member, element or call, and returns the
-    /// variable its location belongs to. A computed property, or an indexer that returns by value, calls a getter whose
-    /// result is a temporary: it is evaluated as a value, and its location is memory.
+    /// variable its location belongs to. A computed property, or an indexer that returns by value, calls a getter: it is
+    /// evaluated as a value, and its location is memory (a temporary, or wherever a ref-returning getter points).
     /// </summary>
     public EffectRoot AddReceiver(ExpressionSyntax receiver)
     {
