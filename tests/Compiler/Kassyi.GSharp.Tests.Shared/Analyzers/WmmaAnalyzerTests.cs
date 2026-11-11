@@ -71,35 +71,55 @@ public class WmmaAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Wmma_CustomMarkerImplementingIWmmaShapeOrLayout_ReportsGSH0076()
+    public async Task Wmma_UserAndCoreMarkerLocals_ReportsGSH0076OnlyForTheCoreMarkers()
     {
-        const string source = """
-            using Kassyi.GSharp.Core;
-
-            namespace TestNamespace;
-
-            public readonly struct CustomWmmaShape : IWmmaShape;
-            public readonly struct CustomWmmaLayout : IWmmaLayout;
-
-            public static class TestKernel
-            {
-                [GpuKernel]
-                public static void KernelWithCustomMarkers()
-                {
-                    CustomWmmaShape badShape = default;
-                    CustomWmmaLayout badLayout = default;
-                }
-            }
-            """;
-
-        var diagnostics = (await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, s_analyzer))
-            .Where(static d => d.Id == GSharpDiagnostics.UnsupportedWarpMatrixOperation.Id)
+        var diagnostics = (await RoslynTestUtility
+            .TestAnalyzer("Analyzers/Wmma_MarkerKinds.cs", s_analyzer)
+            .GetDiagnosticsAsync())
+            .Where(static d => d.Severity >= DiagnosticSeverity.Warning)
             .OrderBy(static d => d.Location.SourceSpan.Start)
             .ToArray();
 
+        // The locals of UserWmmaShape and UserWmmaLayout (lines 22-23) are ordinary structs; only the Core markers are
+        // reported
         Assert.Equal(2, diagnostics.Length);
+        Assert.All(diagnostics, static d => Assert.Equal(GSharpDiagnostics.UnsupportedWarpMatrixOperation.Id, d.Id));
         Assert.All(diagnostics, static d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
-        Assert.Contains("CustomWmmaShape", diagnostics[0].GetMessage());
-        Assert.Contains("CustomWmmaLayout", diagnostics[1].GetMessage());
+
+        // 0: WmmaM16N16K16 coreShape (line 28, 0-based 27)
+        var span0 = diagnostics[0].Location.GetLineSpan();
+        Assert.Equal((27, 8), (span0.StartLinePosition.Line, span0.StartLinePosition.Character));
+        Assert.Equal((27, 21), (span0.EndLinePosition.Line, span0.EndLinePosition.Character));
+
+        // 1: WmmaRowMajor coreLayout (line 29, 0-based 28)
+        var span1 = diagnostics[1].Location.GetLineSpan();
+        Assert.Equal((28, 8), (span1.StartLinePosition.Line, span1.StartLinePosition.Character));
+        Assert.Equal((28, 20), (span1.EndLinePosition.Line, span1.EndLinePosition.Character));
+    }
+
+    // A struct of the user that implements IWmmaShape or IWmmaLayout compiles as any other struct: no diagnostic, and
+    // the struct is emitted. GeneratorSnapshotTests compares the generated code of each case with its snapshots
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("UserMarkerLocal.cu.cs", "LocalShapeTag")]
+    [InlineData("UserMarkerExpression.cu.cs", "ExpressionLayoutTag")]
+    [InlineData("UserMarkerDefault.cu.cs", "DefaultShapeTag")]
+    [InlineData("UserMarkerField.cu.cs", "FieldLayoutTag")]
+    [InlineData("UserMarkerParameter.cu.cs", "ParameterMarkerTag")]
+    public async Task Wmma_UserStructImplementingAMarkerInterface_CompilesAsAnOrdinaryStruct(
+        string fileName,
+        string structName)
+    {
+        var relativePath = "Analyzers/WmmaUserMarker/" + fileName;
+
+        var analyzerDiagnostics = await TestAnalyzer(relativePath, s_analyzer).GetDiagnosticsAsync();
+        Assert.DoesNotContain(analyzerDiagnostics, static d => d.Severity >= DiagnosticSeverity.Warning);
+
+        var driver = await TestGenerator(relativePath).GetDriverAsync();
+        var runResult = driver.GetRunResult();
+        Assert.DoesNotContain(runResult.Diagnostics, static d => d.Severity >= DiagnosticSeverity.Warning);
+
+        var generated = string.Join("\n", runResult.GeneratedTrees.Select(static t => t.GetText().ToString()));
+        Assert.Matches(new Regex($@"(?m)^struct __gsharp_ty_\w*__{structName}\r?$"), generated);
     }
 }
