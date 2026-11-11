@@ -23,7 +23,3 @@ internal readonly struct EquatableDiagnostic(Diagnostic diagnostic) : IEquatable
     public override string ToString() => Diagnostic.ToString();
 }
 
-internal static class EquatableDiagnosticExtensions
-{
-    public static EquatableDiagnostic AsEquatable(this Diagnostic diagnostic) => new(diagnostic);
-}
