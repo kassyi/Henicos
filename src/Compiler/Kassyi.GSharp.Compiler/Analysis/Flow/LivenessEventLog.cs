@@ -111,7 +111,7 @@ internal sealed class LivenessEventLog(LivenessFrames frames)
     }
 
     /// <summary>A tracked parameter assigned as a whole: written and changed.</summary>
-    public void AddParameterAssigned(int index, SyntaxNode syntax, int node)
+    public void AddParameterAssigned(int index, SyntaxNode? syntax, int node)
     {
         if (frames.Count > 0)
         {
@@ -124,7 +124,7 @@ internal sealed class LivenessEventLog(LivenessFrames frames)
     }
 
     /// <summary>A change of a tracked parameter.</summary>
-    public void AddChange(int index, SyntaxNode syntax, int node)
+    public void AddChange(int index, SyntaxNode? syntax, int node)
     {
         Add(LivenessEvent.Change(index), syntax, node);
         HasChanges = true;

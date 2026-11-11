@@ -53,6 +53,10 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     private long _driverAllocations;
     private long _driverFrees;
 
+    // Told of every lease and every release, in order; null except in tests that record the order in which an
+    // evaluation rents and returns its buffers
+    internal IGpuMemoryObserver? Observer { get; set; }
+
     /// <summary>
     /// Allocates or reuses a device memory handle for the specified word count.
     /// </summary>
@@ -105,6 +109,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         _activeAllocations.TryAdd(buffer.Pointer, buffer);
         CountLease(buffer.TotalWords);
         session?.MarkLeased(buffer);
+        Observer?.Leased(buffer.Pointer, buffer.TotalWords);
         return GpuBigIntMemoryHandle.CreateOwned(buffer);
     }
 
@@ -163,6 +168,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         }
 
         CountRelease(buffer.TotalWords);
+        Observer?.Released(buffer.Pointer, buffer.TotalWords);
         if (TryDefer(buffer))
         {
             return;
