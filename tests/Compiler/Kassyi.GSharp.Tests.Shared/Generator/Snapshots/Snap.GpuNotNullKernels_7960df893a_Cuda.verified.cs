@@ -80,7 +80,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__NotNullH
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__NotNullHolder,__gsharp_mb_Offset)==16,""Kassyi.GSharp.Tests.Shared.Core.NotNullHolder.Offset: offset"");
 #endif
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__GpuNotNullKernels__FirstOf(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__NotNullHolder __gsharp_id_0_h){
-return __gsharp_array_not_null(__gsharp_id_0_h.__gsharp_mb_Data, ""G#: Gpu.NotNull is given a null array at GpuNotNullKernels.cs(49,52)"")[0];
+return __gsharp_array_not_null(__gsharp_id_0_h.__gsharp_mb_Data, ""G#: Gpu.NotNull was given a null array at GpuNotNullKernels.cs(49,52)"")[0];
 }
 
 ";
@@ -108,9 +108,9 @@ public partial class GpuNotNullKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1157038880u, "GpuNotNullKernels.cs", 20, 22, "SumKernel", "G#: Gpu.NotNull is given a null array"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1015766794u, "GpuNotNullKernels.cs", 42, 16, "OptionalKernel", "G#: Gpu.NotNull is given a null array"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1449112120u, "GpuNotNullKernels.cs", 55, 16, "LengthKernel", "G#: Gpu.NotNull is given a null array"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1157038880u, "GpuNotNullKernels.cs", 20, 22, "SumKernel", "G#: Gpu.NotNull was given a null array"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1015766794u, "GpuNotNullKernels.cs", 42, 16, "OptionalKernel", "G#: Gpu.NotNull was given a null array"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1449112120u, "GpuNotNullKernels.cs", 55, 16, "LengthKernel", "G#: Gpu.NotNull was given a null array"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

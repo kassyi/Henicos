@@ -59,7 +59,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2142489040u, "BoundsAndMem
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1877458802u, "BoundsAndMemoryDifferentialKernels.cs", 405, 18, "NullArrayReassignedParameterTrapKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1302398962u, "BoundsAndMemoryDifferentialKernels.cs", 568, 22, "AllThreadsNullDereferenceTrapKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(674063691u, "BoundsAndMemoryDifferentialKernels.cs", 637, 25, "NonNullableParameterNullArgumentKernel", "G#: a null array is passed where it is not nullable"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(480353412u, "BoundsAndMemoryDifferentialKernels.cs", 674, 23, "GpuNotNullKernel", "G#: Gpu.NotNull is given a null array"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(480353412u, "BoundsAndMemoryDifferentialKernels.cs", 674, 23, "GpuNotNullKernel", "G#: Gpu.NotNull was given a null array"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

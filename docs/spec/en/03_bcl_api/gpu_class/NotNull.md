@@ -48,10 +48,11 @@ _T[]_<br>
 #### Exceptions
 
 `NullReferenceException`<br>
-`array` is `null`. In a kernel body the exception carries the place of the call in `Exception.Data["GSharp.SourceLocation"]`
-on CUDA and on the native CPU build, as the exception of any other read of a `null` array does
-([Diagnostics and Exceptions](../01_diagnostics_and_exceptions.md)); in a device function the message names the place.
-The managed CPU path throws from the C# method.
+`array` is `null`. In a kernel body the exception carries the place of the call in
+`Exception.Data["GSharp.SourceLocation"]` on CUDA and on the native CPU build, as the exception of any other read of a
+`null` array does ([Diagnostics and Exceptions](../01_diagnostics_and_exceptions.md)); in a device function the message
+names the place. The managed CPU path throws from the C# method. The message is the same on every path:
+`Gpu.NotNull was given a null array` (after `G#: ` on the device).
 
 ## Examples
 

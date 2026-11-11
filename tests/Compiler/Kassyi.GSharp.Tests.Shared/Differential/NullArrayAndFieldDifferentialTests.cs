@@ -324,7 +324,7 @@ public class NullArrayAndFieldDifferentialTests
         {
             Shape = LaunchShapes.Linear(DefaultRows, 32),
             Seeds = [0, 1],
-            ExpectedException = static (rng, _) => rng.Seed == 1 ? GpuNotNullCall(674, 23) : null,
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayArgument(674, 23) : null,
             Inputs = static (rng, shape) => new DiffBuffers()
                 .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
                 .In("flags", new[] { rng.Seed }, readOnly: true)

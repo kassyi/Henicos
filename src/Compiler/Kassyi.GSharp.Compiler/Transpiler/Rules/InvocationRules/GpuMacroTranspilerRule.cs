@@ -21,7 +21,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
                 return true;
 
             case GpuMacroKind.NotNull when call.GetArgument(node.ArgumentList.Arguments, 0) is { } array:
-                ArrayNullCheck.AppendNotNull(ArrayNullCheck.PlanNotNull(node, array.Expression, ref context), ref context);
+                NotNullCallCheck.Append(NotNullCallCheck.Plan(node, array.Expression, ref context), ref context);
                 return true;
 
             case GpuMacroKind.SyncGrid when !call.HasBody:

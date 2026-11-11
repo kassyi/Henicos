@@ -34,15 +34,12 @@ internal static class ArrayNullCheck
     /// <summary>The text of the error of a registered site of a null passed where the parameter is not nullable.</summary>
     public const string ArgumentSiteMessage = "G#: a null array is passed where it is not nullable";
 
-    /// <summary>The text of a null passed where a device function parameter is not nullable, followed by the place.</summary>
+    /// <summary>
+    /// The text of a null passed where a device function parameter is not nullable, followed by the place.
+    /// </summary>
     public const string ArgumentMessagePrefix = ArgumentSiteMessage + PlaceSeparator;
 
     private const string ArgumentTrapKind = "ArrayNullArgument";
-
-    /// <summary>The text of the error of a registered site of <c>Gpu.NotNull</c> given a null array.</summary>
-    public const string NotNullSiteMessage = "G#: Gpu.NotNull is given a null array";
-
-    private const string NotNullTrapKind = "ArrayNotNull";
 
     // Between the text of an error and the place it names, in a method without an error site table
     private const string PlaceSeparator = " at ";
@@ -210,13 +207,18 @@ internal static class ArrayNullCheck
     }
 
     /// <summary>Writes <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>.</summary>
-    public static void AppendCheck(ExpressionSyntax receiver, NullCheckSite site, ref TranspileContext context)
+    public static void AppendCheck(ExpressionSyntax receiver, NullCheckSite site, ref TranspileContext context) =>
+        AppendHelperCall(GSharpInternalNames.Prelude.ArrayRef, receiver, site, ref context);
+
+    /// <summary>Writes <c>&lt;helper&gt;(&lt;array&gt;, &lt;site&gt;)</c>: a Prelude check of one array.</summary>
+    internal static void AppendHelperCall(string helper, ExpressionSyntax array, NullCheckSite site,
+        ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        writer.Append(GSharpInternalNames.Prelude.ArrayRef);
+        writer.Append(helper);
         using (writer.Parentheses())
         {
-            context.Visitor.Visit(receiver);
+            context.Visitor.Visit(array);
             writer.Append(", ");
             AppendSite(writer, site);
         }
@@ -236,59 +238,31 @@ internal static class ArrayNullCheck
     public static NullCheckSite PlanSite(ExpressionSyntax receiver, string place, ref TranspileContext context) =>
         PlanSite(receiver, place, SiteMessage, TrapKind, ref context);
 
-    // A site of the kernel's error site table for <node> with <message>, or, in a method without a table, the message
-    // followed by the place of the node (<place>, formatted here when it is null)
-    private static NullCheckSite PlanSite(ExpressionSyntax node, string? place, string message, string trapKind,
-        ref TranspileContext context)
+    /// <summary>
+    /// A site of the kernel's error site table for <paramref name="node"/> with <paramref name="message"/>, or, in a
+    /// method without a table, the message followed by the place of the node (<paramref name="place"/>, formatted here
+    /// when it is <see langword="null"/>).
+    /// </summary>
+    internal static NullCheckSite PlanSite(ExpressionSyntax node, string? place, string message, string trapKind,
+        ref TranspileContext context) =>
+        PlanSite(node, place, message, trapKind, context.Query.SemanticModel, context.Emitter.ErrorSites,
+            context.Emitter.CurrentMemberName);
+
+    /// <summary>
+    /// <see cref="PlanSite(ExpressionSyntax, string, string, string, ref TranspileContext)"/> with the parts of the
+    /// context it reads: the model, the error site table of the method (<see langword="null"/> in a device function) and
+    /// the name of the method being emitted.
+    /// </summary>
+    internal static NullCheckSite PlanSite(ExpressionSyntax node, string? place, string message, string trapKind,
+        SemanticModel model, ErrorSiteTable? table, string? currentMemberName)
     {
-        var model = context.Query.SemanticModel;
-        if (context.Emitter.ErrorSites is not { } table)
+        if (table is null)
         {
             return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(model, node)));
         }
 
-        var memberName = GetSourceMemberName(node, model) ?? context.Emitter.CurrentMemberName ?? "";
+        var memberName = GetSourceMemberName(node, model) ?? currentMemberName ?? "";
         return new NullCheckSite(table.Register(node, model, memberName, message, trapKind), "");
-    }
-
-    /// <summary>
-    /// The check of the call <c>Gpu.NotNull(&lt;array&gt;)</c> (<paramref name="call"/>): none when
-    /// <paramref name="array"/> is proven (<see cref="NonNullProof"/>), otherwise the place of the call to report.
-    /// </summary>
-    /// <remarks>
-    /// [WHY] Not <see cref="NeedsCheck"/>, which skips an unwritten nullable kernel parameter: a null optional kernel
-    /// argument reads as an empty array, but it is null, and <c>Gpu.NotNull</c> throws for it as C# does.
-    /// </remarks>
-    public static NotNullCheck PlanNotNull(InvocationExpressionSyntax call, ExpressionSyntax array,
-        ref TranspileContext context) =>
-        NonNullProof.IsProvenNonNull(array, context.Query.SemanticModel)
-            ? new NotNullCheck(array, null)
-            : new NotNullCheck(array, PlanSite(call, null, NotNullSiteMessage, NotNullTrapKind, ref context));
-
-    /// <summary>
-    /// Writes the plan of <see cref="PlanNotNull"/>: <c>__gsharp_array_not_null(&lt;array&gt;, &lt;site&gt;)</c>, or
-    /// <c>(&lt;array&gt;)</c> when the array is proven.
-    /// </summary>
-    public static void AppendNotNull(in NotNullCheck check, ref TranspileContext context)
-    {
-        var writer = context.Emitter.Writer;
-        if (check.Site is not { } site)
-        {
-            using (writer.Parentheses())
-            {
-                context.Visitor.Visit(check.Array);
-            }
-
-            return;
-        }
-
-        writer.Append(GSharpInternalNames.Prelude.ArrayNotNull);
-        using (writer.Parentheses())
-        {
-            context.Visitor.Visit(check.Array);
-            writer.Append(", ");
-            AppendSite(writer, site);
-        }
     }
 
     // The method that holds the receiver in the user's source, past lambdas and local functions.
@@ -491,12 +465,6 @@ internal static class ArrayNullCheck
 /// names the place, when the method has no table.
 /// </summary>
 internal readonly record struct NullCheckSite(uint SiteId, string Message);
-
-/// <summary>
-/// The check of a <c>Gpu.NotNull</c> call (<see cref="ArrayNullCheck.PlanNotNull"/>): the array argument, and the place
-/// a null reports, or <see langword="null"/> when the array is proven and the call is the array itself.
-/// </summary>
-internal readonly record struct NotNullCheck(ExpressionSyntax Array, NullCheckSite? Site);
 
 /// <summary>What the check of a device function argument tests (<see cref="ArrayNullCheck.PlanArgument"/>).</summary>
 internal enum ArgumentCheckKind

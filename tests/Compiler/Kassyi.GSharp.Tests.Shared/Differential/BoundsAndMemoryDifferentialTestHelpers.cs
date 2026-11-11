@@ -37,8 +37,8 @@ internal static class BoundsAndMemoryDifferentialTestHelpers
         new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
 #endif
 
-    // A null passed where a device function parameter is not nullable: NullReferenceException on every path; CUDA, the
-    // only path of Tests.Cuda, reports the place of the argument
+    // A null passed where a device function parameter is not nullable, or given to Gpu.NotNull: NullReferenceException
+    // on every path; CUDA, the only path of Tests.Cuda, reports the place of the argument or the call
     internal static ExceptionPolicy NullArrayArgument(int line, int column) =>
 #if GSHARP_CUDA
         new(typeof(NullReferenceException), DiffPaths.CheckedPaths())
@@ -50,10 +50,6 @@ internal static class BoundsAndMemoryDifferentialTestHelpers
 #else
         new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
 #endif
-
-    // Gpu.NotNull given a null array: NullReferenceException on every path; CUDA, the only path of Tests.Cuda, reports
-    // the place of the call
-    internal static ExceptionPolicy GpuNotNullCall(int line, int column) => NullArrayArgument(line, column);
 
     internal static int[] CreateCanaryBacking()
     {

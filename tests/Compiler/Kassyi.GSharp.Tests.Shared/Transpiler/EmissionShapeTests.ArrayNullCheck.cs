@@ -176,8 +176,8 @@ public partial class EmissionShapeTests
             StringComparison.Ordinal);
     }
 
-    // Gpu.NotNull checks the field once, at the call; the local it initializes is proven, so its reads and the call that
-    // passes it are not checked, and Gpu.NotNull of a proven array writes the array alone
+    // Gpu.NotNull checks the field once, at the call; the local it initializes is proven, so its reads and the call
+    // that passes it are not checked, and Gpu.NotNull of a proven array writes the array alone
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cpu")]
@@ -186,7 +186,10 @@ public partial class EmissionShapeTests
     {
         var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect), "NotNullKernel");
 
-        Assert.Single(Regex.Matches(kernel, Regex.Escape("__gsharp_array_not_null(")));
+        // Exactly one check: the first occurrence is also the last
+        var first = kernel.IndexOf("__gsharp_array_not_null(", StringComparison.Ordinal);
+        Assert.True(first >= 0, "Gpu.NotNull of the field is not checked.");
+        Assert.Equal(first, kernel.LastIndexOf("__gsharp_array_not_null(", StringComparison.Ordinal));
         Assert.Contains("__gsharp_array_not_null(__gsharp_id_0_h.__gsharp_mb_Data, ", kernel, StringComparison.Ordinal);
         Assert.DoesNotContain(ArrayRef, kernel, StringComparison.Ordinal);
         Assert.DoesNotContain(ArrayAt, kernel, StringComparison.Ordinal);

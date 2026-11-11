@@ -164,6 +164,14 @@ public static class Reads
         return read.Length;
     }
 
+    // Gpu.NotNull of a non-nullable kernel parameter that the launch checked: nothing left to check
+    [GpuKernel]
+    public static void KernelNotNullOfParameter(int[] data, int[] output)
+    {
+        var read = Gpu.NotNull(data);
+        output[0] = read.Length;
+    }
+
     // A method of the user's own named NotNull is not Gpu.NotNull
     [GpuDeviceFunction]
     public static int DeviceOwnNotNull(int[]? data)

@@ -20,8 +20,8 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 public class GpuNotNullTests : TranspilerTestBase
 {
     private const string KernelFile = "GpuNotNullKernels.cu.cs";
-    private const string SiteMessage = "G#: Gpu.NotNull is given a null array in ";
-    private const string DeviceFunctionMessage = "G#: Gpu.NotNull is given a null array at ";
+    private const string SiteMessage = "G#: Gpu.NotNull was given a null array in ";
+    private const string DeviceFunctionMessage = "G#: Gpu.NotNull was given a null array at ";
 
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
@@ -31,7 +31,9 @@ public class GpuNotNullTests : TranspilerTestBase
     {
         var o = new[] { -1, -1 };
 
-        Run(forceManaged, () => GpuNotNullKernels.LaunchSumKernel(new NotNullHolder { Data = [1, 2, 3], Offset = 10 }, o));
+        var holder = new NotNullHolder { Data = [1, 2, 3], Offset = 10 };
+
+        Run(forceManaged, () => GpuNotNullKernels.LaunchSumKernel(holder, o));
 
         Assert.Equal([16, 1], o);
     }
@@ -139,7 +141,7 @@ public class GpuNotNullTests : TranspilerTestBase
         var exception = Assert.Throws<NullReferenceException>(() => Run(forceManaged, launch));
         if (forceManaged)
         {
-            Assert.Equal("Gpu.NotNull was given a null array.", exception.Message);
+            Assert.Equal("Gpu.NotNull was given a null array", exception.Message);
             return;
         }
 
