@@ -130,7 +130,7 @@ public static partial class ComprehensiveSpecKernel
             float mag = ComputeMagnitude(p);
             mag = (float)Math.Abs(mag);
 
-            // 5. Automatic Loop Unrolling via Constant (for)
+            // 5. Loop Statement (for)
             for (int i = 0; i < unrollFactor; i++)
             {
                 if (i == 1) continue;
