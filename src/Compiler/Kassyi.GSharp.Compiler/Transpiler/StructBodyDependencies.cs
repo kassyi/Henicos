@@ -14,8 +14,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </remarks>
 internal static class StructBodyDependencies
 {
-    private static readonly ConditionalWeakTable<Compilation,
-        ConcurrentDictionary<INamedTypeSymbol, ImmutableArray<ITypeSymbol>>> s_types = new();
+    private static readonly PerCompilationSymbolCache<INamedTypeSymbol, ImmutableArray<ITypeSymbol>> s_types = new();
 
     /// <summary>
     /// The types named in the emitted bodies of <paramref name="structSym"/> that are, or contain, a user struct (an
@@ -23,8 +22,7 @@ internal static class StructBodyDependencies
     /// </summary>
     public static ImmutableArray<ITypeSymbol> Get(INamedTypeSymbol structSym, Compilation compilation)
     {
-        var cache = s_types.GetValue(compilation, static _ =>
-            new ConcurrentDictionary<INamedTypeSymbol, ImmutableArray<ITypeSymbol>>(SymbolEqualityComparer.Default));
+        var cache = s_types.For(compilation);
         return cache.TryGetValue(structSym, out var cached)
             ? cached
             : cache.GetOrAdd(structSym, Collect(structSym, compilation));

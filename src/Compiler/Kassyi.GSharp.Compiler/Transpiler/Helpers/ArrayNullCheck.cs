@@ -47,8 +47,7 @@ internal static class ArrayNullCheck
     // Between the text of an error and the place it names, in a method without an error site table
     private const string PlaceSeparator = " at ";
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IParameterSymbol, bool>> s_written =
-        new();
+    private static readonly PerCompilationSymbolCache<IParameterSymbol, bool> s_written = new();
 
     /// <summary>Whether a read through <paramref name="receiver"/> needs the null check.</summary>
     public static bool NeedsCheck(ExpressionSyntax receiver, SemanticModel semanticModel) =>
@@ -432,10 +431,7 @@ internal static class ArrayNullCheck
             return false;
         }
 
-        var written = s_written.GetValue(
-            compilation,
-            static _ => new ConcurrentDictionary<IParameterSymbol, bool>(SymbolEqualityComparer.Default)
-        );
+        var written = s_written.For(compilation);
         if (!written.TryGetValue(parameter, out var isWritten))
         {
             isWritten = IsWritten(parameter, compilation);
