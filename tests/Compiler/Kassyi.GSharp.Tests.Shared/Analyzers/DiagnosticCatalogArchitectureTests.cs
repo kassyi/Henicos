@@ -1,14 +1,16 @@
-using System.Text.RegularExpressions;
+using System.Text.Json;
 using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Compiler.NativeApi;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 /// <summary>Guards that every diagnostic is defined in <c>diagnostics.json</c> and nowhere else.</summary>
 [Category(TestCategory.Compiler)]
-public partial class DiagnosticCatalogArchitectureTests
+public class DiagnosticCatalogArchitectureTests
 {
     // The build-time generator executable cannot link the generated GSharpDiagnostics, so this file mirrors
     // the NativeApi YAML IDs (see NativeApiReadError.DiagnosticId); NativeApiReadErrorIds_MatchCatalog pins them.
@@ -17,8 +19,9 @@ public partial class DiagnosticCatalogArchitectureTests
     // The catalog generator itself cites an example ID in its schema-error message.
     private const string CatalogGeneratorFile = "DiagnosticGenerator.cs";
 
-    [GeneratedRegex(@"\b(GSH|SLQ)\d{4}\b")]
-    private static partial Regex DiagnosticIdPattern();
+    // Every ID that diagnostics.json defines, obsolete ones included: GSharpDiagnostics.Reported leaves those out, and
+    // a literal that names an obsolete ID is still a literal ID
+    private static readonly string[] s_catalogIds = ReadCatalogIds();
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
@@ -34,11 +37,11 @@ public partial class DiagnosticCatalogArchitectureTests
                 continue;
             }
 
-            var root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
+            var root = RoslynTestUtility.CreateCompilation(File.ReadAllText(path)).SyntaxTrees.First().GetRoot();
             foreach (var token in root.DescendantTokens())
             {
                 if (token.Kind() is not (SyntaxKind.StringLiteralToken or SyntaxKind.InterpolatedStringTextToken) ||
-                    !DiagnosticIdPattern().IsMatch(token.ValueText))
+                    !s_catalogIds.Any(id => token.ValueText.Contains(id, StringComparison.Ordinal)))
                 {
                     continue;
                 }
@@ -61,12 +64,12 @@ public partial class DiagnosticCatalogArchitectureTests
 
         foreach (var path in EnumerateSourceFiles())
         {
-            var root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
+            var root = RoslynTestUtility.CreateCompilation(File.ReadAllText(path)).SyntaxTrees.First().GetRoot();
             foreach (var creation in root.DescendantNodes().OfType<BaseObjectCreationExpressionSyntax>())
             {
                 var isDescriptor = creation switch
                 {
-                    ObjectCreationExpressionSyntax explicitNew => explicitNew.Type.ToString().EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+                    ObjectCreationExpressionSyntax explicitNew => IsDiagnosticDescriptorType(explicitNew.Type),
                     // Target-typed `new(...)` bound to a DiagnosticDescriptor field or local.
                     ImplicitObjectCreationExpressionSyntax implicitNew => IsDescriptorDeclaration(implicitNew),
                     _ => false,
@@ -102,15 +105,36 @@ public partial class DiagnosticCatalogArchitectureTests
     public void StackLinqChainAnalyzer_DiagnosticId_ComesFromCatalog() =>
         Assert.Equal(GSharpDiagnostics.StackLinqChainTooDeep.Id, StackLinqChainAnalyzer.DiagnosticId);
 
+    private static bool IsDiagnosticDescriptorType(TypeSyntax type) =>
+        type switch
+        {
+            IdentifierNameSyntax id => id.Identifier.ValueText.EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+            QualifiedNameSyntax q => q.Right.Identifier.ValueText.EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+            _ => false,
+        };
+
     private static bool IsDescriptorDeclaration(ImplicitObjectCreationExpressionSyntax creation) =>
         creation.Parent switch
         {
             EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } } =>
-                declaration.Type.ToString().EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+                IsDiagnosticDescriptorType(declaration.Type),
             ArrowExpressionClauseSyntax { Parent: PropertyDeclarationSyntax property } =>
-                property.Type.ToString().EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+                IsDiagnosticDescriptorType(property.Type),
             _ => false,
         };
+
+    private static string[] ReadCatalogIds()
+    {
+        using var catalog = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(RepositoryPaths.CompilerProject, "Diagnostics", "diagnostics.json")));
+        return
+        [
+            .. catalog.RootElement
+                .EnumerateArray()
+                .Select(static entry => entry.GetProperty("id").GetString())
+                .OfType<string>()
+        ];
+    }
 
     private static IEnumerable<string> EnumerateSourceFiles()
     {
