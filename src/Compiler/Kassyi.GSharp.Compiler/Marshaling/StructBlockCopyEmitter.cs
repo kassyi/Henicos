@@ -5,7 +5,8 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class StructBlockCopyEmitter
 {
     // [WHY] The members are then read and written by the names of the mirror, whose fields name the hidden fields of
-    // the captured primary constructor parameters (NativeStructEmitter.NeedsHostMirror). The size and offset checks
+    // the captured primary constructor parameters and the fields generated code cannot name
+    // (NativeStructEmitter.NeedsHostMirror). The size and offset checks
     // catch a mirror that does not have the CLR layout of S.
     internal static void WriteHostMirrorBinding(SourceWriter writer, INamedTypeSymbol s, bool hasMirror)
     {

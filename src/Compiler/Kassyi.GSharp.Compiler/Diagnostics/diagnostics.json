@@ -850,6 +850,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "StructFieldTypeInaccessibleToLauncher",
+    "id": "GSH0108",
+    "title": "Struct field type is not accessible to the generated launcher",
+    "messageFormat": "The type '{0}' of field '{1}' is not accessible from '{2}', where the generated launcher copies the field. Make the type internal or public.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",
