@@ -103,6 +103,15 @@ public struct GSharpDeviceErrorSlot
 }
 
 /// <summary>
+/// Encapsulates the runtime error site and thread/block coordinates for mapping to an exception (#1231).
+/// </summary>
+internal readonly record struct ErrorSiteLocation(
+    uint SiteId,
+    uint ModuleId,
+    uint ThreadLinear,
+    (int X, int Y, int Z) BlockCoord);
+
+/// <summary>
 /// Maps device and native CPU runtime error records to standard .NET exceptions with source location and thread coordinate metadata.
 /// </summary>
 public static class GSharpErrorMapper
@@ -354,10 +363,7 @@ public static class GSharpErrorMapper
         var (bx, by, bz) = UnpackBlockIndex(slot.BlockX, slot.BlockYZ);
         return CreateExceptionCore(
             code,
-            slot.SiteId,
-            slot.ModuleId,
-            slot.ThreadLinear,
-            (bx, by, bz),
+            new ErrorSiteLocation(slot.SiteId, slot.ModuleId, slot.ThreadLinear, (bx, by, bz)),
             innerException,
             explicitMessage,
             preserveRawMessageWhenNoSite);
@@ -388,27 +394,35 @@ public static class GSharpErrorMapper
         bool preserveRawMessageWhenNoSite = false) =>
         CreateExceptionCore(
             code,
-            siteId,
-            moduleId,
-            threadLinear,
-            blockCoord,
+            new ErrorSiteLocation(siteId, moduleId, threadLinear, blockCoord),
             innerException,
             explicitMessage,
             preserveRawMessageWhenNoSite);
 
     private static Exception CreateExceptionCore(
         GSharpErrorCode code,
-        uint siteId,
-        uint moduleId,
-        uint threadLinear,
-        (int X, int Y, int Z) blockCoord,
+        in ErrorSiteLocation location,
         Exception? innerException,
         string? explicitMessage,
         bool preserveRawMessageWhenNoSite)
     {
-        var hasSite = TryGetSite(siteId, moduleId, out var site);
-        // The explicit message, else the message of the site, else the builtin message of the prelude, else the default
-        var baseMessage = siteId switch
+        var hasSite = TryGetSite(location.SiteId, location.ModuleId, out var site);
+        var baseMessage = ResolveBaseMessage(code, location.SiteId, explicitMessage, hasSite, site);
+        var (formattedMessage, threadCoord, blockCoordStr) = FormatMessage(
+            baseMessage, location, hasSite, site, preserveRawMessageWhenNoSite, explicitMessage);
+
+        var exception = InstantiateException(code, formattedMessage, innerException);
+        PopulateExceptionData(exception, code, threadCoord, blockCoordStr, hasSite, site, innerException);
+        return exception;
+    }
+
+    private static string ResolveBaseMessage(
+        GSharpErrorCode code,
+        uint siteId,
+        string? explicitMessage,
+        bool hasSite,
+        GSharpErrorSite site) =>
+        siteId switch
         {
             _ when !string.IsNullOrEmpty(explicitMessage) => explicitMessage,
             _ when hasSite && !string.IsNullOrEmpty(site.DefaultMessage) => site.DefaultMessage,
@@ -417,16 +431,25 @@ public static class GSharpErrorMapper
             _ => GetDefaultMessage(code),
         };
 
-        var (tx, ty, tz) = UnpackThreadIndex(threadLinear);
+    private static (string FormattedMessage, string ThreadCoord, string BlockCoordStr) FormatMessage(
+        string baseMessage,
+        in ErrorSiteLocation location,
+        bool hasSite,
+        GSharpErrorSite site,
+        bool preserveRawMessageWhenNoSite,
+        string? explicitMessage)
+    {
+        var (tx, ty, tz) = UnpackThreadIndex(location.ThreadLinear);
         var threadCoord = $"({tx},{ty},{tz})";
-        var blockCoordStr = $"({blockCoord.X},{blockCoord.Y},{blockCoord.Z})";
+        var blockCoordStr = $"({location.BlockCoord.X},{location.BlockCoord.Y},{location.BlockCoord.Z})";
 
         string formattedMessage;
         if (hasSite)
         {
-            var location = $"{site.File}({site.Line},{site.Column})";
+            var sourceLocation = $"{site.File}({site.Line},{site.Column})";
             formattedMessage =
-                $"{baseMessage} in {site.MemberName} at {location} in thread {threadCoord} of block {blockCoordStr}";
+                $"{baseMessage} in {site.MemberName} at {sourceLocation} " +
+                $"in thread {threadCoord} of block {blockCoordStr}";
         }
         else if (preserveRawMessageWhenNoSite && !string.IsNullOrEmpty(explicitMessage))
         {
@@ -438,7 +461,18 @@ public static class GSharpErrorMapper
             formattedMessage = $"{baseMessage} in thread {threadCoord} of block {blockCoordStr}";
         }
 
-        var exception = InstantiateException(code, formattedMessage, innerException);
+        return (formattedMessage, threadCoord, blockCoordStr);
+    }
+
+    private static void PopulateExceptionData(
+        Exception exception,
+        GSharpErrorCode code,
+        string threadCoord,
+        string blockCoordStr,
+        bool hasSite,
+        GSharpErrorSite site,
+        Exception? innerException)
+    {
         exception.Data["GSharp.ErrorCode"] = code.ToString();
         exception.Data["GSharp.ThreadIndex"] = threadCoord;
         exception.Data["GSharp.BlockIndex"] = blockCoordStr;
@@ -453,8 +487,6 @@ public static class GSharpErrorMapper
         {
             exception.Data["GSharp.CudaError"] = cudaEx.Result.ToString();
         }
-
-        return exception;
     }
 
     private static Exception InstantiateException(GSharpErrorCode code, string message, Exception? innerException) =>
