@@ -305,8 +305,8 @@ public readonly struct GpuBigIntExpr : IDisposable
     {
         GraphOwnership.ThrowIfOwned(Node);
 
-        // 1. Warm-up execution to trigger all lazy memory allocations and JIT compilation
-        // before graph capture begins, otherwise cuMemAlloc invalidates the stream.
+        // 1. Warm-up execution to trigger the lazy memory allocations and module loads before graph capture begins, so
+        // that the capture finds its buffers in the pool instead of allocating them while it records.
         try
         {
             // A result allocated by the warm-up goes back to the pool, where the capture finds it again; a result in

@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// Designed for high-performance Batched / Vectorized execution and parallel reductions.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct GpuBigUIntArray : IDisposable
+public readonly struct GpuBigUIntArray : IDisposable, IEquatable<GpuBigUIntArray>
 {
     /// <summary>
     /// Gets the <see cref="GpuWorkspace"/> associated with this GPU array instance.
@@ -121,6 +121,45 @@ public readonly struct GpuBigUIntArray : IDisposable
     /// </summary>
     /// <returns>A borrowed <see cref="GpuBigUIntArray"/>, valid while this array is not disposed.</returns>
     internal GpuBigUIntArray AsBorrowed() => new(Workspace, Handle.Borrow(), Length, WordsPerElement);
+
+    /// <summary>
+    /// Indicates whether the current instance refers to the same workspace, device buffer slice, and element shape as
+    /// another <see cref="GpuBigUIntArray"/>.
+    /// </summary>
+    /// <param name="other">A <see cref="GpuBigUIntArray"/> to compare with this instance.</param>
+    /// <returns>
+    /// <see langword="true"/> if both instances share the same <see cref="Workspace"/>, <see cref="Handle"/>,
+    /// <see cref="Length"/>, and <see cref="WordsPerElement"/>; otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// <see cref="Equals(GpuBigUIntArray)"/> and <see cref="GetHashCode"/> compare buffer identity and array shape
+    /// rather than element values: two separately allocated arrays holding identical values are not equal, whereas a
+    /// full-range borrowed view shares the same handle identity. Neither member reads device memory, so both also work
+    /// on <see langword="default"/> or disposed instances.
+    /// </remarks>
+    public bool Equals(GpuBigUIntArray other) =>
+        ReferenceEquals(Workspace, other.Workspace) &&
+        Handle.Equals(other.Handle) &&
+        Length == other.Length &&
+        WordsPerElement == other.WordsPerElement;
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current instance.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current instance.</param>
+    /// <returns>
+    /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="GpuBigUIntArray"/> and equals the current
+    /// instance; otherwise, <see langword="false"/>.
+    /// </returns>
+    public override bool Equals(object? obj) => obj is GpuBigUIntArray other && Equals(other);
+
+    /// <summary>
+    /// Returns a hash code based on the workspace, buffer handle identity, and array shape, consistent with
+    /// <see cref="Equals(GpuBigUIntArray)"/>.
+    /// </summary>
+    /// <returns>A 32-bit signed integer hash code.</returns>
+    public override int GetHashCode() =>
+        HashCode.Combine(RuntimeHelpers.GetHashCode(Workspace), Handle, Length, WordsPerElement);
 
     /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying buffer.

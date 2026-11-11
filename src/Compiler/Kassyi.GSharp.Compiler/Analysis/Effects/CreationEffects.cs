@@ -39,7 +39,8 @@ internal static class CreationEffects
         AddInitializer(ref walker, with.Initializer);
     }
 
-    // The members that an object initializer assigns belong to the new object; only their values are evaluated
+    // The members that an object initializer assigns belong to the new object: their values are evaluated, and the setter
+    // of a computed property is called
     private static void AddInitializer(ref EffectWalker walker, InitializerExpressionSyntax initializer)
     {
         foreach (var expression in initializer.Expressions)
@@ -51,6 +52,7 @@ internal static class CreationEffects
                     break;
                 case AssignmentExpressionSyntax assignment:
                     walker.AddValue(assignment.Right);
+                    OperatorEffects.AddAccessorCalls(ref walker, assignment.Left, callsGetter: false);
                     break;
                 default:
                     walker.AddValue(expression);

@@ -6,7 +6,10 @@ using static FermatTestMath;
 /// Tests of <see cref="FermatAlgorithm"/>'s device stage under the CPU fallback (#647) and of the fallback mode it keeps
 /// from construction. References come from <see cref="BigInteger"/>.
 /// </summary>
-/// <remarks><see cref="GpuKernelLoader.ForceCpuFallback"/> is AsyncLocal, so each test sets and restores it itself.</remarks>
+/// <remarks>
+/// <see cref="GpuKernelLoader.ForceCpuFallback"/> is AsyncLocal, so each test sets and restores it itself
+/// (<see cref="CpuFallbackScope"/>).
+/// </remarks>
 [Collection(TestCollections.GlobalStateSequential)]
 [TestTarget(ExecutionTarget.CpuExecution)]
 [Category(TestCategory.Stdlib)]
@@ -39,15 +42,10 @@ public class FermatAlgorithmCpuFallbackTests
     public void Run_CpuFallback_MatchesBigIntegerAndTheGpu(int e, uint @base)
     {
         FermatPrpResult cpuResult;
-        GpuKernelLoader.ForceCpuFallback = true;
-        try
+        using (CpuFallbackScope.Enter())
         {
             using var runner = new FermatAlgorithm(e, @base);
             cpuResult = runner.Run();
-        }
-        finally
-        {
-            GpuKernelLoader.ForceCpuFallback = false;
         }
 
         // P-ref and P-verdict: every squaring of the chain and of the checks runs on the host (BigInteger, FoldReference).
@@ -77,8 +75,7 @@ public class FermatAlgorithmCpuFallbackTests
         // E = 40, base 3: the device stage would allocate the registers, the product and the workspace; with the
         // divisor 3 known, Run needs none of them (PR #761 review 1), and Dispose has nothing to release.
         const int E = 40;
-        GpuKernelLoader.ForceCpuFallback = true;
-        try
+        using (CpuFallbackScope.Enter())
         {
             using var runner = new FermatAlgorithm(E);
 
@@ -88,10 +85,6 @@ public class FermatAlgorithmCpuFallbackTests
             Assert.False(runner.HasChain);
             Assert.Equal(runner.ResidueWords, runner.CreateCheckpoint().State.Length);
         }
-        finally
-        {
-            GpuKernelLoader.ForceCpuFallback = false;
-        }
     }
 
     [Fact]
@@ -99,8 +92,7 @@ public class FermatAlgorithmCpuFallbackTests
     public void GetState_CpuFallback_FoldedSquareAboveN_IsReturnedCanonical()
     {
         const int E = 40;
-        GpuKernelLoader.ForceCpuFallback = true;
-        try
+        using (CpuFallbackScope.Enter())
         {
             using var runner = new FermatAlgorithm(E, 2);
 
@@ -113,10 +105,6 @@ public class FermatAlgorithmCpuFallbackTests
             expected[0] = 1;
             Assert.Equal(expected, runner.GetState());
         }
-        finally
-        {
-            GpuKernelLoader.ForceCpuFallback = false;
-        }
     }
 
     [Fact]
@@ -125,8 +113,7 @@ public class FermatAlgorithmCpuFallbackTests
     {
         const int E = 61;
         var options = new FermatPrpOptions { BlockSize = 7 };
-        GpuKernelLoader.ForceCpuFallback = true;
-        try
+        using (CpuFallbackScope.Enter())
         {
             var checkpoints = new List<FermatPrpCheckpoint>();
             FermatPrpResult expected;
@@ -144,10 +131,6 @@ public class FermatAlgorithmCpuFallbackTests
             Assert.True(result.IsProbablePrime);
             Assert.Equal(expected.Residue64, result.Residue64);
         }
-        finally
-        {
-            GpuKernelLoader.ForceCpuFallback = false;
-        }
     }
 
     [Fact]
@@ -155,8 +138,7 @@ public class FermatAlgorithmCpuFallbackTests
     public void Run_CpuFallbackWithFrequentChecks_VerifiesAndMatchesBigInteger()
     {
         const int E = 41;
-        GpuKernelLoader.ForceCpuFallback = true;
-        try
+        using (CpuFallbackScope.Enter())
         {
             using var runner = new FermatAlgorithm(E, 3, new FermatPrpOptions { BlockSize = 10, CheckIntervalBlocks = 2 });
 
@@ -166,10 +148,6 @@ public class FermatAlgorithmCpuFallbackTests
             Assert.Equal(5, result.ChecksPassed);
             Assert.Equal(0, result.Rollbacks);
             Assert.Equal(PrpReference(E, 3).Residue64, result.Residue64);
-        }
-        finally
-        {
-            GpuKernelLoader.ForceCpuFallback = false;
         }
     }
 
@@ -184,8 +162,7 @@ public class FermatAlgorithmCpuFallbackTests
         try
         {
             var checkpoint = runner.CreateCheckpoint();
-            GpuKernelLoader.ForceCpuFallback = true;
-            try
+            using (CpuFallbackScope.Enter())
             {
                 // Device pointers would reach host code (and host pointers CUDA kernels, #647); every member refuses,
                 // Dispose included, which then releases nothing.
@@ -195,10 +172,6 @@ public class FermatAlgorithmCpuFallbackTests
                 Assert.Throws<InvalidOperationException>(() => runner.Restore(checkpoint));
                 Assert.Throws<InvalidOperationException>(() => runner.CreateCheckpoint());
                 Assert.Throws<InvalidOperationException>(() => runner.Dispose());
-            }
-            finally
-            {
-                GpuKernelLoader.ForceCpuFallback = false;
             }
 
             // Nothing ran and nothing was released: the instance still works in its own mode.
@@ -242,15 +215,10 @@ public class FermatAlgorithmCpuFallbackTests
     {
         // E <= 31 never touches a device or CPU-fallback buffer, so switching the mode is harmless there.
         const int E = 31;
-        GpuKernelLoader.ForceCpuFallback = true;
         FermatAlgorithm runner;
-        try
+        using (CpuFallbackScope.Enter())
         {
             runner = new FermatAlgorithm(E, 3);
-        }
-        finally
-        {
-            GpuKernelLoader.ForceCpuFallback = false;
         }
 
         using (runner)

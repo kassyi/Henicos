@@ -85,11 +85,12 @@ internal static class DeviceExportEmitter
     /// records of a struct live in the assembly that declares it, so that two libraries never record one struct.
     /// </para>
     /// <para>
-    /// [WHY] A struct that no G# assembly records (<see cref="IsUnrecordedStruct"/>: a Kassyi.GSharp.Core vector type, a
-    /// struct of a referenced assembly without G#) has no record a consumer could import, so its definition stays in
-    /// the text of every record that names it, in front of that record's own definition (#538 review B1). Its include
-    /// guard keeps the copies from redefining it. A struct of another G# library stays a reference: the consumer imports
-    /// that library's record, with the members (computed properties, Dispose) that a definition from metadata lacks.
+    /// [WHY] A struct that no G# assembly records (<see cref="IsUnrecordedStruct"/>: a Kassyi.GSharp.Core vector
+    /// type, a struct of a referenced assembly without G#) has no record a consumer could import, so its definition
+    /// stays in the text of every record that names it, in front of that record's own definition (#538 review B1).
+    /// Its include guard keeps the copies from redefining it. A struct of another G# library stays a reference: the
+    /// consumer imports that library's record, with the members (computed properties, Dispose) that a definition from
+    /// metadata lacks.
     /// </para>
     /// <para>
     /// A struct fails for a dialect only when its own parts do (<see cref="StructSourcePart.Failed"/>), not with the
@@ -131,9 +132,9 @@ internal static class DeviceExportEmitter
         (!DeviceExportTable.TryFind(type, out var imported) || !imported.IsCompatible || imported.FailedFor(isCuda));
 
     /// <summary>
-    /// The definitions and <c>Dispose</c> definitions of <paramref name="parts"/> whose structs no G# assembly records
-    /// (<see cref="IsUnrecordedStruct"/>), in their order, with the C++ names of those structs: a function record keeps
-    /// them in front of its body.
+    /// The definitions and <c>Dispose</c> definitions of <paramref name="parts"/> whose structs no G# assembly
+    /// records (<see cref="IsUnrecordedStruct"/>), in their order, with the C++ names of those structs: a function
+    /// record keeps them in front of its body.
     /// </summary>
     public static string KeepUnrecorded(ImmutableArray<StructSourcePart>.Builder parts, Compilation compilation,
         bool isCuda, ImmutableArray<string>.Builder names)
@@ -398,7 +399,7 @@ internal static class DeviceExportEmitter
     private static DeviceExportRecord Merge(DeviceExportRecord existing, DeviceExportRecord candidate)
     {
         var merged = existing;
-        if (Prefer(candidate.CudaFailed, candidate.CudaDispose, existing.CudaFailed, existing.CudaDispose))
+        if (ShouldPrefer(candidate.CudaFailed, candidate.CudaDispose, existing.CudaFailed, existing.CudaDispose))
         {
             merged = merged with
             {
@@ -407,7 +408,7 @@ internal static class DeviceExportEmitter
             };
         }
 
-        if (Prefer(candidate.CppFailed, candidate.CppDispose, existing.CppFailed, existing.CppDispose))
+        if (ShouldPrefer(candidate.CppFailed, candidate.CppDispose, existing.CppFailed, existing.CppDispose))
         {
             merged = merged with
             {
@@ -433,7 +434,8 @@ internal static class DeviceExportEmitter
         return merged with { InternalError = internalError };
     }
 
-    private static bool Prefer(bool candidateFailed, string candidateDispose, bool existingFailed, string existingDispose) =>
+    private static bool ShouldPrefer(bool candidateFailed, string candidateDispose, bool existingFailed,
+        string existingDispose) =>
         !candidateFailed && (existingFailed || (existingDispose.Length == 0 && candidateDispose.Length > 0));
 
     // [assembly: global::Kassyi.GSharp.Core.GpuDeviceExport(<version>, "<hash>", "<kind>", "<id>", CppName = "<name>", ...)]
