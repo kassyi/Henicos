@@ -52,8 +52,8 @@ public class GpuBigIntBenchmark : IDisposable
         _scope.Dispose();
     }
 
-    [Benchmark]
-    public void Sub_GSharpKernel() => _gpuResultKernel.Value = _gpuAKernel - _gpuBKernel;
+    [Benchmark(Description = "Sub_GSharpKernel")]
+    public void SubGSharpKernel() => _gpuResultKernel.Value = _gpuAKernel - _gpuBKernel;
 
     public void Dispose() => Cleanup();
 }

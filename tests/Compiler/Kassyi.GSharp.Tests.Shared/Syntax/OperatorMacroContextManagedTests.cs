@@ -15,7 +15,7 @@ public class OperatorMacroContextManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ParameterContext_IsPassedByReference()
+    public void Expand_ManagedParameterContext_IsPassedByReference()
     {
         uint[] result = [0];
         uint[] calls = [0];
@@ -34,7 +34,7 @@ public class OperatorMacroContextManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ParameterContext_IsPassedByValue()
+    public void Expand_ManagedParameterContext_IsPassedByValue()
     {
         uint[] result = [0];
 
@@ -47,7 +47,7 @@ public class OperatorMacroContextManagedTests : TranspilerTestBase
     // AddTwice is a device function that expands the operator macro: the kernel calls its managed version
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_RefParameterContext_OfDeviceFunction_IsPassedOn()
+    public void Expand_ManagedRefParameterContextOfDeviceFunction_IsPassedOn()
     {
         uint[] result = [0];
         uint[] calls = [0];
@@ -68,7 +68,7 @@ public class OperatorMacroContextManagedTests : TranspilerTestBase
     // The context is a field of the kernel's state machine context: the expansion passes that field
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_LocalContext_AcrossBarrier_IsPassed()
+    public void Expand_ManagedLocalContextAcrossBarrier_IsPassed()
     {
         uint[] result = [0];
         uint[] calls = [0];

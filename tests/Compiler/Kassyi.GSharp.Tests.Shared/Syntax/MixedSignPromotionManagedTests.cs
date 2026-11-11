@@ -19,27 +19,27 @@ public class MixedSignPromotionManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UIntMixedWithInt_IsComputedInLong() =>
+    public void Promote_ManagedUIntMixedWithInt_ComputesInInt64() =>
         MixedSignPromotionScenarios.IntPairs(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UIntMixedWithShort_IsComputedInLong() =>
+    public void Promote_ManagedUIntMixedWithShort_ComputesInInt64() =>
         MixedSignPromotionScenarios.ShortPairs(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UIntMixedWithSByte_IsComputedInLong() =>
+    public void Promote_ManagedUIntMixedWithSByte_ComputesInInt64() =>
         MixedSignPromotionScenarios.SBytePairs(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ConstantOperands_FollowTheCSharpConversions() =>
+    public void Promote_ManagedConstantOperands_FollowsCSharpConversions() =>
         MixedSignPromotionScenarios.ConstantOperands(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_MixedOperandsAcrossBarriers_AreComputedInLong() =>
+    public void Promote_ManagedMixedOperandsAcrossBarriers_ComputesInInt64() =>
         MixedSignPromotionScenarios.AcrossBarrier(s_runManaged);
 
     private static void RunManaged(Action launch)

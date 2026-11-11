@@ -136,6 +136,21 @@ Further limits:
 
 The native CPU execution path (`CpuKernelLoader`) mirrors this architecture using thread-local `GSharpErrorSlot` instances exporting `__gsharp_consume_last_error_details`. The runtime unpacks thread and block coordinates with identical layout decoding, producing uniform exception types, messages, and `Exception.Data` key-value pairs across CUDA GPU and native CPU targets.
 
+### 2.6.4 Kernel Pool Growth After GPU Faults on Windows
+
+A failing G# thread records its error and exits, so an ordinary device error (an index out of range, a failed switch expression) does not fault the GPU and costs nothing beyond the exception. A real GPU fault is different: a `trap` that ends the CUDA context (the cases listed in 2.6.2, a launch without error records) or an illegal memory access (a kernel whose checks a release build leaves out). On Windows each such fault logs `nvlddmkm` Event 153 entries in the System event log (one for a plain CUDA program, two for a G# test process), resets the GPU engine and writes a live kernel dump.
+
+Measured on one Windows 11 machine with the NVIDIA driver 610.88 (WDDM):
+
+- A plain CUDA program whose kernel ends in `trap;`, run 200 times right after a reboot, grew the nonpaged pool by 474 MB and the paged pool by 1,098 MB. The growth was uneven from one group of runs to the next, and the pools were not freed when the processes exited, only by a reboot.
+- Over nine days of test runs (about 10,600 Event 153 entries), the pools reached 8.3 GB nonpaged and 11.1 GB paged; a reboot returned them to 1.8 GB and 2.1 GB.
+
+Whether the driver or the live kernel dump that Windows writes for each fault holds the memory is not known yet, and faults on an illegal address were not measured separately. The question is reported to NVIDIA as bug 7077284 (https://developer.nvidia.com/bugs/7077284 , which needs an NVIDIA developer login).
+
+- Watch `\Memory\Pool Nonpaged Bytes` and `\Memory\Pool Paged Bytes` (Performance Monitor, or `typeperf`) when a workload may fault repeatedly, and reboot when they have grown.
+- Do not retry a faulting kernel in a loop; fix the fault, or run the kernel through a launcher whose error records are available so that a failing thread exits instead of faulting.
+- Only Windows was measured; Linux has not been measured.
+
 ## See also
 
 ### Getting Started

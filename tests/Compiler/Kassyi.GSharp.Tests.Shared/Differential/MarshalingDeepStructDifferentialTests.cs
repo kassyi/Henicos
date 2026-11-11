@@ -177,7 +177,7 @@ public sealed class MarshalingDeepStructDifferentialTests
     /// </summary>
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeepStruct_NestedAllArgModes_MatchesSequentialOracle() =>
+    public void DeepStructMarshaling_NestedAllArgModes_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_deepStructAllArgModes);
 
     /// <summary>
@@ -186,7 +186,7 @@ public sealed class MarshalingDeepStructDifferentialTests
     /// </summary>
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeepStruct_SixContainerShapes_MatchesSequentialOracle() =>
+    public void DeepStructMarshaling_SixContainerShapes_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_deepStructSixContainers);
 
     /// <summary>
@@ -194,6 +194,6 @@ public sealed class MarshalingDeepStructDifferentialTests
     /// </summary>
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeepStruct_PrimaryConstructor_MatchesSequentialOracle() =>
+    public void DeepStructMarshaling_PrimaryConstructor_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_primaryCtorDeepStruct);
 }

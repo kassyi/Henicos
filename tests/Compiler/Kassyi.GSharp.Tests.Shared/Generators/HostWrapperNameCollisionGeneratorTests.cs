@@ -11,7 +11,7 @@ public class HostWrapperNameCollisionGeneratorTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_HostWrapperNameCollisions_GenerateCompilableWrappers(string dialect)
+    public async Task HostWrapperNameCollisions_GenerateCompilableWrappers(string dialect)
     {
         var testConfig = RoslynTestUtility.TestGenerator("Generators/GpuKernel_HostWrapperNames.cu.cs")
             .WithDialect(dialect);

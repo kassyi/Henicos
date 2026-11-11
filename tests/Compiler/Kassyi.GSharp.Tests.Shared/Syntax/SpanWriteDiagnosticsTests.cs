@@ -15,7 +15,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OutOfRange_ArrayClear_ThrowsIndexOutOfRangeException(bool managed)
+    public void ArrayClear_OutOfRangeParameters_ThrowsIndexOutOfRangeException(bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
@@ -34,7 +34,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OutOfRange_ArrayFill_ThrowsArgumentOutOfRangeException(bool managed)
+    public void ArrayFill_OutOfRangeParameters_ThrowsArgumentOutOfRangeException(bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
@@ -54,7 +54,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OutOfRange_ArrayCopy_ThrowsArgumentException(bool managed)
+    public void ArrayCopy_OutOfRangeParameters_ThrowsArgumentException(bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
@@ -76,7 +76,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OutOfRange_AsSpanFill_ThrowsArgumentOutOfRangeException(bool managed)
+    public void AsSpanFill_OutOfRangeParameters_ThrowsArgumentOutOfRangeException(bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
@@ -96,7 +96,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OutOfRange_SliceFill_ThrowsArgumentOutOfRangeException(bool managed)
+    public void SliceFill_OutOfRangeParameters_ThrowsArgumentOutOfRangeException(bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
@@ -116,7 +116,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OutOfRange_ArrayFill_CudaTraps()
+    public void ArrayFill_OutOfRangeParametersInCuda_TrapsExecutionWithCudaException()
     {
         Skip.If(true,
             "CUDA checks out-of-range slice and span members only when built with " +
@@ -130,7 +130,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OutOfRange_ArrayCopy_CudaTraps()
+    public void ArrayCopy_OutOfRangeParametersInCuda_TrapsExecutionWithCudaException()
     {
         Skip.If(true,
             "CUDA checks out-of-range slice and span members only when built with " +
@@ -145,7 +145,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OutOfRange_AsSpanFill_CudaTraps()
+    public void AsSpanFill_OutOfRangeParametersInCuda_TrapsExecutionWithCudaException()
     {
         Skip.If(true,
             "CUDA checks out-of-range slice and span members only when built with " +
@@ -159,7 +159,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_OutOfRange_SliceFill_CudaTraps()
+    public void SliceFill_OutOfRangeParametersInCuda_TrapsExecutionWithCudaException()
     {
         Skip.If(true,
             "CUDA checks out-of-range slice and span members only when built with " +
@@ -175,7 +175,7 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EvaluationOrder_LeftToRightAndSingleEvaluation(bool managed)
+    public void EvaluationOrder_ExpressionsWithSideEffects_EvaluatesLeftToRightWithSingleEvaluation(bool managed)
     {
         var src = CreateSequential(8, start: 10);
         var dst1 = new int[4];

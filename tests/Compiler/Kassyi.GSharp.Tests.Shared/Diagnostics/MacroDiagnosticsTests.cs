@@ -13,7 +13,7 @@ public class MacroDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ForUnrollVariableCount_ReportsOnlyGsh0012AtTheArgument(string dialect)
+    public async Task ForUnrollVariableCount_NonConstantArgument_ReportsGsh0012AtArgument(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/MacroArgumentSadPath.cs", dialect);
 
@@ -26,7 +26,7 @@ public class MacroDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SyncGridWithoutLambda_ReportsGsh0003AtTheArgument(string dialect)
+    public async Task SyncGridWithoutLambda_NonLambdaArgument_ReportsGsh0003AtArgument(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/MacroArgumentSadPath.cs", dialect);
 
@@ -39,7 +39,7 @@ public class MacroDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnrollHint_ReportsGsh0016AndGsh0017Once(string dialect)
+    public async Task UnrollHint_InvalidFactor_ReportsGsh0016AndGsh0017Once(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/UnrollHintSadPath.cs", dialect);
 
@@ -54,7 +54,7 @@ public class MacroDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_SupportedMacroForms_ReportNothing(string dialect)
+    public async Task SupportedMacroForms_ValidSyntax_ReportsNothing(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/SupportedMacroAndArrayForms.cu.cs", dialect);
 
@@ -69,7 +69,7 @@ public class MacroDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_LoopMacroLambdaWithoutParameter_IsNotAMacroCall(string dialect)
+    public async Task LoopMacroLambda_ParameterlessLambda_IsNotMacroCall(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/MacroLambdaWithoutParameter.cu.cs", dialect);
 
@@ -82,7 +82,7 @@ public class MacroDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReturnInLoopMacroBody_ReportsGsh0003AtTheReturn(string dialect)
+    public async Task ReturnInLoopMacroBody_ReturnStatement_ReportsGsh0003AtReturn(string dialect)
     {
         var diagnostics =
             await KernelDiagnostics.RunTestCaseAsync("Diagnostics/MacroLoopBodyRestrictions.cu.cs", dialect);
@@ -100,7 +100,7 @@ public class MacroDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_AssignmentToLoopVariable_ReportsGsh0003AtTheWrite(string dialect)
+    public async Task AssignmentToLoopVariable_MutatingIterationVariable_ReportsGsh0003AtWrite(string dialect)
     {
         var diagnostics =
             await KernelDiagnostics.RunTestCaseAsync("Diagnostics/MacroLoopBodyRestrictions.cu.cs", dialect);
@@ -130,7 +130,7 @@ public class MacroDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReferenceToLoopVariable_ReportsGsh0003AtTheReference(string dialect)
+    public async Task ReferenceToLoopVariable_PassingIterationVariableByRef_ReportsGsh0003AtReference(string dialect)
     {
         var diagnostics =
             await KernelDiagnostics.RunTestCaseAsync("Diagnostics/MacroLoopBodyRestrictions.cu.cs", dialect);
@@ -153,7 +153,7 @@ public class MacroDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReorderedNamedArguments_ReportAtTheArgumentOfTheParameter(string dialect)
+    public async Task ReorderedNamedArguments_NamedParameters_ReportsAtArgumentOfParameter(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/MacroNamedArguments.cu.cs", dialect);
 

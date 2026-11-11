@@ -23,7 +23,7 @@ public class GpuKernelLoaderAotTests
 
     [Fact]
     [Category(TestCategory.Runtime)]
-    public void Test_LoadAotKernel_ParallelContention()
+    public void LoadAotKernel_ParallelContention_ReturnsValidFunctionsWithoutThrowing()
     {
         if (!GpuKernelLoader.IsDriverAvailable) return;
 
@@ -40,7 +40,7 @@ public class GpuKernelLoaderAotTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LoadAotKernel_IncompatibleFatbin_ThrowsInvalidOperationException()
+    public void LoadAotKernel_IncompatibleFatbin_ThrowsInvalidOperationException()
     {
         if (!GpuKernelLoader.IsDriverAvailable) return;
 
@@ -59,7 +59,7 @@ public class GpuKernelLoaderAotTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LoadModule_IncompatibleFatbin_ThrowsInvalidOperationException()
+    public void LoadModule_IncompatibleFatbin_ThrowsInvalidOperationException()
     {
         if (!GpuKernelLoader.IsDriverAvailable) return;
 
@@ -79,7 +79,7 @@ public class GpuKernelLoaderAotTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LoadModule_And_LoadAotKernel_SharesCachedModule()
+    public void LoadModuleAndLoadAotKernel_SameFatbinPayload_SharesCachedModule()
     {
         if (!GpuKernelLoader.IsDriverAvailable) return;
 
@@ -95,7 +95,7 @@ public class GpuKernelLoaderAotTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CreateModuleLoadException_NoBinaryForGpu_ListsContentsAndDevice()
+    public void CreateModuleLoadException_NoBinaryForGpu_ListsContentsAndDevice()
     {
         // An sm_90a-style cubin passes the pre-check on 9.0 but the driver can still refuse it; the message must then
         // match the pre-check's message.
@@ -122,7 +122,7 @@ public class GpuKernelLoaderAotTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CreateModuleLoadException_NoBinaryForGpu_UnparsedFatbin_SaysContentsUnknown()
+    public void CreateModuleLoadException_NoBinaryForGpuWithUnparsedFatbin_SaysContentsUnknown()
     {
         Exception ex = GpuKernelLoader.CreateModuleLoadException(CUresult.CudaErrorNoBinaryForGpu, null, 12, 0);
 
@@ -134,7 +134,7 @@ public class GpuKernelLoaderAotTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CreateModuleLoadException_NoBinaryForGpu_EmptyFatbin_SaysNoImages()
+    public void CreateModuleLoadException_NoBinaryForGpuWithEmptyFatbin_SaysNoImages()
     {
         var empty = new FatbinImage(0xBA55ED50u, 1, 16, false, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty, []);
 
@@ -148,7 +148,7 @@ public class GpuKernelLoaderAotTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CreateModuleLoadException_UnsupportedPtxVersion_NamesOldDriverAndFixes()
+    public void CreateModuleLoadException_UnsupportedPtxVersion_NamesOldDriverAndFixes()
     {
         byte[] fatbinBytes = FatbinParserTests.CreateMockFatbin(
             (FatbinItemInfo.TypeCubin, 86u, (ushort)8, (ushort)6),
@@ -171,7 +171,7 @@ public class GpuKernelLoaderAotTests
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CreateModuleLoadException_OtherError_StaysCudaException()
+    public void CreateModuleLoadException_OtherError_StaysGpuException()
     {
         Exception ex = GpuKernelLoader.CreateModuleLoadException(CUresult.CudaErrorInvalidImage, null, 8, 6);
 

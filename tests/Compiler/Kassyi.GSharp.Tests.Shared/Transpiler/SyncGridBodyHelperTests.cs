@@ -63,14 +63,14 @@ public class SyncGridBodyHelperTests
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [MemberData(nameof(StatementsInARow))]
-    public void Test_IsSyncPoint_StatementsInARow_SyncBetweenEach(string method, string expected, bool withModel) =>
+    public void IsSyncPoint_StatementsInARow_ReturnsTrueBetweenEach(string method, string expected, bool withModel) =>
         Assert.Equal(expected, GetSyncPoints(method, withModel));
 
     // An empty statement counts as one also with a label (L: ;)
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(EdgeGaps))]
-    public void Test_IsSyncPoint_EdgeGaps_NoSyncAtTheEndOrNextToExplicitSyncsEmptiesAndDeclarations(
+    public void IsSyncPoint_EdgeGapsAndDeclarations_ReturnsFalseAtEndAndNextToDeclarations(
         string method, string expected, bool withModel) =>
         Assert.Equal(expected, GetSyncPoints(method, withModel));
 
@@ -79,7 +79,7 @@ public class SyncGridBodyHelperTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData(true)]
     [InlineData(false)]
-    public void Test_Flatten_NestedBody_RecordsTheBodyOfEachStatement(bool withModel)
+    public void Flatten_NestedBody_RecordsBodyOfEachStatement(bool withModel)
     {
         var statements = Flatten("NestedBody", withModel);
 
@@ -95,7 +95,7 @@ public class SyncGridBodyHelperTests
     [Scenario(TestScenario.Boundary)]
     [InlineData(true)]
     [InlineData(false)]
-    public void Test_Flatten_NestedExpressionBody_IsTheExpression(bool withModel)
+    public void Flatten_NestedExpressionBody_ReturnsContainedExpression(bool withModel)
     {
         var statements = Flatten("NestedExpressionBody", withModel);
 
@@ -107,13 +107,16 @@ public class SyncGridBodyHelperTests
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(ExecutableStatements))]
-    public void Test_HasExecutableStatements_OnlyEmptiesCount(string method, bool expected, bool withModel) =>
+    public void HasExecutableStatements_EmptyStatementsOnly_ReturnsFalse(
+        string method,
+        bool expected,
+        bool withModel) =>
         Assert.Equal(expected, Flatten(method, withModel).HasExecutableStatements);
 
     // A user type named Gpu is not the macro host; only the syntactic classification (no model) cannot tell
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TryGetBody_LookalikeGpuType_IsABodyOnlyWithoutAModel()
+    public void TryGetBody_LookalikeGpuType_ReturnsBodyOnlyWithoutModel()
     {
         var (statement, model) = GetSyncGridStatement("Lookalike", withModel: true);
         Assert.False(SyncGridBody.TryGetBody(statement, model, out _));
@@ -125,7 +128,11 @@ public class SyncGridBodyHelperTests
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [MemberData(nameof(ExplicitSyncs))]
-    public void Test_IsExplicitSync_ParameterlessSyncGridOnly(string method, int index, bool expected, bool withModel)
+    public void IsExplicitSync_InvocationSyntax_MatchesParameterlessSyncGridOnly(
+        string method,
+        int index,
+        bool expected,
+        bool withModel)
     {
         var model = withModel ? GetModel() : null;
         var statements = Flatten(method, withModel);
@@ -138,7 +145,7 @@ public class SyncGridBodyHelperTests
     [Scenario(TestScenario.Boundary)]
     [InlineData(true)]
     [InlineData(false)]
-    public void Test_Flatten_ExpressionBodyIsABody_FlattensItsStatements(bool withModel)
+    public void Flatten_ExpressionBodyIsABody_FlattensContainedStatements(bool withModel)
     {
         var statements = Flatten("ExpressionBodyIsBody", withModel);
 
@@ -152,7 +159,7 @@ public class SyncGridBodyHelperTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData(true)]
     [InlineData(false)]
-    public void Test_Guards_ReturnsInOuterAndNestedBodies_GuardTheLaterStatementsOfTheirBodies(bool withModel)
+    public void Guards_ReturnsInOuterAndNestedBodies_GuardsLaterStatementsOfBodies(bool withModel)
     {
         var model = withModel ? GetModel() : null;
         var statements = Flatten("ReturnGuards", withModel);
@@ -171,7 +178,7 @@ public class SyncGridBodyHelperTests
     [Scenario(TestScenario.Boundary)]
     [InlineData(true)]
     [InlineData(false)]
-    public void Test_ContainsBodyReturn_ReturnsOfLambdasAndLocalFunctions_AreNotTheBodys(bool withModel)
+    public void ContainsBodyReturn_ReturnsInLambdasAndLocalFunctions_ReturnsFalseForOuterBody(bool withModel)
     {
         var statements = Flatten("ReturnsOfNestedFunctions", withModel);
 

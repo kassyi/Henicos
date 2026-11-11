@@ -7,7 +7,7 @@ public class GpuBigIntModPowTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ModPow_SmallValues()
+    public void ModPow_SmallValues_ProducesExpectedPower()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -26,7 +26,7 @@ public class GpuBigIntModPowTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ModPow_LargeValues()
+    public void ModPow_LargeValues_MatchesBigIntegerReference()
     {
         CudaCapability.EnsureGpuAvailable();
         const int NumWords = 64; // 2048 bits (> 1024 PolyAlgorithmThreshold -> ModPowZeroSyncController)
@@ -61,7 +61,7 @@ public class GpuBigIntModPowTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ModPow_LargeValues_NonZeroTopExponentWord()
+    public void ModPow_LargeValuesWithNonZeroTopExponentWord_MatchesBigIntegerReference()
     {
         CudaCapability.EnsureGpuAvailable();
         const int NumWords = 64; // > PolyAlgorithmThreshold -> ModPowZeroSyncController
@@ -84,7 +84,7 @@ public class GpuBigIntModPowTests
         using var m = new GpuBigUInt(ctx, mArr);
         using var result = new GpuBigUInt(ctx, NumWords);
 
-        // mutant: ModPowZeroSyncController.cs:108 `e == 0 && i == expWords - 1` -> `e != 0 && ...`
+        // mutant: ModPowZeroSyncController.cs:106 `e == 0 && i == expWords - 1` -> `e != 0 && ...`
         // (the last word would stop after its first bit)
         GpuBigIntDivRem.ModPow(a, e, m, result);
 
@@ -113,7 +113,7 @@ public class GpuBigIntModPowTests
     [InlineData(64, ModulusKind.One)]
     [InlineData(64, ModulusKind.Two)]
     [InlineData(64, ModulusKind.Large)]
-    public void Test_ModPow_ExponentZero_MatchesBigInteger(int numWords, ModulusKind modulusKind)
+    public void ModPow_ExponentZero_MatchesBigInteger(int numWords, ModulusKind modulusKind)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
@@ -142,7 +142,7 @@ public class GpuBigIntModPowTests
     [Scenario(TestScenario.Boundary)]
     [InlineData(16)]
     [InlineData(64)]
-    public void Test_ModPow_ModulusOne_NonZeroExponent_ReturnsZero(int numWords)
+    public void ModPow_ModulusOneWithNonZeroExponent_ReturnsZero(int numWords)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);

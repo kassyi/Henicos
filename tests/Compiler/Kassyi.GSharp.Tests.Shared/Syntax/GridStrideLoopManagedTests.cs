@@ -22,22 +22,22 @@ public class GridStrideLoopManagedTests : TranspilerTestBase
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(GridStrideLoopScenarios.LaunchIndices), MemberType = typeof(GridStrideLoopScenarios))]
-    public void Test_Managed_EveryIndex_IsVisitedOnce(int launch) =>
+    public void Execute_ManagedEveryIndex_VisitsOnce(int launch) =>
         GridStrideLoopScenarios.CountVisits(s_runManaged, GridStrideLoopScenarios.Get(launch), withContext: false);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(GridStrideLoopScenarios.LaunchIndices), MemberType = typeof(GridStrideLoopScenarios))]
-    public void Test_Managed_EveryIndex_IsVisitedOnce_WithContext(int launch) =>
+    public void Execute_ManagedEveryIndexWithContext_VisitsOnce(int launch) =>
         GridStrideLoopScenarios.CountVisits(s_runManaged, GridStrideLoopScenarios.Get(launch), withContext: true);
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Managed_Count_IsReadOnce() => GridStrideLoopScenarios.CountReadOnce(s_runManaged);
+    public void Execute_ManagedCountExpression_IsReadOnce() => GridStrideLoopScenarios.CountReadOnce(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Managed_CountCall_RunsOncePerThread() => GridStrideLoopScenarios.CountCallOnce(s_runManaged);
+    public void Execute_ManagedCountCall_RunsOncePerThread() => GridStrideLoopScenarios.CountCallOnce(s_runManaged);
 
     // The start and the step of the helpers that every path calls, for launches whose thread count reaches 2^31: no
     // thread can visit an index from there (count <= int.MaxValue), so both stop at 2^31, where index + step cannot
@@ -52,7 +52,7 @@ public class GridStrideLoopManagedTests : TranspilerTestBase
     [InlineData(0x400000, 1, 1, 1024, 1, 1, 0x200000, 0, 0, 0, 0, 0, 0x80000000u, 0x80000000u)]
     [InlineData(0x7FFFFFFF, 65535, 65535, 1024, 1, 1, 0x7FFFFFFE, 65534, 65534, 1023, 0, 0, 0x80000000u, 0x80000000u)]
     [InlineData(0x10000, 0x8000, 1, 1, 1, 1, 0, 0x7FFF, 0, 0, 0, 0, 0x7FFF0000u, 0x80000000u)]
-    public void Test_StartAndStep_SaturateAt2Pow31(
+    public void Execute_ManagedStartAndStep_SaturatesAtInt32Limit(
         int gridX, int gridY, int gridZ,
         int blockX, int blockY, int blockZ,
         int blockIdxX, int blockIdxY, int blockIdxZ,
@@ -90,7 +90,7 @@ public class GridStrideLoopManagedTests : TranspilerTestBase
     [InlineData(-1, 0u)]
     [InlineData(int.MinValue, 0u)]
     [InlineData(int.MaxValue, 0x7FFFFFFFu)]
-    public void Test_Count_NegativeRunsNoIteration(int count, uint expected) =>
+    public void Execute_ManagedNegativeCount_RunsNoIteration(int count, uint expected) =>
         Assert.Equal(expected, ManagedGpuContext.GridStrideCount(count));
 
     private static void RunManaged(Action launch)

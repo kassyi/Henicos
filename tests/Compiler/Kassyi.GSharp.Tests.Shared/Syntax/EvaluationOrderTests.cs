@@ -16,83 +16,83 @@ public class EvaluationOrderTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CallArguments_AreEvaluatedFromLeftToRight() =>
+    public void CallArguments_WithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.CallArguments(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_VectorConstructorArguments_AreEvaluatedFromLeftToRight() =>
+    public void VectorConstructorArguments_WithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.VectorArguments(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CallArgumentsWithoutInterference_KeepTheirValues() =>
+    public void CallArguments_WithoutInterference_KeepTheirValues() =>
         EvaluationOrderScenarios.NoSpillCalls(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SuspendingCallArguments_AreEvaluatedFromLeftToRight() =>
+    public void SuspendingCallArguments_WithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.SuspendingCallArguments(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OperatorMacroOperands_AreEvaluatedFromLeftToRight() =>
+    public void OperatorMacroOperands_WithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.OperatorMacro(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OperatorMacroOperandsWithoutInterference_KeepTheirValues() =>
+    public void OperatorMacroOperands_WithoutInterference_KeepTheirValues() =>
         EvaluationOrderScenarios.NoSpillOperatorMacro(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefReadsAndAliases_AreEvaluatedFromLeftToRight() =>
+    public void RefReadsAndAliases_WithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.ReadsAndAliases(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefReturningCalls_KeepTheirTargetAndAliases() =>
+    public void RefReturningCalls_WithAliases_KeepTheirTargetAndAliases() =>
         EvaluationOrderScenarios.RefReturn(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ConvertedValues_KeepTheCSharpConversions() =>
+    public void ConvertedValues_CSharpConversions_KeepExpectedConversions() =>
         EvaluationOrderScenarios.Conversions(s_runNative);
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(1)]
     [InlineData(0)]
-    public void Test_InterferingOperandsInABranch_RunOnlyInThatBranch(int selector) =>
+    public void InterferingOperandsInBranch_SelectedBranch_RunOnlyInThatBranch(int selector) =>
         EvaluationOrderScenarios.ConditionalBranches(s_runNative, selector);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Assignment_EvaluatesTheTargetBeforeTheValue() =>
+    public void Assignment_WithInterference_EvaluatesTargetBeforeValue() =>
         EvaluationOrderScenarios.Assignment(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompoundAssignment_ReadsTheTargetBeforeTheValue() =>
+    public void CompoundAssignment_WithInterference_ReadsTargetBeforeValue() =>
         EvaluationOrderScenarios.CompoundAssignment(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AssignmentsWithoutInterference_KeepTheirValues() =>
+    public void Assignments_WithoutInterference_KeepTheirValues() =>
         EvaluationOrderScenarios.NoSpillAssignments(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BinaryOperands_AreEvaluatedFromLeftToRight() =>
+    public void BinaryOperands_WithInterference_AreEvaluatedFromLeftToRight() =>
         EvaluationOrderScenarios.BinaryOperator(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_WritesHiddenInTheCallee_KeepTheArgumentOrder() =>
+    public void WritesHiddenInCallee_ArgumentOrder_KeepArgumentOrder() =>
         EvaluationOrderScenarios.HiddenWrites(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BinaryOperandsWithoutInterference_KeepTheirValues() =>
+    public void BinaryOperands_WithoutInterference_KeepTheirValues() =>
         EvaluationOrderScenarios.NoSpillBinary(s_runNative);
 }

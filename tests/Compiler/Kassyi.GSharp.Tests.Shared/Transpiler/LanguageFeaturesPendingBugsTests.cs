@@ -31,7 +31,7 @@ public class LanguageFeaturesPendingBugsTests
     }
 
     [Fact(Skip = "Pending #1062: Generic [GpuDeviceFunction] lacks template header and call-site type arguments")]
-    public void Test_GenericDeviceFunction_EmitsTemplateHeaderAndCallTypeArgs()
+    public void GenericDeviceFunction_TypeParameters_EmitsTemplateHeaderAndCallTypeArgs()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/GenericDeviceFunctionCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
@@ -44,7 +44,7 @@ public class LanguageFeaturesPendingBugsTests
 
     // #464: the indexed overloads are left unfused and call the ...At functions of the device header
     [Fact]
-    public void Test_StackLinqIndexedOverloads_EmitIndexedCalls()
+    public void StackLinqIndexedOverloads_PredicateWithIndex_EmitsIndexedCalls()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/IndexedStackLinqCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
@@ -57,7 +57,7 @@ public class LanguageFeaturesPendingBugsTests
 
     // #1144: reordered named arguments keep the seed as the seed
     [Fact]
-    public void Test_StackLinqAggregateNamedArguments_BindsSeedAndAccumulatorCorrectly()
+    public void StackLinqAggregate_NamedArguments_BindsSeedAndAccumulatorCorrectly()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/AggregateBindingCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
@@ -69,7 +69,7 @@ public class LanguageFeaturesPendingBugsTests
 
     // #1081: TakeLast before an unfused terminal calls the TakeLast of the device header
     [Fact]
-    public void Test_StackLinqTakeLastWithUnfusedTerminal_EmitsValidCpp()
+    public void StackLinqTakeLast_UnfusedTerminalOperator_EmitsValidCpp()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/TakeLastUnfusedCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
@@ -78,7 +78,7 @@ public class LanguageFeaturesPendingBugsTests
         Assert.Contains("StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::TakeLast(", code, StringComparison.Ordinal);    }
 
     [Fact]
-    public void Test_UserDefinedInlinePtxMethod_IsNotRewrittenToThrow()
+    public void UserDefinedInlinePtxMethod_DeviceInvocation_DoesNotRewriteToThrow()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/UserInlinePtxCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
@@ -89,7 +89,7 @@ public class LanguageFeaturesPendingBugsTests
     }
 
     [Fact(Skip = "Pending #1073: Operator macro inside struct Dispose leaves managed struct Dispose unrewritten")]
-    public void Test_OperatorMacroInsideStructDispose_RewritesManagedStructDispose()
+    public void OperatorMacroInsideStructDispose_ManagedDisposeCall_RewritesManagedStructDispose()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/OperatorMacroInsideStructDisposeCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
@@ -100,7 +100,7 @@ public class LanguageFeaturesPendingBugsTests
 
     // #610: a getter that writes its struct is not a const member function
     [Fact]
-    public void Test_MutatingStructPropertyGetter_OmitsConstQualifier()
+    public void MutatingStructPropertyGetter_StateMutation_OmitsConstQualifier()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/MutatingStructPropertyGetterCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
@@ -111,7 +111,7 @@ public class LanguageFeaturesPendingBugsTests
     }
 
     [Fact(Skip = "Pending #1145: Nested struct inside generic outer class leaves outer type parameter unsubstituted")]
-    public void Test_NestedStructInsideGenericOuterType_SubstitutesOuterTypeParameters()
+    public void NestedStructInsideGenericOuterType_OuterTypeParameters_SubstitutesOuterTypeParameters()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/NestedStructInsideGenericOuterCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
@@ -122,7 +122,7 @@ public class LanguageFeaturesPendingBugsTests
     }
 
     [Fact(Skip = "Pending #1075: MemoryExtensions.Sort with generic method group reports GSH0003")]
-    public void Test_SpanSortWithGenericMethodGroup_CompilesWithoutGSH0003()
+    public void SpanSort_GenericMethodGroupComparison_CompilesWithoutGSH0003()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/GenericSortMethodGroupCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
@@ -132,7 +132,7 @@ public class LanguageFeaturesPendingBugsTests
     }
 
     [Fact(Skip = "Pending #1148, #1033: User-defined explicit operator and custom struct indexer omitted from emitted C++ struct")]
-    public void Test_ExplicitConversionAndCustomIndexer_EmittedInCppStruct()
+    public void ExplicitConversionAndCustomIndexer_StructDeclaration_EmitsOperatorsInCppStruct()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/ExplicitConversionAndCustomIndexerCase.cs");
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");

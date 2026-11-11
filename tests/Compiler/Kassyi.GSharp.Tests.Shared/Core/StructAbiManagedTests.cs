@@ -16,7 +16,7 @@ public class StructAbiManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ComputedProperty_ReadsLikeNative()
+    public void ComputedProperty_ManagedExecution_ReadsLikeNative()
     {
         var result = new int[4];
 
@@ -28,7 +28,7 @@ public class StructAbiManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ComputedPropertyThroughRef_ReadsLikeNative()
+    public void ComputedPropertyThroughRef_ManagedExecution_ReadsLikeNative()
     {
         var data = new AbiComputedPropertyStruct { A = 2, C = 9 };
         var result = new int[4];
@@ -42,7 +42,7 @@ public class StructAbiManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ComputedPropertyStruct_RoundtripKeepsTheMemberAfterIt()
+    public void ComputedPropertyStruct_ManagedRoundtrip_PreservesSubsequentMember()
     {
         var data = new AbiComputedPropertyStruct { A = 1, C = 7 };
 
@@ -54,7 +54,7 @@ public class StructAbiManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SetAndInitAccessorBodies_RunLikeNative()
+    public void SetAndInitAccessorBodies_ManagedExecution_RunsLikeNative()
     {
         var output = new int[3];
 

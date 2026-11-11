@@ -24,7 +24,7 @@ public class SwitchInBarrierLoopTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ContinueInSwitch_ContinuesTheLoop(bool forceManaged)
+    public void ContinueInSwitch_MatchedArm_ContinuesLoop(bool forceManaged)
     {
         var a = new int[Threads];
         var mode = Modes(6);
@@ -39,7 +39,7 @@ public class SwitchInBarrierLoopTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ContinueInSwitchWithoutMatchingCase_ContinuesTheLoop(bool forceManaged)
+    public void ContinueInSwitch_UnmatchedArm_ContinuesLoop(bool forceManaged)
     {
         var a = new int[Threads];
         var mode = Modes(6);
@@ -54,7 +54,7 @@ public class SwitchInBarrierLoopTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_GotoOutOfSwitch_JumpsToTheLabelAfterTheLoop(bool forceManaged)
+    public void GotoOutOfSwitch_GotoStatement_JumpsToLabelAfterLoop(bool forceManaged)
     {
         var a = new int[Threads];
         var mode = Modes(6);
@@ -69,7 +69,7 @@ public class SwitchInBarrierLoopTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ContinueInNestedSwitch_ContinuesTheDoLoop(bool forceManaged)
+    public void ContinueInNestedSwitch_NestedDoLoop_ContinuesDoLoop(bool forceManaged)
     {
         var a = new int[Threads];
         var mode = Modes(4);

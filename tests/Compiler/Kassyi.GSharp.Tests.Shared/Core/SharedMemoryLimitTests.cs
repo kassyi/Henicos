@@ -27,7 +27,9 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public void Test_DynamicDeclaration_LargerThanSharedMemBytes_Throws(bool forceManaged, bool withBarrier)
+    public void DynamicDeclaration_LargerThanSharedMemBytes_ThrowsInvalidOperationException(
+        bool forceManaged,
+        bool withBarrier)
     {
         SkipUndefinedOnCuda();
         var output = new int[32];
@@ -51,7 +53,10 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     [InlineData(true, -1, true)]
     [InlineData(true, int.MaxValue, false)]
     [InlineData(true, int.MaxValue, true)]
-    public void Test_DynamicDeclaration_NegativeOrHugeCount_ThrowsAndProcessGoesOn(bool forceManaged, int count, bool withBarrier)
+    public void DynamicDeclaration_NegativeOrHugeCount_ThrowsAndProcessContinues(
+        bool forceManaged,
+        int count,
+        bool withBarrier)
     {
         SkipUndefinedOnCuda();
         var output = new int[32];
@@ -72,7 +77,7 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public void Test_DynamicDeclaration_LargerThan64KB_Runs(bool forceManaged, bool withBarrier)
+    public void DynamicDeclaration_LargerThan64Kb_ExecutesSuccessfully(bool forceManaged, bool withBarrier)
     {
         Skip.If(IsCudaDialect, "More than 48 KB of shared memory needs the opt-in of #545 on CUDA.");
         const int Count = 20000;
@@ -88,7 +93,7 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     // would allocate 64 MB, one array 64 KB
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DynamicDeclaration_ManyBlocks_ManagedReusesOneArray()
+    public void DynamicDeclaration_ManyBlocksManaged_ReusesSingleArray()
     {
         Skip.If(IsCudaDialect, "The managed execution path exists only on the CPU dialects.");
         const int Count = 16384;
@@ -109,7 +114,7 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_DynamicDeclaration_CountPerBlock_EachBlockStartsWithoutRegions(bool forceManaged)
+    public void DynamicDeclaration_CountPerBlock_EachBlockStartsWithoutRegions(bool forceManaged)
     {
         const int Threads = 8;
         const int Blocks = 4;
@@ -125,7 +130,7 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_TwoDynamicRegions_ExactSize_Runs(bool forceManaged)
+    public void TwoDynamicRegions_ExactSize_ExecutesSuccessfully(bool forceManaged)
     {
         var output = new int[8];
 
@@ -138,7 +143,7 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_TwoDynamicRegions_OneByteShort_Throws(bool forceManaged)
+    public void TwoDynamicRegions_OneByteShort_ThrowsInvalidOperationException(bool forceManaged)
     {
         SkipUndefinedOnCuda();
         var output = new int[8];
@@ -154,7 +159,7 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ManyStaticDeclarations_NotCountedAndNotLimited(bool forceManaged)
+    public void ManyStaticDeclarations_AboveLimit_NotCountedAndNotLimited(bool forceManaged)
     {
         const int Threads = 32;
         var output = new int[Threads];
@@ -171,7 +176,7 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_CountKeptAcrossBarrier_Runs(bool forceManaged)
+    public void CountKeptAcrossBarrier_Execution_ExecutesSuccessfully(bool forceManaged)
     {
         var output = new int[16];
 
@@ -191,7 +196,9 @@ public class SharedMemoryLimitTests : TranspilerTestBase
     [InlineData(true, 56u)]
     [InlineData(false, 55u)]
     [InlineData(true, 55u)]
-    public void Test_RegionAfterDeviceFunctionRegion_PlacedInTheOrderReached(bool forceManaged, uint sharedMemBytes)
+    public void RegionAfterDeviceFunctionRegion_ExecutionOrder_PlacedInOrderReached(
+        bool forceManaged,
+        uint sharedMemBytes)
     {
         var output = new int[8];
         void Launch() => SharedMemoryLimitKernels.LaunchRegionOrderKernel(output, 5, 3, blockDimX: 8,

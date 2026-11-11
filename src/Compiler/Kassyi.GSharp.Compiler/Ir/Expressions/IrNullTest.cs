@@ -17,4 +17,8 @@ internal sealed class IrNullTest(IrExpression operand, bool isNegated, ITypeSymb
 
     /// <summary>Whether the test is <c>!=</c> or <c>is not null</c>.</summary>
     public bool IsNegated { get; } = isNegated;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrNullTest Update(IrExpression operand) =>
+        operand == Operand ? this : new IrNullTest(operand, IsNegated, Type, Category, Source);
 }

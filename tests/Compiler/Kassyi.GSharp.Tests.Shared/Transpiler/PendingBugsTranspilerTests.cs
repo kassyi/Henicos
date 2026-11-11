@@ -23,7 +23,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
     // #641: Expect Gpu.Constant("42") to be rewritten for managed execution instead of remaining in the generated C# output.
     [Fact(Skip = "#641: Gpu.Constant is not rewritten for managed execution.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GpuConstantMacro_IsRewrittenInManagedOutput()
+    public void GpuConstantMacro_ManagedOutput_RewritesConstantMacro()
     {
         var source = RoslynTestUtility.ReadTestCase(
             "Transpiler/PendingBugs/GpuConstantManagedKernels.cu.cs");
@@ -46,7 +46,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
     // defines (StackLinqOperatorTests checks the header against the list)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TakeLastWithElementAtOrDefault_EmitsValidCppWithoutUndefinedStackLinqCalls()
+    public void TakeLastWithElementAtOrDefault_UnfusedOperators_EmitsValidCppWithoutUndefinedCalls()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/UnfusedStackLinqMissingTemplatesKernels.cu.cs");
@@ -85,7 +85,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
     // StackLinq.cuh templates; no C# enumerator struct is defined for it
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UnfusedStackLinqQueryWithCapturingLambdaInLocal_EmitsValidEnumeratorWithoutMismatchedSizeCheck()
+    public void UnfusedStackLinqQuery_CapturingLambdaInLocal_EmitsValidEnumeratorWithoutSizeMismatch()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/UnfusedStackLinqCapturingLambdaLocalKernels.cu.cs");
@@ -112,7 +112,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
     // #1084: Expect outputCompilation.GetDiagnostics() to have zero errors once ContextHoister avoids hoisting non-crossing SharedMemory<T> locals to outer scope.
     [Fact(Skip = "#1084: ContextHoister hoists non-crossing SharedMemory locals to outer scope causing CS0136.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SharedMemorySiblingScopes_CompilesWithoutCS0136InGeneratedManagedCSharp()
+    public void SharedMemorySiblingScopes_LocalDeclarations_CompilesWithoutCS0136InManagedCSharp()
     {
         var source = RoslynTestUtility.ReadTestCase(
             "Transpiler/PendingBugs/SharedMemorySiblingScopeHoistKernels.cu.cs");
@@ -128,7 +128,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
     // #1085: Expect C++ declarations for parenthesized creation `s` and alias copy `alias` to be emitted once LocalDeclarationStatementTranspilerRule handles non-direct SharedMemory<T> initializers.
     [Fact(Skip = "#1085: LocalDeclarationStatementTranspilerRule omits C++ variable declarations for non-direct SharedMemory initializers.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ParenthesizedAndAliasSharedMemoryLocal_EmitsCppVariableDeclarations()
+    public void SharedMemoryLocal_ParenthesizedAndAliasForms_EmitsCppVariableDeclarations()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/SharedMemoryDeclarationAndTypeMismatchKernels.cu.cs");
@@ -150,7 +150,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
     // #1085: Expect C++ declaration and consistent type for `returned = IdentitySharedMemory(localSmem)` once SharedMemory<T> local declarations and CPU representation are unified.
     [Fact(Skip = "#1085: Helper returning SharedMemory omits returned local declaration in CPU dialect.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_PassLocalSharedMemoryToHelper_EmitsReturnedLocalDeclarationInCpuDialect()
+    public void SharedMemoryLocal_PassToHelperFunction_EmitsReturnedLocalDeclarationInCpuDialect()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/SharedMemoryDeclarationAndTypeMismatchKernels.cu.cs");
@@ -171,7 +171,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
     // #543: Expect distinct site keys (Assert.NotEqual) for AliasInStruct<int> and AliasInStruct<float> once SharedMemorySiteKey includes constructed struct type arguments.
     [Fact(Skip = "#543: SharedMemorySiteKey collides across type arguments in generic structs.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TypeAliasSharedMemoryInGenericStruct_EmitsDistinctSiteKeysAcrossTypeArguments()
+    public void SharedMemoryLocal_TypeAliasInGenericStruct_EmitsDistinctSiteKeysAcrossTypeArguments()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/GenericStructSharedMemorySiteKeyKernels.cu.cs");
@@ -198,7 +198,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
     // #543: Expect 4 distinct site keys for generic struct constructors/operators and valid site key computation in property getters once SharedMemorySiteKey supports them.
     [Fact(Skip = "#543: Generic struct constructors, operators, and property getters fail SharedMemorySiteKey computation.")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GenericStructSharedMemoryInCtorOperatorAndProperty_EmitsDistinctSiteKeysAndDoesNotThrowInPropertyGetter()
+    public void SharedMemoryLocal_GenericStructMembers_EmitsDistinctSiteKeysWithoutGetterException()
     {
         var (_, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Transpiler/PendingBugs/GenericStructSharedMemorySiteKeyKernels.cu.cs");

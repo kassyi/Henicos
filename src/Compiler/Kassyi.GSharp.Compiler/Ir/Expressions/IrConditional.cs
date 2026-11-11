@@ -26,4 +26,10 @@ internal sealed class IrConditional(IrExpression condition, IrExpression whenTru
 
     /// <summary>Whether the branches are references (<c>ref</c> conditional).</summary>
     public bool IsRef { get; } = isRef;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrConditional Update(IrExpression condition, IrExpression whenTrue, IrExpression whenFalse) =>
+        condition == Condition && whenTrue == WhenTrue && whenFalse == WhenFalse
+            ? this
+            : new IrConditional(condition, whenTrue, whenFalse, IsRef, Category, ConstantValue, Source);
 }

@@ -7,7 +7,7 @@ public class OperatorMacroContextTests
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ParameterContext_IsPassedByReference()
+    public void Expand_ParameterContext_IsPassedByReference()
     {
         uint[] result = [0];
         uint[] calls = [0];
@@ -27,7 +27,7 @@ public class OperatorMacroContextTests
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ParameterContext_IsPassedByValue()
+    public void Expand_ParameterContext_IsPassedByValue()
     {
         uint[] result = [0];
 
@@ -39,7 +39,7 @@ public class OperatorMacroContextTests
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RefParameterContext_OfDeviceFunction_IsPassedOn()
+    public void Expand_RefParameterContextOfDeviceFunction_IsPassedOn()
     {
         uint[] result = [0];
         uint[] calls = [0];
@@ -60,7 +60,7 @@ public class OperatorMacroContextTests
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LocalContext_AcrossBarrier_IsPassed()
+    public void Expand_LocalContextAcrossBarrier_IsPassed()
     {
         uint[] result = [0];
         uint[] calls = [0];

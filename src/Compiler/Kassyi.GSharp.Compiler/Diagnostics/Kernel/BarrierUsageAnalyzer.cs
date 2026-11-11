@@ -138,8 +138,10 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // A call that C# removes, or one in its arguments, never runs (RemovedCalls)
         if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol callee ||
-            !IsInGpuMethod(context.ContainingSymbol))
+            !IsInGpuMethod(context.ContainingSymbol) ||
+            RemovedCalls.IsInRemovedCall(invocation, context.SemanticModel))
         {
             return;
         }

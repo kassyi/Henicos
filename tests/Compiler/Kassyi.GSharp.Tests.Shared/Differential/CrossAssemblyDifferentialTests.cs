@@ -242,39 +242,43 @@ public class CrossAssemblyDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_CrossAssemblyVec2_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_vec2);
+    public void CrossAssembly_Vec2Struct_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_vec2);
 
     [SkippableFact]
-    public void Test_CrossAssemblyParticle_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_particle);
+    public void CrossAssembly_ParticleStruct_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_particle);
 
     [SkippableFact]
-    public void Test_CrossAssemblyScaled_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_scaled);
+    public void CrossAssembly_ScaledStruct_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_scaled);
 
     [SkippableFact]
-    public void Test_CrossAssemblyTransitiveStruct_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_transitiveStruct);
+    public void CrossAssembly_TransitiveStruct_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_transitiveStruct);
 
     [SkippableFact]
-    public void Test_CrossAssemblyConstantSizedFixedBuffer_MatchesTheOracleOnEveryPath() =>
+    public void CrossAssembly_ConstantSizedFixedBuffer_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_constantSizedFixedBuffer);
 
     [SkippableFact]
-    public void Test_CrossAssemblyFloat3Functions_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_float3Functions);
+    public void CrossAssembly_Float3Functions_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_float3Functions);
 
     [SkippableFact]
-    public void Test_CrossAssemblyExplicitPackedLayout_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_explicitPackedLayout);
+    public void CrossAssembly_ExplicitPackedLayout_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_explicitPackedLayout);
 
     [SkippableFact]
-    public void Test_CrossAssemblyDisposableGuard_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_disposableGuard);
+    public void CrossAssembly_DisposableGuard_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_disposableGuard);
 
     [SkippableFact]
-    public void Test_CrossAssemblyFunctionsAndMacros_MatchesTheReferenceOnEveryPath() =>
+    public void CrossAssembly_FunctionsAndMacros_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_functionsAndMacros);
 
     [SkippableFact]
-    public void Test_CrossAssemblyExplicitLayoutArray_MatchesTheOracleOnEveryPath() =>
+    public void CrossAssembly_ExplicitLayoutArray_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_explicitLayoutArrays);
 
     [SkippableFact]
-    public void Test_CrossAssemblyBarrierExchange_MatchesTheReferenceOnEveryPath() =>
+    public void CrossAssembly_BarrierExchange_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_barrierExchange);
 }
