@@ -15,7 +15,10 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Generator/SadPathDiagnostics.cu.cs", "Cpu", 12, 26, 12, 38)]
     [InlineData("Generator/SadPathDiagnostics.cu.cs", "Cuda", 12, 26, 12, 38)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ClassCreation_ReportsGsh0001Once(string testCase, string dialect, int startLine,
+    public async Task ClassCreation_ObjectCreationExpression_ReportsGsh0001Once(
+        string testCase,
+        string dialect,
+        int startLine,
         int startColumn, int endLine, int endColumn)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(testCase, dialect);
@@ -33,7 +36,10 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs", "Cpu", 12, 9, 12, 15)]
     [InlineData("Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs", "Cuda", 12, 9, 12, 15)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StringVariable_ReportsGsh0002AtTheType(string testCase, string dialect, int startLine,
+    public async Task StringVariable_ExplicitTypeDeclaration_ReportsGsh0002AtType(
+        string testCase,
+        string dialect,
+        int startLine,
         int startColumn, int endLine, int endColumn)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(testCase, dialect);
@@ -48,7 +54,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ImplicitlyTypedStringVariable_ReportsGsh0002AtVar(string dialect)
+    public async Task ImplicitlyTypedStringVariable_VarDeclaration_ReportsGsh0002AtVar(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
 
@@ -61,7 +67,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_StringTypesInABody_ReportGsh0002OutsideSignatures(string dialect)
+    public async Task StringTypesInABody_MultipleOccurrences_ReportsGsh0002OutsideSignatures(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StringTypeUsages.cu.cs", dialect);
 
@@ -77,7 +83,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_StackArrayWithInitializer_IsNotReported(string dialect)
+    public async Task StackArrayWithInitializer_ValidStackalloc_IsNotReported(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/SupportedMacroAndArrayForms.cu.cs", dialect);
 
@@ -88,7 +94,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DynamicStackAllocSize_ReportsGsh0003AtTheSize(string dialect)
+    public async Task DynamicStackAllocSize_NonConstantLength_ReportsGsh0003AtSize(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/DynamicStackAllocSadPath.cs", dialect);
 
@@ -101,7 +107,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SwitchExpressionArms_ReportGsh0003AtTheClauseOrPattern(string dialect)
+    public async Task SwitchExpressionArms_UnsupportedPatternClause_ReportsGsh0003AtClauseOrPattern(string dialect)
     {
         var whenAndRelational =
             await KernelDiagnostics.RunTestCaseAsync("Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs", dialect);
@@ -127,7 +133,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_KernelCalledFromDeviceCode_ReportsGsh0003AtTheCall(string dialect)
+    public async Task KernelCalledFromDeviceCode_DeviceMethodCall_ReportsGsh0003AtCall(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/KernelCallFromDeviceCode.cu.cs", dialect);
 
@@ -145,7 +151,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroWithoutTarget_ReportsGsh0003AtTheAssignment(string dialect)
+    public async Task OperatorMacroWithoutTarget_MissingTarget_ReportsGsh0003AtAssignment(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroMissingTarget.cu.cs", dialect);
 
@@ -160,7 +166,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroWithoutSingleContext_ReportsGsh0003AtTheAssignment(string dialect)
+    public async Task OperatorMacroWithoutSingleContext_AmbiguousContext_ReportsGsh0003AtAssignment(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroContext.cu.cs", dialect);
 
@@ -181,7 +187,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroOverload_ReportsGsh0003AtTheAssignment(string dialect)
+    public async Task OperatorMacroOverload_MultipleOverloads_ReportsGsh0003AtAssignment(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroOverload.cu.cs", dialect);
 
@@ -237,7 +243,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroInCompoundAssignment_ReportsGsh0003(string dialect)
+    public async Task OperatorMacroInCompoundAssignment_CompoundOperator_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
 
@@ -252,7 +258,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_IncrementOperatorMacro_ReportsGsh0003(string dialect)
+    public async Task IncrementOperatorMacro_UnaryIncrement_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
 
@@ -265,7 +271,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_LiftedOperatorMacro_ReportsGsh0003(string dialect)
+    public async Task LiftedOperatorMacro_NullableLifted_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
 
@@ -279,7 +285,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroIntoUnassignedTarget_ReportsGsh0003(string dialect)
+    public async Task OperatorMacroIntoUnassignedTarget_UnassignedVariable_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
 
@@ -304,7 +310,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroWithUnassignedContext_ReportsGsh0003(string dialect)
+    public async Task OperatorMacroWithUnassignedContext_UnassignedContext_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
 
@@ -320,7 +326,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroIntoComputedProperty_ReportsGsh0003(string dialect)
+    public async Task OperatorMacroIntoComputedProperty_ComputedPropertyTarget_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
 
@@ -337,7 +343,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu", true)]
     [InlineData("Cuda", false)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroTargetOfAnInaccessibleStruct_ReportsGsh0003OnTheManagedPath(string dialect,
+    public async Task OperatorMacroTargetOfInaccessibleStruct_ManagedPath_ReportsGsh0003(string dialect,
         bool reported)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnreachableTarget.cu.cs", dialect);
@@ -355,7 +361,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_OperatorMacroIntoAssignedTarget_ReportsNothing(string dialect)
+    public async Task OperatorMacroIntoAssignedTarget_ValidTarget_ReportsNothing(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
 
@@ -369,7 +375,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GenericOperatorMacroTarget_IsNotACandidate(string dialect)
+    public async Task GenericOperatorMacroTarget_GenericTarget_IsNotCandidate(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroUnsupportedForms.cu.cs", dialect);
 
@@ -389,7 +395,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_NestedOperatorMacroThatCannotBeExpanded_ReportsGsh0003(string dialect)
+    public async Task NestedOperatorMacroThatCannotBeExpanded_UnexpandableMacro_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroPositions.cu.cs", dialect);
 
@@ -412,7 +418,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroOutsideAssignment_ReportsGsh0003(string dialect)
+    public async Task OperatorMacroOutsideAssignment_StandaloneExpression_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroPositions.cu.cs", dialect);
 
@@ -433,7 +439,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GpuFunctionWithoutBody_ReportsGsh0003(string dialect)
+    public async Task GpuFunctionWithoutBody_AbstractOrInterfaceMethod_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
             "Diagnostics/GpuFunctionWithoutBody.cu.cs",
@@ -462,7 +468,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OperatorMacroUnderUserDefinedConversion_ReportsGsh0003(string dialect)
+    public async Task OperatorMacroUnderUserDefinedConversion_UserConversion_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroPositions.cu.cs", dialect);
 
@@ -481,7 +487,10 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("ComprehensiveSpecKernel.cu.cs", "Cpu", 107, 63, 107, 68)]
     [InlineData("ComprehensiveSpecKernel.cu.cs", "Cuda", 107, 63, 107, 68)]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_LargeStaticSharedMemory_ReportsGsh0013AtTheSize(string testCase, string dialect, int startLine,
+    public async Task LargeStaticSharedMemory_ExceedingLimit_ReportsGsh0013AtSize(
+        string testCase,
+        string dialect,
+        int startLine,
         int startColumn, int endLine, int endColumn)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(testCase, dialect);
@@ -498,7 +507,7 @@ public class UnsupportedConstructDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DynamicSharedMemoryReachedWithoutTable_ReportsGsh0003(string dialect)
+    public async Task DynamicSharedMemoryReachedWithoutTable_MissingTable_ReportsGsh0003(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/DynamicSharedMemoryWithoutTable.cu.cs", dialect);
 

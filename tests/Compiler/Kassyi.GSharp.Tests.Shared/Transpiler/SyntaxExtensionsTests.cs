@@ -8,7 +8,7 @@ public class SyntaxExtensionsTests
 {
     [Fact]
     [Category(TestCategory.Compiler)]
-    public void Test_SyntaxExtensions_SyntaxToken_IsKind_MatchesCorrectly()
+    public void SyntaxTokenIsKind_MultipleSyntaxKinds_MatchesSpecifiedKinds()
     {
         var token = SyntaxFactory.Token(SyntaxKind.RefKeyword);
 
@@ -19,7 +19,7 @@ public class SyntaxExtensionsTests
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public void Test_SyntaxExtensions_SyntaxNode_IsKind_MatchesCorrectly()
+    public void SyntaxNodeIsKind_MultipleSyntaxKinds_MatchesSpecifiedKinds()
     {
         var node = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression);
 

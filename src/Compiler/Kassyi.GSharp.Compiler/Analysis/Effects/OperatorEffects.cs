@@ -70,7 +70,7 @@ internal static class OperatorEffects
         walker.AddRead(root);
         walker.AddWrite(root);
         if (walker.Model.GetSymbol(operand) is not IPropertySymbol property ||
-            !MemberEffects.IsComputedUserProperty(property))
+            !MemberEffects.IsUserAccessorProperty(property))
         {
             return;
         }
@@ -99,7 +99,7 @@ internal static class OperatorEffects
         walker.AddValue(assignment.Right);
         walker.AddWrite(root);
         if (walker.Model.GetSymbol(assignment.Left) is IPropertySymbol property &&
-            MemberEffects.IsComputedUserProperty(property) &&
+            MemberEffects.IsUserAccessorProperty(property) &&
             walker.MayWriteMemory(property.SetMethod))
         {
             walker.Writes.Memory = true;

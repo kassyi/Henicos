@@ -6,7 +6,7 @@ public class UnsafeMallocTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_MallocRoundTripKernel_WritesReadsAndFreesPerThreadBlock()
+    public void MallocRoundTrip_FourThreads_WritesReadsAndFreesPerThread()
     {
         int[] output = new int[4];
 

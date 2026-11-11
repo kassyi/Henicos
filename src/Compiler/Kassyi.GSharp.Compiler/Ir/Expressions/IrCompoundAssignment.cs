@@ -33,4 +33,10 @@ internal sealed class IrCompoundAssignment(IrOperator<BinaryOperatorKind> @opera
 
     /// <summary>The conversion of the result back to the target's type.</summary>
     public IrConversionKind OutConversion { get; } = outConversion;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrCompoundAssignment Update(IrExpression target, IrExpression value) =>
+        target == Target && value == Value
+            ? this
+            : new IrCompoundAssignment(Operator, target, value, InConversion, OutConversion, Category, Source);
 }

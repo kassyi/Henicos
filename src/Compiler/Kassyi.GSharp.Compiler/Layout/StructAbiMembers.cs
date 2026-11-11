@@ -39,11 +39,21 @@ public enum StructAbiMemberKind
     /// A compiler-generated field in <c>GetMembers()</c> that none of the other kinds explains. It has storage, so it is
     /// listed rather than dropped, and the layout reports the struct as one the device cannot lay out (GSH0078).
     /// </summary>
-    UnknownHiddenField
+    UnknownHiddenField,
+
+    /// <summary>
+    /// A property whose accessors use the <c>field</c> keyword (<c>int X { get; set =&gt; field = value * 2; }</c>),
+    /// found through its backing field and named after the property. The backing field is stored under a name of its
+    /// own, and the accessors are member functions, as for a <see cref="ComputedProperty"/>.
+    /// </summary>
+    FieldBackedProperty
 }
 
 /// <summary>One member of a user struct's native layout.</summary>
-/// <param name="Symbol">The symbol that names the member: the field, or the property for an auto-property.</param>
+/// <param name="Symbol">
+/// The symbol that names the member: the field, or the property for an auto-property or a property that uses the
+/// <c>field</c> keyword.
+/// </param>
 /// <param name="Name">
 /// The declared name; an auto-property keeps the name of the property, a captured primary constructor parameter the
 /// name of the parameter.
@@ -52,7 +62,8 @@ public enum StructAbiMemberKind
 /// <param name="ElementCount">The number of elements: 1, or N for a <c>fixed</c> buffer or the element of an <c>[InlineArray(N)]</c> struct.</param>
 /// <param name="Kind">What the member was declared as.</param>
 /// <param name="StorageField">
-/// The field that holds the member: the field itself, or the backing field of an auto-property; null for a computed
+/// The field that holds the member: the field itself, or the backing field of an auto-property or of a property that
+/// uses the <c>field</c> keyword; null for a computed
 /// property and for a field-like event (Roslyn does not list its field). Read the member's offset from it
 /// (<see cref="StructLayoutReader.GetFieldOffset"/>) instead of searching for it again.
 /// </param>
@@ -81,11 +92,13 @@ public readonly record struct StructAbiMember(
 /// <see cref="StructAbiMember.ElementCount"/> and copy a <c>fixed</c> buffer as one block; an <c>[InlineArray(N)]</c>
 /// struct is one block when its element lays out the same on both sides, and is copied element by element otherwise.
 /// A property without a backing field has no storage on either side and is listed only when
-/// <c>includeComputedProperties</c> is set; the device definition emits a <see cref="IsComputedProperty">computed
+/// <c>includeComputedProperties</c> is set; the device definition emits a <see cref="HasAccessorFunctions">computed
 /// property</see>'s accessors as member functions instead (pinned by <c>StructAbiTests</c>).
 /// </remarks>
 internal static class StructAbiMembers
 {
+    private const string BackingFieldSuffix = ">k__BackingField";
+
     /// <summary>The members of <paramref name="structType"/> in declaration order.</summary>
     /// <param name="structType">The struct.</param>
     /// <param name="includeComputedProperties">Also list the properties that have no backing field (the device emits them as getters).</param>
@@ -93,16 +106,67 @@ internal static class StructAbiMembers
         new(structType, includeComputedProperties);
 
     /// <summary>
-    /// Whether <paramref name="property"/> is a computed property: an instance property without a backing field, whose
-    /// <c>get</c> and <c>set</c> / <c>init</c> accessors are emitted as member functions of the struct.
+    /// Whether the <c>get</c> and <c>set</c> / <c>init</c> accessors of <paramref name="property"/> are emitted as
+    /// member functions of the struct: an instance property without a backing field (a computed property), or one whose
+    /// accessors use the <c>field</c> keyword (<see cref="IsFieldBackedProperty"/>).
     /// </summary>
-    public static bool IsComputedProperty(IPropertySymbol property) =>
+    public static bool HasAccessorFunctions(IPropertySymbol property) =>
         property is { IsStatic: false, IsIndexer: false, IsImplicitlyDeclared: false } &&
-        !HasBackingField(property.ContainingType.GetMembers(), property);
+        (!HasBackingField(property.ContainingType.GetMembers(), property) || !AreAccessorsAutoImplemented(property));
 
-    /// <summary>Whether <paramref name="property"/> is an auto-property, which the device stores as a field.</summary>
+    /// <summary>
+    /// Whether <paramref name="property"/> is an auto-property: a backing field and only accessors that the C# compiler
+    /// implements (<c>{ get; set; }</c>). The device stores it as a field and reads and writes that field directly.
+    /// </summary>
     public static bool IsAutoProperty(IPropertySymbol property) =>
-        HasBackingField(property.ContainingType.GetMembers(), property);
+        HasBackingField(property.ContainingType.GetMembers(), property) && AreAccessorsAutoImplemented(property);
+
+    /// <summary>
+    /// Whether <paramref name="property"/> is an instance property with a backing field and an accessor of its own that
+    /// uses the <c>field</c> keyword (<c>int X { get; set =&gt; field = value * 2; }</c>): the device stores the
+    /// backing
+    /// field and calls the accessors as member functions.
+    /// </summary>
+    public static bool IsFieldBackedProperty(IPropertySymbol property) =>
+        property is { IsStatic: false, IsIndexer: false } &&
+        HasBackingField(property.ContainingType.GetMembers(), property) &&
+        !AreAccessorsAutoImplemented(property);
+
+    /// <summary>Whether every accessor of <paramref name="property"/> is implemented by the C# compiler.</summary>
+    /// <remarks>
+    /// In source, an accessor without a body (<c>get;</c>) or the property of a positional record parameter; a
+    /// <c>partial</c> property always has bodies, on its implementing part. From metadata, an accessor that the C#
+    /// compiler marks <c>[CompilerGenerated]</c>, which it does for an implemented accessor only. Anything else counts
+    /// as written by hand: treating an auto-property as one whose accessors use <c>field</c> gives the same result (its
+    /// accessors read and write the backing field), while the opposite would drop the accessors.
+    /// </remarks>
+    internal static bool AreAccessorsAutoImplemented(IPropertySymbol property) =>
+        property.DeclaringSyntaxReferences.IsEmpty
+            ? AreMetadataAccessorsGenerated(property)
+            : property.DeclaringSyntaxReferences
+                .AsStackEnumerable()
+                .All(static reference => IsAutoImplementedDeclaration(reference.GetSyntax()));
+
+    private static bool AreMetadataAccessorsGenerated(IPropertySymbol property) =>
+        IsCompilerGenerated(property.GetMethod) && IsCompilerGenerated(property.SetMethod);
+
+    // A declaration whose accessors the C# compiler implements: the property of a positional record parameter, or a
+    // property that is not partial, has no expression body and no accessor body
+    private static bool IsAutoImplementedDeclaration(SyntaxNode syntax) =>
+        syntax switch
+        {
+            ParameterSyntax => true,
+            PropertyDeclarationSyntax { ExpressionBody: null, AccessorList: { } accessorList } declaration =>
+                !declaration.Modifiers.Any(SyntaxKind.PartialKeyword) &&
+                !accessorList.Accessors
+                    .AsStackEnumerable()
+                    .Any(static a => a.Body != null || a.ExpressionBody != null),
+            _ => false
+        };
+
+    // An accessor that is missing counts as generated: { get; } has no setter to inspect
+    private static bool IsCompilerGenerated(IMethodSymbol? accessor) =>
+        accessor is null || accessor.HasAttribute(KnownAttributes.CompilerGenerated);
 
     /// <summary>
     /// Whether <paramref name="field"/> is the hidden field that Roslyn declares for a primary constructor parameter
@@ -165,10 +229,58 @@ internal static class StructAbiMembers
         return false;
     }
 
-    private static bool HasBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
+    /// <summary>The property whose backing field <paramref name="field"/> is, if it is one.</summary>
+    /// <remarks>
+    /// [WHY] Roslyn links the backing field to its property (<c>AssociatedSymbol</c>) for a struct of the compilation
+    /// only; in a struct from metadata the link is null, and the field is found by the name the C# compiler gives it,
+    /// <c>&lt;P&gt;k__BackingField</c> (<c>GeneratedNames.MakeBackingFieldName</c>).
+    /// </remarks>
+    public static bool TryGetBackingFieldProperty(IFieldSymbol field, [NotNullWhen(true)] out IPropertySymbol? property)
+    {
+        property = field.AssociatedSymbol as IPropertySymbol;
+        if (property != null || !IsMetadataBackingField(field))
+        {
+            return property != null;
+        }
+
+        var propertyName = field.Name[1..(field.Name.Length - BackingFieldSuffix.Length)];
+        property = field.ContainingType.GetMembers(propertyName)
+            .AsStackEnumerable()
+            .OfType<IPropertySymbol>()
+            .FirstOrDefault();
+        return property != null;
+    }
+
+    private static bool IsMetadataBackingField(IFieldSymbol field) =>
+        field is { AssociatedSymbol: null, CanBeReferencedByName: false, DeclaringSyntaxReferences.IsEmpty: true } &&
+        field.Name.Length > BackingFieldSuffix.Length + 1 &&
+        field.Name[0] == '<' &&
+        field.Name.EndsWith(BackingFieldSuffix, StringComparison.Ordinal);
+
+    // Whether field is the backing field of property, without building the name it would have
+    private static bool IsBackingFieldOf(IFieldSymbol field, IPropertySymbol property) =>
+        field.AssociatedSymbol.IsEqualTo(property) ||
+        (IsMetadataBackingField(field) &&
+         field.Name.Length == property.Name.Length + BackingFieldSuffix.Length + 1 &&
+         string.CompareOrdinal(field.Name, 1, property.Name, 0, property.Name.Length) == 0);
+
+    /// <summary>
+    /// The backing field of <paramref name="property"/>, if it has one, also in a struct from metadata.
+    /// </summary>
+    public static bool TryGetBackingField(IPropertySymbol property, [NotNullWhen(true)] out IFieldSymbol? field)
+    {
+        field = FindBackingField(property.ContainingType.GetMembers(), property);
+        return field != null;
+    }
+
+    private static IFieldSymbol? FindBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
         members
             .AsStackEnumerable()
-            .Any(property, static (member, p) => member is IFieldSymbol field && field.AssociatedSymbol.IsEqualTo(p));
+            .OfType<IFieldSymbol>()
+            .FirstOrDefault(property, static (field, p) => IsBackingFieldOf(field, p));
+
+    private static bool HasBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
+        FindBackingField(members, property) != null;
 
     /// <summary>A <c>foreach</c>-able view of the members that allocates nothing.</summary>
     internal readonly struct MemberSet(INamedTypeSymbol structType, bool includeComputedProperties)
@@ -226,12 +338,26 @@ internal static class StructAbiMembers
             return false;
         }
 
-        private bool TryCreate(IFieldSymbol field, out StructAbiMember member)
+        // The backing field of a property, listed as the property: an auto-property, or one that uses the field keyword
+        private static bool TryCreatePropertyMember(IFieldSymbol field, out StructAbiMember member)
         {
             member = default;
-            if (field.AssociatedSymbol is IPropertySymbol property)
+            if (!TryGetBackingFieldProperty(field, out var property))
             {
-                member = new StructAbiMember(property, property.Name, field.Type, 1, StructAbiMemberKind.AutoProperty, field);
+                return false;
+            }
+
+            var kind = AreAccessorsAutoImplemented(property)
+                ? StructAbiMemberKind.AutoProperty
+                : StructAbiMemberKind.FieldBackedProperty;
+            member = new StructAbiMember(property, property.Name, field.Type, 1, kind, field);
+            return true;
+        }
+
+        private bool TryCreate(IFieldSymbol field, out StructAbiMember member)
+        {
+            if (TryCreatePropertyMember(field, out member))
+            {
                 return true;
             }
 

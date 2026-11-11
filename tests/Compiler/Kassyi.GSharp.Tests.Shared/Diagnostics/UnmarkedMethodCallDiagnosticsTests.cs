@@ -20,7 +20,7 @@ public class UnmarkedMethodCallDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CallOfUnmarkedMethod_ReportsGsh0107AtTheCall(string dialect)
+    public async Task CallOfUnmarkedMethod_UnmarkedInvocation_ReportsGsh0107AtCall(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -42,7 +42,8 @@ public class UnmarkedMethodCallDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_LoweredCallOrMethodGroupOfUnmarkedMethod_ReportsGsh0107AtTheName(string dialect)
+    public async Task LoweredCallOrMethodGroupOfUnmarkedMethod_MethodGroupInvocation_ReportsGsh0107AtName(
+        string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnmarkedMethodCallLowered.cs", dialect);
 
@@ -63,7 +64,7 @@ public class UnmarkedMethodCallDiagnosticsTests
     [InlineData("'Box.Set'", "instance methods of structs are not supported in GPU code yet (GSH0066)")]
     [InlineData("'Helpers.TraceOn'", "add [GpuDeviceFunction]")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CallOfUnmarkedMethod_StatesWhatToDo(string method, string advice)
+    public async Task CallOfUnmarkedMethod_DiagnosticMessage_StatesRemediationGuidance(string method, string advice)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, "Cpu");
 
@@ -79,7 +80,7 @@ public class UnmarkedMethodCallDiagnosticsTests
     // (line 60) are not reported
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_CallOfMarkedMethodOrIntrinsic_IsNotReported()
+    public async Task CallOfMarkedMethodOrIntrinsic_ValidInvocation_IsNotReported()
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, "Cpu");
 

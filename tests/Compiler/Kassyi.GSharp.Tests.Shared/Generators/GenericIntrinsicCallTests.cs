@@ -14,7 +14,7 @@ public class GenericIntrinsicCallTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public Task Test_GenericAndNestedIntrinsicCalls_MapToNativeNamesWithTemplateArguments(string dialect)
+    public Task GenericAndNestedIntrinsicCalls_MapToNativeNamesWithTemplateArguments(string dialect)
     {
         var compilation = NativeApiIntrinsicsEmitterTests.CreateGenericIntrinsicsCompilation();
 
@@ -27,6 +27,6 @@ public class GenericIntrinsicCallTests
 
         return Verifier.Verify(kernels.SourceText.ToString(), "cs")
             .UseDirectory("Snapshots")
-            .UseFileName($"Snap.Test_GenericAndNestedIntrinsicCalls_{dialect}");
+            .UseFileName($"Snap.GenericAndNestedIntrinsicCalls_{dialect}");
     }
 }

@@ -28,7 +28,7 @@ public class ConstexprLiteralTests
     [InlineData(SpecialType.System_Single, 0.1f, "0.1f", "0.1F")]
     [InlineData(SpecialType.System_Double, 0.1, "0.1", "0.1D")]
     [InlineData(SpecialType.System_Double, 1.0, "1.0", "1D")]
-    public void Test_Format_PrimitiveTableRows(
+    public void Format_PrimitiveTableRows_FormatsExpectedLiterals(
         SpecialType specialType,
         object value,
         string expectedCpp,
@@ -58,7 +58,7 @@ public class ConstexprLiteralTests
     [InlineData(SpecialType.System_Double, double.MaxValue, "1.7976931348623157e+308", "1.7976931348623157e+308D")]
     [InlineData(SpecialType.System_Double, double.Epsilon, "5e-324", "5e-324D")]
     [InlineData(SpecialType.System_Single, float.Epsilon, "1e-45f", "1e-45F")]
-    public void Test_Format_BoundaryValues(
+    public void Format_ExtremaValues_FormatsExpectedLiterals(
         SpecialType specialType,
         object value,
         string expectedCpp,
@@ -78,7 +78,7 @@ public class ConstexprLiteralTests
     [InlineData("Ns.Mode", -1, "-1", "(global::Ns.Mode)(-1)")]
     [InlineData("Ns.UIntMode", 5U, "5U", "(global::Ns.UIntMode)5U")]
     [InlineData("Ns.ByteMode", (byte)255, "(unsigned char)255", "(global::Ns.ByteMode)255")]
-    public void Test_Format_EnumValues(
+    public void Format_EnumValues_FormatsExpectedLiterals(
         string metadataName,
         object value,
         string expectedCpp,
@@ -95,7 +95,7 @@ public class ConstexprLiteralTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Format_UnderGermanCulture_UsesInvariantDecimalPoint()
+    public void Format_UnderGermanCulture_UsesInvariantDecimalPoint()
     {
         var previous = CultureInfo.CurrentCulture;
         try
@@ -127,7 +127,7 @@ public class ConstexprLiteralTests
     [InlineData(SpecialType.System_Double, double.NaN)]
     [InlineData(SpecialType.System_Double, double.PositiveInfinity)]
     [InlineData(SpecialType.System_Double, double.NegativeInfinity)]
-    public void Test_Format_NonFiniteFloatingPoint_ThrowsArgumentOutOfRangeException(
+    public void Format_NonFiniteFloatingPoint_ThrowsArgumentOutOfRangeException(
         SpecialType specialType,
         object value)
     {
@@ -160,7 +160,7 @@ public class ConstexprLiteralTests
     [InlineData(SpecialType.System_Char, '\u00E9', "(char16_t)233", "'\u00E9'")]
     [InlineData(SpecialType.System_Char, '\uffff', "(char16_t)65535", @"'\uffff'")]
     [InlineData(SpecialType.System_Char, '\uD800', "(char16_t)55296", @"'\ud800'")]
-    public void Test_TryFormatConstant_FormatsConstants(
+    public void TryFormatConstant_ConstantValues_FormatsExpectedLiterals(
         SpecialType specialType,
         object value,
         string expectedCpp,
@@ -175,7 +175,7 @@ public class ConstexprLiteralTests
     // Nullable<T> is formatted as T: the default of a float? parameter is a float
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TryFormatConstant_UnwrapsNullable()
+    public void TryFormatConstant_NullableFloatingPoint_UnwrapsAndFormatsConstant()
     {
         var nullable = s_compilation.GetSpecialType(SpecialType.System_Nullable_T);
         var nullableSingle = nullable.Construct(s_compilation.GetSpecialType(SpecialType.System_Single));
@@ -190,7 +190,7 @@ public class ConstexprLiteralTests
     // char is not a [GpuConstexpr] parameter type
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Format_Char_ThrowsArgumentOutOfRangeException()
+    public void Format_CharValue_ThrowsArgumentOutOfRangeException()
     {
         var charType = s_compilation.GetSpecialType(SpecialType.System_Char);
 
@@ -199,7 +199,7 @@ public class ConstexprLiteralTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TryFormatConstant_DecimalAndString_HaveNoLiteral()
+    public void TryFormatConstant_DecimalAndString_ReturnsFalseWithoutLiteral()
     {
         Assert.False(ConstexprLiteral.TryFormatConstant(s_compilation.GetSpecialType(SpecialType.System_Decimal), 1.5m, out _));
         Assert.False(ConstexprLiteral.TryFormatConstant(s_compilation.GetSpecialType(SpecialType.System_String), "abc", out _));
@@ -208,7 +208,7 @@ public class ConstexprLiteralTests
     // Without a device literal the transpiler writes the invariant text; the analyzer reports the use (GSH0003)
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FormatCppConstant_FallsBackToInvariantText()
+    public void FormatCppConstant_DecimalAndNullString_FallsBackToInvariantText()
     {
         var previous = CultureInfo.CurrentCulture;
         try
@@ -226,7 +226,7 @@ public class ConstexprLiteralTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Format_UnsupportedType_ThrowsArgumentOutOfRangeException()
+    public void Format_UnsupportedType_ThrowsArgumentOutOfRangeException()
     {
         var stringType = s_compilation.GetSpecialType(SpecialType.System_String);
 

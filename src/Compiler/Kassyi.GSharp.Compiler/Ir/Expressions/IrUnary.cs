@@ -18,4 +18,8 @@ internal sealed class IrUnary(IrOperator<UnaryOperatorKind> @operator, IrExpress
 
     /// <summary>The operand.</summary>
     public IrExpression Operand { get; } = operand;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrUnary Update(IrExpression operand) =>
+        operand == Operand ? this : new IrUnary(Operator, operand, Type, Category, ConstantValue, Source);
 }

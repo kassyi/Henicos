@@ -135,52 +135,60 @@ public class LanguageGenericsAndTypesDifferentialTests
 
     // 1. Generic Structs & Nested Types
     [SkippableFact]
-    public void Test_GenericStructScopeUsing_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_genScopeUsing);
+    public void GenericStruct_ScopeUsing_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_genScopeUsing);
 
     [SkippableFact]
-    public void Test_GenericStructPrimitivesAndNesting_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_genPrimitivesAndNesting);
+    public void GenericStruct_PrimitivesAndNesting_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_genPrimitivesAndNesting);
 
     [SkippableFact]
-    public void Test_ReadonlyStructWeightedSum_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_roWeightedSum);
+    public void ReadonlyStruct_WeightedSum_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_roWeightedSum);
 
     [SkippableFact]
-    public void Test_NestedTypesInNamespaceAndClass_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_nestedTypes);
+    public void NestedTypes_InNamespaceAndClass_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_nestedTypes);
 
     // 2. Extension Methods & Delegates
     [SkippableFact]
-    public void Test_ValueReceiverExtensionMethod_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_valExt);
+    public void ExtensionMethod_ValueReceiver_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_valExt);
 
     [SkippableFact]
-    public void Test_InReceiverExtensionMethod_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_inExt);
+    public void ExtensionMethod_InReceiver_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_inExt);
 
     [SkippableFact]
-    public void Test_RefReceiverExtensionMethod_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_refExt);
+    public void ExtensionMethod_RefReceiver_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_refExt);
 
     [SkippableFact]
-    public void Test_StaticMethodGroupConversion_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_staticDelegate);
+    public void MethodGroup_StaticConversion_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_staticDelegate);
 
     [SkippableFact]
-    public void Test_ReducedExtensionMethodGroup_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_reducedExt);
+    public void MethodGroup_ReducedExtension_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_reducedExt);
 
     [SkippableFact]
-    public void Test_ReadonlyPropertyAccessOnInAndField_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_roPropertyAccess);
+    public void ReadonlyProperty_AccessOnInAndField_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_roPropertyAccess);
 
     // 3. Deconstruction, Records & Patterns
     [SkippableFact]
-    public void Test_TupleDeconstructionSwapAndRotation_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_tupleDeconstruct);
+    public void TupleDeconstruction_SwapAndRotation_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_tupleDeconstruct);
 
     [SkippableFact]
-    public void Test_DeconstructionSideEffectingTargetOrder_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_deconstructTargetOrder);
+    public void Deconstruction_SideEffectingTargetOrder_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_deconstructTargetOrder);
 
     [SkippableFact]
-    public void Test_DeconstructionDuplicateTargetOverwrite_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_deconstructDupTarget);
+    public void Deconstruction_DuplicateTargetOverwrite_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_deconstructDupTarget);
 
     [SkippableFact]
-    public void Test_DeconstructionImplicitWidening_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_deconstructWidening);
+    public void Deconstruction_ImplicitWidening_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_deconstructWidening);
 
     [SkippableFact]
-    public void Test_ReadonlyRecordStructWithExpression_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_recordWith);
+    public void ReadonlyRecordStruct_WithExpression_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_recordWith);
 
     [SkippableFact]
-    public void Test_PatternMatchingAndSwitchExpression_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_patternMatching);
+    public void PatternMatching_SwitchExpression_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_patternMatching);
 }

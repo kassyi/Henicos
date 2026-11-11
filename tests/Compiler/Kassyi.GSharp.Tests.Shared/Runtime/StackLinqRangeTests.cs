@@ -47,7 +47,7 @@ public class StackLinqRangeTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TwoStageRange_MatchesCSharp(int combo, bool managed)
+    public void Range_TwoStagePipeline_MatchesCSharpReference(int combo, bool managed)
     {
         Skip.If(managed && IsCudaDialect, "The managed path runs on the CPU test assembly.");
         foreach (var a in s_arguments)
@@ -82,7 +82,7 @@ public class StackLinqRangeTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StageArguments_AreEvaluatedOnce(bool managed)
+    public void Range_StageArguments_EvaluatedOnce(bool managed)
     {
         int[] counter = [0];
         int[] result = [0, 0];
@@ -102,7 +102,7 @@ public class StackLinqRangeTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SideEffectingSelectThenSkip_CallsTheSelectorForEveryElement(bool managed)
+    public void Range_SideEffectingSelectThenSkip_CallsSelectorForEveryElement(bool managed)
     {
         int[] counter = [0];
         int[] result = [0];
@@ -121,14 +121,14 @@ public class StackLinqRangeTests : TranspilerTestBase
     // the skipped element (StackLinqRangeKernels snapshot: the Skip counts in the loop instead of narrowing the range).
     // This is not the regression test of the fold: the managed path runs the host StackLinq, which always called the
     // selector, so the throws held before the fix too. The fold is guarded by
-    // ExpressionTrapsTests.Test_CountRangeStages_StopsAfterATrappingSelector and the snapshot. This test checks that
+    // ExpressionTrapsTests.CountRangeStages_StopsAfterATrappingSelector and the snapshot. This test checks that
     // the CPU paths still give the C# sums, and becomes the native check of the error once #718 lands.
     [SkippableTheory]
     [MemberData(nameof(Paths))]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrappingSelectThenSkip_RaisesTheErrorOfTheSkippedElement(bool managed)
+    public void Range_TrappingSelectThenSkip_RaisesErrorOfSkippedElement(bool managed)
     {
         Skip.If(
             IsCudaDialect,
@@ -184,7 +184,7 @@ public class StackLinqRangeTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ThreeStageChains_SeededSweep_MatchCSharp(bool managed)
+    public void Range_ThreeStageChainsSeededSweep_MatchesCSharpReference(bool managed)
     {
         const int Threads = 33;
         const int Chains = StackLinqRangeKernels.ThreeStageChains;
@@ -286,7 +286,7 @@ public class StackLinqRangeTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TakeAfterLoopStage_CallsTheStageAsCSharp(int take, bool managed)
+    public void Range_TakeAfterLoopStage_CallsStageAsCSharp(int take, bool managed)
     {
         int[] counter = [0, 0];
         int[] result = [0, 0];
@@ -323,7 +323,7 @@ public class StackLinqRangeTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TakeThenSkip_CallsTheStageAsCSharp(int take, int skip, bool managed)
+    public void Range_TakeThenSkip_CallsStageAsCSharp(int take, int skip, bool managed)
     {
         int[] counter = [0, 0, 0];
         int[] result = [0, 0, 0];

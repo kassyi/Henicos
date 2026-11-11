@@ -42,7 +42,7 @@ public partial class MethodAttributesTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_AggressiveInlining_Execution()
+    public void Execute_AggressiveInlining_DoublesInputValues()
     {
         int[] input = [0, 5, 10, 20];
         int[] result = new int[4];
@@ -61,7 +61,7 @@ public partial class MethodAttributesTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_MethodAttributes_EmptyArray_Execution()
+    public void Execute_EmptyArray_ThrowsArgumentException()
     {
         int[] input = [];
         int[] result = [];
@@ -75,7 +75,7 @@ public partial class MethodAttributesTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_MethodAttributes_SingleElement_Execution()
+    public void Execute_SingleElement_DoublesInputValue()
     {
         int[] input = [42];
         int[] result = new int[1];
@@ -100,7 +100,7 @@ public partial class MethodAttributesTests
     [InlineData(unchecked((int)0xAAAAAAAA), unchecked(((int)0xAAAAAAAA + 100) * 2))]
     [InlineData(1000000, (1000000 + 100) * 2)]
     [InlineData(-1000000, (-1000000 + 100) * 2)]
-    public void Test_AggressiveInlining_NumericBoundaries_Execution(int inputVal, int expectedVal)
+    public void Execute_AggressiveInliningWithVariousInputs_ReturnsTheInlinedResult(int inputVal, int expectedVal)
     {
         int[] input = [inputVal];
         int[] result = new int[1];
@@ -112,7 +112,7 @@ public partial class MethodAttributesTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_AggressiveInlining_TranspilesWithForceinlineDevice()
+    public void Transpile_AggressiveInlining_EmitsForceinlineDevice()
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("AggressiveInlinedFunc");
 
@@ -122,7 +122,7 @@ public partial class MethodAttributesTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_NoInlining_TranspilesWithNoinlineDevice()
+    public void Transpile_NoInlining_EmitsNoinlineDevice()
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoInlinedFunc");
 
@@ -132,7 +132,7 @@ public partial class MethodAttributesTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_MultipleAttributes_EmitsForceinlineOnceWithoutDuplicates()
+    public void Transpile_MultipleAttributes_EmitsForceinlineOnceWithoutDuplicates()
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("MultipleAttributesFunc");
 
@@ -145,7 +145,7 @@ public partial class MethodAttributesTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_UnsupportedOption_NoOptimization_DefaultsToInlineDeviceWithoutError()
+    public void Transpile_UnsupportedNoOptimization_DefaultsToInlineDeviceWithoutError()
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoOptimizationFunc");
 
@@ -157,7 +157,7 @@ public partial class MethodAttributesTests
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]
-    public void Test_UserDefinedMethodImplAttribute_DoesNotCollideWithBclMethodImpl()
+    public void Transpile_UserDefinedMethodImplAttribute_DoesNotCollideWithBclMethodImpl()
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("CustomMethod");
 

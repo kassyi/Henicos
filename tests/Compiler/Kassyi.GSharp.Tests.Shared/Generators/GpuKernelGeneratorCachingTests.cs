@@ -52,7 +52,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public Task Test_StepReasons_AfterEdits(string dialect)
+    public Task StepReasons_AfterEdits(string dialect)
     {
         var compilation = CreateCompilation();
         var driver = CreateDriver(dialect).RunGenerators(compilation);
@@ -78,7 +78,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EditingOneKernelOfAClass_EmitsTheClassOnce(string dialect)
+    public void EditingOneKernelOfAClass_EmitsTheClassOnce(string dialect)
     {
         var compilation = CreateCompilation();
         var driver = CreateDriver(dialect).RunGenerators(compilation).RunGenerators(EditOneKernel(compilation));
@@ -98,7 +98,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EditingOneClass_LeavesTheOtherWrapperCached(string dialect)
+    public void EditingOneClass_LeavesTheOtherWrapperCached(string dialect)
     {
         var compilation = CreateCompilation(s_twoClasses);
         var tree = compilation.SyntaxTrees.Single();
@@ -126,7 +126,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeviceFunctionsOnly_EmitOnlyTheDeviceExports(string dialect)
+    public void DeviceFunctionsOnly_EmitOnlyTheDeviceExports(string dialect)
     {
         var driver = CreateDriver(dialect).RunGenerators(CreateCompilation(s_deviceFunctionsOnly));
 
@@ -148,7 +148,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AddingAnOverloadInAnotherFile_MatchesAFreshRun(string dialect)
+    public void AddingAnOverloadInAnotherFile_MatchesAFreshRun(string dialect)
     {
         var first = CreateCompilation(s_overloadA);
         var withBoth = first.AddSyntaxTrees(CSharpSyntaxTree.ParseText(s_overloadB, s_parseOptions));
@@ -162,7 +162,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RemovingAnOverloadInAnotherFile_MatchesAFreshRun(string dialect)
+    public void RemovingAnOverloadInAnotherFile_MatchesAFreshRun(string dialect)
     {
         var bTree = CSharpSyntaxTree.ParseText(s_overloadB, s_parseOptions);
         var withBoth = CreateCompilation(s_overloadA).AddSyntaxTrees(bTree);
@@ -180,7 +180,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MarkingASiblingAsKernel_MatchesAFreshRun(string dialect)
+    public void MarkingASiblingAsKernel_MatchesAFreshRun(string dialect)
     {
         var plain = s_overloadC;
         var marked = MarkAsKernel(plain);
@@ -197,7 +197,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UnmarkingASiblingKernel_MatchesAFreshRun(string dialect)
+    public void UnmarkingASiblingKernel_MatchesAFreshRun(string dialect)
     {
         var plain = s_overloadC;
         var marked = MarkAsKernel(plain);
@@ -214,7 +214,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EditingIteratorInAnotherFile_ReemitsConsumerKernel(string dialect)
+    public void EditingIteratorInAnotherFile_ReemitsConsumerKernel(string dialect)
     {
         const string KernelSource = """
             using Kassyi.GSharp.Core;
@@ -286,7 +286,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     // callee in another file declare dynamic shared memory must re-emit the caller
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CalleeInAnotherFileGainsDynamicSharedMemory_ReemitsCallerKernel()
+    public void CalleeInAnotherFileGainsDynamicSharedMemory_ReemitsCallerKernel()
     {
         var calleeAfter = s_dynamicSharedMemoryCallee.Replace(
             "new SharedMemory<int>(32)", "new SharedMemory<int>(n)", StringComparison.Ordinal);
@@ -326,7 +326,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     // managed state machine must call it
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CalleeInAnotherFileGainsOperatorMacro_ReemitsCallerAndManagedVersion()
+    public void CalleeInAnotherFileGainsOperatorMacro_ReemitsCallerAndManagedVersion()
     {
         var calleeAfter = s_managedVersionCallee.Replace("z.V = x.V + y.V;", "z = x + y;", StringComparison.Ordinal);
         Assert.NotEqual(s_managedVersionCallee, calleeAfter);
@@ -370,7 +370,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     // An edit that changes no classification leaves the kernel and the managed versions as they were
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UnrelatedEdit_LeavesManagedVersionsCached()
+    public void UnrelatedEdit_LeavesManagedVersionsCached()
     {
         var callee = s_managedVersionCallee.Replace("z.V = x.V + y.V;", "z = x + y;", StringComparison.Ordinal);
         var compilation = CreateCompilation(

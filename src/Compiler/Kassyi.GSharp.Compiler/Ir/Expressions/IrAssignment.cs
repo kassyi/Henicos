@@ -18,4 +18,8 @@ internal sealed class IrAssignment(IrExpression target, IrExpression value, bool
 
     /// <summary>Whether it is a ref assignment.</summary>
     public bool IsRef { get; } = isRef;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrAssignment Update(IrExpression target, IrExpression value) =>
+        target == Target && value == Value ? this : new IrAssignment(target, value, IsRef, Type, Category, Source);
 }

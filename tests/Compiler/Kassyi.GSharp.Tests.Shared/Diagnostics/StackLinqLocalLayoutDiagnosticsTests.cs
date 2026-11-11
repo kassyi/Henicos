@@ -16,7 +16,7 @@ public class StackLinqLocalLayoutDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_LocalStackLinqQueries_AreNotReportedByGsh0078(string dialect)
+    public async Task LocalStackLinqQueries_LocalQueryPipelines_AreNotReportedByGsh0078(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 

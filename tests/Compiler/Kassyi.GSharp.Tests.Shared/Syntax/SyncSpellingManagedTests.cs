@@ -16,52 +16,52 @@ public class SyncSpellingManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_AliasBarrier_OrdersSharedMemoryAccesses() =>
+    public void SyncSpelling_ManagedAliasBarrier_OrdersSharedMemoryAccesses() =>
         SyncSpellingScenarios.AliasBarrier(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticBarrier_OrdersSharedMemoryAccesses() =>
+    public void SyncSpelling_ManagedUsingStaticBarrier_OrdersSharedMemoryAccesses() =>
         SyncSpellingScenarios.UsingStaticBarrier(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_AliasShuffleDown_ReadsTheNextLane() =>
+    public void SyncSpelling_ManagedAliasShuffleDown_ReadsTheNextLane() =>
         SyncSpellingScenarios.AliasShuffle(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticShuffleDown_ReadsTheNextLane() =>
+    public void SyncSpelling_ManagedUsingStaticShuffleDown_ReadsTheNextLane() =>
         SyncSpellingScenarios.UsingStaticShuffle(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_QualifiedBarrier_OrdersSharedMemoryAccesses() =>
+    public void SyncSpelling_ManagedQualifiedBarrier_OrdersSharedMemoryAccesses() =>
         SyncSpellingScenarios.QualifiedBarrier(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_UserMethodNamedSyncThreads_IsCalled() =>
+    public void SyncSpelling_ManagedUserMethodNamedSyncThreads_IsCalled() =>
         SyncSpellingScenarios.UserSyncThreads(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_LookalikeGpuSyncThreads_IsCalled() =>
+    public void SyncSpelling_ManagedLookalikeGpuSyncThreads_IsCalled() =>
         SyncSpellingScenarios.LookalikeGpuSyncThreads(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticThreadIndex_MapsByTheTypePattern() =>
+    public void SyncSpelling_ManagedUsingStaticThreadIndex_MapsByTheTypePattern() =>
         SyncSpellingScenarios.UsingStaticThreadIndex(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_UsingStaticFastExp_MapsByTheDialectSignature() =>
+    public void SyncSpelling_ManagedUsingStaticFastExp_MapsByTheDialectSignature() =>
         SyncSpellingScenarios.UsingStaticFastExp(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_OwnPopCount_IsNotTheIntrinsic() =>
+    public void SyncSpelling_ManagedOwnPopCount_IsNotTheIntrinsic() =>
         SyncSpellingScenarios.OwnPopCount(s_runManaged);
 
     private static void RunManaged(Action launch)

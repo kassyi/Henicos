@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class ElseBarrierTests : TranspilerTestBase
 {
     [SkippableFact]
-    public void Test_ElseBarrier_ReversesArrayCorrectly()
+    public void ElseBarrier_DeviceExecution_ReversesArrayCorrectly()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         int length = 32;

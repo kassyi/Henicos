@@ -13,7 +13,7 @@ public class SwitchSectionLocalDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SpanOrRefLocalSharedBySections_ReportsGsh0003AtTheDeclarator(string dialect)
+    public async Task SpanOrRefLocalSharedBySections_CrossSectionScope_ReportsGsh0003AtDeclarator(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(Cases, dialect);
 

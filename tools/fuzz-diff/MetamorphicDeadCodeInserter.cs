@@ -24,22 +24,9 @@ internal static class MetamorphicDeadCodeInserter
         }
 
         var statements = method.Body.Statements;
-        int minInsertIdx = FuzzSyntaxHelpers.CountPrologueStatements(statements);
-        if (minInsertIdx < statements.Count && FuzzSyntaxHelpers.IsHashInitDeclaration(statements[minInsertIdx]))
-        {
-            minInsertIdx++;
-        }
-
-        // Do not insert dead code into an empty method or a method that has no executable statements after its prologue.
-        if (statements.Count == 0 || minInsertIdx >= statements.Count)
+        if (!TryComputeInsertBounds(statements, out int minInsertIdx, out int maxInsertIdx))
         {
             return root;
-        }
-
-        int maxInsertIdx = statements.Count;
-        if (maxInsertIdx > minInsertIdx && FuzzSyntaxHelpers.IsFinalChecksumWrite(statements[maxInsertIdx - 1]))
-        {
-            maxInsertIdx--;
         }
 
         var rng = new FuzzRandom(seed ^ 0xA11CE008UL);
@@ -55,25 +42,73 @@ internal static class MetamorphicDeadCodeInserter
             ? minInsertIdx + rng.NextBelow(maxInsertIdx - minInsertIdx + 1)
             : minInsertIdx;
 
+        var (deadLocalStmt, unreachableIfStmt) = BuildDeadStatements(rng, usedNames, hasIntGid, hasULongHash);
+        var newStatements = InsertStatementsAt(statements, insertIdx, deadLocalStmt, unreachableIfStmt);
+
+        var updatedMethod = method.WithBody(method.Body.WithStatements(SyntaxFactory.List(newStatements)));
+        return root.ReplaceNode(method, updatedMethod);
+    }
+
+    private static bool TryComputeInsertBounds(
+        SyntaxList<StatementSyntax> statements,
+        out int minInsertIdx,
+        out int maxInsertIdx)
+    {
+        minInsertIdx = FuzzSyntaxHelpers.CountPrologueStatements(statements);
+        if (minInsertIdx < statements.Count && FuzzSyntaxHelpers.IsHashInitDeclaration(statements[minInsertIdx]))
+        {
+            minInsertIdx++;
+        }
+
+        maxInsertIdx = statements.Count;
+        if (statements.Count == 0 || minInsertIdx >= statements.Count)
+        {
+            return false;
+        }
+
+        if (maxInsertIdx > minInsertIdx && FuzzSyntaxHelpers.IsFinalChecksumWrite(statements[maxInsertIdx - 1]))
+        {
+            maxInsertIdx--;
+        }
+
+        return true;
+    }
+
+    private static (StatementSyntax DeadLocalStmt, StatementSyntax UnreachableIfStmt) BuildDeadStatements(
+        FuzzRandom rng,
+        HashSet<string> usedNames,
+        bool hasIntGid,
+        bool hasULongHash)
+    {
         string deadLocalName = MetamorphicTarget.AllocateFreshIdentifier("metaDeadLocal", usedNames);
-        string seedConstHex = string.Create(CultureInfo.InvariantCulture, $"0x{((rng.NextUInt32() & 0x7FFFFFFFU) | 1U):X8}");
+        uint seedVal = (rng.NextUInt32() & 0x7FFFFFFFU) | 1U;
+        string seedConstHex = string.Create(CultureInfo.InvariantCulture, $"0x{seedVal:X8}");
         string baseIntExpr = hasIntGid ? "gid" : "17";
 
-        var deadLocalStmt = SyntaxFactory.ParseStatement(
-            string.Create(CultureInfo.InvariantCulture, $"int {deadLocalName} = ({baseIntExpr} ^ {seedConstHex}) + 29;\n"));
+        string localInitCode = $"int {deadLocalName} = ({baseIntExpr} ^ {seedConstHex}) + 29;\n";
+        var deadLocalStmt = SyntaxFactory.ParseStatement(localInitCode);
 
         string unreachableBody = hasULongHash
             ? $"if (false)\n{{\n{deadLocalName} ^= 0x13579BDF;\nhash ^= (ulong){deadLocalName};\n}}\n"
             : $"if (false)\n{{\n{deadLocalName} ^= 0x13579BDF;\n}}\n";
         var unreachableIfStmt = SyntaxFactory.ParseStatement(unreachableBody);
 
+        return (deadLocalStmt, unreachableIfStmt);
+    }
+
+    private static List<StatementSyntax> InsertStatementsAt(
+        SyntaxList<StatementSyntax> statements,
+        int insertIdx,
+        StatementSyntax first,
+        StatementSyntax second)
+    {
         var newStatements = new List<StatementSyntax>(statements.Count + 2);
         for (int i = 0; i <= statements.Count; i++)
         {
             if (i == insertIdx)
             {
-                newStatements.Add(deadLocalStmt);
-                newStatements.Add(unreachableIfStmt);
+                newStatements.Add(first);
+                newStatements.Add(second);
             }
 
             if (i < statements.Count)
@@ -82,8 +117,7 @@ internal static class MetamorphicDeadCodeInserter
             }
         }
 
-        var updatedMethod = method.WithBody(method.Body.WithStatements(SyntaxFactory.List(newStatements)));
-        return root.ReplaceNode(method, updatedMethod);
+        return newStatements;
     }
 
     private static bool HasULongHashLocal(MethodDeclarationSyntax method, SemanticModel semanticModel)
