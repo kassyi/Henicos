@@ -217,9 +217,9 @@ internal static class ManagedFallbackEmitter
     // The block's coordinates and dimensions in ManagedGpuContext, and a fresh warp exchange
     private static void WriteManagedBlockSetup(SourceWriter writer)
     {
-        writer.AppendLine($"{ManagedNames.BlockIdxX} = {BlockX};");
-        writer.AppendLine($"{ManagedNames.BlockIdxY} = {BlockY};");
-        writer.AppendLine($"{ManagedNames.BlockIdxZ} = {BlockZ};");
+        writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.BlockIdxXName} = {BlockX};");
+        writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.BlockIdxYName} = {BlockY};");
+        writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.BlockIdxZName} = {BlockZ};");
         writer.AppendLine($"{ManagedNames.Context}.BlockDimX = (int)blockDimX;");
         writer.AppendLine($"{ManagedNames.Context}.BlockDimY = (int)blockDimY;");
         writer.AppendLine($"{ManagedNames.Context}.BlockDimZ = (int)blockDimZ;");
@@ -325,9 +325,9 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"int {ThreadX} = {ThreadLoopIndex} % (int)blockDimX;");
         writer.AppendLine($"int {ThreadY} = ({ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
         writer.AppendLine($"int {ThreadZ} = {ThreadLoopIndex} / (int)(blockDimX * blockDimY);");
-        writer.AppendLine($"{ManagedNames.ThreadIdxX} = {ThreadX};");
-        writer.AppendLine($"{ManagedNames.ThreadIdxY} = {ThreadY};");
-        writer.AppendLine($"{ManagedNames.ThreadIdxZ} = {ThreadZ};");
+        writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.ThreadIdxXName} = {ThreadX};");
+        writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.ThreadIdxYName} = {ThreadY};");
+        writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.ThreadIdxZName} = {ThreadZ};");
 
         writer.AppendLine($"int {LinearThreadIndex} = {BlockLoopIndex} * {ThreadsPerBlock} + {ThreadLoopIndex};");
         // A thread that waits at a block barrier or at the grid sync does not run
@@ -347,8 +347,8 @@ internal static class ManagedFallbackEmitter
                 writer.AppendLineIf(kernel.ReachesWarpShuffle, $"{Stepped} = true;");
                 // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
                 // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
-                writer.AppendLine($"{ManagedNames.GridSyncRequested} = false;");
-                writer.AppendLine($"{ManagedNames.BlockBarrierRequested} = false;");
+                writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.GridSyncRequestedName} = false;");
+                writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.BlockBarrierRequestedName} = false;");
                 WriteStateMachineCall(writer, kernel);
                 WriteManagedWaits(writer, kernel);
                 if (kernel.ReachesWarpShuffle)
@@ -439,7 +439,7 @@ internal static class ManagedFallbackEmitter
     // After a step: a thread that reached the grid sync (cooperative: waits; otherwise an error) or a block barrier waits
     private static void WriteManagedWaits(SourceWriter writer, in KernelHostModel kernel)
     {
-        writer.AppendLine($"if ({ManagedNames.GridSyncRequested})");
+        writer.AppendLine($"if ({ManagedNames.Context}.{ManagedNames.GridSyncRequestedName})");
         using (writer.Scope())
         {
             if (kernel.IsCooperative)
@@ -456,7 +456,7 @@ internal static class ManagedFallbackEmitter
             }
         }
 
-        writer.AppendLine($"if ({ManagedNames.BlockBarrierRequested})");
+        writer.AppendLine($"if ({ManagedNames.Context}.{ManagedNames.BlockBarrierRequestedName})");
         using (writer.Scope())
         {
             writer.AppendLine($"{ThreadAtBlockBarrier}[{LinearThreadIndex}] = true;");
