@@ -14,11 +14,6 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 [Category(TestCategory.Compiler)]
 public class IrBuilderCategoryTests
 {
-    // C# classifies these as variables; OperationExtensions.IsVariable does not yet, and adding them changes what the
-    // analyses and the CPU lowering pass by reference
-    private const string NotAVariableYet =
-        "Blocked by #1585 (an inline array element or a ref conditional passed to an in parameter is copied)";
-
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("InVariable", "Ir.TakeIn(value: in x)")]
@@ -101,9 +96,9 @@ public class IrBuilderCategoryTests
     [InlineData("RefReturnProperty", true)]
     [InlineData("RefReturnCall", true)]
     [InlineData("RefArgument", true)]
-    [InlineData("InlineArrayElementIn", true, Skip = NotAVariableYet)]
-    [InlineData("RefConditionalIn", true, Skip = NotAVariableYet)]
-    [InlineData("PointerIndirectionIn", true, Skip = NotAVariableYet)]
+    [InlineData("InlineArrayElementIn", true)]
+    [InlineData("RefConditionalIn", true)]
+    [InlineData("PointerIndirectionIn", true)]
     public void LocationCategory_FollowsIsVariable(string method, bool isVariable)
     {
         var compilation = IrTestCases.Compile(IrTestCases.BuilderCases);

@@ -5,9 +5,9 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class StructUnmarshalMethodEmitter
 {
     internal static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
-        ITranspilerDialect dialect)
+        ITranspilerDialect dialect, IAssemblySymbol launcherAssembly)
     {
-        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
         writer.Append("public static unsafe void ");
         writer.AppendUnmarshalMethodName(s);
         using (writer.Parentheses())
@@ -49,8 +49,8 @@ internal static class StructUnmarshalMethodEmitter
 
     private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
     {
-        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
-            StructBlockCopyEmitter.WriteBlockCopy(writer, member, toNative: false, dialect))
+        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
+            StructBlockCopyEmitter.TryWriteBlockCopy(writer, member, toNative: false, dialect))
         {
             return;
         }
