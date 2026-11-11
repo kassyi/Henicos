@@ -4,11 +4,13 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class NativeStructEmitter
 {
     /// <summary>Emits the explicit struct declaration with computed field offsets for <paramref name="dialect"/>.</summary>
-    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, ITranspilerDialect dialect) =>
-        WriteNativeStructDeclaration(writer, s, TypeLayoutCalculator.GetStructLayout(s, dialect));
+    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s,
+        ITranspilerDialect dialect, IAssemblySymbol launcherAssembly) =>
+        WriteNativeStructDeclaration(writer, s, TypeLayoutCalculator.GetStructLayout(s, dialect), launcherAssembly);
 
     /// <summary>Emits the explicit struct declaration with computed field offsets from <paramref name="structLayout"/>.</summary>
-    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s,
+        StructLayoutInfo structLayout, IAssemblySymbol launcherAssembly)
     {
         var parents = AotHostNames.GetEnclosingCustomStructs(s);
 
@@ -19,7 +21,7 @@ internal static class NativeStructEmitter
         }
 
         writer.AppendLine(
-            $"[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = {structLayout.Device.Size})]");
+            $"[{HostTypeNames.StructLayout}({HostTypeNames.LayoutKind}.Explicit, Size = {structLayout.Device.Size})]");
         writer.Append($"public unsafe partial struct {AotHostNames.GetNativeStructName(s)}");
         writer.AppendLine();
 
@@ -37,14 +39,14 @@ internal static class NativeStructEmitter
                 writer.Append($"public const string DebugName_{field.Name} = \"");
                 writer.AppendFullyQualifiedCsharpName(field.Type);
                 writer.AppendLine("\";");
-                writer.AppendLine($"[global::System.Runtime.InteropServices.FieldOffset({offset})]");
+                writer.AppendLine($"[{HostTypeNames.FieldOffset}({offset})]");
 
                 MapToNativeField(writer, field, fieldLayout.Size);
             }
 
-            if (NeedsHostMirror(s, structLayout))
+            if (NeedsHostMirror(s, structLayout, launcherAssembly))
             {
-                WriteHostMirror(writer, s, structLayout);
+                WriteHostMirror(writer, s, structLayout, launcherAssembly);
             }
         }
 
@@ -62,8 +64,10 @@ internal static class NativeStructEmitter
     /// <summary>
     /// Whether the launcher reads and writes <paramref name="s"/> through a host mirror: a struct that it converts
     /// member by member and that holds the hidden field of a captured primary constructor parameter (<c>&lt;a&gt;P</c>),
-    /// which generated C# cannot name (#495), or the backing field of a property whose accessors use the <c>field</c>
-    /// keyword, which generated C# must not reach through the accessors: the transfer copies the stored value.
+    /// which generated C# cannot name (#495), the backing field of a property whose accessors use the <c>field</c>
+    /// keyword, which generated C# must not reach through the accessors: the transfer copies the stored value, or a
+    /// field or fixed buffer that code generated into <paramref name="launcherAssembly"/> cannot name (a private field,
+    /// an internal field of another assembly; #808).
     /// </summary>
     /// <remarks>
     /// The mirror declares the fields of <paramref name="s"/> in <see cref="StructAbiMembers"/> order, which is the CLR
@@ -71,7 +75,8 @@ internal static class NativeStructEmitter
     /// fields are named after their parameters. The marshaling reinterprets the host value as the mirror
     /// (<c>Unsafe.As</c>) after checking that both have the same size.
     /// </remarks>
-    internal static bool NeedsHostMirror(INamedTypeSymbol s, StructLayoutInfo structLayout)
+    internal static bool NeedsHostMirror(INamedTypeSymbol s, StructLayoutInfo structLayout,
+        IAssemblySymbol launcherAssembly)
     {
         if (structLayout.Transfer == TransferClass.Identical)
         {
@@ -80,7 +85,8 @@ internal static class NativeStructEmitter
 
         foreach (var member in StructAbiMembers.Get(s))
         {
-            if (member.Kind is StructAbiMemberKind.CapturedParameter or StructAbiMemberKind.FieldBackedProperty)
+            if (member.Kind is StructAbiMemberKind.CapturedParameter or StructAbiMemberKind.FieldBackedProperty ||
+                IsUnnameableField(member, launcherAssembly))
             {
                 return true;
             }
@@ -89,62 +95,77 @@ internal static class NativeStructEmitter
         return false;
     }
 
-    // [StructLayout(LayoutKind.<Sequential | Auto>[, Pack = <n>][, Size = <n>])]
+    // A field or fixed buffer that the marshaling would read as host.<name> but that generated code cannot name
+    private static bool IsUnnameableField(StructAbiMember member, IAssemblySymbol launcherAssembly) =>
+        member is { Kind: StructAbiMemberKind.Field or StructAbiMemberKind.FixedBuffer, Symbol: IFieldSymbol field } &&
+        !HostFieldAccess.CanName(field, launcherAssembly);
+
+    // [StructLayout(LayoutKind.<Sequential | Explicit | Auto>[, Pack = <n>][, Size = <n>])]
     // public unsafe struct __gsharp_host_mirror {
-    // public <type> <name>; ... public fixed <element> <name>[<n>];
+    // [[FieldOffset(<n>)]] public <type> <name>; ... [[FieldOffset(<n>)]] public fixed <element> <name>[<n>];
     // public static readonly bool FieldOffsetsMatch = CheckFieldOffsets();
     // private static bool CheckFieldOffsets() { <S> s = default; ref var m = ref Unsafe.As<S, mirror>(ref s);
-    // return <offset of s.F> == <offset of m.F> && ...; } }
-    private static void WriteHostMirror(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
+    // return <offset of m.F> == <host offset of F> && <offset of s.G> == <offset of m.G> && ...; } }
+    private static void WriteHostMirror(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
+        IAssemblySymbol launcherAssembly)
     {
-        // [WHY] LayoutKind.Explicit cannot hold a captured parameter: its hidden field has no [FieldOffset] (CS0625)
-        var kind = structLayout.Kind == TypeLayoutKind.Auto ? "Auto" : "Sequential";
-        writer.Append($"[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.{kind}");
-        writer.AppendIf(structLayout.Pack > 0, $", Pack = {structLayout.Pack}");
-        if (StructLayoutReader.TryGetSize(s, out var size))
-        {
-            writer.Append($", Size = {size}");
-        }
-
+        var plan = HostMirrorPlan.Create(s, structLayout, launcherAssembly);
+        writer.Append($"[{HostTypeNames.StructLayout}({HostTypeNames.LayoutKind}.{plan.LayoutKind}");
+        writer.AppendIf(plan.Pack > 0, $", Pack = {plan.Pack}");
+        writer.AppendIf(plan.Size > 0, $", Size = {plan.Size}");
         writer.AppendLine(")]");
         writer.AppendLine($"public unsafe struct {HostMirrorName}");
         using (writer.Scope())
         {
-            foreach (var member in StructAbiMembers.Get(s))
+            foreach (var field in plan.Fields)
             {
-                var name = member.Name.ToCSharpIdentifier();
-                if (member is { Kind: StructAbiMemberKind.FixedBuffer, Symbol: IFieldSymbol })
-                {
-                    // C# allows a fixed buffer only of a primitive type, so the element always has a keyword
-                    var element = member.Type.SpecialType.GetCsharpKeyword() ?? "byte";
-                    writer.AppendLine($"public fixed {element} {name}[{member.ElementCount}];");
-                    continue;
-                }
-
-                writer.Append("public ");
-                writer.AppendFullyQualifiedCsharpName(member.Type);
-                writer.AppendLine($" {name};");
+                WriteHostMirrorField(writer, field);
             }
 
-            WriteFieldOffsetCheck(writer, s);
+            WriteFieldOffsetCheck(writer, s, plan);
         }
+    }
+
+    // [FieldOffset(<n>)] (explicit layout only) public <type> <name>; or public fixed <element> <name>[<n>];
+    private static void WriteHostMirrorField(SourceWriter writer, HostMirrorField field)
+    {
+        var member = field.Member;
+        var name = member.Name.ToCSharpIdentifier();
+        if (field.FieldOffset is { } fieldOffset)
+        {
+            writer.AppendLine($"[{HostTypeNames.FieldOffset}({fieldOffset})]");
+        }
+
+        if (member is { Kind: StructAbiMemberKind.FixedBuffer, Symbol: IFieldSymbol })
+        {
+            // C# allows a fixed buffer only of a primitive type, so the element always has a keyword
+            var element = member.Type.SpecialType.GetCsharpKeyword() ?? "byte";
+            writer.AppendLine($"public fixed {element} {name}[{member.ElementCount}];");
+            return;
+        }
+
+        writer.Append("public ");
+        writer.AppendFullyQualifiedCsharpName(member.Type);
+        writer.AppendLine($" {name};");
     }
 
     /// <summary>The static field of the host mirror that tells whether its fields sit at the offsets of the struct's.</summary>
     internal const string HostMirrorOffsetsMatch = "FieldOffsetsMatch";
 
-    // [WHY] The size check alone misses two fields that trade places. Each field that generated code can name on the
-    // struct itself (an ordinary field that is not private) is compared with the mirror's, by Unsafe.ByteOffset from
-    // the start of a default value; the hidden fields and the backing fields of auto-properties have no name to compare.
-    // The result is computed once, when the mirror is first used.
-    private static void WriteFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s)
+    // [WHY] The size check alone misses two fields that trade places, and when every field is private there is no
+    // field of the struct to compare with. Each mirror field is compared, by Unsafe.ByteOffset from the start of a
+    // default value, with the same field of the struct when the launcher can name it, otherwise with the host offset
+    // the compiler predicts (HostMirrorPlan), when the CLR does not decide the layout at run time. A fixed buffer and a
+    // pointer field have no ref that Unsafe.As takes and are left to the size check. The result is computed once, when
+    // the mirror is first used.
+    private static void WriteFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s, HostMirrorPlan plan)
     {
         const string Unsafe = HostTypeNames.Unsafe;
         writer.AppendLine($"public static readonly bool {HostMirrorOffsetsMatch} = CheckFieldOffsets();");
         writer.AppendLine("private static bool CheckFieldOffsets()");
         using (writer.Scope())
         {
-            if (!HasNamedField(s))
+            if (!plan.HasOffsetCheck)
             {
                 writer.AppendLine("return true;");
                 return;
@@ -156,46 +177,42 @@ internal static class NativeStructEmitter
             writer.AppendFullyQualifiedCsharpName(s);
             writer.AppendLine($", {HostMirrorName}>(ref s);");
             writer.Append("return true");
-            foreach (var member in StructAbiMembers.Get(s))
+            foreach (var field in plan.Fields)
             {
-                if (!IsNamedField(member))
+                if (field.Check == HostMirrorOffsetCheck.None)
                 {
                     continue;
                 }
 
-                var name = member.Name.ToCSharpIdentifier();
+                var name = field.Member.Name.ToCSharpIdentifier();
                 writer.AppendLine(" &&");
+                if (field.Check == HostMirrorOffsetCheck.PredictedOffset)
+                {
+                    WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.Member.Type, $"ref m.{name}");
+                    writer.Append($" == {field.ExpectedOffset}");
+                    continue;
+                }
+
                 writer.Append($"{Unsafe}.ByteOffset(ref {Unsafe}.As<");
                 writer.AppendFullyQualifiedCsharpName(s);
                 writer.Append($", byte>(ref s), ref {Unsafe}.As<");
-                writer.AppendFullyQualifiedCsharpName(member.Type);
-                writer.Append($", byte>(ref {Unsafe}.AsRef(in s.{name}))) == {Unsafe}.ByteOffset(ref {Unsafe}.As<{HostMirrorName}, byte>(ref m), ref {Unsafe}.As<");
-                writer.AppendFullyQualifiedCsharpName(member.Type);
-                writer.Append($", byte>(ref m.{name}))");
+                writer.AppendFullyQualifiedCsharpName(field.Member.Type);
+                writer.Append($", byte>(ref {Unsafe}.AsRef(in s.{name}))) == ");
+                WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.Member.Type, $"ref m.{name}");
             }
 
             writer.AppendLine(";");
         }
     }
 
-    private static bool HasNamedField(INamedTypeSymbol s)
+    // Unsafe.ByteOffset(ref Unsafe.As<<origin>, ref Unsafe.As<<type>, byte>(<field ref>))
+    private static void WriteByteOffset(SourceWriter writer, string origin, ITypeSymbol type, string fieldRef)
     {
-        foreach (var member in StructAbiMembers.Get(s))
-        {
-            if (IsNamedField(member))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        const string Unsafe = HostTypeNames.Unsafe;
+        writer.Append($"{Unsafe}.ByteOffset(ref {Unsafe}.As<{origin}, ref {Unsafe}.As<");
+        writer.AppendFullyQualifiedCsharpName(type);
+        writer.Append($", byte>({fieldRef}))");
     }
-
-    // An ordinary field that generated code can name on the struct (not private)
-    private static bool IsNamedField(StructAbiMember member) =>
-        member is { Kind: StructAbiMemberKind.Field, Symbol: IFieldSymbol field } &&
-        field.DeclaredAccessibility is not (Accessibility.Private or Accessibility.Protected
-            or Accessibility.ProtectedAndInternal);
 
     /// <summary>
     /// Whether <paramref name="member"/> is a reference type other than an array-like one, or a compiler-generated field
