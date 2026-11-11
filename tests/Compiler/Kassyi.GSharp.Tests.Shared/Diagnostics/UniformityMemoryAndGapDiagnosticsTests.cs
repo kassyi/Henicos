@@ -41,7 +41,11 @@ public class UniformityMemoryAndGapDiagnosticsTests
     [InlineData("Cuda", "SetterKernel", 233)]
     [InlineData("Cuda", "IndexerSetterKernel", 312)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_PartOfAnElementWritten_ReportsGsh0083AtTheBarrier(string dialect, string kernel, int line)
+    public async Task BarrierUniformity_PartOfAnElementWritten_ReportsGsh0083AtTheBarrier(
+        string dialect,
+        string kernel,
+        int line
+    )
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(FieldWrites, dialect);
 
@@ -67,7 +71,7 @@ public class UniformityMemoryAndGapDiagnosticsTests
     [InlineData("Cuda", "PropertyValueCallKernel")]
     [InlineData("Cuda", "AutoPropertyValueCallKernel")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_ElementNotWrittenSinceTheBarrier_ReportsNothing(string dialect, string kernel)
+    public async Task BarrierUniformity_ElementNotWrittenSinceTheBarrier_ReportsNothing(string dialect, string kernel)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(FieldWrites, dialect);
 
@@ -81,7 +85,7 @@ public class UniformityMemoryAndGapDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentBarrierBeforeASyncGridGap_ReportsGsh0083(string dialect)
+    public async Task BarrierUniformity_DivergentBarrierBeforeASyncGridGap_ReportsGsh0083(string dialect)
     {
         const string kernel = "DivergentBarrierBeforeGapKernel";
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(GapBarrier, dialect);
@@ -98,7 +102,7 @@ public class UniformityMemoryAndGapDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_DivergentBarrierInTheLastStatement_ReportsGsh0084(string dialect)
+    public async Task BarrierUniformity_DivergentBarrierInTheLastStatement_ReportsGsh0084(string dialect)
     {
         const string kernel = "DivergentBarrierInLastStatementKernel";
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(GapBarrier, dialect);
