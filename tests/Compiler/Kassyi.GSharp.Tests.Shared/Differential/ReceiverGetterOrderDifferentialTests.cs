@@ -12,8 +12,10 @@ public class ReceiverGetterOrderDifferentialTests
 {
     private const int Rows = 64;
 
+    private const string KernelName = nameof(ReceiverGetterOrderDifferentialKernels.ReceiverGetterOrderKernel);
+
     private static readonly DifferentialCase s_receiverGetterOrder = new(
-        $"{nameof(ReceiverGetterOrderDifferentialKernels)}.{nameof(ReceiverGetterOrderDifferentialKernels.ReceiverGetterOrderKernel)}")
+        $"{nameof(ReceiverGetterOrderDifferentialKernels)}.{KernelName}")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 32),
         Inputs = static (rng, rows) => new DiffBuffers()

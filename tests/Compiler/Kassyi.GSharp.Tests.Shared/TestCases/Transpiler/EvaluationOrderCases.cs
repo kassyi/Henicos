@@ -408,11 +408,19 @@ public static class Order
     public static void StructPureGetterAndConstant(StructWithPureGetter s) { var result = 100 - s.Sum; }
     public static void PureStructGetterRead(OrderStructWithGetters s) { var result = s.Value + s.ComputedDoubled; }
     public static void MutatingStructGetterRead(OrderStructWithGetters s) { var result = s.Value + s.MutatingNext; }
-    public static void ReceiverMutatingGetterRead(OrderStructWithGetters s) { var result = s.Value + s.MutatingInner.V; }
+    public static void ReceiverMutatingGetterRead(OrderStructWithGetters s)
+    {
+        var result = s.Value + s.MutatingInner.V;
+    }
+
     public static void ReceiverMutatingGetterAlone(OrderStructWithGetters s) { var result = s.MutatingInner.V; }
     public static void ReceiverPureGetterRead(OrderStructWithGetters s) { var result = s.Value + s.ComputedInner.V; }
     public static void ReceiverMutatingIndexerRead(OrderStructWithGetters s) { var result = s.Value + s[1].V; }
-    public static void ReceiverMutatingGetterCall(OrderStructWithGetters s) { var result = s.Value + s.MutatingInner.Get(); }
+    public static void ReceiverMutatingGetterCall(OrderStructWithGetters s)
+    {
+        var result = s.Value + s.MutatingInner.Get();
+    }
+
     public static void ReceiverMemoryWritingGetterRead(OrderView v, int[] d) { var result = d[0] + v.Touch.V; }
     public static void CompoundMemoryWritingGetter(OrderView v, int[] d) { var result = d[0] + (v.Mark += 1); }
     public static void SetterReadingMemory(OrderView v, int[] d) { var result = Sub(v.Load = 1, Store(d, 5)); }

@@ -74,9 +74,9 @@ internal static class MemberEffects
         walker.Reads.Memory = true;
     }
 
-    // Reading a property or an indexer calls its getter on receiver (null: the implicit this, which is memory). A getter
-    // that may change its struct reads and writes the receiver (#992); that getter and the getter of a computed property
-    // may read anything, and write what DeviceFunctionEffects says.
+    // Reading a property or an indexer calls its getter on receiver (null: the implicit this, which is memory). A
+    // getter that may change its struct reads and writes the receiver (#992); that getter and the getter of a computed
+    // property may read anything, and write what DeviceFunctionEffects says.
     private static void AddGetterCall(ref EffectWalker walker, ExpressionSyntax? receiver, IPropertySymbol property)
     {
         var mutatesReceiver = MayMutateValueTypeReceiver(property, walker.Model.Compilation);
@@ -109,8 +109,8 @@ internal static class MemberEffects
 
     /// <summary>
     /// Whether reading <paramref name="expression"/> calls a getter whose result is a temporary: a computed property
-    /// (<c>s.P</c>, or <c>P</c> through the implicit <c>this</c>), or an indexer that returns by value (an element of an
-    /// <c>ImmutableArray&lt;T&gt;</c> or an <c>ArraySegment&lt;T&gt;</c> lives in memory, not in the struct).
+    /// (<c>s.P</c>, or <c>P</c> through the implicit <c>this</c>), or an indexer that returns by value (an element of
+    /// an <c>ImmutableArray&lt;T&gt;</c> or an <c>ArraySegment&lt;T&gt;</c> lives in memory, not in the struct).
     /// </summary>
     public static bool IsGetterCall(ExpressionSyntax expression, SemanticModel model)
     {
