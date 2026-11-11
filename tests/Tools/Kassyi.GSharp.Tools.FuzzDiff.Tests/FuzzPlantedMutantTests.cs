@@ -118,9 +118,9 @@ public class FuzzPlantedMutantTests
 
     private static string ApplySyntaxMutant(string methodSource, string mutatedName, CSharpSyntaxRewriter rewriter)
     {
-        var tree = CSharpSyntaxTree.ParseText($"class __MutantContainer {{ {methodSource} }}", FuzzTestCompilationHelper.ParseOptions);
+        var root = SyntaxFactory.ParseCompilationUnit($"class __MutantContainer {{ {methodSource} }}", options: FuzzTestCompilationHelper.ParseOptions);
         MethodDeclarationSyntax? method = null;
-        foreach (var node in tree.GetRoot().DescendantNodes())
+        foreach (var node in root.DescendantNodes())
         {
             if (node is MethodDeclarationSyntax m)
             {

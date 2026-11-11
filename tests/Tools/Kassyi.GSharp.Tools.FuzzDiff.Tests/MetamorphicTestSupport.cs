@@ -112,9 +112,20 @@ internal static class MetamorphicTestSupport
         {
             if (d.Severity == DiagnosticSeverity.Error)
             {
-                string[] lines = source.Split('\n');
                 int errLine = d.Location.GetLineSpan().StartLinePosition.Line;
-                string snippet = errLine >= 0 && errLine < lines.Length ? lines[errLine] : string.Empty;
+                string snippet = string.Empty;
+                int currentLine = 0;
+                foreach (var lineSpan in source.AsSpan().EnumerateLines())
+                {
+                    if (currentLine == errLine)
+                    {
+                        snippet = lineSpan.ToString();
+                        break;
+                    }
+
+                    currentLine++;
+                }
+
                 Assert.Fail($"Compilation error ({dialect}): {d} | Line {errLine + 1}: {snippet}");
             }
         }
@@ -134,7 +145,7 @@ internal static class MetamorphicTestSupport
 
     private static CSharpCompilation CreateCompilation(string source, string assemblyName)
     {
-        var tree = CSharpSyntaxTree.ParseText(source, FuzzTestCompilationHelper.ParseOptions, path: $"{assemblyName}.cu.cs");
+        var tree = SyntaxFactory.ParseSyntaxTree(source, FuzzTestCompilationHelper.ParseOptions, path: $"{assemblyName}.cu.cs");
         return CSharpCompilation.Create(
             assemblyName,
             [tree],

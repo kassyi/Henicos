@@ -115,7 +115,7 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
             string source,
             OptimizationLevel optimizationLevel = OptimizationLevel.Release)
         {
-            var tree = CSharpSyntaxTree.ParseText(source, ParseOptions, path: $"{assemblyName}.cu.cs");
+            var tree = SyntaxFactory.ParseSyntaxTree(source, ParseOptions, path: $"{assemblyName}.cu.cs");
             var compilation = CSharpCompilation.Create(
                 assemblyName,
                 [tree],
@@ -151,9 +151,8 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
         internal static TDelegate CreateStaticDelegate<TDelegate>(Type type, string methodName)
             where TDelegate : Delegate
         {
-            var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
-                ?? throw new InvalidOperationException($"Missing method {methodName}.");
-            return method.CreateDelegate<TDelegate>();
+            return (TDelegate)(Delegate.CreateDelegate(typeof(TDelegate), type, methodName, ignoreCase: false, throwOnBindFailure: false)
+                ?? throw new InvalidOperationException($"Missing method {methodName}."));
         }
 
         internal static bool EvaluatesToMismatch(

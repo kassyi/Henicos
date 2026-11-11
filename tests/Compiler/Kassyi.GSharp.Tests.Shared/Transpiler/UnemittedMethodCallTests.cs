@@ -18,7 +18,9 @@ public class UnemittedMethodCallTests
         string methodName,
         [CallerFilePath] string callerFilePath = "")
     {
-        var (compilation, tree) = MegaCompilationCache.GetSourceContext(callerFilePath);
+        var compilation = RoslynTestUtility.SharedCompilation;
+        var fullPath = Path.GetFullPath(callerFilePath);
+        var tree = compilation.SyntaxTrees.First(t => string.Equals(Path.GetFullPath(t.FilePath), fullPath, StringComparison.OrdinalIgnoreCase));
         var model = compilation.GetSemanticModel(tree);
         var call = tree.GetRoot()
             .DescendantNodes()

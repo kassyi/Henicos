@@ -282,7 +282,7 @@ public class FuzzReducerTests
 
     private static string ReplaceKernelInSyntheticUnit(string baseUnit, string candidateMethodSource, string targetKernelName)
     {
-        var root = (CompilationUnitSyntax)CSharpSyntaxTree.ParseText(baseUnit, FuzzTestCompilationHelper.ParseOptions).GetRoot();
+        var root = SyntaxFactory.ParseCompilationUnit(baseUnit, options: FuzzTestCompilationHelper.ParseOptions);
         MethodDeclarationSyntax? oldKernel = null;
         foreach (var node in root.DescendantNodes())
         {
@@ -298,8 +298,9 @@ public class FuzzReducerTests
             return baseUnit;
         }
 
+        var newKernelUnit = SyntaxFactory.ParseCompilationUnit($"class __W {{ {candidateMethodSource} }}", options: FuzzTestCompilationHelper.ParseOptions);
         MethodDeclarationSyntax? newKernel = null;
-        foreach (var node in CSharpSyntaxTree.ParseText($"class __W {{ {candidateMethodSource} }}", FuzzTestCompilationHelper.ParseOptions).GetRoot().DescendantNodes())
+        foreach (var node in newKernelUnit.DescendantNodes())
         {
             if (node is MethodDeclarationSyntax m)
             {
@@ -324,7 +325,7 @@ public class FuzzReducerTests
         mismatchReproduced = false;
         gshDiagnostics = [];
 
-        var oracleTree = CSharpSyntaxTree.ParseText(candidateSource, FuzzTestCompilationHelper.ParseOptions, path: "ReduceCheck.cu.cs");
+        var oracleTree = SyntaxFactory.ParseSyntaxTree(candidateSource, FuzzTestCompilationHelper.ParseOptions, path: "ReduceCheck.cu.cs");
         var compilation = CSharpCompilation.Create(
             "ReduceCheckAssembly",
             [oracleTree],
@@ -396,7 +397,7 @@ public class FuzzReducerTests
         var combinedRoot = oracleRoot.AddMembers(brokenClass);
         string combinedSource = FuzzTestCompilationHelper.RenderNode(combinedRoot);
 
-        var execTree = CSharpSyntaxTree.ParseText(combinedSource, FuzzTestCompilationHelper.ParseOptions, path: "ReduceExec.cu.cs");
+        var execTree = SyntaxFactory.ParseSyntaxTree(combinedSource, FuzzTestCompilationHelper.ParseOptions, path: "ReduceExec.cu.cs");
         var execCompilation = CSharpCompilation.Create(
             "ReduceExecAssembly",
             [execTree],
