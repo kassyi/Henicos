@@ -12,41 +12,27 @@ internal struct EffectWalker(SemanticModel model)
 
     public readonly SemanticModel Model => model;
 
-    public void AddRead(EffectRoot root)
-    {
-        foreach (var variable in root.Variables)
-        {
-            Reads.Add(variable);
-        }
+    public void AddRead(EffectRoot root) => Reads.AddRoot(root);
 
-        if (root.IsMemory)
-        {
-            Reads.Memory = true;
-        }
+    public void AddWrite(EffectRoot root) => Writes.AddRoot(root);
+
+    public void AddUnknown()
+    {
+        Reads.AddUnknown();
+        Writes.AddUnknown();
     }
 
-    public void AddWrite(EffectRoot root)
+    // A call of user code (accessors, an operator, a conversion; null for none): it may read anything, and writes
+    // memory when DeviceFunctionEffects says one of them does
+    public void AddUserCode(IMethodSymbol? first, IMethodSymbol? second = null)
     {
-        foreach (var variable in root.Variables)
-        {
-            Writes.Add(variable);
-        }
-
-        if (root.IsMemory)
+        Reads.Memory = true;
+        if (DeviceFunctionEffects.WritesMemory(first, model.Compilation) ||
+            DeviceFunctionEffects.WritesMemory(second, model.Compilation))
         {
             Writes.Memory = true;
         }
     }
-
-    public void AddUnknown()
-    {
-        Reads.Memory = Reads.AllLocals = true;
-        Writes.Memory = Writes.AllLocals = true;
-    }
-
-    // Whether a call of method (an accessor or an operator, or none) writes memory, as DeviceFunctionEffects says
-    public readonly bool MayWriteMemory(IMethodSymbol? method) =>
-        method != null && DeviceFunctionEffects.Classify(method, model.Compilation) == DeviceFunctionEffect.Memory;
 
     public void AddValue(ExpressionSyntax expression)
     {
