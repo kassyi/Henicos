@@ -33,7 +33,7 @@ public static class NativeSanitizerParser
         sanitizers = NativeSanitizers.None;
         invalidToken = null;
 
-        if (string.IsNullOrWhiteSpace(value))
+        if (value is null || string.IsNullOrWhiteSpace(value))
         {
             return true;
         }

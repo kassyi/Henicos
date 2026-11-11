@@ -152,9 +152,8 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         }
 
         var arguments = node.ArgumentList.Arguments;
-        var hasReceiver = (!symbol.IsStatic || symbol.ReducedFrom != null) &&
-                          node.Expression is MemberAccessExpressionSyntax;
-        ExpressionSyntax? receiver = hasReceiver && node.Expression is MemberAccessExpressionSyntax access
+        var receiver = (!symbol.IsStatic || symbol.ReducedFrom != null) &&
+                       node.Expression is MemberAccessExpressionSyntax access
             ? access.Expression
             : null;
 
@@ -177,7 +176,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
             return true;
         }
 
-        if (hasReceiver)
+        if (receiver is not null)
         {
             if (arguments.Count != descriptor.OperandCount - 1)
             {

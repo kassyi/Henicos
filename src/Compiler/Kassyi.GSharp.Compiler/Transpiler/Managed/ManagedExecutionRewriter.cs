@@ -22,6 +22,10 @@ internal enum ManagedBodyKind
 /// The stubs through which the body calls an operator macro target it cannot name, and reaches the backing field of an
 /// auto-property that an operator macro passes by reference.
 /// </param>
+/// <param name="isUnsafe">
+/// Whether the context is an unsafe struct reached through a pointer rather than a class, so its members are read
+/// with <c>-&gt;</c>.
+/// </param>
 internal sealed partial class ManagedExecutionRewriter(
     SemanticModel semanticModel,
     ManagedBodyKind bodyKind,

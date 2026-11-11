@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The contract: an array declared non-nullable (<c>T[]</c>, <see cref="NullableAnnotation.NotAnnotated"/>) holds an
+/// The contract: an array declared non-nullable (<c>T[]</c>, <see cref="Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated"/>) holds an
 /// array. A nullable (<c>T[]?</c>) or oblivious (<c>#nullable disable</c>) one may hold null. The launchers reject a
 /// null in a non-nullable kernel array parameter and in a non-nullable array field that a by-value struct argument
 /// reaches through struct fields (<see cref="GetNonNullableArrayFields"/>); a call of a device function checks such an

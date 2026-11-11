@@ -261,7 +261,7 @@ internal static class EvaluationOrder
     {
         var receiverTemp = -1;
         var hasExtensionReceiver = extensionReceiver != null;
-        if (hasExtensionReceiver && !effects[0].IsEmpty)
+        if (extensionReceiver is not null && !effects[0].IsEmpty)
         {
             receiverTemp = DeclareReceiver(ref context, extensionReceiver, receiverParameter, receiverByReference);
         }
