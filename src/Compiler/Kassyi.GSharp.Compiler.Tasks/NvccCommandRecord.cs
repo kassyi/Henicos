@@ -31,7 +31,7 @@ internal static class NvccCommandRecord
 
     // Removes the record before nvcc runs: when nvcc, signing or the record write fails, no record of an earlier
     // command can match the fatbin left behind, so the next build compiles again
-    public static bool Delete(TaskLoggingHelper log, string commandFilePath)
+    public static bool TryDelete(TaskLoggingHelper log, string commandFilePath)
     {
         try
         {
@@ -76,7 +76,7 @@ internal static class NvccCommandRecord
         }
     }
 
-    public static bool Write(TaskLoggingHelper log, string commandFilePath, string commandRecord)
+    public static bool TryWrite(TaskLoggingHelper log, string commandFilePath, string commandRecord)
     {
         try
         {

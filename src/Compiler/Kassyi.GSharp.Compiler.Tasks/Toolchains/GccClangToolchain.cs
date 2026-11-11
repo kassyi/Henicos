@@ -84,7 +84,7 @@ public sealed class GccClangToolchain : INativeToolchain
     public Dictionary<string, string>? GetEnvironmentVariables(string architecture) => null;
 
     /// <inheritdoc />
-    public bool CompileCppToSharedLibrary(
+    public bool TryCompileCppToSharedLibrary(
         string sourcePath,
         string outputPath,
         string architecture,
@@ -99,9 +99,12 @@ public sealed class GccClangToolchain : INativeToolchain
         // -std=c++17 = C++17 standard
         // -fopenmp = Enable OpenMP for BSP CPU scheduler parallelism
         // -Wno-unused-label = C# already diagnoses unused user labels (CS0164); synthesized labels may be unreferenced
-        var args = $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label{BuildSanitizerFlags(sanitizers)} \"{sourcePath}\" -o \"{outputPath}\"";
+        var args =
+            $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label{BuildSanitizerFlags(sanitizers)} " +
+            $"\"{sourcePath}\" -o \"{outputPath}\"";
 
-        log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {architecture} with {compiler}: {sourcePath}");
+        log.LogMessage(MessageImportance.Normal,
+            $"Compiling C++ source for {architecture} with {compiler}: {sourcePath}");
 
         var startInfo = new ProcessStartInfo
         {

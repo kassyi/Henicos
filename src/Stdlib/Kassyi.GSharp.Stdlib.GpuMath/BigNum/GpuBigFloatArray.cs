@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <summary>
 /// Represents a contiguous array of arbitrary-precision signed floating-point numbers stored in NVIDIA GPU global device memory.
 /// </summary>
-public readonly struct GpuBigFloatArray : IDisposable
+public readonly struct GpuBigFloatArray : IDisposable, IEquatable<GpuBigFloatArray>
 {
     /// <summary>
     /// Gets the underlying contiguous array of unsigned significand magnitudes.
@@ -176,6 +176,43 @@ public readonly struct GpuBigFloatArray : IDisposable
     /// <returns>A borrowed <see cref="GpuBigFloatArray"/>.</returns>
     internal GpuBigFloatArray BorrowSlice(int elementOffset, int elementCount) =>
         Slice(elementOffset, elementCount).AsBorrowed();
+
+    /// <summary>
+    /// Indicates whether the current instance refers to the same significand, exponent, and sign array buffers and
+    /// shape as another <see cref="GpuBigFloatArray"/>.
+    /// </summary>
+    /// <param name="other">A <see cref="GpuBigFloatArray"/> to compare with this instance.</param>
+    /// <returns>
+    /// <see langword="true"/> if <see cref="Significands"/>, <see cref="Exponents"/>, and <see cref="Signs"/> all equal
+    /// those of <paramref name="other"/> (<see cref="GpuBigUIntArray.Equals(GpuBigUIntArray)"/>); otherwise,
+    /// <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// <see cref="Equals(GpuBigFloatArray)"/> and <see cref="GetHashCode"/> compare buffer identity and array shape
+    /// rather than element values, and never read device memory; both also work on <see langword="default"/> or
+    /// disposed instances.
+    /// </remarks>
+    public bool Equals(GpuBigFloatArray other) =>
+        Significands.Equals(other.Significands) &&
+        Exponents.Equals(other.Exponents) &&
+        Signs.Equals(other.Signs);
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current instance.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current instance.</param>
+    /// <returns>
+    /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="GpuBigFloatArray"/> and equals the current
+    /// instance; otherwise, <see langword="false"/>.
+    /// </returns>
+    public override bool Equals(object? obj) => obj is GpuBigFloatArray other && Equals(other);
+
+    /// <summary>
+    /// Returns a hash code based on the significand, exponent, and sign buffer identities and shapes, consistent with
+    /// <see cref="Equals(GpuBigFloatArray)"/>.
+    /// </summary>
+    /// <returns>A 32-bit signed integer hash code.</returns>
+    public override int GetHashCode() => HashCode.Combine(Significands, Exponents, Signs);
 
     /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying buffers.
