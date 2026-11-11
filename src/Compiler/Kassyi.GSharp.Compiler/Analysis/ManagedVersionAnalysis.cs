@@ -156,5 +156,6 @@ internal static class ManagedVersionAnalysis
     }
 
     private static bool IsImportedWithManagedVersion(IMethodSymbol method, Compilation compilation) =>
-        DeviceExportTable.TryFindFunction(method, compilation, out var imported) && imported.Record.ManagedVersion;
+        DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
+        imported.Record.Traits.ManagedVersion;
 }

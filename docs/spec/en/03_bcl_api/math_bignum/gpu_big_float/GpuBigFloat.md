@@ -19,10 +19,10 @@ $$(-1)^{\text{IsNegative}} \times \text{UFloat.Significand} \times 2^{\text{UFlo
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBigFloat>, IDisposable
+public readonly struct GpuBigFloat : IGpuBigNumber<GpuBigFloat>
 ```
 
-Implements: `IEquatable<GpuBigFloat>`, `IComparable<GpuBigFloat>`, `IDisposable`
+Implements: [`IGpuBigNumber<GpuBigFloat>`](../gpu_big_int_and_uint/00_index.md#numeric-interfaces), `IGpuNumber<GpuBigFloat>`, `IGpuBigNumberBase`, `IEquatable<GpuBigFloat>`, `IComparable<GpuBigFloat>`, `IDisposable`
 
 ## Constructors
 
@@ -70,8 +70,39 @@ The binary base-2 exponent.
 
 | Name | Description |
 | --- | --- |
+| [CanBeNegative](#canbenegative) | Always `true`: `GpuBigFloat` is a signed type. |
+| [EffectiveScale](#effectivescale) | Gets the effective binary scale (`Exponent + GetBitLength()`) of a non-zero value. |
+| [Exponent](#exponent) | Gets the binary base-2 exponent of the magnitude (`UFloat.Exponent`). |
 | [IsNegative](#isnegative) | Gets a value indicating whether the floating-point number is negative. |
+| [Magnitude](#magnitude) | Gets the unsigned significand buffer (`UFloat.Significand`). |
 | [UFloat](#ufloat) | Gets the underlying unsigned floating-point magnitude payload (`GpuBigUFloat`). |
+| [Workspace](#workspace) | Gets the `GpuWorkspace` that owns the significand buffer (`UFloat.Workspace`). |
+
+`IGpuBigNumber<GpuBigFloat>.AdditionIsExact` is implemented explicitly and returns `false`: every addition rounds, so a sum adds from the left in the order written.
+
+## CanBeNegative
+
+Always `true`: `GpuBigFloat` is a signed type.
+
+```csharp
+public bool CanBeNegative { get; }
+```
+
+## EffectiveScale
+
+Gets the effective binary scale (`Exponent + GetBitLength()`) of a non-zero value.
+
+```csharp
+public long EffectiveScale { get; }
+```
+
+## Exponent
+
+Gets the binary base-2 exponent of the magnitude (`UFloat.Exponent`).
+
+```csharp
+public int Exponent { get; }
+```
 
 ## IsNegative
 
@@ -79,6 +110,14 @@ Gets a value indicating whether the floating-point number is negative.
 
 ```csharp
 public bool IsNegative { get; }
+```
+
+## Magnitude
+
+Gets the unsigned significand buffer (`UFloat.Significand`).
+
+```csharp
+public GpuBigUInt Magnitude { get; }
 ```
 
 ## UFloat
@@ -89,17 +128,30 @@ Gets the underlying unsigned floating-point magnitude payload.
 public GpuBigUFloat UFloat { get; }
 ```
 
+## Workspace
+
+Gets the `GpuWorkspace` that owns the significand buffer (`UFloat.Workspace`).
+
+```csharp
+public GpuWorkspace Workspace { get; }
+```
+
 ## Methods
 
 | Name | Description |
 | --- | --- |
 | [Add(GpuBigFloat)](#addgpubigfloat) | Adds another `GpuBigFloat` to this instance. |
 | [CompareTo(GpuBigFloat)](#comparetogpubigfloat) | Compares this instance to another `GpuBigFloat` and returns an integer indicating their relative order. |
+| [Create(GpuBigUInt, Int32, Boolean)](#creategpubiguint-int32-boolean) | Creates a `GpuBigFloat` from a magnitude, an exponent and a sign; a zero magnitude is never negative. |
+| [Divide(GpuBigFloat)](#dividegpubigfloat) | Divides this instance by another `GpuBigFloat` (`this / other`). |
 | [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying significand. |
 | [DivideByUInt32(UInt32)](#dividebyuint32uint32) | Divides the floating-point number by a 32-bit unsigned integer scalar, returning the quotient and 32-bit remainder. |
 | [Equals(GpuBigFloat)](#equalsgpubigfloat) | Indicates whether the current instance has the same significand buffer, exponent and sign as another `GpuBigFloat`. |
 | [Equals(Object?)](#equalsobject) | Determines whether the specified object is equal to the current instance. |
+| [GetBitLength()](#getbitlength) | Returns the bit length of the significand, or 0 for zero. |
 | [GetHashCode()](#gethashcode) | Returns the hash code of the significand buffer, the exponent and the sign, consistent with `Equals(GpuBigFloat)`. |
+| [IsZero()](#iszero) | Determines whether the value is zero. |
+| [Multiply(GpuBigFloat)](#multiplygpubigfloat) | Multiplies this instance by another `GpuBigFloat` (`this * other`). |
 | [Normalize(Int32, Boolean)](#normalizeint32-boolean) | Normalizes the floating-point value such that the most significant bit of the significand is aligned. |
 | [Subtract(GpuBigFloat)](#subtractgpubigfloat) | Subtracts another `GpuBigFloat` from this instance. |
 
@@ -119,6 +171,22 @@ Compares this instance to another `GpuBigFloat` and returns an integer indicatin
 
 ```csharp
 public int CompareTo(GpuBigFloat other);
+```
+
+### Create(GpuBigUInt, Int32, Boolean)
+
+Creates a `GpuBigFloat` from a magnitude, an exponent and a sign. The sign is dropped when the magnitude is zero.
+
+```csharp
+public static GpuBigFloat Create([TakesOwnership] GpuBigUInt magnitude, int exponent, bool isNegative);
+```
+
+### Divide(GpuBigFloat)
+
+Divides this instance by another `GpuBigFloat` (`this / other`).
+
+```csharp
+public GpuBigFloat Divide(GpuBigFloat other);
 ```
 
 ### Dispose()
@@ -173,6 +241,30 @@ Returns the hash code of the significand buffer, the exponent and the sign, cons
 public override int GetHashCode();
 ```
 
+### GetBitLength()
+
+Returns the bit length of the significand, or 0 for zero.
+
+```csharp
+public int GetBitLength();
+```
+
+### IsZero()
+
+Determines whether the value is zero.
+
+```csharp
+public bool IsZero();
+```
+
+### Multiply(GpuBigFloat)
+
+Multiplies this instance by another `GpuBigFloat` (`this * other`).
+
+```csharp
+public GpuBigFloat Multiply(GpuBigFloat other);
+```
+
 ### Normalize(Int32, Boolean)
 
 Normalizes the floating-point value such that the most significant bit of the significand is aligned.
@@ -209,9 +301,11 @@ public GpuBigFloat Subtract(GpuBigFloat other);
 | `operator +(GpuBigFloat, GpuBigFloat)` | Creates a deferred `BinaryExpr<GpuBigFloat, AddOp>` representing the addition of two floating-point values. |
 | `operator -(GpuBigFloat, GpuBigFloat)` | Creates a deferred `BinaryExpr<GpuBigFloat, SubOp>` representing the subtraction of two floating-point values. |
 | `operator *(GpuBigFloat, GpuBigFloat)` | Creates a deferred `BinaryExpr<GpuBigFloat, MulOp>` representing the multiplication of two floating-point values. |
+| `operator /(GpuBigFloat, GpuBigFloat)` | Creates a deferred `BinaryExpr<GpuBigFloat, DivOp>` representing the division of two floating-point values. |
 | `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, AddOp>)` | Implicitly evaluates a binary addition expression via `GpuBigFloatExpressionVisitor`. |
 | `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, SubOp>)` | Implicitly evaluates a binary subtraction expression via `GpuBigFloatExpressionVisitor`. |
 | `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, MulOp>)` | Implicitly evaluates a binary multiplication expression via `GpuBigFloatExpressionVisitor`. |
+| `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, DivOp>)` | Implicitly evaluates a binary division expression via `GpuBigFloatExpressionVisitor`. |
 | `operator ==(GpuBigFloat, GpuBigFloat)` | Determines whether two specified `GpuBigFloat` instances have the same value on the GPU. |
 | `operator !=(GpuBigFloat, GpuBigFloat)` | Determines whether two specified `GpuBigFloat` instances have different values on the GPU. |
 | `operator <(GpuBigFloat, GpuBigFloat)` | Determines whether one specified `GpuBigFloat` is less than another. |

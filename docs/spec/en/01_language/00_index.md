@@ -38,7 +38,7 @@ This section defines the core language syntax, type system constraints, executio
 ### Architecture
 
 - [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
-- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../02_architecture/01_aot_transpiler.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler`)](../02_architecture/01_aot_transpiler.md)
 
 ### BCL API
 

@@ -493,4 +493,4 @@ Console.WriteLine($"Mul={valMul.ToBigInteger(false)}");
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
 - [GpuBigUInt](GpuBigUInt.md)
-- [GpuBigUInt<TSize>](GpuUIntBigIntegerGeneric.md)
+- [GpuBigUInt<TSize>](GpuBigUIntGeneric.md)

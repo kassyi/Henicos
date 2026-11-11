@@ -59,6 +59,7 @@ public static readonly GSharpKernelProvider Instance;
 | [ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftleftgpuworkspace-gpubiguint-int32-gpubiguint) | Computes left bit-shift on the GPU. |
 | [ShiftRight(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftrightgpuworkspace-gpubiguint-int32-gpubiguint) | Computes right bit-shift on the GPU. |
 | [Square(GpuWorkspace, IntPtr, Int32)](#squaregpuworkspace-intptr-int32) | Computes in-place self-squaring on the GPU. |
+| [DivideByUInt32(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#dividebyuint32gpuworkspace-gpubiguint-uint32-gpubiguint) | Divides a big integer by a 32-bit unsigned scalar, writes the quotient and returns the remainder. |
 | [IsZero(GpuWorkspace, GpuBigUInt)](#iszerogpuworkspace-gpubiguint) | Checks whether the operand equals zero on the GPU. |
 | [IsOne(GpuWorkspace, GpuBigUInt)](#isonegpuworkspace-gpubiguint) | Checks whether the operand equals one on the GPU. |
 | [GetBitLength(GpuWorkspace, GpuBigUInt)](#getbitlengthgpuworkspace-gpubiguint) | Gets the bit length of the operand on the GPU. |
@@ -591,6 +592,33 @@ The number of bit positions to shift right.
 
 `resultBuffer` _GpuBigUInt_<br>
 The buffer to store the result.
+
+## DivideByUInt32(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)
+
+Divides an arbitrary-precision unsigned integer by a 32-bit unsigned scalar, writes the quotient to `quotientBuffer`, and returns the remainder (`dividend % divisor`). Throws `DivideByZeroException` when `divisor` is 0.
+
+```csharp
+public uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor, GpuBigUInt quotientBuffer);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
+
+`dividend` _GpuBigUInt_<br>
+The dividend.
+
+`divisor` _UInt32_<br>
+The 32-bit unsigned scalar divisor.
+
+`quotientBuffer` _GpuBigUInt_<br>
+The destination buffer of the quotient.
+
+#### Returns
+
+_UInt32_<br>
+The remainder.
 
 ## Square(GpuWorkspace, IntPtr, Int32)
 

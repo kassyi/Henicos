@@ -119,7 +119,7 @@ public static class ContextInferenceEngine
 
         if (DeviceExportTable.TryFindFunction(method, state.Compilation, out var imported))
         {
-            answer = state.Cache[method] = imported.Record.IsParallelDependent;
+            answer = state.Cache[method] = imported.Record.Traits.IsParallelDependent;
             return true;
         }
 
