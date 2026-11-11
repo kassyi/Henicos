@@ -63,6 +63,21 @@ internal class VectorWhereExpression(
         return VectorResult.Of(new VectorEvaluation(selected, count));
     }
 
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    {
+        Enter(request);
+        if (!EvaluatesOperands(request))
+        {
+            return Apply(workspace, request, default, default);
+        }
+
+        var operandRequest = OperandRequest(request);
+        var first = VectorWalk.EvaluateDirect(predicate, workspace, operandRequest, depth);
+        var second = VectorWalk.EvaluateDirect(source, workspace, operandRequest, depth);
+        return Apply(workspace, request, first, second);
+    }
+
     public void DisposeOwn() => _state.Dispose();
 
     public void Dispose() => VectorWalk.Dispose(this);

@@ -33,6 +33,9 @@ before any input is evaluated.
 - **Dispose**: `Dispose` of an expression releases it and every expression below it, in the order of the inputs and
   without recursion. A node that throws does not stop the others; one exception is rethrown as it is, several are
   thrown together in an `AggregateException`.
+- **Shallow expressions**: the walk costs a few tens of nanoseconds of host time per node.
+  [VectorExpressionRecursion](VectorExpressionRecursion.md)`.EvaluateOnCallStack` evaluates by plain recursion on the
+  caller's stack instead, for an expression of at most 64 levels.
 
 ## Properties
 

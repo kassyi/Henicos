@@ -35,9 +35,19 @@ internal sealed class FloatVectorSkipExpression(
         VectorResult second) =>
         EvaluatesOperands(request)
             ? first
-            : VectorResult.Of(new FloatVectorEvaluation(
-                FloatVectorSlice.Empty(workspace, WordsPerElement, request.Target.FloatArray),
-                DeviceElementCount.Static(0)));
+            : FloatVectorSlice.EmptyResult(workspace, WordsPerElement, request);
+
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    {
+        if (!EvaluatesOperands(request))
+        {
+            return Apply(workspace, request, default, default);
+        }
+
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(inner, workspace, OperandRequest(request), depth),
+            default);
+    }
 
     public void DisposeOwn()
     {
@@ -49,6 +59,13 @@ internal sealed class FloatVectorSkipExpression(
 
 internal static class FloatVectorSlice
 {
+    // The result of an empty window; out of line, so that its temporaries stay out of the frame of every level
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static VectorResult EmptyResult(GpuWorkspace workspace, int wordsPerElement,
+        scoped in VectorRequest request) =>
+        VectorResult.Of(new FloatVectorEvaluation(Empty(workspace, wordsPerElement, request.Target.FloatArray),
+            DeviceElementCount.Static(0)));
+
     // An evaluation of no elements writes nothing, but a target of another width is still rejected, as by every node
     public static GpuBigFloatArrayView Empty(GpuWorkspace workspace, int wordsPerElement, GpuBigFloatArrayView targetResult)
     {
@@ -95,12 +112,22 @@ internal sealed class FloatVectorTakeExpression(
         VectorResult second) =>
         EvaluatesOperands(request)
             ? first
-            : VectorResult.Of(new FloatVectorEvaluation(
-                FloatVectorSlice.Empty(workspace, WordsPerElement, request.Target.FloatArray),
-                DeviceElementCount.Static(0)));
+            : FloatVectorSlice.EmptyResult(workspace, WordsPerElement, request);
 
     private int EffectiveCount(in VectorRequest request) =>
         Math.Min(request.EvalCount(Capacity), Capacity - request.Offset);
+
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    {
+        if (!EvaluatesOperands(request))
+        {
+            return Apply(workspace, request, default, default);
+        }
+
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(inner, workspace, OperandRequest(request), depth),
+            default);
+    }
 
     public void DisposeOwn()
     {

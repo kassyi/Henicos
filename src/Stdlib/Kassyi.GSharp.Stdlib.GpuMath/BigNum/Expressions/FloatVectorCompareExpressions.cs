@@ -54,6 +54,13 @@ internal sealed class FloatVectorCompareScalarExpression(
         return new BoolVectorEvaluation(flags, evaluated.Count);
     }
 
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    {
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(vector, workspace, VectorRequest.Whole, depth),
+            default);
+    }
+
     public void DisposeOwn() => _flags.Dispose();
 
     public void Dispose() => VectorWalk.Dispose(this);
@@ -123,6 +130,16 @@ internal sealed class FloatVectorCompareVectorExpression(
         FloatVectorCompareLaunch.Launch(workspace, ctx, Capacity, leftResult.WordsPerElement,
             rightResult.WordsPerElement);
         return new BoolVectorEvaluation(flags, count);
+    }
+
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    {
+        Enter(request);
+
+        var first = VectorWalk.EvaluateDirect(left, workspace, VectorRequest.Whole, depth);
+        var second = VectorWalk.EvaluateDirect(right, workspace, VectorRequest.Whole, depth);
+        return Apply(workspace, request, first, second);
     }
 
     public void DisposeOwn()

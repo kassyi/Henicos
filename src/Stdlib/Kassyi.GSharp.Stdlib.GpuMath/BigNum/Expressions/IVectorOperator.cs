@@ -58,4 +58,15 @@ internal interface IVectorOperator
     /// Releases what the node itself holds (its result buffers); <see cref="VectorWalk.Dispose"/> releases its inputs.
     /// </summary>
     void DisposeOwn();
+
+    /// <summary>
+    /// Evaluates the node for <see cref="VectorWalk.EvaluateDirect"/>: checks the request, evaluates the inputs through
+    /// <see cref="VectorWalk.EvaluateDirect"/> at <paramref name="depth"/>, and applies the node, as one level of a
+    /// recursive evaluation.
+    /// </summary>
+    /// <param name="workspace">The workspace.</param>
+    /// <param name="request">The request of the node.</param>
+    /// <param name="depth">The level of the node (1 for the root).</param>
+    /// <returns>The result of the node.</returns>
+    VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth);
 }

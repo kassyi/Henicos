@@ -65,6 +65,44 @@ internal static class VectorWalk
     }
 
     /// <summary>
+    /// Evaluates <paramref name="node"/> and the expression below it by recursion on the caller's stack, one call of
+    /// <see cref="IVectorOperator.EvaluateDirect"/> per level, without the walk: the form of
+    /// <see cref="VectorExpressionRecursion"/>, for expressions known to be shallow.
+    /// </summary>
+    /// <param name="node">The node, or a node that evaluates itself.</param>
+    /// <param name="workspace">The workspace.</param>
+    /// <param name="request">What the node is asked to evaluate.</param>
+    /// <param name="depth">The number of vector nodes above <paramref name="node"/>.</param>
+    /// <returns>The result of the node.</returns>
+    /// <exception cref="NotSupportedException">
+    /// The expression is deeper than <see cref="VectorExpressionRecursion.MaxCallStackDepth"/> levels.
+    /// </exception>
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.AggressiveOptimization)]
+    internal static VectorResult EvaluateDirect(object node, GpuWorkspace workspace, scoped in VectorRequest request,
+        int depth)
+    {
+        if (node is not IVectorOperator op)
+        {
+            return EvaluateInput(node, workspace, request);
+        }
+
+        if (depth >= VectorExpressionRecursion.MaxCallStackDepth)
+        {
+            ThrowTooDeep();
+        }
+
+        return op.EvaluateDirect(workspace, request, depth + 1);
+    }
+
+    // Out of line, so that the message is not built in the frame of every level
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowTooDeep() =>
+        throw new NotSupportedException(
+            $"The expression is deeper than {VectorExpressionRecursion.MaxCallStackDepth} levels of vector nodes, " +
+            "the most EvaluateOnCallStack evaluates by recursion. Use Evaluate, which takes any depth.");
+
+    /// <summary>
     /// Disposes <paramref name="root"/> and every node below it without recursion: each node releases what it holds,
     /// then its inputs are disposed in the order of <see cref="IVectorOperator.GetInput"/>, the first one with
     /// everything below it before the second, as a recursive <c>Dispose</c> did. A node that throws does not stop the
@@ -85,6 +123,7 @@ internal static class VectorWalk
 
     // A node that evaluates itself: an array, or a node implemented outside GpuMath. Each kind has its own method, so
     // that the frame of this one stays small.
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static VectorResult EvaluateInput(object node, GpuWorkspace workspace, scoped in VectorRequest request) =>
         node switch
         {
@@ -94,7 +133,7 @@ internal static class VectorWalk
             _ => throw new ArgumentException($"{node.GetType()} is not a vector expression.", nameof(node))
         };
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.AggressiveOptimization)]
     private static VectorResult EvaluateInput(IGpuBigIntVectorExpression vector, GpuWorkspace workspace,
         scoped in VectorRequest request) =>
         VectorResult.Of(DeviceCounted.Evaluate(vector, workspace, request.Offset, request.Count, request.Target.Words));

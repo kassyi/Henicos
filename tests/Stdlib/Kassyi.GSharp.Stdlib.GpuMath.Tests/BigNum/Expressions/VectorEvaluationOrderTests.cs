@@ -34,25 +34,34 @@ public sealed partial class VectorEvaluationOrderTests
     // mutant: VectorSliceExpressions.cs VectorTakeExpression.EvaluatesOperands -> `true` (an empty window evaluates
     // the source)
     // mutant: VectorOperandPair.cs KeepBoth -> never evaluates the left input again (a shared sub-expression)
+    // mutant: VectorSliceExpressions.cs VectorTakeExpression.EvaluateDirect -> without the EvaluatesOperands check
+    // (EvaluateOnCallStack evaluates the source of an empty window)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task VectorEvaluation_RandomTrees_KeepsTheOrderOfLeavesAndScalars()
     {
-        // Through the public Evaluate (recursion for these depths), walked whole, and walked below the second level
+        // Through the public Evaluate (recursion for these depths), walked whole, walked below the second level, and by
+        // the recursion of EvaluateOnCallStack
         var recursive = RunOnGpu(levels: null);
         var walked = RunOnGpu(levels: 0);
         var walkedBelowTwo = RunOnGpu(levels: 2);
+        var onCallStack = RunOnGpu(levels: OnCallStack);
         for (var tree = 0; tree < Trees; tree++)
         {
             Assert.Equal(recursive[tree], walked[tree]);
             Assert.Equal(recursive[tree], walkedBelowTwo[tree]);
+            Assert.Equal(recursive[tree], onCallStack[tree]);
         }
 
         return Verifier.Verify(string.Join('\n', recursive))
             .UseFastHashSnapshotName(nameof(VectorEvaluation_RandomTrees_KeepsTheOrderOfLeavesAndScalars));
     }
 
-    // The trace of each tree, evaluated with the given number of levels by recursion (null: the public Evaluate)
+    // The levels argument for the evaluation through VectorExpressionRecursion.EvaluateOnCallStack
+    private const int OnCallStack = -1;
+
+    // The trace of each tree, evaluated with the given number of levels by recursion (null: the public Evaluate;
+    // OnCallStack: EvaluateOnCallStack)
     private static string[] RunOnGpu(int? levels)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -142,6 +151,11 @@ public sealed partial class VectorEvaluationOrderTests
         private GpuBigIntArrayView Evaluate(IGpuBigIntVectorExpression node, int offset, int? count,
             GpuBigUIntArrayView target)
         {
+            if (levels == OnCallStack)
+            {
+                return node.EvaluateOnCallStack(workspace, offset, count, target);
+            }
+
             if (levels is not { } limit || node is not IVectorOperator op)
             {
                 return node.Evaluate(workspace, offset, count, target);
@@ -152,12 +166,14 @@ public sealed partial class VectorEvaluationOrderTests
         }
 
         private GpuBigUIntArrayView Evaluate(IGpuBoolVectorExpression node) =>
+            levels == OnCallStack ? node.EvaluateOnCallStack(workspace) :
             levels is { } limit && node is IVectorOperator op
                 ? DeviceCounted.Materialize(workspace,
                     VectorWalk.Evaluate(op, workspace, VectorRequest.Whole, limit).Bool)
                 : node.Evaluate(workspace);
 
         private GpuBigFloatArrayView Evaluate(IGpuBigFloatVectorExpression node) =>
+            levels == OnCallStack ? node.EvaluateOnCallStack(workspace) :
             levels is { } limit && node is IVectorOperator op
                 ? DeviceCounted.Materialize(workspace,
                     VectorWalk.Evaluate(op, workspace, VectorRequest.Whole, limit).Float)

@@ -155,6 +155,17 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         FloatVectorZipOperands operands,
         uint gridDimX);
 
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    {
+        Enter(request);
+
+        var operandRequest = OperandRequest(request);
+        var first = VectorWalk.EvaluateDirect(left, workspace, operandRequest, depth);
+        var second = VectorWalk.EvaluateDirect(right, workspace, operandRequest, depth);
+        return Apply(workspace, request, first, second);
+    }
+
     public void DisposeOwn()
     {
         // A cache release that throws (a failed capture refuses the clear) does not skip the other one

@@ -34,12 +34,23 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
         VectorResult second) =>
         EvaluatesOperands(request)
             ? first
-            : VectorResult.Of(new VectorEvaluation(
-                VectorSlice.Empty(workspace, WordsPerElement, request.Target.Words), DeviceElementCount.Static(0)));
+            : VectorSlice.EmptyResult(workspace, WordsPerElement, request);
 
     // Ensure we do not evaluate beyond the Take boundary; a device count below it is cut by the source's TakeFirst
     private int EffectiveCount(in VectorRequest request) =>
         Math.Min(request.EvalCount(Capacity), Capacity - request.Offset);
+
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    {
+        if (!EvaluatesOperands(request))
+        {
+            return Apply(workspace, request, default, default);
+        }
+
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(source, workspace, OperandRequest(request), depth),
+            default);
+    }
 
     public void DisposeOwn()
     {
@@ -51,6 +62,13 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
 
 internal static class VectorSlice
 {
+    // The result of an empty window; out of line, so that its temporaries stay out of the frame of every level
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static VectorResult EmptyResult(GpuWorkspace workspace, int wordsPerElement,
+        scoped in VectorRequest request) =>
+        VectorResult.Of(new VectorEvaluation(Empty(workspace, wordsPerElement, request.Target.Words),
+            DeviceElementCount.Static(0)));
+
     // An evaluation of no elements writes nothing, but a target of another width is still rejected, as by every node
     public static GpuBigIntArrayView Empty(GpuWorkspace workspace, int wordsPerElement, GpuBigUIntArrayView targetResult)
     {
@@ -100,8 +118,19 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
         VectorResult second) =>
         EvaluatesOperands(request)
             ? first
-            : VectorResult.Of(new VectorEvaluation(
-                VectorSlice.Empty(workspace, WordsPerElement, request.Target.Words), DeviceElementCount.Static(0)));
+            : VectorSlice.EmptyResult(workspace, WordsPerElement, request);
+
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    {
+        if (!EvaluatesOperands(request))
+        {
+            return Apply(workspace, request, default, default);
+        }
+
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(source, workspace, OperandRequest(request), depth),
+            default);
+    }
 
     public void DisposeOwn()
     {

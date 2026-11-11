@@ -67,6 +67,7 @@ This separation ensures that GPU kernels remain purely mathematical and branchle
 - **[GpuBigIntStackLinqExtensions.md](expressions/GpuBigIntStackLinqExtensions.md)**: Zero-allocation stack-based parallel LINQ operations.
 - **[IGpuBigIntVectorExpression.md](expressions/IGpuBigIntVectorExpression.md)**: Interface for vectorized deferred GPU expressions.
 - **[IGpuBoolVectorExpression.md](expressions/IGpuBoolVectorExpression.md)**: Interface for deferred GPU vector boolean predicate expressions.
+- **[VectorExpressionRecursion.md](expressions/VectorExpressionRecursion.md)**: Low-level evaluation of shallow vector expressions by plain recursion (`EvaluateOnCallStack`).
 - **[BoolVectorExpressions.md](expressions/BoolVectorExpressions.md)**: Deferred scalar boolean expression (`IGpuBoolExpr`) and `VectorCompareOperator` enum.
 
 ### Advanced Algorithms & Transforms

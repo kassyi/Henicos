@@ -54,6 +54,15 @@ internal abstract class VectorUnaryExpressionBase(
         GpuBigIntArrayView destination,
         int evalCount);
 
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request, int depth)
+    {
+        Enter(request);
+
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(vector, workspace, OperandRequest(request), depth),
+            default);
+    }
+
     public void DisposeOwn() => _cache.Dispose();
 
     public void Dispose() => VectorWalk.Dispose(this);
