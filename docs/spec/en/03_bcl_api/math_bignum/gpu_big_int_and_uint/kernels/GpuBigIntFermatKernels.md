@@ -25,35 +25,36 @@ public static partial class GpuBigIntFermatKernels
 
 | Name | Description |
 | --- | --- |
-| `QuadraticFoldContext` | The buffers and sizes of `QuadraticFoldReduceKernel`. |
+| `QuadraticFoldBlockedPassContext` | The buffers and sizes of one fold pass (`QuadraticFoldPassBlockedKernel`). |
+| `QuadraticFoldBlockedApplyContext` | The buffers and sizes of the carry application pass (`QuadraticFoldPassApplyKernel`). |
+| `QuadraticFoldSliceOffsets` | The word and bit offsets of a fold pass, derived from `m = 2E + 1` and `E`. |
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [DeviceUnpack16(uint[], uint[], uint[], int, int, bool)](#deviceunpack16uint-uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that unpacks 32-bit words into 16-bit elements across dual NTT buffers. |
+| [DeviceUnpack16(uint[], uint[], uint[], int, int, bool)](#deviceunpack16uint-uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that unpacks 32-bit words into 16-bit elements across dual NTT buffers. An overload takes the buffers as a `GpuBigIntMulKernels.NttUnpackOperandContext` (`DeviceUnpack16(NttUnpackOperandContext operand, int n, bool syncThreads = true)`). |
+| `DeviceUnpack16Transposed(NttUnpackOperandContext, NttGridContext, bool)` | A GPU device function (`[GpuDeviceFunction]`) that unpacks 32-bit words into 16-bit elements in the transposed order of a six-step NTT grid. |
 | [DeviceTranspose32X32(uint[], uint[], int, int, bool)](#devicetranspose32x32uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that transposes a 2D matrix using 32x32 shared-memory tiles with bank-conflict padding. |
 | [DeviceShiftLeftParallel(uint[], uint[], int, int, bool)](#deviceshiftleftparalleluint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs a parallel grid-stride left bit-shift across device buffers. |
 | [KernelTestBlockAddSubParallel(uint[], uint[], uint[], int, int)](#kerneltestblockaddsubparalleluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) entry point that invokes `GpuBigIntKernels.DeviceAddSubParallel` for block-level parallel addition or subtraction. |
-| [GetQuotientWord(uint[], int, int, int, int)](#getquotientworduint-int-int-int-int) | A GPU device function (`[GpuDeviceFunction]`) that returns one word of the quotient `source >> m`, and 0 for a negative index. |
-| [QuadraticFoldPass(uint[], int, uint[], int, int, int, uint)](#quadraticfoldpassuint-int-uint-int-int-int-uint) | A GPU device function (`[GpuDeviceFunction]`) that performs one fold `r + q * 2^E - t * q` with one block. |
-| [QuadraticFoldReduceKernel(QuadraticFoldContext)](#quadraticfoldreducekernelquadraticfoldcontext) | A GPU kernel (`[GpuKernel]`) that reduces the square of a residue modulo `N` with three folds. |
+| [GetQuotientWord(QuadraticFoldBlockedPassContext, QuadraticFoldSliceOffsets, int)](#getquotientwordquadraticfoldblockedpasscontext-quadraticfoldsliceoffsets-int) | A GPU device function (`[GpuDeviceFunction]`) that returns one word of the quotient `source >> m`, and 0 for a negative index. |
+| [ExecuteQuadraticFoldPassBlocked(QuadraticFoldBlockedPassContext)](#executequadraticfoldpassblockedquadraticfoldblockedpasscontext) | A GPU device function (`[GpuDeviceFunction]`) that evaluates one fold `r + q * 2^E - t * q` in chunks of one block each. |
+| [QuadraticFoldPassBlockedKernel(QuadraticFoldBlockedPassContext)](#quadraticfoldpassblockedkernelquadraticfoldblockedpasscontext) | A GPU kernel (`[GpuKernel]`) that runs one fold pass across all blocks. |
+| [QuadraticFoldPassApplyKernel(QuadraticFoldBlockedApplyContext)](#quadraticfoldpassapplykernelquadraticfoldblockedapplycontext) | A GPU kernel (`[GpuKernel]`) that adds the carry of each chunk into the head of the following chunk. |
 
-## QuadraticFoldContext Struct
+## QuadraticFoldBlockedPassContext Struct
 
-The buffers and sizes of `QuadraticFoldReduceKernel`, which reduces the square of a residue modulo `N = 2^m - c` (`m = 2E + 1`, `c = 2^E - ConstantTerm`).
+The buffers and sizes of one fold pass `F(x) = (x mod 2^m) + floor(x / 2^m) * c` modulo `N = 2^m - c` (`m = 2E + 1`, `c = 2^E - ConstantTerm`).
 
 ```csharp
-public struct QuadraticFoldContext
+public struct QuadraticFoldBlockedPassContext
 {
-    public uint[] Product;
-    public uint[] FirstFold;
-    public uint[] SecondFold;
-    public uint[] Residue;
-    public int ProductWords;
-    public int FirstFoldWords;
-    public int SecondFoldWords;
-    public int ResidueWords;
+    public uint[] Source;
+    public uint[] Result;
+    public uint[] BlockCarries;
+    public int SourceWords;
+    public int ResultWords;
     public int ModulusBits;
     public int Exponent;
     public uint ConstantTerm;
@@ -62,11 +63,38 @@ public struct QuadraticFoldContext
 
 | Field | Description |
 | --- | --- |
-| `Product` | The square to reduce, `ProductWords` (`2 * ceil(m / 32)`) words. |
-| `FirstFold`, `SecondFold` | The outputs of the first two folds: `m + E + 3` and `m + 2` bits. |
-| `Residue` | Receives the reduced value, `ResidueWords` (`ceil(m / 32)`) words. It may be the buffer that was squared. |
+| `Source` | The input words of the pass, `SourceWords` words. Not `[GpuReadOnly]`: the second and third folds read what the fold before them wrote. |
+| `Result` | Receives the folded value modulo `2^(32 * ResultWords)`, `ResultWords` words. |
+| `BlockCarries` | Receives the outgoing carry (`0..4`) of each chunk of `Result`. |
 | `ModulusBits`, `Exponent` | `m = 2E + 1` and `E`. |
 | `ConstantTerm` | `t` in `c = 2^E - t`: 11. |
+
+## QuadraticFoldBlockedApplyContext Struct
+
+```csharp
+public struct QuadraticFoldBlockedApplyContext
+{
+    public uint[] Result;
+    public uint[] BlockCarries;
+    public int ResultWords;
+    public int ChunkSize;
+    public int NumBlocks;
+}
+```
+
+`Result` and `BlockCarries` are those of the fold pass; `ChunkSize` is the block size of `QuadraticFoldPassBlockedKernel` in words and `NumBlocks` the number of chunks it resolved.
+
+## QuadraticFoldSliceOffsets Struct
+
+```csharp
+public struct QuadraticFoldSliceOffsets
+{
+    public int FoldWord;
+    public int FoldBit;
+    public int ShiftWord;
+    public int ShiftBit;
+}
+```
 
 ## DeviceUnpack16(uint[], uint[], uint[], int, int, bool)
 
@@ -178,39 +206,41 @@ The number of 32-bit words to process.
 `sign` _int_<br>
 `1` for addition (`a + b`), or `-1` for subtraction (`a - b`).
 
-## GetQuotientWord(uint[], int, int, int, int)
+## GetQuotientWord(QuadraticFoldBlockedPassContext, QuadraticFoldSliceOffsets, int)
 
-A GPU device function (`[GpuDeviceFunction]`) that returns word `index` of the quotient `q = source >> (32 * foldWord + foldBit)`, and 0 for a negative index. `GpuBigIntKernels.GetShiftedRightWord` shifts the whole value, so its word -1 holds the top bits of the remainder; as a factor of `q * 2^E` and `t * q` those words must be 0.
-
-```csharp
-[GpuDeviceFunction]
-public static uint GetQuotientWord(uint[] source, int sourceWords, int index, int foldWord, int foldBit);
-```
-
-## QuadraticFoldPass(uint[], int, uint[], int, int, int, uint)
-
-A GPU device function (`[GpuDeviceFunction]`) run by one block: `result = r + q * 2^E - t * q` with `r = source mod 2^m` and `q = floor(source / 2^m)`, modulo `2^(32 * resultWords)`. `t * q` is subtracted as two carry-free numbers (the low and high halves of the 64-bit products `t * q_i`) in two's complement; carries are resolved per chunk of one block with a warp and block scan.
+A GPU device function (`[GpuDeviceFunction]`) that returns word `index` of the quotient `q = Source >> (32 * FoldWord + FoldBit)`, and 0 for a negative index. `GpuBigIntKernels.GetShiftedRightWord` shifts the whole value, so its word -1 holds the top bits of the remainder; as a factor of `q * 2^E` and `t * q` those words must be 0. It reads `Source` through the normal data path, not the read-only one, because a fold reads the words the fold before it wrote in the same launch.
 
 ```csharp
 [GpuDeviceFunction]
-public static void QuadraticFoldPass(uint[] source, int sourceWords, uint[] result, int resultWords, int modulusBits, int exponent, uint constantTerm);
+public static uint GetQuotientWord(QuadraticFoldBlockedPassContext ctx, QuadraticFoldSliceOffsets offsets, int index);
 ```
 
-## QuadraticFoldReduceKernel(QuadraticFoldContext)
+## ExecuteQuadraticFoldPassBlocked(QuadraticFoldBlockedPassContext)
 
-A GPU kernel (`[GpuKernel]`) that reduces the square of a residue modulo `N = 2^m - c` with three folds `F(x) = (x mod 2^m) + floor(x / 2^m) * c`. For a residue `u < 2^(m+1)` the result is congruent to `u^2` and below `2^m + 2^(E+1) <= 2N`, so it is again a valid residue, and one conditional subtraction of `N` makes it canonical.
+A GPU device function (`[GpuDeviceFunction]`) that evaluates one fold pass `result = r + q * 2^E - t * q` (`r = Source mod 2^m`, `q = floor(Source / 2^m)`) in parallel chunks of one launch block across all SMs, and writes the outgoing carry (`0..4`) of each chunk to `BlockCarries`. `t * q` is split into two numbers whose words need no carry (the low and the high halves of the 64-bit products `t * q_i`), each subtracted as its complement plus 1.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteQuadraticFoldPassBlocked(QuadraticFoldBlockedPassContext ctx);
+```
+
+## QuadraticFoldPassBlockedKernel(QuadraticFoldBlockedPassContext)
+
+A GPU kernel (`[GpuKernel]`) that runs `ExecuteQuadraticFoldPassBlocked`. Follow it with `QuadraticFoldPassApplyKernel` when `ResultWords` spans more than one block. `FermatAlgorithm` reduces a square modulo `N` with three such passes; the result is again a valid residue below `2N`.
 
 ```csharp
 [GpuKernel]
-public static void QuadraticFoldReduceKernel(QuadraticFoldContext ctx);
+public static void QuadraticFoldPassBlockedKernel(QuadraticFoldBlockedPassContext ctx);
 ```
 
-Launch it with one block (`gridDimX = 1`) of a multiple of 32 threads, at most 1024. The host reference of the kernel is `QuadraticFoldModulus.FoldReference` (internal), which the CPU fallback of `FermatAlgorithm` uses.
+## QuadraticFoldPassApplyKernel(QuadraticFoldBlockedApplyContext)
 
-#### Parameters
+A GPU kernel (`[GpuKernel]`) that adds the carry of each chunk, written by `QuadraticFoldPassBlockedKernel`, into the head of the following chunk modulo `2^(32 * ResultWords)`.
 
-`ctx` _QuadraticFoldContext_<br>
-The product, the two fold temporaries, the residue and the sizes.
+```csharp
+[GpuKernel]
+public static void QuadraticFoldPassApplyKernel(QuadraticFoldBlockedApplyContext ctx);
+```
 
 ## Examples
 
@@ -224,20 +254,18 @@ using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
-// The sizes of QuadraticFoldReduceKernel for E = 1000: m = 2E + 1 = 2001 bits.
+// The sizes of the first fold pass for E = 1000: m = 2E + 1 = 2001 bits.
 const int E = 1000;
 const int M = 2 * E + 1;
-var ctx = new GpuBigIntFermatKernels.QuadraticFoldContext
+var ctx = new GpuBigIntFermatKernels.QuadraticFoldBlockedPassContext
 {
     ModulusBits = M,
     Exponent = E,
     ConstantTerm = 11,
-    ResidueWords = (M + 31) / 32,
-    ProductWords = 2 * ((M + 31) / 32),
-    FirstFoldWords = (M + E + 3 + 31) / 32,
-    SecondFoldWords = (M + 2 + 31) / 32
+    SourceWords = 2 * ((M + 31) / 32),
+    ResultWords = (M + E + 3 + 31) / 32
 };
-Console.WriteLine($"QuadraticFoldContext configured: ResidueWords={ctx.ResidueWords}, FirstFoldWords={ctx.FirstFoldWords}");
+Console.WriteLine($"Fold pass configured: SourceWords={ctx.SourceWords}, ResultWords={ctx.ResultWords}");
 ```
 
 ## Remarks

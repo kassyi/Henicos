@@ -77,7 +77,7 @@ internal static class DynamicSharedMemoryAnalysis
         {
             // A device function of another assembly: what its assembly recorded
             return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                   imported.Record.ReachesDynamicSharedMemory;
+                   imported.Record.Traits.ReachesDynamicSharedMemory;
         }
 
         var cache = s_reaches.GetValue(compilation,
@@ -142,7 +142,7 @@ internal static class DynamicSharedMemoryAnalysis
             else if (DeviceExportTable.TryFindFunction(callee, compilation, out var imported))
             {
                 // The sites that the function of another assembly reaches, as its assembly recorded them
-                AddRecordedSites(imported.Record.DynamicSharedMemorySites, sites);
+                AddRecordedSites(imported.Record.Traits.DynamicSharedMemorySites, sites);
             }
         }
     }
@@ -168,7 +168,7 @@ internal static class DynamicSharedMemoryAnalysis
         if (!SuspensionAnalysis.TryGetDeviceFunctionBody(method, compilation, out var declaration))
         {
             return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
-                   imported.Record.ReachesDynamicSharedMemory;
+                   imported.Record.Traits.ReachesDynamicSharedMemory;
         }
 
         var semanticModel = compilation.GetSemanticModel(declaration.SyntaxTree);

@@ -40,3 +40,10 @@ The rules of [`GpuBigUIntView`](GpuBigUIntView.md) apply: the view lives only in
 | `IsZero()`, `GetBitLength()` | As on `GpuBigInt`. |
 | `CompareTo(scoped GpuBigIntView other)` | Compares the values on the GPU; `+0` equals `-0`. |
 | `ToBigInteger()` | Reads the signed value back to the host. |
+| `ToString()` | Returns the sign and the view of the absolute value, for debugging; it does not read device memory. |
+
+## Operators
+
+| Name | Description |
+| --- | --- |
+| `implicit operator GpuBigIntView(GpuBigInt)` | Converts an owned `GpuBigInt` to a view of its buffer without copying. |

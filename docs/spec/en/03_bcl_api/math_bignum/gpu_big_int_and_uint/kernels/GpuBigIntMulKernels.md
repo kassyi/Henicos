@@ -25,34 +25,61 @@ public static partial class GpuBigIntMulKernels
 
 | Name | Description |
 | --- | --- |
-| [NttUnpackContext](#nttunpackcontext-struct) | Encapsulates operand buffers, dual-modulus NTT destination buffers, and length parameters for unpacking 32-bit limbs into 16-bit NTT elements. |
+| [NttUnpackOperandContext](#nttunpackoperandcontext-struct) | One operand to unpack: its source words and its two NTT destination buffers. |
+| [NttUnpackContext](#nttunpackcontext-struct) | Two operands to unpack and the six-step NTT grid. |
+| [NttUnpackSingleContext](#nttunpacksinglecontext-struct) | One operand to unpack (for a square) and the six-step NTT grid. |
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
 | [MultiplyNttUnpackKernel(NttUnpackContext)](#multiplynttunpackkernelnttunpackcontext) | A GPU kernel (`[GpuKernel]`) that unpacks both operands into dual-modulus NTT buffers. |
+| [MultiplyNttUnpackSingleKernel(NttUnpackSingleContext)](#multiplynttunpacksinglekernelnttunpacksinglecontext) | A GPU kernel (`[GpuKernel]`) that unpacks one operand into dual-modulus NTT buffers, for a square. |
 | [MultiplyNttSharedRowKernel(NumberTheoreticTransform)](#multiplynttsharedrowkernelnumbertheoretictransform) | A GPU kernel (`[GpuKernel]`) that performs shared-memory row-wise NTT transformations. |
 | [MultiplyNttTransposeKernel(uint[], uint[], int, int)](#multiplyntttransposekerneluint-uint-int-int) | A GPU kernel (`[GpuKernel]`) that transposes the NTT matrix using 32x32 shared-memory tiles. |
 | [MultiplyNttPointwiseMultiplyKernel(uint[], uint[], uint[], uint[], int)](#multiplynttpointwisemultiplykerneluint-uint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs pointwise modular multiplication in the frequency domain across both NTT moduli. |
-| [MultiplyNttComputeCrtKernel(uint[], uint[], uint[], uint[], int)](#multiplynttcomputecrtkerneluint-uint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the Chinese Remainder Theorem (CRT) coefficients to recombine dual-modulus NTT results. |
+| [MultiplyNttPointwiseSquareKernel(uint[], uint[], int)](#multiplynttpointwisesquarekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that squares each element in the frequency domain across both NTT moduli. |
+| [MultiplyNttComputeCrtKernel(uint[], uint[], uint[], uint[], int, int, int)](#multiplynttcomputecrtkerneluint-uint-uint-uint-int-int-int) | A GPU kernel (`[GpuKernel]`) that computes the Chinese Remainder Theorem (CRT) coefficients to recombine dual-modulus NTT results. |
+| [MultiplyNtt(Span&lt;uint&gt;, Span&lt;uint&gt;, Span&lt;uint&gt;)](#multiplynttspanuint-spanuint-spanuint) | A GPU device function (`[GpuDeviceFunction]`) that multiplies two operands by NTT in the shared memory of one block, when the product fits in 512 words. |
+| [MultiplyNtt(Span&lt;uint&gt;, int, Span&lt;uint&gt;, int, Span&lt;uint&gt;, int)](#multiplynttspanuint-int-spanuint-int-spanuint-int) | The same, with explicit operand and result word counts. |
+| [MultiplyNttKernel(uint[], int, uint[], int, uint[], int)](#multiplynttkerneluint-int-uint-int-uint-int) | A GPU kernel (`[GpuKernel]`) entry point for the single-block NTT multiplication. |
+
+## NttUnpackOperandContext Struct
+
+One operand to unpack into 16-bit NTT elements: its source words and its destination buffers for the two NTT moduli.
+
+```csharp
+public struct NttUnpackOperandContext
+{
+    [GpuReadOnly] public uint[] Source;
+    public uint[] NttBuf1;
+    public uint[] NttBuf2;
+    public int NumWords;
+}
+```
 
 ## NttUnpackContext Struct
 
-Encapsulates operand buffers, dual-modulus NTT destination buffers, and length parameters for unpacking 32-bit limbs into 16-bit NTT elements.
+Two operands to unpack and the six-step NTT grid (`NttGridContext`: `M`, `N1`, `N2`).
 
 ```csharp
 public struct NttUnpackContext
 {
-    [GpuReadOnly] public uint[] OpA;
-    [GpuReadOnly] public uint[] OpB;
-    public uint[] NttBuf1A;
-    public uint[] NttBuf2A;
-    public uint[] NttBuf1B;
-    public uint[] NttBuf2B;
-    public int TransformLength;
-    public int NumWordsA;
-    public int NumWordsB;
+    public NttUnpackOperandContext OperandA;
+    public NttUnpackOperandContext OperandB;
+    public NttGridContext Grid;
+}
+```
+
+## NttUnpackSingleContext Struct
+
+One operand to unpack, for a square, and the six-step NTT grid.
+
+```csharp
+public struct NttUnpackSingleContext
+{
+    public NttUnpackOperandContext Operand;
+    public NttGridContext Grid;
 }
 ```
 
@@ -68,7 +95,16 @@ public static void MultiplyNttUnpackKernel(NttUnpackContext ctx);
 #### Parameters
 
 `ctx` _NttUnpackContext_<br>
-The unpack context containing source operand buffers (`OpA`, `OpB`), destination NTT buffers (`NttBuf1A`, `NttBuf2A`, `NttBuf1B`, `NttBuf2B`), `TransformLength`, `NumWordsA`, and `NumWordsB`.
+The two operands (`OperandA`, `OperandB`), each unpacked in the transposed order of the grid `Grid`.
+
+## MultiplyNttUnpackSingleKernel(NttUnpackSingleContext)
+
+A GPU kernel (`[GpuKernel]`) that unpacks one operand into dual-modulus NTT buffers in the transposed order of the grid, for a square.
+
+```csharp
+[GpuKernel]
+public static void MultiplyNttUnpackSingleKernel(NttUnpackSingleContext ctx);
+```
 
 ## MultiplyNttSharedRowKernel(NumberTheoreticTransform)
 
@@ -134,14 +170,24 @@ The transformed operand B buffer for prime 2.
 `transformLength` _int_<br>
 The length of the NTT transform.
 
-## MultiplyNttComputeCrtKernel(uint[], uint[], uint[], uint[], int)
+## MultiplyNttPointwiseSquareKernel(uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that squares each element of the transformed operand in the frequency domain across both NTT moduli.
+
+```csharp
+[GpuKernel]
+public static void MultiplyNttPointwiseSquareKernel(uint[] nttBuf1A, uint[] nttBuf2A, int transformLength);
+```
+
+## MultiplyNttComputeCrtKernel(uint[], uint[], uint[], uint[], int, int, int)
 
 A GPU kernel (`[GpuKernel]`) that computes the Chinese Remainder Theorem (CRT) coefficients to recombine dual-modulus NTT results.
 
 ```csharp
 [GpuKernel]
 public static void MultiplyNttComputeCrtKernel(
-    uint[] deviceResult1, uint[] deviceResult2, uint[] uncarriedLow, uint[] uncarriedHigh, int transformLength);
+    uint[] deviceResult1, uint[] deviceResult2, uint[] uncarriedLow, uint[] uncarriedHigh, int transformLength,
+    int n1, int n2);
 ```
 
 #### Parameters
@@ -161,6 +207,46 @@ The output buffer for the upper 32 bits of the recombined CRT coefficients.
 `transformLength` _int_<br>
 The length of the NTT transform.
 
+`n1`, `n2` _int_<br>
+The six-step grid dimensions; the coefficients are read in the transposed order of the grid.
+
+<a id="multiplynttspanuint-spanuint-spanuint"></a>
+
+## MultiplyNtt(Span&lt;uint&gt;, Span&lt;uint&gt;, Span&lt;uint&gt;)
+
+A GPU device function (`[GpuDeviceFunction]`) that multiplies `a` by `b` into `result` with a cooperative NTT in the shared memory of one block, for operands whose product fits in 512 32-bit words (1024 16-bit half-words). The word counts are the lengths of the spans.
+
+```csharp
+[GpuDeviceFunction]
+public static void MultiplyNtt([GpuReadOnly] Span<uint> a, [GpuReadOnly] Span<uint> b, Span<uint> result);
+```
+
+<a id="multiplynttspanuint-int-spanuint-int-spanuint-int"></a>
+
+## MultiplyNtt(Span&lt;uint&gt;, int, Span&lt;uint&gt;, int, Span&lt;uint&gt;, int)
+
+The same single-block NTT multiplication with explicit operand and result word counts.
+
+```csharp
+[GpuDeviceFunction]
+public static void MultiplyNtt(
+    [GpuReadOnly] Span<uint> a, int numWordsA,
+    [GpuReadOnly] Span<uint> b, int numWordsB,
+    Span<uint> result, int numWordsResult);
+```
+
+## MultiplyNttKernel(uint[], int, uint[], int, uint[], int)
+
+A GPU kernel (`[GpuKernel]`) entry point for the single-block NTT multiplication; launch it with one block.
+
+```csharp
+[GpuKernel]
+public static void MultiplyNttKernel(
+    uint[] result, int numWordsResult,
+    [GpuReadOnly] uint[] a, int numWordsA,
+    [GpuReadOnly] uint[] b, int numWordsB);
+```
+
 ## Examples
 
 ### Internal Kernel Usage
@@ -170,17 +256,18 @@ The length of the NTT transform.
 
 ```csharp
 using System;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
 // Configure an NttUnpackContext for launching MultiplyNttUnpackKernel via the G# execution pipeline.
 var ctx = new GpuBigIntMulKernels.NttUnpackContext
 {
-    TransformLength = 1024,
-    NumWordsA = 128,
-    NumWordsB = 128
+    OperandA = new GpuBigIntMulKernels.NttUnpackOperandContext { NumWords = 128 },
+    OperandB = new GpuBigIntMulKernels.NttUnpackOperandContext { NumWords = 128 },
+    Grid = new NttGridContext { M = 1024, N1 = 32, N2 = 32 }
 };
-Console.WriteLine($"NttUnpackContext configured: TransformLength={ctx.TransformLength}");
+Console.WriteLine($"NttUnpackContext configured: M={ctx.Grid.M}");
 ```
 
 ## Remarks

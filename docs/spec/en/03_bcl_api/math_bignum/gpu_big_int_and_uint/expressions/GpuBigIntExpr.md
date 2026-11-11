@@ -261,6 +261,7 @@ The result is one of the operands, its sign flag included. Of two equal values e
 | `implicit operator GpuBigIntExpr(GpuBigInt)` | Implicitly wraps a `GpuBigInt` as a signed expression leaf node. |
 | `operator *(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy multiplication expression. |
 | `operator /(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy division expression. |
+| `operator %(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy remainder expression. |
 | `operator +(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy addition expression with deferred sign resolution. |
 | `operator -(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy subtraction expression with deferred sign resolution. |
 | `operator -(GpuBigIntExpr)` | Constructs a lazy negation expression. |

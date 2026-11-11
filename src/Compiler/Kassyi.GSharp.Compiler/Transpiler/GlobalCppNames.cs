@@ -142,7 +142,7 @@ internal static class GlobalCppNames
 
     private static string GetRecordedBody(DeviceExportRecord record)
     {
-        var full = record.CppFullName.Length > 0 ? record.CppFullName : record.CppName;
+        var full = record.Names.CppFullName.Length > 0 ? record.Names.CppFullName : record.Names.CppName;
         return full.StartsWith(GSharpNameEncoding.FunctionPrefix, StringComparison.Ordinal)
             ? full[GSharpNameEncoding.FunctionPrefix.Length..]
             : full;

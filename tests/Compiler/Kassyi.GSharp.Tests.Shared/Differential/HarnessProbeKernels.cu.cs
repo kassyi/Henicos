@@ -4,8 +4,8 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Kernels that test the differential harness itself (<see cref="HarnessTests"/>): one whose result every path must
-/// reproduce, and one whose result depends on the thread order, which the oracle's order check must reject.
+/// Kernels that test the differential harness itself (<see cref="DifferentialRunnerTests"/>): one whose result every
+/// path must reproduce, and one whose result depends on the thread order, which the oracle's order check must reject.
 /// </summary>
 public static partial class HarnessProbeKernels
 {

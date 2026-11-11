@@ -16,12 +16,12 @@ public static class SpillSuppressionParser
         }
 
         var calleesByFunction = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        var sawMarker = ScanFunctions(cuContent, suppressed, calleesByFunction);
+        ScanFunctions(cuContent, suppressed, calleesByFunction, out var sawMarker);
 
         // Propagate suppression to device functions transitively called from a suppressed kernel/function,
         // and to recursive device functions (and the kernels that enter them).
         AddRecursiveFunctions(suppressed, calleesByFunction);
-        while (PropagateSuppression(suppressed, calleesByFunction))
+        while (PropagateSuppressionOnce(suppressed, calleesByFunction) > 0)
         {
         }
 
@@ -34,13 +34,14 @@ public static class SpillSuppressionParser
     }
 
     // Reads the file line by line: records the callees of every defined function and the functions that a suppress
-    // marker names. Returns whether a marker was seen.
-    private static bool ScanFunctions(
+    // marker names. Sets sawMarker when a marker was seen.
+    private static void ScanFunctions(
         string cuContent,
         HashSet<string> suppressed,
-        Dictionary<string, HashSet<string>> calleesByFunction)
+        Dictionary<string, HashSet<string>> calleesByFunction,
+        out bool sawMarker)
     {
-        var sawMarker = false;
+        sawMarker = false;
         var pendingSuppress = false;
         var currentFunction = "";
         var braceDepth = 0;
@@ -71,13 +72,11 @@ public static class SpillSuppressionParser
             }
 
             CollectCalleesOfCurrentFunction(line, currentFunction, calleesByFunction);
-            if (AdvanceBraces(line, ref braceDepth))
+            if (ClosesFunctionBody(line, ref braceDepth))
             {
                 currentFunction = "";
             }
         }
-
-        return sawMarker;
     }
 
     private static bool IsSuppressMarker(string line) =>
@@ -138,7 +137,7 @@ public static class SpillSuppressionParser
     }
 
     // Counts the braces of the line into the depth. Returns whether a closing brace brought the depth to zero.
-    private static bool AdvanceBraces(string line, ref int braceDepth)
+    private static bool ClosesFunctionBody(string line, ref int braceDepth)
     {
         var closedFunction = false;
         foreach (var ch in line)
@@ -172,28 +171,32 @@ public static class SpillSuppressionParser
     }
 
     // One pass: a suppressed function suppresses its callees, a kernel that calls a suppressed function is suppressed.
-    // Returns whether the set grew.
-    private static bool PropagateSuppression(
+    // Returns how many functions it added.
+    private static int PropagateSuppressionOnce(
         HashSet<string> suppressed,
         Dictionary<string, HashSet<string>> calleesByFunction)
     {
-        var changed = false;
+        var added = 0;
         foreach (var kvp in calleesByFunction)
         {
             if (suppressed.Contains(kvp.Key))
             {
                 foreach (var callee in kvp.Value)
                 {
-                    changed |= suppressed.Add(callee);
+                    if (suppressed.Add(callee))
+                    {
+                        added++;
+                    }
                 }
             }
             else if (kvp.Key.StartsWith("__gsharp_k_", StringComparison.Ordinal) && kvp.Value.Overlaps(suppressed))
             {
-                changed |= suppressed.Add(kvp.Key);
+                suppressed.Add(kvp.Key);
+                added++;
             }
         }
 
-        return changed;
+        return added;
     }
 
     private static bool CanReach(

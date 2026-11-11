@@ -18,8 +18,10 @@ Represents an arbitrary-precision unsigned integer stored in NVIDIA GPU global d
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
 [GenerateGpuNumberOperators]
-public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IGpuNumber<GpuBigUInt>
+public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber<GpuBigUInt>
 ```
+
+Implements: `IGpuBigUIntExpression`, [`IGpuBigNumber<GpuBigUInt>`](00_index.md#numeric-interfaces), `IGpuNumber<GpuBigUInt>`, `IGpuBigNumberBase`, `IEquatable<GpuBigUInt>`, `IComparable<GpuBigUInt>`, `IDisposable`
 
 ## Constructors
 
@@ -80,12 +82,27 @@ Thrown when `hostData` is empty.
 
 | Name | Description |
 | --- | --- |
+| [CanBeNegative](#canbenegative) | Always `false`: `GpuBigUInt` is an unsigned type. |
 | [DevicePointer](#devicepointer) | Gets the raw 64-bit device memory pointer to the first limb word in GPU global address space. |
+| [EffectiveScale](#effectivescale) | Gets the bit length of the value (an integer has exponent 0). |
+| [Exponent](#exponent) | Always `0` for an integer. |
 | [Handle](#handle) | Gets the underlying GPU memory handle tracking device buffer allocation and lifetime. |
+| [IsNegative](#isnegative) | Always `false`. |
+| [Magnitude](#magnitude) | Returns this instance (the magnitude of an unsigned integer is the value itself). |
 | [OwnsBuffer](#ownsbuffer) | Gets a value indicating whether this value owns its device buffer, so that disposing it returns the buffer to the pool. |
 | [NumWords](#numwords) | Gets the number of 32-bit unsigned integer limbs (words) allocated for this big integer. |
 | [Value](#value) | Gets a deferred expression representing this instance, or evaluates and assigns a deferred expression into this instance in-place. |
 | [Workspace](#workspace) | Gets the `GpuWorkspace` associated with this GPU integer instance. |
+
+`IGpuBigNumber<GpuBigUInt>.AdditionIsExact` is implemented explicitly and returns `true`: integer addition is exact, so a sum may add in a balanced tree.
+
+## CanBeNegative
+
+Always `false`: `GpuBigUInt` is an unsigned type.
+
+```csharp
+public bool CanBeNegative { get; }
+```
 
 ## DevicePointer
 
@@ -100,12 +117,44 @@ public IntPtr DevicePointer { get; }
 `ObjectDisposedException`<br>
 The buffer has been freed: this value or a copy of it was disposed, or its workspace was disposed. A copy of a freed value never reads the memory of a later owner of the same buffer.
 
+## EffectiveScale
+
+Gets the bit length of the value (an integer has exponent 0).
+
+```csharp
+public long EffectiveScale { get; }
+```
+
+## Exponent
+
+Always `0` for an integer.
+
+```csharp
+public int Exponent { get; }
+```
+
 ## Handle
 
 Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.
 
 ```csharp
 public GpuBigIntMemoryHandle Handle { get; }
+```
+
+## IsNegative
+
+Always `false`.
+
+```csharp
+public bool IsNegative { get; }
+```
+
+## Magnitude
+
+Returns this instance (the magnitude of an unsigned integer is the value itself).
+
+```csharp
+public GpuBigUInt Magnitude { get; }
 ```
 
 ## OwnsBuffer
@@ -156,6 +205,7 @@ public GpuWorkspace Workspace { get; }
 | [ClearWord(int)](#clearwordint) | Clears a single 32-bit limb word at the specified word index in GPU device memory. |
 | [CompareTo(GpuBigUInt)](#comparetogpubiguint) | Compares this instance to another `GpuBigUInt` and returns an integer indicating their relative magnitude. |
 | [CopyFrom(GpuBigUIntView, int, int, int?)](#copyfromgpubiguintview-int-int-int) | Copies limb words from another value or view to this instance in GPU device memory. |
+| [Create(GpuBigUInt, int, bool)](#creategpubiguint-int-bool) | Returns `magnitude`; throws `ArgumentOutOfRangeException` when `exponent` is not 0 or the value would be negative. |
 | [CreatePowerOfTwo(GpuWorkspace, int, int)](#createpoweroftwogpuworkspace-int-int) | Creates a new `GpuBigUInt` initialized to $2^{\text{bitIndex}}$. |
 | [Dispose()](#dispose) | Releases the underlying GPU global device memory handle back to the workspace memory pool. |
 | [Equals(GpuBigUInt)](#equalsgpubiguint) | Indicates whether the current instance refers to the same device buffer as another `GpuBigUInt`. |
@@ -282,6 +332,14 @@ The number of words to copy, or `null` to copy as many words as fit.
 
 `ArgumentOutOfRangeException`<br>
 Thrown when `destOffsetWords` or `srcOffsetWords` is negative or greater than the word count of its buffer, or `numWords` is negative or reaches past the end of the source or of this buffer. Nothing is written.
+
+## Create(GpuBigUInt, int, bool)
+
+The `IGpuBigNumber<GpuBigUInt>` factory: returns `magnitude` itself. Throws `ArgumentOutOfRangeException` when `exponent` is not 0, or when `isNegative` is `true` and the magnitude is not zero.
+
+```csharp
+public static GpuBigUInt Create([TakesOwnership] GpuBigUInt magnitude, int exponent, bool isNegative);
+```
 
 ## CreatePowerOfTwo(GpuWorkspace, int, int)
 

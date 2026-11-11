@@ -13,13 +13,14 @@ description: "Zero-allocation generic binary expressions and stack-scoped visito
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Provides zero-allocation generic binary expression nodes (`BinaryExpr<T, TOp>`), static abstract operator tags (`IFloatOperator<T>`, `AddOp`, `SubOp`, `MulOp`), and the stack-scoped visitor (`GpuBigFloatExpressionVisitor`) that evaluates arbitrary-precision floating-point AST expressions (`GpuBigFloat`, `GpuBigUFloat`) across GPU and CPU backends.
+Provides zero-allocation generic binary expression nodes (`BinaryExpr<T, TOp>`), static abstract operator tags (`IFloatOperator<T>`, `AddOp`, `SubOp`, `MulOp`, `DivOp`), and the stack-scoped visitor (`GpuBigFloatExpressionVisitor`) that evaluates arbitrary-precision floating-point AST expressions (`GpuBigFloat`, `GpuBigUFloat`) across GPU and CPU backends.
 
 ```csharp
 public interface IFloatOperator<T>
 public readonly struct AddOp : IFloatOperator<GpuBigFloat>, IFloatOperator<GpuBigUFloat>
 public readonly struct SubOp : IFloatOperator<GpuBigFloat>, IFloatOperator<GpuBigUFloat>
-public readonly struct MulOp : IFloatOperator<GpuBigFloat>
+public readonly struct MulOp : IFloatOperator<GpuBigFloat>, IFloatOperator<GpuBigUFloat>
+public readonly struct DivOp : IFloatOperator<GpuBigFloat>, IFloatOperator<GpuBigUFloat>
 public readonly struct BinaryExpr<T, TOp>(T left, T right) where TOp : struct, IFloatOperator<T>
 public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFloatArithmetic? arithmetic = null)
 ```
@@ -31,7 +32,8 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
 | [IFloatOperator\<T\>](#ifloatoperatort-interface) | Defines an arithmetic operator capable of executing operations on arbitrary-precision float operands via static abstract polymorphism. |
 | [AddOp](#addop-struct) | Static addition operator tag for `GpuBigFloat` and `GpuBigUFloat`. |
 | [SubOp](#subop-struct) | Static subtraction operator tag for `GpuBigFloat` and `GpuBigUFloat`. |
-| [MulOp](#mulop-struct) | Static multiplication operator tag for `GpuBigFloat`. |
+| [MulOp](#mulop-struct) | Static multiplication operator tag for `GpuBigFloat` and `GpuBigUFloat`. |
+| [DivOp](#divop-struct) | Static division operator tag for `GpuBigFloat` and `GpuBigUFloat`. |
 | [BinaryExpr\<T, TOp\>](#binaryexprt-top-struct) | A zero-allocation generic binary expression node representing a deferred arbitrary-precision floating-point operation. |
 | [GpuBigFloatExpressionVisitor](#gpubigfloatexpressionvisitor-struct) | A stack-scoped `ref struct` visitor that evaluates arbitrary-precision floating-point AST expressions across GPU and CPU backends. |
 
@@ -75,9 +77,22 @@ public readonly struct SubOp : IFloatOperator<GpuBigFloat>, IFloatOperator<GpuBi
 Static multiplication operator tag for arbitrary-precision floating-point operands.
 
 ```csharp
-public readonly struct MulOp : IFloatOperator<GpuBigFloat>
+public readonly struct MulOp : IFloatOperator<GpuBigFloat>, IFloatOperator<GpuBigUFloat>
 {
     public static GpuBigFloat Execute(GpuBigFloat left, GpuBigFloat right, ref GpuBigFloatExpressionVisitor visitor);
+    public static GpuBigUFloat Execute(GpuBigUFloat left, GpuBigUFloat right, ref GpuBigFloatExpressionVisitor visitor);
+}
+```
+
+## DivOp Struct
+
+Static division operator tag for arbitrary-precision floating-point operands.
+
+```csharp
+public readonly struct DivOp : IFloatOperator<GpuBigFloat>, IFloatOperator<GpuBigUFloat>
+{
+    public static GpuBigFloat Execute(GpuBigFloat left, GpuBigFloat right, ref GpuBigFloatExpressionVisitor visitor);
+    public static GpuBigUFloat Execute(GpuBigUFloat left, GpuBigUFloat right, ref GpuBigFloatExpressionVisitor visitor);
 }
 ```
 
@@ -107,11 +122,10 @@ public ref struct GpuBigFloatExpressionVisitor(
     public GpuWorkspace Workspace;
     public IGpuBigFloatArithmetic Arithmetic { get; }
 
-    public GpuBigFloat VisitAdd(GpuBigFloat left, GpuBigFloat right);
-    public GpuBigFloat VisitSub(GpuBigFloat left, GpuBigFloat right);
-    public GpuBigFloat VisitMul(GpuBigFloat left, GpuBigFloat right);
-    public GpuBigUFloat VisitAdd(GpuBigUFloat left, GpuBigUFloat right);
-    public GpuBigUFloat VisitSub(GpuBigUFloat left, GpuBigUFloat right);
+    public T VisitAdd<T>(T left, T right) where T : struct, IGpuBigNumber<T>;
+    public T VisitSub<T>(T left, T right) where T : struct, IGpuBigNumber<T>;
+    public T VisitMul<T>(T left, T right) where T : struct, IGpuBigNumber<T>;
+    public T VisitDiv<T>(T left, T right) where T : struct, IGpuBigNumber<T>;
     public GpuBigFloat Visit<TOp>(BinaryExpr<GpuBigFloat, TOp> expr) where TOp : struct, IFloatOperator<GpuBigFloat>;
     public GpuBigUFloat Visit<TOp>(BinaryExpr<GpuBigUFloat, TOp> expr) where TOp : struct, IFloatOperator<GpuBigUFloat>;
 }
