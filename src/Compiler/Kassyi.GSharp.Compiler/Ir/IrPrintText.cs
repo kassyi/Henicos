@@ -49,7 +49,7 @@ internal static class IrPrintText
         _ => "?"
     };
 
-    /// <summary>The syntax node of an opaque leaf: its kind (<c>SimpleLambdaExpression</c>), not its source text.</summary>
+    /// <summary>The syntax node of an opaque leaf as its kind (<c>SimpleLambdaExpression</c>), not its text.</summary>
     public static string SyntaxKindName(SyntaxNode syntax) => syntax.Kind().ToString();
 
     /// <summary>The name of an opaque reason.</summary>

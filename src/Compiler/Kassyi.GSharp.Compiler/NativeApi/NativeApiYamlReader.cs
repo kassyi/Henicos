@@ -93,7 +93,8 @@ internal static class NativeApiYamlReader
 
         if (mapping.TryGetValue("methods", out var methodsNode) && !IsNull(methodsNode))
         {
-            definition.Methods = ReadSequence(methodsNode, "methods", definition.BindingKind, NativeApiMethodReader.ReadMethod);
+            definition.Methods =
+                ReadSequence(methodsNode, "methods", definition.BindingKind, NativeApiMethodReader.ReadMethod);
         }
 
         if (mapping.TryGetValue("classes", out var classesNode) && !IsNull(classesNode))
