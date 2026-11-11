@@ -483,7 +483,7 @@ public static partial class GpuBigIntVectorKernels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint LoadDivModWord(SharedMemory<uint> shared, DivModWords words, int idx)
     {
-        return words.Base < 0 ? shared[idx] : words.Scratch[words.Base + idx];
+        return words.Base < 0 ? shared[idx] : Gpu.NotNull(words.Scratch)[words.Base + idx];
     }
 
     [GpuDeviceFunction]
@@ -496,7 +496,7 @@ public static partial class GpuBigIntVectorKernels
         }
         else
         {
-            words.Scratch[words.Base + idx] = value;
+            Gpu.NotNull(words.Scratch)[words.Base + idx] = value;
         }
     }
 }
