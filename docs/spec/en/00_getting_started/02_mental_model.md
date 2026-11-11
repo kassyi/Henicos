@@ -58,7 +58,9 @@ _"What happens if I accidentally call `Console.WriteLine`, an unmapped .NET API,
 G# strictly enforces the principle of **Static Determinism** via compile-time Roslyn syntax and semantic analysis. It never allows unmapped or dynamic code to slip through to the CUDA runtime:
 
 - **Zero Runtime Surprises**: You will never experience mysterious GPU driver crashes, silent NaN propagation, or device freezes caused by unsupported C# syntax or runtime reflection.
-- **Instant IDE Feedback**: Any unmapped method invocation, managed string allocation, or unsupported BCL call is caught right in your editor (Visual Studio / Rider / `dotnet build`) with clear, dedicated compile errors ([GSH0001–GSH0029, RS0030](../03_bcl_api/diagnostics/00_index.md)).
+- **Instant IDE Feedback**: Any unmapped method invocation, managed string allocation, or unsupported BCL call is
+  caught right in your editor (Visual Studio / Rider / `dotnet build`) with clear, dedicated compile errors
+  ([GSH0000–GSH0108, SLQ0001, RS0030](../03_bcl_api/diagnostics/00_index.md)).
 
 If your G# code compiles without errors, you have a compile-time guarantee that your kernel translates safely into valid, bare-metal CUDA C++. For a comprehensive list of constraints and diagnostic codes, see [5. Limitations and Diagnostics](../01_language/05_limitations.md).
 
@@ -66,7 +68,8 @@ If your G# code compiles without errors, you have a compile-time guarantee that 
 
 When dealing with scarce GPU memory and high-performance orchestration on the CPU, managing `IDisposable` resources can quickly lead to memory leaks or double-dispose hazards. Standard C# struggles to enforce strict ownership rules for injected dependencies.
 
-To solve this, G# implements a **Strict Ownership Model** for `IDisposable` resources via its custom Roslyn Analyzer (`ObjectLifecycleAnalyzer`).
+To solve this, G# implements a **Strict Ownership Model** for `IDisposable` resources via its custom Roslyn
+analyzers (`DisposableOwnershipAnalyzer` and `LocalDisposableOwnershipAnalyzer`).
 
 - By default, injected resources are considered **Borrowed** (the receiving class must not dispose them).
 - When ownership must be transferred, G# uses the `[TakesOwnership]` attribute, strictly enforcing that the receiving class fully manages and disposes the resource.
