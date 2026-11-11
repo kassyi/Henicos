@@ -12,8 +12,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 internal static class RefLocalLiveness
 {
     /// <summary>
-    /// The <c>ref</c> locals that <paramref name="body"/> declares directly (not in a lambda or a local function) and that
-    /// are not live right after a split point, or <see langword="null"/> when there is none, when
+    /// The <c>ref</c> locals that <paramref name="body"/> declares directly (not in a lambda or a local function), does
+    /// not rebind, and that are not live right after a split point, or <see langword="null"/> when there is none, when
     /// <paramref name="semanticModel"/> does not belong to the tree of <paramref name="body"/>, or when the body does
     /// not bind.
     /// </summary>
@@ -38,7 +38,10 @@ internal static class RefLocalLiveness
             {
                 declared.Add(local);
             }
-            else if (node is AssignmentExpressionSyntax { Right: RefExpressionSyntax, Left: IdentifierNameSyntax target } &&
+            else if (node is AssignmentExpressionSyntax
+                     {
+                         Right: RefExpressionSyntax, Left: IdentifierNameSyntax target
+                     } &&
                      semanticModel.GetSymbol(target) is ILocalSymbol reboundLocal)
             {
                 rebound.Add(reboundLocal);
@@ -71,7 +74,10 @@ internal static class RefLocalLiveness
         return notLive;
     }
 
-    /// <summary>Whether <paramref name="type"/> declares a <c>ref</c> local: <c>ref T</c>, <c>ref readonly T</c>, <c>scoped ref T</c>.</summary>
+    /// <summary>
+    /// Whether <paramref name="type"/> declares a <c>ref</c> local: <c>ref T</c>, <c>ref readonly T</c>,
+    /// <c>scoped ref T</c>.
+    /// </summary>
     public static bool IsRefType(TypeSyntax type) =>
         type is RefTypeSyntax or ScopedTypeSyntax { Type: RefTypeSyntax };
 

@@ -17,8 +17,8 @@ internal static class HoistedVariableAnalysis
     /// <param name="hoistedKeys">Receives the key of every hoisted declaration.</param>
     /// <param name="hoistedDeclarators">Receives the hoisted declarators.</param>
     /// <param name="refLocalsNotLiveAcrossSplit">
-    /// The <c>ref</c> locals that are not live after any split point (<see cref="RefLocalLiveness"/>): a barrier in their
-    /// scope does not hoist them.
+    /// The <c>ref</c> locals that are not live after any split point (<see cref="RefLocalLiveness"/>): a barrier in
+    /// their scope does not hoist them.
     /// </param>
     /// <returns>Whether the block has a split point; without one nothing is hoisted.</returns>
     public static bool Analyze(

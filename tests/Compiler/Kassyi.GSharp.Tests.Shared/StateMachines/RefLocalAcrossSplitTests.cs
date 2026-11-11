@@ -13,8 +13,8 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 
 /// <summary>
-/// A <c>ref</c> local that no state after a split reads stays a local of the state that declares it (#1640): the lowering
-/// leaves it out of the frame, and the managed state machine of the CPU dialect runs it as C# does.
+/// A <c>ref</c> local that no state after a split reads stays a local of the state that declares it (#1640): the
+/// lowering leaves it out of the frame, and the managed state machine of the CPU dialect runs it as C# does.
 /// </summary>
 /// <remarks>
 /// The kernels run from an in-memory build of the generated managed C#: the C++ of both dialects does not translate a

@@ -32,8 +32,8 @@ public class ContextHoister(
     /// <param name="method">The kernel or device function that owns the body.</param>
     /// <param name="plan">The labels that start a state.</param>
     /// <param name="refLocalsNotLiveAcrossSplit">
-    /// The <c>ref</c> locals that are not live after any split point (<see cref="RefLocalLiveness"/>), which stay locals,
-    /// or <see langword="null"/> to hoist every ref local that a barrier follows in its scope.
+    /// The <c>ref</c> locals that are not live after any split point (<see cref="RefLocalLiveness"/>), which stay
+    /// locals, or <see langword="null"/> to hoist every ref local that a barrier follows in its scope.
     /// </param>
     internal ContextHoister(IReadOnlyCollection<string>? copiedParameters, SemanticModel? semanticModel,
         IMethodSymbol? method, StatePlan plan, HashSet<ISymbol>? refLocalsNotLiveAcrossSplit = null)
