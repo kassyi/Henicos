@@ -71,7 +71,7 @@ public sealed class TrustedKeysGenerator : IIncrementalGenerator
                 continue;
             }
 
-            if (ValidateAndParseLine(trimmed, out var keyBytes, out var reason))
+            if (TryParseLine(trimmed, out var keyBytes, out var reason))
             {
                 builder.AddRange(keyBytes);
             }
@@ -89,7 +89,7 @@ public sealed class TrustedKeysGenerator : IIncrementalGenerator
         }
     }
 
-    private static bool ValidateAndParseLine(ReadOnlySpan<char> trimmed, out byte[] bytes, out string reason)
+    private static bool TryParseLine(ReadOnlySpan<char> trimmed, out byte[] bytes, out string reason)
     {
         var separatorIndex = trimmed.IndexOf(FingerprintSeparator);
         var keyText = separatorIndex < 0 ? trimmed : trimmed.Slice(0, separatorIndex).Trim();
