@@ -722,8 +722,8 @@ __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
 return array[index];
 }
 
-// The array of Gpu.NotNull(array): a null array ends the step with NullReferenceException, as the C# method throws. Unlike
-// __gsharp_array_ref, a null optional kernel argument fails too: it reads as an empty array, but it is null
+// The array of Gpu.NotNull(array): a null array ends the step with NullReferenceException, as the C# method throws.
+// Unlike __gsharp_array_ref, a null optional kernel argument fails too: it reads as an empty array, but it is null
 template <typename A, typename S>
 inline A __gsharp_array_not_null(A&& array, S site)
 {

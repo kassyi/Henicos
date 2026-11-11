@@ -658,8 +658,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     }
 
     /// <summary>
-    /// <c>Gpu.NotNull</c> passes an array through and throws <see cref="NullReferenceException"/> at the call for a null
-    /// one; the reads of the local after it carry no check of their own.
+    /// <c>Gpu.NotNull</c> passes an array through and throws <see cref="NullReferenceException"/> at the call for a
+    /// null one; the reads of the local after it carry no check of their own.
     /// </summary>
     [GpuKernel]
     public static void GpuNotNullKernel(int[] src, int[] flags, int[] dst, int rows)

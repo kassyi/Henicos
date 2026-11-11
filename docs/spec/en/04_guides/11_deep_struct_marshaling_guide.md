@@ -432,8 +432,9 @@ G# natively handles `null` array members:
   (`float[]?`) is checked where it is read. In C# a `null` in a non-nullable place throws only when it is read; in G# it
   throws at the launch or at the call, earlier, and only for a `null` in a non-nullable place.
 - To read a nullable field many times without a check per read, read it once through
-  [`Gpu.NotNull`](../03_bcl_api/gpu_class/NotNull.md) into a local: `float[] telemetry = Gpu.NotNull(ctx.DebugTelemetry);`
-  throws `NullReferenceException` at that call when the field is `null`, and the reads of `telemetry` carry no check.
+  [`Gpu.NotNull`](../03_bcl_api/gpu_class/NotNull.md) into a local:
+  `float[] telemetry = Gpu.NotNull(ctx.DebugTelemetry);` throws `NullReferenceException` at that call when the field
+  is `null`, and the reads of `telemetry` carry no check.
 - Reading a `null` array field (`Length`, an element, `foreach`) follows C# and throws `NullReferenceException` on
   every path: on CUDA and the native CPU build with the place in your source (`Exception.Data["GSharp.SourceLocation"]`
   holds `Kernels.cu.cs(12,17)`; inside a device function the native CPU message names the place instead), and on the
