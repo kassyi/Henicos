@@ -287,7 +287,7 @@ internal static class DeviceFunctionEffects
     private static DeviceFunctionEffect ClassifyPropertyAccess(ExpressionSyntax access, IMethodSymbol method,
         SyntaxNode body, SemanticModel model, Compilation compilation, HashSet<IMethodSymbol> visiting)
     {
-        if (model.GetSymbol(access) is not IPropertySymbol property || !StructAbiMembers.IsComputedProperty(property))
+        if (model.GetSymbol(access) is not IPropertySymbol property || !StructAbiMembers.HasAccessorFunctions(property))
         {
             return DeviceFunctionEffect.None;
         }
@@ -548,7 +548,7 @@ internal static class DeviceFunctionEffects
             { MethodKind: MethodKind.Constructor } =>
                 StructConstructorEmitter.IsEmittedStructConstructor(method, compilation),
             { MethodKind: MethodKind.PropertyGet, AssociatedSymbol: IPropertySymbol property } =>
-                StructAbiMembers.IsComputedProperty(property),
+                StructAbiMembers.HasAccessorFunctions(property),
             _ => false
         };
 

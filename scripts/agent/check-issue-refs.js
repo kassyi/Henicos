@@ -7,7 +7,8 @@
 //   node scripts/agent/check-issue-refs.js --stdin              check the numbers in standard input
 //   node scripts/agent/check-issue-refs.js --hook               Claude Code PreToolUse hook (reads the hook JSON on stdin)
 //   --repo <owner/name>   repository to look the numbers up in (default: the origin remote)
-// Prints one line per number: number, kind (issue / PR), state, milestone and title.
+// Prints one line per number: number, kind (issue / PR), state, milestone and title. A "#n" inside an inline code span or
+// a fenced code block is not a reference (GitHub does not link it) and is not checked.
 // Fails (exit 1) when a number does not exist, or when a closing keyword (Fixes / Closes / Resolves #n) names a pull
 // request or an issue that is already closed. In --hook mode the same failures deny the command; otherwise the table
 // is passed back to the agent as additional context, and the command goes on to the normal permission check.
@@ -75,6 +76,17 @@ function collect(text, pattern) {
     return numbers;
 }
 
+// Fenced code blocks (``` or ~~~, closed by a fence of the same character at least as long) and inline code spans
+// (a run of backticks closed by a run of the same length).
+const fencedCodePattern = /^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1[`~]*[ \t]*$|(?![\s\S]))/gm;
+const inlineCodePattern = /(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/g;
+
+// The text without its code: GitHub does not link "#n" inside code, so a number there (Roslyn's flow-capture "#0",
+// a C preprocessor line) is not a reference. Each code part becomes one space so that text around it stays apart.
+function withoutCode(text) {
+    return text.replace(fencedCodePattern, ' ').replace(inlineCodePattern, ' ');
+}
+
 function defaultRepo(cwd) {
     let url;
     try {
@@ -123,12 +135,13 @@ function lookUp(repo, numbers) {
 
 // Returns the table lines and the problems found.
 function check(text, repo) {
+    const prose = withoutCode(text);
     const numbers = new Set([
-        ...collect(text, refPattern),
+        ...collect(prose, refPattern),
         ...collect(text, branchPattern),
         ...collect(text, targetPattern),
     ]);
-    const closing = collect(text, closingPattern);
+    const closing = collect(prose, closingPattern);
     if (numbers.size === 0) return { lines: [], problems: [] };
     const sorted = [...numbers].sort((a, b) => a - b);
     const found = lookUp(repo, sorted);

@@ -78,12 +78,12 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // HardDecrement*)
     // mutant: GSharpKernelFloatProvider.cs:464 `(NumWords + 1) / 2` -> `NumWords / 2` (HardDecrement1, HardDecrement3:
     // for odd n the estimate has p + 17 bits, so a set low word no longer means a set discarded bit)
-    // mutant: GpuBigIntDivRemKernels.cu.cs:227 `left > right ? 2ul : 1ul` -> `1ul : 2ul` (the check inverted:
+    // mutant: GpuBigIntDivRemKernels.cu.cs:226 `left > right ? 2ul : 1ul` -> `1ul : 2ul` (the check inverted:
     // PowerOfFourPlus1*, HardDecrement* keep the estimate)
-    // mutant: GpuBigIntDivRemKernels.cu.cs:232 `== 2ul` -> `!= 1ul` (product >= bound: PowerOfFour* drop to one below)
-    // mutant: GpuBigIntDivRemKernels.cu.cs:232 `== 2ul` -> `!= 0ul` (any difference: HardExact*, where x_hi²·A < 2^(2B),
-    // drop to one below)
-    // mutant: GpuBigIntDivRemKernels.cu.cs:234 `AddSmallSigned(estimate, estimateWords, -1)` -> `0` (PowerOfFourPlus1*,
+    // mutant: GpuBigIntDivRemKernels.cu.cs:231 `== 2ul` -> `!= 1ul` (product >= bound: PowerOfFour* drop to one below)
+    // mutant: GpuBigIntDivRemKernels.cu.cs:231 `== 2ul` -> `!= 0ul` (any difference: HardExact*,
+    // where x_hi²·A < 2^(2B), drop to one below)
+    // mutant: GpuBigIntDivRemKernels.cu.cs:233 `AddSmallSigned(estimate, estimateWords, -1)` -> `0` (PowerOfFourPlus1*,
     // HardDecrement*)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -117,7 +117,8 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // mutant: GSharpKernelFloatProvider.cs:444 `& 3) == 0` -> always true (the check count)
     // mutant: GSharpKernelFloatProvider.cs:427 `rightBits - 32 * truncatedWords` -> `... - 32` (j one word short: the
     // cut divisor has k + 32 bits and DivRem rejects the quotient buffer in WideOperands_LargeWidths and others)
-    // equivalent: GSharpKernelFloatProvider.cs:427 `... + 32` (j one word longer) survives: the cut divisor keeps k -
+    // equivalent: GSharpKernelFloatProvider.cs:427 `rightBits - 32 * truncatedWords` -> `... + 32` (j one word longer)
+    //             survives: the cut divisor keeps k -
     // 32 bits, the excess stays below 2^(p + 37 - k) = 2^-27, and the estimate is still the floor or one above; only
     // the cost changes
     // mutant: GSharpKernelFloatProvider.cs:428 `rightBits + 32 * n + 2` -> `rightBits + 32 * n` (HardDecrement1, 4, 8:
@@ -125,8 +126,8 @@ public class GpuBigFloatWideOperandTests : IDisposable
     // mutant: GSharpKernelFloatProvider.cs:448 `CorrectTruncatedEstimate(...)` removed (PowerPlus1*, HardDecrement*)
     // mutant: GSharpKernelFloatProvider.cs:425 `n + 2` -> `n` (K = n: the excess reaches 2^5; NarrowDividend*,
     // WiderDividend*, Hard*)
-    // mutant: GpuBigIntDivRemKernels.cu.cs:227 `left > right ? 2ul : 1ul` -> `1ul : 2ul` (PowerPlus1*, HardDecrement*)
-    // mutant: GpuBigIntDivRemKernels.cu.cs:232 `== 2ul` -> `!= 1ul` (SameValue*, HardExact*: an exact quotient drops)
+    // mutant: GpuBigIntDivRemKernels.cu.cs:226 `left > right ? 2ul : 1ul` -> `1ul : 2ul` (PowerPlus1*, HardDecrement*)
+    // mutant: GpuBigIntDivRemKernels.cu.cs:231 `== 2ul` -> `!= 1ul` (SameValue*, HardExact*: an exact quotient drops)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(DivideCaseNames))]
