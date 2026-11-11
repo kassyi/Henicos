@@ -104,8 +104,9 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 return;
             }
 
-            if (!Toolchain.CompileCppToSharedLibrary(sourcePath, outputDllPath, arch, Log, CancellationToken, _sanitizers) ||
-                !ArtifactHelper.ProcessArtifact(outputDllPath, Log))
+            if (!Toolchain.TryCompileCppToSharedLibrary(
+                    sourcePath, outputDllPath, arch, Log, CancellationToken, _sanitizers) ||
+                !ArtifactHelper.TrySignArtifact(outputDllPath, Log))
             {
                 Interlocked.Exchange(ref hasErrorsBox[0], 1);
                 return;

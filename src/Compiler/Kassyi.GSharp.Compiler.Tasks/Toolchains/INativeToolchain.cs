@@ -56,7 +56,7 @@ public interface INativeToolchain
     /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
     /// <param name="sanitizers">The native sanitizers (<see cref="NativeSanitizers"/>) to enable for compilation.</param>
     /// <returns><see langword="true"/> if compilation succeeded and produced the output file; otherwise, <see langword="false"/>.</returns>
-    bool CompileCppToSharedLibrary(
+    bool TryCompileCppToSharedLibrary(
         string sourcePath,
         string outputPath,
         string architecture,
