@@ -150,11 +150,7 @@ internal abstract class FloatVectorUnaryExpressionBase(
     public object GetOperand(int index) => vector;
 
     // The target is checked before the vector is evaluated, so that a rejected target evaluates nothing
-    public void Enter(in VectorRequest request)
-    {
-        ValidateBeforeEvaluate();
-        request.FloatTarget(Capacity, WordsPerElement);
-    }
+    public void Enter(in VectorRequest request) => request.FloatTarget(Capacity, WordsPerElement);
 
     // The window of the capacity; the elements are the first Count of them
     public VectorRequest OperandRequest(in VectorRequest request) =>
@@ -176,10 +172,6 @@ internal abstract class FloatVectorUnaryExpressionBase(
         // an element operation throw (Log(0))
         ExecuteElements(workspace, vecResult.Storage, output.Destination, vecResult.Elements(workspace));
         return new FloatVectorEvaluation(output.Close(workspace, vecResult.Count), vecResult.Count, _cache.Lease);
-    }
-
-    protected virtual void ValidateBeforeEvaluate()
-    {
     }
 
     /// <summary>Runs <see cref="EvaluateElement"/> over the first <paramref name="count"/> elements.</summary>
@@ -239,14 +231,6 @@ internal sealed class FloatVectorDivByUInt32Expression(
     // The divisor as a one-word float (exponent 0) while the elements are evaluated; default otherwise
     private GpuFloatOperand _divisorOperand;
 
-    protected override void ValidateBeforeEvaluate()
-    {
-        if (divisor == 0)
-        {
-            throw new DivideByZeroException();
-        }
-    }
-
     protected override void ExecuteElements(
         GpuWorkspace workspace,
         GpuBigFloatArrayView source,
@@ -256,6 +240,12 @@ internal sealed class FloatVectorDivByUInt32Expression(
         if (count == 0)
         {
             return;
+        }
+
+        // C# divides only the elements, so a zero divisor over none divides nothing, as System.Linq
+        if (divisor == 0)
+        {
+            throw new DivideByZeroException();
         }
 
         using var divisorWord = workspace.RentTemp(1);

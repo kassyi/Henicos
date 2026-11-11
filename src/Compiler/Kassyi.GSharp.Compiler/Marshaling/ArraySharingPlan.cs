@@ -95,14 +95,14 @@ internal readonly struct ArraySharingPlan
     public bool CopiesIn(int index)
     {
         var shape = _parameters[index];
-        return shape.CopyIn || Transfer(shape).ConvertedElementHasArrayFields;
+        return shape.IsCopiedIn || Transfer(shape).ConvertedElementHasArrayFields;
     }
 
     /// <summary>Whether the launcher copies the array of parameter <paramref name="index"/> back: not <c>[In]</c>, not a read-only container.</summary>
     public bool CopiesBack(int index)
     {
         var shape = _parameters[index];
-        return shape.CopyOut && !shape.IsReadOnlyContainer;
+        return shape.IsCopiedOut && !shape.IsReadOnlyContainer;
     }
 
     /// <summary>
@@ -167,7 +167,9 @@ internal readonly struct ArraySharingPlan
     {
         var shape = _parameters[index];
         return shape.IsArray &&
-            (shape.IsReadOnlyContainer ? shape.Cpu.ConvertedElementCopyArraysMethodName is not null : !shape.CopyOut);
+            (shape.IsReadOnlyContainer
+                ? shape.Cpu.ConvertedElementCopyArraysMethodName is not null
+                : !shape.IsCopiedOut);
     }
 
     /// <summary>
@@ -200,16 +202,16 @@ internal readonly struct ArraySharingPlan
     }
 
     /// <summary>
-    /// CPU: whether <paramref name="other"/> is a <c>T[]</c> that the kernel gets uncopied and that may hold the array of
-    /// <c>[In]</c> <c>T[]</c> <paramref name="index"/>, which then gets the caller's array too: on CUDA they share one
-    /// region, which <paramref name="other"/> copies back.
+    /// CPU: whether <paramref name="other"/> is a <c>T[]</c> that the kernel gets without a copy and that may hold the
+    /// array of <c>[In]</c> <c>T[]</c> <paramref name="index"/>, which then gets the caller's array too: on CUDA they
+    /// share one region, which <paramref name="other"/> copies back.
     /// </summary>
     public bool IsWritableHolder(int index, int other) =>
         other != index && !NeedsKernelCopy(other) && IsShared(index) && IsShared(other);
 
     /// <summary>
-    /// CPU: whether <paramref name="other"/> is a struct argument, or an array argument the kernel gets uncopied, that may
-    /// hold the array of <c>[In]</c> <c>T[]</c> <paramref name="index"/> in a field
+    /// CPU: whether <paramref name="other"/> is a struct argument, or an array argument the kernel gets without a copy,
+    /// that may hold the array of <c>[In]</c> <c>T[]</c> <paramref name="index"/> in a field
     /// (<see cref="KernelParameterShape.CpuHoldsArrayMethodName"/>): on CUDA the field shares the region and copies it back.
     /// </summary>
     public bool IsFieldHolder(int index, int other)
@@ -219,8 +221,13 @@ internal readonly struct ArraySharingPlan
             (holder.IsCustomStruct || !NeedsKernelCopy(other));
     }
 
-    /// <summary>The <see cref="IsWritableHolder"/> or <see cref="IsFieldHolder"/> of parameter <paramref name="index"/>.</summary>
-    public bool IsUncopiedHolder(int index, int other) => IsWritableHolder(index, other) || IsFieldHolder(index, other);
+    /// <summary>
+    /// CPU: whether <paramref name="other"/> may hold the array of <c>[In]</c> <c>T[]</c> <paramref name="index"/> and
+    /// hands it to the kernel without a copy: the <see cref="IsWritableHolder"/> or <see cref="IsFieldHolder"/> of
+    /// <paramref name="index"/>.
+    /// </summary>
+    public bool IsSharingHolder(int index, int other) =>
+        IsWritableHolder(index, other) || IsFieldHolder(index, other);
 
     private ParameterTransfer Transfer(in KernelParameterShape shape) => _isCuda ? shape.Cuda : shape.Cpu;
 }

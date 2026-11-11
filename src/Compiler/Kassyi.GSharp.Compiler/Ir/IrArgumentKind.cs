@@ -10,5 +10,11 @@ internal enum IrArgumentKind
     DefaultValue,
 
     /// <summary>The arguments of a <see langword="params"/> parameter, collected into one array.</summary>
-    ParamArray
+    ParamArray,
+
+    /// <summary>
+    /// The receiver of an extension method called on it (<c>x.M()</c>): the caller wrote it before the method name,
+    /// and it is the first argument of the static method.
+    /// </summary>
+    ExtensionReceiver
 }

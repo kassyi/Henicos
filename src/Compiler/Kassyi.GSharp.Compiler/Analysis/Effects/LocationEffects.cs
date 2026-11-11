@@ -49,7 +49,7 @@ internal static class LocationEffects
         if (model.GetTypeSymbol(access.Expression) is { IsValueType: true } &&
             access.Expression is not ThisExpressionSyntax)
         {
-            return walker.AddLocation(access.Expression);
+            return walker.AddReceiver(access.Expression);
         }
 
         walker.AddValue(access.Expression);
@@ -66,7 +66,7 @@ internal static class LocationEffects
                 and not IPointerTypeSymbol &&
             element.Expression is not ThisExpressionSyntax)
         {
-            var receiver = walker.AddLocation(element.Expression);
+            var receiver = walker.AddReceiver(element.Expression);
             walker.AddArgumentValues(element.ArgumentList.Arguments);
             return receiver;
         }

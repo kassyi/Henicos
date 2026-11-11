@@ -58,17 +58,17 @@ public class ComputeBenchmarkTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void ComputeBenchmarkRunner_RunSuite_All_ReturnsTrue()
+    public void ComputeBenchmarkRunner_TryRunSuite_All_ReturnsTrue()
     {
         CudaCapability.EnsureGpuAvailable();
-        var result = ComputeBenchmarkRunner.RunSuite("all", iterations: 2);
+        var result = ComputeBenchmarkRunner.TryRunSuite("all", iterations: 2);
         Assert.True(result);
     }
 
     [Fact]
-    public void ComputeBenchmarkRunner_RunSuite_Unknown_ReturnsFalse()
+    public void ComputeBenchmarkRunner_TryRunSuite_Unknown_ReturnsFalse()
     {
-        var result = ComputeBenchmarkRunner.RunSuite("nonexistent_suite_xyz");
+        var result = ComputeBenchmarkRunner.TryRunSuite("nonexistent_suite_xyz");
         Assert.False(result);
     }
 }
