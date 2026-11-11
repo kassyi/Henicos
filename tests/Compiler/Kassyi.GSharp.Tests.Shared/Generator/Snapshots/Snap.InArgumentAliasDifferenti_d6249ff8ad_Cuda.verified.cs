@@ -155,6 +155,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadAfterWrite(in int x, ref int target, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadAfterWrite* __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -181,6 +182,7 @@ return true;
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
+#pragma warning restore CS8500
 
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public unsafe struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadOnlyAfterWrite {
@@ -192,6 +194,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadOnlyAfterWrite(ref readonly int x, ref int target, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadOnlyAfterWrite* __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -218,6 +221,7 @@ return true;
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
+#pragma warning restore CS8500
 
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public unsafe struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadAfterWriteMovingIndex {
@@ -229,6 +233,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadAfterWriteMovingIndex(in int x, ref int target, ref int index, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__ReadAfterWriteMovingIndex* __gsharp_ctx, ref int __gsharp_result) {
 {
@@ -256,6 +261,7 @@ return true;
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
+#pragma warning restore CS8500
 
 }
 }

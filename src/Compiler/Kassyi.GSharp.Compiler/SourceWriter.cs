@@ -267,6 +267,14 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda(string? returnType = null) => new(this, returnType);
 
+    /// <summary>
+    /// Write <c>#pragma warning disable &lt;id&gt;[ // &lt;reason&gt;]</c> now and
+    /// <c>#pragma warning restore &lt;id&gt;</c> on disposal, or nothing when <paramref name="condition"/> is
+    /// <see langword="false"/>.
+    /// </summary>
+    public SourceWriterWarningSuppression WarningSuppressed(string id, string? reason = null, bool condition = true) =>
+        new(this, id, reason, condition);
+
     /// <summary>Name recorded in the <c>GeneratedCodeAttribute</c> of generated types.</summary>
     public const string GeneratorName = "Kassyi.GSharp.Compiler";
 
@@ -382,6 +390,42 @@ public readonly ref struct SourceWriterImmediatelyInvokedLambdaScope
     }
 
     public void Dispose() => _writer.Append("}())");
+}
+
+/// <summary>
+/// A zero-allocation scope that disables a C# warning in generated code on creation and restores it on disposal.
+/// </summary>
+public readonly ref struct SourceWriterWarningSuppression
+{
+    private readonly SourceWriter _writer;
+    private readonly string? _id;
+
+    public SourceWriterWarningSuppression(SourceWriter writer, string id, string? reason, bool condition)
+    {
+        _writer = writer;
+        _id = condition ? id : null;
+        if (!condition)
+        {
+            return;
+        }
+
+        if (reason is null)
+        {
+            _writer.AppendLine($"#pragma warning disable {id}");
+        }
+        else
+        {
+            _writer.AppendLine($"#pragma warning disable {id} // {reason}");
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_id is not null)
+        {
+            _writer.AppendLine($"#pragma warning restore {_id}");
+        }
+    }
 }
 
 #pragma warning disable IDE0060 // Remove unused parameter
