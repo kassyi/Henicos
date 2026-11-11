@@ -174,14 +174,16 @@ __device__ unsigned int __gsharp_launch_abort[__GSHARP_LAUNCH_ABORT_WORDS];
 // so every replay of the graph starts with a clear word. [WHY] An array of its own: the clear of a replay never clears
 // the word of a launch that is not captured. The word holds the full epoch, so a launch leaves only on its own failure;
 // two live graphs whose capture epochs are a multiple of 4096 apart share a word, and a replay of one can clear the
-// word of a failed replay of the other when both run at once. The module loads them as zeros.
+// word of a failed replay of the other when both run at once. A launch that is not captured takes an epoch of the same
+// range when the host has no free record for it; it records into the shared record like a captured launch. The module
+// loads the words as zeros.
 #define __GSHARP_CAPTURE_EPOCH 0x80000000u
 #define __GSHARP_CAPTURE_ABORT_WORDS 4096u
 __device__ unsigned int __gsharp_capture_abort[__GSHARP_CAPTURE_ABORT_WORDS];
 
 // Clears the abort word of a captured launch (one thread); the launcher captures it in front of the kernel. [WHY] A
 // kernel node, not a memset node: in a graph a 4-byte memset node in front of a kernel added 7 to 15 us per replay, a
-// one-thread kernel node about 0.8 us (RTX 3070 Ti, driver 610.88)
+// one-thread kernel node about 0.8 us (RTX 3070 Ti, driver 621.14)
 extern ""C"" __global__ void __gsharp_clear_capture_abort(unsigned int epoch) {
 __gsharp_capture_abort[epoch % __GSHARP_CAPTURE_ABORT_WORDS] = 0u;
 }
@@ -191,8 +193,9 @@ __gsharp_capture_abort[epoch % __GSHARP_CAPTURE_ABORT_WORDS] = 0u;
 // needed.
 __shared__ unsigned int __gsharp_launch_epoch;
 
-// The record that a failing thread of the running launch claims: its epoch's in the ring, or the shared record for a
-// captured launch (epoch 0 or a capture epoch), which the synchronization after cuGraphLaunch reads
+// The record that a failing thread of the running launch claims: its epoch's in the ring, or the shared record for an
+// epoch with bit 31 set or epoch 0 (a captured launch, which the synchronization after cuGraphLaunch reads, or a launch
+// without a free record)
 __device__ __forceinline__ GSharpDeviceErrorSlot* __gsharp_launch_record(unsigned int epoch) {
 GSharpLaunchErrorRing* ring = __gsharp_launch_errors;
 return epoch != 0u && (epoch & __GSHARP_CAPTURE_EPOCH) == 0u && ring != nullptr
@@ -209,18 +212,26 @@ return (epoch & __GSHARP_CAPTURE_EPOCH) != 0u
 : &__gsharp_launch_abort[epoch % __GSHARP_LAUNCH_ABORT_WORDS];
 }
 
-// Claims a record for the error of the running launch and writes it (first writer wins). When another launch still
-// holds the record (an unconsumed record of the launch __GSHARP_LAUNCH_RECORDS epochs before, which may still run), the
-// error goes to the shared record (__gsharp_error_slot), tagged with this epoch. When that one is held by another
-// launch as well, nothing can record the error, and the thread traps rather than letting the launch complete with no
-// exception (as without a record, __gsharp_trap_site). Returns the record that holds an error.
+// Claims a record for the error of the running launch and writes it (first writer wins). A launch that records into
+// the shared record (__gsharp_error_slot) itself, a launch captured into a CUDA graph or every launch when the host has
+// no ring, keeps the error that is already there when another launch holds it, as the launches of one graph that fail
+// in one replay do: the host throws the first error, and this launch only leaves. [WHY] No trap there: a trap ends the
+// context, and the first error already makes the synchronization throw (the launchers of these launches throw any
+// record, LaunchErrorRecords.ThrowIfLaunchError). When another launch still holds the launch's own record in the ring
+// (an unconsumed record of the launch __GSHARP_LAUNCH_RECORDS epochs before, which may still run), the error goes to
+// the shared record, tagged with this epoch. When that one is held by another launch as well, nothing can record the
+// error, and the thread traps rather than letting a launcher that reads only its own record return partial results
+// with no exception (as without a record, __gsharp_trap_site). Returns the record that holds an error.
 __device__ __forceinline__ GSharpDeviceErrorSlot* __gsharp_record_error(GSharpDeviceErrorSlot* record,
 unsigned int epoch, unsigned int code, unsigned int site_id) {
 const unsigned long long claim = (static_cast<unsigned long long>(epoch) << 32) | code;
 unsigned long long held = atomicCAS(reinterpret_cast<unsigned long long*>(&record->code), 0ull, claim);
 if (held != 0ull && static_cast<unsigned int>(held >> 32) != epoch) {
 GSharpDeviceErrorSlot* shared = __gsharp_error_slot;
-if (shared != nullptr && shared != record) {
+if (shared == record) {
+return record;
+}
+if (shared != nullptr) {
 record = shared;
 held = atomicCAS(reinterpret_cast<unsigned long long*>(&record->code), 0ull, claim);
 }
@@ -1048,13 +1059,15 @@ return total;
 static_assert(sizeof(cg::details::grid_workspace) == 8u && __builtin_offsetof(cg::details::grid_workspace, barrier) == 4u,
 ""G#: the layout of cooperative_groups' grid workspace changed; __gsharp_grid_barrier uses its barrier word"");
 
-// Takes back the arrival of a block that leaves a grid barrier, unless the barrier completed meanwhile. [WHY] The
-// counter must be a multiple of 2^31 when the launch ends: a launch captured into a CUDA graph keeps its grid workspace
-// from one replay to the next (measured: the arrivals of a failed replay made a block of the next replay pass its first
-// barrier before the others arrived), so an arrival left in a barrier that never completed would break every barrier of
-// the later replays. The compare-and-swap takes the add back only while the barrier has not completed: a completed
-// barrier already counted it, and a barrier without it cannot complete, as this block no longer arrives. A block that
-// already passed this barrier never comes back to it, so it cannot complete later either.
+// Takes back the arrival of a block that leaves a grid barrier, unless the barrier completed meanwhile; old is the
+// counter before the block's add. [WHY] The counter must be a multiple of 2^31 when the launch ends: a launch captured
+// into a CUDA graph keeps its grid workspace from one replay to the next (measured with driver 621.14, not documented
+// by NVIDIA: the arrivals of a failed replay made a block of the next replay pass its first barrier before the others
+// arrived), so an arrival left in a barrier that never completed would break every barrier of the later replays. The
+// take-back is also right with a driver that clears the workspace for every replay. The compare-and-swap takes the add
+// back only while the barrier has not completed: a completed barrier already counted it, and a barrier without it
+// cannot complete, as this block no longer arrives. A block that already passed this barrier never comes back to it,
+// so it cannot complete later either.
 __device__ __noinline__ void __gsharp_grid_unarrive(unsigned int old) {
 unsigned int* arrived = &cg::details::get_grid_workspace()->barrier;
 const unsigned int blocks = gridDim.x * gridDim.y * gridDim.z;
