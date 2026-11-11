@@ -38,17 +38,6 @@ internal static class IrNodeChildren
         _ => []
     };
 
-    /// <summary>Calls <paramref name="visit"/> on <paramref name="node"/> and every node below it, depth
-    /// first.</summary>
-    public static void Visit(IrNode node, Action<IrNode> visit)
-    {
-        visit(node);
-        foreach (var child in Of(node))
-        {
-            Visit(child, visit);
-        }
-    }
-
     /// <summary>Whether <paramref name="predicate"/> holds for <paramref name="node"/> or a node below it; stops at
     /// the first match.</summary>
     public static bool Exists(IrNode node, Func<IrNode, bool> predicate) =>
