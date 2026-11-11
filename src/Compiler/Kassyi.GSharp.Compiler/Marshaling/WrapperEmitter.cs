@@ -222,6 +222,14 @@ internal static class WrapperEmitter
                     continue;
                 }
 
+                // GSH0108: the analyzer reports the field type the launcher cannot name; a launcher that throws keeps
+                // the callers compiling, so that the build shows GSH0108 rather than errors in generated code
+                if (kernel.Host.LauncherUnavailableReason is { } reason)
+                {
+                    WriteUnavailableLaunchMethod(writer, kernel, reason);
+                    continue;
+                }
+
                 WriteKernelSource(writer, kernel, config);
 
                 if (config.IsCuda)
@@ -237,6 +245,18 @@ internal static class WrapperEmitter
 
         CloseClassDeclaration(writer, model.Class);
         return writer.ToString();
+    }
+
+    // public static unsafe <return> Launch<Name>(<parameters>, <launch options>) { throw new NotSupportedException("<reason>"); }
+    private static void WriteUnavailableLaunchMethod(SourceWriter writer, in KernelEmission kernel, string reason)
+    {
+        WriteLaunchMethodSignature(writer, kernel, isDevicePtr: false);
+        using (writer.Scope())
+        {
+            writer.Append("throw new global::System.NotSupportedException(");
+            NativeApi.ModuleKernelLaunchEmitter.AppendStringLiteral(writer, reason);
+            writer.AppendLine(");");
+        }
     }
 
     private static void WriteKernelSource(SourceWriter writer, in KernelEmission kernel, GeneratorConfig config)

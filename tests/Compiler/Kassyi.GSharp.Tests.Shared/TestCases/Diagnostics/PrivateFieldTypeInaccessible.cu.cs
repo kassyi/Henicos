@@ -16,7 +16,7 @@ public struct HiddenTypeHolder
     }
 }
 
-// Not converted (no array): copied as a whole, so the private type is never named
+// Not converted (no array): copied as a whole, but the layout guard of the nested struct names its type
 public struct HiddenTypeIdentical
 {
     public int X;
@@ -44,6 +44,27 @@ public struct HiddenConvertedTypeHolder
     }
 }
 
+// The field of private type sits in a nested struct: the path names both fields
+public struct HiddenTypeOuter
+{
+    public int[] Data;
+    public HiddenTypeHolder Inner;
+}
+
+// The private type is the element of an array field
+public struct HiddenElementHolder
+{
+    public int[] Data;
+    private Item[] _items;
+
+    public readonly int First => _items[0].V;
+
+    private struct Item
+    {
+        public int V;
+    }
+}
+
 public static partial class PrivateFieldTypeInaccessibleKernels
 {
     [GpuKernel]
@@ -65,5 +86,19 @@ public static partial class PrivateFieldTypeInaccessibleKernels
     public static void HiddenConvertedTypeKernel(HiddenConvertedTypeHolder holder, int[] output)
     {
         output[0] = holder.Value + holder.Tag;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void HiddenTypeOuterKernel(HiddenTypeOuter outer)
+    {
+        outer.Data[0] = outer.Inner.Value;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void HiddenElementKernel(HiddenElementHolder holder)
+    {
+        holder.Data[0] = holder.First;
     }
 }

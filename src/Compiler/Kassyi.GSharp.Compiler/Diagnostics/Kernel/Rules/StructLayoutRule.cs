@@ -151,16 +151,12 @@ internal sealed class StructLayoutRule :
         return true;
     }
 
-    // [WHY] The launcher is generated into the kernel's class and names the type of every field it copies: in the
-    // shadow struct, in the Marshal_ methods of a nested struct and in the host mirror of a struct with fields it
-    // cannot name. A field whose type that class cannot see (a private type nested in the struct) would give CS0122
-    // in generated code, so it is reported here instead (#808).
+    // GSH0108: a field whose type the kernel's class, where the launcher is generated, cannot name (LauncherTypeAccess)
     private static bool ReportInaccessibleFieldType(INamedTypeSymbol structType, SyntaxNode typeSyntax,
         ref ValidationContext context)
     {
         var launcherClass = context.MethodSymbol.ContainingType;
-        if (!TryFindInaccessibleFieldType(structType, context.SemanticModel.Compilation, launcherClass, depth: 0,
-                out var fieldType, out var fieldPath))
+        if (LauncherTypeAccess.Find(structType, launcherClass, context.SemanticModel.Compilation) is not { } found)
         {
             return false;
         }
@@ -168,57 +164,10 @@ internal sealed class StructLayoutRule :
         context.ReportDiagnostic(
             GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher,
             typeSyntax,
-            TypeLayoutCalculator.FormatTypeName(fieldType),
-            fieldPath,
+            TypeLayoutCalculator.FormatTypeName(found.FieldType),
+            found.FieldPath,
             TypeLayoutCalculator.FormatTypeName(launcherClass));
         return true;
-    }
-
-    // The first field of the struct, its nested structs included, whose type (or array element type) launcherClass
-    // cannot access, with its path from the struct (Inner.Hidden)
-    private static bool TryFindInaccessibleFieldType(INamedTypeSymbol structType, Compilation compilation,
-        INamedTypeSymbol launcherClass, int depth, [NotNullWhen(true)] out ITypeSymbol? fieldType,
-        [NotNullWhen(true)] out string? fieldPath)
-    {
-        const int MaxDepth = 16;
-        fieldType = null;
-        fieldPath = null;
-        if (depth > MaxDepth)
-        {
-            return false;
-        }
-
-        foreach (var member in StructAbiMembers.Get(structType))
-        {
-            // GSH0078 reports a member the shadow struct leaves out
-            if (NativeStructEmitter.IsUnrepresentableReference(member))
-            {
-                continue;
-            }
-
-            var type = member.Type;
-            while (type.TryGetArrayLikeElementType(out var element))
-            {
-                type = element;
-            }
-
-            if (!compilation.IsSymbolAccessibleWithin(type, launcherClass))
-            {
-                fieldType = type;
-                fieldPath = member.Name;
-                return true;
-            }
-
-            if (type is INamedTypeSymbol nested && TypeLayoutCalculator.IsUserStruct(nested) &&
-                TryFindInaccessibleFieldType(nested, compilation, launcherClass, depth + 1, out fieldType,
-                    out var nestedPath))
-            {
-                fieldPath = member.Name + "." + nestedPath;
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static void ReportConverted(INamedTypeSymbol structType, SyntaxNode typeSyntax,

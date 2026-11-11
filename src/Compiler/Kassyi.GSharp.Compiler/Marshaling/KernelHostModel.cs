@@ -53,6 +53,14 @@ internal readonly record struct KernelHostModel
     /// <summary>Whether any parameter uses a reserved launch option parameter name (GSH0106), so the wrapper is left out.</summary>
     public bool HasReservedLaunchParameterName { get; init; }
 
+    /// <summary>
+    /// Why the launcher cannot be generated (GSH0108: a field type that the kernel's class cannot name), as the message
+    /// of the exception that the <c>Launch</c> method written in its place throws; <see langword="null"/> otherwise.
+    /// No struct marshaling or layout guard is written for the kernel, so that the generated C# compiles and the build
+    /// shows the analyzer's GSH0108.
+    /// </summary>
+    public string? LauncherUnavailableReason { get; init; }
+
     /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
     public string MessageName { get; init; }
 
@@ -108,6 +116,10 @@ internal readonly record struct KernelHostModel
             .Select(KernelParameterShape.Classify)
             .AddTo(builder);
         var parameters = builder.MoveToImmutable().AsEquatableArray();
+        var unavailableReason = model is not null && LauncherTypeAccess.Find(kernel, model.Compilation) is { } found
+            ? FormatUnavailableReason(kernel, found)
+            : null;
+        var hasLauncher = unavailableReason is null;
 
         return new KernelHostModel
         {
@@ -139,11 +151,18 @@ internal readonly record struct KernelHostModel
             TypedPointerSignatureKey = KernelHostNames.GetSignatureKey(parameters, typedPointers: true),
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
             Parameters = parameters,
-            Structs = structs,
-            CudaLayoutGuards = CollectLayoutGuards(kernel, HostDialects.Cuda),
-            CpuLayoutGuards = CollectLayoutGuards(kernel, HostDialects.Cpu)
+            LauncherUnavailableReason = unavailableReason,
+            Structs = hasLauncher ? structs : default,
+            CudaLayoutGuards = hasLauncher ? CollectLayoutGuards(kernel, HostDialects.Cuda) : default,
+            CpuLayoutGuards = hasLauncher ? CollectLayoutGuards(kernel, HostDialects.Cpu) : default
         };
     }
+
+    // <kernel> cannot be launched: the type '<T>' of field '<path>' is not accessible from '<class>' (GSH0108).
+    private static string FormatUnavailableReason(IMethodSymbol kernel, InaccessibleFieldType found) =>
+        $"{kernel.Name} cannot be launched: the type '{TypeLayoutCalculator.FormatTypeName(found.FieldType)}' of field " +
+        $"'{found.FieldPath}' is not accessible from '{TypeLayoutCalculator.FormatTypeName(kernel.ContainingType)}' " +
+        $"({GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher.Id}).";
 
     // The managed state machine keeps pointers in its context, so the context becomes an unsafe struct pinned by the launcher
     private static bool NeedsUnsafeContext(IMethodSymbol kernel)
@@ -211,7 +230,7 @@ internal readonly record struct KernelHostModel
             var fields = ImmutableArray.CreateBuilder<FieldOffsetGuard>();
             foreach (var field in layout.Host.Fields)
             {
-                if (IsNameableField(field.Member, launcherAssembly))
+                if (HostFieldAccess.CanCheckOffset(field.Member, launcherAssembly))
                 {
                     fields.Add(new FieldOffsetGuard(
                         field.Member.Name.ToCSharpIdentifier(),
@@ -233,12 +252,6 @@ internal readonly record struct KernelHostModel
         }
     }
 
-    // An ordinary field that the generated launcher can name: public, or internal in the launcher's own assembly. A
-    // pointer cannot be a type argument of Unsafe.As, so a pointer field is left to the size check.
-    private static bool IsNameableField(StructAbiMember member, IAssemblySymbol launcherAssembly) =>
-        member is { Kind: StructAbiMemberKind.Field, Symbol: IFieldSymbol field } &&
-        field.Type is not (IPointerTypeSymbol or IFunctionPointerTypeSymbol) &&
-        HostFieldAccess.CanName(field, launcherAssembly);
 }
 
 /// <summary>
@@ -527,7 +540,8 @@ internal readonly record struct KernelModuleModel(
             positions.TryGetValue(hintName, out var position);
             positions[hintName] = position + 1;
             var emission = classModels[classIndices[hintName]].Kernels[position];
-            if (!emission.IsIndistinguishable && !emission.Host.HasReservedLaunchParameterName)
+            if (!emission.IsIndistinguishable && !emission.Host.HasReservedLaunchParameterName &&
+                emission.Host.LauncherUnavailableReason is null)
             {
                 warmups.Add(new KernelWarmup(kernel.Class, emission.MemberKey));
             }
