@@ -29,7 +29,7 @@ internal static class NativeStructEmitter
             {
                 // [WHY] A reference type other than an array has no device layout: GSH0078 reports it, and the shadow
                 // leaves it out so that the generated code still compiles.
-                if (IsUnrepresentableReference(field))
+                if (IsOmittedFromShadow(field))
                 {
                     continue;
                 }
@@ -201,7 +201,7 @@ internal static class NativeStructEmitter
     /// Whether <paramref name="member"/> is a reference type other than an array-like one, or a compiler-generated field
     /// that G# does not know, which the shadow struct and its marshaling leave out (GSH0078).
     /// </summary>
-    internal static bool IsUnrepresentableReference(StructAbiMember member) =>
+    internal static bool IsOmittedFromShadow(StructAbiMember member) =>
         member.Kind == StructAbiMemberKind.UnknownHiddenField ||
         (member.Type.IsReferenceType && !member.Type.IsArrayLikeType());
 
