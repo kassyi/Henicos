@@ -45,9 +45,10 @@ public static unsafe class GpuKernelLoader
     /// Gets a value indicating whether the runtime is operating in CPU host fallback mode.
     /// </summary>
     /// <remarks>
-    /// <see langword="true"/> when <see cref="ForceCpuFallback"/> is set (the driver is not touched then), or when there
-    /// is no driver, no device or a driver call failed. A driver older than the CUDA 13.0 driver is not a fallback
-    /// case: the property is <see langword="false"/>, <see cref="DriverUnavailableReason"/> says why, and GPU use throws.
+    /// <see langword="true"/> when <see cref="ForceCpuFallback"/> is set (the driver is not touched then), or when
+    /// there is no driver, no device or a driver call failed. A driver older than the CUDA 13.0 driver is not a
+    /// fallback case: the property is <see langword="false"/>, <see cref="DriverUnavailableReason"/> says why, and GPU
+    /// use throws.
     /// </remarks>
     public static bool IsCpuFallbackMode =>
         CudaDriverStatus.DecideGpuUse(ForceCpuFallback, s_getDriverState) == GpuUse.Cpu;
@@ -134,8 +135,9 @@ public static unsafe class GpuKernelLoader
     /// Gets a value indicating whether the CUDA driver is available and initialized.
     /// </summary>
     /// <remarks>
-    /// Never throws: <see langword="false"/> for a missing or faulty driver, no device, or a driver older than the CUDA
-    /// 13.0 driver; <see cref="DriverUnavailableReason"/> says which. <see cref="ForceCpuFallback"/> does not change it.
+    /// Never throws: <see langword="false"/> for a missing or faulty driver, no device, or a driver older than the
+    /// CUDA 13.0 driver; <see cref="DriverUnavailableReason"/> says which. <see cref="ForceCpuFallback"/> does not
+    /// change it.
     /// </remarks>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static bool IsDriverAvailable => GetDriverState() == CudaDriverState.Usable;
@@ -144,8 +146,9 @@ public static unsafe class GpuKernelLoader
     /// Gets why the CUDA driver cannot be used, or <see langword="null"/> when it can.
     /// </summary>
     /// <remarks>
-    /// For a driver older than the CUDA 13.0 driver, the message of the <see cref="NotSupportedException"/> that GPU use
-    /// throws (the CUDA version found and the one required); otherwise the failed driver call or the missing library.
+    /// For a driver older than the CUDA 13.0 driver, the message of the <see cref="NotSupportedException"/> that GPU
+    /// use throws (the CUDA version found and the one required); otherwise the failed driver call or the missing
+    /// library.
     /// </remarks>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static string? DriverUnavailableReason
@@ -236,7 +239,8 @@ public static unsafe class GpuKernelLoader
             CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
             CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
             DeviceErrorSlot.AllocateInCurrentContext();
-            CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _)); // Immediately pop to avoid poisoning the ThreadPool thread
+            // Immediately pop to avoid poisoning the ThreadPool thread
+            CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _));
 
             CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMajor,
                 CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
