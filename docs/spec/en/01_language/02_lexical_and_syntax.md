@@ -17,7 +17,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | C# Construct | Supported | CUDA Equivalent | Notes |
 | :--- | :---: | :--- | :--- |
 | `if` / `else if` / `else` | Yes | `if` / `else` | Standard branching. Single-statement braceless blocks are automatically scoped `{ }` in generated CUDA C++. |
-| `for` loop | Yes | `for` loop | Automatically prefixed with `#pragma unroll` during transpilation. |
+| `for` loop | Yes | `for` loop | Supported. Loop unrolling can be requested with `Gpu.Hint.Unroll()`. |
 | `while` loop | Yes | `while` loop | Supported. |
 | `do...while` loop | Yes | `do...while` loop | Supported. |
 | `switch` statement | Yes | `switch` statement | Pattern matching is **supported** (including constant and relational patterns). As in C#, the switch block is one scope: a local or const declared in one section can be used in another (the C++ declares it in a block around the switch). A barrier, a warp shuffle or a call that may suspend inside a section suspends the thread on the CPU paths as it does outside a switch. A local that needs its initializer at the declaration (a span or other ref struct, a ref local, a stack array, shared memory) used that way is reported as [GSH0003](../03_bcl_api/diagnostics/GSH0003.md). |
@@ -25,7 +25,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | `break` / `continue` | Yes | `break` / `continue` | Supported within loops and switches. |
 | `return` | Yes | `return` | Kernels (`[GpuKernel]`) can now directly return primitive types and value structs. When invoked from the host CPU, the runtime automatically handles device output buffer allocation and host-bound memory copying. |
 | Expression-bodied (`=>`) | Yes | Function body | Supported for both `void` and value-returning methods (automatically injects `return`). |
-| Local functions / Lambdas | Yes | C++ Lambdas | Supported for non-capturing lambdas and local functions. Transpiled to C++ lambda expressions. |
+| Local functions / Lambdas | Yes | C++ Lambdas | Supported for non-capturing or value-capturing lambdas and local functions. Transpiled to C++ lambda expressions. |
 | `goto` | Yes | `goto` | Supported, also on the CPU paths, where a label that a `goto` reaches from after a barrier starts a state of the state machine. A `goto` whose jump crosses a barrier in the source text (a `Gpu.SyncThreads()` or a call to a device function that may suspend lies between the `goto` and its label) is reported as [GSH0040](../03_bcl_api/diagnostics/GSH0040.md). |
 | `try` / `catch` / `finally` | No | - | GPU execution does not support C++ exception handling for performance reasons. |
 | `yield return` | Yes (`[GpuDeviceFunction]`) | Inlined `foreach` body | Supported in a `[GpuDeviceFunction]` that returns `IEnumerable<T>`; lowered by inlining the iterator body directly into each consumer `foreach`. Not in `[GpuKernel]`, and not across a barrier (GSH0046, GSH0070-GSH0073). |
@@ -52,11 +52,11 @@ Variables in G# are strictly translated to native C++ variables.
 
 Standard C# operators map directly to their CUDA C++ counterparts with identical precedence and associativity.
 
-* **Arithmetic:** `+`, `-`, `*`, `/`, `%`. The `%` of `float` and `double` operands (and `%=`) is the C# remainder, the C `fmod` result: the sign of the dividend, NaN for an infinite dividend or a zero divisor, the dividend for an infinite divisor, and exact on every path.
-* **Bitwise:** `&`, `|`, `^`, `~`, `<<`, `>>`
+* **Arithmetic:** `+`, `-`, `*`, `/`, `%`. The `%` of `float` and `double` operands (and `%=`) is the C# remainder, the C `fmod` result: the sign of the dividend, NaN for an infinite dividend or a zero divisor, the dividend for an infinite divisor, and exact on every path. Signed integer arithmetic (`+`, `-`, `*`, unary `-`, `++`, `--`) wraps per C# two's complement semantics, emitting Prelude helper functions (such as `__gsharp_add_i32`) where overflow is possible to prevent C++ undefined behavior.
+* **Bitwise:** `&`, `|`, `^`, `~`, `<<`, `>>`, `>>>`. Shift counts are masked per C# rules (`& 31` for 32-bit types, `& 63` for 64-bit types).
 * **Logical:** `&&`, `||`, `!` (Short-circuit evaluation is fully supported)
 * **Relational:** `==`, `!=`, `<`, `>`, `<=`, `>=`
-* **Assignment:** `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`. Tuple Swaps `(a, b) = (b, a)` are safely evaluated using temporary variables to prevent destructive assignments. A computed property of a struct (a getter and setter with bodies) may be the target of a compound assignment, an increment or decrement, and a chained assignment (`x = s.P = v`): the receiver is found once, then the getter runs, then the right side, then the setter, and the value is the one C# defines; with a user-defined or lifted operator, or with `??=`, it is [GSH0003](../03_bcl_api/diagnostics/GSH0003.md).
+* **Assignment:** `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`, `>>>=`. Tuple Swaps `(a, b) = (b, a)` are safely evaluated using temporary variables to prevent destructive assignments. A computed property of a struct (a getter and setter with bodies) may be the target of a compound assignment, an increment or decrement, and a chained assignment (`x = s.P = v`): the receiver is found once, then the getter runs, then the right side, then the setter, and the value is the one C# defines; with a user-defined or lifted operator, or with `??=`, it is [GSH0003](../03_bcl_api/diagnostics/GSH0003.md).
 * **Ternary Conditional & Null-Coalescing:** `? :`, `??`, `??=`. Null-coalescing operators are fully supported with zero-allocation branching.
 * **Pointer Operators:** `*` (dereference), `&` (address-of), `->` (member access), as well as postfix increment/decrement (`ptr++`, `ptr--`). *Note: The `unsafe` keyword must be used in the C# method signature.*
 * **`sizeof(T)`:** Supported. Translated directly to `sizeof(T)` in C++.
@@ -70,7 +70,7 @@ Standard C# operators map directly to their CUDA C++ counterparts with identical
 ## 2.4 Preprocessor Directives
 
 C# preprocessor directives (e.g., `#if`, `#define`) are **not** translated into CUDA C++ preprocessor directives. They are evaluated by the Roslyn compiler during the AOT phase.
-To inject C++ preprocessor macros (like `#define`) into the generated CUDA code, you must use the `[Constant]` attribute on kernel parameters.
+Kernel parameters cannot be transformed into C++ `#define` macros; use the `[GpuConstexpr]` attribute (`GpuConstexprAttribute`) to specify compile-time candidate constant values for kernel specialization.
 
 ## 2.5 In-Depth Syntax Guides
 
@@ -200,14 +200,15 @@ public static class MathDeviceHelpers
 Transpiled CUDA C++ equivalent:
 ```cpp
 // Execution Context: Generated CUDA C++ (Device)
-__device__ int ComputeStep(int input, int offset, int scale)
+inline __device__ int ComputeStep(int input, int offset, int scale)
 {
-    return (input + offset) * scale;
+    return __gsharp_mul_i32(__gsharp_add_i32(input, offset), scale);
 }
 
-extern "C" __global__ void SampleKernel(int* __restrict__ data)
+extern "C" __global__ void SampleKernel(GSharpArray<int> data, unsigned int __gsharp_epoch)
 {
-    int tid = threadIdx.x;
+    __gsharp_launch_epoch = __gsharp_epoch;
+    int tid = (int)threadIdx.x;
 
     // Call site 1: Default arguments synthesized
     int r1 = ComputeStep(data[tid], 0, 1);
@@ -218,7 +219,7 @@ extern "C" __global__ void SampleKernel(int* __restrict__ data)
     // Call site 3: Partially omitted arguments synthesized
     int r3 = ComputeStep(data[tid], 0, 4);
 
-    data[tid] = r1 + r2 + r3;
+    data[tid] = __gsharp_add_i32(__gsharp_add_i32(r1, r2), r3);
 }
 ```
 
