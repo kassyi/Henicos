@@ -47,9 +47,9 @@ public sealed class DedupCommand : IFuzzCommand
     }
 
     private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateTable(
-        new("--source", FuzzOptionTable.Value(FuzzOptionTable.ParseSourcePath)),
-        new("--failing-paths", FuzzOptionTable.Value(FuzzOptionTable.ParseFailingPaths)),
-        new("--failure-kind", FuzzOptionTable.Value(FuzzOptionTable.ParseFailureKind)),
+        new("--source", FuzzOptionTable.Value(FuzzOptionSetters.ParseSourcePath)),
+        new("--failing-paths", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailingPaths)),
+        new("--failure-kind", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailureKind)),
         new("--json", FuzzOptionTable.Flag(static v => v.Json = true)));
 
     /// <summary>Parses command-line arguments into a <see cref="DedupCommandOptions"/> record.</summary>

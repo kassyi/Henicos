@@ -107,9 +107,9 @@ public sealed class RunCommand : IFuzzCommand
         new("--profile", FuzzOptionTable.Value(ParseProfile)),
         new("--minutes", FuzzOptionTable.Value(ParseMinutes)),
         new("--compare-base", FuzzOptionTable.Value(ParseCompareBase)),
-        new("--work-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseWorkDir)),
-        new("--out-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseOutDir)),
-        new("--repo-root", FuzzOptionTable.Value(FuzzOptionTable.ParseRepoRoot)),
+        new("--work-dir", FuzzOptionTable.Value(FuzzOptionSetters.ParseWorkDir)),
+        new("--out-dir", FuzzOptionTable.Value(FuzzOptionSetters.ParseOutDir)),
+        new("--repo-root", FuzzOptionTable.Value(FuzzOptionSetters.ParseRepoRoot)),
         new("--no-gpu-lock", FuzzOptionTable.Flag(static v => v.NoGpuLock = true)));
 
     /// <summary>Gets the singleton command instance.</summary>

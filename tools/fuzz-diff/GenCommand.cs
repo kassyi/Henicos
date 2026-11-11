@@ -44,11 +44,11 @@ public sealed class GenCommand : IFuzzCommand
 
     private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateFrom(
         FuzzOptionTable.GenerationRows,
-        new("--size", FuzzOptionTable.Value(FuzzOptionTable.ParseSize)),
-        new("--profile", FuzzOptionTable.Value(FuzzOptionTable.ParseProfileCode)),
-        new("--out-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseOutDir)),
-        new("--repo-root", FuzzOptionTable.Value(FuzzOptionTable.ParseRepoRoot)),
-        new("--cuda-arch", FuzzOptionTable.Value(FuzzOptionTable.ParseCudaArch)));
+        new("--size", FuzzOptionTable.Value(FuzzOptionSetters.ParseSize)),
+        new("--profile", FuzzOptionTable.Value(FuzzOptionSetters.ParseProfileCode)),
+        new("--out-dir", FuzzOptionTable.Value(FuzzOptionSetters.ParseOutDir)),
+        new("--repo-root", FuzzOptionTable.Value(FuzzOptionSetters.ParseRepoRoot)),
+        new("--cuda-arch", FuzzOptionTable.Value(FuzzOptionSetters.ParseCudaArch)));
 
     /// <summary>Parses command-line arguments into a <see cref="GenCommandOptions"/> record.</summary>
     public static bool TryParseOptions(

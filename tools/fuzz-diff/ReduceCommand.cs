@@ -70,18 +70,18 @@ public sealed class ReduceCommand : IFuzzCommand
     }
 
     private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateTable(
-        new("--source", FuzzOptionTable.Value(FuzzOptionTable.ParseSourcePath)),
+        new("--source", FuzzOptionTable.Value(FuzzOptionSetters.ParseSourcePath)),
         new("--fuzz-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseFuzzSeed)),
-        new("--kernel", FuzzOptionTable.Value(FuzzOptionTable.ParseKernelName)),
+        new("--kernel", FuzzOptionTable.Value(FuzzOptionSetters.ParseKernelName)),
         new("--input-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseInputSeed)),
-        new("--profile", FuzzOptionTable.Value(FuzzOptionTable.ParseProfileCode)),
-        new("--work-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseWorkDir)),
-        new("--repo-root", FuzzOptionTable.Value(FuzzOptionTable.ParseRepoRoot)),
-        new("--test-cmd", FuzzOptionTable.Value(FuzzOptionTable.ParseTestCmd)),
-        new("--out", FuzzOptionTable.Value(FuzzOptionTable.ParseOutPath)),
-        new("--failing-paths", FuzzOptionTable.Value(FuzzOptionTable.ParseFailingPaths)),
-        new("--failure-kind", FuzzOptionTable.Value(FuzzOptionTable.ParseFailureKind)),
-        new("--column", FuzzOptionTable.Value(FuzzOptionTable.ParseColumn)),
+        new("--profile", FuzzOptionTable.Value(FuzzOptionSetters.ParseProfileCode)),
+        new("--work-dir", FuzzOptionTable.Value(FuzzOptionSetters.ParseWorkDir)),
+        new("--repo-root", FuzzOptionTable.Value(FuzzOptionSetters.ParseRepoRoot)),
+        new("--test-cmd", FuzzOptionTable.Value(FuzzOptionSetters.ParseTestCmd)),
+        new("--out", FuzzOptionTable.Value(FuzzOptionSetters.ParseOutPath)),
+        new("--failing-paths", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailingPaths)),
+        new("--failure-kind", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailureKind)),
+        new("--column", FuzzOptionTable.Value(FuzzOptionSetters.ParseColumn)),
         new("--no-gpu-lock", FuzzOptionTable.Flag(static v => v.NoGpuLock = true)));
 
     /// <summary>Parses command-line arguments into a <see cref="ReduceCommandOptions"/> record.</summary>

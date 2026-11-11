@@ -66,11 +66,7 @@ public static class FuzzPromoter
             fpResult.FailingPathsMask);
 
         bool split = FuzzSplitOracle.IsSplitKernel(selectedMethod, root);
-        string kernelFileContent = BuildReproKernelFile(root, renamedMethod, reproClassName, headerLine);
-        if (split)
-        {
-            kernelFileContent = FuzzSplitOracle.WithOracleTwins(kernelFileContent);
-        }
+        string kernelFileContent = BuildReproKernelFile(root, renamedMethod, reproClassName, headerLine, split);
 
         string caseSnippetContent = BuildCaseSnippet(
             reproClassName,
@@ -297,7 +293,8 @@ public static class FuzzPromoter
         CompilationUnitSyntax root,
         MethodDeclarationSyntax renamedMethod,
         string reproClassName,
-        string headerLine)
+        string headerLine,
+        bool split)
     {
         using var writer = new SourceWriter();
         FuzzCaseEmitter.AppendKernelsFileHeader(writer, "Kassyi.GSharp.Tests.Shared.Differential", headerLine);
@@ -309,7 +306,8 @@ public static class FuzzPromoter
         var rewrittenHelpers = CollectUsedRewrittenHelpers(root, rewriter, methodText);
         AppendDeclarationsAndClass(writer, reproClassName, methodText, rewrittenHelpers);
 
-        return writer.ToString();
+        // A split kernel is checked against its oracle twin, so the repro carries the twin as the batch did
+        return split ? FuzzSplitOracle.WithOracleTwins(writer.ToString()) : writer.ToString();
     }
 
     private static List<string> CollectUsedRewrittenHelpers(

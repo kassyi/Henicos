@@ -53,14 +53,14 @@ public sealed class PromoteCommand : IFuzzCommand
     }
 
     private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateTable(
-        new("--source", FuzzOptionTable.Value(FuzzOptionTable.ParseSourcePath)),
+        new("--source", FuzzOptionTable.Value(FuzzOptionSetters.ParseSourcePath)),
         new("--fuzz-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseFuzzSeed)),
         new("--input-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseInputSeed)),
-        new("--failing-paths", FuzzOptionTable.Value(FuzzOptionTable.ParseFailingPaths)),
-        new("--failure-kind", FuzzOptionTable.Value(FuzzOptionTable.ParseFailureKind)),
-        new("--column", FuzzOptionTable.Value(FuzzOptionTable.ParseColumn)),
-        new("--findings-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseFindingsDir)),
-        new("--kernel", FuzzOptionTable.Value(FuzzOptionTable.ParseKernelName)));
+        new("--failing-paths", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailingPaths)),
+        new("--failure-kind", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailureKind)),
+        new("--column", FuzzOptionTable.Value(FuzzOptionSetters.ParseColumn)),
+        new("--findings-dir", FuzzOptionTable.Value(FuzzOptionSetters.ParseFindingsDir)),
+        new("--kernel", FuzzOptionTable.Value(FuzzOptionSetters.ParseKernelName)));
 
     /// <summary>Parses command-line arguments into a <see cref="PromoteCommandOptions"/> record.</summary>
     public static bool TryParseOptions(

@@ -48,8 +48,8 @@ public sealed class CompareCommand : IFuzzCommand
         new("--profile", FuzzOptionTable.Value(ParseProfile)),
         new("--dialects", FuzzOptionTable.Value(ParseDialects)),
         new("--reduce-minutes", FuzzOptionTable.Value(ParseReduceMinutes)),
-        new("--work-dir", FuzzOptionTable.Value(FuzzOptionTable.ParseWorkDir)),
-        new("--repo-root", FuzzOptionTable.Value(FuzzOptionTable.ParseRepoRoot)));
+        new("--work-dir", FuzzOptionTable.Value(FuzzOptionSetters.ParseWorkDir)),
+        new("--repo-root", FuzzOptionTable.Value(FuzzOptionSetters.ParseRepoRoot)));
 
     /// <summary>Gets the singleton command instance.</summary>
     public static CompareCommand Instance { get; } = new();
