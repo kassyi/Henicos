@@ -61,7 +61,7 @@ A function to test each element for a condition; the second parameter of the fun
 Advances the enumerator to the next element that satisfies the index-aware predicate.
 
 ```csharp
-public bool TryGetNext(out TSource current);
+public bool TryGetNext([MaybeNullWhen(false)] out TSource current);
 ```
 
 #### Parameters

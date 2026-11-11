@@ -19,6 +19,29 @@ Provides utility methods for calculating GPU kernel launch grid and block dimens
 public static class LaunchDimension
 ```
 
+## Fields
+
+| Name | Description |
+| --- | --- |
+| [DefaultThreadsPerBlock](#defaultthreadsperblock) | The default number of threads per block for 1D kernel launches (256). |
+| [MaxThreadsPerBlock](#maxthreadsperblock) | The hardware maximum number of threads per block (1024). |
+
+## DefaultThreadsPerBlock
+
+The default number of threads per block for 1D kernel launches (256).
+
+```csharp
+public const int DefaultThreadsPerBlock = 256;
+```
+
+## MaxThreadsPerBlock
+
+The hardware maximum number of threads per block (1024).
+
+```csharp
+public const int MaxThreadsPerBlock = 1024;
+```
+
 ## Methods
 
 | Name | Description |
@@ -30,7 +53,7 @@ public static class LaunchDimension
 Calculates the 1D grid and block dimensions required to execute the specified number of total threads.
 
 ```csharp
-public static (uint Grid, uint Block) Calculate1D(int totalThreads, int threadsPerBlock = 256);
+public static (uint Grid, uint Block) Calculate1D(int totalThreads, int threadsPerBlock = DefaultThreadsPerBlock);
 ```
 
 #### Parameters

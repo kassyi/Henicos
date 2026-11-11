@@ -11,7 +11,7 @@ description: "Returns the number of elements in a sequence."
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Returns the number of elements in a sequence.
 
@@ -19,56 +19,123 @@ Returns the number of elements in a sequence.
 
 | Name | Description |
 | --- | --- |
-| [Count<TEnumerator, TSource>(TEnumerator)](#counttenumeratortsourcetenumerator) | Returns the number of elements. |
-| [Count<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)](#counttenumeratortsourcetenumeratorfunctsourcebool) | Returns a number that represents how many elements satisfy a condition. |
-| [Count<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)](#counttenumeratortsourcetstatetenumeratortstatefunctsourcetstatebool) | Returns how many elements satisfy a condition that receives a state value. Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly. |
+| [Count\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>)](#count-overload-1) | Returns the number of elements in a stack-allocated sequence. |
+| [Count\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)](#count-overload-2) | Returns a number that represents how many elements in the specified stack-allocated sequence satisfy a condition. |
+| [Count\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, int, bool\>)](#count-overload-3) | Returns a number that represents how many elements in the specified stack-allocated sequence satisfy a condition. Each element's index is used in the logic of the predicate function. |
+| [Count\<TEnumerator, TSource, TState\>(StackEnumerable\<TEnumerator, TSource\>, TState, Func\<TSource, TState, bool\>)](#count-overload-4) | Returns a number that represents how many elements satisfy a condition that receives a caller-supplied state. Host-only. |
 
+<a id="count-overload-1"></a>
 
-## Count<TEnumerator, TSource>(TEnumerator)
+## Count\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>)
 
-Returns the number of elements.
+Returns the number of elements in a stack-allocated sequence.
 
 ```csharp
-public static int Count<TEnumerator, TSource>(this TEnumerator source) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static int Count<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The sequence that contains elements to be counted.
 
 #### Returns
 
-<i>int</i>
+The number of elements in the input sequence.
 
-## Count<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)
+**Performance:** Consumes the enumerator in $O(N)$ time with zero heap allocations.
 
-Returns a number that represents how many elements satisfy a condition.
+<a id="count-overload-2"></a>
+
+## Count\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)
+
+Returns a number that represents how many elements in the specified stack-allocated sequence satisfy a condition.
 
 ```csharp
-public static int Count<TEnumerator, TSource>(this TEnumerator source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static int Count<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The sequence that contains elements to be counted.
+
+`predicate`<br>
+A function to test each element for a condition.
 
 #### Returns
 
-<i>int</i>
+A number that represents how many elements in the sequence satisfy the condition.
 
+#### Exceptions
 
+`ArgumentNullException`<br>
+Thrown when `predicate` is `null`.
 
-## Count<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)
+**Performance:** Consumes the enumerator in $O(N)$ time with zero heap allocations.
 
-Returns how many elements satisfy a condition that receives a state value. Pass the outer value as `state` so that the lambda can be `static` and no closure is allocated.
+<a id="count-overload-3"></a>
+
+## Count\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, int, bool\>)
+
+Returns a number that represents how many elements in the specified stack-allocated sequence satisfy a condition. Each element's index is used in the logic of the predicate function.
+
+```csharp
+public static int Count<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+```
+
+#### Parameters
+
+`source`<br>
+The sequence that contains elements to be counted.
+
+`predicate`<br>
+A function to test each element for a condition; the second parameter of the function represents the index of the source element.
+
+#### Returns
+
+A number that represents how many elements in the sequence satisfy the condition.
+
+#### Exceptions
+
+`ArgumentNullException`<br>
+Thrown when `predicate` is `null`.
+
+**Performance:** Consumes the enumerator in $O(N)$ time with zero heap allocations.
+
+<a id="count-overload-4"></a>
+
+## Count\<TEnumerator, TSource, TState\>(StackEnumerable\<TEnumerator, TSource\>, TState, Func\<TSource, TState, bool\>)
+
+Returns a number that represents how many elements satisfy a condition that receives a caller-supplied state.
 
 ```csharp
 public static int Count<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
-```csharp
-var result = names
-    .AsStackEnumerable()
-    .Count(prefix, static (n, p) => n.StartsWith(p));
-```
+#### Parameters
+
+`source`<br>
+The sequence that contains elements to be counted.
+
+`state`<br>
+The value passed to every call of `predicate`.
+
+`predicate`<br>
+A function to test each element for a condition; the second parameter is `state`.
 
 #### Returns
 
-<i>int</i>
+A number that represents how many elements in the sequence satisfy the condition.
 
-**Execution Target:** Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly.
+#### Exceptions
+
+`ArgumentNullException`<br>
+Thrown when `predicate` is `null`.
+
+**Performance:** Passing the outer value as `state` lets `predicate` be a `static` lambda, so no closure is allocated.
+
+**Execution Target:** Host-only (CPU) operation. Cannot be transpiled or invoked within GPU kernels.
 
 ## Remarks
 

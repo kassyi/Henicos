@@ -29,7 +29,7 @@ Performs an atomic read-modify-write addition to a memory address.
 Performs an atomic read-modify-write addition on a 32-bit signed integer.
 
 ```csharp
-[GpuKernel]
+[CudaIntrinsic("atomicAdd")]
 public static int AtomicAdd(ref int address, int val);
 ```
 
@@ -108,7 +108,7 @@ Thrown when evaluated on the host CPU outside of a managed execution context.
 Performs an atomic read-modify-write addition on a single-precision floating-point number.
 
 ```csharp
-[GpuKernel]
+[CudaIntrinsic("atomicAdd")]
 public static float AtomicAdd(ref float address, float val);
 ```
 
@@ -161,14 +161,14 @@ On the CPU paths the `Gpu.Atomic*` family runs as well: the native CPU library t
 > G# supports both `System.Threading.Interlocked` and `Gpu.AtomicAdd`. How should you choose?
 >
 > - **Use `Interlocked` (Recommended):** For standard integer atomics (e.g., `Interlocked.Add(ref myInt, 1)`). This is the C# standard, making your code highly portable and compatible with CPU fallback modes.
-> - **Use `Gpu.AtomicAdd`:** When you need atomic operations on `float` or `double`. The standard C# `.NET` BCL does not support floating-point atomic additions natively via `Interlocked`, but GPU hardware does. Use `Gpu.AtomicAdd` to unlock hardware-accelerated floating-point atomics.
+> - **Use `Gpu.AtomicAdd`:** When you need an atomic addition on `float`. The standard C# `.NET` BCL does not support floating-point atomic additions natively via `Interlocked`, but GPU hardware does. `Gpu.AtomicAdd` has `int`, `uint`, `ulong` and `float` overloads; there is no `double` overload.
 
 ## See also
 
 ### BCL API > Memory
 
 - [Memory Management](../memory/00_index.md)
-- [SharedMemory<T> Class (G#)](../memory/SharedMemory.md)
+- [SharedMemory<T> Struct (G#)](../memory/SharedMemory.md)
 
 ### Guides
 

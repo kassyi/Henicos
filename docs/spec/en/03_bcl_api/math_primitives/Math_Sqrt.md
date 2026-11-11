@@ -32,7 +32,6 @@ Returns the square root of a specified number.
 Returns the square root of a specified number.
 
 ```csharp
-[GpuDevice]
 public static float Sqrt(float x);
 ```
 
@@ -55,7 +54,6 @@ None. Does not throw exceptions; returns `float.NaN` if `x` is negative.
 Returns the square root of a specified number.
 
 ```csharp
-[GpuDevice]
 public static double Sqrt(double x);
 ```
 

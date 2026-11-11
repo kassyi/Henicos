@@ -63,7 +63,7 @@ public readonly TEnumerator Enumerator;
 
 ## Remarks
 
-`ParallelStackEnumerable<TEnumerator, TSource>` is returned by `AsParallel()` on a stack enumerator and enables parallel terminal reductions (such as `Sum()`).
+`ParallelStackEnumerable<TEnumerator, TSource>` is returned by the `AsParallel()` extension method of `StackEnumerable<TEnumerator, TSource>` and enables parallel terminal reductions (such as `Sum()`).
 
 ### In kernels
 

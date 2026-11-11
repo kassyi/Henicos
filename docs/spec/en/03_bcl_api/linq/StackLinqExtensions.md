@@ -62,7 +62,7 @@ public static partial class StackLinqExtensions
 | [Aggregate&lt;TEnumerator, TSource&gt;(StackEnumerable&lt;TEnumerator, TSource&gt;, Func&lt;TSource, TSource, TSource&gt;)](Aggregate.md) | Applies an accumulator function over a sequence. |
 | [Aggregate&lt;TEnumerator, TSource, TAccumulate&gt;(StackEnumerable&lt;TEnumerator, TSource&gt;, TAccumulate, Func&lt;TAccumulate, TSource, TAccumulate&gt;)](Aggregate.md) | Applies an accumulator function over a sequence starting from `seed`. |
 | [Count&lt;TEnumerator, TSource&gt;(...)](Count.md) | Returns the number of elements in a sequence (unconditional, predicate, or index-aware predicate). |
-| [Sum(...)](Sum.md) | Computes the sum of a sequence of `int`, `float`, `double`, or `INumberBase<TSource>` values (including selector overloads and `ParallelStackEnumerable` reduction). |
+| [Sum(...)](Sum.md) | Computes the sum of a sequence of `int`, `float`, `double`, or generic values (`TSource : IAdditionOperators<TSource, TSource, TSource>, IAdditiveIdentity<TSource, TSource>`) (including selector overloads and `ParallelStackEnumerable` reduction). |
 | `Max<TEnumerator>(StackEnumerable<TEnumerator, int | float | double>)` | Returns the maximum value in a numeric sequence. |
 | `Min<TEnumerator>(StackEnumerable<TEnumerator, int | float | double>)` | Returns the minimum value in a numeric sequence. |
 | `Average<TEnumerator>(StackEnumerable<TEnumerator, int | float | double>)` | Computes the arithmetic mean of a numeric sequence. |

@@ -11,7 +11,7 @@ description: "Determines whether a sequence contains a specified element."
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Determines whether a sequence contains a specified element.
 
@@ -19,22 +19,31 @@ Determines whether a sequence contains a specified element.
 
 | Name | Description |
 | --- | --- |
-| [Contains<TEnumerator, TSource>(TEnumerator, TSource)](#containstenumeratortsourcetenumeratortsource) | Determines whether a sequence contains a specified element. |
+| [Contains\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, TSource)](#contains-overload-1) | Determines whether a stack-allocated sequence contains a specified element by using the default equality comparer. |
 
+<a id="contains-overload-1"></a>
 
-## Contains<TEnumerator, TSource>(TEnumerator, TSource)
+## Contains\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, TSource)
 
-Determines whether a sequence contains a specified element.
+Determines whether a stack-allocated sequence contains a specified element by using the default equality comparer.
 
 ```csharp
-public static bool Contains<TEnumerator, TSource>(this TEnumerator source, TSource value) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static bool Contains<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, TSource value) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The source sequence in which to locate a value.
+
+`value`<br>
+The value to locate in the sequence.
 
 #### Returns
 
-<i>bool</i>
+`true` if the source sequence contains an element with the specified value; otherwise, `false`.
 
-
+**Performance:** Linear search in $O(N)$ time with zero heap allocations.
 
 ## Remarks
 

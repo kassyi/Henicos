@@ -26,13 +26,13 @@ Returns the smaller of two specified numbers.
 | --- | --- |
 | [Min(float, float)](#min-float-float) | Returns the smaller of two specified numbers. |
 | [Min(double, double)](#min-double-double) | Returns the smaller of two specified numbers. |
+| [Min(int, int)](#min-int-int) | Returns the smaller of two 32-bit signed integers. |
 
 ## Min(float, float)
 
 Returns the smaller of two specified numbers.
 
 ```csharp
-[GpuDevice]
 public static float Min(float val1, float val2);
 ```
 
@@ -58,7 +58,6 @@ None. Does not throw exceptions.
 Returns the smaller of two specified numbers.
 
 ```csharp
-[GpuDevice]
 public static double Min(double val1, double val2);
 ```
 
@@ -74,6 +73,31 @@ The second double-precision floating-point number.
 
 <i>double</i><br>
 The computed value.
+
+#### Exceptions
+
+None. Does not throw exceptions.
+
+## Min(int, int)
+
+Returns the smaller of two 32-bit signed integers.
+
+```csharp
+public static int Min(int val1, int val2);
+```
+
+#### Parameters
+
+`val1` <i>int</i><br>
+The first 32-bit signed integer.
+
+`val2` <i>int</i><br>
+The second 32-bit signed integer.
+
+#### Returns
+
+<i>int</i><br>
+The smaller of `val1` and `val2`.
 
 #### Exceptions
 
@@ -109,7 +133,7 @@ Console.WriteLine($"Math.Min(5.0, -5.0) = {d:F1}");
 ### BCL API > Math Primitives
 
 - [Math and BitOperations](00_index.md)
-- [Vector2, Vector3, Vector4 Structs (System.Numerics)](VectorTypes.md)
+- [Vector Value Types](VectorTypes.md)
 
 ### Guides
 

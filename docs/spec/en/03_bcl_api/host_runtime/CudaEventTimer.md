@@ -65,6 +65,17 @@ public float GetElapsedTimeMilliseconds();
 _float_<br>
 The elapsed execution time in milliseconds.
 
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The timer has been disposed.
+
+`InvalidOperationException`<br>
+`Start` and `Stop` have not both been called.
+
+[CudaException](../01_diagnostics_and_exceptions.md#cudaexception)<br>
+The CUDA driver call failed.
+
 ## Start(IntPtr)
 
 Records the start event in the specified stream.
@@ -77,6 +88,14 @@ public void Start(IntPtr hStream = 0);
 
 `hStream` _IntPtr_<br>
 The stream to record the event in.
+
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The timer has been disposed.
+
+[CudaException](../01_diagnostics_and_exceptions.md#cudaexception)<br>
+The CUDA driver call failed.
 
 ## Stop(IntPtr)
 
@@ -91,6 +110,17 @@ public void Stop(IntPtr hStream = 0);
 `hStream` _IntPtr_<br>
 The stream to record the event in.
 
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The timer has been disposed.
+
+`InvalidOperationException`<br>
+`Start` has not been called.
+
+[CudaException](../01_diagnostics_and_exceptions.md#cudaexception)<br>
+The CUDA driver call failed.
+
 ## Synchronize()
 
 Blocks the host thread until the end event has been recorded.
@@ -98,6 +128,17 @@ Blocks the host thread until the end event has been recorded.
 ```csharp
 public void Synchronize();
 ```
+
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The timer has been disposed.
+
+`InvalidOperationException`<br>
+`Start` and `Stop` have not both been called.
+
+[CudaException](../01_diagnostics_and_exceptions.md#cudaexception)<br>
+The CUDA driver call failed.
 
 ## SynchronizeAsync(CancellationToken)
 
@@ -121,6 +162,9 @@ A task that completes once `GetElapsedTimeMilliseconds()` can be called.
 
 `ObjectDisposedException`<br>
 The timer has been disposed.
+
+`InvalidOperationException`<br>
+`Start` and `Stop` have not both been called.
 
 ## Remarks
 

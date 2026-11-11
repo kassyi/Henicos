@@ -73,7 +73,7 @@ Thrown when `selector` is `null`.
 Attempts to advance to the next element of the current inner sequence, moving to the next source element when the inner sequence is exhausted.
 
 ```csharp
-public bool TryGetNext(out TResult current);
+public bool TryGetNext([MaybeNullWhen(false)] out TResult current);
 ```
 
 #### Parameters

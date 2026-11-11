@@ -11,7 +11,7 @@ description: "Filters a sequence of values based on a predicate."
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Filters a sequence of values based on a predicate.
 
@@ -19,56 +19,101 @@ Filters a sequence of values based on a predicate.
 
 | Name | Description |
 | --- | --- |
-| [Where<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)](#wheretenumeratortsourcetenumeratorfunctsourcebool) | Filters a sequence based on a predicate. |
-| [Where<TEnumerator, TSource>(TEnumerator, Func<TSource, int, bool>)](#wheretenumeratortsourcetenumeratorfunctsourceintbool) | Filters a sequence based on a predicate that incorporates the element's index. |
-| [Where<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)](#wheretenumeratortsourcetstatetenumeratortstatefunctsourcetstatebool) | Filters a sequence based on a predicate that receives a state value. Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly. |
+| [Where\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)](#where-overload-1) | Filters a stack-allocated sequence of values based on a predicate. |
+| [Where\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, int, bool\>)](#where-overload-2) | Filters a stack-allocated sequence of values based on a predicate. Each element's index is used in the logic of the predicate function. |
+| [Where\<TEnumerator, TSource, TState\>(StackEnumerable\<TEnumerator, TSource\>, TState, Func\<TSource, TState, bool\>)](#where-overload-3) | Filters a stack-allocated sequence of values based on a predicate that receives a caller-supplied state. Host-only. |
 
+<a id="where-overload-1"></a>
 
-## Where<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)
+## Where\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)
 
-Filters a sequence based on a predicate.
+Filters a stack-allocated sequence of values based on a predicate.
 
 ```csharp
-public static WhereEnumerator<TEnumerator, TSource> Where<TEnumerator, TSource>(this TEnumerator source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<WhereEnumerator<TEnumerator, TSource>, TSource> Where<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The source sequence to filter.
+
+`predicate`<br>
+A function to test each element for a condition.
 
 #### Returns
 
-<i>WhereEnumerator<TEnumerator, TSource></i>
+A `StackEnumerable<TEnumerator, TSource>` that contains elements from the input sequence that satisfy the condition.
 
-## Where<TEnumerator, TSource>(TEnumerator, Func<TSource, int, bool>)
+#### Exceptions
 
-Filters a sequence based on a predicate that incorporates the element's index.
+`ArgumentNullException`<br>
+Thrown when `predicate` is `null`.
+
+**Performance:** Evaluated lazily with zero heap allocations.
+
+<a id="where-overload-2"></a>
+
+## Where\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, int, bool\>)
+
+Filters a stack-allocated sequence of values based on a predicate. Each element's index is used in the logic of the predicate function.
 
 ```csharp
-public static WhereAtEnumerator<TEnumerator, TSource> Where<TEnumerator, TSource>(this TEnumerator source, Func<TSource, int, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<WhereAtEnumerator<TEnumerator, TSource>, TSource> Where<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The source sequence to filter.
+
+`predicate`<br>
+A function to test each source element for a condition; the second parameter of the function represents the index of the source element.
 
 #### Returns
 
-<i>WhereAtEnumerator<TEnumerator, TSource></i>
+A `StackEnumerable<TEnumerator, TSource>` that contains elements from the input sequence that satisfy the condition.
 
+#### Exceptions
 
+`ArgumentNullException`<br>
+Thrown when `predicate` is `null`.
 
-## Where<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)
+**Performance:** Evaluated lazily with zero heap allocations.
 
-Filters a sequence based on a predicate that receives a state value. Pass the outer value as `state` so that the lambda can be `static` and no closure is allocated.
+<a id="where-overload-3"></a>
+
+## Where\<TEnumerator, TSource, TState\>(StackEnumerable\<TEnumerator, TSource\>, TState, Func\<TSource, TState, bool\>)
+
+Filters a stack-allocated sequence of values based on a predicate that receives a caller-supplied state.
 
 ```csharp
 public static StackEnumerable<WhereWithStateEnumerator<TEnumerator, TSource, TState>, TSource> Where<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
-```csharp
-var result = names
-    .AsStackEnumerable()
-    .Where(prefix, static (n, p) => n.StartsWith(p));
-```
+#### Parameters
+
+`source`<br>
+The source sequence to filter.
+
+`state`<br>
+The value passed to every call of `predicate`.
+
+`predicate`<br>
+A function to test each element for a condition; the second parameter is `state`.
 
 #### Returns
 
-<i>StackEnumerable&lt;WhereWithStateEnumerator&lt;TEnumerator, TSource, TState&gt;, TSource&gt;</i>
+A `StackEnumerable<TEnumerator, TSource>` that contains elements from the input sequence that satisfy the condition.
 
-**Execution Target:** Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly.
+#### Exceptions
+
+`ArgumentNullException`<br>
+Thrown when `predicate` is `null`.
+
+**Performance:** Evaluated lazily. Passing the outer value as `state` lets `predicate` be a `static` lambda, so no closure is allocated.
+
+**Execution Target:** Host-only (CPU) operation. Cannot be transpiled or invoked within GPU kernels.
 
 ## Examples
 

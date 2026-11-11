@@ -64,7 +64,7 @@ A transform function to apply to each source element; the second parameter of th
 Advances the enumerator to the next element and projects it along with its zero-based index.
 
 ```csharp
-public bool TryGetNext(out TResult current);
+public bool TryGetNext([MaybeNullWhen(false)] out TResult current);
 ```
 
 #### Parameters

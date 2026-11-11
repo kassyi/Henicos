@@ -16,7 +16,7 @@ description: "Loads AOT-compiled native CPU kernel libraries, verifies digital s
 Loads AOT-compiled native CPU kernel libraries, manages function pointer/delegate caching, and controls fallback to pure C# managed execution.
 
 ```csharp
-public sealed class CpuKernelLoader
+public static class CpuKernelLoader
 ```
 
 ## Properties
@@ -41,6 +41,8 @@ public static bool ForceManagedExecution { get; set; }
 | [LoadAotKernelPtr(string, string)](#loadaotkernelptrstring-string) | Loads an AOT-compiled native CPU library and returns a raw function pointer. |
 | [LoadAotKernel\<TDelegate\>(string, string)](#loadaotkerneltdelegatestring-string) | Loads an AOT-compiled native CPU library and returns a strongly-typed delegate. |
 | [Shutdown()](#shutdown) | Unloads all cached CPU modules and clears the in-memory delegate cache. |
+| [RegisterErrorSites(string, ReadOnlySpan\<GSharpErrorSite\>)](#registererrorsitesstring-readonlyspangsharperrorsite) | Registers the error site table of a native CPU library. |
+| [ThrowIfNativeError(string)](#throwifnativeerrorstring) | Throws the managed exception for the error that a native CPU library recorded, if any. |
 
 ## ShouldUseManagedExecution(string)
 
@@ -124,6 +126,35 @@ Unloads all cached CPU modules and clears the in-memory cache to reclaim memory.
 ```csharp
 public static void Shutdown();
 ```
+
+## RegisterErrorSites(string, ReadOnlySpan\<GSharpErrorSite\>)
+
+Registers the error site table of a native CPU library, so that an error the library records can be reported with its source location. The generated launchers call it; user code does not need to.
+
+```csharp
+public static void RegisterErrorSites(string dllPath, ReadOnlySpan<GSharpErrorSite> sites);
+```
+
+#### Parameters
+
+`dllPath` _string_<br>
+The file path to the native dynamic library.
+
+`sites` _ReadOnlySpan\<GSharpErrorSite\>_<br>
+The 1-based error site table.
+
+## ThrowIfNativeError(string)
+
+Reads the error slot of a native CPU library and, when a kernel recorded an error (an out-of-range index, a division by zero ...), throws the corresponding managed exception with the source location. The generated launchers call it after each launch; user code does not need to.
+
+```csharp
+public static void ThrowIfNativeError(string dllPath);
+```
+
+#### Parameters
+
+`dllPath` _string_<br>
+The file path to the native dynamic library.
 
 ## Examples
 

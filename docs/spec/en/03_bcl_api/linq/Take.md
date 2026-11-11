@@ -11,7 +11,7 @@ description: "Returns a specified number of contiguous elements from the start o
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Returns a specified number of contiguous elements from the start of a sequence.
 
@@ -19,22 +19,29 @@ Returns a specified number of contiguous elements from the start of a sequence.
 
 | Name | Description |
 | --- | --- |
-| [Take<TEnumerator, TSource>(TEnumerator, int)](#taketenumeratortsourcetenumeratorint) | Returns elements from the start. |
+| [Take\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, int)](#take-overload-1) | Returns a specified number of contiguous elements from the start of a stack-allocated sequence. |
 
+<a id="take-overload-1"></a>
 
-## Take<TEnumerator, TSource>(TEnumerator, int)
+## Take\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, int)
 
-Returns elements from the start.
+Returns a specified number of contiguous elements from the start of a stack-allocated sequence.
 
 ```csharp
-public static TakeEnumerator<TEnumerator, TSource> Take<TEnumerator, TSource>(this TEnumerator source, int count) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<TakeEnumerator<TEnumerator, TSource>, TSource> Take<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, int count) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The sequence to return elements from.
+
+`count`<br>
+The number of elements to return.
 
 #### Returns
 
-<i>TakeEnumerator<TEnumerator, TSource></i>
-
-
+A `StackEnumerable<TEnumerator, TSource>` that contains the specified number of elements from the start of the input sequence.
 
 ## Examples
 

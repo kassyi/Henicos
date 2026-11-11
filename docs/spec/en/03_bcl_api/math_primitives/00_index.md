@@ -35,6 +35,18 @@ Standard math functions, fast math approximations, and hardware bit operations.
 - [BitOperations_TrailingZeroCount](BitOperations_TrailingZeroCount.md): Count the number of trailing zero bits.
 - [VectorTypes](VectorTypes.md): SIMD vector types like float3, int4.
 
+## Members Without a Page
+
+These BCL members are also supported in kernels:
+
+| Member | Overloads |
+| :--- | :--- |
+| `BitOperations.Log2`, `BitOperations.RotateLeft`, `BitOperations.RotateRight` | `uint`, `ulong`, `nuint` |
+| `Math.Clamp` | `float`, `double`, `int` |
+| `Math.Floor`, `Math.Ceiling`, `Math.Round` / `MathF.Floor`, `MathF.Ceiling`, `MathF.Round` | `double` / `float` (one-argument `Round`, which rounds half to even) |
+| `Math.Pow` / `MathF.Pow` | `double` / `float` |
+| `float.Max`, `float.Min`, `float.MaxNumber`, `float.MinNumber`, and the same members of `double` | `float` / `double` |
+
 ## See also
 
 

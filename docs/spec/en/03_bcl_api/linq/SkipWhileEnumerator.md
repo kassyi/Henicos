@@ -61,7 +61,7 @@ A function to test each element for a condition.
 Advances the enumerator to the next element of the sequence after elements matching the predicate have been skipped.
 
 ```csharp
-public bool TryGetNext(out TSource current);
+public bool TryGetNext([MaybeNullWhen(false)] out TSource current);
 ```
 
 #### Parameters

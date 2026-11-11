@@ -25,13 +25,13 @@ Count the number of trailing zero bits in an integer.
 | --- | --- |
 | [TrailingZeroCount(uint)](#trailingzerocount-uint) | Count the number of trailing zero bits in an integer. (32-bit) |
 | [TrailingZeroCount(ulong)](#trailingzerocount-ulong) | Count the number of trailing zero bits in an integer. (64-bit) |
+| [TrailingZeroCount(nuint)](#trailingzerocount-nuint) | Count the number of trailing zero bits in an integer. (pointer-sized) |
 
 ## TrailingZeroCount(uint)
 
 Count the number of trailing zero bits in an integer. (32-bit)
 
 ```csharp
-[GpuDevice]
 public static int TrailingZeroCount(uint value);
 ```
 
@@ -54,7 +54,6 @@ None. Returns `32` if `value` is `0`.
 Count the number of trailing zero bits in an integer. (64-bit)
 
 ```csharp
-[GpuDevice]
 public static int TrailingZeroCount(ulong value);
 ```
 
@@ -62,6 +61,28 @@ public static int TrailingZeroCount(ulong value);
 
 `value` <i>ulong</i><br>
 The 64-bit unsigned integer.
+
+#### Returns
+
+<i>int</i><br>
+The number of bits.
+
+#### Exceptions
+
+None. Returns `64` if `value` is `0`.
+
+## TrailingZeroCount(nuint)
+
+Count the number of trailing zero bits in an integer. (pointer-sized)
+
+```csharp
+public static int TrailingZeroCount(nuint value);
+```
+
+#### Parameters
+
+`value` <i>nuint</i><br>
+The pointer-sized unsigned integer. G# maps this overload to the 64-bit operation; `nuint` itself is not one of the mapped device types ([2.1 Primitive Value Types](../../01_language/03_type_system.md)), so a kernel passes a `ulong` instead.
 
 #### Returns
 

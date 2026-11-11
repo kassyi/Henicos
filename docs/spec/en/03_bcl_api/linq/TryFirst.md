@@ -27,7 +27,7 @@ Finds the first element that satisfies a condition and reports whether one was f
 Finds the first element that satisfies a condition and reports whether one was found.
 
 ```csharp
-public static bool TryFirst<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate, out TSource value)
+public static bool TryFirst<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate, [MaybeNullWhen(false)] out TSource value)
     where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
@@ -57,7 +57,7 @@ Thrown when `predicate` is `null`.
 Finds the first element that satisfies a condition that receives a caller-supplied state. Pass the outer value as `state` so that the predicate can be a `static` lambda and no closure is allocated.
 
 ```csharp
-public static bool TryFirst<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate, out TSource value)
+public static bool TryFirst<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate, [MaybeNullWhen(false)] out TSource value)
     where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 

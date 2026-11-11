@@ -26,13 +26,13 @@ Count the number of leading zero bits in an integer.
 | --- | --- |
 | [LeadingZeroCount(uint)](#leadingzerocount-uint) | Count the number of leading zero bits in an integer. (32-bit) |
 | [LeadingZeroCount(ulong)](#leadingzerocount-ulong) | Count the number of leading zero bits in an integer. (64-bit) |
+| [LeadingZeroCount(nuint)](#leadingzerocount-nuint) | Count the number of leading zero bits in an integer. (pointer-sized) |
 
 ## LeadingZeroCount(uint)
 
 Count the number of leading zero bits in an integer. (32-bit)
 
 ```csharp
-[GpuDevice]
 public static int LeadingZeroCount(uint value);
 ```
 
@@ -55,7 +55,6 @@ None. Returns `32` if `value` is `0`.
 Count the number of leading zero bits in an integer. (64-bit)
 
 ```csharp
-[GpuDevice]
 public static int LeadingZeroCount(ulong value);
 ```
 
@@ -63,6 +62,28 @@ public static int LeadingZeroCount(ulong value);
 
 `value` <i>ulong</i><br>
 The 64-bit unsigned integer.
+
+#### Returns
+
+<i>int</i><br>
+The number of bits.
+
+#### Exceptions
+
+None. Returns `64` if `value` is `0`.
+
+## LeadingZeroCount(nuint)
+
+Count the number of leading zero bits in an integer. (pointer-sized)
+
+```csharp
+public static int LeadingZeroCount(nuint value);
+```
+
+#### Parameters
+
+`value` <i>nuint</i><br>
+The pointer-sized unsigned integer. G# maps this overload to the 64-bit operation; `nuint` itself is not one of the mapped device types ([2.1 Primitive Value Types](../../01_language/03_type_system.md)), so a kernel passes a `ulong` instead.
 
 #### Returns
 

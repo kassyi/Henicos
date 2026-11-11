@@ -25,13 +25,13 @@ Returns the population count (number of bits set) of a mask.
 | --- | --- |
 | [PopCount(uint)](#popcount-uint) | Returns the population count (number of bits set) of a mask. (32-bit) |
 | [PopCount(ulong)](#popcount-ulong) | Returns the population count (number of bits set) of a mask. (64-bit) |
+| [PopCount(nuint)](#popcount-nuint) | Returns the population count (number of bits set) of a mask. (pointer-sized) |
 
 ## PopCount(uint)
 
 Returns the population count (number of bits set) of a mask. (32-bit)
 
 ```csharp
-[GpuDevice]
 public static int PopCount(uint value);
 ```
 
@@ -54,7 +54,6 @@ None. Returns `0` if `value` is `0`.
 Returns the population count (number of bits set) of a mask. (64-bit)
 
 ```csharp
-[GpuDevice]
 public static int PopCount(ulong value);
 ```
 
@@ -62,6 +61,28 @@ public static int PopCount(ulong value);
 
 `value` <i>ulong</i><br>
 The 64-bit unsigned integer.
+
+#### Returns
+
+<i>int</i><br>
+The number of bits.
+
+#### Exceptions
+
+None. Returns `0` if `value` is `0`.
+
+## PopCount(nuint)
+
+Returns the population count (number of bits set) of a mask. (pointer-sized)
+
+```csharp
+public static int PopCount(nuint value);
+```
+
+#### Parameters
+
+`value` <i>nuint</i><br>
+The pointer-sized unsigned integer. G# maps this overload to the 64-bit operation; `nuint` itself is not one of the mapped device types ([2.1 Primitive Value Types](../../01_language/03_type_system.md)), so a kernel passes a `ulong` instead.
 
 #### Returns
 

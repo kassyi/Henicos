@@ -11,7 +11,7 @@ description: "Wraps an existing contiguous memory block into a zero-allocation s
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Wraps an existing contiguous memory block into a zero-allocation stack enumerator.
 
@@ -19,48 +19,106 @@ Wraps an existing contiguous memory block into a zero-allocation stack enumerato
 
 | Name | Description |
 | --- | --- |
-| [AsStackEnumerable<T>(ReadOnlySpan<T>)](#asstackenumerabletreadonlyspant) | Wraps a read-only span. |
-| [AsStackEnumerable<T>(Span<T>)](#asstackenumerabletspant) | Wraps a span. |
-| [AsStackEnumerable<T>(T[])](#asstackenumerablett) | Wraps an array. |
+| [AsStackEnumerable\<T\>(T[])](#asstackenumerable-overload-1) | Wraps a managed array into a zero-allocation `StackEnumerable<TEnumerator, T>`. |
+| [AsStackEnumerable\<T\>(List\<T\>)](#asstackenumerable-overload-2) | Wraps a `Collections.Generic.List<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`. Host-only. |
+| [AsStackEnumerable\<T\>(Span\<T\>)](#asstackenumerable-overload-3) | Wraps a `Span<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`. |
+| [AsStackEnumerable\<T\>(ReadOnlySpan\<T\>)](#asstackenumerable-overload-4) | Wraps a `ReadOnlySpan<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`. |
 
+<a id="asstackenumerable-overload-1"></a>
 
-## AsStackEnumerable<T>(ReadOnlySpan<T>)
+## AsStackEnumerable\<T\>(T[])
 
-Wraps a read-only span.
+Wraps a managed array into a zero-allocation `StackEnumerable<TEnumerator, T>`.
 
 ```csharp
-public static SpanEnumerator<T> AsStackEnumerable<T>(this ReadOnlySpan<T> source);
+public static StackEnumerable<ArrayEnumerator<T>, T> AsStackEnumerable<T>(this T[] source);
 ```
+
+#### Parameters
+
+`source`<br>
+The source array to wrap.
 
 #### Returns
 
-<i>SpanEnumerator<T></i>
+A stack-allocated enumerable wrapping an `ArrayEnumerator<T>`.
 
-## AsStackEnumerable<T>(Span<T>)
+#### Exceptions
 
-Wraps a span.
+`ArgumentNullException`<br>
+Thrown when `source` is `null`.
+
+**Performance:** Operates in $O(1)$ time with zero heap allocations.
+
+<a id="asstackenumerable-overload-2"></a>
+
+## AsStackEnumerable\<T\>(List\<T\>)
+
+Wraps a `Collections.Generic.List<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`.
 
 ```csharp
-public static SpanEnumerator<T> AsStackEnumerable<T>(this Span<T> source);
+public static StackEnumerable<SpanEnumerator<T>, T> AsStackEnumerable<T>(this List<T> source);
 ```
+
+#### Parameters
+
+`source`<br>
+The source list to wrap.
 
 #### Returns
 
-<i>SpanEnumerator<T></i>
+A stack-allocated enumerable wrapping a `SpanEnumerator<T>`.
 
-## AsStackEnumerable<T>(T[])
+#### Exceptions
 
-Wraps an array.
+`ArgumentNullException`<br>
+Thrown when `source` is `null`.
+
+**Performance:** Operates in $O(1)$ time with zero heap allocations by accessing the underlying span.
+
+**Execution Target:** Host-only (CPU) operation. Cannot be transpiled or invoked within GPU kernels.
+
+<a id="asstackenumerable-overload-3"></a>
+
+## AsStackEnumerable\<T\>(Span\<T\>)
+
+Wraps a `Span<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`.
 
 ```csharp
-public static ArrayEnumerator<T> AsStackEnumerable<T>(this T[] source);
+public static StackEnumerable<SpanEnumerator<T>, T> AsStackEnumerable<T>(this Span<T> source);
 ```
+
+#### Parameters
+
+`source`<br>
+The source span to wrap.
 
 #### Returns
 
-<i>ArrayEnumerator<T></i>
+A stack-allocated enumerable wrapping a `SpanEnumerator<T>`.
 
+**Performance:** Operates in $O(1)$ time with zero heap allocations.
 
+<a id="asstackenumerable-overload-4"></a>
+
+## AsStackEnumerable\<T\>(ReadOnlySpan\<T\>)
+
+Wraps a `ReadOnlySpan<T>` into a zero-allocation `StackEnumerable<TEnumerator, T>`.
+
+```csharp
+public static StackEnumerable<SpanEnumerator<T>, T> AsStackEnumerable<T>(this ReadOnlySpan<T> source);
+```
+
+#### Parameters
+
+`source`<br>
+The source read-only span to wrap.
+
+#### Returns
+
+A stack-allocated enumerable wrapping a `SpanEnumerator<T>`.
+
+**Performance:** Operates in $O(1)$ time with zero heap allocations.
 
 ## Examples
 

@@ -59,7 +59,7 @@ Thrown when `source` is `null`.
 Attempts to advance the enumerator to the next element of the array.
 
 ```csharp
-public bool TryGetNext(out T current);
+public bool TryGetNext([MaybeNullWhen(false)] out T current);
 ```
 
 #### Parameters

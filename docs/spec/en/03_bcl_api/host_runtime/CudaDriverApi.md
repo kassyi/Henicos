@@ -48,11 +48,21 @@ P/Invoke bindings for NVIDIA CUDA Driver API functions (`nvcuda.dll` / `libcuda.
 ```csharp
 public static partial class CudaDriverApi
 {
+    // Flags for cuMemHostAlloc
+    public const uint MemHostAllocPortable = 0x01;
+    public const uint MemHostAllocDeviceMap = 0x02;
+
     public enum CuDeviceAttribute
     {
+        MaxSharedMemoryPerBlock = 8,
         MultiprocessorCount = 16,
         ComputeCapabilityMajor = 75,
-        ComputeCapabilityMinor = 76
+        ComputeCapabilityMinor = 76,
+        MaxSharedMemoryPerMultiprocessor = 81,
+        MaxSharedMemoryPerBlockOptin = 97,
+        ReservedSharedMemoryPerBlock = 111,
+        CanUse64BitStreamMemOps = 122,
+        CanUseStreamWaitValueNor = 123
     }
 }
 ```
@@ -140,7 +150,8 @@ public enum CuFunctionAttribute
     LocalSizeBytes = 3,
     NumRegs = 4,
     PtxVersion = 5,
-    BinaryVersion = 6
+    BinaryVersion = 6,
+    MaxDynamicSharedSizeBytes = 8
 }
 ```
 

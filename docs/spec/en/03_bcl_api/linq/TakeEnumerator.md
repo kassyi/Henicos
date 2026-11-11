@@ -61,7 +61,7 @@ The number of elements to take from the start of the sequence.
 Advances the enumerator to the next element of the sequence until the specified count is reached.
 
 ```csharp
-public bool TryGetNext(out TSource value);
+public bool TryGetNext([MaybeNullWhen(false)] out TSource value);
 ```
 
 #### Parameters

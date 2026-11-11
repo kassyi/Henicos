@@ -39,6 +39,8 @@ public static ReadOnlySpan<byte> EmbeddedKeys { get; }
 | --- | --- |
 | [RegisterTrustedKey(ReadOnlySpan\<Byte\>)](#registertrustedkeyreadonlyspanbyte) | Registers a trusted 32-byte Ed25519 public key dynamically at runtime. |
 | [VerifyImage(FatbinImage)](#verifyimagefatbinimage) | Verifies whether the specified FATBIN image has a valid digital signature matching any embedded or dynamic trusted key. |
+| [VerifySignature(ReadOnlySpan\<Byte\>, ReadOnlySpan\<Byte\>)](#verifysignaturereadonlyspanbyte-readonlyspanbyte) | Verifies an Ed25519 signature against any embedded or dynamically registered trusted key. |
+| [VerifySignature(ReadOnlySpan\<Byte\>, ReadOnlySpan\<Byte\>, ReadOnlySpan\<Byte\>)](#verifysignaturereadonlyspanbyte-readonlyspanbyte-readonlyspanbyte) | Verifies an Ed25519 signature against a contiguous buffer of 32-byte public keys. |
 
 ## RegisterTrustedKey(ReadOnlySpan\<Byte\>)
 
@@ -80,6 +82,51 @@ _Boolean_<br>
 
 `ArgumentNullException`<br>
 `image` is `null`.
+
+## VerifySignature(ReadOnlySpan\<Byte\>, ReadOnlySpan\<Byte\>)
+
+Verifies an Ed25519 signature against any embedded or dynamically registered trusted key.
+
+```csharp
+public static bool VerifySignature(ReadOnlySpan<byte> payload, ReadOnlySpan<byte> signature);
+```
+
+#### Parameters
+
+`payload` _ReadOnlySpan\<Byte\>_<br>
+The binary payload to verify.
+
+`signature` _ReadOnlySpan\<Byte\>_<br>
+The 64-byte Ed25519 signature.
+
+#### Returns
+
+_Boolean_<br>
+`true` if the signature matches an authorized trusted key; otherwise, `false`.
+
+## VerifySignature(ReadOnlySpan\<Byte\>, ReadOnlySpan\<Byte\>, ReadOnlySpan\<Byte\>)
+
+Verifies an Ed25519 signature against a contiguous buffer of 32-byte public keys.
+
+```csharp
+public static bool VerifySignature(ReadOnlySpan<byte> payload, ReadOnlySpan<byte> signature, ReadOnlySpan<byte> trustedKeys);
+```
+
+#### Parameters
+
+`payload` _ReadOnlySpan\<Byte\>_<br>
+The binary payload to verify.
+
+`signature` _ReadOnlySpan\<Byte\>_<br>
+The 64-byte Ed25519 signature.
+
+`trustedKeys` _ReadOnlySpan\<Byte\>_<br>
+A contiguous byte span containing one or more 32-byte public keys.
+
+#### Returns
+
+_Boolean_<br>
+`true` if the signature matches any of the keys; otherwise, `false`. It also returns `false` when `signature` is not 64 bytes long, or `trustedKeys` is empty or not a multiple of 32 bytes long.
 
 ## Remarks
 

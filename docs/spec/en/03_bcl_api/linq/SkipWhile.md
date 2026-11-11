@@ -11,7 +11,7 @@ description: "Bypasses elements in a sequence as long as a specified condition i
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Bypasses elements in a sequence as long as a specified condition is true and then returns the remaining elements.
 
@@ -19,35 +19,62 @@ Bypasses elements in a sequence as long as a specified condition is true and the
 
 | Name | Description |
 | --- | --- |
-| [SkipWhile<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)](#skipwhiletenumeratortsourcetenumeratorfunctsourcebool) | Bypasses elements as long as a condition is true. |
-| [SkipWhile<TEnumerator, TSource>(TEnumerator, Func<TSource, int, bool>)](#skipwhiletenumeratortsourcetenumeratorfunctsourceintbool) | Bypasses elements as long as an indexed condition is true. |
+| [SkipWhile\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)](#skipwhile-overload-1) | Bypasses elements in a stack-allocated sequence as long as a specified condition is true and then returns the remaining elements. |
+| [SkipWhile\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, int, bool\>)](#skipwhile-overload-2) | Bypasses elements in a stack-allocated sequence as long as a specified condition is true and then returns the remaining elements. The element's index is used in the logic of the predicate function. |
 
+<a id="skipwhile-overload-1"></a>
 
-## SkipWhile<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)
+## SkipWhile\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)
 
-Bypasses elements as long as a condition is true.
+Bypasses elements in a stack-allocated sequence as long as a specified condition is true and then returns the remaining elements.
 
 ```csharp
-public static SkipWhileEnumerator<TEnumerator, TSource> SkipWhile<TEnumerator, TSource>(this TEnumerator source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SkipWhileEnumerator<TEnumerator, TSource>, TSource> SkipWhile<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The source sequence to return elements from.
+
+`predicate`<br>
+A function to test each element for a condition.
 
 #### Returns
 
-<i>SkipWhileEnumerator<TEnumerator, TSource></i>
+A `StackEnumerable<TEnumerator, TSource>` that contains elements from the input sequence starting at the first element that does not pass the test.
 
-## SkipWhile<TEnumerator, TSource>(TEnumerator, Func<TSource, int, bool>)
+#### Exceptions
 
-Bypasses elements as long as an indexed condition is true.
+`ArgumentNullException`<br>
+`predicate` is `null`.
+
+<a id="skipwhile-overload-2"></a>
+
+## SkipWhile\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, int, bool\>)
+
+Bypasses elements in a stack-allocated sequence as long as a specified condition is true and then returns the remaining elements. The element's index is used in the logic of the predicate function.
 
 ```csharp
-public static SkipWhileAtEnumerator<TEnumerator, TSource> SkipWhile<TEnumerator, TSource>(this TEnumerator source, Func<TSource, int, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SkipWhileAtEnumerator<TEnumerator, TSource>, TSource> SkipWhile<TEnumerator, TSource>(this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The source sequence to return elements from.
+
+`predicate`<br>
+A function to test each source element for a condition; the second parameter of the function represents the index of the source element.
 
 #### Returns
 
-<i>SkipWhileAtEnumerator<TEnumerator, TSource></i>
+A `StackEnumerable<TEnumerator, TSource>` that contains elements from the input sequence starting at the first element that does not pass the test.
 
+#### Exceptions
 
+`ArgumentNullException`<br>
+`predicate` is `null`.
 
 ## Remarks
 

@@ -74,7 +74,7 @@ On the CPU paths (the native CPU library and managed execution) the threads of a
 ### BCL API > Memory
 
 - [Memory Management](../memory/00_index.md)
-- [SharedMemory<T> Class (G#)](../memory/SharedMemory.md)
+- [SharedMemory<T> Struct (G#)](../memory/SharedMemory.md)
 
 ### Guides
 

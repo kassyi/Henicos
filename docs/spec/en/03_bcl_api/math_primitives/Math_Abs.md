@@ -26,13 +26,13 @@ Returns the absolute value of a specified number.
 | --- | --- |
 | [Abs(float)](#abs-float) | Returns the absolute value of a specified number. |
 | [Abs(double)](#abs-double) | Returns the absolute value of a specified number. |
+| [Abs(int)](#abs-int) | Returns the absolute value of a 32-bit signed integer. |
 
 ## Abs(float)
 
 Returns the absolute value of a specified number.
 
 ```csharp
-[GpuDevice]
 public static float Abs(float x);
 ```
 
@@ -55,7 +55,6 @@ None. Does not throw exceptions; returns `float.NaN` if `x` is `float.NaN`.
 Returns the absolute value of a specified number.
 
 ```csharp
-[GpuDevice]
 public static double Abs(double x);
 ```
 
@@ -72,6 +71,29 @@ The computed value.
 #### Exceptions
 
 None. Does not throw exceptions; returns `double.NaN` if `x` is `double.NaN`.
+
+## Abs(int)
+
+Returns the absolute value of a 32-bit signed integer.
+
+```csharp
+public static int Abs(int value);
+```
+
+#### Parameters
+
+`value` <i>int</i><br>
+A 32-bit signed integer.
+
+#### Returns
+
+<i>int</i><br>
+The absolute value of `value`.
+
+#### Exceptions
+
+`OverflowException`<br>
+In C#, `value` is `int.MinValue`. The transpiled call maps to C `abs`, which does not detect this case; do not pass `int.MinValue`.
 
 ## Examples
 

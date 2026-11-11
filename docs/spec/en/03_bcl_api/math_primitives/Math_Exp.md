@@ -32,7 +32,6 @@ Returns e raised to the specified power.
 Returns e raised to the specified power.
 
 ```csharp
-[GpuDevice]
 public static float Exp(float x);
 ```
 
@@ -55,7 +54,6 @@ None. Does not throw exceptions; returns `float.PositiveInfinity` if `x` is `Pos
 Returns e raised to the specified power.
 
 ```csharp
-[GpuDevice]
 public static double Exp(double x);
 ```
 
