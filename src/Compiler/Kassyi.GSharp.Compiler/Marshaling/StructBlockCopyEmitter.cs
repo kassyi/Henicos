@@ -44,7 +44,7 @@ internal static class StructBlockCopyEmitter
     // is the whole struct, so it is copied by its own address (Unsafe.Copy infers its type from host). An inline array
     // whose element lays out differently on the device, or holds arrays, is copied element by element instead
     // (host[k] is the element, whatever the field's accessibility).
-    internal static bool WriteBlockCopy(SourceWriter writer, StructAbiMember member, bool toNative,
+    internal static bool TryWriteBlockCopy(SourceWriter writer, StructAbiMember member, bool toNative,
         ITranspilerDialect dialect)
     {
         var name = member.Name.ToCSharpIdentifier();

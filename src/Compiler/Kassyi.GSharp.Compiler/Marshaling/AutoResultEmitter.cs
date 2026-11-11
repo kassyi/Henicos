@@ -184,7 +184,7 @@ internal static class AutoResultEmitter
     /// CPU: emits the declarations of the shadow of a converted returned struct, before the <c>try</c> block; returns
     /// whether the kernel returns one.
     /// </summary>
-    internal static bool WriteCpuConvertedDeclaration(SourceWriter writer, in KernelHostModel kernel)
+    internal static bool TryWriteCpuConvertedDeclaration(SourceWriter writer, in KernelHostModel kernel)
     {
         if (!kernel.IsCpuConvertedReturn)
         {
@@ -215,7 +215,7 @@ internal static class AutoResultEmitter
 
     // fixed (<result>* p___gsharp_auto_result = __gsharp_auto_result), or of the shadow span for a converted struct
     /// <summary>CPU: emits the <c>fixed</c> statement that pins the auto result; returns whether it wrote one.</summary>
-    internal static bool WriteCpuFixed(SourceWriter writer, in KernelHostModel kernel)
+    internal static bool TryWriteCpuFixed(SourceWriter writer, in KernelHostModel kernel)
     {
         if (kernel.IsCpuConvertedReturn)
         {

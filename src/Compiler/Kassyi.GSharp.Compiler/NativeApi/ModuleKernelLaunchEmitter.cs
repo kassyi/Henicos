@@ -6,14 +6,14 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// <param name="Name">The C# parameter name.</param>
 /// <param name="TypeName">The C# type as written in the launcher signature.</param>
 /// <param name="ArrayElementTypeName">The element type when the parameter is a managed array; otherwise <see langword="null"/>.</param>
-/// <param name="CopyIn">Whether the array is copied to the device before the launch.</param>
-/// <param name="CopyOut">Whether the array is copied back to the host after the launch.</param>
+/// <param name="IsCopiedIn">Whether the array is copied to the device before the launch.</param>
+/// <param name="IsCopiedOut">Whether the array is copied back to the host after the launch.</param>
 internal readonly record struct ModuleKernelLaunchParameter(
     string Name,
     string TypeName,
     string? ArrayElementTypeName,
-    bool CopyIn,
-    bool CopyOut)
+    bool IsCopiedIn,
+    bool IsCopiedOut)
 {
     public bool IsArray => ArrayElementTypeName is not null;
 }
@@ -207,7 +207,7 @@ internal static class ModuleKernelLaunchEmitter
             }
 
             writer.AppendLine($"using var d_{param.Name} = new GpuBuffer<{param.ArrayElementTypeName}>({param.Name}.Length);");
-            if (param.CopyIn)
+            if (param.IsCopiedIn)
             {
                 writer.AppendLine($"d_{param.Name}.CopyToDevice({param.Name});");
             }
@@ -366,7 +366,7 @@ internal static class ModuleKernelLaunchEmitter
     {
         foreach (var param in parameters)
         {
-            if (IsLaunchParameter(param.Name) || !param.IsArray || !param.CopyOut)
+            if (IsLaunchParameter(param.Name) || !param.IsArray || !param.IsCopiedOut)
             {
                 continue;
             }
