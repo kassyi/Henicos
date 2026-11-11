@@ -255,6 +255,49 @@ internal static class DeviceCounted
     }
 
     /// <summary>
+    /// Evaluates <paramref name="node"/> for its checks when its evaluation can throw (<see cref="VectorEffects"/>), as
+    /// <c>System.Linq</c> runs every projection that a count enumerates; a node that cannot throw is not evaluated.
+    /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// The node can throw and the workspace stream is capturing a CUDA graph (checked before any work, so that the
+    /// capture stays valid), or the workspace runs under the CPU fallback.
+    /// </exception>
+    public static void EvaluateIfMayThrow(IGpuBigIntVectorExpression node, GpuWorkspace workspace)
+    {
+        if (VectorEffects.MayThrow(node))
+        {
+            ThrowIfCapturingChecks(workspace);
+            Evaluate(node, workspace);
+        }
+    }
+
+    /// <inheritdoc cref="EvaluateIfMayThrow(IGpuBigIntVectorExpression, GpuWorkspace)"/>
+    public static void EvaluateIfMayThrow(IGpuBigFloatVectorExpression node, GpuWorkspace workspace)
+    {
+        if (VectorEffects.MayThrow(node))
+        {
+            ThrowIfCapturingChecks(workspace);
+            Evaluate(node, workspace);
+        }
+    }
+
+    /// <inheritdoc cref="EvaluateIfMayThrow(IGpuBigIntVectorExpression, GpuWorkspace)"/>
+    public static void EvaluateIfMayThrow(IGpuBoolVectorExpression node, GpuWorkspace workspace)
+    {
+        if (VectorEffects.MayThrow(node))
+        {
+            ThrowIfCapturingChecks(workspace);
+            Evaluate(node, workspace);
+        }
+    }
+
+    // The checks of a division, a square root or of the lengths read their result back from the device
+    private static void ThrowIfCapturingChecks(GpuWorkspace workspace) =>
+        CaptureChecks.ThrowIfCapturing(workspace,
+            "The check of a division, a square root or the lengths of a counted vector",
+            "Count a chain without them in a graph, or count this one without a graph.");
+
+    /// <summary>
     /// The public result of an evaluation: the storage itself for a host count; for a device count, the count is read
     /// (one synchronization) and the storage cut to it.
     /// </summary>

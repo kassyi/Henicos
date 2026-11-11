@@ -22,6 +22,10 @@ internal enum ManagedBodyKind
 /// The stubs through which the body calls an operator macro target it cannot name, and reaches the backing field of an
 /// auto-property that an operator macro passes by reference.
 /// </param>
+/// <param name="isUnsafe">
+/// Whether the context is an unsafe struct reached through a pointer rather than a class, so its members are read
+/// with <c>-&gt;</c>.
+/// </param>
 internal sealed partial class ManagedExecutionRewriter(
     SemanticModel semanticModel,
     ManagedBodyKind bodyKind,
@@ -40,6 +44,9 @@ internal sealed partial class ManagedExecutionRewriter(
 
     // The number of the next loop variable that a Gpu.ForUnroll becomes; found on the first visit, which is the body
     private int _nextUnrollId = -1;
+
+    // The number of the next hidden variable that a using (<variable>) statement declares
+    private int _nextUsingResourceId;
 
     public override SyntaxNode? Visit(SyntaxNode? node)
     {
@@ -117,7 +124,9 @@ internal sealed partial class ManagedExecutionRewriter(
             StructConstructorEmitter.IsEmittedStructConstructor(ctor, semanticModel.Compilation) &&
             DeclaresSharedMemoryInStruct(structType, semanticModel.Compilation))
         {
-            var typeSyntax = SyntaxFactory.ParseTypeName(structType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            using var typeNameWriter = new SourceWriter();
+            typeNameWriter.AppendCsharpTypeName(structType);
+            var typeSyntax = SyntaxFactory.ParseTypeName(typeNameWriter.ToString());
             var typeArgs = SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(typeSyntax));
             var beginCall = SyntaxFactory.InvocationExpression(
                 ManagedNames.CreateMemberAccess(

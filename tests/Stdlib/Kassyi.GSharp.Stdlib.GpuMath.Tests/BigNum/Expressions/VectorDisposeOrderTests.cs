@@ -83,6 +83,8 @@ public sealed class VectorDisposeOrderTests
 
         public int OperandCount => 1;
 
+        public bool MayThrow => true;
+
         public object GetOperand(int index) => input;
 
         public VectorRequest OperandRequest(in VectorRequest request) => request;

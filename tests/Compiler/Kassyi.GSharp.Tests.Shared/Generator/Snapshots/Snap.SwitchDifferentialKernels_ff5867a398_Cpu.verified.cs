@@ -3951,7 +3951,16 @@ case 6: return (-2.5f);
 default: return __gsharp_ctx->__gsharp_id_1_fa[__gsharp_ctx->__gsharp_id_4_t];
 }
 }());
-__gsharp_ctx->__gsharp_id_7_fTag=((__gsharp_ctx->__gsharp_id_6_fv!=__gsharp_ctx->__gsharp_id_6_fv)?(-9223372036854775807LL-1):((__gsharp_ctx->__gsharp_id_6_fv==0.0f?0ll:((__gsharp_ctx->__gsharp_id_6_fv==__gsharp_inf_f?9223372036854775807LL:((__gsharp_ctx->__gsharp_id_6_fv==(-__gsharp_inf_f)?(-5000000000LL):((__gsharp_ctx->__gsharp_id_6_fv==1.5f?15ll:((__gsharp_ctx->__gsharp_id_6_fv==(-2.5f)?(-25LL):7ll)))))))))));
+__gsharp_ctx->__gsharp_id_7_fTag=([&]() {
+float __gsharp_seq_0 = __gsharp_ctx->__gsharp_id_6_fv;
+if(__gsharp_seq_0!=__gsharp_seq_0) return (-9223372036854775807LL-1);
+if(__gsharp_seq_0==0.0f) return 0ll;
+if(__gsharp_seq_0==__gsharp_inf_f) return 9223372036854775807LL;
+if(__gsharp_seq_0==(-__gsharp_inf_f)) return (-5000000000LL);
+if(__gsharp_seq_0==1.5f) return 15ll;
+if(__gsharp_seq_0==(-2.5f)) return (-25LL);
+return 7ll;
+}());
 __gsharp_ctx->__gsharp_id_8_uniformZero=__gsharp_ctx->__gsharp_id_0_a[0]&0;
 __gsharp_ctx->__gsharp_id_9_fRes=0;
 auto __gsharp_switch_temp_0 = (long long)__gsharp_ctx->__gsharp_id_8_uniformZero;
@@ -4272,7 +4281,16 @@ __gsharp_ctx.fv = (__gsharp_ctx.v & 7) switch
 6 => -2.5f,
 _ => __gsharp_ctx.fa[__gsharp_ctx.t]
 };
-__gsharp_ctx.fTag = (__gsharp_ctx.fv != __gsharp_ctx.fv) ? long.MinValue : (__gsharp_ctx.fv == 0.0f ? 0L : (__gsharp_ctx.fv == float.PositiveInfinity ? long.MaxValue : (__gsharp_ctx.fv == float.NegativeInfinity ? -5_000_000_000L : (__gsharp_ctx.fv == 1.5f ? 15L : (__gsharp_ctx.fv == -2.5f ? -25L : 7L)))));
+__gsharp_ctx.fTag = __gsharp_ctx.fv switch
+{
+float.NaN => long.MinValue,
+0.0f => 0L, // -0.0f matches too, as fv == 0.0f does
+float.PositiveInfinity => long.MaxValue,
+float.NegativeInfinity => -5_000_000_000L,
+1.5f => 15L,
+-2.5f => -25L,
+_ => 7L
+};
 __gsharp_ctx.uniformZero = __gsharp_ctx.a[0] & 0;
 __gsharp_ctx.fRes = 0;
 {

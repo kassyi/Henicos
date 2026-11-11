@@ -125,9 +125,8 @@ internal sealed partial class ManagedExecutionRewriter
             return guarded;
         }
 
-        // <label>: ;
-        var end = SyntaxFactory.LabeledStatement(SyntaxFactory.Identifier(endLabel), SyntaxFactory.EmptyStatement());
-        return SyntaxFactory.Block(guarded, end);
+        // { <guarded> <label>: ; }
+        return SyntaxFactory.Block(guarded, LoweringSyntax.EmptyLabel(endLabel));
     }
 
     // Gpu.GridStrideLoop([ref ctx,] count, body) becomes:
@@ -240,13 +239,37 @@ internal sealed partial class ManagedExecutionRewriter
 
     // <type> <name> = <value>
     private static VariableDeclarationSyntax DeclareVariable(SyntaxKind type, string name, ExpressionSyntax value) =>
+        DeclareVariable(SyntaxFactory.PredefinedType(SyntaxFactory.Token(type)), name, value);
+
+    // <type> <name> = <value>
+    private static VariableDeclarationSyntax DeclareVariable(TypeSyntax type, string name, ExpressionSyntax value) =>
         SyntaxFactory.VariableDeclaration(
-            SyntaxFactory.PredefinedType(SyntaxFactory.Token(type)),
+            type,
             SyntaxFactory.SingletonSeparatedList(
                 SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(name))
                     .WithInitializer(SyntaxFactory.EqualsValueClause(value))
             )
         );
+
+    // using (<variable>) <body> becomes using (var __gsharp_using_resource_<n> = <variable>) <body>: the hidden
+    // variable of the C# specification written out, as the C++ output does (UsingTranspiler). C# disposes the copy
+    // either way, and the declaration form keeps the copied body from raising CS0728 a second time, in the generated
+    // file, for an assignment to the variable that the user's source already reports
+    public override SyntaxNode? VisitUsingStatement(UsingStatementSyntax node)
+    {
+        var rewritten = base.VisitUsingStatement(node);
+        if (rewritten is not UsingStatementSyntax visited ||
+            visited is not { Declaration: null, Expression: IdentifierNameSyntax variable })
+        {
+            return rewritten;
+        }
+
+        var name = GSharpInternalNames.Using.ResourcePrefix + _nextUsingResourceId++;
+        var declaration = DeclareVariable(SyntaxFactory.IdentifierName("var"), name, variable.WithoutTrivia());
+        return visited
+            .WithExpression(null)
+            .WithDeclaration(declaration);
+    }
 
     // <type> <name> = <value>;
     private static LocalDeclarationStatementSyntax DeclareLocal(SyntaxKind type, string name, ExpressionSyntax value) =>
@@ -278,13 +301,7 @@ internal sealed partial class ManagedExecutionRewriter
         var substituter = CreateSubstituter(call.GetContext(arguments), lambda, loopParameter, indexName);
         var body = VisitLoopBody(lambda, substituter, namesInScope);
 
-        var declaration = SyntaxFactory.VariableDeclaration(
-            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
-            SyntaxFactory.SingletonSeparatedList(
-                SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(indexName))
-                    .WithInitializer(SyntaxFactory.EqualsValueClause(startExpr))
-            )
-        );
+        var declaration = DeclareVariable(SyntaxKind.IntKeyword, indexName, startExpr);
 
         // <index> < unchecked(<start> + <count>)
         var condition = SyntaxFactory.BinaryExpression(
@@ -392,8 +409,7 @@ internal sealed partial class ManagedExecutionRewriter
         // A return of a Gpu.SingleThread body leaves the body: goto <label>;
         if (_singleThreadEndLabel is { } singleThreadEnd && _inLambdaOrLocalFuncCount == _singleThreadDepth)
         {
-            return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(singleThreadEnd))
-                .WithTriviaFrom(node);
+            return LoweringSyntax.Goto(singleThreadEnd).WithTriviaFrom(node);
         }
 
         // A managed version returns as the user's method does

@@ -32,7 +32,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(26,16)",
+        AssertNullRead(forceManaged, "(28,16)",
             () => NullArrayFieldKernels.LaunchLengthKernel(new NullArrayHolder { Data = null }, o));
         Assert.Equal([-1], o);
     }
@@ -45,7 +45,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(33,16)",
+        AssertNullRead(forceManaged, "(35,16)",
             () => NullArrayFieldKernels.LaunchReadElementKernel(new NullArrayHolder { Data = null }, o));
     }
 
@@ -57,7 +57,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(39,9)",
+        AssertNullRead(forceManaged, "(41,9)",
             () => NullArrayFieldKernels.LaunchWriteElementKernel(new NullArrayHolder { Data = null }, o));
         Assert.Equal([-1], o);
     }
@@ -70,7 +70,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(46,27)",
+        AssertNullRead(forceManaged, "(48,27)",
             () => NullArrayFieldKernels.LaunchForEachKernel(new NullArrayHolder { Data = null }, o));
     }
 
@@ -83,7 +83,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(129,27)",
+        AssertNullRead(forceManaged, "(132,27)",
             () => NullArrayFieldKernels.LaunchForEachWithBarrierKernel(new NullArrayHolder { Data = null }, o));
     }
 
@@ -109,7 +109,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(123,41)",
+        AssertNullRead(forceManaged, "(126,41)",
             () => NullArrayFieldKernels.LaunchLocalToDeviceFunctionKernel(new NullArrayHolder { Data = null }, o),
             inDeviceFunction: true);
     }
@@ -122,7 +122,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(64,16)", () => NullArrayFieldKernels.LaunchDefaultLocalKernel(o));
+        AssertNullRead(forceManaged, "(66,16)", () => NullArrayFieldKernels.LaunchDefaultLocalKernel(o));
     }
 
     [SkippableTheory]
@@ -190,7 +190,7 @@ public class NullArrayFieldTests : TranspilerTestBase
         var o = new[] { -1, -1 };
         NullArrayHolder[] holders = [new() { Data = [1] }, new() { Data = null }];
 
-        AssertNullRead(forceManaged, "(110,16)",
+        AssertNullRead(forceManaged, "(113,16)",
             () => NullArrayFieldKernels.LaunchStructArrayKernel(holders, o));
     }
 
@@ -218,7 +218,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1, -1 };
 
-        AssertNullRead(forceManaged, "(140,16)",
+        AssertNullRead(forceManaged, "(143,16)",
             () => NullArrayFieldKernels.LaunchIndexSideEffectKernel(new NullArrayHolder { Data = null }, o));
         Assert.Equal([-1, 5], o);
     }
@@ -231,7 +231,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1, -1 };
 
-        AssertNullRead(forceManaged, "(146,9)",
+        AssertNullRead(forceManaged, "(149,9)",
             () => NullArrayFieldKernels.LaunchStoreIndexSideEffectKernel(new NullArrayHolder { Data = null }, o));
         Assert.Equal([-1, 5], o);
     }
@@ -245,7 +245,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(185,16)",
+        AssertNullRead(forceManaged, "(190,16)",
             () => NullArrayFieldKernels.LaunchIndexReplacesReceiverKernel(
                 new NullArrayHolder { Data = null },
                 new NullArrayHolder { Data = [42] },
@@ -262,7 +262,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(156,16)",
+        AssertNullRead(forceManaged, "(159,16)",
             () => NullArrayFieldKernels.LaunchWrittenParameterWithBarrierKernel(new NullArrayHolder { Data = null }, [1, 2], o));
     }
 
@@ -278,7 +278,7 @@ public class NullArrayFieldTests : TranspilerTestBase
     {
         var o = new[] { -1 };
 
-        AssertNullRead(forceManaged, "(166,16)",
+        AssertNullRead(forceManaged, "(170,16)",
             () => NullArrayFieldKernels.LaunchWrittenOptionalKernel(new NullArrayHolder { Data = null }, o, biasIsNull ? null : [1]));
     }
 

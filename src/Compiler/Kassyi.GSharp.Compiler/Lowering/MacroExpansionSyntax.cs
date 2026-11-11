@@ -6,14 +6,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// </summary>
 internal static class MacroExpansionSyntax
 {
-    /// <summary>Whether <paramref name="node"/> holds a phase barrier.</summary>
-    public static bool ContainsBarrier(SyntaxNode node) =>
-        node.DescendantNodesAndSelf()
-            .AsStackEnumerable()
-            .Any(static descendant =>
-                descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv)
-            );
-
     /// <summary>The original-span annotations of <paramref name="node"/>, which its expansion carries.</summary>
     public static ImmutableArray<SyntaxAnnotation> GetOriginalSpans(SyntaxNode node) =>
         ImmutableArray.CreateRange(node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
@@ -29,7 +21,7 @@ internal static class MacroExpansionSyntax
     {
         loop = default;
         if (call.GetBody(args) is not { } lambdaExpr ||
-            !ContainsBarrier(lambdaExpr.Body) ||
+            !BarrierHelper.ContainsPhaseBarrier(lambdaExpr.Body) ||
             GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, call.HasContext) is not { } loopParam ||
             loopParam.Identifier.ValueText.Length == 0)
         {
