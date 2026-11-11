@@ -285,28 +285,28 @@ internal sealed class DeviceExportTable
         }
 
         var names = new DeviceExportRecord.ExportNames(
-            CppName: GetString(named, AttributeNames.CppName),
-            CppFullName: GetString(named, AttributeNames.CppFullName),
-            DefinedNames: GetArray(named, AttributeNames.DefinedNames),
-            DefinedIds: GetArray(named, AttributeNames.DefinedIds),
-            DefinedFullNames: GetArray(named, AttributeNames.DefinedFullNames));
+            CppName: GetString(named, AttributeNames.Names.CppName),
+            CppFullName: GetString(named, AttributeNames.Names.CppFullName),
+            DefinedNames: GetArray(named, AttributeNames.Names.DefinedNames),
+            DefinedIds: GetArray(named, AttributeNames.Names.DefinedIds),
+            DefinedFullNames: GetArray(named, AttributeNames.Names.DefinedFullNames));
 
         var traits = new DeviceExportRecord.FunctionTraits(
-            FrameName: GetString(named, AttributeNames.FrameName),
-            FrameDependencies: GetArray(named, AttributeNames.FrameDependencies),
-            Suspends: GetBool(named, AttributeNames.Suspends),
-            ReachesBlockBarrier: GetBool(named, AttributeNames.ReachesBlockBarrier),
-            IsParallelDependent: GetBool(named, AttributeNames.IsParallelDependent),
-            ReachesDynamicSharedMemory: GetBool(named, AttributeNames.ReachesDynamicSharedMemory),
-            DynamicSharedMemorySites: GetArray(named, AttributeNames.DynamicSharedMemorySites),
-            Effect: named.TryGetValue(AttributeNames.Effect, out var effect) && effect.Value is string e
+            FrameName: GetString(named, AttributeNames.Traits.FrameName),
+            FrameDependencies: GetArray(named, AttributeNames.Traits.FrameDependencies),
+            Suspends: GetBool(named, AttributeNames.Traits.Suspends),
+            ReachesBlockBarrier: GetBool(named, AttributeNames.Traits.ReachesBlockBarrier),
+            IsParallelDependent: GetBool(named, AttributeNames.Traits.IsParallelDependent),
+            ReachesDynamicSharedMemory: GetBool(named, AttributeNames.Traits.ReachesDynamicSharedMemory),
+            DynamicSharedMemorySites: GetArray(named, AttributeNames.Traits.DynamicSharedMemorySites),
+            Effect: named.TryGetValue(AttributeNames.Traits.Effect, out var effect) && effect.Value is string e
                 ? e
                 : DeviceExportRecord.FunctionTraits.None.Effect,
-            ManagedStateMachine: GetBool(named, AttributeNames.ManagedStateMachine),
-            ManagedVersion: GetBool(named, AttributeNames.ManagedVersion),
-            DivergentConditionParameters: GetInt(named, AttributeNames.DivergentConditionParameters),
-            DivergentExitOnlyParameters: GetInt(named, AttributeNames.DivergentExitOnlyParameters),
-            HasExitOnlyBarrier: GetBool(named, AttributeNames.HasExitOnlyBarrier));
+            ManagedStateMachine: GetBool(named, AttributeNames.Traits.ManagedStateMachine),
+            ManagedVersion: GetBool(named, AttributeNames.Traits.ManagedVersion),
+            DivergentConditionParameters: GetInt(named, AttributeNames.Traits.DivergentConditionParameters),
+            DivergentExitOnlyParameters: GetInt(named, AttributeNames.Traits.DivergentExitOnlyParameters),
+            HasExitOnlyBarrier: GetBool(named, AttributeNames.Traits.HasExitOnlyBarrier));
 
         var record = new DeviceExportRecord(
             kind,

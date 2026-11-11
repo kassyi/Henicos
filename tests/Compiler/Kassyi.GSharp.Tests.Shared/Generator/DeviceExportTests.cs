@@ -360,12 +360,19 @@ public class DeviceExportTests
     // The names the emitter writes and the table reads are the named arguments of the attribute, all of them
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void DeviceExportAttributeNames_EveryConstant_NamesASettablePropertyOfTheAttribute()
+    public void DeviceExportAttributeNames_AllNames_AreTheSettablePropertiesOfTheAttribute()
     {
-        var constants = typeof(DeviceExportAttributeNames)
-            .GetFields(BindingFlags.Public | BindingFlags.Static)
+        var constants = new[]
+            {
+                typeof(DeviceExportAttributeNames),
+                typeof(DeviceExportAttributeNames.Names),
+                typeof(DeviceExportAttributeNames.Traits)
+            }
+            .SelectMany(static t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
             .Where(static f => f.IsLiteral)
             .Select(static f => f.GetRawConstantValue() as string ?? throw new InvalidOperationException(f.Name))
+            .Concat(GetDialectNames(DeviceExportAttributeNames.Cuda))
+            .Concat(GetDialectNames(DeviceExportAttributeNames.Cpp))
             .Order(StringComparer.Ordinal)
             .ToArray();
         var properties = typeof(Kassyi.GSharp.Core.GpuDeviceExportAttribute)
@@ -377,6 +384,9 @@ public class DeviceExportTests
 
         Assert.Equal(properties, constants);
     }
+
+    private static string[] GetDialectNames(DeviceExportAttributeNames.DialectNames names) =>
+        [names.References, names.Signature, names.Body, names.Dispose, names.Includes, names.Failed];
 
     // Two functions write the struct of the guard, one without its Dispose: the record keeps the Dispose text
     [Theory]

@@ -447,37 +447,41 @@ internal static class DeviceExportEmitter
             AppendString(writer, record.Id);
             var names = record.Names;
             var traits = record.Traits;
-            AppendStringProperty(writer, AttributeNames.CppName, names.CppName);
-            AppendStringProperty(writer, AttributeNames.CppFullName, names.CppFullName);
-            AppendArrayProperty(writer, AttributeNames.DefinedNames, names.DefinedNames);
-            AppendArrayProperty(writer, AttributeNames.DefinedIds, names.DefinedIds);
-            AppendArrayProperty(writer, AttributeNames.DefinedFullNames, names.DefinedFullNames);
-            AppendArrayProperty(writer, AttributeNames.CudaReferences, record.Cuda.References);
-            AppendArrayProperty(writer, AttributeNames.CppReferences, record.Cpp.References);
-            AppendStringProperty(writer, AttributeNames.FrameName, traits.FrameName);
-            AppendArrayProperty(writer, AttributeNames.FrameDependencies, traits.FrameDependencies);
-            AppendBoolProperty(writer, AttributeNames.Suspends, traits.Suspends);
-            AppendBoolProperty(writer, AttributeNames.ReachesBlockBarrier, traits.ReachesBlockBarrier);
-            AppendBoolProperty(writer, AttributeNames.IsParallelDependent, traits.IsParallelDependent);
-            AppendBoolProperty(writer, AttributeNames.ReachesDynamicSharedMemory, traits.ReachesDynamicSharedMemory);
-            AppendArrayProperty(writer, AttributeNames.DynamicSharedMemorySites, traits.DynamicSharedMemorySites);
-            AppendStringProperty(writer, AttributeNames.Effect, traits.Effect);
-            AppendStringProperty(writer, AttributeNames.CudaSignature, record.Cuda.Signature);
-            AppendStringProperty(writer, AttributeNames.CudaBody, record.Cuda.Body);
-            AppendStringProperty(writer, AttributeNames.CudaDispose, record.Cuda.Dispose);
-            AppendStringProperty(writer, AttributeNames.CppSignature, record.Cpp.Signature);
-            AppendStringProperty(writer, AttributeNames.CppBody, record.Cpp.Body);
-            AppendStringProperty(writer, AttributeNames.CppDispose, record.Cpp.Dispose);
-            AppendArrayProperty(writer, AttributeNames.CudaIncludes, record.Cuda.Includes);
-            AppendArrayProperty(writer, AttributeNames.CppIncludes, record.Cpp.Includes);
-            AppendBoolProperty(writer, AttributeNames.CudaFailed, record.Cuda.Failed);
-            AppendBoolProperty(writer, AttributeNames.CppFailed, record.Cpp.Failed);
-            AppendBoolProperty(writer, AttributeNames.ManagedStateMachine, traits.ManagedStateMachine);
-            AppendBoolProperty(writer, AttributeNames.ManagedVersion, traits.ManagedVersion);
+            AppendStringProperty(writer, AttributeNames.Names.CppName, names.CppName);
+            AppendStringProperty(writer, AttributeNames.Names.CppFullName, names.CppFullName);
+            AppendArrayProperty(writer, AttributeNames.Names.DefinedNames, names.DefinedNames);
+            AppendArrayProperty(writer, AttributeNames.Names.DefinedIds, names.DefinedIds);
+            AppendArrayProperty(writer, AttributeNames.Names.DefinedFullNames, names.DefinedFullNames);
+            AppendArrayProperty(writer, AttributeNames.Cuda.References, record.Cuda.References);
+            AppendArrayProperty(writer, AttributeNames.Cpp.References, record.Cpp.References);
+            AppendStringProperty(writer, AttributeNames.Traits.FrameName, traits.FrameName);
+            AppendArrayProperty(writer, AttributeNames.Traits.FrameDependencies, traits.FrameDependencies);
+            AppendBoolProperty(writer, AttributeNames.Traits.Suspends, traits.Suspends);
+            AppendBoolProperty(writer, AttributeNames.Traits.ReachesBlockBarrier, traits.ReachesBlockBarrier);
+            AppendBoolProperty(writer, AttributeNames.Traits.IsParallelDependent, traits.IsParallelDependent);
+            AppendBoolProperty(writer, AttributeNames.Traits.ReachesDynamicSharedMemory,
+                traits.ReachesDynamicSharedMemory);
+            AppendArrayProperty(writer, AttributeNames.Traits.DynamicSharedMemorySites,
+                traits.DynamicSharedMemorySites);
+            AppendStringProperty(writer, AttributeNames.Traits.Effect, traits.Effect);
+            AppendStringProperty(writer, AttributeNames.Cuda.Signature, record.Cuda.Signature);
+            AppendStringProperty(writer, AttributeNames.Cuda.Body, record.Cuda.Body);
+            AppendStringProperty(writer, AttributeNames.Cuda.Dispose, record.Cuda.Dispose);
+            AppendStringProperty(writer, AttributeNames.Cpp.Signature, record.Cpp.Signature);
+            AppendStringProperty(writer, AttributeNames.Cpp.Body, record.Cpp.Body);
+            AppendStringProperty(writer, AttributeNames.Cpp.Dispose, record.Cpp.Dispose);
+            AppendArrayProperty(writer, AttributeNames.Cuda.Includes, record.Cuda.Includes);
+            AppendArrayProperty(writer, AttributeNames.Cpp.Includes, record.Cpp.Includes);
+            AppendBoolProperty(writer, AttributeNames.Cuda.Failed, record.Cuda.Failed);
+            AppendBoolProperty(writer, AttributeNames.Cpp.Failed, record.Cpp.Failed);
+            AppendBoolProperty(writer, AttributeNames.Traits.ManagedStateMachine, traits.ManagedStateMachine);
+            AppendBoolProperty(writer, AttributeNames.Traits.ManagedVersion, traits.ManagedVersion);
             AppendStringProperty(writer, AttributeNames.InternalError, record.InternalError);
-            AppendIntProperty(writer, AttributeNames.DivergentConditionParameters, traits.DivergentConditionParameters);
-            AppendIntProperty(writer, AttributeNames.DivergentExitOnlyParameters, traits.DivergentExitOnlyParameters);
-            AppendBoolProperty(writer, AttributeNames.HasExitOnlyBarrier, traits.HasExitOnlyBarrier);
+            AppendIntProperty(writer, AttributeNames.Traits.DivergentConditionParameters,
+                traits.DivergentConditionParameters);
+            AppendIntProperty(writer, AttributeNames.Traits.DivergentExitOnlyParameters,
+                traits.DivergentExitOnlyParameters);
+            AppendBoolProperty(writer, AttributeNames.Traits.HasExitOnlyBarrier, traits.HasExitOnlyBarrier);
         }
 
         writer.AppendLine("]");
