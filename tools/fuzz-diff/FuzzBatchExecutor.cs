@@ -386,11 +386,8 @@ internal sealed class FuzzFailureMerger
     }
 
     private static int PathRank(string path) =>
-        path.ToLowerInvariant() switch
-        {
-            "managed" => 0,
-            "native" => 1,
-            "cuda" => 2,
-            _ => 9,
-        };
+        path.Equals("managed", StringComparison.OrdinalIgnoreCase) ? 0
+        : path.Equals("native", StringComparison.OrdinalIgnoreCase) ? 1
+        : path.Equals("cuda", StringComparison.OrdinalIgnoreCase) ? 2
+        : 9;
 }

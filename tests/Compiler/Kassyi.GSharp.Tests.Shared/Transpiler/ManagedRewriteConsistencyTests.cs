@@ -1,5 +1,6 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Extensions;
+using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
@@ -12,8 +13,10 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// A function that needs no managed version runs as the user's method on the managed path. Rewriting its body must then
 /// give the body with its names qualified and nothing else, apart from the rewrites whose result the user's method
 /// already gives: the body macros with a lambda (Kassyi.GSharp.Core runs them), the site key of a
-/// <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key), the length of an optional array
-/// and the calls that C# removes (<c>RemovedCalls</c>), which the user's method does not make either.
+/// <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key), the length of an optional array,
+/// the calls that C# removes (<c>RemovedCalls</c>), which the user's method does not make either, the arm that C# adds
+/// to a switch expression that is not exhaustive, and the <c>in</c> of a variable passed to a <c>ref readonly</c>
+/// parameter without a keyword.
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [Scenario(TestScenario.HappyPath)]
@@ -206,6 +209,13 @@ public class ManagedRewriteConsistencyTests
                 model.GetSymbolInfo(access.Expression).Symbol is IParameterSymbol
                 {
                     Type: IArrayTypeSymbol, NullableAnnotation: NullableAnnotation.Annotated
+                },
+            SwitchExpressionSyntax switchExpression =>
+                model.GetOperation(switchExpression) is ISwitchExpressionOperation { IsExhaustive: false },
+            ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.None } argument =>
+                model.GetOperation(argument.Expression) is
+                {
+                    Parent: IArgumentOperation { Parameter.RefKind: RefKind.RefReadOnlyParameter }
                 },
             _ => false
         });

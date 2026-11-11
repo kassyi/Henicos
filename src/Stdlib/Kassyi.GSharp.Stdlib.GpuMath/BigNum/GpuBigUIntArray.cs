@@ -81,6 +81,7 @@ public readonly struct GpuBigUIntArray : IDisposable, IEquatable<GpuBigUIntArray
     /// Returns the array argument that passes the words of every element to a <c>Launch{Kernel}Ptr</c> launcher or a
     /// shadow struct field: the kernel sees an array of <see cref="TotalWords"/> words.
     /// </summary>
+    /// <returns>The pointer and the word count of the device words.</returns>
     /// <exception cref="ObjectDisposedException">The buffer has been freed.</exception>
     public GSharpArrayProxy ToProxy() => new() { Data = DevicePointer, Length = TotalWords };
 

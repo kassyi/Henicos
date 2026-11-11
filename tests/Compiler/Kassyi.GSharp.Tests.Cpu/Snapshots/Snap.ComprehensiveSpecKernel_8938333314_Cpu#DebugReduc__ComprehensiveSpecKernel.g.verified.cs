@@ -474,6 +474,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] __gsharp_in_particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes __gsharp_in_largeStructVal, int __gsharp_in_particleCount, int __gsharp_in_unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> staticCache = new global::Kassyi.GSharp.Core.SharedMemory<int>(10000, 0xe20e17017ad9529aUL);
@@ -627,6 +628,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 private static bool __gsharp_layout_checked_ProcessPhysics;
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]

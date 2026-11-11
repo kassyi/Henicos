@@ -6,29 +6,19 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </summary>
 internal static class OperatorEffects
 {
-    // A user-defined conversion of the value (implicit, or the operator of a cast) is a call
+    // A user-defined conversion of the value (implicit, or the operator of a cast) is a call of user code
     public static void AddConversions(ref EffectWalker walker, ExpressionSyntax expression)
     {
         var model = walker.Model;
         if (model.GetSafeConversion(expression) is { IsUserDefined: true, MethodSymbol: { } conversion })
         {
-            AddConversionCall(ref walker, conversion);
+            walker.AddUserCode(conversion);
         }
 
         if (expression is CastExpressionSyntax &&
             model.GetSymbol(expression) is IMethodSymbol { MethodKind: MethodKind.Conversion } castOperator)
         {
-            AddConversionCall(ref walker, castOperator);
-        }
-    }
-
-    // A conversion operator reads what it may and writes what DeviceFunctionEffects says
-    private static void AddConversionCall(ref EffectWalker walker, IMethodSymbol conversion)
-    {
-        walker.Reads.Memory = true;
-        if (walker.MayWriteMemory(conversion))
-        {
-            walker.Writes.Memory = true;
+            walker.AddUserCode(castOperator);
         }
     }
 
@@ -103,11 +93,7 @@ internal static class OperatorEffects
             return;
         }
 
-        walker.Reads.Memory = true;
-        if ((callsGetter && walker.MayWriteMemory(property.GetMethod)) || walker.MayWriteMemory(property.SetMethod))
-        {
-            walker.Writes.Memory = true;
-        }
+        walker.AddUserCode(callsGetter ? property.GetMethod : null, property.SetMethod);
     }
 
     private static void AddTupleAssignment(

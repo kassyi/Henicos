@@ -3852,7 +3852,16 @@ case 6: return (-2.5f);
 default: return __gsharp_id_1_fa[__gsharp_id_4_t];
 }
 }());
-long long __gsharp_id_7_fTag = ((__gsharp_id_6_fv!=__gsharp_id_6_fv)?(-9223372036854775807LL-1):((__gsharp_id_6_fv==0.0f?0ll:((__gsharp_id_6_fv==__gsharp_inf_f?9223372036854775807LL:((__gsharp_id_6_fv==(-__gsharp_inf_f)?(-5000000000LL):((__gsharp_id_6_fv==1.5f?15ll:((__gsharp_id_6_fv==(-2.5f)?(-25LL):7ll)))))))))));
+long long __gsharp_id_7_fTag = ([&]() {
+float __gsharp_seq_0 = __gsharp_id_6_fv;
+if(__gsharp_seq_0!=__gsharp_seq_0) return (-9223372036854775807LL-1);
+if(__gsharp_seq_0==0.0f) return 0ll;
+if(__gsharp_seq_0==__gsharp_inf_f) return 9223372036854775807LL;
+if(__gsharp_seq_0==(-__gsharp_inf_f)) return (-5000000000LL);
+if(__gsharp_seq_0==1.5f) return 15ll;
+if(__gsharp_seq_0==(-2.5f)) return (-25LL);
+return 7ll;
+}());
 int __gsharp_id_8_uniformZero = __gsharp_id_0_a[0]&0;
 int __gsharp_id_9_fRes = 0;
 switch((long long)__gsharp_id_8_uniformZero)

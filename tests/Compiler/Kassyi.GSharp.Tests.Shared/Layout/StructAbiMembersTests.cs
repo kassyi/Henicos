@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Layout;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
@@ -331,7 +332,7 @@ public class StructAbiMembersTests
 
         return type.ContainingNamespace.IsGlobalNamespace
             ? type.MetadataName
-            : type.ContainingNamespace.ToDisplayString() + "." + type.MetadataName;
+            : type.ContainingNamespace.GetFullNamespaceName() + "." + type.MetadataName;
     }
 
     private static void CollectStructs(INamespaceOrTypeSymbol container, List<INamedTypeSymbol> structs)

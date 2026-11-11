@@ -4,50 +4,13 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Lowers <c>foreach</c> statements that contain a phase barrier into <c>for</c> loops (for arrays and spans) prior to
 /// <see cref="LoopRewriter"/>.
 /// </summary>
-public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter, IBlockLoweringPass
+public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBlockRewriter
 {
     private int _loopCounter;
 
-    private static bool ContainsBarrier(SyntaxNode node) =>
-        node.DescendantNodesAndSelf()
-            .AsStackEnumerable()
-            .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv));
-
-    /// <summary>Rewrites <c>foreach</c> loops within <paramref name="block"/> that contain a phase barrier.</summary>
-    public BlockSyntax Rewrite(BlockSyntax block) =>
-        ContainsBarrier(block) ? (BlockSyntax)Visit(block) : block;
-
-    public override SyntaxNode VisitBlock(BlockSyntax node)
-    {
-        var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>(node.Statements.Count);
-
-        foreach (var statement in node.Statements)
-        {
-            var visited = (StatementSyntax)Visit(statement);
-
-            if (visited is BlockSyntax nestedBlock)
-            {
-                if (statement is not BlockSyntax || ContainsBarrier(statement))
-                {
-                    newStatements.AddRange(nestedBlock.Statements);
-                }
-                else
-                {
-                    newStatements.Add(nestedBlock);
-                }
-            }
-            else
-            {
-                newStatements.Add(visited);
-            }
-        }
-
-        return SyntaxFactory.Block(newStatements);
-    }
-
     public override SyntaxNode? VisitForEachStatement(ForEachStatementSyntax node)
     {
-        if (!ContainsBarrier(node))
+        if (!BarrierHelper.ContainsPhaseBarrier(node))
         {
             return base.VisitForEachStatement(node);
         }
@@ -122,14 +85,7 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
             : expr.WithAdditionalAnnotations(
                 new SyntaxAnnotation(LoweringAnnotations.ArrayNullCheckAnnotationKind, nullCheckPlace)
             );
-        var srcDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(srcName))
-            .WithInitializer(SyntaxFactory.EqualsValueClause(source));
-        return SyntaxFactory.LocalDeclarationStatement(
-            SyntaxFactory.VariableDeclaration(
-                SyntaxFactory.IdentifierName("var"),
-                SyntaxFactory.SingletonSeparatedList(srcDeclarator)
-            )
-        ).WithAdditionalAnnotations(annotations);
+        return LoweringSyntax.DeclareLocal(srcName, source).WithAdditionalAnnotations(annotations);
     }
 
     // int __gsharp_foreach_i_<id> = 0
@@ -215,15 +171,7 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : CSharpSyntax
     {
         var bodyStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
         bodyStatements.Add(itemStatement);
-        if (body is BlockSyntax bodyBlock)
-        {
-            bodyStatements.AddRange(bodyBlock.Statements);
-        }
-        else
-        {
-            bodyStatements.Add(body);
-        }
-
+        AddInlined(bodyStatements, body);
         return SyntaxFactory.Block(bodyStatements);
     }
 }

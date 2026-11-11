@@ -31,6 +31,7 @@ public sealed class CudaKernelFunction(string kernelName, Func<byte[]> fatbin)
     /// <summary>
     /// Returns the function in the context current for a launch on this thread, loading its module there if needed.
     /// </summary>
+    /// <returns>The <c>CUfunction</c> handle of the kernel in the current context.</returns>
     public IntPtr Resolve() => Resolve([]);
 
     /// <summary>
@@ -38,6 +39,7 @@ public sealed class CudaKernelFunction(string kernelName, Func<byte[]> fatbin)
     /// registers <paramref name="errorSites"/> for the module when it resolves the function.
     /// </summary>
     /// <param name="errorSites">The device error sites of the module, registered when the function is resolved.</param>
+    /// <returns>The <c>CUfunction</c> handle of the kernel in the current context.</returns>
     public IntPtr Resolve(ReadOnlySpan<GSharpErrorSite> errorSites)
     {
         // Read before resolving: a Shutdown during the resolution leaves an older number, so the next launch

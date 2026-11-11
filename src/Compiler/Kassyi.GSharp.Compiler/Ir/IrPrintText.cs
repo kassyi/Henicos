@@ -49,13 +49,8 @@ internal static class IrPrintText
         _ => "?"
     };
 
-    /// <summary>The first line of the text of a syntax node.</summary>
-    public static string FirstLine(SyntaxNode syntax)
-    {
-        var text = syntax.ToString();
-        var end = text.IndexOfAny(['\r', '\n']);
-        return end < 0 ? text : text[..end];
-    }
+    /// <summary>The syntax node of an opaque leaf as its kind (<c>SimpleLambdaExpression</c>), not its text.</summary>
+    public static string SyntaxKindName(SyntaxNode syntax) => syntax.Kind().ToString();
 
     /// <summary>The name of an opaque reason.</summary>
     public static string Reason(IrOpaqueReason reason) => reason switch

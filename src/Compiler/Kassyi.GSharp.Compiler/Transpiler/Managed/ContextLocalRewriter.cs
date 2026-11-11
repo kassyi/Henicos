@@ -147,7 +147,7 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
                 {
                     var value = Visit(assignment.Right) as ExpressionSyntax ?? assignment.Right;
                     SimpleNameSyntax name = _renamedLocals.TryGetValue(declaredKey, out var renamed)
-                        ? SyntaxFactory.IdentifierName(renamed).WithAdditionalAnnotations(memberAccess.Name.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+                        ? SyntaxFactory.IdentifierName(renamed).WithOriginalSpanFrom(memberAccess.Name)
                         : memberAccess.Name.WithoutTrivia();
                     return _resumeLocals.CreateInitialization(declaredKey, name, value)?.WithTriviaFrom(node);
                 }

@@ -63,13 +63,9 @@ internal static class SwitchStatementFlattener
 
         statements.Add(dispatch.Block);
         LayOutSections(sections, dispatch, semanticModel, statements);
-        statements.Add(Label(dispatch.EndLabel));
+        statements.Add(LoweringSyntax.EmptyLabel(dispatch.EndLabel));
         return SyntaxFactory.Block(statements);
     }
-
-    /// <summary>Builds <c>goto &lt;label&gt;;</c>.</summary>
-    public static GotoStatementSyntax Goto(string label) =>
-        SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(label));
 
     // The temporary, one comparison per case label in the order of the source and the jump to the default section or the
     // end; the labels that the sections and the jumps of SwitchJumpRewriter go to
@@ -84,7 +80,7 @@ internal static class SwitchStatementFlattener
 
         // var <temp> = <expression>;
         var dispatch = ImmutableArray.CreateBuilder<StatementSyntax>();
-        dispatch.Add(CreateTempDeclaration(temp.Identifier.ValueText, expression));
+        dispatch.Add(LoweringSyntax.DeclareLocal(temp.Identifier.ValueText, expression.WithoutTrivia()));
         for (var i = 0; i < node.Sections.Count; i++)
         {
             sectionLabels[i] = $"{GSharpInternalNames.Lowering.LabelPrefix}SwitchSection_{id}_{i}";
@@ -100,7 +96,7 @@ internal static class SwitchStatementFlattener
                 dispatch.Add(
                     SyntaxFactory.IfStatement(
                         CreateCaseCondition(temp, caseLabel.Value, semanticModel),
-                        Goto(sectionLabels[i])
+                        LoweringSyntax.Goto(sectionLabels[i])
                     )
                 );
                 caseTargets.Add(
@@ -113,12 +109,11 @@ internal static class SwitchStatementFlattener
             }
         }
 
-        dispatch.Add(Goto(defaultLabel ?? endLabel));
+        dispatch.Add(LoweringSyntax.Goto(defaultLabel ?? endLabel));
 
         // [WHY] The dispatch carries the span of the switch, so a diagnostic on the temporary or a comparison is
         // reported at the switch (Reporter.GetReportLocation takes the nearest annotated ancestor)
-        var block = SyntaxFactory.Block(dispatch)
-            .WithAdditionalAnnotations(node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+        var block = SyntaxFactory.Block(dispatch).WithOriginalSpanFrom(node);
         return new SwitchDispatch(block, sectionLabels, caseTargets.ToImmutable(), defaultLabel, endLabel);
     }
 
@@ -143,7 +138,7 @@ internal static class SwitchStatementFlattener
         var jumps = new SwitchJumpRewriter(dispatch.EndLabel, dispatch.DefaultLabel, dispatch.CaseTargets, semanticModel);
         for (var i = 0; i < sections.Length; i++)
         {
-            statements.Add(Label(dispatch.SectionLabels[i]));
+            statements.Add(LoweringSyntax.EmptyLabel(dispatch.SectionLabels[i]));
             foreach (var statement in sections[i])
             {
                 if (IsSectionConstant(statement))
@@ -166,22 +161,6 @@ internal static class SwitchStatementFlattener
             or ParenthesizedExpressionSyntax or CastExpressionSyntax or InvocationExpressionSyntax
             ? value
             : SyntaxFactory.ParenthesizedExpression(value);
-
-    // <label>: ;
-    private static LabeledStatementSyntax Label(string label) =>
-        SyntaxFactory.LabeledStatement(label, SyntaxFactory.EmptyStatement());
-
-    // var <name> = <value>;
-    private static LocalDeclarationStatementSyntax CreateTempDeclaration(string name, ExpressionSyntax value) =>
-        SyntaxFactory.LocalDeclarationStatement(
-            SyntaxFactory.VariableDeclaration(
-                SyntaxFactory.IdentifierName("var"),
-                SyntaxFactory.SingletonSeparatedList(
-                    SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(name))
-                        .WithInitializer(SyntaxFactory.EqualsValueClause(value.WithoutTrivia()))
-                )
-            )
-        );
 
     // The dispatch block of a flattened switch and the labels it and the jumps of its sections go to
     private readonly record struct SwitchDispatch(

@@ -125,7 +125,11 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
         var syncThreadsInvocation = tree.GetRoot()
             .DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Single(inv => inv.Expression.ToString() == "Gpu.SyncThreads");
+            .Single(inv => inv.Expression is MemberAccessExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "Gpu" },
+                Name.Identifier.ValueText: "SyncThreads"
+            });
         var expectedSpan = syncThreadsInvocation.GetLocation().GetLineSpan();
 
         var diagnostics = await TestAnalyzer(

@@ -104,7 +104,7 @@ internal static class SyncGridExpansion
             // <label>: ;
             // No original-span annotation, as for the labels of LoopRewriter and BranchRewriter: the label is keyed by
             // its name, not by the symbol of the statement it follows (a foreach variable, a label of the user)
-            rest.Add(SyntaxFactory.LabeledStatement(label, SyntaxFactory.EmptyStatement()));
+            rest.Add(LoweringSyntax.EmptyLabel(label));
         }
     }
 
@@ -163,7 +163,7 @@ internal static class SyncGridExpansion
 
             // The name carries the span of the declarator, so it binds to the local (LoweringIdentity.ForReference)
             var name = SyntaxFactory.IdentifierName(declarator.Identifier.WithoutTrivia())
-                .WithAdditionalAnnotations(declarator.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+                .WithOriginalSpanFrom(declarator);
             // <name> = <initializer>;
             assignments.Add(
                 SyntaxFactory.ExpressionStatement(
@@ -195,12 +195,12 @@ internal static class SyncGridExpansion
                 : variable.Type.WithoutTrivia();
             // The declarator carries the span of the designation, so it declares the same local
             var declarator = SyntaxFactory.VariableDeclarator(designation.Identifier.WithoutTrivia())
-                .WithAdditionalAnnotations(designation.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+                .WithOriginalSpanFrom(designation);
             // <type> <name>;
             head.Add(
                 SyntaxFactory.LocalDeclarationStatement(
                     SyntaxFactory.VariableDeclaration(type, SyntaxFactory.SingletonSeparatedList(declarator))
-                ).WithAdditionalAnnotations(variable.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+                ).WithOriginalSpanFrom(variable)
             );
         }
 
@@ -287,8 +287,8 @@ internal static class SyncGridExpansion
         node switch
         {
             StatementSyntax statement => statement,
-            ExpressionSyntax expression => SyntaxFactory.ExpressionStatement(expression)
-                .WithAdditionalAnnotations(expression.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)),
+            ExpressionSyntax expression =>
+                SyntaxFactory.ExpressionStatement(expression).WithOriginalSpanFrom(expression),
             _ => throw new InvalidOperationException($"Cannot expand a SyncGrid body element of kind '{node.Kind()}'.")
         };
 

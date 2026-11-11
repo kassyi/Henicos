@@ -79,7 +79,7 @@ The members are declared in a C# 14 `extension(IGpuBigFloatVectorExpression sour
 
 | Name | Description |
 | --- | --- |
-| [Count(IGpuBigFloatVectorExpression)](#countigpubigfloatvectorexpression) | Returns the element count when known on the host without device execution. |
+| [Count(IGpuBigFloatVectorExpression)](#countigpubigfloatvectorexpression) | Returns the element count; evaluates the expression with the workspace of its arrays when that is needed. |
 | [Count(IGpuBigFloatVectorExpression, GpuWorkspace)](#countgpuworkspace) | Evaluates the expression if needed and returns the exact element count (synchronizing once when filtered by `Where`). |
 | [Sum(IGpuBigFloatVectorExpression, GpuWorkspace)](#sumigpubigfloatvectorexpression-gpuworkspace) | Computes the sum of all elements in the vectorized expression using multi-pass GPU tree reduction. |
 | [Max(IGpuBigFloatVectorExpression, GpuWorkspace)](#maxigpubigfloatvectorexpression-gpuworkspace) | Computes the maximum value in the vectorized expression using multi-pass GPU tree reduction. |
@@ -341,7 +341,7 @@ public static IGpuBoolVectorExpression IsLessThanOrEqualTo(
 
 ## Count(IGpuBigFloatVectorExpression)
 
-Returns the number of elements in `source` when known statically on the host without running on the device.
+Returns the number of elements in `source`. A chain of operations that cannot throw, with a length known on the host, is not evaluated. Otherwise (an operation that can throw: a division, a square root, a reciprocal, a logarithm, an exponential, `Pow`, inputs of different lengths; or a `Where`), `source` is evaluated as `Count(workspace)` does, with the workspace of the first `GpuBigFloatArray` of the expression, so that the result is the one of `System.Linq`.
 
 ```csharp
 public static int Count(this IGpuBigFloatVectorExpression source);
@@ -349,12 +349,18 @@ public static int Count(this IGpuBigFloatVectorExpression source);
 
 #### Exceptions
 
+`DivideByZeroException`<br>
+Thrown when a counted element is divided by zero.
+
 `InvalidOperationException`<br>
-Thrown when `source` contains a `Where` filter (`"The length of a filtered vector expression is only known on the device; call Count(workspace) to read it."`).
+Thrown when an operation is undefined for a counted element, or when `source` must be evaluated and contains no `GpuBigFloatArray` to take a workspace from (an expression implemented outside GpuMath); use `Count(workspace)`.
+
+`NotSupportedException`<br>
+Thrown when `source` must be evaluated and the workspace stream is capturing a CUDA graph.
 
 ## Count(IGpuBigFloatVectorExpression, GpuWorkspace)
 
-Returns the exact number of elements in `source`. If `source` contains a `Where` filter, evaluates the filter and reads the compacted element count from the device with one stream synchronization; otherwise returns the statically known length without device execution. Returns `0` for an empty sequence.
+Returns the exact number of elements in `source`. If `source` contains a `Where` filter, evaluates the filter and reads the compacted element count from the device with one stream synchronization. Otherwise, when `source` contains an operation that can throw, evaluates the counted elements first and throws as `Evaluate` does, as `System.Linq` runs every projection it counts; a chain without such an operation returns the statically known length without device execution. Returns `0` for an empty sequence. A chain with an operation that can throw throws `NotSupportedException` inside a CUDA graph capture, before any work.
 
 ```csharp
 public static int Count(this IGpuBigFloatVectorExpression source, GpuWorkspace workspace);
@@ -431,14 +437,14 @@ public static void EvaluateTo(
 1. **`Length`, `Capacity`, and `TryGetLength` on Filtered Expressions**:
    When an `IGpuBigFloatVectorExpression` contains a `Where` clause, the number of surviving elements is computed on the device without stalling the host thread. Accessing `Length` throws `InvalidOperationException`; use `Capacity` to query the upper bound without device synchronization, or `TryGetLength(out int length)` to check whether the length is known on the host (`false` when filtered).
 2. **`Count()` vs. `Count(GpuWorkspace)`**:
-   `Count()` is a host-only query that throws `InvalidOperationException` on a filtered expression. `Count(GpuWorkspace)` evaluates the pipeline if needed and reads the compacted device count with one synchronization.
+   Both give the `System.Linq` count. `Count()` evaluates with the workspace of the expression's arrays when it must evaluate (a `Where`, or an operation that can throw), and throws `InvalidOperationException` only for an expression with no `GpuBigFloatArray`. `Count(GpuWorkspace)` evaluates with the given workspace and reads the compacted device count with one synchronization after a `Where`.
 3. **`EvaluateTo` Rejects Filtered Expressions**:
    `EvaluateTo(workspace, destination)` checks `TryGetLength` upfront and throws `InvalidOperationException` without modifying `destination` when the expression contains `Where`. To materialize a filtered expression, call `expr.Evaluate(workspace)` to obtain a `GpuBigFloatArrayView` sliced to the exact surviving count.
 4. **Empty Sequences**:
    When a sequence has `0` elements (either statically via `Take(0)` / `Skip` past the end, or dynamically when `Where` selects `0` elements):
    - `Max(workspace)`, `Min(workspace)`, and `Average(workspace)` throw `InvalidOperationException` (`"Sequence contains no elements."`).
    - `Sum(workspace)` returns `+0` (`IsNegative == false`, zero significand of `WordsPerElement` words).
-   - `Count(workspace)` (and `Count()` when unfiltered) returns `0`.
+   - `Count(workspace)` and `Count()` return `0`.
 5. **Combining Filtered Expressions (`Zip*`, Vector `Is*`, and `Where`)**:
    Combining two separately constructed `Where` expressions element-by-element in `ZipAdd`, `ZipSubtract`, `ZipMultiply`, `ZipDivide`, `ZipPow`, vector-to-vector `Is*` comparisons, or `Where` throws `NotSupportedException` (`"Cannot combine two filtered vector expressions whose lengths are only known at evaluation time."`). Two branches derived from the *same* `Where` node with identical `Skip` and `Take` offsets share the same device count and can be combined safely.
 

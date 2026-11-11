@@ -20,10 +20,13 @@ internal sealed class IrPrinter
     private readonly Dictionary<IrVariable, int> _temporaries;
     private readonly Dictionary<string, int> _temporaryCounts;
     private readonly IrExpressionPrinter _expressions;
+    private readonly bool _oneLine;
+    private bool _separatorPending;
 
-    private IrPrinter(SourceWriter writer, IrPrintOptions options, IrPrinter? outer = null)
+    private IrPrinter(SourceWriter writer, IrPrintOptions options, IrPrinter? outer = null, bool oneLine = false)
     {
         _writer = writer;
+        _oneLine = oneLine;
         _options = options;
         _temporaries = outer?._temporaries ?? [];
         _temporaryCounts = outer?._temporaryCounts ?? new Dictionary<string, int>(StringComparer.Ordinal);
@@ -70,6 +73,7 @@ internal sealed class IrPrinter
 
     private void WriteStatement(IrStatement statement)
     {
+        StartLine();
         switch (statement)
         {
             case IrBlock block:
@@ -88,29 +92,37 @@ internal sealed class IrPrinter
                 WriteIf(@if);
                 break;
             case IrOpaqueStatement opaque:
-                _writer.AppendLine(
-                    $"opaque:{IrPrintText.Reason(opaque.Reason)}: {IrPrintText.FirstLine(opaque.Syntax)}");
+                WriteOpaque(opaque);
                 break;
             default:
                 throw new InvalidOperationException("The IR printer has no form for " + statement.GetType().Name + ".");
         }
     }
 
+    private void WriteOpaque(IrOpaqueStatement opaque)
+    {
+        _writer.Append($"opaque:{IrPrintText.Reason(opaque.Reason)}: {IrPrintText.SyntaxKindName(opaque.Syntax)}");
+        EndLine();
+    }
+
     private void WriteExpressionStatement(IrExpressionStatement statement)
     {
         _expressions.WriteExpression(statement.Expression);
-        _writer.AppendLine();
+        EndLine();
     }
 
     private void WriteBlock(IrBlock block)
     {
-        _writer.AppendLine("{");
+        _writer.Append("{");
+        EndLine();
         foreach (var inner in block.Statements)
         {
             WriteStatement(inner);
         }
 
-        _writer.AppendLine("}");
+        StartLine();
+        _writer.Append("}");
+        EndLine();
     }
 
     private void WriteDeclaration(IrLocalDeclaration declaration)
@@ -124,7 +136,7 @@ internal sealed class IrPrinter
             _expressions.WriteExpression(initializer);
         }
 
-        _writer.AppendLine();
+        EndLine();
     }
 
     private void WriteReturn(IrReturn @return)
@@ -136,18 +148,20 @@ internal sealed class IrPrinter
             _expressions.WriteExpression(value);
         }
 
-        _writer.AppendLine();
+        EndLine();
     }
 
     private void WriteIf(IrIf @if)
     {
         _writer.Append("if ");
         _expressions.WriteExpression(@if.Condition);
-        _writer.AppendLine();
+        EndLine();
         WriteStatement(@if.Then);
         if (@if.Else is { } @else)
         {
-            _writer.AppendLine("else");
+            StartLine();
+            _writer.Append("else");
+            EndLine();
             WriteStatement(@else);
         }
     }
@@ -156,8 +170,27 @@ internal sealed class IrPrinter
     public string PrintInline(IrStatement statement)
     {
         using var writer = new SourceWriter();
-        new IrPrinter(writer, _options, this).WriteStatement(statement);
-        return writer.ToString().Replace("\r", "").Replace('\n', ' ').TrimEnd();
+        new IrPrinter(writer, _options, this, oneLine: true).WriteStatement(statement);
+        return writer.ToString();
+    }
+
+    // Ends a line; on one line, the next line starts after a space instead
+    private void EndLine()
+    {
+        if (_oneLine)
+        {
+            _separatorPending = true;
+        }
+        else
+        {
+            _writer.AppendLine();
+        }
+    }
+
+    private void StartLine()
+    {
+        _writer.AppendIf(_separatorPending, " ");
+        _separatorPending = false;
     }
 
     /// <summary>Writes a variable: its name, with the region of an inlined copy, or a temporary by its
