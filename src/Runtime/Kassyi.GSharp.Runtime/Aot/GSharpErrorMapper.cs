@@ -103,15 +103,6 @@ public struct GSharpDeviceErrorSlot
 }
 
 /// <summary>
-/// Encapsulates the runtime error site and thread/block coordinates for mapping to an exception (#1231).
-/// </summary>
-internal readonly record struct ErrorSiteLocation(
-    uint SiteId,
-    uint ModuleId,
-    uint ThreadLinear,
-    (int X, int Y, int Z) BlockCoord);
-
-/// <summary>
 /// Maps device and native CPU runtime error records to standard .NET exceptions with source location and thread coordinate metadata.
 /// </summary>
 public static class GSharpErrorMapper
@@ -369,8 +360,6 @@ public static class GSharpErrorMapper
             preserveRawMessageWhenNoSite);
     }
 
-
-
     /// <summary>
     /// Creates a standard .NET exception for the specified <see cref="GSharpErrorCode"/>, explicit site ID, module ID, and block coordinates.
     /// </summary>
@@ -406,84 +395,88 @@ public static class GSharpErrorMapper
         string? explicitMessage,
         bool preserveRawMessageWhenNoSite)
     {
-        var hasSite = TryGetSite(location.SiteId, location.ModuleId, out var site);
-        var baseMessage = ResolveBaseMessage(code, location.SiteId, explicitMessage, hasSite, site);
-        var (formattedMessage, threadCoord, blockCoordStr) = FormatMessage(
-            baseMessage, location, hasSite, site, preserveRawMessageWhenNoSite, explicitMessage);
+        GSharpErrorSite? site = TryGetSite(location.SiteId, location.ModuleId, out var found) ? found : null;
+        var baseMessage = ResolveBaseMessage(code, location.SiteId, explicitMessage, site);
+        var (tx, ty, tz) = UnpackThreadIndex(location.ThreadLinear);
+        var threadCoord = $"({tx},{ty},{tz})";
+        var blockCoord = $"({location.BlockCoord.X},{location.BlockCoord.Y},{location.BlockCoord.Z})";
+        var rawMessage = preserveRawMessageWhenNoSite ? explicitMessage : null;
+        var message = FormatMessage(baseMessage, site, threadCoord, blockCoord, rawMessage);
 
-        var exception = InstantiateException(code, formattedMessage, innerException);
-        PopulateExceptionData(exception, code, threadCoord, blockCoordStr, hasSite, site, innerException);
+        var exception = InstantiateException(code, message, innerException);
+        PopulateExceptionData(exception, code, threadCoord, blockCoord, site);
         return exception;
     }
 
+    /// <summary>
+    /// The explicit message, else the message of the site, else the builtin message of the prelude, else the default.
+    /// </summary>
     private static string ResolveBaseMessage(
         GSharpErrorCode code,
         uint siteId,
         string? explicitMessage,
-        bool hasSite,
-        GSharpErrorSite site) =>
-        siteId switch
-        {
-            _ when !string.IsNullOrEmpty(explicitMessage) => explicitMessage,
-            _ when hasSite && !string.IsNullOrEmpty(site.DefaultMessage) => site.DefaultMessage,
-            _ when (siteId & BuiltinSiteFlag) != 0u && s_builtinMessages.TryGetValue(siteId, out var builtinMsg) =>
-                builtinMsg,
-            _ => GetDefaultMessage(code),
-        };
-
-    private static (string FormattedMessage, string ThreadCoord, string BlockCoordStr) FormatMessage(
-        string baseMessage,
-        in ErrorSiteLocation location,
-        bool hasSite,
-        GSharpErrorSite site,
-        bool preserveRawMessageWhenNoSite,
-        string? explicitMessage)
+        GSharpErrorSite? site)
     {
-        var (tx, ty, tz) = UnpackThreadIndex(location.ThreadLinear);
-        var threadCoord = $"({tx},{ty},{tz})";
-        var blockCoordStr = $"({location.BlockCoord.X},{location.BlockCoord.Y},{location.BlockCoord.Z})";
-
-        string formattedMessage;
-        if (hasSite)
+        if (!string.IsNullOrEmpty(explicitMessage))
         {
-            var sourceLocation = $"{site.File}({site.Line},{site.Column})";
-            formattedMessage =
-                $"{baseMessage} in {site.MemberName} at {sourceLocation} " +
-                $"in thread {threadCoord} of block {blockCoordStr}";
-        }
-        else if (preserveRawMessageWhenNoSite && !string.IsNullOrEmpty(explicitMessage))
-        {
-            formattedMessage = explicitMessage;
-        }
-        else
-        {
-            // Consistent exception message format across CUDA and Native CPU
-            formattedMessage = $"{baseMessage} in thread {threadCoord} of block {blockCoordStr}";
+            return explicitMessage;
         }
 
-        return (formattedMessage, threadCoord, blockCoordStr);
+        if (site is { DefaultMessage: { Length: > 0 } siteMessage })
+        {
+            return siteMessage;
+        }
+
+        if ((siteId & BuiltinSiteFlag) != 0u && s_builtinMessages.TryGetValue(siteId, out var builtinMessage))
+        {
+            return builtinMessage;
+        }
+
+        return GetDefaultMessage(code);
+    }
+
+    // rawMessage: the explicit message when the caller keeps it verbatim for an error without a site, else null.
+    private static string FormatMessage(
+        string baseMessage,
+        GSharpErrorSite? site,
+        string threadCoord,
+        string blockCoord,
+        string? rawMessage)
+    {
+        if (site is { } knownSite)
+        {
+            var sourceLocation = $"{knownSite.File}({knownSite.Line},{knownSite.Column})";
+            return $"{baseMessage} in {knownSite.MemberName} at {sourceLocation} " +
+                $"in thread {threadCoord} of block {blockCoord}";
+        }
+
+        if (!string.IsNullOrEmpty(rawMessage))
+        {
+            return rawMessage;
+        }
+
+        // Consistent exception message format across CUDA and Native CPU
+        return $"{baseMessage} in thread {threadCoord} of block {blockCoord}";
     }
 
     private static void PopulateExceptionData(
         Exception exception,
         GSharpErrorCode code,
         string threadCoord,
-        string blockCoordStr,
-        bool hasSite,
-        GSharpErrorSite site,
-        Exception? innerException)
+        string blockCoord,
+        GSharpErrorSite? site)
     {
         exception.Data["GSharp.ErrorCode"] = code.ToString();
         exception.Data["GSharp.ThreadIndex"] = threadCoord;
-        exception.Data["GSharp.BlockIndex"] = blockCoordStr;
+        exception.Data["GSharp.BlockIndex"] = blockCoord;
 
-        if (hasSite)
+        if (site is { } knownSite)
         {
-            exception.Data["GSharp.MemberName"] = site.MemberName;
-            exception.Data["GSharp.SourceLocation"] = $"{site.File}({site.Line},{site.Column})";
+            exception.Data["GSharp.MemberName"] = knownSite.MemberName;
+            exception.Data["GSharp.SourceLocation"] = $"{knownSite.File}({knownSite.Line},{knownSite.Column})";
         }
 
-        if (innerException is CudaException cudaEx)
+        if (exception.InnerException is CudaException cudaEx)
         {
             exception.Data["GSharp.CudaError"] = cudaEx.Result.ToString();
         }

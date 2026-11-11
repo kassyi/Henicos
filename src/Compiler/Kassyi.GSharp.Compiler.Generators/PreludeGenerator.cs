@@ -79,12 +79,10 @@ public static class PreludeGenerator
         using var resolved = new SourceWriter();
         var copied = 0;
 
-        while (TryFindInclude(
-            file, content, copied, out var includeIndex, out var pathStart, out var pathEnd, out var line))
+        while (FindInclude(file, content, copied) is { } include)
         {
-            var includedFilePath = ResolveIncludedFilePath(
-                resourcesDir, file, content, pathStart, pathEnd, line, includeChain);
-            var includedAtDocumentEnd = atDocumentEnd && content.AsSpan(pathEnd + 1).Trim().IsEmpty;
+            var includedFilePath = ResolveIncludedFilePath(resourcesDir, file, content, include, includeChain);
+            var includedAtDocumentEnd = atDocumentEnd && content.AsSpan(include.PathEnd + 1).Trim().IsEmpty;
             var includedContent = LoadIncludedContent(includedFilePath, isCuda, includedAtDocumentEnd);
 
             includeChain.Add(includedFilePath);
@@ -98,54 +96,44 @@ public static class PreludeGenerator
             );
             includeChain.RemoveAt(includeChain.Count - 1);
 
-            resolved.Append(content, copied, includeIndex - copied);
+            resolved.Append(content, copied, include.Index - copied);
             resolved.Append(resolvedInclude);
-            copied = pathEnd + 1;
+            copied = include.PathEnd + 1;
         }
 
         resolved.Append(content, copied, content.Length - copied);
         return resolved.ToString();
     }
 
-    private static bool TryFindInclude(
-        string file,
-        string content,
-        int copied,
-        out int includeIndex,
-        out int pathStart,
-        out int pathEnd,
-        out int line)
+    // The first #include "<path>" of content at or after copied, or null when there is none.
+    private static IncludeDirective? FindInclude(string file, string content, int copied)
     {
-        includeIndex = content.IndexOf(IncludePrefix, copied, StringComparison.Ordinal);
-        if (includeIndex < 0)
+        var index = content.IndexOf(IncludePrefix, copied, StringComparison.Ordinal);
+        if (index < 0)
         {
-            pathStart = 0;
-            pathEnd = 0;
-            line = 0;
-            return false;
+            return null;
         }
 
-        line = LineOf(content, includeIndex);
-        pathStart = includeIndex + IncludePrefix.Length;
-        pathEnd = content.IndexOfAny(['"', '\n'], pathStart);
+        var line = LineOf(content, index);
+        var pathStart = index + IncludePrefix.Length;
+        var pathEnd = content.IndexOfAny(['"', '\n'], pathStart);
         if (pathEnd < 0 || content[pathEnd] != '"')
         {
             throw new GeneratorInputException(
                 file, line, "The #include directive has no closing quote on its line.");
         }
 
-        return true;
+        return new IncludeDirective(index, pathStart, pathEnd, line);
     }
 
     private static string ResolveIncludedFilePath(
         string resourcesDir,
         string file,
         string content,
-        int pathStart,
-        int pathEnd,
-        int line,
+        IncludeDirective include,
         List<string> includeChain)
     {
+        var (pathStart, pathEnd, line) = (include.PathStart, include.PathEnd, include.Line);
         var relativeInclude = string.Create(pathEnd - pathStart, (content, pathStart), static (span, state) =>
         {
             var src = state.content.AsSpan(state.pathStart, span.Length);
@@ -273,4 +261,8 @@ public static class PreludeGenerator
 
         return hash.Value.ToString("x16", CultureInfo.InvariantCulture);
     }
+
+    // An #include "<path>" directive: Index is the position of '#', PathStart and PathEnd enclose the path (PathEnd is
+    // the closing quote), Line is the 1-based line of the directive.
+    private readonly record struct IncludeDirective(int Index, int PathStart, int PathEnd, int Line);
 }
