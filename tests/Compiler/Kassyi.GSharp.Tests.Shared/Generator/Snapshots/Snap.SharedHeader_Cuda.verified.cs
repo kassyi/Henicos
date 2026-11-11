@@ -174,8 +174,8 @@ __device__ unsigned int __gsharp_launch_abort[__GSHARP_LAUNCH_ABORT_WORDS];
 // the word of a launch that is not captured. The word holds the full epoch, so a launch leaves only on its own failure;
 // two live graphs whose capture epochs are a multiple of 4096 apart share a word, and a replay of one can clear the
 // word of a failed replay of the other when both run at once. A launch that is not captured takes an epoch of the same
-// range when the host has no free record for it; it records into the shared record like a captured launch. The module
-// loads the words as zeros.
+// range when the host has no free record for it; it records into the shared record like a captured launch, and its
+// launcher clears its word on the stream before it the same way. The module loads the words as zeros.
 #define __GSHARP_CAPTURE_EPOCH 0x80000000u
 #define __GSHARP_CAPTURE_ABORT_WORDS 4096u
 __device__ unsigned int __gsharp_capture_abort[__GSHARP_CAPTURE_ABORT_WORDS];
@@ -213,10 +213,12 @@ return (epoch & __GSHARP_CAPTURE_EPOCH) != 0u
 
 // Claims a record for the error of the running launch and writes it (first writer wins). A launch that records into
 // the shared record (__gsharp_error_slot) itself, a launch captured into a CUDA graph or every launch when the host has
-// no ring, keeps the error that is already there when another launch holds it, as the launches of one graph that fail
-// in one replay do: the host throws the first error, and this launch only leaves. [WHY] No trap there: a trap ends the
-// context, and the first error already makes the synchronization throw (the launchers of these launches throw any
-// record, LaunchErrorRecords.ThrowIfLaunchError). When another launch still holds the launch's own record in the ring
+// no ring, keeps the error that is already there when another such launch (epoch 0 or bit 31) holds it, as the
+// launches of one graph that fail in one replay do: the host throws the first error, and this launch only leaves.
+// [WHY] No trap there: a trap ends the context, and the first error already makes the synchronization throw (the
+// launchers of these launches throw any record, LaunchErrorRecords.ThrowIfLaunchError). When the holder is a launch
+// that owns a ring epoch and overflowed into the shared record, no synchronization takes that record for this launch,
+// so the thread traps as below. When another launch still holds the launch's own record in the ring
 // (an unconsumed record of the launch __GSHARP_LAUNCH_RECORDS epochs before, which may still run), the error goes to
 // the shared record, tagged with this epoch. When that one is held by another launch as well, nothing can record the
 // error, and the thread traps rather than letting a launcher that reads only its own record return partial results
@@ -227,7 +229,8 @@ const unsigned long long claim = (static_cast<unsigned long long>(epoch) << 32) 
 unsigned long long held = atomicCAS(reinterpret_cast<unsigned long long*>(&record->code), 0ull, claim);
 if (held != 0ull && static_cast<unsigned int>(held >> 32) != epoch) {
 GSharpDeviceErrorSlot* shared = __gsharp_error_slot;
-if (shared == record) {
+const unsigned int holder = static_cast<unsigned int>(held >> 32);
+if (shared == record && (holder == 0u || (holder & __GSHARP_CAPTURE_EPOCH) != 0u)) {
 return record;
 }
 if (shared != nullptr) {

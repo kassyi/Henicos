@@ -51,7 +51,11 @@ public static unsafe class LaunchErrorRecords
     private static IntPtr s_host;
     private static ulong s_device;
     private static int s_lastEpoch;
-    private static int s_lastCaptureEpoch;
+    private static int s_lastSharedEpoch;
+
+    // Tests: HoldEveryRecordForTest
+    [ThreadStatic]
+    private static bool t_holdEveryRecordForTest;
 
     // The epoch whose launcher reads the record of each index itself, or 0
     private static readonly uint[] s_owners = new uint[Records];
@@ -150,7 +154,7 @@ public static unsafe class LaunchErrorRecords
         {
             // An invalidated capture fails the launch anyway
             return barrierFunction != IntPtr.Zero && captureStatus == CUstreamCaptureStatus.Active
-                ? TakeCaptureEpoch(stream, barrierFunction)
+                ? TakeSharedEpoch(stream, barrierFunction)
                 : 0u;
         }
 
@@ -159,12 +163,12 @@ public static unsafe class LaunchErrorRecords
         {
             // [WHY] Without records the device writes into the shared record, but the launch still needs its own
             // abort word, so that its waiters leave on its failure and only on its own
-            return TakeSharedEpoch();
+            return TakeSharedEpoch(stream, barrierFunction);
         }
 
         // An epoch whose record a launcher still waits for is skipped, so that this launch neither throws nor
         // overwrites that launcher's error
-        for (var attempt = 0u; attempt < Records; attempt++)
+        for (var attempt = 0u; attempt < Records && !t_holdEveryRecordForTest; attempt++)
         {
             var epoch = TakeEpoch();
             var index = epoch % Records;
@@ -186,7 +190,7 @@ public static unsafe class LaunchErrorRecords
 
         // [WHY] Every record is owned by a launcher: the launch records into the shared record, as without records,
         // and keeps an abort word of its own
-        return TakeSharedEpoch();
+        return TakeSharedEpoch(stream, barrierFunction);
     }
 
     // The epochs of launches that own a record in the ring: 1 to 2^31 - 1 (the epochs with bit 31 set record into the
@@ -205,14 +209,27 @@ public static unsafe class LaunchErrorRecords
         return TakeEpoch();
     }
 
-    // Takes a capture epoch and launches __gsharp_clear_capture_abort of the function's module (Prelude.cu) on the
-    // capturing stream, which clears the epoch's abort word. [WHY] Capture epochs are never released: the graph lives
-    // until its owner destroys it, which the runtime does not see. The word holds the full epoch, so a word that two
-    // graphs share (capture epochs a multiple of 4096 apart) never makes a launch leave on the other's failure; only a
-    // replay of one that runs at the same time as a failed replay of the other can clear the other's word.
-    private static uint TakeCaptureEpoch(IntPtr stream, IntPtr function)
+    // Takes an epoch with bit 31 set: the launch records into the shared record (Prelude.cu, __gsharp_launch_record),
+    // where a failing thread keeps the error of another such launch that is already there, and has its abort word in
+    // __gsharp_capture_abort. A captured launch takes one, and a launch that is not captured takes one when it cannot
+    // take a record of the ring. For a kernel that waits for arrivals (function is not zero) it first launches
+    // __gsharp_clear_capture_abort of the function's module on the stream, which clears the epoch's word; in a capture
+    // that launch becomes a node in front of the kernel. [WHY] These epochs are never released: a graph lives until its
+    // owner destroys it, which the runtime does not see, and the counter wraps after 2^31 epochs, so a word can still
+    // hold the same value from an earlier failed launch; the clear in front of every launch that reads the word makes
+    // that harmless without clearing every module at the wrap, which a capture would not allow. The word holds the
+    // full epoch, so a word that two graphs share (epochs a multiple of 4096 apart) never makes a launch leave on the
+    // other's failure; only a replay of one that runs at the same time as a failed replay of the other can clear the
+    // other's word.
+    private static uint TakeSharedEpoch(IntPtr stream, IntPtr function)
     {
-        var epoch = TakeSharedEpoch();
+        var counter = unchecked((uint)Interlocked.Increment(ref s_lastSharedEpoch));
+        var epoch = CaptureEpochBit | (counter & ~CaptureEpochBit);
+        if (function == IntPtr.Zero)
+        {
+            return epoch;
+        }
+
         CudaException.ThrowIfError(CudaDriverApi.cuFuncGetModule(out var module, function));
         if (CudaDriverApi.cuModuleGetFunction(out var clear, module, ClearCaptureAbortName) != CUresult.CudaSuccess)
         {
@@ -230,14 +247,21 @@ public static unsafe class LaunchErrorRecords
         return epoch;
     }
 
-    // An epoch with bit 31 set: the launch records into the shared record (Prelude.cu, __gsharp_launch_record), where a
-    // failing thread keeps the error of another launch that is already there, and has its abort word in
-    // __gsharp_capture_abort. A launch that is not captured takes one when it cannot take a record of the ring; no
-    // clear node runs before it, and none is needed, as no earlier launch wrote its value into the word.
-    private static uint TakeSharedEpoch()
+    // Tests: the next epoch with bit 31 set is the one after <counter>, so that a test can take an epoch again, as
+    // after the counter wrapped around
+    internal static void SetLastSharedEpochForTest(int counter) => Volatile.Write(ref s_lastSharedEpoch, counter);
+
+    // Tests: the launches of the calling thread take an epoch with bit 31 set, as while every record is owned, until
+    // the result is disposed
+    internal static IDisposable HoldEveryRecordForTest()
     {
-        var counter = unchecked((uint)Interlocked.Increment(ref s_lastCaptureEpoch));
-        return CaptureEpochBit | (counter & ~CaptureEpochBit);
+        t_holdEveryRecordForTest = true;
+        return new RecordsReleased();
+    }
+
+    private sealed class RecordsReleased : IDisposable
+    {
+        public void Dispose() => t_holdEveryRecordForTest = false;
     }
 
     /// <summary>

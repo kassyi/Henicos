@@ -144,7 +144,7 @@ A captured launch of a kernel that waits at a barrier counting a fixed number of
 
 A block that leaves a grid barrier after a failure takes its arrival back while the barrier has not completed. On driver 621.14 a graph keeps the grid workspace of a cooperative kernel node from one replay to the next, so an arrival left in a barrier that never completed would let blocks of the next replay pass their barriers early. NVIDIA does not document either behavior; the take-back is also correct when a driver clears the workspace for every replay.
 
-Several captured launches that fail before a synchronization (two failing nodes of one graph, or replays of different graphs) all write the shared slot: the first error stays, the later failing launches only leave, and the synchronization throws the first error. The same holds for a launch that is not captured but records into the shared slot (below).
+Several captured launches that fail before a synchronization (two failing nodes of one graph, or replays of different graphs) all write the shared slot: the first error of such a launch stays, the later failing launches only leave, and the synchronization throws the first error. The same holds for a launch that is not captured but records into the shared slot (below).
 
 Known limits of captured launches:
 
@@ -154,7 +154,7 @@ Known limits of captured launches:
 
 Further limits:
 
-- When the per-launch records could not be allocated, or 256 launches whose launchers read their own record are in flight at once, the next launch takes an epoch of the shared range (bit 31 set) and records into the shared slot like a captured launch: it keeps its own abort word, its launcher throws any recorded error, and when several such launches fail before a synchronization, only the first error is thrown.
+- When the per-launch records could not be allocated, or 256 launches whose launchers read their own record are in flight at once, the next launch takes an epoch of the shared range (bit 31 set) and records into the shared slot like a captured launch: it keeps its own abort word, which `__gsharp_clear_capture_abort` clears on the stream before a kernel that waits for arrivals (so a word left by a launch 2^31 shared epochs earlier does no harm), its launcher throws any recorded error, and when several such launches fail before a synchronization, only the first error is thrown. When the shared slot holds the error of a launch that owns a ring epoch (one that overflowed, below), a failing launch of the shared range traps instead, as no synchronization would throw that record for it.
 - A launch whose own record is still held by an unconsumed error of the launch 256 epochs before it records into the shared slot; when that is held by another launch as well, the thread traps (a GPU fault that ends the context) rather than let its launcher return partial results with no exception.
 - Once every 2^31 launches the epoch counter wraps around and the host clears the abort words of every loaded module. The clear is not ordered with launches on non-blocking streams: a launch that failed and is still running at that moment can lose its abort word, and its grid barrier or mbarrier waiters keep waiting until the driver resets the GPU (TDR).
 
