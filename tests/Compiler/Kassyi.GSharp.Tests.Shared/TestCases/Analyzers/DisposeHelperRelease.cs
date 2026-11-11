@@ -279,3 +279,19 @@ public sealed class LocalDirect : IDisposable
         void Inner() => _a.Dispose();
     }
 }
+
+// No GSH0022: the object itself passed to a method whose body the analysis cannot see, which may release its fields (a
+// tree of nodes disposed by one walk)
+public sealed class EscapedThis : IDisposable
+{
+    private Resource? _a = new Resource();
+
+    public void Release() => _a?.Dispose();
+
+    public void Dispose() => TreeDisposal.Dispose(this);
+}
+
+public static class TreeDisposal
+{
+    public static void Dispose(EscapedThis node) => node.Release();
+}

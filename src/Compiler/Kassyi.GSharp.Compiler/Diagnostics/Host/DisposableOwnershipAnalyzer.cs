@@ -361,8 +361,9 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         if (helpers.Length == 0)
         {
             // nameof(<name>) only names it; a method the analysis cannot see (another type, a base type, a delegate)
-            // may release what it is given
-            return passedAt >= 0 && !IsNameOf(invocation) ? FieldRelease.Escaped : FieldRelease.None;
+            // may release what it is given, and given this, any field of it
+            var escapes = passedAt >= 0 || (isField && PassesThis(arguments));
+            return escapes && !IsNameOf(invocation) ? FieldRelease.Escaped : FieldRelease.None;
         }
 
         if (passedAt < 0 && !isField)
@@ -448,6 +449,12 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     // The body of a local function; an extern one has none, so its declaration (which holds no call) stands for it
     private static SyntaxNode GetLocalFunctionBody(LocalFunctionStatementSyntax local) =>
         (SyntaxNode?)local.Body ?? local.ExpressionBody ?? (SyntaxNode)local;
+
+    // this as an argument: the callee reaches every field of the object
+    private static bool PassesThis(SeparatedSyntaxList<ArgumentSyntax> arguments) =>
+        arguments
+            .AsStackEnumerable()
+            .Any(static argument => argument.Expression is ThisExpressionSyntax);
 
     // nameof(...): the caller checks first that no helper has that name, so the call is the operator
     private static bool IsNameOf(InvocationExpressionSyntax invocation) =>
