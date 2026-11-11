@@ -56,6 +56,10 @@ jobs:
       VSTEST_CONNECTION_TIMEOUT: "300"
       # Every dotnet test writes a .trx here; uploaded below for `node scripts/human/ci-test-durations.js`
       TEST_RESULTS_DIR: ${{ github.workspace }}/tmp/test-results
+      # The cuda.h the Tests.Cpu and Tests.Cuda jobs fetch (cuda_cudart of redistrib_13.4.1.json); the cache key and the
+      # fetch step both read these two, so a new pin changes both
+      CUDA_HEADER_VERSION: "13.4.49"
+      CUDA_HEADER_SHA256: ec3df9f91560db23a064c6b395d4fde17b2893f5bf954c6bd193dd03a44de522
 
     steps:
       - name: Enable long paths in Git (Windows)
@@ -80,23 +84,24 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-${{ matrix.suite }}-
 
       # cuda.h alone, for the scan of CudaDriverApiEntryPointTests that checks the driver bindings against the
-      # redirects of the header (the runners have no CUDA toolkit). One archive serves both OSes: the header text is
-      # the same. Pinned to the CUDA version of the bindings; the test fails instead of skipping when CI=true.
+      # redirects of the header (the runners have no CUDA toolkit). One archive serves both OSes: the header is
+      # byte-identical. Pinned (CUDA_HEADER_VERSION) to the CUDA version of the bindings; the test fails instead of
+      # skipping when CI=true.
       - name: Cache the CUDA header
         if: matrix.suite != 'rest'
         id: cuda-header
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/cuda-include
-          key: cuda-header-13.4.49-ec3df9f91560db23
+          key: cuda-header-${{ env.CUDA_HEADER_VERSION }}-${{ env.CUDA_HEADER_SHA256 }}
 
       - name: Fetch the CUDA header
         if: matrix.suite != 'rest' && steps.cuda-header.outputs.cache-hit != 'true'
         shell: bash
         working-directory: ${{ runner.temp }}
         env:
-          ARCHIVE: cuda_cudart-linux-x86_64-13.4.49-archive
-          SHA256: ec3df9f91560db23a064c6b395d4fde17b2893f5bf954c6bd193dd03a44de522
+          ARCHIVE: cuda_cudart-linux-x86_64-${{ env.CUDA_HEADER_VERSION }}-archive
+          SHA256: ${{ env.CUDA_HEADER_SHA256 }}
           REDIST: https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/linux-x86_64
           INCLUDE_DIR: ${{ runner.temp }}/cuda-include
         run: |
