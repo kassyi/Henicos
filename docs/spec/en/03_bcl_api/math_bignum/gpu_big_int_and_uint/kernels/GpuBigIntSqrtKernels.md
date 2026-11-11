@@ -26,6 +26,8 @@ public static partial class GpuBigIntSqrtKernels
 | Name | Description |
 | --- | --- |
 | [InverseSqrtNewtonRaphsonMegaKernel(NewtonRaphsonContext)](#inversesqrtnewtonraphsonmegakernelnewtonraphsoncontext) | A cooperative GPU kernel (`[GpuKernel(Cooperative = true)]`) that executes the Newton-Raphson inverse square root iteration loop on the GPU. |
+| [SqrtFloorCorrectionKernel(uint[], uint[], uint[], uint[], uint[], int, int, int, uint[])](#sqrtfloorcorrectionkerneluint-uint-uint-uint-uint-int-int-int-uint) | A GPU kernel (`[GpuKernel]`) that moves an integer square root estimate to `floor(sqrt(a))` one step at a time. |
+| [CorrectInverseSqrtSlack(uint[], uint[], uint[], uint[], int, int, int, int, uint[], uint)](#correctinversesqrtslackuint-uint-uint-uint-int-int-int-int-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that corrects an inverse square root estimate by its slack and returns the steps to add to it. |
 
 ## InverseSqrtNewtonRaphsonMegaKernel(NewtonRaphsonContext)
 
@@ -40,6 +42,28 @@ public static void InverseSqrtNewtonRaphsonMegaKernel(NewtonRaphsonContext core)
 
 `core` _NewtonRaphsonContext_<br>
 The Newton-Raphson context structure containing operand buffers (`TargetOperand`, `ResultBuffer`, `Constant3`), precision dimensions (`NumberOfWords`, `MarginWords`, `MarginBits`, `Iterations`), NTT twiddle factors, and intermediate workspace buffers.
+
+## SqrtFloorCorrectionKernel(uint[], uint[], uint[], uint[], uint[], int, int, int, uint[])
+
+A GPU kernel (`[GpuKernel]`) that moves an integer square root estimate `r` of `a` to `floor(sqrt(a))`, one step at a time, by updating the slack `s = a - r^2`: `r` is the floor exactly when `0 <= s < 2r + 1`. Launched with one block; runs on the stream without a host synchronization. When `r` is not confirmed within `maxSteps` steps, thread 0 adds 1 to `status[0]` and writes `GpuBigIntDivRemKernels.SqrtCorrectionFailed` to `status[1]`.
+
+```csharp
+[GpuKernel]
+public static void SqrtFloorCorrectionKernel([GpuReadOnly] uint[] operand, [GpuReadOnly] uint[] rootSquared,
+    uint[] root, uint[] slack, uint[] trial, int operandWords, int rootWords, int maxSteps, uint[] status);
+```
+
+`operand` and `rootSquared` (`r^2`) have `operandWords` words; `root` has `rootWords` words and is corrected in place; `slack` and `trial` are scratch of `operandWords + 1` words.
+
+## CorrectInverseSqrtSlack(uint[], uint[], uint[], uint[], int, int, int, int, uint[], uint)
+
+A GPU device function (`[GpuDeviceFunction]`) that corrects an inverse square root estimate `x` by updating the slack `s = 2^(2B) - a * x^2` and the product `a * x`, and returns the number of steps to add to `x`. Runs on block 0 only (the other blocks return 0 at once). When `x` is not confirmed within `maxSteps` steps, thread 0 adds 1 to `status[0]` and writes `failureCode` to `status[1]`.
+
+```csharp
+[GpuDeviceFunction]
+public static int CorrectInverseSqrtSlack(uint[] slack, uint[] ax, [GpuReadOnly] uint[] operand, uint[] trial,
+    int slackWords, int axWords, int operandWords, int maxSteps, uint[] status, uint failureCode);
+```
 
 ## Examples
 

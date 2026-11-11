@@ -236,7 +236,7 @@ internal static class UsingTranspiler
     // A struct of another assembly whose record holds its Dispose definition for the dialect
     private static bool HasImportedDispose(INamedTypeSymbol type, Compilation compilation, ITranspilerDialect dialect) =>
         DeviceExportTable.IsOutside(type, compilation) && DeviceExportTable.TryFind(type, out var imported) &&
-        (dialect.IsCuda ? imported.Record.CudaDispose : imported.Record.CppDispose).Length > 0;
+        imported.Record.GetDialect(dialect.IsCuda).Dispose.Length > 0;
 
     // A struct of another assembly whose record failed in the dialect or was written by another G#: the analyzer reports
     // the using (GSH0089, ImportedDeviceCodeRule), not a Dispose without a body

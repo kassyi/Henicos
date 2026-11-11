@@ -261,8 +261,8 @@ public sealed class LaunchEpochTests
         return AssertWaitersLeaveAfterRecordConsumedAsync(captured: true);
     }
 
-    // Every thread of block 1 fails at once; the other blocks reach the barrier only after about 100 ms, by which time a
-    // consumer on another thread has taken the record. The launch is a Ptr launch, or a graph that captured it; the
+    // Every thread of block 1 fails at once; the other blocks reach the barrier only after about 100 ms, by which time
+    // a consumer on another thread has taken the record. The launch is a Ptr launch, or a graph that captured it; the
     // record names block 1 and the launch's epoch, and no thread writes after the barrier, which never completes.
     private static async Task AssertWaitersLeaveAfterRecordConsumedAsync(bool captured)
     {

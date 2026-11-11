@@ -8,39 +8,76 @@ namespace Kassyi.GSharp.Compiler.Models;
 internal readonly record struct DeviceExportRecord(
     string Kind,
     string Id,
-    string CppName,
-    string CppFullName,
-    EquatableArray<string> DefinedNames,
-    EquatableArray<string> DefinedIds,
-    EquatableArray<string> DefinedFullNames,
-    EquatableArray<string> CudaReferences,
-    EquatableArray<string> CppReferences,
-    string FrameName,
-    EquatableArray<string> FrameDependencies,
-    bool Suspends,
-    bool ReachesBlockBarrier,
-    bool IsParallelDependent,
-    bool ReachesDynamicSharedMemory,
-    EquatableArray<string> DynamicSharedMemorySites,
-    string Effect,
-    string CudaSignature,
-    string CudaBody,
-    string CudaDispose,
-    string CppSignature,
-    string CppBody,
-    string CppDispose,
-    EquatableArray<string> CudaIncludes,
-    EquatableArray<string> CppIncludes,
-    bool CudaFailed,
-    bool CppFailed,
-    bool ManagedStateMachine,
-    bool ManagedVersion,
-    string InternalError,
-    int DivergentConditionParameters = 0,
-    int DivergentExitOnlyParameters = 0,
-    bool HasExitOnlyBarrier = false,
-    bool ReachesArrivalBarrier = false)
+    DeviceExportRecord.ExportNames Names,
+    DeviceExportRecord.DialectText Cuda,
+    DeviceExportRecord.DialectText Cpp,
+    DeviceExportRecord.FunctionTraits Traits,
+    string InternalError)
 {
+    /// <summary>The names the record defines and refers to.</summary>
+    public readonly record struct ExportNames(
+        string CppName,
+        string CppFullName,
+        EquatableArray<string> DefinedNames,
+        EquatableArray<string> DefinedIds,
+        EquatableArray<string> DefinedFullNames);
+
+    /// <summary>The text and dependencies of one dialect.</summary>
+    public readonly record struct DialectText(
+        EquatableArray<string> References,
+        string Signature,
+        string Body,
+        string Dispose,
+        EquatableArray<string> Includes,
+        bool Failed)
+    {
+        /// <summary>No text and no references, not failed.</summary>
+        public static DialectText Empty => new(
+            References: default,
+            Signature: "",
+            Body: "",
+            Dispose: "",
+            Includes: default,
+            Failed: false);
+
+        /// <summary>No text, failed: a consumer copies nothing of the dialect.</summary>
+        public static DialectText NotTranspiled => Empty with { Failed = true };
+    }
+
+    /// <summary>The traits and execution requirements of a device function.</summary>
+    public readonly record struct FunctionTraits(
+        string FrameName,
+        EquatableArray<string> FrameDependencies,
+        bool Suspends,
+        bool ReachesBlockBarrier,
+        bool IsParallelDependent,
+        bool ReachesDynamicSharedMemory,
+        EquatableArray<string> DynamicSharedMemorySites,
+        string Effect,
+        bool ManagedStateMachine,
+        bool ManagedVersion,
+        int DivergentConditionParameters = 0,
+        int DivergentExitOnlyParameters = 0,
+        bool HasExitOnlyBarrier = false,
+        bool ReachesArrivalBarrier = false)
+    {
+        /// <summary>
+        /// The traits of a record that is not a transpiled function (a struct, or a function that failed): no frame, no
+        /// barrier, no dynamic shared memory, the <c>Memory</c> effect (the attribute's default).
+        /// </summary>
+        public static FunctionTraits None => new(
+            FrameName: "",
+            FrameDependencies: default,
+            Suspends: false,
+            ReachesBlockBarrier: false,
+            IsParallelDependent: false,
+            ReachesDynamicSharedMemory: false,
+            DynamicSharedMemorySites: default,
+            Effect: "Memory",
+            ManagedStateMachine: false,
+            ManagedVersion: false);
+    }
+
     /// <summary>The kind of a device function record.</summary>
     public const string FunctionKind = "Function";
 
@@ -71,8 +108,8 @@ internal readonly record struct DeviceExportRecord(
         HashHelper.ComputeFnv1A64($"{GSharpPreludeResources.Hash}/{CurrentFormatVersion}")
             .ToString("x16", CultureInfo.InvariantCulture);
 
-    /// <summary>The global C++ names that the text of a dialect refers to and does not define itself.</summary>
-    public EquatableArray<string> GetReferences(bool isCuda) => isCuda ? CudaReferences : CppReferences;
+    /// <summary>The text of the CUDA or the C++ dialect.</summary>
+    public DialectText GetDialect(bool isCuda) => isCuda ? Cuda : Cpp;
 
     /// <summary>Whether the record holds a value: a default record has no ID.</summary>
     public bool IsValid => !string.IsNullOrEmpty(Id);

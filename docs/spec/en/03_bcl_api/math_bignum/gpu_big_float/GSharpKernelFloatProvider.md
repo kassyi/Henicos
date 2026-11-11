@@ -20,11 +20,11 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
     : IGpuBigFloatArithmetic
 ```
 
-## Properties
+## Fields
 
 | Name | Description |
 | --- | --- |
-| `Instance` | Gets the default singleton instance of `GSharpKernelFloatProvider` using `CSharpCpuBigFloatArithmetic.Instance` as fallback. |
+| `Instance` | `public static readonly GSharpKernelFloatProvider Instance`: gets the default singleton instance of `GSharpKernelFloatProvider` using `CSharpCpuBigFloatArithmetic.Instance` as fallback. |
 
 ## Methods
 
@@ -102,7 +102,7 @@ The cut pays off only when it moves the work out of the slow size range of the G
 Measured with `Henicos.Benchmarks arithmetic wide` on an RTX 3070 Ti (time with the cut / time without, operands of $w$ words):
 
 | $n$ | $w$ | `Divide` | `Rsqrt` |
-| --: | --: | --: | --: |
+| ---: | ---: | ---: | ---: |
 | 8 | 14 | 1.05 | 1.06 |
 | 8 | 32 | 0.88 | 0.66 |
 | 8 | 128 | 0.12 | 0.05 |

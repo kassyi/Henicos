@@ -37,3 +37,9 @@ The rules of [`GpuBigUIntView`](GpuBigUIntView.md) apply: the view lives only in
 | --- | --- |
 | `GetElement(int index)` | A [`GpuBigIntView`](GpuBigIntView.md) of one element; reads its sign word back from the device. |
 | `Slice(int elementOffset, int elementCount)` | A view of a range of the elements. |
+
+## Operators
+
+| Name | Description |
+| --- | --- |
+| `implicit operator GpuBigIntArrayView(GpuBigIntArray)` | Converts an owned `GpuBigIntArray` to a view of its buffers without copying. |
