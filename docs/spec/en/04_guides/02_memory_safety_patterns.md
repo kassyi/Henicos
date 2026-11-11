@@ -67,32 +67,32 @@ Lifecycle of resources allocated and scoped within a single method execution.
 
 | Pattern | Code Example | Analyzer Evaluation & Diagnostics |
 | :--- | :--- | :--- |
-| **Discarded Allocation** | `new GpuWorkspace();` | ❌ **Error (`GSH0067`)**: Immediate leak. Instantiated without binding or scope management. |
-| **Undisposed Local** | `var ctx = new GpuWorkspace();` | ❌ **Error (`GSH0068`)**: Local variable leaves scope without invoking `Dispose()`. |
-| **Scoped Disposal (Standard)** | `using var ctx = new GpuWorkspace();` | ⭕ **OK**: Guaranteed automatic disposal upon scope exit. |
+| **Discarded Allocation** | `new GpuWorkspace(1024);` | ❌ **Error (`GSH0067`)**: Immediate leak. Instantiated without binding or scope management. |
+| **Undisposed Local** | `var ctx = new GpuWorkspace(1024);` | ❌ **Error (`GSH0068`)**: Local variable leaves scope without invoking `Dispose()`. |
+| **Scoped Disposal (Standard)** | `using var ctx = new GpuWorkspace(1024);` | ⭕ **OK**: Guaranteed automatic disposal upon scope exit. |
 | **Explicit Manual Disposal** | `var ctx = ...; ctx.Dispose();` | ⭕ **OK**: Satisfies disposal criteria (Warning may suggest `using` preference). |
 
 **Code Examples:**
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
+// Execution Context: Host (CPU)
 
 // ❌ Error: Immediate leak. Instantiated without binding or scope management.
-new GpuWorkspace();
+new GpuWorkspace(1024);
 
 // ❌ Error: Local variable leaves scope without invoking `Dispose()`.
 void BadScope() {
-    var ctx = new GpuWorkspace();
+    var ctx = new GpuWorkspace(1024);
 } // ctx leaks here
 
 // ⭕ OK: Guaranteed automatic disposal upon scope exit.
 void GoodScope() {
-    using var ctx = new GpuWorkspace();
+    using var ctx = new GpuWorkspace(1024);
 }
 
 // ⭕ OK: Satisfies disposal criteria (Warning may suggest `using` preference).
 void ManualScope() {
-    var ctx = new GpuWorkspace();
+    var ctx = new GpuWorkspace(1024);
     ctx.Dispose();
 }
 ```
@@ -108,29 +108,28 @@ Patterns where the allocating method does not dispose of the resource, but clean
 
 | Pattern | Code Example | Analyzer Evaluation & Diagnostics |
 | :--- | :--- | :--- |
-| **Return Value Transfer** | `return new GpuWorkspace();` | ⭕ **OK**: Ownership propagates to the caller. The call-site variable is now subject to Layer 1 validation. |
-| **Output Parameter (`out`)** | `out var ctx = new GpuWorkspace();` | ⭕ **OK**: Ownership propagates to the caller's target variable. |
-| **Deferred Enumeration (`yield`)** | `yield return new GpuWorkspace();` | ⭕ **OK**: Ownership transfers to the `IEnumerable` consumer. The consumer must explicitly dispose the yielded items. |
+| **Return Value Transfer** | `return new GpuWorkspace(1024);` | ⭕ **OK**: Ownership propagates to the caller. The call-site variable is now subject to Layer 1 validation. |
+| **Output Parameter (`out`)** | `out var ctx = new GpuWorkspace(1024);` | ⭕ **OK**: Ownership propagates to the caller's target variable. |
+| **Deferred Enumeration (`yield`)** | `yield return new GpuWorkspace(1024);` | ⭕ **OK**: Ownership transfers to the `IEnumerable` consumer. The consumer must explicitly dispose the yielded items. |
 
 **Code Examples:**
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
+// Execution Context: Host (CPU)
 
 // ⭕ OK: Ownership propagates to the caller. The call-site variable is now subject to Layer 1 validation.
 public GpuWorkspace CreateContext() {
-    return new GpuWorkspace();
+    return new GpuWorkspace(1024);
 }
 
 // ⭕ OK: Ownership propagates to the caller's target variable.
-[GpuKernel]
 public void TryCreate(out GpuWorkspace ctx) {
-    ctx = new GpuWorkspace();
+    ctx = new GpuWorkspace(1024);
 }
 
 // ⭕ OK: Ownership transfers to the `IEnumerable` consumer. The consumer must explicitly dispose the yielded items.
 public IEnumerable<GpuWorkspace> GenerateContexts() {
-    yield return new GpuWorkspace();
+    yield return new GpuWorkspace(1024);
 }
 public void ConsumeContexts() {
     foreach (var ctx in GenerateContexts()) {
@@ -152,27 +151,28 @@ Patterns where resources are retained as class fields and their lifecycle is tie
 | **Missing `IDisposable` on Class** | `class A { GpuWorkspace _c = new(); }` | ❌ **Error (GSH0020)**: Class `A` holds a disposable GPU resource but does not implement `IDisposable`. |
 | **Undisposed Field in `Dispose()`** | `class A : IDisposable { GpuWorkspace _c = new(); public void Dispose() { } }` | ❌ **Error (GSH0022)**: The `Dispose()` method must explicitly invoke `.Dispose()` on the owned `IGpuResourceScope` (note: `GSH0021` is obsolete/disabled). |
 | **Clean Chained Disposal** | `class A : IDisposable { ... public void Dispose() { _c.Dispose(); } }` | ⭕ **OK**: Layer 3 validation passed. Resource lifecycle is safely chained. |
-| **Unsafe Field Overwrite** | `_c = new GpuWorkspace();` (Reassignment) | ❌ **Antipattern**: Reassigning an owned field without prior disposal leaks the previous instance (note: `GSH0022` is `UndisposedGpuScope` in `Dispose()`, not field reassignment). |
+| **Unsafe Field Overwrite** | `_c = new GpuWorkspace(1024);` (Reassignment) | ❌ **Antipattern**: Reassigning an owned field without prior disposal leaks the previous instance (note: `GSH0022` is `UndisposedGpuScope` in `Dispose()`, not field reassignment). |
 
 **Code Examples:**
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
+// Execution Context: Host (CPU)
 
 // ❌ Error (GSH0020): Class `A` holds a disposable GPU resource but does not implement `IDisposable`.
 class A {
-    GpuWorkspace _c = new GpuWorkspace();
+    GpuWorkspace _c = new GpuWorkspace(1024);
 }
 
-// ❌ Error (GSH0022): The Dispose() method must explicitly invoke .Dispose() on the owned IGpuResourceScope '_c' (GSH0021 is obsolete).
+// ❌ Error (GSH0022): The Dispose() method must explicitly invoke .Dispose() on the owned
+// IGpuResourceScope '_c' (GSH0021 is obsolete).
 class B : IDisposable {
-    GpuWorkspace _c = new GpuWorkspace();
+    GpuWorkspace _c = new GpuWorkspace(1024);
     public void Dispose() { }
 }
 
 // ⭕ OK: Layer 3 validation passed. Resource lifecycle is safely chained.
 class C : IDisposable {
-    GpuWorkspace _c = new GpuWorkspace();
+    GpuWorkspace _c = new GpuWorkspace(1024);
     public void Dispose() {
         _c.Dispose();
     }
@@ -180,9 +180,9 @@ class C : IDisposable {
 
 // ❌ Antipattern: Reassigning an owned field without prior disposal leaks the previous instance.
 class D : IDisposable {
-    GpuWorkspace _c = new GpuWorkspace();
+    GpuWorkspace _c = new GpuWorkspace(1024);
     public void Reassign() {
-        _c = new GpuWorkspace();
+        _c = new GpuWorkspace(1024);
     }
     public void Dispose() { _c.Dispose(); }
 }
@@ -226,17 +226,17 @@ Aggregation of multiple disposable GPU instances.
 
 | Pattern | Code Example | Analyzer Evaluation & Diagnostics |
 | :--- | :--- | :--- |
-| **Collection Ingestion** | `var list = new List<GpuWorkspace>(); list.Add(new GpuWorkspace());` | ⚠️ **Not Tracked**: Collection element ownership is not currently tracked by the analyzer. |
+| **Collection Ingestion** | `var list = new List<GpuWorkspace>(); list.Add(new GpuWorkspace(1024));` | ⚠️ **Not Tracked**: Collection element ownership is not currently tracked by the analyzer. |
 | **Manual Loop Disposal** | `foreach (var c in list) c.Dispose();` | ⭕ **Required**: The developer must manually ensure exhaustive traversal and disposal. |
 
 **Code Examples:**
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
+// Execution Context: Host (CPU)
 
 // ⚠️ Not Tracked: Collection element ownership is not currently tracked by the analyzer.
 var list = new List<GpuWorkspace>();
-list.Add(new GpuWorkspace());
+list.Add(new GpuWorkspace(1024));
 
 // ⭕ Required: The developer must manually ensure exhaustive traversal and disposal.
 class SafeContainer : IDisposable {
@@ -255,20 +255,20 @@ Handling partial failures during object initialization when multiple resources a
 
 | Pattern | Code Example | Analyzer Evaluation & Diagnostics |
 | :--- | :--- | :--- |
-| **Unguarded Multi-Allocation** | `_c1 = new GpuWorkspace(); _c2 = new GpuWorkspace(); /* If _c2 throws, _c1 leaks */` | ❌ **Error**: Multiple allocations in a constructor must be wrapped in `try { ... } catch { _c1?.Dispose(); throw; }`. |
+| **Unguarded Multi-Allocation** | `_c1 = new GpuWorkspace(1024); _c2 = new GpuWorkspace(1024); /* If _c2 throws, _c1 leaks */` | ❌ **Error**: Multiple allocations in a constructor must be wrapped in `try { ... } catch { _c1?.Dispose(); throw; }`. |
 | **Safe Factory Pattern** | `public static A Create() { ... }` | ⭕ **OK**: Preferred architecture. Assembles resources within a protected `using`/`try` scope before constructing `A`. |
 
 **Code Examples:**
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
+// Execution Context: Host (CPU)
 
 // ❌ Error: Multiple allocations in a constructor can leak if one throws.
 class UnsafeAlloc : IDisposable {
     GpuWorkspace _c1, _c2;
     public UnsafeAlloc() {
-        _c1 = new GpuWorkspace();
-        _c2 = new GpuWorkspace(); // If this throws, _c1 is permanently leaked
+        _c1 = new GpuWorkspace(1024);
+        _c2 = new GpuWorkspace(1024); // If this throws, _c1 is permanently leaked
     }
     public void Dispose() { _c1.Dispose(); _c2.Dispose(); }
 }
@@ -276,13 +276,13 @@ class UnsafeAlloc : IDisposable {
 // ⭕ OK: Preferred architecture using a Safe Factory Pattern.
 class SafeAlloc : IDisposable {
     GpuWorkspace _c1, _c2;
-    private SafeAlloc(GpuWorkspace c1, GpuWorkspace c2) {
+    private SafeAlloc([TakesOwnership] GpuWorkspace c1, [TakesOwnership] GpuWorkspace c2) {
         _c1 = c1; _c2 = c2;
     }
     public static SafeAlloc Create() {
-        var c1 = new GpuWorkspace();
+        var c1 = new GpuWorkspace(1024);
         try {
-            var c2 = new GpuWorkspace();
+            var c2 = new GpuWorkspace(1024);
             return new SafeAlloc(c1, c2); // Transfer ownership
         } catch {
             c1.Dispose(); // Clean up if c2 allocation fails
