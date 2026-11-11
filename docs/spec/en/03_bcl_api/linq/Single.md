@@ -11,7 +11,7 @@ description: "Returns the only element of a sequence, and throws an exception if
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Returns the only element of a sequence, and throws an exception if there is not exactly one element.
 
@@ -19,35 +19,128 @@ Returns the only element of a sequence, and throws an exception if there is not 
 
 | Name | Description |
 | --- | --- |
-| [Single<TEnumerator, TSource>(TEnumerator)](#singletenumeratortsourcetenumerator) | Returns the only element. |
-| [Single<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)](#singletenumeratortsourcetenumeratorfunctsourcebool) | Returns the only element that satisfies a specified condition. |
+| [Single\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>)](#single-overload-1) | Returns the only element of a stack-allocated sequence, and throws an exception if there is not exactly one element in the sequence. |
+| [Single\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)](#single-overload-2) | Returns the only element of a stack-allocated sequence that satisfies a specified condition, and throws an exception if more than one such element exists. |
+| [SingleOrDefault\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>)](#single-overload-3) | Returns the only element of a stack-allocated sequence, or a default value if the sequence is empty; this method throws an exception if there is more than one element in the sequence. |
+| [SingleOrDefault\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)](#single-overload-4) | Returns the only element of a stack-allocated sequence that satisfies a specified condition, or a default value if no such element exists; this method throws an exception if more than one element satisfies the condition. |
 
+<a id="single-overload-1"></a>
 
-## Single<TEnumerator, TSource>(TEnumerator)
+## Single\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>)
 
-Returns the only element.
+Returns the only element of a stack-allocated sequence, and throws an exception if there is not exactly one element in the sequence.
 
 ```csharp
-public static TSource Single<TEnumerator, TSource>(this TEnumerator source) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TSource Single<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The source sequence to return the single element of.
 
 #### Returns
 
-<i>TSource</i>
+The single element of the input sequence.
 
-## Single<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)
+#### Exceptions
 
-Returns the only element that satisfies a specified condition.
+`InvalidOperationException`<br>
+The input sequence contains no elements or more than one element.
+
+<a id="single-overload-2"></a>
+
+## Single\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)
+
+Returns the only element of a stack-allocated sequence that satisfies a specified condition, and throws an exception if more than one such element exists.
 
 ```csharp
-public static TSource Single<TEnumerator, TSource>(this TEnumerator source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static TSource Single<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The source sequence to return a single element from.
+
+`predicate`<br>
+A function to test an element for a condition.
 
 #### Returns
 
-<i>TSource</i>
+The single element of the input sequence that satisfies the condition.
 
+#### Exceptions
 
+`ArgumentNullException`<br>
+`predicate` is `null`.
+
+`InvalidOperationException`<br>
+No element satisfies the condition in `predicate`, or more than one element satisfies the condition.
+
+<a id="single-overload-3"></a>
+
+## SingleOrDefault\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>)
+
+Returns the only element of a stack-allocated sequence, or a default value if the sequence is empty; this method throws an exception if there is more than one element in the sequence.
+
+```csharp
+public static TSource? SingleOrDefault<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+```
+
+#### Parameters
+
+`source`<br>
+The source sequence to return the single element of.
+
+#### Returns
+
+The single element of the input sequence, or default value if the sequence contains no elements.
+
+#### Exceptions
+
+`InvalidOperationException`<br>
+The input sequence contains more than one element.
+
+<a id="single-overload-4"></a>
+
+## SingleOrDefault\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)
+
+Returns the only element of a stack-allocated sequence that satisfies a specified condition, or a default value if no such element exists; this method throws an exception if more than one element satisfies the condition.
+
+```csharp
+public static TSource? SingleOrDefault<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+```
+
+#### Parameters
+
+`source`<br>
+The source sequence to return a single element from.
+
+`predicate`<br>
+A function to test an element for a condition.
+
+#### Returns
+
+The single element of the input sequence that satisfies the condition, or default value if no such element is found.
+
+#### Exceptions
+
+`ArgumentNullException`<br>
+`predicate` is `null`.
+
+`InvalidOperationException`<br>
+More than one element satisfies the condition in `predicate`.
 
 ## Remarks
 

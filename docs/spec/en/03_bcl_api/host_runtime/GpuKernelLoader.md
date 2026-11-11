@@ -16,7 +16,7 @@ description: "Manages CUDA driver initialization, thread-scoped CUDA contexts, a
 Runtime AOT loader engine that manages thread contexts, CPU fallback detection, and verified GPU Fatbin module loading.
 
 ```csharp
-public sealed class GpuKernelLoader
+public static class GpuKernelLoader
 ```
 
 ## Properties
@@ -75,6 +75,10 @@ public static bool IsDriverAvailable { get; }
 | [GetKernelAttributes(IntPtr)](#getkernelattributesintptr) | Queries the hardware resource attributes (`KernelResourceAttributes`) of a compiled kernel function. |
 | [SynchronizeDevice()](#synchronizedevice) | Blocks until the device has completed all preceding requested tasks in the current context. |
 | [Shutdown()](#shutdown) | Unloads all cached GPU modules and clears the module cache. A later launch loads its module again. |
+| [DestroyContext(IntPtr)](#destroycontextintptr) | Faults every pending stream wait on a context, then destroys the context with `cuCtxDestroy`. |
+| [RegisterErrorSites(ReadOnlySpan\<byte\>, ReadOnlySpan\<GSharpErrorSite\>)](#registererrorsitesreadonlyspanbyte-readonlyspangsharperrorsite) | Registers the error site table of an AOT Fatbin. |
+| [ThrowIfDeviceError(Exception)](#throwifdeviceerrorexception) | Consumes any recorded device error and throws the corresponding .NET exception. |
+| [CreateExceptionForDriverError(CUresult, string)](#createexceptionfordrivererrorcuresult-string) | Creates the exception for a failed driver call, taking a recorded device error into account. |
 
 ## EnsureInitialized()
 
@@ -208,6 +212,83 @@ public static void Shutdown();
 Do not call it while another thread launches a kernel or loads a module: such a launch can still use a function of a
 module that is being unloaded.
 
+## DestroyContext(IntPtr)
+
+Faults every pending stream wait on `context`, then destroys the context with `cuCtxDestroy`. Destroy a context created with `cuCtxCreate` through this method rather than calling `cuCtxDestroy` directly: a wait of `CudaStreamCompletion.WaitAsync` that is still pending on the context would otherwise use a destroyed handle.
+
+```csharp
+public static void DestroyContext(IntPtr context);
+```
+
+#### Parameters
+
+`context` _IntPtr_<br>
+A context created with `cuCtxCreate`. It must not be used after this call.
+
+#### Exceptions
+
+[CudaException](../01_diagnostics_and_exceptions.md#cudaexception)<br>
+`cuCtxDestroy` failed.
+
+`TimeoutException`<br>
+A watchdog tick did not leave the driver in time; the context was not destroyed.
+
+The awaiters of the faulted waits observe an `ObjectDisposedException`. The GPU work they were waiting for is not canceled; it is drained or torn down together with the context.
+
+<a id="registererrorsitesreadonlyspanbyte-readonlyspangsharperrorsite"></a>
+
+## RegisterErrorSites(ReadOnlySpan\<byte\>, ReadOnlySpan\<GSharpErrorSite\>)
+
+Registers the error site table of an AOT Fatbin, so that a device error recorded by its kernels is reported with its source location. The generated launchers call it; user code does not need to.
+
+```csharp
+public static void RegisterErrorSites(ReadOnlySpan<byte> aotFatbin, ReadOnlySpan<GSharpErrorSite> sites);
+```
+
+#### Parameters
+
+`aotFatbin` _ReadOnlySpan\<byte\>_<br>
+The raw bytes of the AOT Fatbin binary.
+
+`sites` _ReadOnlySpan\<GSharpErrorSite\>_<br>
+The 1-based error site table.
+
+## ThrowIfDeviceError(Exception)
+
+Consumes any recorded device error and throws the corresponding .NET exception (for example `IndexOutOfRangeException` or `DivideByZeroException`).
+
+```csharp
+public static void ThrowIfDeviceError(Exception? innerException = null);
+```
+
+#### Parameters
+
+`innerException` _Exception?_<br>
+An optional inner exception, such as the `CudaException` of the driver call that reported the failure.
+
+It consumes the error of any launch whose launcher is not about to read it itself, also of a launch on another stream that has not been synchronized yet; a generated launcher consumes only the error of its own launch.
+
+## CreateExceptionForDriverError(CUresult, string)
+
+Creates the exception for a driver call that returned a non-success `CUresult`. When the result reports a fault of a running kernel and a device error was recorded, it returns the corresponding .NET exception with a `CudaException` as its inner exception; otherwise it returns a `CudaException`.
+
+```csharp
+public static Exception CreateExceptionForDriverError(CUresult result, string? fallbackMessage = null);
+```
+
+#### Parameters
+
+`result` _CUresult_<br>
+The non-success result of the driver call.
+
+`fallbackMessage` _string?_<br>
+An optional message for the `CudaException`.
+
+#### Returns
+
+_Exception_<br>
+The exception to throw.
+
 ## Examples
 
 ### Managing Context Scopes and Fallback Mode
@@ -250,5 +331,4 @@ public readonly struct CudaContextScope : IDisposable
 
 - [Host Runtime](00_index.md)
 - [CpuKernelLoader Class (G#)](CpuKernelLoader.md)
-- [ConstantArgument Struct (G#)](ConstantArgument.md)
 - [CudaStream Class (G#)](CudaStream.md)

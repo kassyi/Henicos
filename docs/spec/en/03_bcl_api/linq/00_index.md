@@ -36,7 +36,7 @@ flowchart LR
 ```
 
 ### 1. Absolute Zero-Allocation (0 B Heap Memory)
-All enumerators are defined as `ref struct` types implementing the zero-allocation `IStackEnumerator<TSource>` contract. They cannot be boxed, cannot be cast to interface object references, and cannot escape to the managed heap. Memory allocation across all operations (`Where`, `Select`, `Take`, `Skip`, aggregators) is guaranteed to be **0 Bytes**.
+All enumerators are value types implementing the zero-allocation `IStackEnumerator<TSource>` contract; every one except `ArrayEnumerator<T>` (a plain `struct`) is a `ref struct`, and every query is wrapped in the `readonly ref struct` `StackEnumerable<TEnumerator, TSource>`. They cannot be boxed, cannot be cast to interface object references, and cannot escape to the managed heap. Memory allocation across all operations (`Where`, `Select`, `Take`, `Skip`, aggregators) is guaranteed to be **0 Bytes**.
 
 ### 2. Direct PTX / CUDA Lowering for GPU Native Execution
 Through the `Kassyi.GSharp.Compiler` Roslyn Source Generator, StackLinq pipelines inside `[GpuKernel]` or `[GpuDeviceFunction]` methods are intercepted at compile time and lowered into native CUDA C++ templates (`GSharpSharedCudaPrelude`). 
@@ -65,7 +65,7 @@ public interface IStackEnumerator<TSource>
     /// </summary>
     /// <param name="current">When this method returns true, contains the next element in the sequence.</param>
     /// <returns>true if the enumerator successfully advanced; otherwise, false.</returns>
-    bool TryGetNext(out TSource current);
+    bool TryGetNext([MaybeNullWhen(false)] out TSource current);
 }
 ```
 
@@ -192,5 +192,6 @@ GSharp provides the compile-time diagnostic **[`SLQ0001`](../diagnostics/SLQ0001
 * [SelectMany Method](SelectMany.md)
 * [TryFirst Method](TryFirst.md) / [IndexOf Method](IndexOf.md)
 * [OfType Method](OfType.md)
+* Methods without a page of their own (their XML documentation is shown by IntelliSense): `AsParallel`, `Average`, `Max`, `Min`, `Last`, `LastOrDefault`, `ElementAt`, `ElementAtOrDefault`, `CopyTo`, `ToArray`, `SumSequential`
 * [Diagnostic SLQ0001: Excessive StackLinq Chain Depth](../diagnostics/SLQ0001.md)
 * [Transpiler Architecture & Lowering Rules](../../02_architecture/00_index.md)

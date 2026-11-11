@@ -11,7 +11,7 @@ description: "Determines whether any element of a sequence exists or satisfies a
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Determines whether any element of a sequence exists or satisfies a condition.
 
@@ -19,56 +19,102 @@ Determines whether any element of a sequence exists or satisfies a condition.
 
 | Name | Description |
 | --- | --- |
-| [Any<TEnumerator, TSource>(TEnumerator)](#anytenumeratortsourcetenumerator) | Determines whether a sequence contains any elements. |
-| [Any<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)](#anytenumeratortsourcetenumeratorfunctsourcebool) | Determines whether any element satisfies a condition. |
-| [Any<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)](#anytenumeratortsourcetstatetenumeratortstatefunctsourcetstatebool) | Determines whether any element satisfies a condition that receives a state value. Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly. |
+| [Any\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>)](#any-overload-1) | Determines whether a stack-allocated sequence contains any elements. |
+| [Any\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)](#any-overload-2) | Determines whether any element of a stack-allocated sequence satisfies a condition. |
+| [Any\<TEnumerator, TSource, TState\>(StackEnumerable\<TEnumerator, TSource\>, TState, Func\<TSource, TState, bool\>)](#any-overload-3) | Determines whether any element satisfies a condition that receives a caller-supplied state. Host-only. |
 
+<a id="any-overload-1"></a>
 
-## Any<TEnumerator, TSource>(TEnumerator)
+## Any\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>)
 
-Determines whether a sequence contains any elements.
+Determines whether a stack-allocated sequence contains any elements.
 
 ```csharp
-public static bool Any<TEnumerator, TSource>(this TEnumerator source) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static bool Any<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The sequence to check for non-emptiness.
 
 #### Returns
 
-<i>bool</i>
+`true` if the source sequence contains any elements; otherwise, `false`.
 
-## Any<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)
+**Performance:** Short-circuits on the first element ($O(1)$) with zero heap allocations.
 
-Determines whether any element satisfies a condition.
+<a id="any-overload-2"></a>
+
+## Any\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, bool\>)
+
+Determines whether any element of a stack-allocated sequence satisfies a condition.
 
 ```csharp
-public static bool Any<TEnumerator, TSource>(this TEnumerator source, Func<TSource, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static bool Any<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The sequence whose elements to apply the predicate to.
+
+`predicate`<br>
+A function to test each element for a condition.
 
 #### Returns
 
-<i>bool</i>
+`true` if any element satisfies the condition; otherwise, `false`.
 
+#### Exceptions
 
+`ArgumentNullException`<br>
+Thrown when `predicate` is `null`.
 
-## Any<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)
+**Performance:** Short-circuits upon the first matching element with zero heap allocations.
 
-Determines whether any element satisfies a condition that receives a state value. Pass the outer value as `state` so that the lambda can be `static` and no closure is allocated.
+<a id="any-overload-3"></a>
+
+## Any\<TEnumerator, TSource, TState\>(StackEnumerable\<TEnumerator, TSource\>, TState, Func\<TSource, TState, bool\>)
+
+Determines whether any element satisfies a condition that receives a caller-supplied state.
 
 ```csharp
-public static bool Any<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static bool Any<TEnumerator, TSource, TState>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    TState state,
+    Func<TSource, TState, bool> predicate)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
-```csharp
-var result = names
-    .AsStackEnumerable()
-    .Any(prefix, static (n, p) => n.StartsWith(p));
-```
+#### Parameters
+
+`source`<br>
+The sequence whose elements to apply the predicate to.
+
+`state`<br>
+The value passed to every call of `predicate`.
+
+`predicate`<br>
+A function to test each element for a condition; the second parameter is `state`.
 
 #### Returns
 
-<i>bool</i>
+`true` if any element satisfies the condition; otherwise, `false`.
 
-**Execution Target:** Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly.
+#### Exceptions
+
+`ArgumentNullException`<br>
+Thrown when `predicate` is `null`.
+
+**Performance:** Short-circuits upon the first matching element. Passing the outer value as `state` lets `predicate` be a `static` lambda, so no closure is allocated.
+
+**Execution Target:** Host-only (CPU) operation. Cannot be transpiled or invoked within GPU kernels.
 
 ## Remarks
 

@@ -22,20 +22,21 @@ Exchanges a variable by shifting data down by a specified delta.
 | [ShuffleDownSync(uint, int, uint, int)](#shuffledownsync-uint-int-uint-int) | Exchanges a 32-bit signed integer by shifting data down by a specified delta. |
 | [ShuffleDownSync(uint, uint, uint, int)](#shuffledownsync-uint-uint-uint-int) | Exchanges a 32-bit unsigned integer by shifting data down by a specified delta. |
 | [ShuffleDownSync(uint, float, uint, int)](#shuffledownsync-uint-float-uint-int) | Exchanges a single-precision floating-point number by shifting data down by a specified delta. |
+| [ShuffleDownSync(uint, double, uint, int)](#shuffledownsync-uint-double-uint-int) | Exchanges a double-precision floating-point number by shifting data down by a specified delta. |
 
 ## ShuffleDownSync(uint, int, uint, int)
 
 Exchanges a 32-bit signed integer by shifting data down by a specified delta.
 
 ```csharp
-[GpuKernel]
-public static int ShuffleDownSync(uint mask, int var, uint delta, int width);
+[CudaIntrinsic("__shfl_down_sync")]
+public static int ShuffleDownSync(uint mask, int var, uint delta, int width = 32);
 ```
 
 #### Parameters
 
 `mask` <i>uint</i><br>
-The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Gpu.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
+The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Warp.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
 
 `var` <i>int</i><br>
 The variable to exchange.
@@ -61,13 +62,14 @@ Thrown when evaluated on the host CPU.
 Exchanges a 32-bit unsigned integer by shifting data down by a specified delta.
 
 ```csharp
-public static uint ShuffleDownSync(uint mask, uint var, uint delta, int width);
+[CudaIntrinsic("__shfl_down_sync")]
+public static uint ShuffleDownSync(uint mask, uint var, uint delta, int width = 32);
 ```
 
 #### Parameters
 
 `mask` <i>uint</i><br>
-The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Gpu.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
+The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Warp.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
 
 `var` <i>uint</i><br>
 The variable to exchange.
@@ -93,14 +95,14 @@ Thrown when evaluated on the host CPU.
 Exchanges a single-precision floating-point number by shifting data down by a specified delta.
 
 ```csharp
-[GpuKernel]
-public static float ShuffleDownSync(uint mask, float var, uint delta, int width);
+[CudaIntrinsic("__shfl_down_sync")]
+public static float ShuffleDownSync(uint mask, float var, uint delta, int width = 32);
 ```
 
 #### Parameters
 
 `mask` <i>uint</i><br>
-The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Gpu.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
+The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Warp.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
 
 `var` <i>float</i><br>
 The variable to exchange.
@@ -114,6 +116,41 @@ The logical warp width: 1, 2, 4, 8, 16 or 32 (default is 32). Any other width is
 #### Returns
 
 <i>float</i><br>
+The value exchanged from the source thread.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
+<a id="shuffledownsync-uint-double-uint-int"></a>
+
+## ShuffleDownSync(uint, double, uint, int)
+
+Exchanges a double-precision floating-point number by shifting data down by a specified delta.
+
+```csharp
+[CudaIntrinsic("__shfl_down_sync")]
+public static double ShuffleDownSync(uint mask, double var, uint delta, int width = 32);
+```
+
+#### Parameters
+
+`mask` <i>uint</i><br>
+The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Warp.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
+
+`var` <i>double</i><br>
+The variable to exchange.
+
+`delta` <i>uint</i><br>
+The offset to shift the lane ID down by. Only its low 5 bits are used, as on the GPU (33 shifts by 1).
+
+`width` <i>int</i><br>
+The logical warp width: 1, 2, 4, 8, 16 or 32 (default is 32). Any other width is undefined on CUDA: a constant one is reported as [GSH0095](../diagnostics/GSH0095.md), and the CPU paths throw `InvalidOperationException` for one known only at run time.
+
+#### Returns
+
+<i>double</i><br>
 The value exchanged from the source thread.
 
 #### Exceptions
@@ -140,7 +177,7 @@ If a warp has 4 active threads holding values `[A, B, C, D]`, calling `ShuffleDo
 
 > [!CAUTION]
 > **GPU Deadlock Warning**: Never pass `0xFFFFFFFF` if some threads in the warp cannot reach the shuffle instruction (e.g., in an `if (ThreadIndex.X % 2 == 0)` branch without the other threads calling it). The GPU hardware will pause and wait indefinitely for inactive threads to reach the barrier.
-> **Solution**: Use `Gpu.ActiveMask()` instead. For comprehensive details on hardware scheduling and deadlock avoidance, see the **[Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)**.
+> **Solution**: Use `Warp.ActiveMask()` instead. For comprehensive details on hardware scheduling and deadlock avoidance, see the **[Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)**.
 
 The `mask` parameter is a 32-bit unsigned integer (`uint`) where each bit corresponds to a lane in the warp (Lane 0 to Lane 31). A bit set to `1` indicates that the corresponding thread participates in the shuffle operation.
 
@@ -149,7 +186,7 @@ In practice, choosing `mask` follows three common patterns:
 | Scenario | Recommended Value | Why / Description |
 | :--- | :--- | :--- |
 | **All threads participate (95%+ of cases)** | `0xFFFFFFFF` | Used when all 32 threads in the warp execute the shuffle unconditionally (e.g., prefix sums, convolutions, reductions). In binary, this sets all 32 bits to `1`. |
-| **Divergent execution (`if` branch)** | `Gpu.ActiveMask()` | When only a subset of threads inside an `if` block call shuffle, passing `0xFFFFFFFF` causes a **GPU deadlock**. Calling `Gpu.ActiveMask()` dynamically computes the bitmask of currently active threads. |
+| **Divergent execution (`if` branch)** | `Warp.ActiveMask()` | When only a subset of threads inside an `if` block call shuffle, passing `0xFFFFFFFF` causes a **GPU deadlock**. Calling `Warp.ActiveMask()` dynamically computes the bitmask of currently active threads. |
 | **Partial warp (Tail boundary)** | `(1u << count) - 1` | When processing data where the final warp only has $K$ valid elements (e.g., $K=10$), use `(1u << 10) - 1` (`0x3FF`) to mark only the first 10 threads as active. |
 
 ## Examples
@@ -166,10 +203,10 @@ try {
     int myValue = 10;
 
     // Exchanges variable from a thread with a higher ID relative to the caller
-    int shiftedValue = Gpu.ShuffleDownSync(mask, myValue, 1);
+    int shiftedValue = Warp.ShuffleDownSync(mask, myValue, 1);
     Console.WriteLine($"Shifted value from next lane: {shiftedValue}");
 } catch (GpuOnlyException) {
-    Console.WriteLine("Gpu.ShuffleDownSync can only be executed on the GPU.");
+    Console.WriteLine("Warp.ShuffleDownSync can only be executed on the GPU.");
 }
 ```
 

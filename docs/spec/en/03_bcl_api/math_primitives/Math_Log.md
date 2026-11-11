@@ -32,7 +32,6 @@ Returns the natural (base e) logarithm of a specified number.
 Returns the natural (base e) logarithm of a specified number.
 
 ```csharp
-[GpuDevice]
 public static float Log(float x);
 ```
 
@@ -55,7 +54,6 @@ None. Does not throw exceptions; returns `float.NaN` if `x` is negative, or `flo
 Returns the natural (base e) logarithm of a specified number.
 
 ```csharp
-[GpuDevice]
 public static double Log(double x);
 ```
 
@@ -86,9 +84,9 @@ using System;
 float f = MathF.Log(MathF.E);
 Console.WriteLine($"MathF.Log(E) = {f:F1}");
 
-// Math.Log operates on double-precision floating point
-double d = Math.Log(100.0, 10.0); // Log base 10
-Console.WriteLine($"Math.Log(100, 10) = {d:F1}");
+// Math.Log operates on double-precision floating point (only the one-argument overload is supported in a kernel)
+double d = Math.Log(100.0) / Math.Log(10.0); // Log base 10
+Console.WriteLine($"Log10(100) = {d:F1}");
 ```
 ## See also
 

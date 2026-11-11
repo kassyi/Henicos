@@ -24,12 +24,13 @@ The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA
 | `short` | `System_Int16` | `short` | 2 |
 | `ushort` | `System_UInt16` | `unsigned short` | 2 |
 | `byte` | `System_Byte` | `unsigned char` | 1 |
-| `sbyte` | `System_SByte` | `char` | 1 |
+| `sbyte` | `System_SByte` | `signed char` | 1 |
 | `long` | `System_Int64` | `long long` | 8 |
 | `ulong` | `System_UInt64` | `unsigned long long` | 8 |
 | `float` | `System_Single` | `float` | 4 |
 | `double` | `System_Double` | `double` | 8 |
 | `bool` | `System_Boolean` | `bool` | 1 |
+| `char` | `System_Char` | `char16_t` | 2 |
 
 ### 2.1.1 Arithmetic Conversions
 
@@ -68,10 +69,10 @@ G# supports custom user-defined C# `struct` types. When a kernel or device metho
 To completely prevent "Multiple Definition" conflicts when multiple kernels use identically named structs from different C# namespaces, the transpiler handles namespace collisions transparently under the hood. You do not need to worry about naming conflicts across different namespaces.
 
 ### 2.2.1 Struct Constraints
-* **Unmanaged Types & Arrays**: Structs should primarily contain primitive types or other structs. While standard reference types (`class`, `string`) are strictly prohibited, **C# managed arrays (`T[]`) are explicitly permitted** as struct fields. The generator transparently applies "Deep Struct Marshaling" to automatically transpose these host arrays into valid device pointers (`T*`) during execution.
+* **Unmanaged Types & Arrays**: Structs should primarily contain primitive types or other structs. While standard reference types (`class`, `string`) are strictly prohibited, **C# managed arrays (`T[]`) are explicitly permitted** as struct fields. The generator transparently applies "Deep Struct Marshaling" to copy these host arrays to the device; on the device each array field is a 16-byte `GSharpArray<T>` (data pointer, length and flags), so its `Length` is known on the device (bounds checks follow [6. Semantics](06_semantics.md)).
 * **Nested Structs**: Structs can contain fields of other custom struct types. The AOT transpiler automatically resolves the dependency graph and emits the corresponding C++ struct definitions in topological order (dependencies first).
-* **Methods and Properties**: Instance methods and properties within a struct are currently unsupported by the AST transpiler. Structs should be treated strictly as Plain Old Data (POD) containers (`public int X; public int Y;`).
-* **Pass-by-Value Limits**: Passing large structs by value to a kernel consumes constant memory and register space. The transpiler emits a warning (`GSharpDiagnostics.LargeStructByValueWarning`) if a struct larger than 32 bytes is passed by value. Passing via `ref` or as an array pointer is recommended for large types.
+* **Methods and Properties**: Constructors (primary constructors included), auto-properties, computed properties and properties that use the `field` keyword, user-defined conversion operators, `operator true` / `operator false`, and a `Dispose()` called by a `using` are transpiled ([2.2.3](#223-struct-instantiation)). Instance methods are not: an instance `[GpuDeviceFunction]` is reported as [GSH0066](../03_bcl_api/diagnostics/GSH0066.md), and a call from GPU code to an instance method of a struct as [GSH0107](../03_bcl_api/diagnostics/GSH0107.md). Write a `static` `[GpuDeviceFunction]` that takes the struct as a parameter instead.
+* **Pass-by-Value Limits**: Kernel parameters are passed in the kernel parameter space, which holds 4 KB. The transpiler emits the warning [GSH0064](../03_bcl_api/diagnostics/GSH0064.md) when the parameters of a kernel exceed it; pass large structs in an array or a buffer. (The former 32-byte warning GSH0014 is deprecated and disabled.)
 
 ### 2.2.2 Inline Arrays and Fixed Buffers
 G# supports stack-allocated, fixed-size arrays within structs for fast, unmanaged local memory access.
@@ -205,7 +206,7 @@ G# enforces strict rules on memory access to ensure valid device pointer derefer
 
 ### 2.2.1 Arrays as Pointers
 C# arrays provided as kernel parameters are exclusively passed as flat pointers to device memory (Global Memory).
-* A C# parameter `int[] data` transpiles to `int* data` in CUDA.
+* A C# parameter `int[] data` transpiles to `GSharpArray<int> data` in CUDA: a 16-byte struct that holds the device pointer, the length and flags, so that `data.Length` is known on the device.
 * Multidimensional arrays (`int[,]`) are unsupported. Developers must manually compute offsets on flattened 1D arrays (e.g., `y * width + x`).
 * **Implicit Marshaling**: When invoking the generated `LaunchX` stub, the host C# array is automatically pinned via `GCHandle`, allocated on the GPU (`cuMemAlloc`), copied to device memory (`cuMemcpyHtoD`), and copied back after execution (`cuMemcpyDtoH`).
 * **Null and empty arrays**: `null` and an empty array are different values on the device, as in C#. Reading a `null` array (`Length` or another `System.Array` member, an element, `foreach`) throws `NullReferenceException` on the native CPU build (with the place in the source), on the managed path and on the checked CUDA build; the release CUDA build does not check ([6. Semantics](06_semantics.md)). An empty array reads as length 0 and is not `null`. `is null`, `?.`, `??` and converting the array to a span read nothing and never throw. A non-optional array parameter rejects `null` and `[]` at launch; an optional one (`T[]?`) reads as length 0 when it is `null` or `[]`.

@@ -366,5 +366,5 @@ This achieves a memory management architecture that brings C#'s expressive ergon
 ### BCL API > Memory
 
 - [Memory Management](../03_bcl_api/memory/00_index.md)
-- [SharedMemory<T> Class (G#)](../03_bcl_api/memory/SharedMemory.md)
+- [SharedMemory<T> Struct (G#)](../03_bcl_api/memory/SharedMemory.md)
 

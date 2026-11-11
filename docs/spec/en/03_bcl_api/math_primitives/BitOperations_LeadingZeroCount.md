@@ -26,13 +26,13 @@ Count the number of leading zero bits in an integer.
 | --- | --- |
 | [LeadingZeroCount(uint)](#leadingzerocount-uint) | Count the number of leading zero bits in an integer. (32-bit) |
 | [LeadingZeroCount(ulong)](#leadingzerocount-ulong) | Count the number of leading zero bits in an integer. (64-bit) |
+| [LeadingZeroCount(nuint)](#leadingzerocount-nuint) | Count the number of leading zero bits in an integer. (pointer-sized; host only, GSH0003 in a kernel) |
 
 ## LeadingZeroCount(uint)
 
 Count the number of leading zero bits in an integer. (32-bit)
 
 ```csharp
-[GpuDevice]
 public static int LeadingZeroCount(uint value);
 ```
 
@@ -55,7 +55,6 @@ None. Returns `32` if `value` is `0`.
 Count the number of leading zero bits in an integer. (64-bit)
 
 ```csharp
-[GpuDevice]
 public static int LeadingZeroCount(ulong value);
 ```
 
@@ -63,6 +62,33 @@ public static int LeadingZeroCount(ulong value);
 
 `value` <i>ulong</i><br>
 The 64-bit unsigned integer.
+
+#### Returns
+
+<i>int</i><br>
+The number of bits.
+
+#### Exceptions
+
+None. Returns `64` if `value` is `0`.
+
+<a id="leadingzerocount-nuint"></a>
+
+## LeadingZeroCount(nuint)
+
+Count the number of leading zero bits in an integer. (pointer-sized)
+
+```csharp
+public static int LeadingZeroCount(nuint value);
+```
+
+#### Parameters
+
+`value` <i>nuint</i><br>
+The pointer-sized unsigned integer.
+
+> [!WARNING]
+> **Not supported in kernels yet.** A call of this overload in GPU code is reported as [GSH0003](../diagnostics/GSH0003.md) until #983 (nint and nuint constants and casts in kernels build wrong or not at all) is fixed; a kernel calls the `ulong` overload instead. On the host it is the .NET method.
 
 #### Returns
 

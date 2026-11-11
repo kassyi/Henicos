@@ -32,7 +32,6 @@ Returns the tangent of the specified angle.
 Returns the tangent of the specified angle.
 
 ```csharp
-[GpuDevice]
 public static float Tan(float x);
 ```
 
@@ -55,7 +54,6 @@ None. Does not throw exceptions; returns `float.NaN` if `x` is `NaN`, `PositiveI
 Returns the tangent of the specified angle.
 
 ```csharp
-[GpuDevice]
 public static double Tan(double x);
 ```
 

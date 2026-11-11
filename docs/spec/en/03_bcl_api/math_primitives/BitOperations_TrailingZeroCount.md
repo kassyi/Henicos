@@ -25,13 +25,13 @@ Count the number of trailing zero bits in an integer.
 | --- | --- |
 | [TrailingZeroCount(uint)](#trailingzerocount-uint) | Count the number of trailing zero bits in an integer. (32-bit) |
 | [TrailingZeroCount(ulong)](#trailingzerocount-ulong) | Count the number of trailing zero bits in an integer. (64-bit) |
+| [TrailingZeroCount(nuint)](#trailingzerocount-nuint) | Count the number of trailing zero bits in an integer. (pointer-sized; host only, GSH0003 in a kernel) |
 
 ## TrailingZeroCount(uint)
 
 Count the number of trailing zero bits in an integer. (32-bit)
 
 ```csharp
-[GpuDevice]
 public static int TrailingZeroCount(uint value);
 ```
 
@@ -54,7 +54,6 @@ None. Returns `32` if `value` is `0`.
 Count the number of trailing zero bits in an integer. (64-bit)
 
 ```csharp
-[GpuDevice]
 public static int TrailingZeroCount(ulong value);
 ```
 
@@ -62,6 +61,33 @@ public static int TrailingZeroCount(ulong value);
 
 `value` <i>ulong</i><br>
 The 64-bit unsigned integer.
+
+#### Returns
+
+<i>int</i><br>
+The number of bits.
+
+#### Exceptions
+
+None. Returns `64` if `value` is `0`.
+
+<a id="trailingzerocount-nuint"></a>
+
+## TrailingZeroCount(nuint)
+
+Count the number of trailing zero bits in an integer. (pointer-sized)
+
+```csharp
+public static int TrailingZeroCount(nuint value);
+```
+
+#### Parameters
+
+`value` <i>nuint</i><br>
+The pointer-sized unsigned integer.
+
+> [!WARNING]
+> **Not supported in kernels yet.** A call of this overload in GPU code is reported as [GSH0003](../diagnostics/GSH0003.md) until #983 (nint and nuint constants and casts in kernels build wrong or not at all) is fixed; a kernel calls the `ulong` overload instead. On the host it is the .NET method.
 
 #### Returns
 

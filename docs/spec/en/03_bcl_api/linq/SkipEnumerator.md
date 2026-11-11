@@ -61,7 +61,7 @@ The number of elements to skip before yielding elements.
 Advances the enumerator to the next element of the sequence after skipping.
 
 ```csharp
-public bool TryGetNext(out TSource value);
+public bool TryGetNext([MaybeNullWhen(false)] out TSource value);
 ```
 
 #### Parameters

@@ -1,5 +1,5 @@
 ---
-title: "SharedMemory<T> Class (G#)"
+title: "SharedMemory<T> Struct (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
@@ -23,15 +23,15 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
 
 | Name | Description |
 | --- | --- |
-| SharedMemory(int, string, int) | Allocates statically-sized shared memory. |
+| SharedMemory(int, string, int, string) | Declares static or dynamic shared memory with the specified element capacity. |
 
 ## Properties
 
 | Name | Description |
 | --- | --- |
-| Item[int] | Gets or sets the element at the specified index. |
+| Item[int] | Gets a reference to the element at the specified index. |
 
-## SharedMemory(int, string, int)
+## SharedMemory(int, string, int, string)
 
 Declares static or dynamic shared memory with the specified element capacity.
 
@@ -59,10 +59,10 @@ The method of the declaration, filled in by the compiler. Do not pass it.
 
 ## Item[int]
 
-Gets or sets the element at the specified zero-based index in shared memory.
+Gets a reference to the element at the specified zero-based index in shared memory. The reference can be read, written, or passed as a `ref` argument (for example `Gpu.AtomicAdd(ref cache[0], 1)`).
 
 ```csharp
-public T this[int index] { get; set; }
+public ref T this[int index] { get; }
 ```
 
 #### Parameters
@@ -72,8 +72,8 @@ The zero-based element offset.
 
 #### Property Value
 
-`T`<br>
-The element at the specified index.
+`ref T`<br>
+A reference to the element at the specified index.
 
 #### Exceptions
 
@@ -250,16 +250,16 @@ public static void HalfKernel(int[] output, int n)
 
 #### Generic device functions
 
-The site key, and so the CUDA slot, comes from the generic definition, not from an instantiation. Managed execution looks a region up by site key and element type, so it separates element types, not instantiations. For the instantiations of a generic device function (`Fill<int>` and `Fill<float>`) this gives:
+The site key, and so the CUDA slot, comes from the generic definition, not from an instantiation. Managed execution looks a static region up by site key and element type, so it separates element types, not instantiations; it looks a dynamic region up by site key alone, so all instantiations share it, as on CUDA. For the instantiations of a generic device function (`Fill<int>` and `Fill<float>`) this gives:
 
 | Declaration in the generic device function | CUDA | CPU (native) | Managed |
 | --- | --- | --- | --- |
-| Dynamic, element type is a type parameter (`SharedMemory<T>(n)`) | Shared by all instantiations | Shared | One region per element type |
+| Dynamic, element type is a type parameter (`SharedMemory<T>(n)`) | Shared by all instantiations | Shared | Shared |
 | Dynamic, element type is not a type parameter (`SharedMemory<int>(n)`) | Shared | Shared | Shared |
 | Static, element type is a type parameter (`SharedMemory<T>(256)`) | One array per instantiation (each template instantiation has its own `__shared__` array) | Shared | One region per element type |
 | Static, element type is not a type parameter (`SharedMemory<int>(256)`) | One array per instantiation | Shared | Shared |
 
-The dialects agree only on the dynamic declaration whose element type is not a type parameter, and even there the instantiations share one region. Do not declare dynamic `SharedMemory<T>` in a generic device function.
+The dialects agree only on the dynamic declarations, and there all instantiations share one region, so `Fill<int>` and `Fill<float>` read and write the same bytes as different types. Do not declare dynamic `SharedMemory<T>` in a generic device function (#543).
 
 ### CPU Emulation (Testing)
 
@@ -281,7 +281,7 @@ Violations are either statically blocked by Roslyn Analyzers at compile-time or 
 | **Cross-Barrier `ref struct`** | **Strictly Prohibited** | `ref` variables or `ref struct`s (e.g., `Span<T>`) cannot be held across barriers. Triggers a Roslyn compile-time error ([GSH0039](../diagnostics/GSH0039.md)). |
 | **Cross-Barrier `goto`** | **Strictly Prohibited** | `goto` statements cannot jump across barrier bounds. Triggers a Roslyn compile-time error ([GSH0040](../diagnostics/GSH0040.md)). |
 | **Cross-Barrier Local Pointer** | **Strictly Prohibited** | Pointers to local variables (`&x`) or `stackalloc` memory cannot be held across barriers. Triggers a Roslyn compile-time error ([GSH0041](../diagnostics/GSH0041.md)). |
-| **External Method Barriers** | **Strictly Prohibited** | `Gpu.SyncThreads()` cannot be called inside external helper methods. It must be inside the `[GpuKernel]` method or its local functions. Triggers a Roslyn compile-time error ([GSH0042](../diagnostics/GSH0042.md)). |
+| **Barriers outside GPU code** | **Strictly Prohibited** | `Gpu.SyncThreads()` can be called only in a `[GpuKernel]` or `[GpuDeviceFunction]` method; any other method triggers a Roslyn compile-time error ([GSH0042](../diagnostics/GSH0042.md)). Inside those methods, a barrier in a local function or in a lambda other than the body of `Gpu.ForUnroll` or `Gpu.SyncGrid(body)` is the error [GSH0037](../diagnostics/GSH0037.md). |
 | **Barriers inside `fixed` blocks** | **Strictly Prohibited** | Suspending inside a `fixed` block releases the GC pin, risking access violations. Triggers a Roslyn compile-time error ([GSH0043](../diagnostics/GSH0043.md)). |
 | **Kernel Parameters (`ref`/`out`/`in`)** | **Supported** | The host launcher passes kernel parameters again on every state machine resume, so `ref`/`out`/`in`/`ref readonly` and `ref struct` parameters (`Span<T>`, `ReadOnlySpan<T>`) work across barriers. |
 | **Recursive Barriers** | **Strictly Prohibited** | Recursive local functions containing barriers cause infinite AST inlining and are blocked. Triggers a Roslyn compile-time error ([GSH0045](../diagnostics/GSH0045.md)). |
