@@ -12,7 +12,8 @@ This document defines the internal architecture of the Ahead-Of-Time (AOT) trans
 
 ## 1.1 Pipeline Overview
 
-The `Kassyi.GSharp.Compiler` project intercepts the MSBuild compilation process, analyzes the C# Abstract Syntax Tree (AST), and generates both the intermediary C++ source strings and the C# execution stubs.
+The `Kassyi.GSharp.Compiler` project intercepts the MSBuild compilation process, analyzes the C# Abstract Syntax Tree
+(AST), and generates both the intermediary C++ source strings and the C# execution stubs.
 
 ```mermaid
 flowchart TD
@@ -48,8 +49,10 @@ Structs with the same name in different C# namespaces never share a C++ name: th
 
 The transpiler analyzes parameter attributes during signature generation.
 
-- Kernel parameters cannot be transformed into C++ `#define` macros.
-- Instead, the `[GpuConstexpr]` attribute (`GpuConstexprAttribute`) marks a kernel parameter as a compile-time constant with candidate values for kernel specialization.
+- Kernel parameters are not turned into C++ `#define` macros; every parameter appears in the generated signature.
+- The `[GpuConstexpr]` attribute (`GpuConstexprAttribute`) marks a kernel parameter with candidate constant values,
+  but the candidates are not used yet: the parameter is passed as an ordinary run-time argument. A later release
+  emits one entry point per value, in which the parameter is a C++ `constexpr`.
 
 ### 1.2.3 Transpiler Dialect Architecture (Two-Tier Design)
 
@@ -60,8 +63,16 @@ This separation of concerns is achieved through the `ITranspilerDialect` interfa
 - **Yaml Dialect Generation**: Dialects are not manually implemented in C#. Instead, the transpiler uses a data-driven YAML generation system (`YamlDialectGenerator`). Dialects are defined via `.yml` files (specifying the Backend, Capabilities, Types, and Intrinsics) which are compiled into `ITranspilerDialect` C# classes (e.g., `GSharpCudaDialect.g.cs`) at build-time.
 
 - **Current Implementation**: The transpiler utilizes two distinct dialects during the build process:
-    1. **`StandardCppDialect` (Default Fallback)**: Transpiles C# into standard C++17. This dialect ensures that every GPU kernel has a functional, native CPU-side fallback compiled as a shared library. It implements parallel grid-stride loops using OpenMP (`#pragma omp parallel for`) and standard `std::thread` constructs. Barrier synchronization (`Gpu.SyncThreads()`) and warp shuffle operations (`Warp.ShuffleSync`) are supported via `StateMachineLowerer` and `WarpInstructionRewriter`.
-    2. **`GSharpCudaDialect` (Hardware Execution)**: Layers G# over NVIDIA's CUDA C++. It handles the translation of C# syntax into valid CUDA C++ equivalents, maps mathematical built-ins to fast PTX hardware intrinsics (e.g., `__expf`), and manages execution grid dimensions. The compiled CUDA Fatbin payload is signed with a trailing 64-byte Ed25519 digital signature.
+    1. **`StandardCppDialect` (CPU paths)**: Transpiles C# into standard C++17, compiled as a shared library for the
+       native CPU path, which reproduces the GPU result to check it. OpenMP (`#pragma omp parallel for`) runs the
+       blocks of the grid in parallel, and the threads of each block run in turn inside its iteration, as state
+       machines that stop at each barrier when the kernel has barriers or warp operations.
+       Barrier synchronization (`Gpu.SyncThreads()`) and warp shuffle operations (`Warp.ShuffleSync`) are supported
+       via `StateMachineLowerer` and `WarpInstructionRewriter`.
+    2. **`GSharpCudaDialect` (Hardware Execution)**: Layers G# over NVIDIA's CUDA C++. It handles the translation of
+       C# syntax into valid CUDA C++ equivalents, maps mathematical built-ins to fast PTX hardware intrinsics (e.g.,
+       `__expf`), and manages execution grid dimensions. The compiled CUDA Fatbin payload is signed with a trailing
+       64-byte Ed25519 digital signature.
 
 Both dialects share core responsibilities like converting C# `ref` to C++ pointers, pointer-arithmetic array accesses, and resolving custom struct dependencies.
 
@@ -202,7 +213,10 @@ When a struct parameter is detected, the `GpuKernelGenerator` recursively traver
 
 > [!IMPORTANT]
 > This implicit deep marshaling empowers developers to pass complex, nested C# objects into the GPU without manually writing verbose and unsafe P/Invoke memory management code.
-> However, deep marshaling applies **only to the standard `Launch*` (host-array) path**. When invoking the zero-allocation `Launch*Ptr` overload (which expects pre-allocated device pointers), passing structs that contain managed arrays (`T[]`) is prohibited. The generator detects this and intentionally rejects passing structs with managed arrays to the `Launch*Ptr` launcher to prevent corrupted pointer mapping.
+> However, deep marshaling applies **only to the standard `Launch*` (host-array) path**. The zero-allocation
+> `Launch*Ptr` overload (which expects pre-allocated device pointers) takes the native shadow struct
+> (`AotContexts.<Name>`), whose array fields are device pointers, so a struct that contains managed arrays (`T[]`)
+> does not convert to its parameter type and the call does not compile.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
@@ -231,14 +245,23 @@ MyKernels.LaunchProcessPtr(ctx);
 
 - **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
 - **Execution & Cleanup**: The launcher invokes the runtime via `CpuKernelLoader.LoadAotKernel` (or `GpuKernelLoader.LoadAotKernel` for GPU execution) and subsequently dispatches the execution logic (e.g., `cuLaunchKernel`). Post-execution, it automatically copies the array data back Device-to-Host (`cuMemcpyDtoH_v2`) and frees all allocated device memory.
-- **Compile-time Constants**: Parameters marked with `[GpuConstexpr]` (`GpuConstexprAttribute`) are passed as standard arguments in the current runtime while reserving specialized entry points.
+- **Compile-time Constants**: Parameters marked with `[GpuConstexpr]` (`GpuConstexprAttribute`) are marshaled as
+  ordinary arguments: the candidate values are not used yet, and the specialized entry points are not emitted.
 
 ### 1.4.5 CPU Launcher Generation (`WriteCpuLauncher`)
 
-When the transpiler is configured to use the `StandardCppDialect` (Standard C++), the generator automatically invokes `WriteCpuLauncher`. This process emits a standard `extern "C"` C++ wrapper function (e.g., `__gsharp_launch_{Kernel}`) that translates the flat GPU grid/block indexing scheme into nested standard C++ `for` loops. This enables the generated native binary to be directly invoked from C# via P/Invoke on CPU-only machines without modifying the host C# API signature.
+When the transpiler is configured to use the `StandardCppDialect` (Standard C++), the generator automatically invokes
+`WriteCpuLauncher`. This process emits a standard `extern "C"` C++ wrapper function named
+`__gsharp_launch_<Namespace>__<Type>__<Kernel>` (e.g., `__gsharp_launch_MyApp__MyKernels__KernelName`). The wrapper
+runs the blocks of the grid in an OpenMP `parallel for` and, inside each block, runs its threads in turn (in rounds of
+a state machine when the kernel has barriers or warp operations). This enables the generated native binary to be
+directly invoked from C# via P/Invoke on CPU-only machines without modifying the host C# API signature.
 
 > [!NOTE]
-> The CPU compilation task (`CompileCppToNativeTask`) supports Windows via MSVC (`cl.exe`, `vswhere.exe`) and Linux / POSIX via `GccClangToolchain` (`g++`, `clang++`), generating `.dll` or `.so` native shared libraries. Furthermore, the build process (`ArtifactHelper.cs`) appends a 64-byte Ed25519 digital signature to the end of every compiled artifact (`.fatbin`, `.dll`, and `.so`) for integrity validation (`AotSignatureValidator`).
+> The CPU compilation task (`CompileCppToNativeTask`) supports Windows via MSVC (`cl.exe`, `vswhere.exe`) and Linux /
+> POSIX via `GccClangToolchain` (`g++`, `clang++`), generating `.dll` or `.so` native shared libraries. Furthermore,
+> the build process (`ArtifactHelper.cs`) appends a 64-byte Ed25519 digital signature to the end of every compiled
+> artifact (`.fatbin`, `.dll`, and `.so`) for integrity validation (`AotSignatureValidator`).
 
 ## 1.5 MSBuild Configuration Properties
 

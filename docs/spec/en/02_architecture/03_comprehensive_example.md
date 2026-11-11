@@ -12,7 +12,10 @@ description: "This document provides a 'Rosetta Stone' example that validates al
 > **Compiler Validation Reference Code**
 > This file is **not** a beginner tutorial or a getting-started guide. It is a comprehensive "Rosetta Stone" test-case designed to demonstrate how the G# transpiler converts all supported C# features into C++. It contains intentional edge-cases and hundreds of lines of code, serving primarily as a compiler validation reference.
 
-This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository. It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`, `[GpuConstexpr]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit array marshaling.
+This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository.
+It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`,
+`[GpuConstexpr]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit
+array marshaling.
 
 ## 8.1 The G# Source Code
 
@@ -298,7 +301,9 @@ The generator emits one C# file per kernel class. The CUDA C++ for each kernel i
 
 Inside the C++, every user identifier is renamed from its symbol: parameters and locals become `__gsharp_id_{n}_{name}`, and fields of structs that G# defines become `__gsharp_mb_{name}`. The renaming keeps C# names that are reserved in C++ or CUDA from breaking the build. See [Identifier Naming](01_aot_transpiler.md#126-identifier-naming-cppnameresolver).
 
-The listing below is the CUDA snapshot of this file (`tests/Compiler/Kassyi.GSharp.Tests.Cuda/Snapshots/Snap.TestComprehensiveSpecKern_*_Cuda#ComprehensiveSpecKernel.g.verified.cs`). Regenerate §8.1 and §8.3 with `node scripts/sync-comprehensive-spec.js`.
+The listing below is the CUDA snapshot of this file
+(`tests/Compiler/Kassyi.GSharp.Tests.Cuda/Snapshots/Snap.ComprehensiveSpecKernel_*_Cuda#DebugReduc__ComprehensiveSpecKernel.g.verified.cs`).
+Regenerate §8.1 and §8.3 with `node scripts/agent/sync-comprehensive-spec.js`.
 
 <!-- BEGIN CPP -->
 
@@ -949,7 +954,8 @@ The G# compiler natively intercepts these syntax tree nodes and fails the build 
 
 This explicit trace proves that:
 
-1. `[GpuConstexpr]` parameters mark compile-time constant values for kernel specialization.
+1. `[GpuConstexpr]` parameters are still ordinary run-time arguments: `unrollFactor` is the kernel parameter
+   `int __gsharp_id_5_unrollFactor`, and the loop over it is not unrolled (the candidate values are not used yet).
 2. Custom Structs map flawlessly, and all 11 primitive C# types align to their C++ equivalents.
 3. Diagnostic warnings and errors natively integrate with MSBuild (`GSH0001` - `GSH0004`, `GSH0013` and `GSH0064`) to act as strict guardrails.
 4. `CastExpression` and `ParenthesizedExpression` AST nodes are properly translated, allowing explicit math method casting like `(float)Math.Sqrt(...)`.

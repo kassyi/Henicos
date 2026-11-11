@@ -31,7 +31,8 @@ The `LoadAotKernel` method is responsible for validating and loading the precomp
 
 ### 2.2.2 CPU AOT Kernel Loading (`CpuKernelLoader.LoadAotKernel`)
 
-When a kernel is compiled using the `StandardCppDialect` (Standard C++ fallback), it generates standard dynamic libraries (`.dll` or `.so`) rather than CUDA Fatbins.
+When a kernel is compiled using the `StandardCppDialect` (Standard C++ fallback), it generates standard dynamic
+libraries (`.dll` or `.so`) rather than CUDA Fatbins.
 The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 
 - It reads the compiled host library and performs the identical **64-byte Ed25519 Digital Signature Verification** via `AotSignatureValidator.ExtractAndVerify` against `GpuSecurityPolicy.EmbeddedKeys`.
@@ -40,8 +41,15 @@ The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 
 ### 2.2.3 Caching and Memory Management
 
-- **Concurrent Dictionary**: Once validated and loaded (either via `cuModuleLoadDataEx` or `NativeLibrary.Load`), the resulting `CUfunction` or `Delegate` handles are cached in thread-safe collections in `CudaModuleCache` and `CpuKernelLoader`.
-- **Zero-Allocation Cache Keys**: To avoid string allocations during high-frequency kernel dispatches, `CudaModuleCache` indexes modules by `(IntPtr Context, AotSignatureValidator.Hash256 Hash)` and functions by `(IntPtr Context, AotSignatureValidator.Hash256 Hash, string KernelName)`. The `Hash256` value type is extracted from the first 32 bytes of the Ed25519 digital signature via `AotSignatureValidator.ExtractAndVerify`. Subsequent calls instantly retrieve the cached handle in $O(1)$ time with zero GC pressure.
+- **Concurrent Dictionary**: Once validated and loaded (either via `cuModuleLoadDataEx` or `NativeLibrary.Load`), the
+  resulting `CUfunction` or `Delegate` handles are cached in thread-safe collections in `CudaModuleCache` and
+  `CpuKernelLoader`.
+- **Zero-Allocation Cache Keys**: To avoid string allocations during high-frequency kernel dispatches,
+  `CudaModuleCache` indexes modules by `(IntPtr Context, AotSignatureValidator.Hash256 Hash)` and functions by
+  `(IntPtr Context, AotSignatureValidator.Hash256 Hash, string KernelName)`. The `Hash256` value type holds the first
+  32 bytes of the Ed25519 signature at the end of the binary, which `CudaModuleCache.ReadSignatureHash` reads without
+  verifying it; the signature is verified by `AotSignatureValidator.ExtractAndVerify` when the module is loaded into a
+  context. Subsequent calls instantly retrieve the cached handle in $O(1)$ time with zero GC pressure.
 - **One Module per Context**: A CUDA module and its functions belong to the context they were loaded in, so the GPU caches are keyed by the context as well. A launch loads the module into the context that is current for it (the context of the innermost `CudaContextScope`, such as the one of an isolated `GpuWorkspace`, otherwise the global context) the first time it runs there. Each generated launcher keeps the last function it resolved together with a number that identifies its context; a launch in the same context reuses it without a driver call, and a launch in another context resolves the function of that context. `GpuKernelLoader.DestroyContext` drops the modules of the destroyed context; a context created later gets a new number even when the driver reuses the handle, so nothing of the destroyed context is launched again.
 - **Graceful Shutdown**: Developers can explicitly call `GpuKernelLoader.Shutdown()` or `CpuKernelLoader.Shutdown()` to unload all cached modules (`cuModuleUnload` / `NativeLibrary.Free`), preventing resource leaks when kernels are no longer needed. A kernel launched after `GpuKernelLoader.Shutdown()` loads its module again: the generated launcher keeps its function together with the loader's module generation, which `Shutdown` advances. `Shutdown` must not run while another thread launches a kernel.
 
@@ -59,9 +67,12 @@ This stub accepts standard C# managed arrays (e.g., `T[]`, custom structs).
 
 ### 2.3.2 Pointer Launcher (`Launch{Kernel}Ptr`)
 
-This stub accepts only raw pointers (`T*`), device abstractions (e.g., `GpuBuffer<T>`), or native shadow structs (`AotContexts`).
+This stub accepts only raw pointers (`T*`), device abstractions (e.g., `GpuBuffer<T>`), or native shadow structs
+(`AotContexts`).
 
-1. **Zero-Allocation**: It completely bypasses all managed array (`T[]`) pinning, deep struct marshaling, and memory allocation logic. **Passing structs with managed arrays to a `Ptr` launcher is prohibited; callers pass pre-allocated device pointers or shadow structs.**
+1. **Zero-Allocation**: It completely bypasses all managed array (`T[]`) pinning, deep struct marshaling, and memory
+   allocation logic. **Passing structs with managed arrays to a `Ptr` launcher is prohibited; callers pass pre-allocated
+   device pointers or shadow structs.**
 2. **Grid and Block Dimensions**: Determines `gridDim` and `blockDim`.
 3. **Dispatch**: Immediately constructs the `IntPtr` argument array and invokes `cuLaunchKernel`.
 
