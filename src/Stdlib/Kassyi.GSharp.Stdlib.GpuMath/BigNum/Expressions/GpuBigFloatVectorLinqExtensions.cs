@@ -246,8 +246,8 @@ public static class GpuBigFloatVectorLinqExtensions
         /// <summary>
         /// Gets the number of elements in the vectorized expression. An expression that contains an operation whose
         /// evaluation can throw (a division, a square root, a logarithm, <c>Pow</c>) is evaluated first, as
-        /// <c>System.Linq</c> runs every projection it counts; after a <c>Where</c>, the expression is evaluated and the
-        /// number read from the device (one synchronization).
+        /// <c>System.Linq</c> runs every projection it counts; after a <c>Where</c>, the expression is evaluated and
+        /// the number read from the device (one synchronization).
         /// </summary>
         /// <param name="workspace">The GPU workspace used for evaluation.</param>
         /// <returns>The element count.</returns>

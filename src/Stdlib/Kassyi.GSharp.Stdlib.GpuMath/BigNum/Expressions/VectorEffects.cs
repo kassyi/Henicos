@@ -3,8 +3,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// <summary>
 /// Whether the evaluation of a vector expression can throw: a zero divisor, the square root of a negative value, inputs
 /// of different lengths. <c>Count</c> and <c>Any</c> may answer from the length alone only when it cannot, because
-/// <c>System.Linq</c> runs every projection that a <c>Count</c> enumerates. Each node decides it once, when it is built,
-/// from its operation and its inputs, so that an expression of plain operations costs nothing more to count.
+/// <c>System.Linq</c> runs every projection that a <c>Count</c> enumerates. Each node decides it once, when it is
+/// built, from its operation and its inputs, so that an expression of plain operations costs nothing more to count.
 /// </summary>
 internal static class VectorEffects
 {

@@ -266,7 +266,9 @@ public static class GpuBigIntVectorLinqExtensions
     /// would; otherwise a length known on the host is written without evaluating the vector.
     /// </remarks>
     /// <exception cref="DivideByZeroException">At evaluation: a counted element is divided by zero.</exception>
-    /// <exception cref="InvalidOperationException">At evaluation: the square root of a negative counted element.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// At evaluation: the square root of a negative counted element.
+    /// </exception>
     public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source) => new(new VectorCountExpression(source));
 
     /// <summary>
