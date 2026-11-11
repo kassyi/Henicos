@@ -23,8 +23,16 @@ internal abstract class VectorBinaryScalarExpressionBase(
 {
     private readonly VectorShape _shape = VectorShape.Of(vector);
 
+    // Whether evaluating an input can throw: the vector, or a scalar that is not a value
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(vector) || VectorEffects.MayThrow(scalar);
+
     public int Length => _shape.Length;
     public long BitsPerElement { get; } = bitsPerElement;
+
+    public bool MayThrow => _inputsMayThrow || Divides;
+
+    /// <summary>Gets whether the operation is a division, which throws for a zero scalar.</summary>
+    protected virtual bool Divides => false;
     public int WordsPerElement { get; } = BigIntWidths.Words(bitsPerElement);
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
@@ -212,6 +220,8 @@ internal sealed class VectorDivScalarExpression(
     : VectorBinaryScalarExpressionBase(vector, scalar,
         BigIntWidths.OfWords(Math.Max(vector.WordsPerElement, scalar.NumWords)))
 {
+    protected override bool Divides => true;
+
     protected override bool DividesByZero(GpuWorkspace workspace, VectorScalarOperands operands)
     {
         ZeroDivisorCheck.ThrowIfCapturingScalarTest(workspace);
@@ -241,6 +251,8 @@ internal sealed class VectorModScalarExpression(
     : VectorBinaryScalarExpressionBase(vector, scalar,
         BigIntWidths.OfWords(Math.Max(vector.WordsPerElement, scalar.NumWords)))
 {
+    protected override bool Divides => true;
+
     protected override bool DividesByZero(GpuWorkspace workspace, VectorScalarOperands operands)
     {
         ZeroDivisorCheck.ThrowIfCapturingScalarTest(workspace);

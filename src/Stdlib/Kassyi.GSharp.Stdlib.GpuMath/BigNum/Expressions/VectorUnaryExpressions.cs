@@ -5,8 +5,15 @@ internal abstract class VectorUnaryExpressionBase(
 {
     private readonly VectorShape _shape = VectorShape.Of(vector);
 
+    private readonly bool _inputMayThrow = VectorEffects.MayThrow(vector);
+
     public int Length => _shape.Length;
     public int WordsPerElement { get; } = vector.WordsPerElement;
+
+    public bool MayThrow => _inputMayThrow || ElementMayThrow;
+
+    /// <summary>Gets whether the operation can throw for an element (a negative square root, a zero divisor).</summary>
+    protected abstract bool ElementMayThrow { get; }
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
@@ -72,6 +79,8 @@ internal abstract class VectorUnaryExpressionBase(
 internal sealed class VectorSqrtExpression(
     [TakesOwnership] IGpuBigIntVectorExpression vector) : VectorUnaryExpressionBase(vector)
 {
+    protected override bool ElementMayThrow => true;
+
     protected override void EvaluateElements(
         GpuWorkspace workspace,
         GpuBigIntArrayView source,
@@ -109,6 +118,8 @@ internal sealed class VectorDivByUInt32Expression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     uint divisor) : VectorUnaryExpressionBase(vector)
 {
+    protected override bool ElementMayThrow => divisor == 0;
+
     // Runs only when there is an element (evalCount > 0): C# divides only the elements, so a zero divisor over none
     // divides nothing, as System.Linq
     protected override void EvaluateElements(

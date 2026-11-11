@@ -135,8 +135,18 @@ internal abstract class FloatVectorUnaryExpressionBase(
 {
     private readonly VectorShape _shape = VectorShape.Of(vector);
 
+    private readonly bool _inputMayThrow = VectorEffects.MayThrow(vector);
+
     public int Length => _shape.Length;
     public int WordsPerElement { get; } = vector.WordsPerElement;
+
+    public bool MayThrow => _inputMayThrow || ElementMayThrow;
+
+    /// <summary>
+    /// Gets whether the operation can throw for an element (the square root or logarithm of a negative value, a zero
+    /// divisor).
+    /// </summary>
+    protected abstract bool ElementMayThrow { get; }
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
@@ -206,6 +216,10 @@ internal sealed class FloatVectorUnaryExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
     FloatVectorUnaryOpKind opKind) : FloatVectorUnaryExpressionBase(vector)
 {
+    // Every kind runs through the host arithmetic, which throws for an element outside its domain or an exponent that
+    // overflows
+    protected override bool ElementMayThrow => true;
+
     protected override GpuFloatResult EvaluateElement(
         ref GpuBigIntExecutionContext context,
         IGpuBigFloatArithmetic arithmetic,
@@ -226,6 +240,8 @@ internal sealed class FloatVectorDivByUInt32Expression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
     uint divisor) : FloatVectorUnaryExpressionBase(vector)
 {
+    protected override bool ElementMayThrow => divisor == 0;
+
     // The divisor as a one-word float (exponent 0) while the elements are evaluated; default otherwise
     private GpuFloatOperand _divisorOperand;
 

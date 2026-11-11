@@ -24,6 +24,12 @@ internal interface IVectorOperator
     object GetInput(int index) => GetOperand(index);
 
     /// <summary>
+    /// Gets whether evaluating the node can throw, by its own operation (a division, a square root, inputs of different
+    /// lengths) or through an input (<see cref="VectorEffects.MayThrow(object)"/>); fixed when the node is built.
+    /// </summary>
+    bool MayThrow { get; }
+
+    /// <summary>
     /// Checks the request before any input is evaluated (a caller's target, the lengths of the inputs), so that a
     /// rejected request evaluates nothing.
     /// </summary>

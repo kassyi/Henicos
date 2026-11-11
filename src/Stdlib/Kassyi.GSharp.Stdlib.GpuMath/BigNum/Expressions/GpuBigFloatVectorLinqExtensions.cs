@@ -221,30 +221,53 @@ public static class GpuBigFloatVectorLinqExtensions
         }
 
         /// <summary>
-        /// Gets the number of elements in the vectorized expression.
+        /// Gets the number of elements in the vectorized expression, without evaluating it.
         /// </summary>
         /// <returns>The element count.</returns>
-        /// <exception cref="InvalidOperationException">The number is known only on the device (the expression contains a
-        /// <c>Where</c>); use <see cref="Count(IGpuBigFloatVectorExpression, GpuWorkspace)"/>.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// The number is known only on the device (the expression contains a <c>Where</c>), or the expression contains
+        /// an operation whose evaluation can throw (a division, a square root, a logarithm, <c>Pow</c>), which
+        /// <c>System.Linq</c> would run for every element it counts; use
+        /// <see cref="Count(IGpuBigFloatVectorExpression, GpuWorkspace)"/>.
+        /// </exception>
         public int Count()
         {
             ArgumentNullException.ThrowIfNull(source);
+            if (VectorEffects.MayThrow(source))
+            {
+                throw new InvalidOperationException(
+                    "The expression contains an operation whose evaluation can throw, so counting it evaluates it. " +
+                    "Use Count(workspace).");
+            }
+
             return source.Length;
         }
 
         /// <summary>
-        /// Gets the number of elements in the vectorized expression; after a <c>Where</c>, evaluates the expression and
-        /// reads the number from the device (one synchronization).
+        /// Gets the number of elements in the vectorized expression. An expression that contains an operation whose
+        /// evaluation can throw (a division, a square root, a logarithm, <c>Pow</c>) is evaluated first, as
+        /// <c>System.Linq</c> runs every projection it counts; after a <c>Where</c>, the expression is evaluated and the
+        /// number read from the device (one synchronization).
         /// </summary>
         /// <param name="workspace">The GPU workspace used for evaluation.</param>
         /// <returns>The element count.</returns>
+        /// <exception cref="DivideByZeroException">A counted element is divided by zero.</exception>
+        /// <exception cref="InvalidOperationException">An operation is undefined for a counted element.</exception>
         public int Count(GpuWorkspace workspace)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(workspace);
-            return source.TryGetLength(out var length)
-                ? length
-                : DeviceCounted.Evaluate(source, workspace).Elements(workspace);
+            if (!source.TryGetLength(out var length))
+            {
+                return DeviceCounted.Evaluate(source, workspace).Elements(workspace);
+            }
+
+            if (VectorEffects.MayThrow(source))
+            {
+                DeviceCounted.Evaluate(source, workspace);
+            }
+
+            return length;
         }
 
         /// <summary>

@@ -13,6 +13,10 @@ internal class VectorWhereExpression(
 
     public int Capacity { get; } = source.Capacity;
 
+    // A predicate of another length is rejected
+    public bool MayThrow { get; } = VectorEffects.MayThrow(source) || VectorEffects.MayThrow(predicate) ||
+        predicate.Capacity != source.Capacity;
+
     public int WordsPerElement { get; } = source.WordsPerElement;
     public long BitsPerElement { get; } = source.BitsPerElement;
 

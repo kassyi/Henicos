@@ -260,6 +260,13 @@ public static class GpuBigIntVectorLinqExtensions
     /// </summary>
     /// <param name="source">The input vectorized expression.</param>
     /// <returns>A deferred expression tree representing the element count; 0 for an empty vector.</returns>
+    /// <remarks>
+    /// As <c>System.Linq</c> runs every projection it counts, the evaluation evaluates the vector when it contains an
+    /// operation that can throw (a division, a square root, inputs of different lengths) and throws as its evaluation
+    /// would; otherwise a length known on the host is written without evaluating the vector.
+    /// </remarks>
+    /// <exception cref="DivideByZeroException">At evaluation: a counted element is divided by zero.</exception>
+    /// <exception cref="InvalidOperationException">At evaluation: the square root of a negative counted element.</exception>
     public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source) => new(new VectorCountExpression(source));
 
     /// <summary>

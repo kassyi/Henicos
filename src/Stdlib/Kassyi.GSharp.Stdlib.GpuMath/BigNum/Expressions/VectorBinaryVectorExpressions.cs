@@ -35,7 +35,12 @@ internal abstract class VectorBinaryVectorExpressionBase(
     // The capacity of the right input, for the length check of a Zip before anything is evaluated
     private readonly int _rightCapacity = right.Capacity;
 
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(left) || VectorEffects.MayThrow(right);
+
     public int Length => _shape.Length;
+
+    // Inputs of different lengths are rejected; a division throws for a zero divisor
+    public bool MayThrow => _inputsMayThrow || ChecksZeroDivisor || Capacity != _rightCapacity;
     public long BitsPerElement { get; } = bitsPerElement;
     public int WordsPerElement { get; } = BigIntWidths.Words(bitsPerElement);
 

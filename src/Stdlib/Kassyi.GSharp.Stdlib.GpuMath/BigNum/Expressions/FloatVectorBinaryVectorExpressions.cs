@@ -34,7 +34,13 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     // The capacity of the right input, for the length check of a Zip before anything is evaluated
     private readonly int _rightCapacity = right.Capacity;
 
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(left) || VectorEffects.MayThrow(right);
+
     public int Length => _shape.Length;
+
+    // Inputs of different lengths are rejected; a division throws for a zero divisor, an
+    // operation on the host (Pow) for an element it cannot compute
+    public bool MayThrow => _inputsMayThrow || ChecksZeroDivisor || RunsOnHost || Capacity != _rightCapacity;
     public int WordsPerElement { get; } = wordsPerElement;
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept

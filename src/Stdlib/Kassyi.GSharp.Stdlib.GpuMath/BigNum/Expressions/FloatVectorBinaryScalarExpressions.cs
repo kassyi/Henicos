@@ -23,8 +23,16 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 {
     private readonly VectorShape _shape = VectorShape.Of(vector);
 
+    private readonly bool _inputMayThrow = VectorEffects.MayThrow(vector);
+
     public int Length => _shape.Length;
     public int WordsPerElement { get; } = wordsPerElement;
+
+    // A division throws for a zero scalar, an operation on the host (Pow) for an element it cannot compute
+    public bool MayThrow => _inputMayThrow || Divides || RunsOnHost;
+
+    /// <summary>Gets whether the operation is a division, which throws for a zero scalar.</summary>
+    protected virtual bool Divides => false;
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
@@ -225,6 +233,8 @@ internal sealed class FloatVectorDivScalarExpression(
         scalar,
         Math.Max(vector.WordsPerElement, scalar.Significand.NumWords) + 1)
 {
+    protected override bool Divides => true;
+
     protected override bool DividesByZero(GpuWorkspace workspace, FloatVectorScalarOperands operands)
     {
         ZeroDivisorCheck.ThrowIfCapturingScalarTest(workspace);

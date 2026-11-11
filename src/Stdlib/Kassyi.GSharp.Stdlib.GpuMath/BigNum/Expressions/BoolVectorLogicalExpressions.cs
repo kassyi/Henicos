@@ -10,6 +10,10 @@ internal class VectorLogicalExpression(
     // The capacity of the right input, for the length check before anything is evaluated
     private readonly int _rightCapacity = right.Capacity;
 
+    // Inputs of different lengths are rejected
+    public bool MayThrow { get; } =
+        VectorEffects.MayThrow(left) || VectorEffects.MayThrow(right) || left.Capacity != right.Capacity;
+
     // The flags, allocated at the first evaluation
     private readonly VectorFlags _flags = new();
 
@@ -83,6 +87,8 @@ internal class VectorNotExpression([TakesOwnership] IGpuBoolVectorExpression sou
 {
     private readonly VectorShape _shape = VectorShape.Of(source);
 
+    public bool MayThrow { get; } = VectorEffects.MayThrow(source);
+
     // The flags, allocated at the first evaluation
     private readonly VectorFlags _flags = new();
 
@@ -135,9 +141,15 @@ internal static class BoolVectorQuantifier
     public static bool Evaluate(GpuWorkspace workspace, IGpuBoolVectorExpression source, bool all)
     {
         DeviceCounted.ThrowIfCpuFallback(workspace);
-        // A vector with no capacity has no element: nothing is evaluated or launched
+        // A vector with no capacity has no element: nothing is launched, and nothing is evaluated unless the
+        // evaluation can throw (inputs of different lengths)
         if (source.Capacity == 0)
         {
+            if (VectorEffects.MayThrow(source))
+            {
+                DeviceCounted.Evaluate(source, workspace);
+            }
+
             return all;
         }
 

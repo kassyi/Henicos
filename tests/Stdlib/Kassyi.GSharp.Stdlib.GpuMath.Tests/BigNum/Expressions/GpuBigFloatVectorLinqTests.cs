@@ -461,4 +461,66 @@ public class GpuBigFloatVectorLinqTests : GpuBigFloatWorkspaceTestBase
         using var mismatchedZipPow = zeroVec.AsVectorizedEnumerable().ZipPow(shortVec.AsVectorizedEnumerable());
         Assert.Throws<ArgumentException>(() => mismatchedZipPow.Evaluate(Context));
     }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void Count_ProjectionThatThrows_ThrowsAsSystemLinq()
+    {
+        using var vec = new GpuBigFloatArray(Context, 3, 4);
+        using var six = CreateFloat(6);
+        using var minusFour = CreateFloat(-4);
+        for (var i = 0; i < 3; i++)
+        {
+            vec.SetElement(i, i == 1 ? minusFour : six);
+        }
+
+        using var zero = CreateFloat(0);
+        using var three = CreateFloat(3);
+        double[] reference = [6, -4, 6];
+
+        // Count(workspace) runs the projections it counts, as System.Linq: a zero divisor throws as Evaluate does.
+        // mutant: GpuBigFloatVectorLinqExtensions.Count(workspace) without the evaluation of a MayThrow source
+        // mutant: FloatVectorDivScalarExpression without `Divides => true`
+        // decimal stands in for System.Linq: like GpuBigFloat, and unlike double, it has no infinity.
+        Assert.Throws<DivideByZeroException>(() => reference.Select(static x => (decimal)x / 0m).Count());
+        using (var divided = vec.AsVectorizedEnumerable().SelectDivide(zero))
+        {
+            Assert.Throws<DivideByZeroException>(() => divided.Count(Context));
+        }
+
+        // The square root of the negative element throws InvalidOperationException, as its Evaluate.
+        // mutant: FloatVectorUnaryExpression.ElementMayThrow => false
+        using (var rooted = vec.AsVectorizedEnumerable().SelectSqrt())
+        {
+            Assert.Throws<InvalidOperationException>(() => rooted.Evaluate(Context));
+            Assert.Throws<InvalidOperationException>(() => rooted.Count(Context));
+        }
+
+        // A Take that leaves out the negative element counts without an error, as System.Linq evaluates only the
+        // elements it counts.
+        // mutant: FloatVectorTakeExpression.OperandRequest asking for the whole capacity of its input (throws)
+        using (var firstRoot = vec.AsVectorizedEnumerable().SelectSqrt().Take(1))
+        {
+            Assert.Equal(reference.Take(1).Select(Math.Sqrt).Count(), firstRoot.Count(Context));
+        }
+
+        // A division by a non-zero scalar counts every element.
+        using (var thirds = vec.AsVectorizedEnumerable().SelectDivide(three))
+        {
+            Assert.Equal(reference.Select(static x => x / 3).Count(), thirds.Count(Context));
+        }
+
+        // Count without a workspace cannot evaluate: a chain that can throw is refused instead of answered from the
+        // length; a chain of plain operations keeps its length.
+        // mutant: GpuBigFloatVectorLinqExtensions.Count() without the MayThrow check (returns 3)
+        using (var divided = vec.AsVectorizedEnumerable().SelectDivide(three))
+        {
+            Assert.Throws<InvalidOperationException>(() => divided.Count());
+        }
+
+        using var plain = vec.AsVectorizedEnumerable().SelectAdd(three).SelectMultiply(three).Skip(1);
+        Assert.Equal(reference.Select(static x => (x + 3) * 3).Skip(1).Count(), plain.Count());
+        Assert.Equal(reference.Select(static x => (x + 3) * 3).Skip(1).Count(), plain.Count(Context));
+    }
 }
