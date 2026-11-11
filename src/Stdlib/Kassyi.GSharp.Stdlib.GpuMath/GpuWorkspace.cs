@@ -194,6 +194,8 @@ public class GpuWorkspace : IGpuResourceScope
         }
         else
         {
+            // Throws on a driver older than the CUDA 13.0 driver before an isolated context is created
+            GpuKernelLoader.EnsureInitialized();
             var isolatedContext = IntPtr.Zero;
             if (useIsolatedContext)
             {

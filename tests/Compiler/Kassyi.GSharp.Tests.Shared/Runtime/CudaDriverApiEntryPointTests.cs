@@ -21,18 +21,6 @@ public class CudaDriverApiEntryPointTests
     // CU_AD_FORMAT_FLOAT
     private const int FloatArrayFormat = 0x20;
 
-    // Bindings that keep the unversioned symbol on purpose. Each declares the parameters of that older symbol.
-    private static readonly HashSet<string> s_unversionedOnPurpose =
-    [
-        // Same parameters as cuEventElapsedTime_v2, which a driver older than CUDA 12.8 does not export. G# states no
-        // minimum driver and still loads the CUDA 12 cuBLAS (cublas64_12.dll), so a CUDA 12.0-12.7 driver must work.
-        "cuEventElapsedTime",
-        // Declared with the CUDA 8 parameters (a CUdevice where the _v2 symbols take a CUmemLocation), which the public
-        // declarations of the CUDA 13 cuda.h no longer have; nothing calls these two bindings.
-        "cuMemAdvise",
-        "cuMemPrefetchAsync",
-    ];
-
     [SkippableFact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
@@ -53,7 +41,7 @@ public class CudaDriverApiEntryPointTests
 
         var unversioned = ReadDriverApi().Methods
             .Select(static m => (m.Name, Symbol: m.EntryPoint ?? m.Name))
-            .Where(m => redirects.ContainsKey(m.Symbol) && !s_unversionedOnPurpose.Contains(m.Symbol))
+            .Where(m => redirects.ContainsKey(m.Symbol))
             .Select(m => $"{m.Name} binds {m.Symbol}; cuda.h calls {redirects[m.Symbol]}")
             .ToList();
 
@@ -66,6 +54,7 @@ public class CudaDriverApiEntryPointTests
     [Scenario(TestScenario.Boundary)]
     [InlineData("cuArrayCreate", "cuArrayCreate_v2")]
     [InlineData("cuDeviceTotalMem", "cuDeviceTotalMem_v2")]
+    [InlineData("cuEventElapsedTime", "cuEventElapsedTime_v2")]
     [InlineData("cuMemAllocHost", "cuMemAllocHost_v2")]
     [InlineData("cuMemHostRegister", "cuMemHostRegister_v2")]
     [InlineData("cuStreamBeginCapture", "cuStreamBeginCapture_v2")]
