@@ -18,23 +18,8 @@ internal static class SuspensionAnalysis
 {
     // [WHY] Only the queried function is cached: a depth-first walk that stops at an already visited function would
     // record a wrong 'false' for the functions inside a cycle.
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
-        s_suspending = new();
-
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
-        s_blockBarrier = new();
-
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
-        s_gridBarrier = new();
-
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
-        s_warpShuffle = new();
-
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
-        s_activeMask = new();
-
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
-        s_arrivalBarrier = new();
+    private static readonly ConditionalWeakTable<Compilation,
+        ConcurrentDictionary<BarrierSet, ConcurrentDictionary<IMethodSymbol, bool>>> s_reaches = new();
 
     // Which barriers a query looks for
     private enum BarrierSet
@@ -59,21 +44,8 @@ internal static class SuspensionAnalysis
     }
 
     /// <summary>Whether <paramref name="method"/> is a device function that reaches a phase barrier.</summary>
-    public static bool IsSuspendingFunction(IMethodSymbol method, Compilation compilation)
-    {
-        var definition = method.OriginalDefinition;
-        if (!TryGetDeviceFunctionBody(definition, compilation, out _))
-        {
-            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                imported.Record.Traits.Suspends;
-        }
-
-        var cache = s_suspending.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
-        return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, BarrierSet.Splitting, compilation,
-                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
-    }
+    public static bool IsSuspendingFunction(IMethodSymbol method, Compilation compilation) =>
+        Reaches(method, BarrierSet.Splitting, compilation);
 
     /// <summary>
     /// Whether <paramref name="method"/> is a device function that reaches a block barrier (<c>Gpu.SyncThreads()</c> or
@@ -83,21 +55,8 @@ internal static class SuspensionAnalysis
     /// [WHY] Every thread of the block must reach a block barrier, so a call to such a function must not sit in a branch
     /// (GSH0037). A warp shuffle takes the mask of the threads that reach it, so a call that reaches only shuffles may.
     /// </remarks>
-    public static bool ReachesBlockBarrier(IMethodSymbol method, Compilation compilation)
-    {
-        var definition = method.OriginalDefinition;
-        if (!TryGetDeviceFunctionBody(definition, compilation, out _))
-        {
-            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                   imported.Record.Traits.ReachesBlockBarrier;
-        }
-
-        var cache = s_blockBarrier.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
-        return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, BarrierSet.Block, compilation,
-                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
-    }
+    public static bool ReachesBlockBarrier(IMethodSymbol method, Compilation compilation) =>
+        Reaches(method, BarrierSet.Block, compilation);
 
     /// <summary>
     /// Whether <paramref name="method"/> is a device function that reaches a grid barrier (<c>Gpu.SyncGrid()</c>),
@@ -108,20 +67,8 @@ internal static class SuspensionAnalysis
     /// that varies only between blocks (GSH0083). The export record of a device function of another assembly does not
     /// say which barrier it reaches; such a call is taken as reaching a block barrier only.
     /// </remarks>
-    public static bool ReachesGridBarrier(IMethodSymbol method, Compilation compilation)
-    {
-        var definition = method.OriginalDefinition;
-        if (!TryGetDeviceFunctionBody(definition, compilation, out _))
-        {
-            return false;
-        }
-
-        var cache = s_gridBarrier.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
-        return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, BarrierSet.Grid, compilation,
-                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
-    }
+    public static bool ReachesGridBarrier(IMethodSymbol method, Compilation compilation) =>
+        Reaches(method, BarrierSet.Grid, compilation);
 
     /// <summary>
     /// The barrier scope of a call to <paramref name="method"/>, a device function that reaches a block barrier: the grid
@@ -134,21 +81,8 @@ internal static class SuspensionAnalysis
     /// Whether <paramref name="method"/> (a kernel or a device function) reaches a warp shuffle or warp match
     /// (<see cref="SyncIntrinsicKind.WarpShuffle"/>), directly or through device functions it calls.
     /// </summary>
-    public static bool ReachesWarpShuffle(IMethodSymbol method, Compilation compilation)
-    {
-        var definition = method.OriginalDefinition;
-        if (!TryGetMethodBody(definition, compilation, out _))
-        {
-            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                   imported.Record.Traits.Suspends;
-        }
-
-        var cache = s_warpShuffle.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
-        return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, BarrierSet.WarpShuffle, compilation,
-                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
-    }
+    public static bool ReachesWarpShuffle(IMethodSymbol method, Compilation compilation) =>
+        Reaches(method, BarrierSet.WarpShuffle, compilation);
 
     /// <summary>
     /// Whether <paramref name="method"/> (a kernel or a device function) reaches a barrier that waits for a fixed
@@ -160,21 +94,8 @@ internal static class SuspensionAnalysis
     /// (<c>LaunchErrorRecords.NextLaunchEpoch</c>). Any mbarrier intrinsic counts: a kernel that initializes or arrives
     /// at one waits at it too.
     /// </remarks>
-    public static bool ReachesArrivalBarrier(IMethodSymbol method, Compilation compilation)
-    {
-        var definition = method.OriginalDefinition;
-        if (!TryGetMethodBody(definition, compilation, out _))
-        {
-            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                   imported.Record.Traits.ReachesArrivalBarrier;
-        }
-
-        var cache = s_arrivalBarrier.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
-        return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, BarrierSet.Arrival, compilation,
-                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
-    }
+    public static bool ReachesArrivalBarrier(IMethodSymbol method, Compilation compilation) =>
+        Reaches(method, BarrierSet.Arrival, compilation);
 
     /// <summary>
     /// Whether <paramref name="method"/> (a kernel or a device function) reaches <c>Warp.ActiveMask()</c>, directly or
@@ -187,27 +108,8 @@ internal static class SuspensionAnalysis
     /// <c>Warp.ActiveMask()</c>; one that suspends is taken as reaching it, so that the kernel context has room for its
     /// branches.
     /// </remarks>
-    public static bool ReachesActiveMask(IMethodSymbol method, Compilation compilation)
-    {
-        var definition = method.OriginalDefinition;
-        if (!TryGetMethodBody(definition, compilation, out _))
-        {
-            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                   imported.Record.Traits.Suspends;
-        }
-
-        var cache = s_activeMask.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
-        return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, BarrierSet.ActiveMask, compilation,
-                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
-    }
-
-    /// <summary>Whether <paramref name="invocation"/>, a node of the tree of <paramref name="semanticModel"/>, calls a
-    /// device function that reaches a phase barrier.</summary>
-    public static bool IsSuspendingCall(InvocationExpressionSyntax invocation, SemanticModel semanticModel) =>
-        semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol method &&
-        IsSuspendingFunction(method, semanticModel.Compilation);
+    public static bool ReachesActiveMask(IMethodSymbol method, Compilation compilation) =>
+        Reaches(method, BarrierSet.ActiveMask, compilation);
 
     /// <summary>
     /// Whether <paramref name="method"/> reaches a phase barrier and calls itself, directly or through other device
@@ -243,6 +145,39 @@ internal static class SuspensionAnalysis
         return callees.ToImmutable();
     }
 
+    // The queries of the splitting, block and grid barriers ask about a device function only; the others also about a
+    // kernel
+    private static bool Reaches(IMethodSymbol method, BarrierSet barriers, Compilation compilation)
+    {
+        var definition = method.OriginalDefinition;
+        var hasBody = barriers is BarrierSet.Splitting or BarrierSet.Block or BarrierSet.Grid
+            ? TryGetDeviceFunctionBody(definition, compilation, out _)
+            : TryGetMethodBody(definition, compilation, out _);
+        if (!hasBody)
+        {
+            return ImportedReaches(definition, barriers, compilation);
+        }
+
+        var caches = s_reaches.GetValue(compilation,
+            static _ => new ConcurrentDictionary<BarrierSet, ConcurrentDictionary<IMethodSymbol, bool>>());
+        var cache = caches.GetOrAdd(barriers,
+            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
+        return cache.GetOrAdd(definition,
+            m => ReachesBarrier(m, barriers, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
+    }
+
+    // A device function of another assembly: what its assembly recorded. The record does not say which barrier the
+    // function reaches beyond a block barrier and an arrival barrier, nor whether it reaches Warp.ActiveMask()
+    private static bool ImportedReaches(IMethodSymbol method, BarrierSet barriers, Compilation compilation) =>
+        DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
+        barriers switch
+        {
+            BarrierSet.Splitting or BarrierSet.WarpShuffle or BarrierSet.ActiveMask => imported.Record.Traits.Suspends,
+            BarrierSet.Block => imported.Record.Traits.ReachesBlockBarrier,
+            BarrierSet.Arrival => imported.Record.Traits.ReachesArrivalBarrier,
+            _ => false
+        };
+
     private static bool ReachesBarrier(IMethodSymbol method, BarrierSet barriers, Compilation compilation,
         HashSet<IMethodSymbol> visited)
     {
@@ -253,16 +188,7 @@ internal static class SuspensionAnalysis
 
         if (!TryGetMethodBody(method, compilation, out var declaration))
         {
-            // A device function of another assembly: what its assembly recorded
-            return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
-                   barriers switch
-                   {
-                       BarrierSet.Splitting or BarrierSet.WarpShuffle or BarrierSet.ActiveMask =>
-                           imported.Record.Traits.Suspends,
-                       BarrierSet.Block => imported.Record.Traits.ReachesBlockBarrier,
-                       BarrierSet.Arrival => imported.Record.Traits.ReachesArrivalBarrier,
-                       _ => false
-                   };
+            return ImportedReaches(method, barriers, compilation);
         }
 
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
@@ -350,19 +276,8 @@ internal static class SuspensionAnalysis
     /// declaration through a referenced compilation.
     /// </summary>
     private static bool TryGetMethodBody(IMethodSymbol method, Compilation compilation,
-        [NotNullWhen(true)] out MethodDeclarationSyntax? declaration)
-    {
-        if ((method.HasAttribute(KnownAttributes.GpuDeviceFunction) || method.HasAttribute(KnownAttributes.GpuKernel)) &&
-            method.TryGetDeclaringSyntax(out declaration) &&
-            compilation.ContainsSyntaxTree(declaration.SyntaxTree) &&
-            (declaration.Body != null || declaration.ExpressionBody != null))
-        {
-            return true;
-        }
-
-        declaration = null;
-        return false;
-    }
+        [NotNullWhen(true)] out MethodDeclarationSyntax? declaration) =>
+        TryGetBody(method, GpuExecutionSpace.IsGpuFunction(method), compilation, out declaration);
 
     /// <summary>
     /// Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> declared with a body in
@@ -370,12 +285,16 @@ internal static class SuspensionAnalysis
     /// declaration through a referenced compilation.
     /// </summary>
     internal static bool TryGetDeviceFunctionBody(IMethodSymbol method, Compilation compilation,
+        [NotNullWhen(true)] out MethodDeclarationSyntax? declaration) =>
+        TryGetBody(method, method.HasAttribute(KnownAttributes.GpuDeviceFunction), compilation, out declaration);
+
+    private static bool TryGetBody(IMethodSymbol method, bool hasAttribute, Compilation compilation,
         [NotNullWhen(true)] out MethodDeclarationSyntax? declaration)
     {
-        if (method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+        if (hasAttribute &&
             method.TryGetDeclaringSyntax(out declaration) &&
             compilation.ContainsSyntaxTree(declaration.SyntaxTree) &&
-            (declaration.Body != null || declaration.ExpressionBody != null))
+            declaration.HasBody())
         {
             return true;
         }
