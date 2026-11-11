@@ -71,7 +71,8 @@ public sealed class GpuWorkspaceReleaseTests : IDisposable
             {
             }
 
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(workspace.Stream, CUstreamCaptureMode.Relaxed));
+            var begin = CudaDriverApi.cuStreamBeginCapture(workspace.Stream, CUstreamCaptureMode.Relaxed);
+            CudaException.ThrowIfError(begin);
         });
     }
 
