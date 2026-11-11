@@ -1,25 +1,40 @@
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
-/// Finds the <c>ref</c> locals of a kernel or device function that are not live right after any point where the CPU
-/// dialects split its state machine (<see cref="CrossBarrierLiveness"/>, the liveness behind GSH0039).
+/// What the CPU state machine may do with each <c>ref</c> local of a kernel or device function, from the liveness behind
+/// GSH0039 (<see cref="CrossBarrierLiveness"/>): which ones it keeps as locals of their state, and which ones GSH0039
+/// reports.
 /// </summary>
+/// <param name="StaysLocal">
+/// The <c>ref</c> locals of declaration statements that no state after a split reads and that are never rebound: their
+/// declaration and every use lie in one state, so a barrier in their scope does not hoist them
+/// (<c>HoistedVariableAnalysis</c>).
+/// </param>
+/// <param name="ReportedLive">
+/// The <c>ref</c> locals that the analyzer reports as GSH0039: declared by a declaration statement and live right after
+/// a split point.
+/// </param>
 /// <remarks>
-/// [WHY] A <c>ref</c> local cannot be a field of the managed frame class (CS9059: a ref field needs a ref struct). One
-/// that no state after a split reads needs no field: its declaration and every use lie in one state, so the lowering
-/// keeps it a local (<c>HoistedVariableAnalysis</c>). One that is live after a split is GSH0039 (#1640).
+/// The <c>ref</c> iteration variable of a <c>foreach</c> is in neither set: GSH0039 does not track it, and it never
+/// stays a local, because its loop walks a span and a span temporary across a split does not build on the managed path
+/// yet (#1005). The lowering hoists it when a barrier is in the loop, and the generator reports it (GSH0003).
 /// </remarks>
-internal static class RefLocalLiveness
+/// <remarks>
+/// [WHY] A <c>ref</c> local cannot be a field of the managed frame class (CS9059), and the native frame would hold a
+/// copy of its target. A ref local that the lowering still hoists is an error: GSH0039 when it is in
+/// <see cref="ReportedLive"/>, otherwise GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>), which
+/// the generator reports (#1640).
+/// </remarks>
+internal sealed record RefLocalLiveness(HashSet<ISymbol> StaysLocal, HashSet<ISymbol> ReportedLive)
 {
     /// <summary>
-    /// The <c>ref</c> locals that <paramref name="body"/> declares directly (not in a lambda or a local function), does
-    /// not rebind, and that are not live right after a split point, or <see langword="null"/> when there is none, when
-    /// <paramref name="semanticModel"/> does not belong to the tree of <paramref name="body"/>, or when the body does
-    /// not bind.
+    /// The <c>ref</c> locals of <paramref name="body"/> sorted by what the CPU state machine may do with them, or
+    /// <see langword="null"/> when the body declares none, when <paramref name="semanticModel"/> does not belong to the
+    /// tree of <paramref name="body"/>, or when the body does not bind.
     /// </summary>
     /// <param name="body">The block or expression body of a method declaration.</param>
     /// <param name="semanticModel">The semantic model of the tree that declares the method.</param>
-    public static HashSet<ISymbol>? FindNotLiveAcrossSplit(SyntaxNode body, SemanticModel? semanticModel)
+    public static RefLocalLiveness? Analyze(SyntaxNode body, SemanticModel? semanticModel)
     {
         if (semanticModel == null || semanticModel.SyntaxTree != body.SyntaxTree ||
             body.Parent is not MethodDeclarationSyntax method)
@@ -27,51 +42,34 @@ internal static class RefLocalLiveness
             return null;
         }
 
-        var declared = ImmutableArray.CreateBuilder<ISymbol>();
-        var rebound = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-        foreach (var node in body.DescendantNodes())
-        {
-            if (node is VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } declarator &&
-                IsRefType(declaration.Type) &&
-                IsDeclaredBy(declarator, method) &&
-                semanticModel.GetDeclaredSymbol<ILocalSymbol>(declarator) is { IsRef: true } local)
-            {
-                declared.Add(local);
-            }
-            else if (node is AssignmentExpressionSyntax
-                     {
-                         Right: RefExpressionSyntax, Left: IdentifierNameSyntax target
-                     } &&
-                     semanticModel.GetSymbol(target) is ILocalSymbol reboundLocal)
-            {
-                rebound.Add(reboundLocal);
-            }
-        }
-
-        // [WHY] A ref local rebound after a split (`a = ref y;`) is not live there, but that state still names it, so
-        // it cannot stay a local of the state that declares it; such a local keeps being hoisted
-        var refLocals = ImmutableArray.CreateBuilder<ISymbol>(declared.Count);
-        declared
-            .AsStackEnumerable()
-            .Where(rebound, static (local, set) => !set.Contains(local))
-            .AddTo(refLocals);
+        var refLocals = CollectRefLocals(body, method, semanticModel);
         if (refLocals.Count == 0 ||
             !new MethodFlowGraph(semanticModel, method).TryGetLiveness(out var graph, out var liveness))
         {
             return null;
         }
 
-        var live = CrossBarrierLiveness.FindLiveAcrossSplit(graph, liveness, refLocals);
-        var notLive = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var symbols = ImmutableArray.CreateBuilder<ISymbol>(refLocals.Count);
+        refLocals
+            .AsStackEnumerable()
+            .Select(static local => local.Symbol)
+            .AddTo(symbols);
+        var live = CrossBarrierLiveness.FindLiveAcrossSplit(graph, liveness, symbols);
+        var staysLocal = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var reportedLive = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
         for (var i = 0; i < live.Length; i++)
         {
-            if (!live[i])
+            if (live[i])
             {
-                notLive.Add(refLocals[i]);
+                reportedLive.Add(refLocals[i].Symbol);
+            }
+            else if (!refLocals[i].IsRebound)
+            {
+                staysLocal.Add(refLocals[i].Symbol);
             }
         }
 
-        return notLive;
+        return new RefLocalLiveness(staysLocal, reportedLive);
     }
 
     /// <summary>
@@ -81,11 +79,47 @@ internal static class RefLocalLiveness
     public static bool IsRefType(TypeSyntax type) =>
         type is RefTypeSyntax or ScopedTypeSyntax { Type: RefTypeSyntax };
 
-    // Whether the nearest function around declarator is method itself, not a lambda or local function inside it
-    private static bool IsDeclaredBy(SyntaxNode declarator, MethodDeclarationSyntax method) =>
-        declarator.Ancestors()
+    // The ref locals that the declaration statements of body declare (not in a lambda or local function), each with
+    // whether it is ever rebound with `= ref`
+    // [WHY] A ref local rebound after a split (`a = ref y;`) is not live there, but that state still names it, so it
+    // cannot stay a local of the state that declares it
+    private static ImmutableArray<RefLocal>.Builder CollectRefLocals(SyntaxNode body, MethodDeclarationSyntax method,
+        SemanticModel semanticModel)
+    {
+        var declared = ImmutableArray.CreateBuilder<RefLocal>();
+        var rebound = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        foreach (var node in body.DescendantNodes())
+        {
+            switch (node)
+            {
+                case VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } declarator
+                    when IsRefType(declaration.Type) && IsDeclaredBy(declarator, method) &&
+                         semanticModel.GetDeclaredSymbol<ILocalSymbol>(declarator) is { IsRef: true } local:
+                    declared.Add(new RefLocal(local, IsRebound: false));
+                    break;
+                case AssignmentExpressionSyntax { Right: RefExpressionSyntax, Left: IdentifierNameSyntax target }
+                    when semanticModel.GetSymbol(target) is ILocalSymbol reboundLocal:
+                    rebound.Add(reboundLocal);
+                    break;
+            }
+        }
+
+        for (var i = 0; i < declared.Count; i++)
+        {
+            declared[i] = declared[i] with { IsRebound = rebound.Contains(declared[i].Symbol) };
+        }
+
+        return declared;
+    }
+
+    // Whether the nearest function around node is method itself, not a lambda or local function inside it
+    private static bool IsDeclaredBy(SyntaxNode node, MethodDeclarationSyntax method) =>
+        node.Ancestors()
             .AsStackEnumerable()
-            .FirstOrDefault(static node =>
-                node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or BaseMethodDeclarationSyntax
+            .FirstOrDefault(static ancestor =>
+                ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or BaseMethodDeclarationSyntax
             ) == method;
+
+    // A ref local of the method: its symbol and whether it is rebound
+    private readonly record struct RefLocal(ISymbol Symbol, bool IsRebound);
 }

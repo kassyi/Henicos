@@ -25,27 +25,41 @@ namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 public class RefLocalAcrossSplitTests
 {
     private const string TestCase = "Diagnostics/RefLocalAcrossSplit.cu.cs";
+    private const string HeldTestCase = "Diagnostics/RefLocalHeldByCpuStateMachine.cu.cs";
     private const string KernelsType = "Kassyi.GSharp.Tests.TestCases.Diagnostics.RefLocalAcrossSplitKernels";
     private const int ThreadCount = 4;
 
-    private static readonly Lazy<Assembly> s_managedAssembly = new(CompileManagedAssembly);
+    private static readonly Lazy<Assembly> s_managedAssembly = new(() => CompileManagedAssembly(TestCase));
 
     [Theory]
-    [InlineData("UsedBeforeSyncThreads")]
-    [InlineData("UsedBeforeSyncThreadsInLoop")]
-    [InlineData("HeldAcrossSyncThreads")]
-    [InlineData("HeldInDeviceFunction")]
-    [InlineData("ReboundAfterSyncThreads")]
+    [InlineData(TestCase, "UsedBeforeSyncThreads", "")]
+    [InlineData(TestCase, "UsedBeforeSyncThreadsInLoop", "")]
+    [InlineData(TestCase, "HeldAcrossSyncThreads", "alias:live")]
+    [InlineData(TestCase, "HeldInDeviceFunction", "alias:live")]
+    [InlineData(TestCase, "ReboundAfterSyncThreads", "alias")]
+    [InlineData(HeldTestCase, "ReboundBeforeSyncThreads", "alias")]
+    [InlineData(HeldTestCase, "UsedInAnotherSwitchSection", "alias")]
+    [InlineData(HeldTestCase, "RefForEachReadAfterSyncThreads", "e")]
+    [InlineData(HeldTestCase, "RefForEachInDeviceFunction", "e")]
+    [InlineData(HeldTestCase, "RefForEachUsedBeforeSyncThreads", "e")]
     [Scenario(TestScenario.HappyPath)]
-    public void Lower_RefLocal_HoistedOnlyWhenAStateAfterTheSplitNamesIt(string method)
+    public void Lower_RefLocal_HeldOnlyWhenAStateAfterTheSplitNamesIt(string testCase, string method, string expected)
     {
-        var fields = LowerContextFields(method);
+        var lowered = Lower(testCase, method);
 
-        // mutant: RefLocalLiveness.FindNotLiveAcrossSplit `if (!live[i])` -> `if (live[i])` -> the held locals stay
-        // locals and the others are hoisted
-        var hoistsAlias = method is "HeldAcrossSyncThreads" or "HeldInDeviceFunction" or "ReboundAfterSyncThreads";
-        Assert.Equal(hoistsAlias, fields.Contains("alias"));
-        Assert.Contains(method == "ReboundAfterSyncThreads" ? "x" : "w", fields);
+        // The held ref locals, with whether GSH0039 reports them (live); the others stay locals of their state
+        // mutant: RefLocalLiveness.Analyze `if (live[i])` -> `if (!live[i])` -> the held locals stay locals and the
+        // others are held
+        // mutant: RefLocalLiveness.Analyze without `!local.IsRebound` -> the rebound locals stay locals (CS0103)
+        var held = string.Join(
+            ",",
+            lowered.HeldRefLocals.Select(static h => h.Declarator.Identifier.ValueText + (h.IsReportedLive ? ":live" : "")));
+        Assert.Equal(expected, held);
+        Assert.Equal(
+            lowered.HeldRefLocals.Select(static h => h.Declarator.Identifier.ValueText),
+            lowered.ContextFields
+                .Where(static f => f.Parent is VariableDeclarationSyntax { Type: RefTypeSyntax })
+                .Select(static f => f.Identifier.ValueText));
     }
 
     [Theory]
@@ -59,7 +73,7 @@ public class RefLocalAcrossSplitTests
     {
         int[] r = [10, 20, 30, 40];
 
-        Invoke(run, r);
+        Invoke(s_managedAssembly, KernelsType, run, r);
 
         Assert.Equal(expected, r);
     }
@@ -71,16 +85,17 @@ public class RefLocalAcrossSplitTests
     {
         int[] r = [10, 20, 30, 40];
 
-        var thrown = Assert.Throws<TargetInvocationException>(() => Invoke("RunHeldAcrossSyncThreads", r));
+        var thrown = Assert.Throws<TargetInvocationException>(
+            () => Invoke(s_managedAssembly, KernelsType, "RunHeldAcrossSyncThreads", r));
 
         var inner = Assert.IsType<NotSupportedException>(thrown.InnerException);
         Assert.Contains("'alias'", inner.Message, StringComparison.Ordinal);
         Assert.Equal([10, 20, 30, 40], r);
     }
 
-    private static void Invoke(string run, int[] r)
+    private static void Invoke(Lazy<Assembly> assembly, string typeName, string run, int[] r)
     {
-        var kernels = s_managedAssembly.Value.GetType(KernelsType, throwOnError: true);
+        var kernels = assembly.Value.GetType(typeName, throwOnError: true);
         Assert.NotNull(kernels);
         var method = kernels.GetMethod(run, BindingFlags.Public | BindingFlags.Static);
         Assert.NotNull(method);
@@ -97,11 +112,11 @@ public class RefLocalAcrossSplitTests
         }
     }
 
-    // The generated managed C# of the test case, built in memory; the generator's GSH0003 for the C++ of the ref
-    // locals does not stop the managed build
-    private static Assembly CompileManagedAssembly()
+    // The generated managed C# of a test case, built in memory; the errors that the generator reports (GSH0003) do not
+    // stop the managed build
+    private static Assembly CompileManagedAssembly(string testCase)
     {
-        var (_, output, _) = RoslynTestUtility.RunGenerator(RoslynTestUtility.ReadTestCase(TestCase), "Cpu");
+        var (_, output, _) = RoslynTestUtility.RunGenerator(RoslynTestUtility.ReadTestCase(testCase), "Cpu");
         using var stream = new MemoryStream();
         var result = output.Emit(stream);
         Assert.True(
@@ -113,16 +128,15 @@ public class RefLocalAcrossSplitTests
             .LoadFromStream(stream);
     }
 
-    private static string[] LowerContextFields(string methodName)
+    private static LoweredStateMachine Lower(string testCase, string methodName)
     {
-        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(TestCase);
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(testCase);
         var method = tree.GetRoot()
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .Single(m => m.Identifier.ValueText == methodName);
         var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method);
-        var isDeviceFunction = methodName == "HeldInDeviceFunction";
-        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction);
-        return lowered.ContextFields.Select(static f => f.Identifier.ValueText).ToArray();
+        var isDeviceFunction = methodName is "HeldInDeviceFunction" or "RefForEachInDeviceFunction";
+        return AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction);
     }
 }

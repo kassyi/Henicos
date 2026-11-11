@@ -45,6 +45,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
     public const string TypeKeyedSitesRegistrationTrackingName = "GpuTypeKeyedSitesRegistrationInput";
 
     /// <summary>
+    /// The tracking name of the input of the output that reports the ref locals the CPU state machines would keep in
+    /// their frames (#1640). It reads the compilation to place each diagnostic in the user's tree, so it runs again on
+    /// every edit; it only reports.
+    /// </summary>
+    public const string HeldRefLocalsTrackingName = "GpuHeldRefLocalsInput";
+
+    /// <summary>
     /// The tracking name of the step that reads the device code export records of the referenced assemblies, which the
     /// native module imports from.
     /// </summary>
@@ -195,6 +202,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var allKernels = kernelMethods.Collect();
         var allDevices = deviceMethods.Collect();
 
+        // [WHY] A ref local that the CPU state machine would keep in its frame and GSH0039 does not report is the
+        // generator's own finding, from the lowering (#1640); reported for the CPU dialect only, which lowers (#929)
+        var heldRefLocalSites = kernelMethods
+            .Select(static (kernel, _) => kernel.HeldRefLocalSites)
+            .Collect()
+            .Combine(deviceMethods.Select(static (device, _) => device.HeldRefLocalSites).Collect())
+            .Combine(configProvider)
+            .Combine(context.CompilationProvider)
+            .WithTrackingName(HeldRefLocalsTrackingName);
+        context.RegisterSourceOutput(heldRefLocalSites,
+            static (spc, input) => ReportHeldRefLocals(spc, input.Left.Left.Left, input.Left.Left.Right,
+                input.Left.Right, input.Right));
+
         // The structs that other assemblies can name and whose device definition a consumer cannot build from metadata;
         // the structs that device code uses come with the functions
         var standaloneStructs = context.SyntaxProvider
@@ -341,6 +361,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
             var kernelErrorSites = errorSites.Entries.AsEquatableArray();
+            var heldRefLocalSites = HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -354,7 +375,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     ToIncludes(requiredIncludesCpp),
                     "",
                     structExports,
-                    kernelErrorSites
+                    kernelErrorSites,
+                    heldRefLocalSites
                 );
             }
 
@@ -371,7 +393,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 ToIncludes(requiredIncludesCpp),
                 "",
                 structExports,
-                kernelErrorSites
+                kernelErrorSites,
+                heldRefLocalSites
             );
         }
         catch (Exception ex)
@@ -506,7 +529,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 frames,
                 managedCSharpSource,
                 export,
-                structExports);
+                structExports,
+                HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel));
         }
         catch (InsufficientExecutionStackException)
         {
@@ -999,8 +1023,33 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return distinct;
     }
 
-    // The generator reports only its own failure (GSH0048); the analyzers report the user's errors, and a construct the
-    // transpiler could not emit is stated in the output as #error
+    // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite); a device
+    // function's sites once, however many results it has
+    private static void ReportHeldRefLocals(SourceProductionContext context,
+        ImmutableArray<EquatableArray<HeldRefLocalSite>> kernels, ImmutableArray<EquatableArray<HeldRefLocalSite>> devices,
+        GeneratorConfig config, Compilation compilation)
+    {
+        if (config.IsCuda)
+        {
+            return;
+        }
+
+        var reported = new HashSet<HeldRefLocalSite>();
+        foreach (var sites in kernels.AddRange(devices))
+        {
+            foreach (var site in sites)
+            {
+                if (reported.Add(site))
+                {
+                    site.Report(context, compilation);
+                }
+            }
+        }
+    }
+
+    // The generator reports its own failure (GSH0048) and the ref locals that only the lowering finds
+    // (ReportHeldRefLocals); the analyzers report the user's errors, and a construct the transpiler could not emit is
+    // stated in the output as #error
     private static void ReportInternalError(SourceProductionContext context, string internalError)
     {
         if (internalError.Length > 0)

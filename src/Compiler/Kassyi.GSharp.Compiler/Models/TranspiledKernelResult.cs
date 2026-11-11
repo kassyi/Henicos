@@ -16,6 +16,10 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// <param name="InternalError">The exception that stopped the transpilation (GSH0048), or empty.</param>
 /// <param name="StructExports">The device code export records of the structs that the kernel uses.</param>
 /// <param name="ErrorSites">The error site entries registered for this kernel.</param>
+/// <param name="HeldRefLocalSites">
+/// The ref locals that the CPU state machine would keep in its frame and GSH0039 does not report; the generator reports
+/// GSH0003 at each on a CPU dialect build (#1640).
+/// </param>
 internal readonly record struct TranspiledKernelResult(
     HostClassHeader Class,
     KernelHostModel Host,
@@ -26,7 +30,8 @@ internal readonly record struct TranspiledKernelResult(
     EquatableArray<string> CppIncludes,
     string InternalError,
     EquatableArray<DeviceExportRecord> StructExports = default,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default)
+    EquatableArray<ErrorSiteEntry> ErrorSites = default,
+    EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 

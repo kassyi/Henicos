@@ -38,16 +38,8 @@ internal static class ManagedCSharpTranspiler
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
                        ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
         var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
-        var bodySource = ManagedContextFields.FindHeldRefLocal(contextFields) is { } heldRefLocal
-            ? ManagedContextFields.CreateHeldRefLocalThrow(kernelName, heldRefLocal)
-            : RewriteAndNormalizeBody(
-                RewriteResumeLocals(loweredBody, unhoistedLocals, renamedLocals, semanticModel, kernelName,
-                    methodSymbol.AreLocalsZeroed()),
-                semanticModel,
-                isDeviceFunction: false,
-                accessors,
-                isUnsafe
-            );
+        var bodySource = CreateBody(lowered, unhoistedLocals, renamedLocals, semanticModel, kernelName,
+            methodSymbol.AreLocalsZeroed(), isDeviceFunction: false, accessors, isUnsafe);
 
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
@@ -104,16 +96,8 @@ internal static class ManagedCSharpTranspiler
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
                        ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
         var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
-        var bodySource = ManagedContextFields.FindHeldRefLocal(lowered.ContextFields) is { } heldRefLocal
-            ? ManagedContextFields.CreateHeldRefLocalThrow(functionName, heldRefLocal)
-            : RewriteAndNormalizeBody(
-                RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals, semanticModel, functionName,
-                    methodSymbol.AreLocalsZeroed()),
-                semanticModel,
-                isDeviceFunction: true,
-                accessors,
-                isUnsafe
-            );
+        var bodySource = CreateBody(lowered, unhoistedLocals, renamedLocals, semanticModel, functionName,
+            methodSymbol.AreLocalsZeroed(), isDeviceFunction: true, accessors, isUnsafe);
 
         // As visible as the function (a consumer of another assembly calls a public one); the frame's fields are the
         // assembly's own (#538 3rd review M1)
@@ -250,6 +234,23 @@ internal static class ManagedCSharpTranspiler
             .Select(semanticModel, static (clause, model) => ManagedNameQualifier.Qualify(clause, model))
             .AddTo(result);
         return SyntaxFactory.List(result.MoveToImmutable());
+    }
+
+    // The source of the state machine body: the lowered body rewritten for managed execution, or only a throw when the
+    // body holds a ref local (LoweredStateMachine.HeldRefLocals), which is an error of its own
+    private static string CreateBody(LoweredStateMachine lowered,
+        Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals, Dictionary<DeclarationKey, string> renamedLocals,
+        SemanticModel semanticModel, string methodName, bool zeroFill, bool isDeviceFunction,
+        ManagedAccessorSet accessors, bool isUnsafe)
+    {
+        if (lowered.HeldRefLocals is [var heldRefLocal, ..])
+        {
+            return ManagedContextFields.CreateHeldRefLocalThrow(methodName, heldRefLocal.Declarator);
+        }
+
+        var body = RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals, semanticModel, methodName,
+            zeroFill);
+        return RewriteAndNormalizeBody(body, semanticModel, isDeviceFunction, accessors, isUnsafe);
     }
 
     private static string RewriteAndNormalizeBody(BlockSyntax loweredBody, SemanticModel semanticModel,
