@@ -16,7 +16,7 @@ public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void GpuBigFloat_ScalarOperators_And_Comparisons_WorkCorrectly()
+    public void ScalarOperations_ArithmeticAndComparisons_ProduceExpectedResults()
     {
         using var a = CreateFloat(20);
         using var b = CreateFloat(4);
@@ -47,7 +47,7 @@ public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void StackEnumerable_SelectArithmetic_And_Reductions_CalculateCorrectResults()
+    public void Select_ArithmeticAndReductions_CalculatesCorrectResults()
     {
         using var f0 = CreateFloat(10);
         using var f1 = CreateFloat(20);
@@ -131,7 +131,7 @@ public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void StackEnumerable_GenericUnification_GpuBigUInt_And_GpuBigUFloat_CalculateCorrectResults()
+    public void GenericUnification_GpuBigUIntAndGpuBigUFloat_CalculatesCorrectResults()
     {
         using var u0 = new GpuBigUInt(Context, [10u, 0u, 0u, 0u]);
         using var u1 = new GpuBigUInt(Context, [20u, 0u, 0u, 0u]);
@@ -200,8 +200,8 @@ public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
         var b = new[] { CreateNumber<T>(3), CreateNumber<T>(2) };
         var scalar = CreateNumber<T>(3);
 
-        // mutant: GpuBigNumberStackLinqExtensions.cs:47 / 55 / 63 / 71 (parallel Select*), and the generic operators
-        // GpuBigFloat.cs:312 / GpuBigUFloat.cs:343 `left - right` -> `left + right`, GpuBigUFloat.cs:347 `*` -> `/`
+        // mutant: GpuBigNumberStackLinqExtensions.cs:47 / 59 / 67 / 75 (parallel Select*), and the generic operators
+        // GpuBigFloat.cs:307 / GpuBigUFloat.cs:355 `left - right` -> `left + right`, GpuBigUFloat.cs:359 `*` -> `/`
         AssertExactSum("parallel SelectAdd", 21, 1, a.AsStackEnumerable().AsParallel().SelectAdd(scalar).Sum());
         AssertExactSum(
             "parallel SelectSubtract",
@@ -215,13 +215,13 @@ public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
             a.AsStackEnumerable().AsParallel().SelectMultiply(scalar).Sum());
         AssertExactSum("parallel SelectDivide", 5, 1, a.AsStackEnumerable().AsParallel().SelectDivide(scalar).Sum());
 
-        // mutant: GpuBigNumberStackLinqExtensions.cs:206 / 215 / 224 / 233 (sequential Select*)
+        // mutant: GpuBigNumberStackLinqExtensions.cs:178 / 191 / 200 / 209 (sequential Select*)
         AssertExactSum("SelectAdd", 21, 1, a.AsStackEnumerable().SelectAdd(scalar).Sum());
         AssertExactSum("SelectSubtract", 9, 1, a.AsStackEnumerable().SelectSubtract(scalar).Sum());
         AssertExactSum("SelectMultiply", 45, 1, a.AsStackEnumerable().SelectMultiply(scalar).Sum());
         AssertExactSum("SelectDivide", 5, 1, a.AsStackEnumerable().SelectDivide(scalar).Sum());
 
-        // mutant: GpuBigNumberStackLinqExtensions.cs:281 / 300 / 319 / 338 (parallel Zip*)
+        // mutant: GpuBigNumberStackLinqExtensions.cs:282 / 305 / 324 / 343 (parallel Zip*)
         AssertExactSum(
             "parallel ZipAdd",
             20,
@@ -243,7 +243,7 @@ public class GpuBigFloatStackLinqTests : GpuBigFloatWorkspaceTestBase
             2,
             a.AsStackEnumerable().AsParallel().ZipDivide(b.AsStackEnumerable().AsParallel()).Sum());
 
-        // mutant: GpuBigNumberStackLinqExtensions.cs:396 / 415 / 434 / 453 (sequential Zip*)
+        // mutant: GpuBigNumberStackLinqExtensions.cs:404 / 427 / 446 / 465 (sequential Zip*)
         AssertExactSum("ZipAdd", 20, 1, a.AsStackEnumerable().ZipAdd(b.AsStackEnumerable()).Sum());
         AssertExactSum("ZipSubtract", 10, 1, a.AsStackEnumerable().ZipSubtract(b.AsStackEnumerable()).Sum());
         AssertExactSum("ZipMultiply", 36, 1, a.AsStackEnumerable().ZipMultiply(b.AsStackEnumerable()).Sum());

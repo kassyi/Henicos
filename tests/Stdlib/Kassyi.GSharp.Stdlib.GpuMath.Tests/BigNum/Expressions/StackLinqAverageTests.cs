@@ -78,7 +78,7 @@ public sealed class StackLinqAverageCpuFallbackTests
     [Theory]
     [MemberData(nameof(Counts))]
     [Scenario(TestScenario.Boundary)]
-    public void FollowsTheSameRules(int count)
+    public void Average_CpuFallbackWithVaryingCount_FollowsTheSameRules(int count)
     {
         GpuKernelLoader.ForceCpuFallback = true;
         try

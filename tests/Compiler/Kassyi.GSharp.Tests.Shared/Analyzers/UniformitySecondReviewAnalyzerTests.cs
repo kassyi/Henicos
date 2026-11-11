@@ -12,7 +12,7 @@ public class UniformitySecondReviewAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GuardThenUniformFlow_IsExitOnly()
+    public async Task GuardThenUniformFlow_DivergentGuardCondition_IsExitOnly()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/GuardThenUniformKernels.cu.cs");
 
@@ -34,7 +34,7 @@ public class UniformitySecondReviewAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_ExhaustiveSwitchExpression_DoesNotDiverge()
+    public async Task ExhaustiveSwitchExpression_UniformBranches_DoesNotDiverge()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/SwitchExpressionBarrierKernels.cu.cs");
 
@@ -49,7 +49,7 @@ public class UniformitySecondReviewAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GridBarrierThroughCallee_DivergesBetweenBlocks()
+    public async Task GridBarrierThroughCallee_InterproceduralCall_DivergesBetweenBlocks()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/GridCalleeKernels.cu.cs");
 
@@ -65,7 +65,7 @@ public class UniformitySecondReviewAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReturnUnderBranchAndLambdaParameter_AreThreadVariant()
+    public async Task ReturnUnderBranchAndLambdaParameter_BranchAndLambda_AreThreadVariant()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/ReturnAndLambdaVarianceKernels.cu.cs");
 

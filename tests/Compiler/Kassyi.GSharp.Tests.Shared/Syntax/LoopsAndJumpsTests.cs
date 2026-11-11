@@ -4,7 +4,7 @@ public class LoopsAndJumpsTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_ForeachInlineArray_Execution()
+    public void Foreach_InlineArray_AccumulatesExpectedSum()
     {
         int[] output = [0];
         LoopsAndJumpsKernels.LaunchForeachInlineArrayKernel(output, blockDimX: 1);
@@ -14,7 +14,7 @@ public class LoopsAndJumpsTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_SwitchGotoCase_Transpilation()
+    public async Task Transpile_SwitchGotoCase_EmitsValidCudaSourceWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<LoopsAndJumpsTarget>(
             nameof(LoopsAndJumpsTarget.SwitchGotoCase), dialect: CurrentDialect);
@@ -29,7 +29,7 @@ public class LoopsAndJumpsTests : TranspilerTestBase
     [InlineData(1, 35)] // case 1 -> goto case 2 -> goto default: 10 + 20 + 5
     [InlineData(2, 25)] // case 2 -> goto default: 20 + 5
     [InlineData(0, 5)]  // default only
-    public void Test_SwitchGotoCase_Evaluation(int mode, int expected)
+    public void Evaluate_SwitchGotoCase_FollowsTheJumpedToCase(int mode, int expected)
     {
         int[] output = [0];
         LoopsAndJumpsTarget.SwitchGotoCase(output, mode);
@@ -39,7 +39,7 @@ public class LoopsAndJumpsTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_NamedBreakGoto_Transpilation()
+    public async Task Transpile_NamedBreakGoto_EmitsValidCudaSourceWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<LoopsAndJumpsTarget>(
             nameof(LoopsAndJumpsTarget.NamedBreakGoto), dialect: CurrentDialect);
@@ -55,7 +55,7 @@ public class LoopsAndJumpsTests : TranspilerTestBase
     [InlineData(15, 15)]   // exits from the inner loop mid-way through the second outer iteration
     [InlineData(100, 100)] // exits exactly on the last iteration
     [InlineData(1000, 100)] // never jumps; both loops run to completion
-    public void Test_NamedBreakGoto_Evaluation(int limit, int expected)
+    public void Evaluate_NamedBreakGoto_ExitsAtTheNamedLabel(int limit, int expected)
     {
         int[] output = [0];
         LoopsAndJumpsTarget.NamedBreakGoto(output, limit);

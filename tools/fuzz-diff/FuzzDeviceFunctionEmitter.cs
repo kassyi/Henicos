@@ -25,7 +25,17 @@ public static class FuzzDeviceFunctionEmitter
         var intType = FuzzTypeInfo.Get(FuzzScalarKind.Int32);
         var longType = FuzzTypeInfo.Get(FuzzScalarKind.Int64);
 
-        var f0 = new DeviceFunctionSpec(
+        return
+        [
+            CreateSpec0(intType, c0),
+            CreateSpec1(intType, longType, c1),
+            CreateSpec2(intType, longType, c2),
+            CreateSpec3(intType, kernelClassName, c3),
+        ];
+    }
+
+    private static DeviceFunctionSpec CreateSpec0(FuzzTypeInfo intType, int c0) =>
+        new(
             "DevFunc_0",
             DagStage: 0,
             ReturnType: intType,
@@ -39,7 +49,8 @@ public static class FuzzDeviceFunctionEmitter
             MethodSource: RenderDevFunc0(c0),
             IsInDefensiveCopyProbe: true);
 
-        var f1 = new DeviceFunctionSpec(
+    private static DeviceFunctionSpec CreateSpec1(FuzzTypeInfo intType, FuzzTypeInfo longType, int c1) =>
+        new(
             "DevFunc_1",
             DagStage: 1,
             ReturnType: intType,
@@ -53,7 +64,8 @@ public static class FuzzDeviceFunctionEmitter
             TypeParameterNames: [],
             MethodSource: RenderDevFunc1(c1));
 
-        var f2 = new DeviceFunctionSpec(
+    private static DeviceFunctionSpec CreateSpec2(FuzzTypeInfo intType, FuzzTypeInfo longType, int c2) =>
+        new(
             "DevFunc_2",
             DagStage: 2,
             ReturnType: longType,
@@ -66,7 +78,8 @@ public static class FuzzDeviceFunctionEmitter
             TypeParameterNames: ["T0"],
             MethodSource: RenderDevFunc2(c2));
 
-        var f3 = new DeviceFunctionSpec(
+    private static DeviceFunctionSpec CreateSpec3(FuzzTypeInfo intType, string kernelClassName, int c3) =>
+        new(
             "DevFunc_3",
             DagStage: 3,
             ReturnType: intType,
@@ -78,9 +91,6 @@ public static class FuzzDeviceFunctionEmitter
             ],
             TypeParameterNames: ["T0", "T1"],
             MethodSource: RenderDevFunc3(kernelClassName, c3));
-
-        return [f0, f1, f2, f3];
-    }
 
     /// <summary>
     /// Emits mandatory <c>[GpuDeviceFunction]</c> DAG invocations in every kernel:

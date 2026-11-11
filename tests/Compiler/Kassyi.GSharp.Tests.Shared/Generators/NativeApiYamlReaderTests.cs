@@ -8,7 +8,7 @@ public class NativeApiYamlReaderTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryRead_LibraryDefinition_MapsAllExistingKeys()
+    public void TryRead_LibraryDefinition_MapsAllExistingKeys()
     {
         const string Yaml = """
             namespace: MyApp.Interop
@@ -69,7 +69,7 @@ public class NativeApiYamlReaderTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryRead_ModuleDefinition_ResolvesModuleBindingKind()
+    public void TryRead_ModuleDefinition_ResolvesModuleBindingKind()
     {
         const string Yaml = """
             namespace: MyApp.Native
@@ -100,7 +100,7 @@ public class NativeApiYamlReaderTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryRead_IntrinsicDefinition_ParsesTypeTemplate()
+    public void TryRead_IntrinsicDefinition_ParsesTypeTemplate()
     {
         const string Yaml = """
             namespace: Kassyi.GSharp.Core
@@ -133,7 +133,7 @@ public class NativeApiYamlReaderTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryRead_IntrinsicDefinition_ParsesTypeParametersAndNestedClass()
+    public void TryRead_IntrinsicDefinition_ParsesTypeParametersAndNestedClass()
     {
         const string Yaml = """
             namespace: Kassyi.GSharp.Core
@@ -172,7 +172,7 @@ public class NativeApiYamlReaderTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryRead_BlockScalars_FoldAndPreserveLines()
+    public void TryRead_BlockScalars_FoldAndPreserveLines()
     {
         const string Yaml = """
             namespace: MyApp.Interop
@@ -204,7 +204,7 @@ public class NativeApiYamlReaderTests
     [InlineData("curand_api.yml")]
     [InlineData("device_heap_intrinsics.yml")]
     [InlineData("wmma_intrinsics.yml")]
-    public void Test_TryRead_BuiltInDefinitions_ParseWithoutErrors(string fileName)
+    public void TryRead_BuiltInDefinitions_ParseWithoutErrors(string fileName)
     {
         var path = RepositoryPaths.Combine("src", "NativeApi", fileName);
         var yaml = File.ReadAllText(path);
@@ -218,7 +218,7 @@ public class NativeApiYamlReaderTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TryRead_EmptyMethods_Succeeds()
+    public void TryRead_EmptyMethods_Succeeds()
     {
         const string Yaml = """
             ---
@@ -237,7 +237,7 @@ public class NativeApiYamlReaderTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TryRead_CrLfLineEndings_AreAccepted()
+    public void TryRead_CrLfLineEndings_AreAccepted()
     {
         const string Yaml = "namespace: A.B\r\nclassName: C\r\nlibraryName: lib\r\nmethods:\r\n  - name: f\r\n";
 
@@ -250,7 +250,7 @@ public class NativeApiYamlReaderTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TryRead_HashInsideQuotedScalar_IsNotComment()
+    public void TryRead_HashInsideQuotedScalar_IsNotComment()
     {
         const string Yaml = """
             namespace: A.B
@@ -274,7 +274,7 @@ public class NativeApiYamlReaderTests
     [InlineData("namespace: A.B\nnamespace: C.D\nclassName: C\n", 2)]
     [InlineData("namespace: A.B\nclassName: &anchor C\n", 2)]
     [InlineData("namespace: A.B\nclassName: C\n  bogus: 1\n", 3)]
-    public void Test_TryRead_MalformedYaml_ReportsSyntaxErrorWithLine(string yaml, int expectedLine)
+    public void TryRead_MalformedYaml_ReportsSyntaxErrorWithLine(string yaml, int expectedLine)
     {
         var success = NativeApiYamlReader.TryRead(yaml, out var definition, out var error);
 
@@ -316,7 +316,7 @@ public class NativeApiYamlReaderTests
     [InlineData("namespace: A.B\nclassName: C\nclasses:\n  - { name: C.Other, xmlDoc: <summary/> }\nmethods:\n  - name: f\n", "classes")]
     [InlineData("namespace: A.B\nclassName: C\nclasses:\n  - { name: C, xmlDoc: <summary/> }\n  - { name: C, xmlDoc: <summary/> }\nmethods:\n  - name: f\n", "classes")]
     [InlineData("namespace: A.B\nclassName: C\nclasses:\n  - { name: C }\nmethods:\n  - name: f\n", "xmlDoc")]
-    public void Test_TryRead_SchemaViolation_ReportsSchemaErrorNamingTheKey(string yaml, string expectedKey)
+    public void TryRead_SchemaViolation_ReportsSchemaErrorNamingTheKey(string yaml, string expectedKey)
     {
         var success = NativeApiYamlReader.TryRead(yaml, out var definition, out var error);
 

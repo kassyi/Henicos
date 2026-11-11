@@ -265,138 +265,138 @@ public class LanguageControlAndResourceDifferentialTests
     // ---------------------------------------------------------
 
     [SkippableFact]
-    public void Test_ForUnrollPositiveRange_MatchesTheOracle() =>
+    public void ForUnroll_PositiveRange_MatchesTheOracle() =>
         DifferentialRunner.Run(s_forUnrollPositiveRange);
 
     [SkippableFact]
-    public void Test_ForUnrollNegativeStart_MatchesTheOracle() =>
+    public void ForUnroll_NegativeStart_MatchesTheOracle() =>
         DifferentialRunner.Run(s_forUnrollNegativeStart);
 
     [SkippableFact]
-    public void Test_ForUnrollZeroCount_MatchesTheOracle() =>
+    public void ForUnroll_ZeroCount_MatchesTheOracle() =>
         DifferentialRunner.Run(s_forUnrollZeroCount);
 
     [SkippableFact]
-    public void Test_ForUnrollRefContext_MatchesTheOracle() =>
+    public void ForUnroll_RefContext_MatchesTheOracle() =>
         DifferentialRunner.Run(s_forUnrollRefContext);
 
     [SkippableFact]
-    public void Test_ForUnrollNested_MatchesTheOracle() =>
+    public void ForUnroll_Nested_MatchesTheOracle() =>
         DifferentialRunner.Run(s_forUnrollNested);
 
     [SkippableFact]
-    public void Test_DeviceIteratorEarlyBreak_MatchesTheOracle() =>
+    public void DeviceIterator_EarlyBreak_MatchesTheOracle() =>
         DifferentialRunner.Run(s_deviceIteratorEarlyBreak);
 
     [SkippableFact]
-    public void Test_DeviceIteratorConsecutiveExpansions_MatchesTheOracle() =>
+    public void DeviceIterator_ConsecutiveExpansions_MatchesTheOracle() =>
         DifferentialRunner.Run(s_deviceIteratorConsecutiveExpansions);
 
     [SkippableFact]
-    public void Test_DeviceIteratorConsumerBreakContinue_MatchesTheOracle() =>
+    public void DeviceIterator_ConsumerBreakContinue_MatchesTheOracle() =>
         DifferentialRunner.Run(s_deviceIteratorConsumerBreakContinue);
 
     [SkippableFact]
-    public void Test_DeviceIteratorNestedExpansion_MatchesTheOracle() =>
+    public void DeviceIterator_NestedExpansion_MatchesTheOracle() =>
         DifferentialRunner.Run(s_deviceIteratorNestedExpansion);
 
     [SkippableFact]
-    public void Test_DeviceIteratorOptionalParamDefault_MatchesTheOracle() =>
+    public void DeviceIterator_OptionalParamDefault_MatchesTheOracle() =>
         DifferentialRunner.Run(s_deviceIteratorOptionalParamDefault);
 
     [SkippableFact]
-    public void Test_StaticLocalFunction_MatchesTheOracle() =>
+    public void LocalFunction_Static_MatchesTheOracle() =>
         DifferentialRunner.Run(s_staticLocalFunction);
 
     [SkippableFact]
-    public void Test_CapturingLocalFunctionReturn_MatchesTheOracle() =>
+    public void LocalFunction_CapturingReturn_MatchesTheOracle() =>
         DifferentialRunner.Run(s_capturingLocalFunctionReturn);
 
     [SkippableFact]
-    public void Test_CapturingLocalFunctionMutatedOuter_MatchesTheOracle() =>
+    public void LocalFunction_CapturingMutatedOuter_MatchesTheOracle() =>
         DifferentialRunner.Run(s_capturingLocalFunctionMutatedOuter);
 
     [SkippableFact]
-    public void Test_RefOutLocalFunctionState_MatchesTheOracle() =>
+    public void LocalFunction_RefOutState_MatchesTheOracle() =>
         DifferentialRunner.Run(s_refOutLocalFunctionState);
 
     [SkippableFact]
-    public void Test_RefOutLocalFunctionSnapshot_MatchesTheOracle() =>
+    public void LocalFunction_RefOutSnapshot_MatchesTheOracle() =>
         DifferentialRunner.Run(s_refOutLocalFunctionSnapshot);
 
     [SkippableFact]
-    public void Test_BlockLambdaReturn_MatchesTheOracle() =>
+    public void BlockLambda_Return_MatchesTheOracle() =>
         DifferentialRunner.Run(s_blockLambdaReturn);
 
     [SkippableFact]
-    public void Test_UsingLifoOrder_MatchesTheOracle() =>
+    public void UsingStatement_LifoOrder_MatchesTheOracle() =>
         DifferentialRunner.Run(s_usingLifoOrder);
 
     [SkippableFact]
-    public void Test_UsingEarlyReturnAndOrder_MatchesTheOracle() =>
+    public void UsingStatement_EarlyReturnAndOrder_MatchesTheOracle() =>
         DifferentialRunner.Run(s_usingEarlyReturnAndOrder);
 
     [SkippableFact]
-    public void Test_UsingLoopBreakContinueTrace_MatchesTheOracle() =>
+    public void UsingStatement_LoopBreakContinueTrace_MatchesTheOracle() =>
         DifferentialRunner.Run(s_usingLoopBreakContinueTrace);
 
     [SkippableFact]
-    public void Test_UsingPatternRefStruct_MatchesTheOracle() =>
+    public void UsingStatement_PatternRefStruct_MatchesTheOracle() =>
         DifferentialRunner.Run(s_usingPatternRefStruct);
 
     [SkippableFact]
-    public void Test_UsingMutatingGuardGetterVal_MatchesTheOracle() =>
+    public void UsingStatement_MutatingGuardGetterVal_MatchesTheOracle() =>
         DifferentialRunner.Run(s_usingMutatingGuardGetterVal);
 
     [SkippableFact]
-    public void Test_UsingMutatingGuardDisposedState_MatchesTheOracle() =>
+    public void UsingStatement_MutatingGuardDisposedState_MatchesTheOracle() =>
         DifferentialRunner.Run(s_usingMutatingGuardDisposedState);
 
     [SkippableFact]
-    public void Test_SpanSortInt_MatchesTheOracle() =>
+    public void SpanSort_Int32Elements_MatchesTheOracle() =>
         DifferentialRunner.Run(s_spanSortInt);
 
     [SkippableFact]
-    public void Test_SpanSortEnum_MatchesTheOracle() =>
+    public void SpanSort_EnumElements_MatchesTheOracle() =>
         DifferentialRunner.Run(s_spanSortEnum);
 
     [SkippableFact]
-    public void Test_SpanSortComparableStruct_MatchesTheOracle() =>
+    public void SpanSort_ComparableStruct_MatchesTheOracle() =>
         DifferentialRunner.Run(s_spanSortComparableStruct);
 
     [SkippableFact]
-    public void Test_SpanSortComparer_MatchesTheOracle() =>
+    public void SpanSort_CustomComparer_MatchesTheOracle() =>
         DifferentialRunner.Run(s_spanSortComparer);
 
     [SkippableFact]
-    public void Test_SpanSortMethodGroupComparison_MatchesTheOracle() =>
+    public void SpanSort_MethodGroupComparison_MatchesTheOracle() =>
         DifferentialRunner.Run(s_spanSortMethodGroupComparison);
 
     [SkippableFact]
-    public void Test_SpanSortKeyValueDefault_MatchesTheOracle() =>
+    public void SpanSort_KeyValueDefault_MatchesTheOracle() =>
         DifferentialRunner.Run(s_spanSortKeyValueDefault);
 
     [SkippableFact]
-    public void Test_SpanSortKeyValueComparer_MatchesTheOracle() =>
+    public void SpanSort_KeyValueComparer_MatchesTheOracle() =>
         DifferentialRunner.Run(s_spanSortKeyValueComparer);
 
     [SkippableFact]
-    public void Test_SpanSortKeyValueLambda_MatchesTheOracle() =>
+    public void SpanSort_KeyValueLambda_MatchesTheOracle() =>
         DifferentialRunner.Run(s_spanSortKeyValueLambda);
 
     [SkippableFact]
-    public void Test_InlineArrayAndFixedBuffer_MatchesTheOracle() =>
+    public void InlineArray_FixedBuffer_MatchesTheOracle() =>
         DifferentialRunner.Run(s_inlineArrayAndFixedBuffer);
 
     [SkippableFact]
-    public void Test_CollectionExpressionSpread_MatchesTheOracle() =>
+    public void CollectionExpression_SpreadOperator_MatchesTheOracle() =>
         DifferentialRunner.Run(s_collectionExpressionSpread);
 
     [SkippableFact]
-    public void Test_NamedArgumentsEvaluationOrder_MatchesTheOracle() =>
+    public void NamedArguments_EvaluationOrder_MatchesTheOracle() =>
         DifferentialRunner.Run(s_namedArgumentsEvaluationOrder);
 
     [SkippableFact]
-    public void Test_OptionalArgumentsAndRefReturn_MatchesTheOracle() =>
+    public void OptionalArguments_RefReturn_MatchesTheOracle() =>
         DifferentialRunner.Run(s_optionalArgumentsAndRefReturn);
 }

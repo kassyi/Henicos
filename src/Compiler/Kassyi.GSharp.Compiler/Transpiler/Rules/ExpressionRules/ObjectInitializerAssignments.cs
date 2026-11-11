@@ -34,7 +34,7 @@ internal static class ObjectInitializerAssignments
 
             context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.AggregateTemp}.");
             AppendPath(assignment, initializer, ref context);
-            ComputedPropertyGetterCall.TranspileAssignment(assignment, " = ", ref context);
+            PropertyAccessorCall.TranspileAssignment(assignment, " = ", ref context);
             context.Emitter.Writer.Append(";");
             if (lineBreaks)
             {

@@ -14,7 +14,7 @@ public class CudaDriverApiStructTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CudaDriverApi_ArrayDescriptor_MatchesCudaHeaderLayout()
+    public void CudaArrayDescriptor_Layout_MatchesDriverApiHeader()
     {
         var descriptor = default(CudaArrayDescriptor);
 
@@ -29,7 +29,7 @@ public class CudaDriverApiStructTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CudaDriverApi_ResourceDescriptor_MatchesCudaHeaderLayout()
+    public void CudaResourceDescriptor_Layout_MatchesDriverApiHeader()
     {
         var descriptor = default(CudaResourceDescriptor);
 
@@ -43,7 +43,7 @@ public class CudaDriverApiStructTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CudaDriverApi_TextureDescriptor_MatchesCudaHeaderLayout()
+    public void CudaTextureDescriptor_Layout_MatchesDriverApiHeader()
     {
         var descriptor = default(CudaTextureDescriptor);
 
@@ -68,7 +68,7 @@ public class CudaDriverApiStructTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CudaDriverApi_ResourceViewDescriptor_MatchesCudaHeaderLayout()
+    public void CudaResourceViewDescriptor_Layout_MatchesDriverApiHeader()
     {
         var descriptor = default(CudaResourceViewDescriptor);
 
@@ -87,7 +87,7 @@ public class CudaDriverApiStructTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public unsafe void Test_CudaDriverApi_ResourceDescriptor_LeavesUnionTailAndPaddingZero()
+    public unsafe void CudaResourceDescriptor_InitializedFields_LeavesUnionTailAndPaddingZero()
     {
         var descriptor = new CudaResourceDescriptor { ResType = -1, Res = new IntPtr(-1), Flags = uint.MaxValue };
         var bytes = new ReadOnlySpan<byte>(&descriptor, sizeof(CudaResourceDescriptor));
@@ -104,7 +104,7 @@ public class CudaDriverApiStructTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CUresult_ValuesAndNames_MatchCudaDriverApiHeader()
+    public void CudaResult_ValuesAndNames_MatchDriverApiHeader()
     {
         // Verify every CUresult member matches its exact value in cuda.h (cudaError_enum)
         var expected = new (string Name, int Value)[]

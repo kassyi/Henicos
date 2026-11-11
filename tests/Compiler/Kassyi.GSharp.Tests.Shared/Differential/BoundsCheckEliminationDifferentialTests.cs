@@ -236,22 +236,22 @@ public class BoundsCheckEliminationDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_BoundsCheckEliminationValid_MatchesTheOracleOnEveryPath() =>
+    public void BoundsCheckElimination_ValidAccess_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_boundsCheckEliminationValid);
 
     [SkippableFact]
-    public void Test_BoundsCheckEliminationOffByOne_MatchesTheOracleOnEveryPath() =>
+    public void BoundsCheckElimination_OffByOne_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_boundsCheckEliminationOffByOne);
 
     [SkippableFact]
-    public void Test_BoundsCheckEliminationWrongSpan_MatchesTheOracleOnEveryPath() =>
+    public void BoundsCheckElimination_WrongSpan_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_boundsCheckEliminationWrongSpan);
 
     [SkippableFact]
-    public void Test_BoundsCheckEliminationPostIncrement_MatchesTheOracleOnEveryPath() =>
+    public void BoundsCheckElimination_PostIncrement_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_boundsCheckEliminationPostIncrement);
 
     [SkippableFact]
-    public void Test_BoundsCheckEliminationUpperOnly_MatchesTheOracleOnEveryPath() =>
+    public void BoundsCheckElimination_UpperOnly_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_boundsCheckEliminationUpperOnly);
 }

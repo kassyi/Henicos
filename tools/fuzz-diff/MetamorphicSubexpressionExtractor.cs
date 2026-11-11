@@ -28,6 +28,22 @@ internal static class MetamorphicSubexpressionExtractor
         var scope = EffectScope.ForKernel(method, semanticModel);
         var statements = method.Body.Statements;
 
+        var candidates = CollectLocalCandidates(statements, scope, semanticModel);
+        if (candidates.Count == 0)
+        {
+            return root;
+        }
+
+        var chosen = candidates[rng.NextBelow(candidates.Count)];
+        string newLocalName = MetamorphicTarget.AllocateFreshIdentifier("metaExtracted", usedNames);
+        return ApplyLocalExtraction(root, method, statements, chosen, newLocalName);
+    }
+
+    private static List<(int StmtIndex, ExpressionSyntax SubExpr, string TypeName)> CollectLocalCandidates(
+        SyntaxList<StatementSyntax> statements,
+        EffectScope scope,
+        SemanticModel semanticModel)
+    {
         var candidates = new List<(int StmtIndex, ExpressionSyntax SubExpr, string TypeName)>();
         for (int i = 0; i < statements.Count; i++)
         {
@@ -39,26 +55,27 @@ internal static class MetamorphicSubexpressionExtractor
 
             foreach (var node in rhsRoot.DescendantNodes())
             {
-                if (node is not ExpressionSyntax subExpr ||
-                    !IsExtractableCandidate(subExpr, rhsRoot, scope) ||
-                    !MetamorphicTypeResolver.TryResolveSupportedValueType(subExpr, semanticModel, out _, out string? exprType))
+                if (node is ExpressionSyntax subExpr &&
+                    IsExtractableCandidate(subExpr, rhsRoot, scope) &&
+                    MetamorphicTypeResolver.TryResolveSupportedValueType(
+                        subExpr, semanticModel, out _, out string? exprType))
                 {
-                    continue;
+                    candidates.Add((i, subExpr, exprType));
                 }
-
-                candidates.Add((i, subExpr, exprType));
             }
         }
 
-        if (candidates.Count == 0)
-        {
-            return root;
-        }
+        return candidates;
+    }
 
-        var chosen = candidates[rng.NextBelow(candidates.Count)];
-        string newLocalName = MetamorphicTarget.AllocateFreshIdentifier("metaExtracted", usedNames);
+    private static CompilationUnitSyntax ApplyLocalExtraction(
+        CompilationUnitSyntax root,
+        MethodDeclarationSyntax method,
+        SyntaxList<StatementSyntax> statements,
+        (int StmtIndex, ExpressionSyntax SubExpr, string TypeName) chosen,
+        string newLocalName)
+    {
         string subExprText = FuzzSyntaxHelpers.RenderNodeText(chosen.SubExpr);
-
         var tempDeclStmt = SyntaxFactory.ParseStatement($"{chosen.TypeName} {newLocalName} = ({subExprText});\n");
         var replacementId = SyntaxFactory.IdentifierName(newLocalName).WithTriviaFrom(chosen.SubExpr);
         var updatedStmt = statements[chosen.StmtIndex].ReplaceNode(chosen.SubExpr, replacementId);
@@ -77,7 +94,7 @@ internal static class MetamorphicSubexpressionExtractor
             }
         }
 
-        var updatedMethod = method.WithBody(method.Body.WithStatements(SyntaxFactory.List(newStatements)));
+        var updatedMethod = method.WithBody(method.Body!.WithStatements(SyntaxFactory.List(newStatements)));
         return root.ReplaceNode(method, updatedMethod);
     }
 
@@ -101,7 +118,38 @@ internal static class MetamorphicSubexpressionExtractor
         var scope = EffectScope.ForKernel(method, semanticModel);
         var statements = method.Body.Statements;
 
-        var candidates = new List<(int StmtIndex, ExpressionSyntax SubExpr, string ReturnType, List<(string Name, string Type)> FreeVars)>();
+        var candidates = CollectDeviceFunctionCandidates(statements, scope, semanticModel);
+        if (candidates.Count == 0)
+        {
+            return root;
+        }
+
+        var chosen = candidates[rng.NextBelow(candidates.Count)];
+        string effectiveHelperName = !string.IsNullOrWhiteSpace(helperMethodName) && usedNames.Add(helperMethodName)
+            ? helperMethodName
+            : MetamorphicTarget.AllocateFreshIdentifier("MetaExtractedFunc_", usedNames);
+
+        var (helperMember, callExpr) = BuildHelperMethodAndCall(chosen, effectiveHelperName);
+        if (helperMember is null)
+        {
+            return root;
+        }
+
+        return ApplyDeviceFunctionExtraction(root, parentClass, method, statements, chosen, helperMember, callExpr);
+    }
+
+    private readonly record struct DeviceFunctionCandidate(
+        int StmtIndex,
+        ExpressionSyntax SubExpr,
+        string ReturnType,
+        List<(string Name, string Type)> FreeVars);
+
+    private static List<DeviceFunctionCandidate> CollectDeviceFunctionCandidates(
+        SyntaxList<StatementSyntax> statements,
+        EffectScope scope,
+        SemanticModel semanticModel)
+    {
+        var candidates = new List<DeviceFunctionCandidate>();
         for (int i = 0; i < statements.Count; i++)
         {
             var stmt = statements[i];
@@ -115,27 +163,25 @@ internal static class MetamorphicSubexpressionExtractor
                 if (node is not ExpressionSyntax subExpr ||
                     ContainsElementAccess(subExpr) ||
                     !IsExtractableCandidate(subExpr, rhsRoot, scope) ||
-                    !MetamorphicTypeResolver.TryResolveSupportedValueType(subExpr, semanticModel, out _, out string? returnType) ||
+                    !MetamorphicTypeResolver.TryResolveSupportedValueType(
+                        subExpr, semanticModel, out _, out string? returnType) ||
                     !TryCollectValueTypeFreeVariables(subExpr, semanticModel, out var freeVars) ||
                     freeVars.Count is < 1 or > 4)
                 {
                     continue;
                 }
 
-                candidates.Add((i, subExpr, returnType, freeVars));
+                candidates.Add(new DeviceFunctionCandidate(i, subExpr, returnType, freeVars));
             }
         }
 
-        if (candidates.Count == 0)
-        {
-            return root;
-        }
+        return candidates;
+    }
 
-        var chosen = candidates[rng.NextBelow(candidates.Count)];
-        string effectiveHelperName = !string.IsNullOrWhiteSpace(helperMethodName) && usedNames.Add(helperMethodName)
-            ? helperMethodName
-            : MetamorphicTarget.AllocateFreshIdentifier("MetaExtractedFunc_", usedNames);
-
+    private static (MemberDeclarationSyntax? HelperMember, ExpressionSyntax CallExpr) BuildHelperMethodAndCall(
+        DeviceFunctionCandidate chosen,
+        string effectiveHelperName)
+    {
         var paramDecls = new string[chosen.FreeVars.Count];
         var callArgs = new string[chosen.FreeVars.Count];
         for (int i = 0; i < chosen.FreeVars.Count; i++)
@@ -156,13 +202,20 @@ internal static class MetamorphicSubexpressionExtractor
             """;
 
         var helperMember = SyntaxFactory.ParseMemberDeclaration(helperDeclText + "\n");
-        if (helperMember is null)
-        {
-            return root;
-        }
-
         var callExpr = SyntaxFactory.ParseExpression($"{effectiveHelperName}({string.Join(", ", callArgs)})")
             .WithTriviaFrom(chosen.SubExpr);
+        return (helperMember, callExpr);
+    }
+
+    private static CompilationUnitSyntax ApplyDeviceFunctionExtraction(
+        CompilationUnitSyntax root,
+        ClassDeclarationSyntax parentClass,
+        MethodDeclarationSyntax method,
+        SyntaxList<StatementSyntax> statements,
+        DeviceFunctionCandidate chosen,
+        MemberDeclarationSyntax helperMember,
+        ExpressionSyntax callExpr)
+    {
         var updatedStmt = statements[chosen.StmtIndex].ReplaceNode(chosen.SubExpr, callExpr);
         var updatedMethod = FuzzSyntaxHelpers.ReplaceSingleStatement(method, chosen.StmtIndex, updatedStmt);
 

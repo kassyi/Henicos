@@ -84,7 +84,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
 {
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_ConversionOperators_Execution()
+    public void Execute_ConversionOperators_ConvertsAndAssignsExpectedFloat()
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.ConversionOperators), isDevice: false, dialect: CurrentDialect);
@@ -97,7 +97,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_AutoProperties_Execution()
+    public void Execute_AutoProperties_InitializesSensorReadingFields()
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.AutoProperties), isDevice: false, dialect: CurrentDialect);
@@ -111,7 +111,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_ExpressionBodiedProperties_Execution()
+    public void Execute_ExpressionBodiedProperties_CalculatesAreaFromWidth()
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.ExpressionBodiedProperties), isDevice: false, dialect: CurrentDialect);
@@ -125,7 +125,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_StaticAbstractMembers_Execution()
+    public void Execute_StaticAbstractMembers_InitializesConstantImplValue()
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.StaticAbstractMembers), isDevice: false, dialect: CurrentDialect);
@@ -138,7 +138,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_CheckedUnchecked_Transpilation()
+    public void Transpile_CheckedUnchecked_FailsWithUnsupportedSyntaxAndEmitsPlaceholder()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.CheckedUnchecked), isDevice: false, dialect: CurrentDialect);
@@ -153,7 +153,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_ExtensionMethods_Execution()
+    public void Execute_ExtensionMethods_InvokesDeviceExtensionMethod()
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.ExtensionMethods), isDevice: false, dialect: CurrentDialect);
@@ -167,7 +167,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_NullableValueTypes_Execution()
+    public void Execute_NullableValueTypes_HandlesNullAndAssignsDefault()
     {
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.NullableValueTypes), isDevice: false, dialect: CurrentDialect);

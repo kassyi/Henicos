@@ -72,9 +72,10 @@ public class NamedThenPositionalDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_NamedThenPositional_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_namedThenPositional);
+    public void MethodInvocation_NamedThenPositionalArguments_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_namedThenPositional);
 
     [SkippableFact]
-    public void Test_NamedThenPositionalSuspendingCall_MatchesTheReferenceOnEveryPath() =>
+    public void MethodInvocation_NamedThenPositionalSuspendingCall_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_suspendingCall);
 }

@@ -25,7 +25,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_LibraryWithoutRecords_ReportsGsh0088AtEachUse(string dialect)
+    public async Task LibraryWithoutRecords_ForeignAssemblyReference_ReportsGsh0088AtEachUse(string dialect)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library);
 
@@ -41,7 +41,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_LibraryWithRecords_ReportsNothing(string dialect)
+    public async Task LibraryWithRecords_ValidExportRecords_ReportsNothing(string dialect)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", null, s_library);
 
@@ -54,7 +54,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_RecordOfAnotherPrelude_ReportsGsh0089(string dialect)
+    public async Task RecordOfAnotherPrelude_MismatchedPreludeHash_ReportsGsh0089(string dialect)
     {
         var library = BuildHandWritten("0123456789abcdef", cudaFailed: false, cppFailed: false);
 
@@ -71,7 +71,10 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cuda", true, false, 1)]
     [InlineData("Cuda", false, true, 0)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_RecordThatFailedInTheDialect_ReportsGsh0089(string dialect, bool cudaFailed, bool cppFailed,
+    public async Task RecordThatFailedInTheDialect_DialectCompilationFailure_ReportsGsh0089(
+        string dialect,
+        bool cudaFailed,
+        bool cppFailed,
         int expected)
     {
         var library = BuildHandWritten(DeviceExportRecord.CurrentPreludeHash, cudaFailed, cppFailed);
@@ -88,7 +91,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_TwoLibrariesWithOnePath_ReportsGsh0090(string dialect)
+    public async Task TwoLibrariesWithOnePath_ConflictingFilePaths_ReportsGsh0090(string dialect)
     {
         var first = DeviceLibraryBuilder.Build("LibA", null, s_library).WithAliases(["LibA"]);
         var second = DeviceLibraryBuilder.Build("LibB", null, s_library).WithAliases(["LibB"]);
@@ -107,7 +110,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_TypeWithThePathOfTwoLibraries_ReportsGsh0090(string dialect)
+    public async Task TypeWithPathOfTwoLibraries_PathCollision_ReportsGsh0090(string dialect)
     {
         var first = DeviceLibraryBuilder.Build("LibA", null, s_library).WithAliases(["LibA"]);
         var second = DeviceLibraryBuilder.Build("LibB", null, s_library).WithAliases(["LibB"]);
@@ -123,7 +126,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GenericTypeAndFieldWithThePathOfTwoLibraries_ReportGsh0090(string dialect)
+    public async Task GenericTypeAndFieldWithPathOfTwoLibraries_PathCollision_ReportsGsh0090(string dialect)
     {
         var first = DeviceLibraryBuilder.Build("LibA", null, RoslynTestUtility.ReadTestCase(Folder + "BoxLibrary.cs"))
             .WithAliases(["LibA"]);
@@ -142,7 +145,9 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu", 1)]
     [InlineData("Cuda", 0)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_RecordWithAnInternalError_ReportsGsh0089WithTheMessage(string dialect, int expected)
+    public async Task RecordWithAnInternalError_ExportRecordFailure_ReportsGsh0089WithErrorMessage(
+        string dialect,
+        int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
             RoslynTestUtility.ReadTestCase(Folder + "HandWrittenInternalError.cs")
@@ -161,7 +166,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu", 1)]
     [InlineData("Cuda", 0)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UsingOfAStructThatFailedInTheDialect_ReportsGsh0089(string dialect, int expected)
+    public async Task UsingOfStructThatFailedInTheDialect_FailedTypeUsage_ReportsGsh0089(string dialect, int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport,
             RoslynTestUtility.ReadTestCase(Folder + "HandWrittenLease.cs")
@@ -181,7 +186,9 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu", 1)]
     [InlineData("Cuda", 1)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SuspendingCallFromAnExportedDeviceFunction_ReportsGsh0089(string dialect, int expected)
+    public async Task SuspendingCallFromExportedDeviceFunction_CrossAssemblyInvocation_ReportsGsh0089(
+        string dialect,
+        int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
             RoslynTestUtility.ReadTestCase(Folder + "HandWrittenSuspendingRecord.cs")
@@ -201,7 +208,9 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu", 1)]
     [InlineData("Cuda", 0)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SuspendingFunctionWithoutManagedStateMachine_ReportsGsh0089(string dialect, int expected)
+    public async Task SuspendingFunctionWithoutManagedStateMachine_MissingStateMachine_ReportsGsh0089(
+        string dialect,
+        int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
             RoslynTestUtility.ReadTestCase(Folder + "HandWrittenSuspendingRecord.cs")
@@ -219,7 +228,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_TargetTypedNew_ReportsGsh0088(string dialect)
+    public async Task TargetTypedNew_UnrecordedLibraryType_ReportsGsh0088(string dialect)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library);
 
@@ -233,7 +242,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu", 1)]
     [InlineData("Cuda", 0)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DependencyThatFailedInTheDialect_ReportsGsh0089AtTheUse(string dialect, int expected)
+    public async Task DependencyThatFailedInTheDialect_TransitiveUsage_ReportsGsh0089AtUse(string dialect, int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
             RoslynTestUtility.ReadTestCase(Folder + "HandWrittenChain.cs")
@@ -256,7 +265,9 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu", true)]
     [InlineData("Cuda", true)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DependencyInAThirdAssembly_ReportsGsh0088UnlessItIsExported(string dialect, bool innerExports)
+    public async Task DependencyInThirdAssembly_UnexportedTypeReference_ReportsGsh0088(
+        string dialect,
+        bool innerExports)
     {
         var inner = DeviceLibraryBuilder.Build("XasmInner", innerExports ? null : s_noExport,
             RoslynTestUtility.ReadTestCase(Folder + "InnerLibrary.cs"));
@@ -287,7 +298,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DependencyWithThePathOfAnotherLibrary_ReportsGsh0090AtTheUse(string dialect)
+    public async Task DependencyWithPathOfAnotherLibrary_TransitivePathCollision_ReportsGsh0090AtUse(string dialect)
     {
         var chain = DeviceLibraryBuilder.Build("LibA", null, RoslynTestUtility.ReadTestCase(Folder + "ChainLibrary.cs"))
             .WithAliases(["LibA"]);
@@ -307,7 +318,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DependencyWithThePathOfTheConsumer_ReportsGsh0090AtTheUse(string dialect)
+    public async Task DependencyWithPathOfTheConsumer_ConsumerPathCollision_ReportsGsh0090AtUse(string dialect)
     {
         var chain = DeviceLibraryBuilder.Build("LibA", null, RoslynTestUtility.ReadTestCase(Folder + "ChainLibrary.cs"))
             .WithAliases(["LibA"]);
@@ -326,7 +337,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GenericIteratorAndGridFunctions_ReportedOnce(string dialect)
+    public async Task GenericIteratorAndGridFunctions_CrossAssemblyUsage_ReportsDiagnosticsOnce(string dialect)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", null, RoslynTestUtility.ReadTestCase(Folder + "BoxLibrary.cs"));
 
@@ -344,7 +355,7 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ImportedDivergentParameter_ReportsGsh0083(string dialect)
+    public async Task ImportedDivergentParameter_CrossAssemblyDeviceFunction_ReportsGsh0083(string dialect)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
             RoslynTestUtility.ReadTestCase(Folder + "HandWrittenDivergentRecord.cs")
@@ -379,7 +390,9 @@ public class CrossAssemblyDiagnosticsTests
     [InlineData("Cpu", true)]
     [InlineData("Cuda", true)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ParameterlessConstructorOfALibrary_IsReportedUnlessRecorded(string dialect, bool exports)
+    public async Task ParameterlessConstructorOfLibrary_UnrecordedConstructor_ReportsGsh0088(
+        string dialect,
+        bool exports)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", exports ? null : s_noExport,
             RoslynTestUtility.ReadTestCase(Folder + "ParameterlessLibrary.cs"));

@@ -174,9 +174,9 @@ public sealed class GpuBigIntMathTests : IDisposable
     {
         // Shifting a value in place: 2048 words take two passes of a 1024-thread block, and the second pass of a left
         // shift reads words that the first pass writes, so an in-place kernel would corrupt the result.
-        // mutant: GpuBigIntMath.cs:260 `==` -> `!=` (the kernel runs in place)
-        // mutant: GpuBigIntMath.cs:263 / :264 temporary copy or launch removed
-        // mutant: GpuBigIntMath.cs:279 `return` removed (the host path shifts a second time)
+        // mutant: GpuBigIntMath.cs:580 `==` -> `!=` (the kernel runs in place)
+        // mutant: GpuBigIntMath.cs:583 / :584 temporary copy or launch removed
+        // mutant: GpuBigIntMath.cs:599 `return` removed (the host path shifts a second time)
         const int Words = 2048;
         var value = RandomValue(seed: 598, Words);
         using var buffer = GpuBigUInt.FromBigInteger(_workspace, value, Words);
@@ -199,9 +199,9 @@ public sealed class GpuBigIntMathTests : IDisposable
     {
         // The host path shifts left for a positive amount and right for a negative one, truncated or zero-extended to
         // the result size.
-        // mutant: GpuBigIntMath.cs:286 copy removed; :288 `val << signedBitShift` -> `val >> signedBitShift`,
+        // mutant: GpuBigIntMath.cs:606 copy removed; :609-610 `val << signedBitShift` -> `val >> signedBitShift`,
         //         `val >> -signedBitShift` -> `val << -signedBitShift` / `val >> +signedBitShift`
-        // mutant: GpuBigIntMath.cs:289 / :290 WriteLimbs or upload removed
+        // mutant: GpuBigIntMath.cs:611 / :612 WriteLimbs or upload removed
         // ForceCpuFallback is AsyncLocal, so the override cannot leak into other tests.
         GpuKernelLoader.ForceCpuFallback = true;
         try
@@ -233,7 +233,7 @@ public sealed class GpuBigIntMathTests : IDisposable
     public void NormalizeToMsb_ZeroSource_ClearsPrefilledResult()
     {
         // A zero source has no top bit: the result is cleared and the shift and bit count are 0.
-        // mutant: GpuBigIntMath.cs:313 `ClearMemoryAsync(resultBuffer...)` removed
+        // mutant: GpuBigIntMath.cs:643 `ClearMemoryAsync(resultBuffer...)` removed
         using var source = new GpuBigUInt(_workspace, 4);
         using var result = new GpuBigUInt(_workspace, Enumerable.Repeat(uint.MaxValue, 6).ToArray());
 
@@ -250,7 +250,7 @@ public sealed class GpuBigIntMathTests : IDisposable
     public void Pow10_ResultHasMinimalWords(int exponent)
     {
         // 10^e is exact and trimmed to the words its bit length needs.
-        // mutant: GpuBigIntMath.cs:467 `(actualBits + 31) / 32` -> `(actualBits + 31) * 32`
+        // mutant: GpuBigIntMath.cs:843 `(actualBits + 31) / 32` -> `(actualBits + 31) * 32`
         var expected = BigInteger.Pow(10, exponent);
         using var power = GpuBigIntMath.Pow10(_workspace, exponent);
 
@@ -263,7 +263,7 @@ public sealed class GpuBigIntMathTests : IDisposable
     {
         // The largest documented exponent is accepted; one more is rejected. 10^50,000,000 has about 5.2 million words
         // (under a second on an RTX 3070 Ti); the value is checked by its bit length (log2(10) * e, rounded up).
-        // mutant: GpuBigIntMath.cs:403 `exponent > MaxPow10Exponent` -> `exponent >= MaxPow10Exponent`
+        // mutant: GpuBigIntMath.cs:779 `exponent > MaxPow10Exponent` -> `exponent >= MaxPow10Exponent`
         const int MaxExponent = 50_000_000;
         Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigIntMath.Pow10(_workspace, MaxExponent + 1));
         Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigIntMath.Pow10(_workspace, -1));

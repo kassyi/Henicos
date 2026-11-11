@@ -184,7 +184,7 @@ public sealed class DirectMethodWidthCpuFallbackTests
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
-    public void FollowsTheSameRules(int aWords, int bWords)
+    public void DirectMethodWidth_CpuFallbackWithVaryingWords_FollowsTheSameRules(int aWords, int bWords)
     {
         GpuKernelLoader.ForceCpuFallback = true;
         try

@@ -16,68 +16,70 @@ public class UserLabelManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_LabeledShuffle_RunsAgainOnEveryGoto() => UserLabelScenarios.LabeledShuffleLoop(s_runManaged);
+    public void LabeledShuffle_ManagedLoopWithGoto_RunsAgainOnEveryGoto() =>
+        UserLabelScenarios.LabeledShuffleLoop(s_runManaged);
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(3)]
     [InlineData(0)]
-    public void Test_Managed_LabelLoop_KeepsLocalsDeclaredBeforeTheLabel(int rounds) =>
+    public void LabelLoop_ManagedVaryingRounds_KeepsLocalsDeclaredBeforeTheLabel(int rounds) =>
         UserLabelScenarios.LabelLoop(s_runManaged, rounds);
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_BranchExitLabel_GotoFromLaterStateReachesLabel(int flag) =>
+    public void BranchExitLabel_ManagedConditionalFlag_GotoFromLaterStateReachesLabel(int flag) =>
         UserLabelScenarios.BranchExitLabel(s_runManaged, flag);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_ChainedLabel_LabelSplitByAnotherSplitLabel(int flag) =>
+    public void ChainedLabel_ManagedInterleavedSplitLabels_ExecutesInCorrectOrder(int flag) =>
         UserLabelScenarios.ChainedLabel(s_runManaged, flag);
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_CrossLabelWrite_LocalUsedAfterSplitLabel(int flag) =>
+    public void CrossLabelWrite_ManagedLocalUsedAfterSplitLabel_PreservesValueAcrossLabels(int flag) =>
         UserLabelScenarios.CrossLabelWrite(s_runManaged, flag);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GotoPastInitialization_SkipsTheDeclarations() =>
+    public void GotoPastInitialization_ManagedForwardJump_SkipsDeclarations() =>
         UserLabelScenarios.GotoPastInitialization(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GotoPastConstAndArrays_SkipsTheDeclarations() =>
+    public void GotoPastConstAndArrays_ManagedForwardJump_SkipsDeclarations() =>
         UserLabelScenarios.GotoPastConstAndArrays(s_runManaged);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_SiblingSameLabel_SpanStaysLocal(int flag) =>
+    public void SiblingSameLabel_ManagedConditionalBranches_SpanStaysLocal(int flag) =>
         UserLabelScenarios.SiblingSameLabel(s_runManaged, flag);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SameStateSameLabel_EachGotoReachesItsLabel() =>
+    public void SameStateSameLabel_ManagedMultipleGotos_EachGotoReachesItsLabel() =>
         UserLabelScenarios.SameStateSameLabel(s_runManaged);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_Managed_CrossLabelInitialized_LocalUsedAfterSplitLabel(int flag) =>
+    public void CrossLabelInitialized_ManagedLocalUsedAfterSplitLabel_PreservesInitializedValue(int flag) =>
         UserLabelScenarios.CrossLabelInitialized(s_runManaged, flag);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_LabeledBarrier_SeparatesWritesFromReads() => UserLabelScenarios.LabeledBarrier(s_runManaged);
+    public void LabeledBarrier_ManagedSharedMemory_SeparatesWritesFromReads() =>
+        UserLabelScenarios.LabeledBarrier(s_runManaged);
 
     private static void RunManaged(Action launch)
     {

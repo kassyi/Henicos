@@ -227,7 +227,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
 
     // The CPU provider has the exact integer square root on the host: it writes floor(sqrt(a)) whatever the estimate,
     // r² <= a < (r + 1)², over an estimate of all ones.
-    // mutant: CSharpCpuBigIntProvider.cs:353 `a.Sqrt()` -> `a.Sqrt() + 1` (all three)
+    // mutant: CSharpCpuBigIntProvider.cs:359 `a.Sqrt()` -> `a.Sqrt() + 1` (all three)
     [Theory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
@@ -344,7 +344,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
         var aValue = ToBigInteger(aWords);
         using var a = new GpuBigUInt(_workspace, aWords);
 
-        // mutant: CSharpCpuBigIntProvider.cs:200 / 208 / 320 `Write(...)` removed (the sentinel would remain)
+        // mutant: CSharpCpuBigIntProvider.cs:201 / 211 / 333 `Write(...)` removed (the sentinel would remain)
         using (var res = CreateSentinelBuffer(4))
         {
             _provider.Add(_workspace, a, 7u, res);
@@ -364,7 +364,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
         }
 
         // Square of the 2-word value 2^64 - 1 fills all 4 words of the buffer in place.
-        // mutant: CSharpCpuBigIntProvider.cs:266 `logicalWords * 2` -> `logicalWords / 2`, L267 `true` -> `false`
+        // mutant: CSharpCpuBigIntProvider.cs:270 `logicalWords * 2` -> `logicalWords / 2`, L271 `true` -> `false`
         using var square = new GpuBigUInt(_workspace, [Sentinel, Sentinel, 0u, 0u]);
         Assert.True(_provider.Square(_workspace, square.DevicePointer, 2));
         var max64 = (BigInteger.One << 64) - 1;
@@ -391,7 +391,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
         var x = ToBigInteger(xWords);
         using var operand = new GpuBigUInt(_workspace, xWords);
 
-        // mutant: CSharpCpuBigIntProvider.cs:341 `+ marginWords` -> `- marginWords`, L342 `/ x` -> `* x`
+        // mutant: CSharpCpuBigIntProvider.cs:347 `+ marginWords` -> `- marginWords`, L348 `/ x` -> `* x`
         using (var res = CreateSentinelBuffer(8))
         {
             _provider.InverseSqrtMega(_workspace, operand, res, MarginWords, 0, 0);
@@ -400,7 +400,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
             Assert.Equal(expected, ToBigInteger(res.ToHostArray()));
         }
 
-        // mutant: CSharpCpuBigIntProvider.cs:358 `/ x` -> `* x`, L359 `Write(...)` removed
+        // mutant: CSharpCpuBigIntProvider.cs:373 `/ x` -> `* x`, L374 `Write(...)` removed
         using (var res = CreateSentinelBuffer(8))
         {
             _provider.ReciprocalMega(
@@ -414,8 +414,8 @@ public class CSharpCpuBigIntProviderTests : IDisposable
     [Theory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    // mutant: CSharpCpuBigIntProvider.cs:386 `v - t * x` -> `v + t * x`, L394 `v < 0` -> `v > 0` / `!(v < 0)`,
-    // L396 `(v + n) % n` -> `(v + n) * n` / `(v - n) % n`
+    // mutant: CSharpCpuBigIntProvider.cs:401 `v - t * x` -> `v + t * x`, L409 `v < 0` -> `v > 0` / `!(v < 0)`,
+    // L411 `(v + n) % n` -> `(v + n) * n` / `(v - n) % n`
     [InlineData(17u, 3120u, 2753u)]
     [InlineData(42u, 2017u, 1969u)]
     [InlineData(7u, 40u, 23u)]

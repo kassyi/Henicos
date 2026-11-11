@@ -324,69 +324,91 @@ internal static class CodegenComparison
 
         foreach (string name in names)
         {
-            if (!baseFiles.TryGetValue(name, out string? b) || !headFiles.TryGetValue(name, out string? h))
+            baseFiles.TryGetValue(name, out string? b);
+            headFiles.TryGetValue(name, out string? h);
+
+            if (b is null || h is null)
             {
-                // A file only one side generates.
-                differences.Add(new CodegenDifference(
-                    null,
-                    dialect,
-                    name,
-                    "file",
-                    1,
-                    1,
-                    b is null ? MissingFile : FirstLine(b),
-                    b is null ? FirstLine(headFiles[name]) : MissingFile));
+                differences.Add(CreateMissingFileDifference(name, dialect, b, h));
                 continue;
             }
 
-            string baseText = Normalize(b);
-            string headText = Normalize(h);
-            if (string.Equals(baseText, headText, StringComparison.Ordinal))
+            CompareManagedFileContent(name, dialect, b, h, differences);
+        }
+    }
+
+    private static CodegenDifference CreateMissingFileDifference(string name, string dialect, string? b, string? h) =>
+        new(
+            null,
+            dialect,
+            name,
+            "file",
+            1,
+            1,
+            b is null ? MissingFile : FirstLine(b),
+            b is null ? FirstLine(h!) : MissingFile);
+
+    private static void CompareManagedFileContent(
+        string name,
+        string dialect,
+        string b,
+        string h,
+        List<CodegenDifference> differences)
+    {
+        string baseText = Normalize(b);
+        string headText = Normalize(h);
+        if (string.Equals(baseText, headText, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var baseSegments = SplitByKernel(baseText);
+        var headSegments = SplitByKernel(headText);
+        int before = differences.Count;
+
+        CompareManagedKernels(name, dialect, baseSegments, headSegments, differences);
+
+        if (differences.Count == before &&
+            FindFirstLineDifference(baseText, headText) is { } fileDiff &&
+            !OnlyNativeSourcesDiffer(baseText, headText, baseSegments, headSegments))
+        {
+            differences.Add(new CodegenDifference(
+                null,
+                dialect,
+                name,
+                "file",
+                fileDiff.Line,
+                fileDiff.Line,
+                fileDiff.BaseText,
+                fileDiff.HeadText));
+        }
+    }
+
+    private static void CompareManagedKernels(
+        string name,
+        string dialect,
+        KernelSegments baseSegments,
+        KernelSegments headSegments,
+        List<CodegenDifference> differences)
+    {
+        foreach (var (kernel, baseMembers) in baseSegments.ManagedMembers)
+        {
+            if (!headSegments.ManagedMembers.TryGetValue(kernel, out string? headMembers) ||
+                FindFirstLineDifference(baseMembers, headMembers) is not { } diff)
             {
                 continue;
             }
 
-            var baseSegments = SplitByKernel(baseText);
-            var headSegments = SplitByKernel(headText);
-            int before = differences.Count;
-            foreach (var (kernel, baseMembers) in baseSegments.ManagedMembers)
-            {
-                if (!headSegments.ManagedMembers.TryGetValue(kernel, out string? headMembers) ||
-                    FindFirstLineDifference(baseMembers, headMembers) is not { } diff)
-                {
-                    continue;
-                }
-
-                int start = headSegments.ManagedStartLines.TryGetValue(kernel, out int line) ? line : 0;
-                differences.Add(new CodegenDifference(
-                    kernel,
-                    dialect,
-                    name,
-                    "kernel",
-                    diff.Line,
-                    start == 0 ? 0 : start + diff.Line - 1,
-                    diff.BaseText,
-                    diff.HeadText));
-            }
-
-            if (differences.Count == before && FindFirstLineDifference(baseText, headText) is { } fileDiff)
-            {
-                // Only the native code constants differ, which the native comparison reports.
-                if (OnlyNativeSourcesDiffer(baseText, headText, baseSegments, headSegments))
-                {
-                    continue;
-                }
-
-                differences.Add(new CodegenDifference(
-                    null,
-                    dialect,
-                    name,
-                    "file",
-                    fileDiff.Line,
-                    fileDiff.Line,
-                    fileDiff.BaseText,
-                    fileDiff.HeadText));
-            }
+            int start = headSegments.ManagedStartLines.TryGetValue(kernel, out int line) ? line : 0;
+            differences.Add(new CodegenDifference(
+                kernel,
+                dialect,
+                name,
+                "kernel",
+                diff.Line,
+                start == 0 ? 0 : start + diff.Line - 1,
+                diff.BaseText,
+                diff.HeadText));
         }
     }
 

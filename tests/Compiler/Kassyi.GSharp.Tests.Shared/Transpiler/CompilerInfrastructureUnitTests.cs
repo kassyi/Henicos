@@ -8,7 +8,7 @@ public class CompilerInfrastructureUnitTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EquatableArray_BasicOperations_WorkCorrectly()
+    public void EquatableArray_BasicOperations_PreservesEqualityAndIteration()
     {
         // Happy Path: Standard population, indexing, iteration, and equality
         var items = ImmutableArray.Create(1, 2, 3);
@@ -40,7 +40,7 @@ public class CompilerInfrastructureUnitTests
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]
-    public void Test_EquatableArray_BoundarySizes_BehaveExpectedly(int size)
+    public void EquatableArray_EmptyAndSmallSizes_PreservesElementsAndEquality(int size)
     {
         // Boundary Testing: 0, 1, and small element counts
         var builder = ImmutableArray.CreateBuilder<int>(size);
@@ -70,7 +70,7 @@ public class CompilerInfrastructureUnitTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EquatableArray_DefaultValue_HandledGracefully()
+    public void EquatableArray_DefaultValue_ReportsDefaultOrEmptyAndZeroLength()
     {
         // Boundary Testing: Default (uninitialized) struct instance
         EquatableArray<int> defArr = default;
@@ -96,7 +96,7 @@ public class CompilerInfrastructureUnitTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_EquatableArray_Mismatches_ReturnFalse()
+    public void EquatableArray_MismatchedLengthOrElements_ReturnsFalse()
     {
         // Sad Path: Length mismatches, element value differences, and Default vs Initialized
         var arrA = ImmutableArray.Create(1, 2, 3).AsEquatableArray();
@@ -114,7 +114,7 @@ public class CompilerInfrastructureUnitTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_EquatableArray_IndexOutOfBounds_ThrowsArgumentOutOfRangeException()
+    public void EquatableArray_IndexOutOfBounds_ThrowsIndexOutOfRangeException()
     {
         // Sad Path: Indexing out of range
         var arr = ImmutableArray.Create(10, 20).AsEquatableArray();
@@ -124,7 +124,7 @@ public class CompilerInfrastructureUnitTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SourceWriter_InterpolationAndIndentation_BuildsAccurateCode()
+    public void SourceWriter_InterpolationAndIndentation_BuildsAccurateCode()
     {
         // Happy Path: SourceWriter with indentation scopes and interpolated handler
         var writer = new SourceWriter();
@@ -145,7 +145,7 @@ public class CompilerInfrastructureUnitTests
 
     [Fact]
     [Category(TestCategory.Stress)]
-    public void Test_EquatableArray_ConcurrentReadsAndEquality_ThreadSafe()
+    public void EquatableArray_ConcurrentReadsAndEquality_ExecutesThreadSafe()
     {
         // Stress & Concurrency: Multi-threaded equality checks across worker threads
         var arrA = ImmutableArray.Create(1, 2, 3, 4, 5).AsEquatableArray();

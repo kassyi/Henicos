@@ -10,7 +10,7 @@ public class UnsafeMallocDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_Malloc_ReportsGsh0029OnTheCallInKernelAndDeviceFunction(string dialect)
+    public async Task MallocCall_KernelAndDeviceFunction_ReportsGsh0029(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsafeMallocWarning.cu.cs", dialect);
 
@@ -22,7 +22,7 @@ public class UnsafeMallocDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ManualUnmanagedAllocation_IsAWarning()
+    public void ManualUnmanagedAllocation_DiagnosticSeverity_ReportsWarning()
     {
         Assert.Equal(DiagnosticSeverity.Warning, GSharpDiagnostics.ManualUnmanagedAllocation.DefaultSeverity);
     }

@@ -15,7 +15,7 @@ public class ForUnrollBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ExchangeKernel_SynchronizesAcrossIterations()
+    public void Exchange_ForUnrollWithBarrier_SynchronizesAcrossIterations()
     {
         int[] buffer = new int[BlockSize];
         int[] output = new int[BlockSize];
@@ -27,7 +27,7 @@ public class ForUnrollBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SuspendingCallKernel_ResumesDeviceFunctionEachIteration()
+    public void SuspendingCall_ForUnrollWithBarrier_ResumesDeviceFunctionEachIteration()
     {
         int[] buffer = new int[BlockSize];
         int[] output = new int[BlockSize];
@@ -39,7 +39,7 @@ public class ForUnrollBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RefContextKernel_PropagatesAccumulatorAcrossBarriers()
+    public void RefContext_ForUnrollWithBarrier_PropagatesAccumulatorAcrossBarriers()
     {
         int[] buffer = new int[BlockSize];
         int[] output = new int[BlockSize];
@@ -51,7 +51,7 @@ public class ForUnrollBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ZeroCountKernel_SkipsBodyWithoutCorruptingOutput()
+    public void ZeroCount_ForUnrollZeroIterations_SkipsBodyWithoutCorruptingOutput()
     {
         int[] buffer = new int[BlockSize];
         int[] output = [-1, -1, -1, -1];
@@ -63,7 +63,7 @@ public class ForUnrollBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NestedForUnrollKernel_ExpandsOuterAndUnrollsInner()
+    public void NestedForUnroll_NestedLoopsWithBarrier_ExpandsOuterAndUnrollsInner()
     {
         int[] buffer = new int[BlockSize];
         int[] output = new int[BlockSize];
@@ -75,7 +75,7 @@ public class ForUnrollBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_MegaReducedKernel_ShiftsAndIncrementsAcrossThreeRounds()
+    public void MegaReduced_ForUnrollAcrossThreeRounds_ShiftsAndIncrementsScratchBuffer()
     {
         int[] input = [10, 20, 30, 40];
         int[] scratch = new int[BlockSize];

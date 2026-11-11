@@ -98,7 +98,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DynamicSharedMemory48KB_LaunchesWithoutOptIn()
+    public void Launch_DynamicSharedMemoryAtDefault48KbLimit_ProducesExpectedSumsWithoutOptIn()
     {
         var bytes = DefaultLimitBytes - (uint)StaticBytes(nameof(DynamicSharedMemoryLimitKernels.DefaultLimitKernel));
         var n = (int)(bytes / 4);
@@ -114,7 +114,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DynamicSharedMemory48KBPlus1_Launches()
+    public void Launch_DynamicSharedMemoryAt48KbPlusOneByte_ProducesExpectedSums()
     {
         SkipIfOptInNotAboveDefault();
 
@@ -129,7 +129,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DynamicSharedMemory64KB_LaunchesAndUsesTheWholeRegion()
+    public void Launch_DynamicSharedMemoryAt64Kb_UsesWholeRegionAndMatchesExpectedSums()
     {
         SkipIfOptInNotAboveDefault();
         AssertLaunchSums(s_fillAndSum, 64 * 1024, 0);
@@ -139,7 +139,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DynamicSharedMemoryAtOptInLimit_Launches()
+    public void Launch_DynamicSharedMemoryAtOptInLimit_ProducesExpectedSums()
     {
         SkipIfOptInNotAboveDefault();
         var bytes = (uint)(OptInLimit - StaticBytes(nameof(DynamicSharedMemoryLimitKernels.FillAndSumKernel)));
@@ -150,7 +150,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StaticPlusDynamicAtOptInLimit_Launches()
+    public void Launch_StaticPlusDynamicAtOptInLimit_ProducesExpectedSums()
     {
         SkipIfOptInNotAboveDefault();
         var staticBytes = StaticBytes(nameof(DynamicSharedMemoryLimitKernels.StaticPlusDynamicKernel));
@@ -163,7 +163,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_DynamicSharedMemoryAboveOptInLimit_ThrowsBeforeLaunch()
+    public void Launch_DynamicSharedMemoryAboveOptInLimit_ThrowsBeforeLaunching()
     {
         var limit = OptInLimit;
         var staticBytes = StaticBytes(nameof(DynamicSharedMemoryLimitKernels.FillAndSumKernel));
@@ -184,7 +184,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_StaticPlusDynamicAboveOptInLimit_ThrowsBecauseStaticCounts()
+    public void Launch_StaticPlusDynamicAboveOptInLimit_ThrowsNamingStaticBytes()
     {
         SkipIfOptInNotAboveDefault();
         var limit = OptInLimit;
@@ -205,7 +205,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_DynamicSharedMemoryMaxValue_ThrowsWithoutOverflow()
+    public void Launch_DynamicSharedMemoryAtMaxValue_ThrowsWithoutOverflow()
     {
         var output = new uint[BlockSize];
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -218,7 +218,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_RepeatedLaunches_OptInOnce()
+    public void Launch_RepeatedRequestsAboveDefaultLimit_OptsInOnlyOnce()
     {
         SkipIfOptInNotAboveDefault();
         var hfunc = GetFunction(nameof(DynamicSharedMemoryLimitKernels.FillAndSumKernel));
@@ -241,7 +241,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OptIn_KeepsOccupancyOfSmallLaunches()
+    public void Launch_OptedInKernelThenSmallLaunch_PreservesOccupancy()
     {
         SkipIfOptInNotAboveDefault();
         var hfunc = GetFunction(nameof(DynamicSharedMemoryLimitKernels.OccupancyKernel));

@@ -9,7 +9,7 @@ public class GeneratorFileIoArchitectureTests
 {
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CompilerSources_ContainNoAbsolutePathLiterals()
+    public void CompilerSources_PathLiterals_ContainNoAbsolutePathLiterals()
     {
         var compilerRoot = RepositoryPaths.CompilerProject;
         var violations = new List<string>();
@@ -51,7 +51,7 @@ public class GeneratorFileIoArchitectureTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("GpuKernelGenerator.cs")]
     [InlineData("Aot/AotArtifactWriter.cs")]
-    public void Test_GeneratorSources_CatchBlocksDoNotWriteFiles(string relativePath)
+    public void GeneratorSources_CatchBlocks_DoNotWriteFiles(string relativePath)
     {
         var compilerRoot = RepositoryPaths.CompilerProject;
         var generatorPath = Path.Combine(compilerRoot, relativePath);

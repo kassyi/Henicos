@@ -221,31 +221,36 @@ public class NarrowIntegerDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NarrowCompoundAndStep_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_narrowCompoundAndStep);
+    public void NarrowInteger_CompoundAndStep_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_narrowCompoundAndStep);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NarrowEnumAndSignedEnum_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_narrowEnumAndSignedEnum);
+    public void NarrowInteger_EnumAndSignedEnum_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_narrowEnumAndSignedEnum);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MixedSignDivRem_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_mixedSignDivRem);
+    public void NarrowInteger_MixedSignDivRem_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mixedSignDivRem);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BitOpsReturnSign_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_bitOpsReturnSign);
+    public void NarrowInteger_BitOpsReturnSign_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_bitOpsReturnSign);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TargetEvaluationOrder_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_targetEvaluationOrder);
+    public void NarrowInteger_TargetEvaluationOrder_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_targetEvaluationOrder);
 
     private static int[] NarrowIntValues(DiffRandom rng, int count) =>
         DiffValues.Mixed(rng, count, s_narrowAndIntBoundaries, static r => unchecked((int)r.NextUInt64()));

@@ -15,27 +15,27 @@ public class HoistedNameIdentityTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BarrierLocalSameNameInitializerKernel_PreservesMemberAndLocal() =>
+    public void Execute_BarrierLocalSameNameInitializer_PreservesMemberAndLocal() =>
         AssertInitializerSameName();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BarrierLocalSameNameWithKernel_PreservesMemberAndLocal() =>
+    public void Execute_BarrierLocalSameNameWith_PreservesMemberAndLocal() =>
         AssertWithSameName();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BarrierLocalSameNameMemberAccessKernel_PreservesMemberAndLocal() =>
+    public void Execute_BarrierLocalSameNameMemberAccess_PreservesMemberAndLocal() =>
         AssertMemberAccessSameName();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BarrierLocalSameNameLambdaParameterKernel_DoesNotCaptureHoistedLocal() =>
+    public void Execute_BarrierLocalSameNameLambdaParameter_DoesNotCaptureHoistedLocal() =>
         AssertLambdaParameterSameName();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SiblingBlockSameLabelKernel_BranchesToEachBlockLabel() =>
+    public void Execute_SiblingBlockSameLabel_BranchesToEachBlockLabel() =>
         AssertSiblingBlockSameLabel();
 
     internal static void AssertInitializerSameName()

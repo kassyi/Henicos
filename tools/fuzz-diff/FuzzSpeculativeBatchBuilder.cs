@@ -312,54 +312,7 @@ public static class FuzzSpeculativeBatchBuilder
 
         for (int i = statements.Count - 1; i >= 0; i--)
         {
-            var stmt = statements[i];
-            if (removableSet.Contains(i))
-            {
-                if (stmt is LocalDeclarationStatementSyntax { Declaration.Variables.Count: 1 } localDecl)
-                {
-                    var v = localDecl.Declaration.Variables[0];
-                    if (!liveVars.Contains(v.Identifier.ValueText) &&
-                        (v.Initializer is null || !HasSideEffect(v.Initializer.Value)))
-                    {
-                        deadIndices.Add(i);
-                        continue;
-                    }
-                }
-                else if (stmt is ExpressionStatementSyntax
-                {
-                    Expression: AssignmentExpressionSyntax
-                    {
-                        RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
-                        Left: IdentifierNameSyntax leftId,
-                    } simpleAssign,
-                })
-                {
-                    if (!liveVars.Contains(leftId.Identifier.ValueText) && !HasSideEffect(simpleAssign.Right))
-                    {
-                        deadIndices.Add(i);
-                        continue;
-                    }
-
-                    liveVars.Remove(leftId.Identifier.ValueText);
-                    foreach (var node in simpleAssign.Right.DescendantNodesAndSelf())
-                    {
-                        if (node is IdentifierNameSyntax id)
-                        {
-                            liveVars.Add(id.Identifier.ValueText);
-                        }
-                    }
-
-                    continue;
-                }
-            }
-
-            foreach (var node in stmt.DescendantNodes())
-            {
-                if (node is IdentifierNameSyntax id)
-                {
-                    liveVars.Add(id.Identifier.ValueText);
-                }
-            }
+            ProcessStatementLiveness(statements[i], removableSet, i, liveVars, deadIndices);
         }
 
         if (deadIndices.Count > 0 && deadIndices.Count < removableIndices.Count)
@@ -367,6 +320,60 @@ public static class FuzzSpeculativeBatchBuilder
             deadIndices.Sort();
             var mutated = FuzzSyntaxHelpers.RemoveStatementsFromMethodNode(kernelMethod, new HashSet<int>(deadIndices));
             tryAdd("StripDeadStores", deadIndices, mutated);
+        }
+    }
+
+    private static void ProcessStatementLiveness(
+        StatementSyntax stmt,
+        HashSet<int> removableSet,
+        int index,
+        HashSet<string> liveVars,
+        List<int> deadIndices)
+    {
+        if (removableSet.Contains(index))
+        {
+            if (stmt is LocalDeclarationStatementSyntax { Declaration.Variables.Count: 1 } localDecl)
+            {
+                var v = localDecl.Declaration.Variables[0];
+                if (!liveVars.Contains(v.Identifier.ValueText) &&
+                    (v.Initializer is null || !HasSideEffect(v.Initializer.Value)))
+                {
+                    deadIndices.Add(index);
+                    return;
+                }
+            }
+            else if (stmt is ExpressionStatementSyntax
+            {
+                Expression: AssignmentExpressionSyntax
+                {
+                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
+                    Left: IdentifierNameSyntax leftId,
+                } simpleAssign,
+            })
+            {
+                if (!liveVars.Contains(leftId.Identifier.ValueText) && !HasSideEffect(simpleAssign.Right))
+                {
+                    deadIndices.Add(index);
+                    return;
+                }
+
+                liveVars.Remove(leftId.Identifier.ValueText);
+                AddReferencedVariables(simpleAssign.Right, liveVars);
+                return;
+            }
+        }
+
+        AddReferencedVariables(stmt, liveVars);
+    }
+
+    private static void AddReferencedVariables(SyntaxNode node, HashSet<string> liveVars)
+    {
+        foreach (var desc in node.DescendantNodesAndSelf())
+        {
+            if (desc is IdentifierNameSyntax id)
+            {
+                liveVars.Add(id.Identifier.ValueText);
+            }
         }
     }
 
@@ -507,6 +514,18 @@ public static class FuzzSpeculativeBatchBuilder
         using var writer = new SourceWriter();
         FuzzCaseEmitter.AppendKernelsFileHeader(writer, "Kassyi.GSharp.Tests.Shared.Differential");
 
+        AppendEnumsAndStructs(writer, originalRoot);
+
+        using (writer.Scope("public static partial class FuzzBatchKernels"))
+        {
+            AppendBatchClassBody(writer, originalRoot, candidates);
+        }
+
+        return writer.ToString();
+    }
+
+    private static void AppendEnumsAndStructs(SourceWriter writer, CompilationUnitSyntax originalRoot)
+    {
         var existingEnums = new List<EnumDeclarationSyntax>();
         var existingStructs = new List<StructDeclarationSyntax>();
         foreach (var node in originalRoot.DescendantNodes())
@@ -548,28 +567,32 @@ public static class FuzzSpeculativeBatchBuilder
             FuzzCompositeModel.AppendCompositeStructDeclarations(writer);
             writer.AppendLine();
         }
+    }
 
-        using (writer.Scope("public static partial class FuzzBatchKernels"))
+    private static void AppendBatchClassBody(
+        SourceWriter writer,
+        CompilationUnitSyntax originalRoot,
+        IReadOnlyList<SpeculativeBatchCandidate> candidates)
+    {
+        foreach (var helper in FuzzSyntaxHelpers.GetDeviceFunctionMethods(originalRoot))
         {
-            foreach (var helper in FuzzSyntaxHelpers.GetDeviceFunctionMethods(originalRoot))
+            writer.AppendLine(FuzzSyntaxHelpers.RenderFullNode(helper).AsSpan().TrimEnd().ToString());
+            writer.AppendLine();
+        }
+
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            if (i > 0)
             {
-                writer.AppendLine(FuzzSyntaxHelpers.RenderFullNode(helper).AsSpan().TrimEnd().ToString());
                 writer.AppendLine();
             }
 
-            for (int i = 0; i < candidates.Count; i++)
-            {
-                if (i > 0)
-                {
-                    writer.AppendLine();
-                }
-
-                writer.AppendLine(string.Create(CultureInfo.InvariantCulture, $"// Speculative candidate #{candidates[i].Index:D2}: {candidates[i].CandidateDescription}"));
-                writer.AppendLine(candidates[i].CandidateKernelMethodSource.AsSpan().TrimEnd().ToString());
-            }
+            string candidateComment = string.Create(
+                CultureInfo.InvariantCulture,
+                $"// Speculative candidate #{candidates[i].Index:D2}: {candidates[i].CandidateDescription}");
+            writer.AppendLine(candidateComment);
+            writer.AppendLine(candidates[i].CandidateKernelMethodSource.AsSpan().TrimEnd().ToString());
         }
-
-        return writer.ToString();
     }
 
 }

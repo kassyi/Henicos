@@ -28,7 +28,7 @@ public class GpuFixedUIntTests
     }
 
     [Fact]
-    public void GpuUInt128_BoundaryValues_MaxAndMultiLimb()
+    public void Compare_GpuUInt128MaxAndMultiLimb_VerifiesOrderingAndHashCode()
     {
         GpuUInt128 max = [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu];
         GpuUInt128 almostMax = [0xFFFFFFFEu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu];
@@ -57,7 +57,7 @@ public class GpuFixedUIntTests
     }
 
     [Fact]
-    public void GpuUInt256_BoundaryValues_MaxAndMultiLimb()
+    public void Compare_GpuUInt256MaxAndMultiLimb_VerifiesOrdering()
     {
         GpuUInt256 max = [0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu];
         GpuUInt256 almostMax = [0xFFFFFFFEu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu];

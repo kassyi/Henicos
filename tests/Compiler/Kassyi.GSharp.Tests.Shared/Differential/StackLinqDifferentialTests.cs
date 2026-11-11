@@ -437,79 +437,92 @@ public class StackLinqDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_Int32StackLinqMatrix_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_int32Matrix);
+    public void StackLinq_Int32Matrix_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_int32Matrix);
 
     [SkippableFact]
-    public void Test_Int32Average_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_int32Average);
+    public void StackLinq_Int32Average_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_int32Average);
 
     [SkippableFact]
-    public void Test_SingleFusedAverage_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleFusedAverage);
+    public void StackLinq_SingleFusedAverage_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singleFusedAverage);
 
     [SkippableFact]
-    public void Test_SingleUnfusedAverage_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleUnfusedAverage);
+    public void StackLinq_SingleUnfusedAverage_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singleUnfusedAverage);
 
     [SkippableFact]
-    public void Test_FloatingExtremaAndZeroContains_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_floatingExtremaAndZeroContains);
+    public void StackLinq_FloatingExtremaAndZeroContains_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_floatingExtremaAndZeroContains);
 
     [SkippableFact]
-    public void Test_ContainsNaN_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_containsNaN);
+    public void StackLinq_ContainsNaN_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_containsNaN);
 
     [SkippableFact]
-    public void Test_ContainsEvaluationOrder_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_containsEvaluationOrder);
+    public void StackLinq_ContainsEvaluationOrder_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_containsEvaluationOrder);
 
     [SkippableFact]
-    public void Test_UnfusedSelectEvaluation_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_unfusedSelectEvaluation);
+    public void StackLinq_UnfusedSelectEvaluation_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_unfusedSelectEvaluation);
 
     [SkippableFact]
-    public void Test_NarrowAndInt64StackLinq_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_narrowAndInt64);
+    public void StackLinq_NarrowAndInt64_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_narrowAndInt64);
 
     [SkippableFact]
-    public void Test_FloatSequentialSum_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_floatSequentialSum);
+    public void StackLinq_FloatSequentialSum_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_floatSequentialSum);
 
     [SkippableFact]
-    public void Test_DoubleSequentialSum_MatchesTheReferenceOnEveryPath() => DifferentialRunner.Run(s_doubleSequentialSum);
+    public void StackLinq_DoubleSequentialSum_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_doubleSequentialSum);
 
     [SkippableFact]
-    public void Test_StackLinqFusedFirst_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fusedFirst);
+    public void StackLinq_FusedFirst_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fusedFirst);
 
     [SkippableFact]
-    public void Test_StackLinqFusedFirstPredicate_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fusedFirstPred);
+    public void StackLinq_FusedFirstPredicate_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fusedFirstPred);
 
     [SkippableFact]
-    public void Test_StackLinqFusedLast_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fusedLast);
+    public void StackLinq_FusedLast_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fusedLast);
 
     [SkippableFact]
-    public void Test_StackLinqFusedLastPredicate_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fusedLastPred);
+    public void StackLinq_FusedLastPredicate_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_fusedLastPred);
 
     [SkippableFact]
-    public void Test_StackLinqSingleOneElement_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleOneElem);
+    public void StackLinq_SingleOneElement_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleOneElem);
 
     [SkippableFact]
-    public void Test_StackLinqSinglePredicateUnique_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singlePredUnique);
+    public void StackLinq_SinglePredicateUnique_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singlePredUnique);
 
     [SkippableFact]
-    public void Test_StackLinqSingleOrDefaultEmpty_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleOrDefaultEmpty);
+    public void StackLinq_SingleOrDefaultEmpty_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singleOrDefaultEmpty);
 
     [SkippableFact]
-    public void Test_StackLinqSingleOrDefaultOneElement_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleOrDefaultOneElem);
+    public void StackLinq_SingleOrDefaultOneElement_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singleOrDefaultOneElem);
 
     [SkippableFact]
-    public void Test_StackLinqSingleOrDefaultPredicateNone_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_singleOrDefaultPredNone);
+    public void StackLinq_SingleOrDefaultPredicateNone_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_singleOrDefaultPredNone);
 
     [SkippableFact]
-    public void Test_StackLinqElementAtZero_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_elementAt0);
+    public void StackLinq_ElementAtZero_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_elementAt0);
 
     [SkippableFact]
-    public void Test_StackLinqElementAtTwo_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_elementAt2);
+    public void StackLinq_ElementAtTwo_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_elementAt2);
 
     [SkippableFact]
-    public void Test_StackLinqTakeWhileSideEffects_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_takeWhileSideEffects);
+    public void StackLinq_TakeWhileSideEffects_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_takeWhileSideEffects);
 
     [SkippableFact]
-    public void Test_StackLinqSkipWhileSideEffects_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_skipWhileSideEffects);
+    public void StackLinq_SkipWhileSideEffects_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_skipWhileSideEffects);
 
     [SkippableFact]
-    public void Test_ParallelSumStackLinq_MatchesTheReferenceOnEveryPath() =>
+    public void StackLinq_ParallelSum_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_parallelSum);
 
 

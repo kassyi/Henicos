@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 public class WarpLevelConcurrencyTests
 {
     [SkippableFact]
-    public void Test_WarpReduceSum_CalculatesCorrectly()
+    public void WarpReduceSum_CrossLaneButterfly_CalculatesCorrectSum()
     {
         int numWarps = 4;
         int threadsPerWarp = 32;
@@ -38,7 +38,7 @@ public class WarpLevelConcurrencyTests
     }
 
     [SkippableFact]
-    public void Test_WarpPrimitives_GenerateAndCompile()
+    public void WarpPrimitives_PtxIntrinsics_GeneratesAndCompilesValidPtx()
     {
         int length = 32;
         var input = new int[length];

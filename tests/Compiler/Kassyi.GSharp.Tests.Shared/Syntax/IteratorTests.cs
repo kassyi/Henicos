@@ -20,7 +20,7 @@ public class IteratorTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Range_SumsArithmeticProgressionPerThread()
+    public void Enumerate_RangeIterator_SumsArithmeticProgressionPerThread()
     {
         const int threads = 8;
         const int count = 4;
@@ -36,7 +36,7 @@ public class IteratorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Evens_FiltersArrayWithForEachAndYield()
+    public void Enumerate_EvensIterator_FiltersArrayWithForEachAndYield()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8];
         var output = new int[1];
@@ -48,7 +48,7 @@ public class IteratorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Fibonacci_PreservesLocalsAcrossYields()
+    public void Enumerate_FibonacciIterator_PreservesLocalsAcrossYields()
     {
         var lastOutput = new int[1];
         var sumOutput = new int[1];
@@ -64,7 +64,7 @@ public class IteratorTests : TranspilerTestBase
     [InlineData(0, 0)]
     [InlineData(1, 0)]
     [InlineData(5, 10)]
-    public void Test_Countdown_EnumeratingSameLocalTwiceRestoresInitialParameter(int n, int expectedSum)
+    public void Enumerate_CountdownTwice_RestoresInitialParameter(int n, int expectedSum)
     {
         var firstSum = new int[1];
         var secondSum = new int[1];
@@ -80,7 +80,7 @@ public class IteratorTests : TranspilerTestBase
     [InlineData(0, 0)]
     [InlineData(5, 6)]
     [InlineData(100, 21)]
-    public void Test_TakeUntil_YieldBreakTerminatesEnumerationEarly(int limit, int expectedSum)
+    public void Enumerate_TakeUntilWithYieldBreak_TerminatesEarly(int limit, int expectedSum)
     {
         int[] data = [1, 2, 3, 6, 9];
         var output = new int[1];
@@ -92,7 +92,7 @@ public class IteratorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Doubled_NestedIteratorForEachDoublesRangeSum()
+    public void Enumerate_DoubledNestedIterator_DoublesRangeSum()
     {
         const int threads = 8;
         const int count = 4;
@@ -111,7 +111,7 @@ public class IteratorTests : TranspilerTestBase
     [InlineData(0, 0)]
     [InlineData(3, 63)]
     [InlineData(4, 106)]
-    public void Test_StructItems_YieldsNestedUserDefinedStructs(int count, int expectedBaseSum)
+    public void Enumerate_StructItemsIterator_YieldsNestedUserDefinedStructs(int count, int expectedBaseSum)
     {
         const int threads = 4;
         var output = new int[threads];
@@ -128,7 +128,7 @@ public class IteratorTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(5, 3, -1, 39)]
     [InlineData(10, 0, 3, 1032)]
-    public void Test_ConsumerControlFlow_BreakContinueReturnAndNestedLoops(
+    public void Enumerate_ConsumerControlFlow_HandlesBreakContinueAndReturn(
         int stopAt,
         int skipVal,
         int earlyReturnAt,
@@ -147,7 +147,7 @@ public class IteratorTests : TranspilerTestBase
     [InlineData(1, 2, 1125)]
     [InlineData(0, 99, 1552)]
     [InlineData(9, 2, 0)]
-    public void Test_MultiYieldLabelAndShadow_DuplicatesBodyWithDistinctLabelsAndHygienicNames(
+    public void Enumerate_MultiYieldLabelAndShadow_DuplicatesBodyWithHygienicNames(
         int mode,
         int baseVal,
         int expected)
@@ -163,7 +163,7 @@ public class IteratorTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(1, 30, 100)]
     [InlineData(2, 100, 100)]
-    public void Test_UsingAndSpan_DisposesOnEarlyBreakAndNormalCompletion(
+    public void Enumerate_UsingAndSpan_DisposesOnEarlyBreakAndNormalCompletion(
         int maxItems,
         int expectedSum,
         int expectedDisposeMarker)
@@ -180,7 +180,7 @@ public class IteratorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_NamedAndDefaultArgs_EvaluatesLexicallyAndAppliesDefaults()
+    public void Enumerate_NamedAndDefaultArgs_EvaluatesLexicallyAndAppliesDefaults()
     {
         var output = new int[3];
         var evalLog = new int[4];
@@ -193,7 +193,7 @@ public class IteratorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_WideningElementType_VarUsesDeclaredIteratorElementType()
+    public void Enumerate_WideningElementType_VarUsesDeclaredIteratorElementType()
     {
         var output = new long[1];
 
@@ -204,7 +204,7 @@ public class IteratorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InlineArrayForEach_EnumeratesBufferElementsInsideIterator()
+    public void Enumerate_InlineArrayForEach_EnumeratesBufferElementsInsideIterator()
     {
         const int threads = 4;
         const int scale = 3;
@@ -220,7 +220,7 @@ public class IteratorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SeventeenLevels_NestedIteratorChainMatchesExpectedValues()
+    public void Enumerate_SeventeenLevels_NestedChainMatchesExpectedValues()
     {
         const int threads = 8;
         var sixteenOut = new int[threads];
@@ -241,7 +241,7 @@ public class IteratorTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ExternalAssemblyIterator_ReportsUnsupportedSyntax()
+    public async Task Transpile_ExternalAssemblyIterator_ReportsUnsupportedSyntax()
     {
         var externalLibrarySource = RoslynTestUtility.ReadTestCase("Analyzers/IteratorExternalAssembly_Lib.cs");
         var consumerSource = RoslynTestUtility.ReadTestCase("Analyzers/IteratorExternalAssembly_Consumer.cu.cs");
@@ -296,7 +296,7 @@ public class IteratorTests : TranspilerTestBase
 #if GSHARP_CPU
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_AllIteratorKernels_MatchNativeSemantics()
+    public void EnumerateManaged_AllIteratorKernels_MatchesNativeSemantics()
     {
         bool previousState = CpuKernelLoader.ForceManagedExecution;
         CpuKernelLoader.ForceManagedExecution = true;

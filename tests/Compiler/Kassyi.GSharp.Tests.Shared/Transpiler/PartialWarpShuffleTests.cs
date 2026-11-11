@@ -30,7 +30,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ShuffleDown_LaneBeyondPartialWarp_ThrowsWithPlace(bool forceManaged)
+    public void ShuffleDown_LaneBeyondPartialWarp_ThrowsWithPlace(bool forceManaged)
     {
         SkipUndefinedOnCuda();
         var result = new int[9];
@@ -47,7 +47,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ShuffleXor_OneLanePastPartialWarp_ThrowsWithPlace(bool forceManaged)
+    public void ShuffleXor_OneLanePastPartialWarp_ThrowsWithPlace(bool forceManaged)
     {
         SkipUndefinedOnCuda();
         var result = new int[9];
@@ -65,7 +65,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ShuffleDown_FullWarp_ReadsLaneOrKeepsOwnValueOutsideWidth(bool forceManaged)
+    public void ShuffleDown_FullWarp_ReadsLaneOrKeepsOwnValueOutsideWidth(bool forceManaged)
     {
         var result = new int[32];
 
@@ -78,7 +78,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ShuffleXor_EveryLaneExists_ReadsPartnerLane(bool forceManaged)
+    public void ShuffleXor_EveryLaneExists_ReadsPartnerLane(bool forceManaged)
     {
         var result = new int[16];
 
@@ -100,7 +100,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(true, 13)]
     [InlineData(false, 31)]
     [InlineData(true, 31)]
-    public void Test_ShuffleIdx_SourceLaneOutsideWidth_WrapsInSegment(bool forceManaged, int srcLane)
+    public void ShuffleIdx_SourceLaneOutsideWidth_WrapsInSegment(bool forceManaged, int srcLane)
     {
         const int Width = 8;
         var result = new int[32];
@@ -118,7 +118,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(true, 64)]
     [InlineData(false, 0)]
     [InlineData(true, 0)]
-    public void Test_ShuffleWidth_NotAPowerOfTwoUpTo32_ThrowsWithPlace(bool forceManaged, int width)
+    public void ShuffleWidth_NotAPowerOfTwoUpTo32_ThrowsWithPlace(bool forceManaged, int width)
     {
         SkipUndefinedOnCuda();
         var result = new int[32];
@@ -140,7 +140,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(true, 4)]
     [InlineData(false, 32)]
     [InlineData(true, 32)]
-    public void Test_ShuffleWidth_PowerOfTwo_ShiftsInSegment(bool forceManaged, int width)
+    public void ShuffleWidth_PowerOfTwo_ShiftsInSegment(bool forceManaged, int width)
     {
         var result = new int[32];
 
@@ -157,7 +157,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(true, 8)]
     [InlineData(false, 24)]
     [InlineData(true, 24)]
-    public void Test_ShuffleXor_PartnerInLaterGroup_KeepsOwnValue(bool forceManaged, int laneMask)
+    public void ShuffleXor_PartnerInLaterGroup_KeepsOwnValue(bool forceManaged, int laneMask)
     {
         var result = new int[32];
 
@@ -176,7 +176,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(true, 3u, 8)]
     [InlineData(false, 16u, 32)]
     [InlineData(true, 16u, 32)]
-    public void Test_ShuffleUp_LanesAtTheStartOfEachGroup_KeepOwnValue(bool forceManaged, uint delta, int width)
+    public void ShuffleUp_LanesAtStartOfEachGroup_KeepsOwnValue(bool forceManaged, uint delta, int width)
     {
         var result = new int[32];
 
@@ -195,7 +195,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
-    public void Test_ShuffleSync_NamedArgumentsInAnyOrder_ReachTheirParameters(bool forceManaged, bool valueByName)
+    public void ShuffleSync_NamedArgumentsInAnyOrder_ReachesParameters(bool forceManaged, bool valueByName)
     {
         var result = new int[32];
 
@@ -221,7 +221,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(true, 33u)]
     [InlineData(false, 0xFFFFFFE1u)]
     [InlineData(true, 0xFFFFFFE1u)]
-    public void Test_ShuffleDown_DeltaOf32OrMore_UsesItsLowFiveBits(bool forceManaged, uint delta)
+    public void ShuffleDown_DeltaOf32OrMore_UsesLowFiveBits(bool forceManaged, uint delta)
     {
         var result = new int[32];
 
@@ -237,7 +237,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(true, 33u, 32)]
     [InlineData(false, 35u, 8)]
     [InlineData(true, 35u, 8)]
-    public void Test_ShuffleUp_DeltaOf32OrMore_UsesItsLowFiveBits(bool forceManaged, uint delta, int width)
+    public void ShuffleUp_DeltaOf32OrMore_UsesLowFiveBits(bool forceManaged, uint delta, int width)
     {
         var result = new int[32];
 
@@ -257,7 +257,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(true, -1)]
     [InlineData(false, 40)]
     [InlineData(true, 40)]
-    public void Test_ShuffleXor_LaneMaskOf32OrMore_UsesItsLowFiveBits(bool forceManaged, int laneMask)
+    public void ShuffleXor_LaneMaskOf32OrMore_UsesLowFiveBits(bool forceManaged, int laneMask)
     {
         var result = new int[32];
 
@@ -276,7 +276,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(9, true)]
     [InlineData(33, true)]
     [InlineData(64, true)]
-    public void Test_ActiveMask_PartialWarp_HasOnlyLanesThatExist(int threads, bool forceManaged)
+    public void ActiveMask_PartialWarp_HasOnlyLanesThatExist(int threads, bool forceManaged)
     {
         var result = new uint[threads];
 
@@ -295,7 +295,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [InlineData(40, false)]
     [InlineData(9, true)]
     [InlineData(40, true)]
-    public void Test_ActiveMask_InDeviceFunction_HasOnlyLanesThatExist(int threads, bool forceManaged)
+    public void ActiveMask_InDeviceFunction_HasOnlyLanesThatExist(int threads, bool forceManaged)
     {
         var result = new uint[threads];
 
@@ -311,7 +311,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_ActiveMask_TwoDimensionalBlock_FollowsTheLinearThreadIndex(bool forceManaged)
+    public void ActiveMask_TwoDimensionalBlock_FollowsLinearThreadIndex(bool forceManaged)
     {
         var result = new uint[35];
 
@@ -324,7 +324,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_MatchAny_CallerOutsideMask_ThrowsWithPlace(bool forceManaged)
+    public void MatchAny_CallerOutsideMask_ThrowsWithPlace(bool forceManaged)
     {
         SkipUndefinedOnCuda();
         var result = new uint[32];
@@ -341,7 +341,7 @@ public class PartialWarpShuffleTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_MatchAll_CallerOutsideMask_ThrowsWithPlace(bool forceManaged)
+    public void MatchAll_CallerOutsideMask_ThrowsWithPlace(bool forceManaged)
     {
         SkipUndefinedOnCuda();
         var result = new uint[32];

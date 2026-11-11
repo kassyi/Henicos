@@ -58,11 +58,12 @@ internal readonly ref struct KernelBarrierValidator(
 
     /// <summary>
     /// Visits every node of the body once: the syntax-only prohibitions are reported where they are found, and the
-    /// barriers, jumps, labels and tracked locals are collected for the later checks.
+    /// barriers, jumps, labels and tracked locals are collected for the later checks. A call that C# removes and its
+    /// arguments never run, so they hold no barrier (<see cref="RemovedCalls"/>).
     /// </summary>
     private void ScanKernelBody()
     {
-        foreach (var node in methodDecl.DescendantNodes())
+        foreach (var node in RemovedCalls.DescendantNodesThatRun(methodDecl, semanticModel))
         {
             switch (node)
             {
