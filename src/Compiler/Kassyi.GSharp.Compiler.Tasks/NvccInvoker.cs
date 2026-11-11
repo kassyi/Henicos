@@ -55,7 +55,7 @@ internal static class NvccInvoker
         return args.ToString();
     }
 
-    public static bool Run(
+    public static bool TryRun(
         TaskLoggingHelper log,
         IProcessRunner processRunner,
         string nvccPath,

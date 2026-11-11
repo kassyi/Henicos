@@ -65,7 +65,9 @@ public class IrClassificationEquivalenceTests(ITestOutputHelper output)
             report.AddRange(differences.OrderBy(static m => m, StringComparer.Ordinal).Select(static m => "  " + m));
         }
 
-        var receivedPath = RepositoryPaths.Combine("tmp", "IrClassificationEquivalence.received.txt");
+        // One file per test assembly: Tests.Cpu and Tests.Cuda both compile this test and may run together
+        var assembly = typeof(IrClassificationEquivalenceTests).Assembly.GetName().Name;
+        var receivedPath = RepositoryPaths.Combine("tmp", $"IrClassificationEquivalence.{assembly}.received.txt");
         Directory.CreateDirectory(Path.GetDirectoryName(receivedPath) ?? ".");
         File.WriteAllLines(receivedPath, report);
         output.WriteLine("Differences: " + receivedPath);
@@ -81,7 +83,8 @@ public class IrClassificationEquivalenceTests(ITestOutputHelper output)
         var expected = File.Exists(expectedPath) ? File.ReadAllText(expectedPath).Replace("\r", "") : "";
         if (expected != actual)
         {
-            var receivedPath = RepositoryPaths.Combine("tmp", "IrEffectDifferences.received.txt");
+            var assembly = typeof(IrClassificationEquivalenceTests).Assembly.GetName().Name;
+            var receivedPath = RepositoryPaths.Combine("tmp", $"IrEffectDifferences.{assembly}.received.txt");
             File.WriteAllText(receivedPath, actual);
             output.WriteLine("Received counts: " + receivedPath);
         }

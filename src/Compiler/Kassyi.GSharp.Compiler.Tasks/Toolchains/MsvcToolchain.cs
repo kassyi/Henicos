@@ -93,7 +93,7 @@ public sealed class MsvcToolchain : INativeToolchain
     }
 
     /// <inheritdoc />
-    public bool CompileCppToSharedLibrary(
+    public bool TryCompileCppToSharedLibrary(
         string sourcePath,
         string outputPath,
         string architecture,

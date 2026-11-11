@@ -14,5 +14,9 @@ internal static class HostTypeNames
     public const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
     public const string GCHandle = "global::System.Runtime.InteropServices.GCHandle";
     public const string GCHandleType = "global::System.Runtime.InteropServices.GCHandleType";
+    public const string StructLayout = "global::System.Runtime.InteropServices.StructLayout";
+    public const string LayoutKind = "global::System.Runtime.InteropServices.LayoutKind";
+    public const string FieldOffset = "global::System.Runtime.InteropServices.FieldOffset";
+    public const string PointerList = "global::System.Collections.Generic.List<global::System.IntPtr>";
     public const string ArrayPoolShared = "global::System.Buffers.ArrayPool<byte>.Shared";
 }

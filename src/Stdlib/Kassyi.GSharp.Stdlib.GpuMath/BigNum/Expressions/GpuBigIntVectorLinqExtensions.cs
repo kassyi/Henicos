@@ -75,6 +75,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <param name="source">The input vectorized expression (dividend).</param>
     /// <param name="scalar">The scalar divisor value.</param>
     /// <returns>A new vectorized expression representing the scalar division.</returns>
+    /// <remarks>
+    /// The evaluation throws <see cref="DivideByZeroException"/> when <paramref name="scalar"/> is zero and the vector
+    /// has at least one element; as in System.Linq, a zero divisor over no element (an empty vector, or a <c>Where</c>
+    /// that selects none) divides nothing and does not throw.
+    /// </remarks>
     public static IGpuBigIntVectorExpression SelectDivide(
         this IGpuBigIntVectorExpression source,
         GpuBigInt scalar) =>
@@ -86,6 +91,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <param name="source">The input vectorized expression (dividend).</param>
     /// <param name="scalar">The scalar divisor value.</param>
     /// <returns>A new vectorized expression representing the scalar modulo operation.</returns>
+    /// <remarks>
+    /// The evaluation throws <see cref="DivideByZeroException"/> when <paramref name="scalar"/> is zero and the vector
+    /// has at least one element; as in System.Linq, a zero divisor over no element (an empty vector, or a <c>Where</c>
+    /// that selects none) divides nothing and does not throw.
+    /// </remarks>
     public static IGpuBigIntVectorExpression SelectModulo(
         this IGpuBigIntVectorExpression source,
         GpuBigInt scalar) =>
@@ -106,6 +116,11 @@ public static class GpuBigIntVectorLinqExtensions
     /// <param name="source">The input vectorized expression (dividend).</param>
     /// <param name="divisor">The 32-bit unsigned integer divisor.</param>
     /// <returns>A new vectorized expression representing the element-wise 32-bit scalar division.</returns>
+    /// <remarks>
+    /// The evaluation throws <see cref="DivideByZeroException"/> when <paramref name="divisor"/> is zero and the vector
+    /// has at least one element; as in System.Linq, a zero divisor over no element (an empty vector, or a <c>Where</c>
+    /// that selects none) divides nothing and does not throw.
+    /// </remarks>
     public static IGpuBigIntVectorExpression SelectDivideByUInt32(
         this IGpuBigIntVectorExpression source,
         uint divisor) =>

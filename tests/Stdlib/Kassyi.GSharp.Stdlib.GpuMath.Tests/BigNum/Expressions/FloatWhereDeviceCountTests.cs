@@ -163,6 +163,112 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
         Assert.Equal(-1.0, ToDouble(result.GetElement(1)));
     }
 
+    private static readonly string[] s_scalarDivisions = ["SelectDivide", "SelectDivideByUInt32"];
+
+    public static TheoryData<string> ScalarDivisions() => new(s_scalarDivisions);
+
+    // Divisor 3 divides [6, 9] exactly; divisor 1 is the identity
+    public static TheoryData<string, uint> NonZeroDivisions()
+    {
+        var data = new TheoryData<string, uint>();
+        foreach (var operation in s_scalarDivisions)
+        {
+            data.Add(operation, 3);
+            data.Add(operation, 1);
+        }
+
+        return data;
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ScalarDivisions))]
+    public void ScalarDivision_ZeroDivisorAfterWhereSelectingNone_IsEmpty(string operation)
+    {
+        // P: System.Linq divides only the elements, so a zero divisor over a Where that selects nothing divides
+        // nothing: Count 0 and Sum 0.
+        // mutant: ZeroDivisorCheck.cs:28 `if (count.Read(workspace) > 0)` -> `if (count.Capacity > 0)`
+        // input: SelectDivide
+        // mutant: FloatVectorUnaryExpressions.cs:237 the `if (divisor == 0)` check moved back before the count is read
+        // input: SelectDivideByUInt32
+        var array = CreateArray([1, 2, 3]);
+
+        IGpuBigFloatVectorExpression Divided() => DivideBy(
+            array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsLessThan(Float(0))), operation, 0);
+
+        using var forCount = Divided();
+        using var forSum = Divided();
+        Assert.Equal(0, forCount.Count(_workspace));
+        Assert.Equal(0.0, ReadOwned(forSum.Sum(_workspace)));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [MemberData(nameof(ScalarDivisions))]
+    public void ScalarDivision_ZeroDivisorAfterWhereSelectingSome_ThrowsDivideByZeroException(string operation)
+    {
+        // P: a zero divisor throws as soon as one element is divided, as System.Linq does (one of three selected).
+        // mutant: ZeroDivisorCheck.cs:30 `throw new DivideByZeroException();` removed
+        // input: SelectDivide
+        // mutant: FloatVectorUnaryExpressions.cs:231 `if (count == 0)` -> `if (count <= 1)`
+        // input: SelectDivideByUInt32
+        // equivalent: removing the check at FloatVectorUnaryExpressions.cs:237 `if (divisor == 0)`; the element
+        // division throws the same exception
+        var array = CreateArray([-3, 1, 2]);
+
+        using var divided = DivideBy(
+            array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsLessThan(Float(0))), operation, 0);
+
+        Assert.Throws<DivideByZeroException>(() => divided.Sum(_workspace));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ScalarDivisions))]
+    public void ScalarDivision_ZeroDivisorOverAnEmptyVector_IsEmpty(string operation)
+    {
+        // P: a vector of capacity 0 has no element to divide: Count 0 and Sum 0, as System.Linq.
+        // No mutant: this passed before the fix too (Count and Sum of a capacity-0 float vector do not reach the
+        // division check); it fixes the result.
+        var array = CreateArray([]);
+
+        using var forCount = DivideBy(array.AsVectorizedEnumerable(), operation, 0);
+        using var forSum = DivideBy(array.AsVectorizedEnumerable(), operation, 0);
+        Assert.Equal(0, forCount.Count(_workspace));
+        Assert.Equal(0.0, ReadOwned(forSum.Sum(_workspace)));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [MemberData(nameof(NonZeroDivisions))]
+    public void ScalarDivision_NonZeroDivisorAfterWhere_DividesTheSelected(string operation, uint divisor)
+    {
+        // P: the zero divisor handling leaves the division by a non-zero divisor as it was: the sum of [6, 9] divided
+        // by 3 or 1 (exact in the significand).
+        // mutant: FloatVectorBinaryScalarExpressions.cs:66 `DispatchKernel(workspace, operands, (uint)elements);`
+        // removed
+        // input: SelectDivide
+        // mutant: FloatVectorUnaryExpressions.cs:237 `if (divisor == 0)` -> `if (divisor == 1)`
+        // input: SelectDivideByUInt32 by 1 (DivideByZeroException)
+        var array = CreateArray([6, -3, 9]);
+
+        using var divided = DivideBy(
+            array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsGreaterThan(Float(0))), operation,
+            divisor);
+
+        Assert.Equal(new[] { 6.0, 9.0 }.Select(v => v / divisor).Sum(), ReadOwned(divided.Sum(_workspace)));
+    }
+
+    // The scalar division named by the theory data
+    private IGpuBigFloatVectorExpression DivideBy(IGpuBigFloatVectorExpression source, string operation,
+        uint divisor) =>
+        operation switch
+        {
+            "SelectDivide" => source.SelectDivide(Float(divisor)),
+            "SelectDivideByUInt32" => source.SelectDivideByUInt32(divisor),
+            _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null)
+        };
+
     private GpuBigFloat Float(long value)
     {
         var magnitude = (ulong)Math.Abs(value);

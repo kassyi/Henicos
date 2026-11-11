@@ -17,8 +17,8 @@ namespace Kassyi.GSharp.Compiler.Ir.Classifying;
 /// <para>
 /// Where the syntax walk of <see cref="ExpressionEffects"/> reads a shape and the IR knows the meaning, the IR follows
 /// the meaning: a call of a struct member, and a computed property read, through the implicit <see langword="this"/>
-/// treat <see langword="this"/> as an explicit receiver does; a struct property used as a receiver calls its getter
-/// (both wrong on the syntax side, #1606); a discard is written by no one; the location of <see langword="this"/> and
+/// treat <see langword="this"/> as an explicit receiver does, and a struct property used as a receiver calls its
+/// getter, as in the syntax walk; a discard is written by no one; the location of <see langword="this"/> and
 /// of a field of a struct temporary reads nothing; the member an object initializer assigns belongs to the new value;
 /// the receiver of an extension method is an argument like the others, so a by-value receiver is not written.
 /// </para>
@@ -59,6 +59,18 @@ internal static class IrEffects
             walker.ReadRoot(root);
         }
 
+        return walker.ToEffects();
+    }
+
+    /// <summary>
+    /// The effects of evaluating <paramref name="expression"/> to the location it names and of writing that location:
+    /// a <see langword="ref"/> or <see langword="out"/> argument, an assignment target.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A call in the expression is not classified.</exception>
+    public static ExpressionEffects OfWrittenLocation(IrExpression expression, Compilation compilation)
+    {
+        var walker = new IrEffectWalker(compilation);
+        walker.WriteRoot(walker.AddLocation(expression));
         return walker.ToEffects();
     }
 }
