@@ -34,6 +34,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 | [ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftleftgpuworkspace-gpubiguint-int32-gpubiguint) | Launches `GpuBigIntKernels.ShiftLeftKernel` with decomposed word and bit offsets. |
 | [ShiftRight(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftrightgpuworkspace-gpubiguint-int32-gpubiguint) | Launches `GpuBigIntKernels.ShiftRightKernel` with decomposed word and bit offsets. |
 | [Square(GpuWorkspace, IntPtr, Int32)](#squaregpuworkspace-intptr-int32) | Computes in-place squaring by delegating to `GpuBigIntMath.Mul`. |
+| [DivideByUInt32(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#dividebyuint32gpuworkspace-gpubiguint-uint32-gpubiguint) | Divides a big integer by a 32-bit unsigned scalar, writes the quotient and returns the remainder. |
 | [IsZero(GpuWorkspace, GpuBigUInt)](#iszerogpuworkspace-gpubiguint) | Evaluates `GpuBigIntCmpKernels.IsZeroKernel` and returns `true` if all words are zero. |
 | [IsOne(GpuWorkspace, GpuBigUInt)](#isonegpuworkspace-gpubiguint) | Evaluates `GpuBigIntCmpKernels.IsOneKernel` and returns `true` if the operand equals `1`. |
 | [GetBitLength(GpuWorkspace, GpuBigUInt)](#getbitlengthgpuworkspace-gpubiguint) | Evaluates `GpuBigIntCmpKernels.GetBitLengthKernel` and returns the significant bit length. |
@@ -307,12 +308,39 @@ The destination buffer receiving `targetOperand >> shiftBits`.
 `CudaException`<br>
 Thrown when the kernel launch or temporary copy fails.
 
-## Square(GpuWorkspace, IntPtr, Int32)
+## DivideByUInt32(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)
 
-Computes in-place squaring of a multi-word buffer by wrapping `dataPtr` in a temporary `GpuBigUInt` view and delegating to `GpuBigIntMath.Mul`.
+Divides an arbitrary-precision unsigned integer by a 32-bit unsigned scalar, writes the quotient to `quotientBuffer`, and returns the remainder (`dividend % divisor`). Throws `DivideByZeroException` when `divisor` is 0.
 
 ```csharp
-public void Square(GpuWorkspace workspace, IntPtr dataPtr, int numWords);
+public uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor, GpuBigUInt quotientBuffer);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
+
+`dividend` _GpuBigUInt_<br>
+The dividend.
+
+`divisor` _UInt32_<br>
+The 32-bit unsigned scalar divisor.
+
+`quotientBuffer` _GpuBigUInt_<br>
+The destination buffer of the quotient.
+
+#### Returns
+
+_UInt32_<br>
+The remainder.
+
+## Square(GpuWorkspace, IntPtr, Int32)
+
+Squares the `logicalWords` words at `devicePointer`: copies them to a temporary `GpuBigUInt`, multiplies it by itself with `GpuBigIntMath.Mul`, and copies the `2 * logicalWords`-word product back to `devicePointer`, which must hold that many words. Returns `true`.
+
+```csharp
+public bool Square(GpuWorkspace workspace, IntPtr devicePointer, int logicalWords);
 ```
 
 #### Parameters
@@ -320,11 +348,16 @@ public void Square(GpuWorkspace workspace, IntPtr dataPtr, int numWords);
 `workspace` _GpuWorkspace_<br>
 The GPU workspace managing temporary buffers and the active CUDA stream.
 
-`dataPtr` _IntPtr_<br>
-The device pointer to the buffer to square in place.
+`devicePointer` _IntPtr_<br>
+The device pointer to the operand; it receives the product.
 
-`numWords` _Int32_<br>
-The word capacity of the operand buffer.
+`logicalWords` _Int32_<br>
+The word count of the operand.
+
+#### Returns
+
+_Boolean_<br>
+`true`.
 
 #### Exceptions
 

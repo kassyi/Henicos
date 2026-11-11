@@ -21,31 +21,17 @@ Contains the core GPU kernels, device functions, and prime/Barrett constants req
 public static partial class GpuBigIntNttKernels
 ```
 
-## Fields
-
-| Name | Description |
-| --- | --- |
-| `Prime1` | The first 32-bit NTT prime modulus (`4194304001`, i.e., $125 \cdot 2^{25} + 1$). |
-| `NttG1` | The primitive root (`3`) for `Prime1`. |
-| `Prime2` | The second 32-bit NTT prime modulus (`2717908993`, i.e., $81 \cdot 2^{25} + 1$). |
-| `NttG2` | The primitive root (`5`) for `Prime2`. |
-| `BarrettMagic1` | The Barrett reduction magic constant (`4398046510UL`, $\lfloor 2^{64} / \text{Prime1} \rfloor$) for `Prime1`. |
-| `BarrettMagic2` | The Barrett reduction magic constant (`6787108810UL`, $\lfloor 2^{64} / \text{Prime2} \rfloor$) for `Prime2`. |
+The NTT primes, the Barrett constants and the modular arithmetic device functions are members of `NttPrimeArithmetic` (`Prime1`, `Prime2`, `Prime3`, `NttG1`-`NttG3`, `BarrettMagic1`-`BarrettMagic3`, the Garner CRT constants, `ModAdd`, `ModSub`, `ModMulBarrett`, `ModMul`, `ModMul1`-`ModMul3`, `ModReduce64Barrett` and `ModPow`; see [Device Kernels](../00_index.md#device-kernels)). This class uses them through `using static NttPrimeArithmetic`.
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [ModAdd(uint, uint, uint)](#modadduint-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that computes modular addition `(operandA + operandB) mod primeModulus`. |
-| [ModSub(uint, uint, uint)](#modsubuint-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that computes modular subtraction `(operandA - operandB) mod primeModulus`. |
-| [ModMulBarrett(uint, uint, uint, ulong)](#modmulbarrettuint-uint-uint-ulong) | A GPU device function (`[GpuDeviceFunction]`) that computes modular multiplication using PTX 64-bit wide multiply and Barrett reduction. |
-| [ModMul1(uint, uint)](#modmul1uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that computes modular multiplication modulo `Prime1`. |
-| [ModMul2(uint, uint)](#modmul2uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that computes modular multiplication modulo `Prime2`. |
-| [ModPow(uint, uint, uint, ulong)](#modpowuint-uint-uint-ulong) | A GPU device function (`[GpuDeviceFunction]`) that computes modular exponentiation using binary exponentiation and Barrett reduction. |
 | [ExecuteNttSharedRow(NumberTheoreticTransform)](#executenttsharedrownumbertheoretictransform) | A GPU device function (`[GpuDeviceFunction]`) that performs shared-memory row-wise NTT butterfly stages. |
 | [ExecuteNttPointwiseSquare(uint[], uint[], int)](#executenttpointwisesquareuint-uint-int) | A GPU device function (`[GpuDeviceFunction]`) that squares dual-modulus NTT frequency-domain elements in place. |
 | [ExecuteNttPointwiseMultiply(uint[], uint[], uint[], uint[], int)](#executenttpointwisemultiplyuint-uint-uint-uint-int) | A GPU device function (`[GpuDeviceFunction]`) that multiplies dual-modulus NTT frequency-domain elements pointwise. |
 | [ExecuteCrtComputeCoefficients(uint[], uint[], uint[], uint[], int)](#executecrtcomputecoefficientsuint-uint-uint-uint-int) | A GPU device function (`[GpuDeviceFunction]`) that recombines dual-modulus inverse-NTT outputs using the Chinese Remainder Theorem (CRT). |
+| [ExecuteCrtComputeCoefficientsTransposed(uint[], uint[], uint[], uint[], int, int, int)](#executecrtcomputecoefficientstransposeduint-uint-uint-uint-int-int-int) | A GPU device function (`[GpuDeviceFunction]`) that computes the CRT coefficients like `ExecuteCrtComputeCoefficients`, reading the inverse-NTT results in the transposed order of an `n1` x `n2` six-step grid. |
 | [ExecuteResolveNttCarriesBlocked(uint[], uint[], uint[], uint[], int, int, int)](#executeresolventtcarriesblockeduint-uint-uint-uint-int-int-int) | A GPU device function (`[GpuDeviceFunction]`) that resolves 16-bit NTT convolution carries in a block-wise manner using Kogge-Stone prefix scans. |
 | [ResolveNttCarriesBlockedKernel(uint[], uint[], uint[], uint[], int, int, int)](#resolventtcarriesblockedkerneluint-uint-uint-uint-int-int-int) | A GPU kernel (`[GpuKernel]`) that resolves NTT carries in a block-wise manner. |
 | [ExecuteResolveNttCarriesApply(uint[], uint[], int, int, int)](#executeresolventtcarriesapplyuint-uint-int-int-int) | A GPU device function (`[GpuDeviceFunction]`) that applies resolved block carries across chunk boundaries. |
@@ -56,65 +42,6 @@ public static partial class GpuBigIntNttKernels
 | [ExecuteDualForwardNtt(DualNtt)](#executedualforwardnttdualntt) | A GPU device function (`[GpuDeviceFunction]`) that executes forward NTT transforms for both `Prime1` and `Prime2`. |
 | [ExecuteDualInverseNtt(DualNtt)](#executedualinversenttdualntt) | A GPU device function (`[GpuDeviceFunction]`) that executes inverse NTT transforms for both `Prime1` and `Prime2`. |
 | [_DiagnosticsWrapper_ExecuteNttSharedRow(uint[])](#_diagnosticswrapper_executenttsharedrowuint) | A diagnostic GPU kernel wrapper (`[GpuKernel]`) used to trigger snapshot transpilation of NTT device functions. |
-
-## ModAdd(uint, uint, uint)
-
-A GPU device function (`[GpuDeviceFunction]`) that computes modular addition `(operandA + operandB) mod primeModulus`.
-
-```csharp
-[GpuDeviceFunction]
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static uint ModAdd(uint operandA, uint operandB, uint primeModulus);
-```
-
-## ModSub(uint, uint, uint)
-
-A GPU device function (`[GpuDeviceFunction]`) that computes modular subtraction `(operandA - operandB) mod primeModulus`.
-
-```csharp
-[GpuDeviceFunction]
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static uint ModSub(uint operandA, uint operandB, uint primeModulus);
-```
-
-## ModMulBarrett(uint, uint, uint, ulong)
-
-A GPU device function (`[GpuDeviceFunction]`) that computes modular multiplication using PTX 64-bit wide multiply and Barrett reduction.
-
-```csharp
-[GpuDeviceFunction]
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static uint ModMulBarrett(uint operandA, uint operandB, uint primeModulus, ulong barrettMagic);
-```
-
-## ModMul1(uint, uint)
-
-A GPU device function (`[GpuDeviceFunction]`) that computes modular multiplication modulo `Prime1`.
-
-```csharp
-[GpuDeviceFunction]
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static uint ModMul1(uint operandA, uint operandB);
-```
-
-## ModMul2(uint, uint)
-
-A GPU device function (`[GpuDeviceFunction]`) that computes modular multiplication modulo `Prime2`.
-
-```csharp
-[GpuDeviceFunction]
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static uint ModMul2(uint operandA, uint operandB);
-```
-
-## ModPow(uint, uint, uint, ulong)
-
-A GPU device function (`[GpuDeviceFunction]`) that computes modular exponentiation using binary exponentiation and Barrett reduction.
-
-```csharp
-[GpuDeviceFunction]
-public static uint ModPow(uint baseValue, uint exponent, uint primeModulus, ulong barrettMagic);
-```
 
 ## ExecuteNttSharedRow(NumberTheoreticTransform)
 
@@ -150,6 +77,16 @@ A GPU device function (`[GpuDeviceFunction]`) that recombines dual-modulus inver
 ```csharp
 [GpuDeviceFunction]
 public static void ExecuteCrtComputeCoefficients([GpuReadOnly] uint[] deviceResult1, [GpuReadOnly] uint[] deviceResult2, uint[] uncarriedLow, uint[] uncarriedHigh, int transformLength);
+```
+
+## ExecuteCrtComputeCoefficientsTransposed(uint[], uint[], uint[], uint[], int, int, int)
+
+A GPU device function (`[GpuDeviceFunction]`) that recombines the two inverse-NTT results into 64-bit coefficients (`uncarriedLow`, `uncarriedHigh`) like `ExecuteCrtComputeCoefficients`, reading them in the transposed order of an `n1` x `n2` six-step grid.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteCrtComputeCoefficientsTransposed([GpuReadOnly] uint[] deviceResult1, [GpuReadOnly] uint[] deviceResult2,
+    uint[] uncarriedLow, uint[] uncarriedHigh, int transformLength, int n1, int n2);
 ```
 
 ## ExecuteResolveNttCarriesBlocked(uint[], uint[], uint[], uint[], int, int, int)
@@ -295,9 +232,9 @@ using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
-// Inspect the dual 32-bit NTT primes and modular arithmetic helpers.
-uint sum = GpuBigIntNttKernels.ModAdd(4194304000u, 5u, GpuBigIntNttKernels.Prime1);
-Console.WriteLine($"Prime1={GpuBigIntNttKernels.Prime1}, Prime2={GpuBigIntNttKernels.Prime2}, ModAdd={sum}");
+// Inspect the 32-bit NTT primes and modular arithmetic helpers that GpuBigIntNttKernels uses.
+uint sum = NttPrimeArithmetic.ModAdd(4194304000u, 5u, NttPrimeArithmetic.Prime1);
+Console.WriteLine($"Prime1={NttPrimeArithmetic.Prime1}, Prime2={NttPrimeArithmetic.Prime2}, ModAdd={sum}");
 ```
 
 ## Remarks

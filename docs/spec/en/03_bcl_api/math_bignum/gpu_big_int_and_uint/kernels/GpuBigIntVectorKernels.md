@@ -27,6 +27,7 @@ public static partial class GpuBigIntVectorKernels
 | --- | --- |
 | `VectorSignMagnitudeToTwosComplementKernelHandle` | Cached native CUDA kernel handle (`IntPtr`) for `VectorSignMagnitudeToTwosComplementKernel`. |
 | `VectorSignMagnitudeToOffsetBinaryKernelHandle` | Cached native CUDA kernel handle (`IntPtr`) for `VectorSignMagnitudeToOffsetBinaryKernel`. |
+| `DivModSharedWords` | `public const int DivModSharedWords = 512;` the words of each shared work buffer of the vector division; a wider element works in global scratch. |
 
 ## Nested Context Structs
 
@@ -275,6 +276,19 @@ public struct FloatAccumulateStepContext
 }
 ```
 
+### DivModWords Struct
+
+A work buffer of the vector division (the remainder or the quotient): `Count` words in shared memory, or at `Base` in `Scratch` when `Base` is not negative.
+
+```csharp
+public struct DivModWords
+{
+    public uint[]? Scratch;
+    public int Base;
+    public int Count;
+}
+```
+
 ## Methods
 
 ### Representation Conversion & Bit-Shift Primitives
@@ -333,31 +347,33 @@ public struct FloatAccumulateStepContext
 | --- | --- |
 | [ReduceWarpMaxUInt64(uint, ulong)](#reducewarpmaxuint64uint-ulong) | A GPU device function (`[GpuDeviceFunction]`) that computes the warp-wide maximum of a 64-bit unsigned integer using `__shfl_xor_sync`. |
 | [ReduceBlockMaxUInt64(ulong, SharedMemory\<ulong\>)](#reduceblockmaxuint64ulong-sharedmemoryulong) | A GPU device function (`[GpuDeviceFunction]`) that computes the block-wide maximum of a 64-bit unsigned integer across warps. |
-| [CompareShiftedLimbsBlockParallel(ShiftedLimbCompareContext, SharedMemory\<ulong\>)](#compareshiftedlimbsblockparallelshiftedlimbcomparecontext-sharedmemoryulong) | A GPU device function (`[GpuDeviceFunction]`) that compares two bit-shifted multi-word slices in parallel across a thread block (`1` if left > right, `2` if left < right, `0` if equal). |
+| [CompareShiftedLimbsBlockParallel(ShiftedLimbCompareContext, SharedMemory\<ulong\>)](#compareshiftedlimbsblockparallelshiftedlimbcomparecontext-sharedmemoryulong) | A GPU device function (`[GpuDeviceFunction]`) that compares two bit-shifted multi-word slices in parallel across a thread block (`2` if left > right, `1` if left < right, `0` if equal). |
 | [CopyElementWordsBlockParallel(VectorAccumulateContext)](#copyelementwordsblockparallelvectoraccumulatecontext) | A GPU device function (`[GpuDeviceFunction]`) that copies `Source.NumWords` words from `Source.Data` into `Dest` in parallel across the block. |
 | [PassBatchSize(ElementCountContext, int, int)](#passbatchsizeelementcountcontext-int-int) | A GPU device function (`[GpuDeviceFunction]`) that computes the active element count entering reduction pass `passIndex` for a given `chunkSize`. |
 | [VectorSumReductionChunkKernel(VectorReductionChunkContext)](#vectorsumreductionchunkkernelvectorreductionchunkcontext) | A GPU kernel (`[GpuKernel]`) that reduces chunks of a multi-word integer batch by summation. |
 | [DeviceVectorSumReductionChunk(VectorReductionChunkContext)](#devicevectorsumreductionchunkvectorreductionchunkcontext) | A GPU device function (`[GpuDeviceFunction]`) that accumulates a chunk of multi-word integers into a block-level sum buffer. |
 | [DeviceVectorAddAccumulateParallel(VectorAccumulateContext)](#devicevectoraddaccumulateparallelvectoraccumulatecontext) | A GPU device function (`[GpuDeviceFunction]`) that adds a multi-word integer slice into a destination slice using Kogge-Stone carry lookahead. |
-| [VectorReductionFinalizeKernel(VectorReductionFinalizeContext)](#vectorreductionfinalizekernelvectorreductionfinalizecontext) | A GPU kernel (`[GpuKernel]`) that converts the final reduced two's complement or offset-binary value back to sign-magnitude representation and writes `Header` (`[bitLength, isNegative]`). |
+| [VectorReductionFinalizeKernel(VectorReductionFinalizeContext)](#vectorreductionfinalizekernelvectorreductionfinalizecontext) | A GPU kernel (`[GpuKernel]`) that converts the final reduced two's complement or offset-binary value back to sign-magnitude representation and writes `Header` (`[negative \| (overflow << 1), count]`). |
 | [VectorMaxReductionChunkKernel(VectorReductionChunkContext)](#vectormaxreductionchunkkernelvectorreductionchunkcontext) | A GPU kernel (`[GpuKernel]`) that reduces chunks of a multi-word integer batch to their maximum value. |
 | [DeviceVectorMaxReductionChunk(VectorReductionChunkContext)](#devicevectormaxreductionchunkvectorreductionchunkcontext) | A GPU device function (`[GpuDeviceFunction]`) that computes the maximum multi-word integer across a chunk. |
 | [VectorMinReductionChunkKernel(VectorReductionChunkContext)](#vectorminreductionchunkkernelvectorreductionchunkcontext) | A GPU kernel (`[GpuKernel]`) that reduces chunks of a multi-word integer batch to their minimum value. |
 | [DeviceVectorMinReductionChunk(VectorReductionChunkContext)](#devicevectorminreductionchunkvectorreductionchunkcontext) | A GPU device function (`[GpuDeviceFunction]`) that computes the minimum multi-word integer across a chunk. |
-| [DeviceVectorCompareReductionChunk(VectorReductionChunkContext, ulong)](#devicevectorcomparereductionchunkvectorreductionchunkcontext-ulong) | A GPU device function (`[GpuDeviceFunction]`) that reduces a chunk of unsigned/offset-binary elements according to `targetCmpBits` (`1` for maximum, `2` for minimum). |
+| [DeviceVectorCompareReductionChunk(VectorReductionChunkContext, ulong)](#devicevectorcomparereductionchunkvectorreductionchunkcontext-ulong) | A GPU device function (`[GpuDeviceFunction]`) that reduces a chunk of unsigned/offset-binary elements according to `targetCmpBits` (`2` for maximum, `1` for minimum). |
 | [DeviceVectorCompareAccumulateParallel(VectorAccumulateContext)](#devicevectorcompareaccumulateparallelvectoraccumulatecontext) | A GPU device function (`[GpuDeviceFunction]`) that compares `acc.Source` against `acc.Dest` and overwrites `acc.Dest` when the comparison matches `acc.TargetCmpBits`. |
 | [ComputeBlockBitLength(BlockBitLengthContext, SharedMemory\<ulong\>)](#computeblockbitlengthblockbitlengthcontext-sharedmemoryulong) | A GPU device function (`[GpuDeviceFunction]`) that computes the exact bit length of a multi-word slice across the thread block. |
-| [DeviceVectorFloatCompareElement(ElementCompareContext)](#devicevectorfloatcompareelementelementcomparecontext) | A GPU device function (`[GpuDeviceFunction]`) that compares two signed floating-point elements (`1` if left > right, `2` if left < right, `0` if equal). |
+| [DeviceVectorFloatCompareElement(ElementCompareContext)](#devicevectorfloatcompareelementelementcomparecontext) | A GPU device function (`[GpuDeviceFunction]`) that compares two signed floating-point elements (`2` if left > right, `1` if left < right, `0` if equal). |
 | [EvaluateCompareOperator(uint, int)](#evaluatecompareoperatoruint-int) | A GPU device function (`[GpuDeviceFunction]`) that evaluates a `VectorCompareOperator` (`opType`) against a 3-way comparison result `cmpRes`. |
 | [VectorFloatCompareKernel(VectorFloatCompareContext)](#vectorfloatcomparekernelvectorfloatcomparecontext) | A GPU kernel (`[GpuKernel]`) that compares each element of a float vector against a scalar or another float vector and writes `1u` or `0u` flags. |
 | [InitFloatReductionChunkElement(VectorFloatReductionChunkContext)](#initfloatreductionchunkelementvectorfloatreductionchunkcontext) | A GPU device function (`[GpuDeviceFunction]`) that copies the first element of a float reduction chunk into the block output slot and returns the chunk start index. |
 | [VectorFloatMaxReductionChunkKernel(VectorFloatReductionChunkContext)](#vectorfloatmaxreductionchunkkernelvectorfloatreductionchunkcontext) | A GPU kernel (`[GpuKernel]`) that reduces chunks of a `GpuBigFloatArray` batch to their maximum value. |
 | [VectorFloatMinReductionChunkKernel(VectorFloatReductionChunkContext)](#vectorfloatminreductionchunkkernelvectorfloatreductionchunkcontext) | A GPU kernel (`[GpuKernel]`) that reduces chunks of a `GpuBigFloatArray` batch to their minimum value. |
-| [DeviceVectorFloatCompareReductionChunk(VectorFloatReductionChunkContext, uint)](#devicevectorfloatcomparereductionchunkvectorfloatreductionchunkcontext-uint) | A GPU device function (`[GpuDeviceFunction]`) that reduces a chunk of floating-point elements to their maximum (`targetCmpBits == 1`) or minimum (`targetCmpBits == 2`). |
+| [DeviceVectorFloatCompareReductionChunk(VectorFloatReductionChunkContext, uint)](#devicevectorfloatcomparereductionchunkvectorfloatreductionchunkcontext-uint) | A GPU device function (`[GpuDeviceFunction]`) that reduces a chunk of floating-point elements to their maximum (`targetCmpBits == 2`) or minimum (`targetCmpBits == 1`). |
 | [ComputeFloatAlignmentOffsets(ref FloatAlignmentInput)](#computefloatalignmentoffsetsref-floatalignmentinput) | A GPU device function (`[GpuDeviceFunction]`) that computes the significand bit shifts and output exponent for radix-aligned floating-point addition. |
 | [ShiftElementInPlaceBlockParallel(MutableElementSliceContext)](#shiftelementinplaceblockparallelmutableelementslicecontext) | A GPU device function (`[GpuDeviceFunction]`) that shifts a multi-word slice in place by `slice.BitOffset` bits across the thread block. |
 | [NegateElementInPlaceBlockParallel(MutableElementSliceContext)](#negateelementinplaceblockparallelmutableelementslicecontext) | A GPU device function (`[GpuDeviceFunction]`) that two's-complement negates a multi-word slice in place across the thread block. |
 | [AccumulateFloatElementBlockParallel(FloatAccumulateStepContext)](#accumulatefloatelementblockparallelfloataccumulatestepcontext) | A GPU device function (`[GpuDeviceFunction]`) that aligns and accumulates one floating-point element into the running chunk accumulator. |
+| [FinishFloatAccumulate(FloatAccumulateStepContext, bool, uint, int, uint)](#finishfloataccumulatefloataccumulatestepcontext-bool-uint-int-uint) | A GPU device function (`[GpuDeviceFunction]`) that finishes one aligned float accumulation step: negates a borrowed difference, or takes a carry out by shifting the sum down one bit and raising the exponent. |
+| [AlignmentShift(int, int, int, int)](#alignmentshiftint-int-int-int) | A GPU device function (`[GpuDeviceFunction, GpuInline]`) that returns the left shift of the operand with the larger exponent in a float addition. |
 | [VectorFloatSumReductionChunkKernel(VectorFloatReductionChunkContext)](#vectorfloatsumreductionchunkkernelvectorfloatreductionchunkcontext) | A GPU kernel (`[GpuKernel]`) that reduces chunks of a `GpuBigFloatArray` batch by summation. |
 | [DeviceVectorFloatSumReductionChunk(VectorFloatReductionChunkContext)](#devicevectorfloatsumreductionchunkvectorfloatreductionchunkcontext) | A GPU device function (`[GpuDeviceFunction]`) that sums a chunk of floating-point elements with radix alignment and normalization. |
 | [VectorAnyTrueKernel(VectorBoolReductionContext)](#vectoranytruekernelvectorboolreductioncontext) | A GPU kernel (`[GpuKernel]`) that sets `ctx.Result[0] = 1u` if any active predicate flag in `ctx.Flags` is non-zero. |
@@ -682,7 +698,7 @@ public static ulong ReduceBlockMaxUInt64(ulong myVal, SharedMemory<ulong> warpMa
 
 ## CompareShiftedLimbsBlockParallel(ShiftedLimbCompareContext, SharedMemory\<ulong\>)
 
-Compares two bit-shifted multi-word slices across a thread block by packing the highest differing word index (`idx + 1`) and outcome (`1` if left > right, `2` if left < right) into a 64-bit integer and reducing via `ReduceBlockMaxUInt64`.
+Compares two bit-shifted multi-word slices across a thread block by packing the highest differing word index (`idx + 1`) and outcome (`2` if left > right, `1` if left < right) into a 64-bit integer and reducing via `ReduceBlockMaxUInt64`.
 
 ```csharp
 [GpuDeviceFunction]
@@ -743,7 +759,7 @@ public static void DeviceVectorAddAccumulateParallel(VectorAccumulateContext acc
 
 ## VectorReductionFinalizeKernel(VectorReductionFinalizeContext)
 
-Converts the single reduced two's-complement or offset-binary integer in `ctx.Source` back to sign-magnitude representation in `ctx.Destination` and writes `[bitLength, isNegative]` into `ctx.Header`. When `ctx.Count.Base` is non-null and resolves to `0` elements, zeroes out the destination and header.
+Converts the single reduced two's-complement or offset-binary integer in `ctx.Source` back to sign-magnitude representation in `ctx.Destination` and writes `[negative | (overflow << 1), count]` into `ctx.Header`: bit 0 of `Header[0]` is the sign of the result, bit 1 is set when the result did not fit in `ResultWords`, and `Header[1]` is the element count. When `ctx.Count.Base` is non-null and resolves to `0` elements, zeroes out the destination and header.
 
 ```csharp
 [GpuKernel]
@@ -761,7 +777,7 @@ public static void VectorMaxReductionChunkKernel(VectorReductionChunkContext ctx
 
 ## DeviceVectorMaxReductionChunk(VectorReductionChunkContext)
 
-Computes the maximum multi-word integer across a chunk by invoking `DeviceVectorCompareReductionChunk(ctx, 1UL)`.
+Computes the maximum multi-word integer across a chunk by invoking `DeviceVectorCompareReductionChunk(ctx, 2UL)`.
 
 ```csharp
 [GpuDeviceFunction]
@@ -780,7 +796,7 @@ public static void VectorMinReductionChunkKernel(VectorReductionChunkContext ctx
 
 ## DeviceVectorMinReductionChunk(VectorReductionChunkContext)
 
-Computes the minimum multi-word integer across a chunk by invoking `DeviceVectorCompareReductionChunk(ctx, 2UL)`.
+Computes the minimum multi-word integer across a chunk by invoking `DeviceVectorCompareReductionChunk(ctx, 1UL)`.
 
 ```csharp
 [GpuDeviceFunction]
@@ -790,7 +806,7 @@ public static void DeviceVectorMinReductionChunk(VectorReductionChunkContext ctx
 
 ## DeviceVectorCompareReductionChunk(VectorReductionChunkContext, ulong)
 
-Reduces a chunk of multi-word integers in `ctx.A` into `ctx.Result` by keeping the element that matches `targetCmpBits` (`1UL` for maximum, `2UL` for minimum).
+Reduces a chunk of multi-word integers in `ctx.A` into `ctx.Result` by keeping the element that matches `targetCmpBits` (`2UL` for maximum, `1UL` for minimum).
 
 ```csharp
 [GpuDeviceFunction]
@@ -820,7 +836,7 @@ public static uint ComputeBlockBitLength(BlockBitLengthContext ctx, SharedMemory
 
 ## DeviceVectorFloatCompareElement(ElementCompareContext)
 
-Compares two floating-point elements (`cmp.Left` and `cmp.Right`) across a thread block, accounting for zero magnitudes, signs, normalized exponents ($e + \text{bitLen}$), and bit-shifted significands. Returns `1u` if left > right, `2u` if left < right, or `0u` if equal.
+Compares two floating-point elements (`cmp.Left` and `cmp.Right`) across a thread block, accounting for zero magnitudes, signs, normalized exponents ($e + \text{bitLen}$), and bit-shifted significands. Returns `2u` if left > right, `1u` if left < right, or `0u` if equal.
 
 ```csharp
 [GpuDeviceFunction]
@@ -877,7 +893,7 @@ public static void VectorFloatMinReductionChunkKernel(VectorFloatReductionChunkC
 
 ## DeviceVectorFloatCompareReductionChunk(VectorFloatReductionChunkContext, uint)
 
-Reduces a chunk of up to `ctx.ChunkSize` floating-point elements to their maximum (`targetCmpBits == 1u`) or minimum (`targetCmpBits == 2u`) using `DeviceVectorFloatCompareElement`.
+Reduces a chunk of up to `ctx.ChunkSize` floating-point elements to their maximum (`targetCmpBits == 2u`) or minimum (`targetCmpBits == 1u`) using `DeviceVectorFloatCompareElement`.
 
 ```csharp
 [GpuDeviceFunction]
@@ -925,6 +941,30 @@ Aligns and accumulates the floating-point element `step.Source` into the running
 [GpuDeviceFunction]
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 public static void AccumulateFloatElementBlockParallel(FloatAccumulateStepContext step);
+```
+
+## FinishFloatAccumulate(FloatAccumulateStepContext, bool, uint, int, uint)
+
+Finishes one aligned accumulation step of `AccumulateFloatElementBlockParallel`. With different signs, `|A| + ~|B| + 1` carries out exactly when `|A| >= |B|`: a borrow means `|B|` is larger and the buffer holds `|A| - |B|` modulo the width, which is negated. With the same sign, a carry out is the bit above the width: the sum is shifted down by one bit to take it, and the exponent rises by one.
+
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void FinishFloatAccumulate(
+    FloatAccumulateStepContext step,
+    bool differentSigns,
+    uint topCarry,
+    int outExp,
+    uint signA);
+```
+
+## AlignmentShift(int, int, int, int)
+
+Returns the left shift of the operand with the larger exponent in a float addition: the exponent difference `diff`, at most the bits of the result above the operand less `carryBits` kept free for the carry (0 when the result is not wider than the operand). The other operand moves right for the rest of the difference.
+
+```csharp
+[GpuDeviceFunction, GpuInline]
+public static int AlignmentShift(int diff, int resultWords, int operandWords, int carryBits);
 ```
 
 ## VectorFloatSumReductionChunkKernel(VectorFloatReductionChunkContext)
