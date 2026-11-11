@@ -1,22 +1,22 @@
 ---
-title: "1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)"
+title: "1. Generator Architecture (`Kassyi.GSharp.Compiler`)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
 description: "This document defines the internal architecture of the Ahead-Of-Time (AOT) transpilation layer implemented via Roslyn Source Generators."
 ---
 
-# 1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)
+# 1. Generator Architecture (`Kassyi.GSharp.Compiler`)
 
 This document defines the internal architecture of the Ahead-Of-Time (AOT) transpilation layer implemented via Roslyn Source Generators.
 
 ## 1.1 Pipeline Overview
 
-The `Kassyi.GSharp.Compiler.Generators` project intercepts the MSBuild compilation process, analyzes the C# Abstract Syntax Tree (AST), and generates both the intermediary C++ source strings and the C# execution stubs.
+The `Kassyi.GSharp.Compiler` project intercepts the MSBuild compilation process, analyzes the C# Abstract Syntax Tree (AST), and generates both the intermediary C++ source strings and the C# execution stubs.
 
 ```mermaid
 flowchart TD
-    A[MSBuild Process] --> B(Kassyi.GSharp.Compiler.Generators)
+    A[MSBuild Process] --> B(Kassyi.GSharp.Compiler)
     B --> C[Syntax Receiver]
     C -->|"Detects [GpuKernel]"| D[RoslynToCudaVisitor]
     D -->|AST Translation| E[CUDA C++ Source String]
@@ -48,8 +48,8 @@ Structs with the same name in different C# namespaces never share a C++ name: th
 
 The transpiler analyzes parameter attributes during signature generation.
 
-- Parameters marked with `[Constant]` are intentionally omitted from the generated `__global__ void` C++ signature.
-- Instead, they are deferred to the `GpuKernelGenerator` for preprocessor `#define` injection.
+- Kernel parameters cannot be transformed into C++ `#define` macros.
+- Instead, the `[GpuConstexpr]` attribute (`GpuConstexprAttribute`) marks a kernel parameter as a compile-time constant with candidate values for kernel specialization.
 
 ### 1.2.3 Transpiler Dialect Architecture (Two-Tier Design)
 
@@ -60,8 +60,8 @@ This separation of concerns is achieved through the `ITranspilerDialect` interfa
 - **Yaml Dialect Generation**: Dialects are not manually implemented in C#. Instead, the transpiler uses a data-driven YAML generation system (`YamlDialectGenerator`). Dialects are defined via `.yml` files (specifying the Backend, Capabilities, Types, and Intrinsics) which are compiled into `ITranspilerDialect` C# classes (e.g., `GSharpCudaDialect.g.cs`) at build-time.
 
 - **Current Implementation**: The transpiler utilizes two distinct dialects during the build process:
-    1. **`CpuDialect` (Default Fallback)**: Transpiles C# into standard C++17. This dialect ensures that every GPU kernel has a functional, native CPU-side fallback compiled as a shared library. It implements parallel grid-stride loops using OpenMP (`#pragma omp parallel for`) and standard `std::thread` constructs. It does not support CUDA-specific intrinsic synchronization (e.g., `__syncthreads()`) or warp-level shuffle operations, gracefully falling back to standard barriers where possible.
-    2. **`CudaCppDialect` (Hardware Execution)**: Layers G# over NVIDIA's CUDA C++. It handles the translation of C# syntax into valid CUDA C++ equivalents, maps mathematical built-ins to fast PTX hardware intrinsics (e.g., `__sinf`), and manages execution grid dimensions. It generates the encrypted CUDA Fatbin payload.
+    1. **`StandardCppDialect` (Default Fallback)**: Transpiles C# into standard C++17. This dialect ensures that every GPU kernel has a functional, native CPU-side fallback compiled as a shared library. It implements parallel grid-stride loops using OpenMP (`#pragma omp parallel for`) and standard `std::thread` constructs. Barrier synchronization (`Gpu.SyncThreads()`) and warp shuffle operations (`Warp.ShuffleSync`) are supported via `StateMachineLowerer` and `WarpInstructionRewriter`.
+    2. **`GSharpCudaDialect` (Hardware Execution)**: Layers G# over NVIDIA's CUDA C++. It handles the translation of C# syntax into valid CUDA C++ equivalents, maps mathematical built-ins to fast PTX hardware intrinsics (e.g., `__expf`), and manages execution grid dimensions. The compiled CUDA Fatbin payload is signed with a trailing 64-byte Ed25519 digital signature.
 
 Both dialects share core responsibilities like converting C# `ref` to C++ pointers, pointer-arithmetic array accesses, and resolving custom struct dependencies.
 
@@ -165,7 +165,7 @@ The transpiler strictly adheres to the following naming conventions and rules wh
 public partial class MyKernels
 {
     public static T[] LaunchKernelName(
-        int arg1, // Original non-Constant parameters
+        int arg1, // Original parameters
         int stride = 1, // Preserved default parameter value
         uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
         uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1,
@@ -202,7 +202,7 @@ When a struct parameter is detected, the `GpuKernelGenerator` recursively traver
 
 > [!IMPORTANT]
 > This implicit deep marshaling empowers developers to pass complex, nested C# objects into the GPU without manually writing verbose and unsafe P/Invoke memory management code.
-> However, deep marshaling applies **only to the standard `Launch*` (host-array) path**. When invoking the zero-allocation `Launch*_Device` overload (which expects pre-allocated device pointers), passing structs that contain managed arrays (`T[]`) is prohibited. The generator detects this and intentionally throws a `NotSupportedException` in the `_Device` launcher to prevent corrupted pointer mapping.
+> However, deep marshaling applies **only to the standard `Launch*` (host-array) path**. When invoking the zero-allocation `Launch*Ptr` overload (which expects pre-allocated device pointers), passing structs that contain managed arrays (`T[]`) is prohibited. The generator detects this and intentionally rejects passing structs with managed arrays to the `Launch*Ptr` launcher to prevent corrupted pointer mapping.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
@@ -231,14 +231,14 @@ MyKernels.LaunchProcessPtr(ctx);
 
 - **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
 - **Execution & Cleanup**: The launcher invokes the runtime via `CpuKernelLoader.LoadAotKernel` (or `GpuKernelLoader.LoadAotKernel` for GPU execution) and subsequently dispatches the execution logic (e.g., `cuLaunchKernel`). Post-execution, it automatically copies the array data back Device-to-Host (`cuMemcpyDtoH_v2`) and frees all allocated device memory.
-- **Exceptions**: `[Constant]` parameters are strictly excluded from this marshaling array, as they exist exclusively in the preprocessor domain.
+- **Compile-time Constants**: Parameters marked with `[GpuConstexpr]` (`GpuConstexprAttribute`) are passed as standard arguments in the current runtime while reserving specialized entry points.
 
 ### 1.4.5 CPU Launcher Generation (`WriteCpuLauncher`)
 
-When the transpiler is configured to use the `CpuDialect` (Standard C++), the generator automatically invokes `WriteCpuLauncher`. This process emits a standard `extern "C"` C++ wrapper function (e.g., `__gsharp_launch_MyApp__MyKernels__KernelName`) that translates the flat GPU grid/block indexing scheme into nested standard C++ `for` loops. This enables the generated native binary to be directly invoked from C# via P/Invoke on CPU-only machines without modifying the host C# API signature.
+When the transpiler is configured to use the `StandardCppDialect` (Standard C++), the generator automatically invokes `WriteCpuLauncher`. This process emits a standard `extern "C"` C++ wrapper function (e.g., `__gsharp_launch_{Kernel}`) that translates the flat GPU grid/block indexing scheme into nested standard C++ `for` loops. This enables the generated native binary to be directly invoked from C# via P/Invoke on CPU-only machines without modifying the host C# API signature.
 
 > [!NOTE]
-> The CPU compilation task (`CompileCppToNativeTask`) is currently hardcoded for Windows. It strictly requires MSVC (`cl.exe`, `vswhere.exe`) and only outputs Windows `.dll` binaries for x64 and arm64. There is currently no implementation for Linux/macOS `.so` files via GCC/Clang. Furthermore, the build process (`ArtifactHelper.cs`) silently appends a 32-byte SHA256 checksum to the end of every compiled artifact (`.fatbin` and `.dll`) for integrity validation.
+> The CPU compilation task (`CompileCppToNativeTask`) supports Windows via MSVC (`cl.exe`, `vswhere.exe`) and Linux / POSIX via `GccClangToolchain` (`g++`, `clang++`), generating `.dll` or `.so` native shared libraries. Furthermore, the build process (`ArtifactHelper.cs`) appends a 64-byte Ed25519 digital signature to the end of every compiled artifact (`.fatbin`, `.dll`, and `.so`) for integrity validation (`AotSignatureValidator`).
 
 ## 1.5 MSBuild Configuration Properties
 

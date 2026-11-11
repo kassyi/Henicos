@@ -12,7 +12,7 @@ description: "This document provides a 'Rosetta Stone' example that validates al
 > **Compiler Validation Reference Code**
 > This file is **not** a beginner tutorial or a getting-started guide. It is a comprehensive "Rosetta Stone" test-case designed to demonstrate how the G# transpiler converts all supported C# features into C++. It contains intentional edge-cases and hundreds of lines of code, serving primarily as a compiler validation reference.
 
-This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository. It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`, `[Constant]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit array marshaling.
+This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository. It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`, `[GpuConstexpr]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit array marshaling.
 
 ## 8.1 The G# Source Code
 
@@ -153,7 +153,7 @@ public static partial class ComprehensiveSpecKernel
             float mag = ComputeMagnitude(p);
             mag = (float)Math.Abs(mag);
 
-            // 5. Automatic Loop Unrolling via Constant (for)
+            // 5. Loop Statement (for)
             for (int i = 0; i < unrollFactor; i++)
             {
                 if (i == 1) continue;
@@ -284,7 +284,7 @@ public static partial class ComprehensiveSpecKernel
 
 ## 8.2 Build Output (Diagnostics)
 
-When building this code, MSBuild natively catches the strict constraints via the `Kassyi.Generators.GSharp` analyzers:
+When building this code, MSBuild natively catches the strict constraints via the `Kassyi.GSharp.Compiler` analyzers:
 
 ```
 ComprehensiveSpecKernel.cu.cs(107,63): warning GSH0013: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
@@ -949,7 +949,7 @@ The G# compiler natively intercepts these syntax tree nodes and fails the build 
 
 This explicit trace proves that:
 
-1. `Constant` uses preprocessor macros.
+1. `[GpuConstexpr]` parameters mark compile-time constant values for kernel specialization.
 2. Custom Structs map flawlessly, and all 11 primitive C# types align to their C++ equivalents.
 3. Diagnostic warnings and errors natively integrate with MSBuild (`GSH0001` - `GSH0004`, `GSH0013` and `GSH0064`) to act as strict guardrails.
 4. `CastExpression` and `ParenthesizedExpression` AST nodes are properly translated, allowing explicit math method casting like `(float)Math.Sqrt(...)`.
@@ -966,5 +966,5 @@ This explicit trace proves that:
 ### Architecture
 
 - [2. Compiler and Runtime Architecture](00_index.md)
-- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](01_aot_transpiler.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler`)](01_aot_transpiler.md)
 - [2. Runtime Execution and AOT Loader Pipeline (`Kassyi.GSharp.Runtime`)](02_runtime_loader.md)
