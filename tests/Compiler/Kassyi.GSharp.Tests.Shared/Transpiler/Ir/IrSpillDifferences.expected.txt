@@ -1,0 +1,60 @@
+#927 a ?? with a split on its right is written as an if
+  WarpShuffleInUnsplitContextKernels.cu.cs WarpShuffleInUnsplitContextKernels.CoalesceKernel: data[tid] = cached ?? Warp.ShuffleSync(0xFFFFFFFFu, data[tid], 0);
+    ir:     cond{spill(data[tid]) split(Warp.ShuffleSync(0xFFFFFFFFu, data[tid], 0))}
+    syntax: spill(data[tid]) split(Warp.ShuffleSync(0xFFFFFFFFu, data[tid], 0))
+#927 the receiver of an extension call that splits
+  ExtensionCallDiagnostics.cs ExtensionCallKernels.SuspendingExtensionKernel: data[ThreadIndex.X] = data[ThreadIndex.X].AfterBarrier();
+    ir:     spill(data[ThreadIndex.X]) split(data[ThreadIndex.X].AfterBarrier())
+    syntax: split(data[ThreadIndex.X].AfterBarrier())
+#927 the receiver of an extension call that splits
+  RecursiveExtensionBarrierKernels.cu.cs RecursiveExtensionBarrierKernels.DirectRec: (x - 1).DirectRec();
+    ir:     spill(x - 1) split((x - 1).DirectRec())
+    syntax: split((x - 1).DirectRec())
+#927 the receiver of an extension call that splits
+  RecursiveExtensionBarrierKernels.cu.cs RecursiveExtensionBarrierKernels.MutualA: (x - 1).MutualB();
+    ir:     spill(x - 1) split((x - 1).MutualB())
+    syntax: split((x - 1).MutualB())
+#927 the receiver of an extension call that splits
+  RecursiveExtensionBarrierKernels.cu.cs RecursiveExtensionBarrierKernels.MutualB: (x - 1).MutualA();
+    ir:     spill(x - 1) split((x - 1).MutualA())
+    syntax: split((x - 1).MutualA())
+#991 a conditional is written as an if before the operands to its left
+  IrSpillPlannerCases.cs Cases.ArgumentLeftOfAConditionalSplit: result[0] = SuspendWith(a[0], c ? Suspend() : 0);
+    ir:     spill(a[0]) cond{split(Suspend())|} split(SuspendWith(a[0], c ? Suspend() : 0))
+    syntax: cond{split(Suspend())|} spill(a[0]) split(SuspendWith(a[0], c ? Suspend() : 0))
+#991 a part of a target location that the split may change
+  IrSpillPlannerCases.cs Cases.RefElementArgumentOfACallThatDoesNotSplit: result[0] = Store(ref a[b[i]], Suspend());
+    ir:     spill(b[i]) split(Suspend())
+    syntax: split(Suspend())
+#991 a part of a target location that the split may change
+  IrSpillPlannerCases.cs Cases.StructElementFieldTarget: cells[b[i]].F = Suspend();
+    ir:     spill(b[i]) split(Suspend())
+    syntax: split(Suspend())
+#991 a part of a target location that the split may change
+  IrSpillPlannerCases.cs Cases.TargetIndexThatCanThrow: r[t / u] = Suspend();
+    ir:     spill(t / u) split(Suspend())
+    syntax: split(Suspend())
+#991 a part of a target location that the split may change
+  IrSpillPlannerCases.cs Cases.TargetIndexWrittenByTheValue: r[t + 1] = SuspendWith(Inc(ref t), 0);
+    ir:     spill(t + 1) spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
+    syntax: spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
+#991 an earlier operand of an operation that does not split
+  IrSpillPlannerCases.cs Cases.EarlierArgumentOfACallThatDoesNotSplit: result[0] = Pair(a[0], Suspend());
+    ir:     spill(a[0]) split(Suspend())
+    syntax: split(Suspend())
+#991 an earlier operand of an operation that does not split
+  IrSpillPlannerCases.cs Cases.EarlierOperandBeforeAnUnconditionalSplit: result[0] = Triple(a[0], Warp.ShuffleSync(0xffffffffu, x, 0), c ? Suspend() : 0);
+    ir:     spill(a[0]) split(Warp.ShuffleSync(0xffffffffu, x, 0)) cond{split(Suspend())|}
+    syntax: cond{split(Suspend())|} split(Warp.ShuffleSync(0xffffffffu, x, 0))
+#991 an operand before a split inside ?: / && / || is evaluated before it
+  IrSpillPlannerCases.cs Cases.LeftOperandOfAConditionalSplit: result[0] = a[0] + (c ? Suspend() : 0);
+    ir:     spill(a[0]) cond{split(Suspend())|}
+    syntax: cond{split(Suspend())|}
+#991 the read of a compound assignment target
+  IrSpillPlannerCases.cs Cases.CompoundElementTarget: a[l] += Warp.ShuffleSync(0xffffffffu, Bump(a, l), 0);
+    ir:     spill(a[l]) spill(Bump(a, l)) split(Warp.ShuffleSync(0xffffffffu, Bump(a, l), 0))
+    syntax: spill(Bump(a, l)) split(Warp.ShuffleSync(0xffffffffu, Bump(a, l), 0))
+#991 the read of a compound assignment target
+  IrSpillPlannerCases.cs Cases.CompoundLocalTarget: x += Warp.ShuffleSync(0xffffffffu, Inc(ref x), 0);
+    ir:     spill(x) spill(Inc(ref x)) split(Warp.ShuffleSync(0xffffffffu, Inc(ref x), 0))
+    syntax: spill(Inc(ref x)) split(Warp.ShuffleSync(0xffffffffu, Inc(ref x), 0))

@@ -1,15 +1,14 @@
 
 // Important note on CUDA Stream Capture (CUDA Graph: GBI-31) and xUnit parallel test execution:
 //
-// While a stream capture is actively running via cuStreamBeginCapture (e.g., in GBI_31_CudaGraphExecutionTests),
-// any operation targeting the default stream (Stream 0) or any synchronous CUDA driver API that enforces
-// device-wide implicit synchronization (such as cuMemAlloc / cuMemFree) invoked on another thread within the same
-// CUDA context violates CUDA capture constraints.
-//
-// In such cases, the interfering call fails with CUDA_ERROR_STREAM_CAPTURE_IMPLICIT, and the active stream capture
-// is immediately invalidated with CUDA_ERROR_STREAM_CAPTURE_INVALIDATED.
+// The BigNum captures (KernelGraphHandler) run in relaxed mode, so an allocation such as cuMemAlloc on another thread
+// does not disturb them. Work on the legacy default stream (Stream 0) does: a workspace stream is a blocking stream
+// (CU_STREAM_DEFAULT), which synchronizes with the default stream, so default-stream work on any thread of the same
+// CUDA context while a workspace stream captures fails with CUDA_ERROR_STREAM_CAPTURE_IMPLICIT and invalidates the
+// capture (CUDA_ERROR_STREAM_CAPTURE_INVALIDATED). Tests that begin their own capture in a stricter mode also reject
+// unsafe calls made during it.
 //
 // When xUnit executes test classes in parallel, other tests using auto-generated kernel wrappers or host array overloads
-// may perform implicit allocations or default stream copies concurrently, resulting in flaky test failures.
+// may copy through the default stream concurrently, resulting in flaky test failures.
 // Therefore, test parallelization is disabled for this test assembly to ensure deterministic and safe execution.
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
