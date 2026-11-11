@@ -96,7 +96,13 @@ public class FermatPrpBenchmark
     /// Loads a binary Pietrzak proof from <paramref name="proofPath"/> and verifies it on the GPU (or host for small
     /// <c>E</c>).
     /// </summary>
-    public static bool TryVerifyProofFile(string proofPath)
+    /// <returns><see langword="true"/> when the proof is valid.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="proofPath"/> is <see langword="null"/>, empty or whitespace.
+    /// </exception>
+    /// <exception cref="FileNotFoundException">The proof file does not exist.</exception>
+    /// <exception cref="InvalidDataException">The proof file header, length or SHA-256 digest is invalid.</exception>
+    public static bool VerifyProofFile(string proofPath)
     {
         var proof = FermatPrpProof.Load(proofPath);
         Logger<FermatPrpBenchmark>.Info("==================================================");
