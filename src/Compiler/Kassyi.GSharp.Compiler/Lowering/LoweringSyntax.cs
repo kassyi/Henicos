@@ -1,6 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>The statements that the lowering passes build in many places: jumps, labels and <c>var</c> locals.</summary>
+/// <summary>
+/// The statements that the lowering passes build in many places: jumps, labels and <c>var</c> locals.
+/// </summary>
 internal static class LoweringSyntax
 {
     // goto <label>;

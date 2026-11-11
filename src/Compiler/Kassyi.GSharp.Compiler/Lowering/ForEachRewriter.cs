@@ -171,15 +171,7 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBl
     {
         var bodyStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
         bodyStatements.Add(itemStatement);
-        if (body is BlockSyntax bodyBlock)
-        {
-            bodyStatements.AddRange(bodyBlock.Statements);
-        }
-        else
-        {
-            bodyStatements.Add(body);
-        }
-
+        AddInlined(bodyStatements, body);
         return SyntaxFactory.Block(bodyStatements);
     }
 }

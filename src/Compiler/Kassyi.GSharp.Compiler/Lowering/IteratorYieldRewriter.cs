@@ -50,10 +50,7 @@ internal sealed class IteratorYieldRewriter(
             stampedDeclStmt.Declaration.WithVariables(SyntaxFactory.SingletonSeparatedList(stampedDeclarator)));
         var consumerBodyBlock = stampedConsumerEnvelope.Statements[1];
 
-        var nextLabeledStmt = SyntaxFactory.LabeledStatement(
-            SyntaxFactory.Identifier(nextLabel),
-            SyntaxFactory.EmptyStatement()
-        );
+        var nextLabeledStmt = LoweringSyntax.EmptyLabel(nextLabel);
 
         return SyntaxFactory.Block(loopVarDeclaration, consumerBodyBlock, nextLabeledStmt)
             .WithAdditionalAnnotations(new SyntaxAnnotation(LoweringAnnotations.ScopedBlockAnnotationKind));
