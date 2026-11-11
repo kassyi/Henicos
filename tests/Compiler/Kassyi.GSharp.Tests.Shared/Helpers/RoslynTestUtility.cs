@@ -205,10 +205,19 @@ public static class RoslynTestUtility
         var dir = Path.GetDirectoryName(callerFilePath);
         if (dir != null)
         {
-            var targetTypeKernelFile = Path.Combine(dir, $"{targetType.Name}.cu.cs");
-            if (File.Exists(targetTypeKernelFile) && !pathList.Contains(targetTypeKernelFile))
+            var candidates = new[]
             {
-                pathList.Add(targetTypeKernelFile);
+                Path.Combine(dir, $"{targetType.Name}.cu.cs"),
+                Path.Combine(dir, $"{targetType.Name}.cs"),
+                Path.Combine(dir, $"{targetType.Name}s.cu.cs"),
+                Path.Combine(dir, $"{targetType.Name}s.cs"),
+            };
+            foreach (var candidate in candidates)
+            {
+                if (File.Exists(candidate) && !pathList.Contains(candidate))
+                {
+                    pathList.Add(candidate);
+                }
             }
         }
 
