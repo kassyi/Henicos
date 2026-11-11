@@ -12,7 +12,9 @@ public static unsafe class GpuKernelLoader
     private static IntPtr s_globalContext;
     private static ulong s_globalContextId;
     private static readonly Lock s_initLock = new();
-    private static volatile bool s_isCpuFallbackMode;
+    private static CudaDriverState s_driverState;
+    private static string? s_driverUnavailableReason;
+    private static readonly Func<CudaDriverState> s_getDriverState = GetDriverState;
     private static int s_deviceMajor;
     private static int s_deviceMinor;
 
@@ -26,6 +28,7 @@ public static unsafe class GpuKernelLoader
     /// and page-locked memory of G# go with it, and every later G# call that makes the global context current throws
     /// <see cref="InvalidOperationException"/>, also after the CUDA Runtime has initialized the primary context again.
     /// </remarks>
+    /// <exception cref="NotSupportedException">The NVIDIA driver is older than the CUDA 13.0 driver.</exception>
     public static IntPtr GlobalContext
     {
         get
@@ -49,19 +52,14 @@ public static unsafe class GpuKernelLoader
     /// <summary>
     /// Gets a value indicating whether the runtime is operating in CPU host fallback mode.
     /// </summary>
-    public static bool IsCpuFallbackMode
-    {
-        get
-        {
-            if (ForceCpuFallback)
-            {
-                return true;
-            }
-
-            EnsureInitialized();
-            return s_isCpuFallbackMode;
-        }
-    }
+    /// <remarks>
+    /// <see langword="true"/> when <see cref="ForceCpuFallback"/> is set (the driver is not touched then), or when
+    /// there is no driver, no device or a driver call failed. A driver older than the CUDA 13.0 driver is not a
+    /// fallback case: the property is <see langword="false"/>, <see cref="DriverUnavailableReason"/> says why, and GPU
+    /// use throws.
+    /// </remarks>
+    public static bool IsCpuFallbackMode =>
+        CudaDriverStatus.DecideGpuUse(ForceCpuFallback, s_getDriverState) == GpuUse.Cpu;
 
     /// <summary>
     /// Scoped RAII structure that activates a CUDA context on the current thread and restores the previous context upon disposal.
@@ -90,10 +88,18 @@ public static unsafe class GpuKernelLoader
         /// Initializes a new instance of the <see cref="CudaContextScope"/> struct with a custom CUDA context.
         /// </summary>
         /// <param name="customContext">The explicit CUDA context handle to activate.</param>
+        /// <exception cref="NotSupportedException">
+        /// The NVIDIA driver is older than the CUDA 13.0 driver and <see cref="ForceCpuFallback"/> is not set.
+        /// </exception>
         public CudaContextScope(IntPtr customContext)
         {
-            EnsureInitialized();
-            if (IsCpuFallbackMode)
+            var use = CudaDriverStatus.DecideGpuUse(ForceCpuFallback, s_getDriverState);
+            if (use == GpuUse.Unsupported)
+            {
+                throw UnsupportedDriver();
+            }
+
+            if (use == GpuUse.Cpu)
             {
                 _isFallback = true;
                 _prevContext = IntPtr.Zero;
@@ -140,26 +146,29 @@ public static unsafe class GpuKernelLoader
     /// <summary>
     /// Gets a value indicating whether the CUDA driver is available and initialized.
     /// </summary>
+    /// <remarks>
+    /// Never throws: <see langword="false"/> for a missing or faulty driver, no device, or a driver older than the
+    /// CUDA 13.0 driver; <see cref="DriverUnavailableReason"/> says which. <see cref="ForceCpuFallback"/> does not
+    /// change it.
+    /// </remarks>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-    public static bool IsDriverAvailable
+    public static bool IsDriverAvailable => GetDriverState() == CudaDriverState.Usable;
+
+    /// <summary>
+    /// Gets why the CUDA driver cannot be used, or <see langword="null"/> when it can.
+    /// </summary>
+    /// <remarks>
+    /// For a driver older than the CUDA 13.0 driver, the message of the <see cref="NotSupportedException"/> that GPU
+    /// use throws (the CUDA version found and the one required); otherwise the failed driver call or the missing
+    /// library.
+    /// </remarks>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+    public static string? DriverUnavailableReason
     {
         get
         {
-            try
-            {
-                EnsureInitialized();
-                return !s_isCpuFallbackMode;
-            }
-            catch (DllNotFoundException)
-            {
-                // Expected when CUDA is not installed; handled gracefully by the fallback logic.
-                return false;
-            }
-            catch (CudaException)
-            {
-                // Expected when CUDA is installed but driver is faulty/unavailable.
-                return false;
-            }
+            GetDriverState();
+            return s_driverUnavailableReason;
         }
     }
 
@@ -167,54 +176,103 @@ public static unsafe class GpuKernelLoader
     /// Ensures that the global CUDA driver and primary context are initialized in a thread-safe manner.
     /// Falls back to CPU emulation mode if the CUDA driver or hardware is unavailable.
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// The installed NVIDIA driver is older than the CUDA 13.0 driver (R580). The message names the CUDA version the
+    /// driver supports and the one required. The driver is initialized once; later calls throw the same message.
+    /// </exception>
     public static void EnsureInitialized()
+    {
+        if (GetDriverState() == CudaDriverState.Unsupported)
+        {
+            throw UnsupportedDriver();
+        }
+    }
+
+    private static NotSupportedException UnsupportedDriver() => new(s_driverUnavailableReason);
+
+    // Initializes the driver once per process and returns its state; never throws
+    private static CudaDriverState GetDriverState()
     {
         // ReSharper disable once InconsistentlySynchronizedField -- Double-checked locking pattern
         if (s_isGlobalInit)
         {
-            return;
+            return s_driverState;
         }
 
         lock (s_initLock)
         {
-            if (s_isGlobalInit)
+            if (!s_isGlobalInit)
             {
-                return;
+                var classification = InitializeDriver();
+                if (classification.State == CudaDriverState.Usable)
+                {
+                    classification = CreateGlobalContext();
+                }
+
+                s_driverState = classification.State;
+                s_driverUnavailableReason = classification.Reason;
+                s_isGlobalInit = true;
             }
 
-            try
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
-                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
+            return s_driverState;
+        }
+    }
 
-                // [WHY] The primary context, not a context of cuCtxCreate: on a created context the driver ends the
-                // process with an access violation instead of returning CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED for a
-                // potentially unsafe call (cuMemAlloc, cuMemFree, cuEventQuery) made during a global or thread-local
-                // stream capture (NVIDIA bug 7081224, driver 621.14). The retain is never released: the context
-                // lives until the process ends, as the device error slot and the staging buffers expect.
-                CudaException.ThrowIfError(CudaDriverApi.cuDevicePrimaryCtxRetain(out s_globalContext, device));
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxPushCurrent_v2(s_globalContext));
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxGetId(s_globalContext, out s_globalContextId));
-                DeviceErrorSlot.AllocateInCurrentContext();
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _)); // Immediately pop to avoid poisoning the ThreadPool thread
-
-                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMajor,
-                    CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
-                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMinor,
-                    CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMinor, device));
-                s_isCpuFallbackMode = false;
-            }
-            catch (DllNotFoundException)
+    // cuInit and cuDriverGetVersion, classified by CudaDriverStatus.Classify
+    private static CudaDriverClassification InitializeDriver()
+    {
+        try
+        {
+            var initResult = CudaDriverApi.cuInit(0);
+            var driverVersion = 0;
+            var versionResult = initResult == CUresult.CudaSuccess
+                ? CudaDriverApi.cuDriverGetVersion(out driverVersion)
+                : initResult;
+            var classification = CudaDriverStatus.Classify(initResult, versionResult, driverVersion);
+            if (classification.State == CudaDriverState.CpuFallback)
             {
-                s_isCpuFallbackMode = true;
-            }
-            catch (CudaException ex)
-            {
-                Logger.Warning(nameof(GpuKernelLoader), $"EnsureInitialized failed: {ex.Message}");
-                s_isCpuFallbackMode = true;
+                Logger.Warning(nameof(GpuKernelLoader), $"EnsureInitialized failed: {classification.Reason}");
             }
 
-            s_isGlobalInit = true;
+            return classification;
+        }
+        catch (DllNotFoundException ex)
+        {
+            // Expected when CUDA is not installed; the CPU fallback handles it
+            return new CudaDriverClassification(CudaDriverState.CpuFallback, ex.Message);
+        }
+    }
+
+    // The global context on device 0, the device error slot and the compute capability
+    private static CudaDriverClassification CreateGlobalContext()
+    {
+        try
+        {
+            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
+            // [WHY] The primary context, not a context of cuCtxCreate: on a created context the driver ends the process
+            // with an access violation instead of returning CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED for a potentially
+            // unsafe call (cuMemAlloc, cuMemFree, cuEventQuery) made during a global or thread-local stream capture
+            // (NVIDIA bug 7081224, driver 621.14). The retain is never released: the context lives until the process
+            // ends, as the device error slot and the staging buffers expect. Its ID tells a later reset apart
+            // (ThrowIfGlobalContextReset).
+            CudaException.ThrowIfError(CudaDriverApi.cuDevicePrimaryCtxRetain(out s_globalContext, device));
+            CudaException.ThrowIfError(CudaDriverApi.cuCtxPushCurrent_v2(s_globalContext));
+            CudaException.ThrowIfError(CudaDriverApi.cuCtxGetId(s_globalContext, out s_globalContextId));
+            DeviceErrorSlot.AllocateInCurrentContext();
+            // Immediately pop to avoid poisoning the ThreadPool thread
+            CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _));
+
+            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMajor,
+                CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
+            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMinor,
+                CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMinor, device));
+            return CudaDriverClassification.Usable;
+        }
+        catch (CudaException ex)
+        {
+            // Expected when CUDA is installed but the driver is faulty or no device is available
+            Logger.Warning(nameof(GpuKernelLoader), $"EnsureInitialized failed: {ex.Message}");
+            return new CudaDriverClassification(CudaDriverState.CpuFallback, ex.Message);
         }
     }
 
@@ -290,7 +348,7 @@ public static unsafe class GpuKernelLoader
     {
         DynamicSharedMemoryOptIn.Clear();
 
-        if (!s_isGlobalInit)
+        if (!s_isGlobalInit || s_driverState == CudaDriverState.Unsupported)
         {
             CudaModuleCache.Clear();
             return;
