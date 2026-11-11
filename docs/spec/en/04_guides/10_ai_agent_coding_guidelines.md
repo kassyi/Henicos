@@ -22,16 +22,12 @@ public static class MyKernels
 
 ## 2. Kernel Signatures and Types
 
-### ❌ Hallucination: `Span<T>` or `T[,]` in Arguments
+### ❌ Hallucination: Multi-dimensional arrays `T[,]` or reference collections in Arguments
 
-AI agents love modern C# features like `ReadOnlySpan<T>` or multi-dimensional arrays `float[,]`.
+AI agents often assume `Span<T>` cannot be used in kernel parameters, or attempt to pass multi-dimensional arrays `float[,]` and reference collections like `List<T>`.
 
-- **Rule**: The `[GpuKernel]` method signature **ONLY** supports the following types:
-    - Primitive value types (`int`, `float`, `bool`, etc.)
-    - Blittable structs (passed by value, `ref`, or `out`)
-    - 1D managed arrays (`T[]`)
-    - Raw pointers (`T*` - requires `unsafe`)
-- **Prohibited in Signatures**: `Span<T>`, `T[,]`, `class`, `string`. (Note: You can use `Span<T>` _inside_ the kernel body for local variables, but not in the parameter list).
+- **Rule**: In device code and kernel signatures, 1D managed arrays (`T[]`), `Span<T>`, and `ReadOnlySpan<T>` (along with `Memory<T>`, `ReadOnlyMemory<T>`, `ArraySegment<T>`, and `ImmutableArray<T>`) ARE supported with runtime bounds checks.
+- **Prohibited in Signatures**: Multi-dimensional arrays `T[,]`, reference-type collections like `List<T>`, `class`, and `string`.
 
 ## 3. Host-Side Launcher Execution
 
@@ -77,11 +73,11 @@ AI agents often try to access `array[x, y]`.
 
 ## 5. Threading and Atomics
 
-### ❌ Hallucination: Using `Interlocked` for floats
+### ❌ Hallucination: Using `Interlocked` for floats or assuming `Gpu.AtomicAdd` supports `double`
 
-AI agents often try to use `Interlocked.Add` for floats, which does not exist in standard C#, or they ignore the GSharp atomic intrinsic.
+AI agents often try to use `Interlocked.Add` for floats, which does not exist in standard C#, or assume `Gpu.AtomicAdd` supports `double`.
 
-- **Rule**: Use `System.Threading.Interlocked` for standard integer atomics. Use `Gpu.AtomicAdd` specifically when you need atomic operations on `float` or `double`.
+- **Rule**: Use `System.Threading.Interlocked` for standard integer atomics. Use `Gpu.AtomicAdd` when you need atomic addition on `int`, `uint`, `ulong`, or `float`. Note that `Gpu.AtomicAdd` does **NOT** support `double`.
 
 ## See also
 
