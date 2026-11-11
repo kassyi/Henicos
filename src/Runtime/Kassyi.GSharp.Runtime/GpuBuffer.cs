@@ -27,6 +27,11 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
         {
             if (owningContext != IntPtr.Zero)
             {
+                if (owningContext == GpuKernelLoader.GlobalContext)
+                {
+                    GpuKernelLoader.ThrowIfGlobalContextReset();
+                }
+
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxPushCurrent_v2(owningContext));
                 _pushed = true;
             }

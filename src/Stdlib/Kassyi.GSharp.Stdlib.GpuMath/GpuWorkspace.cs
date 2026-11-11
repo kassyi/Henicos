@@ -178,11 +178,11 @@ public class GpuWorkspace : IGpuResourceScope
     /// <param name="maxWords">The maximum word count for BigInteger operations.</param>
     /// <param name="engine">The GPU execution backend engine to utilize.</param>
     /// <param name="useIsolatedContext">
-    /// Whether to create and use an isolated CUDA context instead of the shared global context. Do not make a call that
-    /// allocates (a number larger than every pooled buffer) while the stream of an isolated workspace captures in
-    /// global or thread-local mode: in a context of <c>cuCtxCreate</c> the driver currently ends the process with an
-    /// access violation instead of returning <c>CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED</c> (NVIDIA bug 7081224).
-    /// Relaxed mode is not affected.
+    /// Whether to create and use an isolated CUDA context instead of the shared global context. Do not make a
+    /// potentially unsafe call (an allocation of a number larger than every pooled buffer, a free, or an event query)
+    /// while the stream of an isolated workspace captures in global or thread-local mode: in a context of
+    /// <c>cuCtxCreate</c> the driver currently ends the process with an access violation instead of returning
+    /// <c>CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED</c> (NVIDIA bug 7081224). Relaxed mode is not affected.
     /// </param>
     /// <exception cref="InvalidOperationException">Thrown when CUDA context or native workspace allocation fails.</exception>
     public GpuWorkspace(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot,

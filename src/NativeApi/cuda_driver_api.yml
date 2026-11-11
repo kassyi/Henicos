@@ -101,6 +101,36 @@ methods:
         type: int
         description: Device handle.
 
+  - name: cuDevicePrimaryCtxRelease_v2
+    returnType: CUresult
+    summary: Releases a reference to the primary context on the device.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dev
+        type: int
+        description: Device handle.
+
+  - name: cuDevicePrimaryCtxReset_v2
+    returnType: CUresult
+    summary: Destroys all allocations and resets all state on the primary context of the device.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dev
+        type: int
+        description: Device handle.
+
+  - name: cuCtxGetId
+    returnType: CUresult
+    summary: Returns the unique ID of a context, which changes when the context is created again.
+    returnDescription: CudaSuccess on success; otherwise, an error code (709, context is destroyed, after a reset).
+    parameters:
+      - name: ctx
+        type: IntPtr
+        description: Context to query.
+      - name: ctxId
+        type: out ulong
+        description: Returned context ID.
+
   - name: cuCtxDestroy_v2
     returnType: CUresult
     summary: Destroys a CUDA context.

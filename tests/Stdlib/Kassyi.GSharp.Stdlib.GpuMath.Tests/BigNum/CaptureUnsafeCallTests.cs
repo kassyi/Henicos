@@ -8,7 +8,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 /// </summary>
 /// <remarks>
 /// The forbidding modes run in a child process: in a context of <c>cuCtxCreate</c> the driver ends the process with an
-/// access violation instead of returning the error (NVIDIA bug 7081224), which would end the test host.
+/// access violation instead of returning the error (NVIDIA bug 7081224), which would end the test host. An isolated
+/// workspace still has such a context, so its test is skipped until a driver returns the error there.
 /// </remarks>
 [Collection(TestCollections.DeviceExclusive)]
 [Category(TestCategory.Stdlib)]
@@ -48,6 +49,23 @@ public sealed class CaptureUnsafeCallTests
         AssertAllocationIsRefused(CUstreamCaptureMode.Global);
     }
 
+    [SkippableFact(Skip = "In a context of cuCtxCreate the driver ends the process instead of returning the error " +
+        "(NVIDIA bug 7081224, driver 621.14).")]
+    [Scenario(TestScenario.SadPath)]
+    public void AllocationMissingThePool_InIsolatedContextDuringThreadLocalCapture_ThrowsCaptureUnsupported()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const string Name =
+            nameof(AllocationMissingThePool_InIsolatedContextDuringThreadLocalCapture_ThrowsCaptureUnsupported);
+        if (!IsolatedTestProcess.IsChild(Name))
+        {
+            IsolatedTestProcess.Run(typeof(CaptureUnsafeCallTests), Name);
+            return;
+        }
+
+        AssertAllocationIsRefused(CUstreamCaptureMode.ThreadLocal, useIsolatedContext: true);
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void AllocationMissingThePool_DuringRelaxedCapture_Allocates()
@@ -73,10 +91,10 @@ public sealed class CaptureUnsafeCallTests
         Assert.Equal(allocationsBefore + 1, workspace.GetMemoryStatistics().DriverAllocations);
     }
 
-    private static void AssertAllocationIsRefused(CUstreamCaptureMode mode)
+    private static void AssertAllocationIsRefused(CUstreamCaptureMode mode, bool useIsolatedContext = false)
     {
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot, useIsolatedContext);
+        using var scope = workspace.ActivateContext();
 
         CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(workspace.Stream, mode));
         var thrown = Record.Exception(() => new GpuBigUInt(workspace, Words).Dispose());
