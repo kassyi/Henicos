@@ -16,12 +16,12 @@ public static class SpillSuppressionParser
         }
 
         var calleesByFunction = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        var sawMarker = ScanFunctions(cuContent, suppressed, calleesByFunction);
+        var sawMarker = HasSuppressionMarkers(cuContent, suppressed, calleesByFunction);
 
         // Propagate suppression to device functions transitively called from a suppressed kernel/function,
         // and to recursive device functions (and the kernels that enter them).
         AddRecursiveFunctions(suppressed, calleesByFunction);
-        while (PropagateSuppression(suppressed, calleesByFunction))
+        while (TryPropagateSuppression(suppressed, calleesByFunction))
         {
         }
 
@@ -35,7 +35,7 @@ public static class SpillSuppressionParser
 
     // Reads the file line by line: records the callees of every defined function and the functions that a suppress
     // marker names. Returns whether a marker was seen.
-    private static bool ScanFunctions(
+    private static bool HasSuppressionMarkers(
         string cuContent,
         HashSet<string> suppressed,
         Dictionary<string, HashSet<string>> calleesByFunction)
@@ -71,7 +71,7 @@ public static class SpillSuppressionParser
             }
 
             CollectCalleesOfCurrentFunction(line, currentFunction, calleesByFunction);
-            if (AdvanceBraces(line, ref braceDepth))
+            if (DidCloseScope(line, ref braceDepth))
             {
                 currentFunction = "";
             }
@@ -138,7 +138,7 @@ public static class SpillSuppressionParser
     }
 
     // Counts the braces of the line into the depth. Returns whether a closing brace brought the depth to zero.
-    private static bool AdvanceBraces(string line, ref int braceDepth)
+    private static bool DidCloseScope(string line, ref int braceDepth)
     {
         var closedFunction = false;
         foreach (var ch in line)
@@ -173,7 +173,7 @@ public static class SpillSuppressionParser
 
     // One pass: a suppressed function suppresses its callees, a kernel that calls a suppressed function is suppressed.
     // Returns whether the set grew.
-    private static bool PropagateSuppression(
+    private static bool TryPropagateSuppression(
         HashSet<string> suppressed,
         Dictionary<string, HashSet<string>> calleesByFunction)
     {

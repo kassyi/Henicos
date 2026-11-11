@@ -15,11 +15,11 @@ public class CompileCudaToFatbinTaskTests
     [InlineData("ptxas info : 1 bytes spill stores, 0 bytes spill loads", "", true)]
     [InlineData("ptxas info : 0 bytes spill stores, 1 bytes spill loads", "", true)]
     [InlineData("Some random output that doesn't mention spills", "Some random error", false)]
-    public void DetectRegisterSpill_PtxasOutput_ReturnsSpillFlagWithMatchingMessage(
+    public void TryDetectRegisterSpill_PtxasOutput_ReturnsSpillFlagWithMatchingMessage(
         string output, string error, bool expectedHasSpill)
     {
         // Act
-        var result = NvccOutputParser.DetectRegisterSpill(output, error, out var errorMessage);
+        var result = NvccOutputParser.TryDetectRegisterSpill(output, error, out var errorMessage);
 
         // Assert
         Assert.Equal(expectedHasSpill, result);
