@@ -179,8 +179,8 @@ internal static class WrapperEmitter
     /// <summary>Emits the wrapper source of one kernel class.</summary>
     /// <param name="model">The kernels of the class.</param>
     /// <param name="config">The generator options.</param>
-    /// <param name="assemblyName">The name of the assembly that declares the kernels.</param>
-    public static string GenerateKernelExtensions(in KernelClassModel model, GeneratorConfig config, string assemblyName)
+    /// <param name="moduleName">The module name of the assembly that declares the kernels.</param>
+    public static string GenerateKernelExtensions(in KernelClassModel model, GeneratorConfig config, string moduleName)
     {
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader(enableNullable: false);
@@ -234,11 +234,11 @@ internal static class WrapperEmitter
 
                 if (config.IsCuda)
                 {
-                    CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, assemblyName, config.IsCheckedBuild);
+                    CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, moduleName, config.IsCheckedBuild);
                 }
                 else
                 {
-                    CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, assemblyName);
+                    CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, moduleName);
                 }
             }
         }

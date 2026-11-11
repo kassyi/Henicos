@@ -13,10 +13,10 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Compiler.Marshaling
 {
-    internal static class AotHostNames
+    internal static class AotModuleNames
     {
-        public static string ToSafeIdentifier(string name) =>
-            string.Create(name.Length, name, static (span, src) =>
+        public static string GetArtifactFileStem(string name) =>
+            "Kassyi.GSharp.Kernels_" + string.Create(name.Length, name, static (span, src) =>
             {
                 for (int i = 0; i < src.Length; i++)
                 {

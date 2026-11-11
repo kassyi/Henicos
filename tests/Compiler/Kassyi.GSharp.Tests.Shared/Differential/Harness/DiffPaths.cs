@@ -142,7 +142,7 @@ public static class DiffPaths
     {
         string name = assembly.GetName().Name ?? throw new ArgumentException("the assembly has no name", nameof(assembly));
         string arch = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "_arm64" : "_x64";
-        return Path.Combine(AppContext.BaseDirectory, $"Kassyi.GSharp.Kernels_{AotHostNames.ToSafeIdentifier(name)}{arch}.dll");
+        return Path.Combine(AppContext.BaseDirectory, $"{AotModuleNames.GetArtifactFileStem(name)}{arch}.dll");
     }
 
     /// <summary>Throws when a launch on this thread would not load <paramref name="dllPath"/>.</summary>
