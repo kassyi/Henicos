@@ -132,36 +132,54 @@ public static class FuzzReducer
             return isInteresting(candidate);
         }
 
+        string current = ApplyInitialHoistingAndInlining(source, avoidStructConversionDefault, TestCandidate);
+        current = RunReductionFixedPointLoop(current, TestCandidate);
+
+        int finalStatements = CountKernelExecutableStatements(current);
+        int finalDeviceFuncs = CountDeviceFunctionMethods(current);
+        return new FuzzReductionResult(
+            current, origStatements, finalStatements, origDeviceFuncs, finalDeviceFuncs, iterations);
+    }
+
+    private static string ApplyInitialHoistingAndInlining(
+        string source,
+        bool avoidStructConversionDefault,
+        Func<string, bool> testCandidate)
+    {
         string current = source;
 
         // Step 1: Hoist all non-ref local variable declarations to `T v = default(T);` at the top of each method body.
         string hoisted = HoistLocalsToDefault(current, avoidStructConversionDefault);
-        if (!string.Equals(hoisted, current, StringComparison.Ordinal) && TestCandidate(hoisted))
+        if (!string.Equals(hoisted, current, StringComparison.Ordinal) && testCandidate(hoisted))
         {
             current = hoisted;
         }
 
         // Step 2: Inline and prune [GpuDeviceFunction] helper methods.
-        current = FuzzInlinerAndSimplifier.InlineAndPruneDeviceFunctions(current, TestCandidate);
+        current = FuzzInlinerAndSimplifier.InlineAndPruneDeviceFunctions(current, testCandidate);
 
         // Re-hoist locals in case inlining introduced new local declarations.
         string rehoisted = HoistLocalsToDefault(current, avoidStructConversionDefault);
-        if (!string.Equals(rehoisted, current, StringComparison.Ordinal) && TestCandidate(rehoisted))
+        if (!string.Equals(rehoisted, current, StringComparison.Ordinal) && testCandidate(rehoisted))
         {
             current = rehoisted;
         }
 
-        // Step 3 & 4: Fixed-point loop of binary-search coarse statement removal, expression simplification, and unused local pruning.
+        return current;
+    }
+
+    private static string RunReductionFixedPointLoop(string current, Func<string, bool> testCandidate)
+    {
         for (int pass = 0; pass < 6; pass++)
         {
             string beforePass = current;
 
-            current = CoarseRemoveStatements(current, TestCandidate);
-            current = FuzzInlinerAndSimplifier.InlineAndPruneDeviceFunctions(current, TestCandidate);
-            current = FuzzInlinerAndSimplifier.SimplifyExpressions(current, TestCandidate);
-            current = FuzzInlinerAndSimplifier.PruneUnusedHoistedLocals(current, TestCandidate);
-            current = FuzzInlinerAndSimplifier.CollapseSingleAssignmentLocals(current, TestCandidate);
-            current = FuzzInlinerAndSimplifier.PruneUnusedHoistedLocals(current, TestCandidate);
+            current = CoarseRemoveStatements(current, testCandidate);
+            current = FuzzInlinerAndSimplifier.InlineAndPruneDeviceFunctions(current, testCandidate);
+            current = FuzzInlinerAndSimplifier.SimplifyExpressions(current, testCandidate);
+            current = FuzzInlinerAndSimplifier.PruneUnusedHoistedLocals(current, testCandidate);
+            current = FuzzInlinerAndSimplifier.CollapseSingleAssignmentLocals(current, testCandidate);
+            current = FuzzInlinerAndSimplifier.PruneUnusedHoistedLocals(current, testCandidate);
 
             if (string.Equals(current, beforePass, StringComparison.Ordinal))
             {
@@ -169,9 +187,7 @@ public static class FuzzReducer
             }
         }
 
-        int finalStatements = CountKernelExecutableStatements(current);
-        int finalDeviceFuncs = CountDeviceFunctionMethods(current);
-        return new FuzzReductionResult(current, origStatements, finalStatements, origDeviceFuncs, finalDeviceFuncs, iterations);
+        return current;
     }
 
     /// <summary>
@@ -466,35 +482,15 @@ public static class FuzzReducer
             }
 
             granularity = Math.Min(granularity, n);
-            bool reducedInPass = false;
             int chunkSize = Math.Max(1, n / granularity);
 
-            for (int chunkIndex = granularity - 1; chunkIndex >= 0; chunkIndex--)
+            if (TryRemoveChunk(
+                root, method, removableIndices, granularity, chunkSize, isInteresting, out string? candidate))
             {
-                int start = chunkIndex * chunkSize;
-                int end = (chunkIndex == granularity - 1) ? n : Math.Min(n, (chunkIndex + 1) * chunkSize);
-                if (start >= end)
-                {
-                    continue;
-                }
-
-                var toRemove = new HashSet<int>();
-                for (int i = start; i < end; i++)
-                {
-                    toRemove.Add(removableIndices[i]);
-                }
-
-                string candidate = FuzzSyntaxHelpers.RemoveMethodStatementsByIndex(root, method, toRemove);
-                if (isInteresting(candidate))
-                {
-                    current = candidate;
-                    granularity = Math.Max(2, granularity - 1);
-                    reducedInPass = true;
-                    break;
-                }
+                current = candidate;
+                granularity = Math.Max(2, granularity - 1);
             }
-
-            if (!reducedInPass)
+            else
             {
                 if (granularity >= n)
                 {
@@ -506,5 +502,42 @@ public static class FuzzReducer
         }
 
         return current;
+    }
+
+    private static bool TryRemoveChunk(
+        CompilationUnitSyntax root,
+        MethodDeclarationSyntax method,
+        IReadOnlyList<int> removableIndices,
+        int granularity,
+        int chunkSize,
+        Func<string, bool> isInteresting,
+        [NotNullWhen(true)] out string? successfulCandidate)
+    {
+        int n = removableIndices.Count;
+        for (int chunkIndex = granularity - 1; chunkIndex >= 0; chunkIndex--)
+        {
+            int start = chunkIndex * chunkSize;
+            int end = (chunkIndex == granularity - 1) ? n : Math.Min(n, (chunkIndex + 1) * chunkSize);
+            if (start >= end)
+            {
+                continue;
+            }
+
+            var toRemove = new HashSet<int>();
+            for (int i = start; i < end; i++)
+            {
+                toRemove.Add(removableIndices[i]);
+            }
+
+            string candidate = FuzzSyntaxHelpers.RemoveMethodStatementsByIndex(root, method, toRemove);
+            if (isInteresting(candidate))
+            {
+                successfulCandidate = candidate;
+                return true;
+            }
+        }
+
+        successfulCandidate = null;
+        return false;
     }
 }
