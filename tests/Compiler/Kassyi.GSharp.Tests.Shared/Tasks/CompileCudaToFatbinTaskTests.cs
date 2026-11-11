@@ -125,7 +125,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void CompileCudaToFatbinTask_TryDetectRegisterSpillSuppressGs0001()
+    public void CompileCudaToFatbinTask_SuppressGs0001Marker_LogsNoSpillWarning()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel1.cu", "// gsharp:suppress GS0001\ndummy");

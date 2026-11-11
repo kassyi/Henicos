@@ -70,7 +70,7 @@ internal static class NvccInvoker
             var reportPath = sourcePaths.Count > 0 ? sourcePaths[0] : "";
             var suppressedFunctions = CollectSuppressedSpillFunctions(log, sourcePaths);
 
-            if (NvccOutputParser.TryDetectRegisterSpill(
+            if (NvccOutputParser.HasRegisterSpill(
                     result.StandardOutput, result.StandardError, out var errorMessage, suppressedFunctions))
             {
                 log.LogWarning(subcategory: null, warningCode: "GS0001", helpKeyword: null, file: reportPath,

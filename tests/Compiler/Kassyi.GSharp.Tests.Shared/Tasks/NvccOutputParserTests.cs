@@ -12,28 +12,28 @@ public class NvccOutputParserTests
         MSBuildLocatorSetup.EnsureRegistered();
     }
 
-    private static bool TryDetectRegisterSpill(string output, string error, out string errorMessage) =>
-        NvccOutputParser.TryDetectRegisterSpill(output, error, out errorMessage);
+    private static bool HasRegisterSpill(string output, string error, out string errorMessage) =>
+        NvccOutputParser.HasRegisterSpill(output, error, out errorMessage);
 
     [Fact]
-    public void TryDetectRegisterSpill_ZeroBytesSpill_ReturnsFalse()
+    public void HasRegisterSpill_ZeroBytesSpill_ReturnsFalse()
     {
         var output = "some random output\ncompilation success";
         var error = "some ptxas info : 0 bytes spill";
 
-        var hasSpill = TryDetectRegisterSpill(output, error, out var errorMessage);
+        var hasSpill = HasRegisterSpill(output, error, out var errorMessage);
 
         Assert.False(hasSpill);
         Assert.Empty(errorMessage);
     }
 
     [Fact]
-    public void TryDetectRegisterSpill_SpillInErrorStream_ReportsTheSpill()
+    public void HasRegisterSpill_SpillInErrorStream_ReportsTheSpill()
     {
         var output = "";
         var error = "ptxas warning : 10 bytes spill\nFunction properties for _Z3foo";
 
-        var hasSpill = TryDetectRegisterSpill(output, error, out var errorMessage);
+        var hasSpill = HasRegisterSpill(output, error, out var errorMessage);
 
         Assert.True(hasSpill);
         Assert.Contains("Register spill detected", errorMessage);
@@ -41,12 +41,12 @@ public class NvccOutputParserTests
     }
 
     [Fact]
-    public void TryDetectRegisterSpill_SpillInOutputStream_ReportsTheSpill()
+    public void HasRegisterSpill_SpillInOutputStream_ReportsTheSpill()
     {
         var output = "Function properties for _Z3bar\nptxas info : 4 bytes spill";
         var error = "";
 
-        var hasSpill = TryDetectRegisterSpill(output, error, out var errorMessage);
+        var hasSpill = HasRegisterSpill(output, error, out var errorMessage);
 
         Assert.True(hasSpill);
         Assert.Contains("Register spill detected", errorMessage);
@@ -74,7 +74,7 @@ public class NvccOutputParserTests
     }
 
     [Fact]
-    public void TryDetectRegisterSpill_ScopedSuppression_OnlySuppressesMarkedFunction()
+    public void HasRegisterSpill_ScopedSuppression_OnlySuppressesMarkedFunction()
     {
         var cuContent = """
             // gsharp:suppress GS0001
@@ -88,14 +88,14 @@ public class NvccOutputParserTests
             ptxas info    : Function properties for __gsharp_k_SuppressedKernel
                 16 bytes stack frame, 12 bytes spill stores, 12 bytes spill loads
             """;
-        Assert.False(NvccOutputParser.TryDetectRegisterSpill(suppressedOnlyOutput, "", out _, suppressed));
+        Assert.False(NvccOutputParser.HasRegisterSpill(suppressedOnlyOutput, "", out _, suppressed));
 
         var mixedOutput = suppressedOnlyOutput + "\n" + """
             ptxas warning : Registers are spilled to local memory in function '__gsharp_k_UnsuppressedKernel', 8 bytes spill stores, 8 bytes spill loads
             ptxas info    : Function properties for __gsharp_k_UnsuppressedKernel
                 8 bytes stack frame, 8 bytes spill stores, 8 bytes spill loads
             """;
-        Assert.True(NvccOutputParser.TryDetectRegisterSpill(mixedOutput, "", out var errorMessage, suppressed));
+        Assert.True(NvccOutputParser.HasRegisterSpill(mixedOutput, "", out var errorMessage, suppressed));
         Assert.Contains("__gsharp_k_UnsuppressedKernel", errorMessage);
         Assert.DoesNotContain("__gsharp_k_SuppressedKernel", errorMessage);
     }

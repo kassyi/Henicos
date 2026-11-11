@@ -40,7 +40,7 @@ public static class NvccOutputParser
         return false;
     }
 
-    public static bool TryDetectRegisterSpill(
+    public static bool HasRegisterSpill(
         string output,
         string error,
         out string errorMessage,
@@ -155,7 +155,7 @@ public static class NvccOutputParser
                 continue;
             }
 
-            // Register spill lines are handled by TryDetectRegisterSpill (GS0001).
+            // Register spill lines are handled by HasRegisterSpill (GS0001).
             if (HasSpill(line) ||
                 (line.IndexOf("ptxas warning", StringComparison.OrdinalIgnoreCase) >= 0 &&
                  line.IndexOf("spill", StringComparison.OrdinalIgnoreCase) >= 0))
