@@ -129,14 +129,12 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         Memory.AddCall(invocation, node);
     }
 
-    // A call that splits the state machine; a barrier, or a call that reaches one, is also a site of GSH0037. The gaps
-    // inside a Gpu.SyncGrid(body) are not split points here: the call is (a grid barrier). The memory, though, is
-    // synced in each gap, where the expansion places the grid sync, and not where the body starts.
+    // A call that splits the state machine; a barrier, or a call that reaches one, is also a site of GSH0037
     public void OnSplit(SplitPoint split, int node)
     {
         if (split.Kind == SplitKind.Gap)
         {
-            Memory.AddSync(SyncScope.Grid, node);
+            OnGap(node);
             return;
         }
 
@@ -148,11 +146,26 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         Nodes[node].HasSplit = true;
         Nodes[node].Splits.Add(call);
         RecordNode(SplitsAt, call, node);
-        if (split.BarrierScope is not { } scope)
+        if (split.BarrierScope is { } scope)
         {
-            return;
+            RecordBarrierSite(split, call, scope, graph, node);
         }
+    }
 
+    // A gap inside a Gpu.SyncGrid(body) is not a site: the call is (a grid barrier). Every thread of the grid waits at
+    // the grid sync that the expansion places in the gap, so it is a point where the threads that skipped a divergent
+    // barrier wait while the others wait at that barrier (#982), and the memory is synced there, not where the body
+    // starts.
+    private void OnGap(int node)
+    {
+        Nodes[node].HasSplit = true;
+        Memory.AddSync(SyncScope.Grid, node);
+    }
+
+    // A barrier or barrier-reaching call: a site of GSH0083 / GSH0084; a barrier itself syncs the memory, the callee
+    // of a barrier-reaching call lowers it through its summary (AddCall)
+    private void RecordBarrierSite(SplitPoint split, SyntaxNode call, SyncScope scope, ControlFlowGraph graph, int node)
+    {
         Sites[call] = new BarrierSite(scope, split.BarrierCall, graph);
         if (split.BarrierCall is { } invocation)
         {
@@ -160,7 +173,6 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         }
         else if (split.Kind == SplitKind.Call)
         {
-            // A barrier; the callee of a barrier-reaching call lowers the memory through its summary (AddCall)
             Memory.AddSync(scope, node);
         }
     }
