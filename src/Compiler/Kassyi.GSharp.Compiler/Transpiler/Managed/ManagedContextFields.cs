@@ -29,8 +29,8 @@ internal static class ManagedContextFields
     /// <remarks>
     /// [WHY] The lowering hoists a ref local only when it is live after a split point (<see cref="RefLocalLiveness"/>),
     /// which the analyzer reports (GSH0039), or when it is rebound with <c>= ref</c> in the method (hoisted as before,
-    /// until #921 keeps ref locals in the frame). A class cannot hold a ref field (CS9059), and generated code that does
-    /// not compile hides every analyzer diagnostic of the build, GSH0039 included; so the state machine of such a
+    /// until #921 keeps ref locals in the frame). A class cannot hold a ref field (CS9059), and generated code that
+    /// does not compile hides every analyzer diagnostic of the build, GSH0039 included; so the state machine of such a
     /// method only throws, and its frame class leaves the ref local out (#1640).
     /// </remarks>
     public static VariableDeclaratorSyntax? FindHeldRefLocal(IReadOnlyList<VariableDeclaratorSyntax>? contextFields) =>
