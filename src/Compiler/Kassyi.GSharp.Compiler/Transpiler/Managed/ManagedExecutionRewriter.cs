@@ -124,7 +124,9 @@ internal sealed partial class ManagedExecutionRewriter(
             StructConstructorEmitter.IsEmittedStructConstructor(ctor, semanticModel.Compilation) &&
             DeclaresSharedMemoryInStruct(structType, semanticModel.Compilation))
         {
-            var typeSyntax = SyntaxFactory.ParseTypeName(structType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            using var typeNameWriter = new SourceWriter();
+            typeNameWriter.AppendCsharpTypeName(structType);
+            var typeSyntax = SyntaxFactory.ParseTypeName(typeNameWriter.ToString());
             var typeArgs = SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(typeSyntax));
             var beginCall = SyntaxFactory.InvocationExpression(
                 ManagedNames.CreateMemberAccess(

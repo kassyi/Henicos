@@ -102,7 +102,7 @@ internal static class CSharpTypeNameWriter
                 writer.Append('*');
                 break;
             case ITypeParameterSymbol typeParameter:
-                writer.Append(typeParameter.Name);
+                AppendIdentifier(writer, typeParameter.Name);
                 break;
             case INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType
                 when useKeywords:
@@ -135,12 +135,12 @@ internal static class CSharpTypeNameWriter
                 writer.Append('.');
                 break;
             case INamespaceSymbol { IsGlobalNamespace: false } containingNamespace:
-                writer.AppendNamespace(containingNamespace);
+                AppendNamespace(writer, containingNamespace, escapeKeywords: true);
                 writer.Append('.');
                 break;
         }
 
-        writer.Append(type.Name);
+        AppendIdentifier(writer, type.Name);
         if (type is not INamedTypeSymbol { TypeArguments: { Length: > 0 } typeArguments })
         {
             return;
@@ -165,18 +165,38 @@ internal static class CSharpTypeNameWriter
     /// </summary>
     public static ref readonly SourceWriter AppendNamespace(this in SourceWriter writer, INamespaceSymbol? ns)
     {
+        AppendNamespace(writer, ns, escapeKeywords: false);
+        return ref writer;
+    }
+
+    // With escapeKeywords, a segment that is a keyword is written as C# source spells it (@event)
+    private static void AppendNamespace(in SourceWriter writer, INamespaceSymbol? ns, bool escapeKeywords)
+    {
         if (ns is null || ns.IsGlobalNamespace)
         {
-            return ref writer;
+            return;
         }
 
         if (ns.ContainingNamespace is { IsGlobalNamespace: false } parentNs)
         {
-            writer.AppendNamespace(parentNs);
+            AppendNamespace(writer, parentNs, escapeKeywords);
             writer.Append('.');
         }
 
-        writer.Append(ns.Name);
-        return ref writer;
+        if (escapeKeywords)
+        {
+            AppendIdentifier(writer, ns.Name);
+        }
+        else
+        {
+            writer.Append(ns.Name);
+        }
+    }
+
+    // A name as C# source spells it: a keyword gets @ (@class), as SymbolDisplayFormat.FullyQualifiedFormat writes it
+    private static void AppendIdentifier(in SourceWriter writer, string name)
+    {
+        writer.AppendIf(SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None, "@");
+        writer.Append(name);
     }
 }
