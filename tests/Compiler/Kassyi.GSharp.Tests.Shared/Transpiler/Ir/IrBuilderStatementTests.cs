@@ -21,7 +21,7 @@ public class IrBuilderStatementTests
         var method = IrTestCases.BuildCase("MultipleDeclarators");
 
         Assert.Equal("method Ir.MultipleDeclarators()\n{\nlocal int a = 1\nlocal int b = a\n}\n",
-            IrPrinter.Print(method).Replace("\r", ""));
+            IrTestCases.PrintLf(method));
         var second = Assert.IsType<IrLocalDeclaration>(method.Body.Statements[1]);
         var read = Assert.IsType<IrVariableReference>(second.Initializer);
         Assert.Same(Assert.IsType<IrLocalDeclaration>(method.Body.Statements[0]).Variable, read.Variable);
@@ -31,7 +31,7 @@ public class IrBuilderStatementTests
     [Scenario(TestScenario.HappyPath)]
     public void ExpressionBody_IsOneReturn() =>
         Assert.Equal("method Ir.ExpressionBody(int x)\n{\nreturn (x + 1)\n}\n",
-            IrPrinter.Print(IrTestCases.BuildCase("ExpressionBody")).Replace("\r", ""));
+            IrTestCases.PrintLf(IrTestCases.BuildCase("ExpressionBody")));
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
@@ -42,7 +42,7 @@ public class IrBuilderStatementTests
         Assert.IsType<IrExpressionStatement>(@if.Then);
         Assert.IsType<IrBlock>(@if.Else);
         Assert.Equal("if (x > 0)\n(ref data[0] = 1)\nelse\n{\n(ref data[0] = 2)\n}",
-            IrPrinter.Print(@if).Replace("\r", ""));
+            IrTestCases.PrintLf(@if));
     }
 
     [Fact]
