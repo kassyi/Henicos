@@ -33,11 +33,7 @@ internal sealed class IteratorYieldRewriter(
         if (node.IsKind(SyntaxKind.YieldBreakStatement))
         {
             // goto __gsharp_iter_end_<r>;
-            return SyntaxFactory.GotoStatement(
-                    SyntaxKind.GotoStatement,
-                    SyntaxFactory.IdentifierName(endLabel)
-                )
-                .WithAdditionalAnnotations(node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+            return LoweringSyntax.Goto(endLabel).WithOriginalSpanFrom(node);
         }
 
         var yieldIndex = _yieldCounter++;
@@ -85,8 +81,7 @@ internal sealed class IteratorYieldRewriter(
     private BlockSyntax CopyConsumer(string nextLabel, int consumerRegion)
     {
         var uninitDeclarator = SyntaxFactory.VariableDeclarator(annotatedForEach.Identifier)
-            .WithAdditionalAnnotations(
-                annotatedForEach.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+            .WithOriginalSpanFrom(annotatedForEach);
         var uninitVarDecl = SyntaxFactory.VariableDeclaration(
             loopVariableType,
             SyntaxFactory.SingletonSeparatedList(uninitDeclarator)

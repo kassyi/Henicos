@@ -125,9 +125,8 @@ internal sealed partial class ManagedExecutionRewriter
             return guarded;
         }
 
-        // <label>: ;
-        var end = SyntaxFactory.LabeledStatement(SyntaxFactory.Identifier(endLabel), SyntaxFactory.EmptyStatement());
-        return SyntaxFactory.Block(guarded, end);
+        // { <guarded> <label>: ; }
+        return SyntaxFactory.Block(guarded, LoweringSyntax.EmptyLabel(endLabel));
     }
 
     // Gpu.GridStrideLoop([ref ctx,] count, body) becomes:
@@ -392,8 +391,7 @@ internal sealed partial class ManagedExecutionRewriter
         // A return of a Gpu.SingleThread body leaves the body: goto <label>;
         if (_singleThreadEndLabel is { } singleThreadEnd && _inLambdaOrLocalFuncCount == _singleThreadDepth)
         {
-            return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(singleThreadEnd))
-                .WithTriviaFrom(node);
+            return LoweringSyntax.Goto(singleThreadEnd).WithTriviaFrom(node);
         }
 
         // A managed version returns as the user's method does

@@ -1,49 +1,10 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Lowers loop constructs (for, while, do-while) into flat goto sequences for linear state machine generation.</summary>
-public class LoopRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
+public class LoopRewriter : SplitPointBlockRewriter
 {
     private int _labelCounter;
     private readonly Stack<(string? Break, string? Continue)> _loopStack = new();
-
-    private static bool ContainsBarrier(SyntaxNode node) =>
-        node.DescendantNodesAndSelf()
-            .AsStackEnumerable()
-            .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv));
-
-    /// <summary>Rewrites loops within the block into flat goto sequences.</summary>
-    public BlockSyntax Rewrite(BlockSyntax block) =>
-        ContainsBarrier(block) ? (BlockSyntax)Visit(block) : block;
-
-    public override SyntaxNode VisitBlock(BlockSyntax node)
-    {
-        var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>(node.Statements.Count);
-
-        foreach (var statement in node.Statements)
-        {
-            var visited = (StatementSyntax)Visit(statement);
-
-            if (visited is BlockSyntax nestedBlock)
-            {
-                // [WHY] Loop statements only become BlockSyntax when they already contain a barrier.
-                // Explicit nested BlockSyntax nodes are only inlined if they contain a barrier.
-                if (statement is not BlockSyntax || ContainsBarrier(statement))
-                {
-                    newStatements.AddRange(nestedBlock.Statements);
-                }
-                else
-                {
-                    newStatements.Add(nestedBlock);
-                }
-            }
-            else
-            {
-                newStatements.Add(visited);
-            }
-        }
-
-        return SyntaxFactory.Block(newStatements);
-    }
 
     public override SyntaxNode VisitBreakStatement(BreakStatementSyntax node)
     {
@@ -52,7 +13,7 @@ public class LoopRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
             return node;
         }
 
-        return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(breakLabel));
+        return LoweringSyntax.Goto(breakLabel);
     }
 
     public override SyntaxNode VisitContinueStatement(ContinueStatementSyntax node)
@@ -62,12 +23,12 @@ public class LoopRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
             return node;
         }
 
-        return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(continueLabel));
+        return LoweringSyntax.Goto(continueLabel);
     }
 
     public override SyntaxNode? VisitWhileStatement(WhileStatementSyntax node)
     {
-        if (!ContainsBarrier(node))
+        if (!BarrierHelper.ContainsPhaseBarrier(node))
         {
             return VisitBarrierFreeLoop(node, base.VisitWhileStatement);
         }
@@ -77,7 +38,7 @@ public class LoopRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
 
     public override SyntaxNode? VisitDoStatement(DoStatementSyntax node)
     {
-        if (!ContainsBarrier(node))
+        if (!BarrierHelper.ContainsPhaseBarrier(node))
         {
             return VisitBarrierFreeLoop(node, base.VisitDoStatement);
         }
@@ -87,7 +48,7 @@ public class LoopRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
 
     public override SyntaxNode? VisitForStatement(ForStatementSyntax node)
     {
-        if (!ContainsBarrier(node))
+        if (!BarrierHelper.ContainsPhaseBarrier(node))
         {
             return VisitBarrierFreeLoop(node, base.VisitForStatement);
         }
@@ -176,7 +137,7 @@ public class LoopRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
 
         _loopStack.Push((endLabel, continueLabel));
 
-        statements.Add(SyntaxFactory.LabeledStatement(startLabel, SyntaxFactory.EmptyStatement()));
+        statements.Add(LoweringSyntax.EmptyLabel(startLabel));
 
         if (!isPostCondition && condition != null)
         {
@@ -185,21 +146,11 @@ public class LoopRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
                 SyntaxKind.LogicalNotExpression,
                 SyntaxFactory.ParenthesizedExpression((ExpressionSyntax)Visit(condition))
             );
-            var gotoEnd = SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(endLabel));
-            statements.Add(SyntaxFactory.IfStatement(notCondition, gotoEnd));
+            statements.Add(SyntaxFactory.IfStatement(notCondition, LoweringSyntax.Goto(endLabel)));
         }
 
-        var body = (StatementSyntax)Visit(bodySyntax);
-        if (body is BlockSyntax bodyBlock)
-        {
-            statements.AddRange(bodyBlock.Statements);
-        }
-        else
-        {
-            statements.Add(body);
-        }
-
-        statements.Add(SyntaxFactory.LabeledStatement(continueLabel, SyntaxFactory.EmptyStatement()));
+        AddInlined(statements, (StatementSyntax)Visit(bodySyntax));
+        statements.Add(LoweringSyntax.EmptyLabel(continueLabel));
 
         if (incrementors != null)
         {
@@ -208,18 +159,16 @@ public class LoopRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
 
         if (isPostCondition && condition != null)
         {
+            // if (<condition>) goto <start label>;
             var visitedCondition = (ExpressionSyntax)Visit(condition);
-            var gotoStart =
-                SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(startLabel));
-            statements.Add(SyntaxFactory.IfStatement(visitedCondition, gotoStart));
+            statements.Add(SyntaxFactory.IfStatement(visitedCondition, LoweringSyntax.Goto(startLabel)));
         }
         else
         {
-            statements.Add(SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement,
-                SyntaxFactory.IdentifierName(startLabel)));
+            statements.Add(LoweringSyntax.Goto(startLabel));
         }
 
-        statements.Add(SyntaxFactory.LabeledStatement(endLabel, SyntaxFactory.EmptyStatement()));
+        statements.Add(LoweringSyntax.EmptyLabel(endLabel));
 
         _loopStack.Pop();
 
