@@ -24,7 +24,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 | Name | Description |
 | --- | --- |
 | [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpubiguint-uint32-gpubiguint) | Launches `GpuBigIntScalarKernels.ScalarMulKernel` to multiply a multi-word operand by a 32-bit unsigned scalar. |
-| [Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Executes global non-cooperative dual-modulus NTT multiplication and CRT carry resolution on the GPU. |
+| [Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Multiplies by a 3-prime 35-bit NTT convolution with Garner CRT3 reconstruction on the GPU; squares through a dedicated tableless path when both operands are the same buffer. |
 | [Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcdgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the Greatest Common Divisor using `GpuBigIntGcdKernels.ExecuteLehmerGcdMacroKernel` and `GpuBigIntDivRem.Mod` fallback steps. |
 | [ModInverse(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modinversegpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes the modular multiplicative inverse via `GpuBigIntGcdKernels.ExecuteExtendedBinaryGcdMacroKernel` (for odd moduli) or `ModInverseHostLoopController` (for even moduli). |
 | [InverseSqrtMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#inversesqrtmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Launches `GpuBigIntSqrtKernels.InverseSqrtNewtonRaphsonMegaKernel` to compute the fixed-point inverse square root on the GPU. |
@@ -61,7 +61,7 @@ Thrown when the kernel launch fails.
 
 ## Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Executes global non-cooperative dual-modulus Number Theoretic Transform (NTT) convolution (`P1 = 2013265921`, `P2 = 1811939329`) followed by Chinese Remainder Theorem (CRT) reconstruction and stream-compacted carry propagation on the GPU.
+Multiplies by a 3-prime 35-bit Number Theoretic Transform (NTT) convolution (`Ntt35ConvolutionLauncher.Multiply`) with division-free Garner CRT3 reconstruction and carry resolution on the GPU, using scratch buffers rented from the workspace. When `leftOperand` and `rightOperand` are the same buffer with the same word count, it squares instead (`Ntt35ConvolutionLauncher.Square`: tableless NTT with fused shared-memory middle passes).
 
 ```csharp
 public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);

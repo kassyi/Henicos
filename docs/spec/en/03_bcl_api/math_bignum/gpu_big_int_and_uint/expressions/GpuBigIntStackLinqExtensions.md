@@ -436,6 +436,33 @@ A new parallel sequence that contains elements from the input sequence that sati
 `ArgumentNullException`<br>
 Thrown when `predicate` is `null`.
 
+## Division and Remainder Projections
+
+Each method below has an overload for `GpuBigInt` elements and one for `GpuBigIntExpr` elements, and exists for both `ParallelStackEnumerable<TEnumerator, T>` and `StackEnumerable<TEnumerator, T>` sources. The result is a sequence of deferred `GpuBigIntExpr` values of the same kind as the source.
+
+| Name | Description |
+| --- | --- |
+| `SelectDivide<TEnumerator>(source, GpuBigInt scalar)` | Divides each element by `scalar` (`x / scalar`). |
+| `SelectModulo<TEnumerator>(source, GpuBigInt scalar)` | The remainder of each element divided by `scalar` (`x % scalar`). |
+| `ZipDivide<TLeftEnumerator, TRightEnumerator>(left, right)` | Divides the elements of `left` by those of `right` element-wise. |
+| `ZipModulo<TLeftEnumerator, TRightEnumerator>(left, right)` | The element-wise remainder of `left` divided by `right`. |
+
+## Sequential (StackEnumerable) Reductions
+
+`Sum`, `Max`, `Min`, `Aggregate` and `Average` also exist for `StackEnumerable<TEnumerator, GpuBigInt>` and `StackEnumerable<TEnumerator, GpuBigIntExpr>`, with the signatures of the parallel overloads above. `Sum` and `Average` build the same balanced tree as their parallel forms: integer addition is exact, so the order cannot change the value. `Aggregate` folds from the left, in the order written, because it runs a user function.
+
+## ZipStackEnumerator Struct
+
+```csharp
+public ref struct ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, TLeft, TRight, TResult>
+    : IStackEnumerator<TResult>
+    where TLeftEnumerator : struct, IStackEnumerator<TLeft>, allows ref struct
+    where TRightEnumerator : struct, IStackEnumerator<TRight>, allows ref struct
+    where TResult : struct
+```
+
+The enumerator of the `Zip*` methods: it combines two stack-allocated sequences element-wise with a selector, without heap allocation.
+
 ## Remarks
 
 > [!NOTE]

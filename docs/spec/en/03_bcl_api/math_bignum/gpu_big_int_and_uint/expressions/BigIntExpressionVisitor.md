@@ -96,7 +96,7 @@ public ScopedBigIntMemory VisitGpuUIntBigInteger(GpuBigUInt node);
 
 #### Parameters
 
-`node` _[GpuBigUInt](../GpuUIntBigInteger.md)_<br>
+`node` _[GpuBigUInt](../GpuBigUInt.md)_<br>
 The GPU BigInteger node.
 
 #### Returns

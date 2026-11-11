@@ -41,3 +41,10 @@ The rules of [`GpuBigUIntView`](GpuBigUIntView.md) apply: the view lives only in
 | `GetElement(int index)` | A [`GpuBigUIntView`](GpuBigUIntView.md) of one element. |
 | `Slice(int elementOffset, int elementCount)` | A view of a range of the elements. |
 | `ToProxy()` | The words of the view as a kernel array argument of `TotalWords` words, for a `Launch{Kernel}Ptr` launcher or a shadow struct field. |
+| `ToString()` | Returns the length, the words per element and the buffer handle, for debugging; it does not read device memory. |
+
+## Operators
+
+| Name | Description |
+| --- | --- |
+| `implicit operator GpuBigUIntArrayView(GpuBigUIntArray)` | Converts an owned `GpuBigUIntArray` to a view of its buffer without copying. |

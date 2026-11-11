@@ -1,22 +1,22 @@
 ---
-title: "Standard Math Library (Stdlib.Math)"
+title: "Standard Math Library (Kassyi.GSharp.Stdlib.GpuMath)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
 description: "Overview of the Kassyi.GSharp.Stdlib.GpuMath namespace, providing arbitrary-precision arithmetic and high-performance algorithms for the GPU."
 ---
 
-# Standard Math Library (Stdlib.Math)
+# Standard Math Library (Kassyi.GSharp.Stdlib.GpuMath)
 
 The `Kassyi.GSharp.Stdlib.GpuMath` namespace provides high-performance, arbitrary-precision arithmetic (`GpuBigInt`, `GpuBigFloat`) and advanced mathematical algorithms designed for the GPU.
 
 > [!NOTE]
 > **Dual Architecture: Host-Orchestrated vs GPU-Direct**
 >
-> The `Stdlib.Math` library offers two distinct execution models:
+> The `Kassyi.GSharp.Stdlib.GpuMath` library offers two distinct execution models:
 >
 > 1. **Host-Orchestrated (Dynamic Precision)**: Types like the non-generic `GpuBigInt` rely on `GpuWorkspace` memory pools and coordinate thousands of limbs for million-bit arithmetic. These are **Host-Side Only** and cannot be used inside `[GpuKernel]`.
-> 2. **GPU-Direct (Fixed Precision)**: Types like `GpuBigFloat<TSize>` and `GpuBigUInt<TSize>` use C# 12 `[InlineArray]` (e.g., `LimbBuffer8`) to allocate fixed-size buffers directly on the stack/registers. These are **100% Zero-Allocation** and execute natively _inside_ `[GpuKernel]`.
+> 2. **GPU-Direct (Fixed Precision)**: Types like `GpuBigUInt<TSize>` use C# 12 `[InlineArray]` (e.g., `LimbBuffer8`) to allocate fixed-size buffers directly on the stack/registers. These are **100% Zero-Allocation** and execute natively _inside_ `[GpuKernel]`.
 
 ## Namespaces and Components
 
@@ -33,20 +33,16 @@ This module is split into several logical sub-components:
 
 ## Memory Management and Zero-Allocation
 
-G# enforces a strict Zero-Allocation rule inside GPU kernels. The `Stdlib.Math` library satisfies this in two different ways depending on the model:
+G# enforces a strict Zero-Allocation rule inside GPU kernels. The `Kassyi.GSharp.Stdlib.GpuMath` library satisfies this in two different ways depending on the model:
 
 - **GPU-Direct Types (`<TSize>`)**:
   Uses C# 12 `[InlineArray]` (such as `LimbBuffer8`) to map array-like structures directly to contiguous registers or local memory. Instantiating these (e.g. `new LimbBuffer8()`) does **not** allocate memory on the heap. They are completely GC-free value types (`struct`), allowing you to use object-oriented syntax without violating zero-allocation rules.
 
     ```csharp
-    // Because it is a struct with [InlineArray], it acts as a fixed-size
-    // value type buffer. No heap allocation (GC) occurs when instantiated.
-    [InlineArray(8)]
-    public struct LimbBuffer8
-    {
-        private uint _element0;
-    }
-
+    // LimbBuffer8 (Kassyi.GSharp.Stdlib.GpuMath.BigNum) is declared as
+    //   [InlineArray(8)] public struct LimbBuffer8 { private uint _element0; }
+    // so it acts as a fixed-size value type buffer. No heap allocation (GC)
+    // occurs when it is instantiated.
     [GpuKernel]
     public static void Example()
     {
@@ -54,7 +50,7 @@ G# enforces a strict Zero-Allocation rule inside GPU kernels. The `Stdlib.Math` 
         // directly on the stack (or as registers in PTX), NOT on the heap.
         var buffer = new LimbBuffer8();
         buffer[0] = 3;
-        var floatVal = new GpuBigFloat<LimbBuffer8>(/*...*/);
+        var value = new GpuBigUInt<LimbBuffer8>(buffer);
     }
     ```
 

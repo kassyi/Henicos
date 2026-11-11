@@ -25,19 +25,22 @@ public static partial class GpuBigIntScalarKernels
 
 | Name | Description |
 | --- | --- |
-| [ScalarAddKernel(uint[], uint, uint[], int)](#scalaraddkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel scalar addition on a large integer. |
-| [ScalarSubKernel(uint[], uint, uint[], int)](#scalarsubkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel scalar subtraction on a large integer. |
-| [Device_ScalarAddSubParallel(uint[], uint, uint[], int, int, bool)](#device_scalaraddsubparalleluint-uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel scalar addition or subtraction using Kogge-Stone carry lookahead. |
-| [ScalarMulKernel(uint[], uint, uint[], int)](#scalarmulkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel scalar multiplication on a large integer. |
-| [DeviceScalarMulParallel(uint[], uint, uint[], int, bool)](#devicescalarmulparalleluint-uint-uint-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel scalar multiplication using warp shuffle and Kogge-Stone carry lookahead. |
+| [ScalarAddKernel(uint[], uint, uint[], int, int, uint[])](#scalaraddkerneluint-uint-uint-int-int-uint) | A GPU kernel (`[GpuKernel]`) that computes `result = a + s`. |
+| [ScalarSubKernel(uint[], uint, uint[], int, int, uint[])](#scalarsubkerneluint-uint-uint-int-int-uint) | A GPU kernel (`[GpuKernel]`) that computes `result = a - s`. |
+| [DeviceScalarAddSub(uint[], uint, uint[], int, int, int, uint[], uint)](#devicescalaraddsubuint-uint-uint-int-int-int-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that adds or subtracts a scalar in one block with a carry lookahead scan. |
+| [ScalarMulKernel(uint[], uint, uint[], int, int, uint[])](#scalarmulkerneluint-uint-uint-int-int-uint) | A GPU kernel (`[GpuKernel]`) that computes `result = a * s`. |
+| [DeviceScalarMul(uint[], uint, uint[], int, int, uint[])](#devicescalarmuluint-uint-uint-int-int-uint) | A GPU device function (`[GpuDeviceFunction]`) that multiplies by a scalar in one block with warp shuffles and a carry lookahead scan. |
+| [ScalarDivByUInt32Kernel(uint[], uint, uint[], uint[], int)](#scalardivbyuint32kerneluint-uint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that divides by a 32-bit scalar and writes the quotient and the remainder. |
 
-## ScalarAddKernel(uint[], uint, uint[], int)
+The add, subtract and multiply kernels take the result width `resultWords` and the workspace's device status words `status`. A result that does not fit is a domain error: the kernel records it in `status` (`GpuDomainErrors`), and the host reports it as `OverflowException` at the next read of the workspace stream. Launch each of them with one block whose size is a multiple of 32.
 
-A GPU kernel (`[GpuKernel]`) that performs parallel scalar addition on a large integer.
+## ScalarAddKernel(uint[], uint, uint[], int, int, uint[])
+
+A GPU kernel (`[GpuKernel]`) that computes `result = a + s`. A result wider than `numWords` receives the carry in word `numWords` and zeros above it; a result of `numWords` words reports a carry as `GpuDomainErrors.ScalarAddOverflow`.
 
 ```csharp
 [GpuKernel]
-public static void ScalarAddKernel(uint[] dA, uint s, uint[] dResult, int numWords);
+public static void ScalarAddKernel(uint[] dA, uint s, uint[] dResult, int numWords, int resultWords, uint[] status);
 ```
 
 #### Parameters
@@ -49,124 +52,82 @@ The large integer operand buffer.
 The scalar 32-bit unsigned integer to add.
 
 `dResult` _uint[]_<br>
-The buffer to store the result.
+The buffer to store the result, `resultWords` words.
 
 `numWords` _int_<br>
-The total number of words.
+The word count of `dA`.
 
-## ScalarSubKernel(uint[], uint, uint[], int)
+`resultWords` _int_<br>
+The word count of `dResult`, at least `numWords`.
 
-A GPU kernel (`[GpuKernel]`) that performs parallel scalar subtraction on a large integer.
+`status` _uint[]_<br>
+The workspace's device status words, which receive a domain error.
+
+## ScalarSubKernel(uint[], uint, uint[], int, int, uint[])
+
+A GPU kernel (`[GpuKernel]`) that computes `result = a - s`. A result wider than `numWords` receives zeros above the difference; a borrow (`a < s`) is reported as `GpuDomainErrors.ScalarSubtractBelowZero` at any width. The parameters are those of `ScalarAddKernel`.
 
 ```csharp
 [GpuKernel]
-public static void ScalarSubKernel(uint[] dA, uint s, uint[] dResult, int numWords);
+public static void ScalarSubKernel(uint[] dA, uint s, uint[] dResult, int numWords, int resultWords, uint[] status);
 ```
 
-#### Parameters
+## DeviceScalarAddSub(uint[], uint, uint[], int, int, int, uint[], uint)
 
-`dA` _uint[]_<br>
-The large integer operand buffer.
-
-`s` _uint_<br>
-The scalar 32-bit unsigned integer to subtract.
-
-`dResult` _uint[]_<br>
-The buffer to store the result.
-
-`numWords` _int_<br>
-The total number of words.
-
-## Device_ScalarAddSubParallel(uint[], uint, uint[], int, int, bool)
-
-A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel scalar addition or subtraction using Kogge-Stone carry lookahead.
+A GPU device function (`[GpuDeviceFunction]`) that computes `a + s` (`subtract = 0`) or `a - s` (`subtract = 1`) over `numWords` words, then the word above them, and reports `code` to `status` when the result does not fit. `a` may be the result itself (`x++`): each thread reads its word before it writes it.
 
 ```csharp
 [GpuDeviceFunction]
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static void Device_ScalarAddSubParallel(
-    [GpuReadOnly] uint[] a,
+public static void DeviceScalarAddSub(
+    uint[] a,
     uint s,
     uint[] result,
     int numWords,
-    int sign,
-    bool syncThreads = true);
+    int resultWords,
+    int subtract,
+    uint[] status,
+    uint code);
 ```
 
-#### Parameters
+## ScalarMulKernel(uint[], uint, uint[], int, int, uint[])
 
-`a` _uint[]_<br>
-The large integer operand buffer.
-
-`s` _uint_<br>
-The scalar 32-bit unsigned integer operand.
-
-`result` _uint[]_<br>
-The destination buffer.
-
-`numWords` _int_<br>
-The total number of words.
-
-`sign` _int_<br>
-`1` for scalar addition (`a + s`), or `-1` for scalar subtraction (`a - s`).
-
-`syncThreads` _bool_<br>
-If `true`, synchronizes threads within the block upon completion.
-
-## ScalarMulKernel(uint[], uint, uint[], int)
-
-A GPU kernel (`[GpuKernel]`) that performs parallel scalar multiplication on a large integer.
+A GPU kernel (`[GpuKernel]`) that computes `result = a * s`. A result wider than `numWords` receives the top word of the product in word `numWords` and zeros above it; a result of `numWords` words reports a non-zero top word as `GpuDomainErrors.ScalarMultiplyOverflow`. The parameters are those of `ScalarAddKernel`.
 
 ```csharp
 [GpuKernel]
-public static void ScalarMulKernel(uint[] dA, uint s, uint[] dResult, int numWords);
+public static void ScalarMulKernel(uint[] dA, uint s, uint[] dResult, int numWords, int resultWords, uint[] status);
 ```
 
-#### Parameters
+## DeviceScalarMul(uint[], uint, uint[], int, int, uint[])
 
-`dA` _uint[]_<br>
-The large integer operand buffer.
-
-`s` _uint_<br>
-The scalar 32-bit unsigned integer to multiply by.
-
-`dResult` _uint[]_<br>
-The buffer to store the result.
-
-`numWords` _int_<br>
-The total number of words.
-
-## DeviceScalarMulParallel(uint[], uint, uint[], int, bool)
-
-A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel scalar multiplication using warp shuffle and Kogge-Stone carry lookahead.
+A GPU device function (`[GpuDeviceFunction]`) that computes `a * s` over `numWords` words, then the top word, in one block. `a` may be the result itself.
 
 ```csharp
 [GpuDeviceFunction]
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-public static void DeviceScalarMulParallel(
-    [GpuReadOnly] uint[] a,
+public static void DeviceScalarMul(
+    uint[] a,
     uint s,
     uint[] result,
     int numWords,
-    bool syncThreads = true);
+    int resultWords,
+    uint[] status);
 ```
 
-#### Parameters
+## ScalarDivByUInt32Kernel(uint[], uint, uint[], uint[], int)
 
-`a` _uint[]_<br>
-The large integer operand buffer.
+A GPU kernel (`[GpuKernel]`) that divides `dA` by `divisor` from the top word down on one thread (thread 0 of block 0), writing the quotient to `dResult` and the remainder to `dRemainder[0]`.
 
-`s` _uint_<br>
-The scalar 32-bit unsigned integer multiplier.
-
-`result` _uint[]_<br>
-The destination buffer.
-
-`numWords` _int_<br>
-The total number of words.
-
-`syncThreads` _bool_<br>
-If `true`, synchronizes threads within the block upon completion.
+```csharp
+[GpuKernel]
+public static void ScalarDivByUInt32Kernel(
+    [GpuReadOnly] uint[] dA,
+    uint divisor,
+    uint[] dResult,
+    uint[] dRemainder,
+    int numWords);
+```
 
 ## Examples
 
