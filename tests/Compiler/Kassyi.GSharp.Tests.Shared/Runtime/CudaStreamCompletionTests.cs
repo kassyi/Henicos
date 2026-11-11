@@ -304,8 +304,7 @@ public class CudaStreamCompletionTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
 
-        // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, CUstreamCaptureMode.ThreadLocal));
         try
         {
             Assert.Throws<InvalidOperationException>(() => CudaStreamCompletion.WaitAsync(stream.Handle));

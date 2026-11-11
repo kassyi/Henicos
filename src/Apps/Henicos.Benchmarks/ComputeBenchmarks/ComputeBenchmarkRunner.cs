@@ -76,7 +76,7 @@ public static class ComputeBenchmarkRunner
         return BenchmarkStats.Calculate(samples);
     }
 
-    public static bool RunSuite(string suiteName, int iterations = 10, bool jsonOutput = false)
+    public static bool TryRunSuite(string suiteName, int iterations = 10, bool jsonOutput = false)
     {
         var logOut = jsonOutput ? Console.Error : Console.Out;
         var results = RunSuite(suiteName, iterations, logOut);
@@ -127,10 +127,11 @@ public static class ComputeBenchmarkRunner
         var cpuTime = ExecuteCpuBaseline(benchmark, logOut);
 
         var errorMessage = "";
-        var nativeSuccess = ExecuteNativeCuda(benchmark, iterations, logOut, ref errorMessage, out var nativeStats);
-        var gsharpSuccess = ExecuteGSharp(benchmark, iterations, logOut, ref errorMessage, out var gsharpStats);
+        var nativeSuccess = TryExecuteNativeCuda(
+            benchmark, iterations, logOut, ref errorMessage, out var nativeStats);
+        var gsharpSuccess = TryExecuteGSharp(benchmark, iterations, logOut, ref errorMessage, out var gsharpStats);
 
-        var verified = VerifyResults(benchmark, nativeSuccess, gsharpSuccess, logOut, ref errorMessage);
+        var verified = TryVerifyResults(benchmark, nativeSuccess, gsharpSuccess, logOut, ref errorMessage);
         var isSuccess = nativeSuccess && gsharpSuccess && verified && string.IsNullOrEmpty(errorMessage);
 
         var nativeFunc = benchmark.GetNativeFunction();
@@ -183,7 +184,7 @@ public static class ComputeBenchmarkRunner
         return cpuTime;
     }
 
-    private static bool ExecuteNativeCuda(
+    private static bool TryExecuteNativeCuda(
         IComputeBenchmark benchmark,
         int iterations,
         TextWriter logOut,
@@ -207,7 +208,7 @@ public static class ComputeBenchmarkRunner
         }
     }
 
-    private static bool ExecuteGSharp(
+    private static bool TryExecuteGSharp(
         IComputeBenchmark benchmark, int iterations, TextWriter logOut, ref string errorMessage,
         out BenchmarkStats stats)
     {
@@ -228,7 +229,7 @@ public static class ComputeBenchmarkRunner
         }
     }
 
-    private static bool VerifyResults(IComputeBenchmark benchmark, bool nativeSuccess, bool gsharpSuccess,
+    private static bool TryVerifyResults(IComputeBenchmark benchmark, bool nativeSuccess, bool gsharpSuccess,
         TextWriter logOut, ref string errorMessage)
     {
         if (!nativeSuccess || !gsharpSuccess)

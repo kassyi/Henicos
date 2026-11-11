@@ -14,7 +14,10 @@ Unsupported C# syntax (`new`, `string`, LINQ, recursion, ...) must not be ignore
 C++ definitions for C# `struct`s (e.g. `StructTranspiler`) must be wrapped in an include guard (`#ifndef __GSHARP_STRUCT_{structName}__`) to avoid redefinition when kernels sharing a struct are JIT-compiled together.
 
 ## 4. Deep Struct Marshaling
-`T[]` fields inside structs become unmanaged `IntPtr` fields in native shadow structs (`__Native_Name`). On the device side treat them as raw pointers, not managed objects.
+`T[]` and other array-like fields inside converted structs become 16-byte `GSharpArrayProxy` fields in generated
+`{KernelClass}.AotContexts.{Name}` shadow structs (`NativeStructEmitter`, trailing `Context` stripped) and
+`GSharpArray<T>` values (`data`, `length`, `flags`) in emitted C++ structs (`StructMemberEmitter`). Host arrays are
+pinned with `GCHandle` (`StructMarshalMethodEmitter`, `StructBlockCopyEmitter`), never `stackalloc`.
 
 ## 5. Semantic-Aware Pointer Cascading (`ref` / `out`)
 When transpiling variable references (esp. `ref`/`out` arguments), query the `SemanticModel` to determine whether the symbol is already a pointer/reference in CUDA. This prevents `&(&val)` and ensures member access `.` on `ref` structs becomes `->`. `RefSyntaxHelper` implements this for arguments ([helpers.md §4](../skills/gsharp-transpiler-guidelines/references/helpers.md#4-transpiler-rules)).
