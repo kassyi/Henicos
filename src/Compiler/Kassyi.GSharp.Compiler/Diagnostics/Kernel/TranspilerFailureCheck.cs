@@ -118,6 +118,14 @@ internal static class TranspilerFailureCheck
                 return;
             }
 
+            // CallTargetRule reports a call that the project's dialect does not implement, with the project's dialect;
+            // this run's verdict is the CUDA dialect's. One in code the rule does not walk stays a failure here
+            if (failure.Descriptor.Id == GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id &&
+                IsInDeclaration(failure.Location))
+            {
+                return;
+            }
+
             if (isDeviceIteratorCandidate &&
                 (failure.Descriptor.Id == GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id ||
                  failure.Descriptor.Id == GSharpDiagnostics.InstanceDeviceFunctionNotSupported.Id))

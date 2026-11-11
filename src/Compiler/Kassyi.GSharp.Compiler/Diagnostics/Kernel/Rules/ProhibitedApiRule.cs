@@ -3,13 +3,16 @@ using Kassyi.GSharp.Compiler.Analysis;
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
-/// Reports, in GPU code (GSH0003): the members of <c>System.Math</c> and <c>System.MathF</c> that the project's dialect
-/// does not map to a native function (constants such as <c>Math.PI</c> and the calls of mapped members are allowed; a
-/// mapped member used as a method group is not, as its native function is an overload set that converts to no
-/// delegate), the members of <c>System.Threading.Interlocked</c> and <c>System.Numerics.BitOperations</c> that no
-/// <c>[BclIntrinsicMap]</c> maps, takes a <c>nint</c> / <c>nuint</c> or is used as a method group (#570), and the
-/// host-only StackLinq operators.
+/// Reports, in GPU code (GSH0003): a member of <c>System.Math</c> or <c>System.MathF</c> that the project's dialect
+/// maps to a native function, used as a method group (its native function is an overload set, which converts to no
+/// delegate); a member of <c>System.Threading.Interlocked</c> or <c>System.Numerics.BitOperations</c> that
+/// <c>[BclIntrinsicMap]</c> maps and that takes a <c>nint</c> / <c>nuint</c> or is used as a method group (#570); and
+/// the host-only StackLinq operators.
 /// </summary>
+/// <remarks>
+/// A member that neither the dialect nor <c>[BclIntrinsicMap]</c> maps is reported by <see cref="CallTargetRule"/>
+/// (GSH0109), with every other method that GPU code cannot call.
+/// </remarks>
 internal sealed class ProhibitedApiRule :
     ISyntaxValidationRule<MemberAccessExpressionSyntax>,
     ISyntaxValidationRule<InvocationExpressionSyntax>,
@@ -76,20 +79,20 @@ internal sealed class ProhibitedApiRule :
 
     private static void AnalyzeSymbol(ISymbol? symbol, SyntaxNode locationNode, ref ValidationContext context)
     {
-        if (symbol == null)
+        if (symbol is not IMethodSymbol method)
         {
             return;
         }
 
-        if (symbol.ContainingType.IsSystemMathType())
+        if (method.ContainingType.IsSystemMathType())
         {
-            AnalyzeMathMember(symbol, locationNode, ref context);
+            AnalyzeMathMember(method, locationNode, ref context);
         }
-        else if (IsInterlockedOrBitOperations(symbol))
+        else if (IsInterlockedOrBitOperations(method))
         {
-            AnalyzeMappedBclMember(symbol, locationNode, ref context);
+            AnalyzeMappedBclMember(method, locationNode, ref context);
         }
-        else if (symbol is IMethodSymbol method && StackLinqHelper.IsHostOnly(method))
+        else if (StackLinqHelper.IsHostOnly(method))
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.UnsupportedSyntax,
@@ -98,22 +101,12 @@ internal sealed class ProhibitedApiRule :
         }
     }
 
-    // The dialect YAML decides per overload (Math.Abs(int) is mapped, Math.Abs(long) is not)
-    private static void AnalyzeMathMember(ISymbol symbol, SyntaxNode locationNode, ref ValidationContext context)
+    // A mapped member (the dialect YAML decides per overload) named without a call; an unmapped one is GSH0109
+    private static void AnalyzeMathMember(IMethodSymbol method, SyntaxNode locationNode, ref ValidationContext context)
     {
-        if (symbol is not IFieldSymbol { IsConst: true } && !context.Dialect.TryMapIntrinsic(symbol, out _))
+        if (!IsInvoked(locationNode) && context.Dialect.TryMapIntrinsic(method, out _))
         {
-            context.ReportDiagnostic(
-                GSharpDiagnostics.UnsupportedSyntax,
-                locationNode,
-                $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (not mapped by {context.Dialect.Name})");
-        }
-        else if (symbol is IMethodSymbol && !IsInvoked(locationNode))
-        {
-            context.ReportDiagnostic(
-                GSharpDiagnostics.UnsupportedSyntax,
-                locationNode,
-                $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (used as a method group)");
+            ReportMethodGroup(method, locationNode, ref context);
         }
     }
 
@@ -122,35 +115,37 @@ internal sealed class ProhibitedApiRule :
         (symbol.ContainingNamespace.IsSystemThreading() || symbol.ContainingNamespace.IsSystemOrNumerics());
 
     // [WHY] The transpiler converts the members of Interlocked and BitOperations that [BclIntrinsicMap] lists (Core
-    // BclMappings.cs, read by BclIntrinsicMapBuilder) per overload; the rule reads the same table, so a member is
-    // rejected exactly when it has no mapping (#570). A mapped method used as a method group has no function to
-    // convert to a delegate, as for Math.
-    private static void AnalyzeMappedBclMember(ISymbol symbol, SyntaxNode locationNode, ref ValidationContext context)
+    // BclMappings.cs, read by BclIntrinsicMapBuilder) per overload. A mapped method used as a method group has no
+    // function to convert to a delegate, as for Math.
+    private static void AnalyzeMappedBclMember(IMethodSymbol method, SyntaxNode locationNode,
+        ref ValidationContext context)
     {
         var map = BclIntrinsicMapBuilder.GetOrBuildMap(context.SemanticModel.Compilation);
-        if (symbol is not IMethodSymbol method || !map.ContainsKey(method.OriginalDefinition))
+        if (!map.ContainsKey(method.OriginalDefinition))
         {
-            context.ReportDiagnostic(
-                GSharpDiagnostics.UnsupportedSyntax,
-                locationNode,
-                $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (no G# mapping)");
+            return;
         }
-        else if (TakesNativeInteger(method))
+
+        if (TakesNativeInteger(method))
         {
             // A nint or nuint value does not build in GPU code yet (#983); the overloads are enabled there
             context.ReportDiagnostic(
                 GSharpDiagnostics.UnsupportedSyntax,
                 locationNode,
-                $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (nint and nuint are not supported)");
+                $"{method.ContainingType.Name}.{method.FormatSignature()} (nint and nuint are not supported)");
         }
         else if (!IsInvoked(locationNode))
         {
-            context.ReportDiagnostic(
-                GSharpDiagnostics.UnsupportedSyntax,
-                locationNode,
-                $"{symbol.ContainingType.Name}.{FormatMember(symbol)} (used as a method group)");
+            ReportMethodGroup(method, locationNode, ref context);
         }
     }
+
+    private static void ReportMethodGroup(IMethodSymbol method, SyntaxNode locationNode,
+        ref ValidationContext context) =>
+        context.ReportDiagnostic(
+            GSharpDiagnostics.UnsupportedSyntax,
+            locationNode,
+            $"{method.ContainingType.Name}.{method.FormatSignature()} (used as a method group)");
 
     private static bool TakesNativeInteger(IMethodSymbol method) =>
         method.Parameters
@@ -161,8 +156,4 @@ internal sealed class ProhibitedApiRule :
     private static bool IsInvoked(SyntaxNode node) =>
         node is InvocationExpressionSyntax ||
         (node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node);
-
-    // Abs(long): the overload decides whether the dialect maps it
-    private static string FormatMember(ISymbol symbol) =>
-        symbol is IMethodSymbol method ? method.FormatSignature() : symbol.Name;
 }
