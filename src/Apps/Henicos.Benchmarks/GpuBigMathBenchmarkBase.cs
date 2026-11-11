@@ -26,11 +26,13 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
         }
     }
 
-    protected GpuKernelLoader.CudaContextScope Scope;
+    protected GpuKernelLoader.CudaContextScope Scope { get; private set; }
+
     // Initialized during [GlobalSetup] by BenchmarkDotNet lifecycle; non-null during benchmark execution.
-    // Kept as a non-null field to satisfy GSharp ownership analyzer GSH0022 on Dispose().
-    protected GpuWorkspace Ctx = null!;
-    protected IntPtr Stream;
+    // Kept as a non-null property to satisfy GSharp ownership analyzer GSH0022 on Dispose().
+    protected GpuWorkspace Ctx { get; private set; } = null!;
+
+    protected IntPtr Stream { get; private set; }
 
     // Precision parameter (word count / bit width)
     [Params(2048)]

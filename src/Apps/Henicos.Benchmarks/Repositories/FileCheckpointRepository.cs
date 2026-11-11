@@ -3,13 +3,6 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 namespace Henicos.Benchmarks.Repositories;
 
-public interface ICheckpointRepository
-{
-    bool Exists();
-    FermatPrpCheckpoint Load();
-    void Save(FermatPrpCheckpoint checkpoint);
-}
-
 /// <summary>
 /// Stores a <see cref="FermatPrpCheckpoint"/> in a file with a SHA-256 hash, written through a temporary file and a move.
 /// </summary>
