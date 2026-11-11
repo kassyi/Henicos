@@ -250,11 +250,26 @@ public sealed class MsvcToolchain : INativeToolchain
         RenamedIdentifierLogger.LogRenamedIdentifiers(log, result.StandardOutput, result.StandardError);
     }
 
+    // The optimization flags of the native kernel build: /O2 without its global optimizations (/Og), that is
+    // /Oi /Ot /Oy /Ob2 /GF /Gy (#1078). MSVC's /Og miscompiles C++ that the emitted kernels contain and that C++
+    // defines:
+    // - a wrapping negation used as a dividend, (int)(0u - (unsigned)x) / 2, becomes -(x / 2), wrong for int.MinValue
+    //   (Developer Community 11177375; still wrong in 19.53.36919)
+    // - a short widened through unsigned int and widened directly to unsigned long long reuses the wrong sign
+    //   extension (Developer Community 11127140; fixed in 19.53.36919)
+    // - the conversion back to short after a wrapping add is dropped when the value then picks a pointer target (fixed
+    //   in 19.52.37025)
+    // Everything else of /O2 stays, the inlining of the Prelude helpers (/Ob2) included. /Og- is not used because
+    // MSVC deprecates it (D9035), and /Gs is not added because it is not part of /O2 (it puts a stack probe in every
+    // function with locals). This is the one place to go back to /O2 once a compiler with all three fixes is
+    // detected.
+    private const string OptimizationFlags = "/Oi /Ot /Oy /Ob2 /GF /Gy";
+
     // Logged once per task run by CompileCppToNativeTask when 'undefined' is requested with this toolchain.
     internal const string UndefinedSanitizerUnsupportedWarning =
         "GSharpNativeSanitizers specifies 'undefined', which is not supported by MSVC (no UndefinedBehaviorSanitizer). Continuing with AddressSanitizer only when 'address' is specified, ignoring 'undefined'.";
 
-    // /O2 = Optimize for speed
+    // OptimizationFlags = /O2 without /Og (see the constant)
     // /LD = Create DLL
     // /Fo = Object file name
     // /Fe = Output file name
@@ -280,7 +295,7 @@ public sealed class MsvcToolchain : INativeToolchain
             ? $" /fsanitize=address /Zi /Fd:\"{vcPdbPath}\""
             : "";
 
-        return $"/O2 /LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj{sanitizerFlags} \"{sourcePath}\" /Fo:\"{objPath}\" /Fe:\"{outputPath}\"";
+        return $"{OptimizationFlags} /LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj{sanitizerFlags} \"{sourcePath}\" /Fo:\"{objPath}\" /Fe:\"{outputPath}\"";
     }
 
     private static string ToVcvarsArchitecture(string arch) => arch switch
