@@ -18,7 +18,7 @@ public class OutSpanParameterDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_SpanParameterOverwrittenThroughOut_IsNotLiveAcrossTheSplit(string dialect)
+    public async Task CrossBarrierLiveness_SpanParameterOverwrittenThroughOut_IsNotLiveAcrossTheSplit(string dialect)
     {
         var source = await File.ReadAllTextAsync(RepositoryPaths.Combine(s_acceptedKernels));
 
@@ -32,7 +32,7 @@ public class OutSpanParameterDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SpanParameterReadBeforeTheOverwrite_ReportsGsh0039(string dialect)
+    public async Task CrossBarrierLiveness_SpanParameterReadBeforeTheOverwrite_ReportsGsh0039(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OutSpanParameterOverwrite.cu.cs",
             dialect);

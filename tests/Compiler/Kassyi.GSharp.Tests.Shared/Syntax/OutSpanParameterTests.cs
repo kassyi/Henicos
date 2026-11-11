@@ -14,7 +14,7 @@ public class OutSpanParameterTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SpanParameterOverwrittenThroughOut_ReadsTheNewSpan() => AssertOutSpan();
+    public void OutArgument_OverwritesASpanParameter_ReadsTheNewSpan() => AssertOutSpan();
 
     // C#: both helpers read buffer[0] (99) through the span Fill wrote; the shuffle helper adds 0 + 1
     internal static void AssertOutSpan()

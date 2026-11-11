@@ -26,7 +26,7 @@ public class OutSpanParameterManagedTests : IDisposable
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SpanParameterOverwrittenThroughOut_ReadsTheNewSpan() =>
+    public void OutArgument_OverwritesASpanParameterOnTheManagedPath_ReadsTheNewSpan() =>
         OutSpanParameterTests.AssertOutSpan();
 }
 #endif
