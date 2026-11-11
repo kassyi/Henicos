@@ -93,7 +93,5 @@ internal sealed class SwitchJumpRewriter(
 
     // goto <label>; with the trivia and the original span of the jump it replaces
     private static GotoStatementSyntax GotoFrom(StatementSyntax jump, string label) =>
-        SwitchStatementFlattener.Goto(label)
-            .WithTriviaFrom(jump)
-            .WithAdditionalAnnotations(jump.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+        LoweringSyntax.Goto(label).WithTriviaFrom(jump).WithOriginalSpanFrom(jump);
 }

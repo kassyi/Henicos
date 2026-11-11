@@ -51,7 +51,10 @@ public class IrClassificationEquivalenceTests(ITestOutputHelper output)
             .OrderBy(static m => m, StringComparer.Ordinal)
             .ToArray();
         Assert.True(unexplained.Length == 0, string.Join("\n", unexplained.Take(50)));
-        AssertCountsMatch(equivalence);
+        IrExpectedFiles.AssertMatches(ExpectedFile,
+            IrExpectedFiles.SortedLines(equivalence.EffectMismatches
+                .Select(static pair => pair.Key + "\t" + pair.Value.Count)
+            ), output);
     }
 
     // Every difference, to read when a count changes
@@ -66,30 +69,8 @@ public class IrClassificationEquivalenceTests(ITestOutputHelper output)
             report.AddRange(differences.OrderBy(static m => m, StringComparer.Ordinal).Select(static m => "  " + m));
         }
 
-        // One file per test assembly: Tests.Cpu and Tests.Cuda both compile this test and may run together
-        var assembly = typeof(IrClassificationEquivalenceTests).Assembly.GetName().Name;
-        var receivedPath = RepositoryPaths.Combine("tmp", $"IrClassificationEquivalence.{assembly}.received.txt");
-        Directory.CreateDirectory(Path.GetDirectoryName(receivedPath) ?? ".");
+        var receivedPath = IrExpectedFiles.ReceivedPath("IrClassificationEquivalence");
         File.WriteAllLines(receivedPath, report);
         output.WriteLine("Differences: " + receivedPath);
-    }
-
-    private void AssertCountsMatch(IrClassificationEquivalence equivalence)
-    {
-        var actual = string.Join("\n", equivalence.EffectMismatches
-            .OrderBy(static pair => pair.Key, StringComparer.Ordinal)
-            .Select(static pair => pair.Key + "\t" + pair.Value.Count)) + "\n";
-        var expectedPath = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Transpiler",
-            "Ir", ExpectedFile);
-        var expected = File.Exists(expectedPath) ? File.ReadAllText(expectedPath).Replace("\r", "") : "";
-        if (expected != actual)
-        {
-            var assembly = typeof(IrClassificationEquivalenceTests).Assembly.GetName().Name;
-            var receivedPath = RepositoryPaths.Combine("tmp", $"IrEffectDifferences.{assembly}.received.txt");
-            File.WriteAllText(receivedPath, actual);
-            output.WriteLine("Received counts: " + receivedPath);
-        }
-
-        Assert.Equal(expected, actual);
     }
 }

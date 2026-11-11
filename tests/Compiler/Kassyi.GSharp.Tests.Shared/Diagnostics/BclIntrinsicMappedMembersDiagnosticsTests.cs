@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 

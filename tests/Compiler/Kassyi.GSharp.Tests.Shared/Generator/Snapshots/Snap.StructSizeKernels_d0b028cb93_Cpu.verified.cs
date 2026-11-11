@@ -189,6 +189,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondPaddedKernel(global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt[] data, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondPaddedKernel* __gsharp_ctx) {
 {
@@ -211,6 +212,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 private static bool __gsharp_layout_checked_ReadSecondPaddedKernel;
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
@@ -470,6 +472,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondOddKernel(global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt[] data, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondOddKernel* __gsharp_ctx) {
 {
@@ -492,6 +495,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_ReadSecondOddKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy o);
@@ -767,6 +771,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondPackedKernel(global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked[] data, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__StructSizeKernels__ReadSecondPackedKernel* __gsharp_ctx) {
 {
@@ -789,6 +794,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 private static bool __gsharp_layout_checked_ReadSecondPackedKernel;
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]

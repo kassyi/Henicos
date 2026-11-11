@@ -67,7 +67,7 @@ internal sealed class RemovedCallEraser : CSharpSyntaxRewriter
     public static StatementSyntax ToEmptyStatement(ExpressionStatementSyntax statement) =>
         (IsEmbedded(statement) ? (StatementSyntax)SyntaxFactory.Block() : SyntaxFactory.EmptyStatement())
             .WithTriviaFrom(statement)
-            .WithAdditionalAnnotations(statement.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+            .WithOriginalSpanFrom(statement);
 
     /// <summary>
     /// Whether <paramref name="statement"/> is the embedded statement of an <c>if</c>, <c>else</c>, loop or label
@@ -114,8 +114,7 @@ internal sealed class RemovedCallEraser : CSharpSyntaxRewriter
 
     // { } with the original-span annotation of the removed call it replaces
     private static BlockSyntax CreateEmptyBody(SyntaxNode call) =>
-        SyntaxFactory.Block()
-            .WithAdditionalAnnotations(call.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+        SyntaxFactory.Block().WithOriginalSpanFrom(call);
 
     private static SeparatedSyntaxList<ExpressionSyntax> WithoutRemovedCalls(
         SeparatedSyntaxList<ExpressionSyntax> original, SeparatedSyntaxList<ExpressionSyntax> visited,

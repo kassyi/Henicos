@@ -10,9 +10,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </summary>
 internal sealed class UniformityValueReader(UniformityState state)
 {
-    private static readonly ConditionalWeakTable<Compilation,
-            ConcurrentDictionary<IMethodSymbol, ConcurrentDictionary<ArgumentMasks, CalleeVariance>>>
-        s_callees = new();
+    private static readonly
+        PerCompilationSymbolCache<IMethodSymbol, ConcurrentDictionary<ArgumentMasks, CalleeVariance>> s_callees = new();
 
     /// <summary>The variance of the value of <paramref name="operation"/>; records the variance of each expression while observing.</summary>
     public ThreadVariance Evaluate(IOperation operation, ControlFlowGraph graph, ThreadVariance[] current)
@@ -118,9 +117,7 @@ internal sealed class UniformityValueReader(UniformityState state)
     public CalleeVariance GetCalleeSummary(IMethodSymbol callee, MethodDeclarationSyntax declaration,
         ArgumentMasks masks)
     {
-        var cache = s_callees.GetValue(state.Model.Compilation,
-                static _ => new ConcurrentDictionary<IMethodSymbol,
-                    ConcurrentDictionary<ArgumentMasks, CalleeVariance>>(SymbolEqualityComparer.Default))
+        var cache = s_callees.For(state.Model.Compilation)
             .GetOrAdd(callee, static _ => new ConcurrentDictionary<ArgumentMasks, CalleeVariance>());
         if (cache.TryGetValue(masks, out var summary))
         {

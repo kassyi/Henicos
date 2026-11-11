@@ -3734,6 +3734,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayAndFixedBufferPositionsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 valVecs, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket outer, global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3[] vecArr, ref global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket fixedPkt, global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket[] fixedArr, int[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__InlineArrayAndFixedBufferPositionsKernel* __gsharp_ctx, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 __gsharp_auto_result) {
 {
@@ -3801,6 +3802,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 private static bool __gsharp_layout_checked_InlineArrayAndFixedBufferPositionsKernel;
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
@@ -5017,6 +5019,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel(in int inScalar, ref int refA, ref int refB, ref float refF, ref int outSum, int* pValid, int* pNull, int constFactor, int[] roTable, int[] probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel* __gsharp_ctx) {
 {
@@ -5061,6 +5064,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_MultiRefScalarAndRawPointerKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::System.Int32 inScalar, global::System.Int32* refA, global::System.Int32* refB, global::System.Single* refF, global::System.Int32* outSum, global::System.Int32* pValid, global::System.Int32* pNull, global::System.Int32 constFactor, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy roTable, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy probe);

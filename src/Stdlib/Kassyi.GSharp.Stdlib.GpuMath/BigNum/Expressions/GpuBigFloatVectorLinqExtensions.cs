@@ -221,30 +221,59 @@ public static class GpuBigFloatVectorLinqExtensions
         }
 
         /// <summary>
-        /// Gets the number of elements in the vectorized expression.
+        /// Gets the number of elements in the vectorized expression. A chain of operations that cannot throw is not
+        /// evaluated; otherwise, and after a <c>Where</c>, the expression is evaluated as
+        /// <see cref="Count(IGpuBigFloatVectorExpression, GpuWorkspace)"/> does, with the workspace of its arrays.
         /// </summary>
         /// <returns>The element count.</returns>
-        /// <exception cref="InvalidOperationException">The number is known only on the device (the expression contains a
-        /// <c>Where</c>); use <see cref="Count(IGpuBigFloatVectorExpression, GpuWorkspace)"/>.</exception>
+        /// <exception cref="DivideByZeroException">A counted element is divided by zero.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// An operation is undefined for a counted element, or the expression must be evaluated and contains no
+        /// <see cref="GpuBigFloatArray"/> to take a workspace from; use
+        /// <see cref="Count(IGpuBigFloatVectorExpression, GpuWorkspace)"/>.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The expression must be evaluated and the workspace stream is capturing a CUDA graph.
+        /// </exception>
         public int Count()
         {
             ArgumentNullException.ThrowIfNull(source);
-            return source.Length;
+            if (source.TryGetLength(out var length) && !VectorEffects.MayThrow(source))
+            {
+                return length;
+            }
+
+            var workspace = ArrayWorkspace(source) ?? throw new InvalidOperationException(
+                "Counting the expression evaluates it, and it contains no GpuBigFloatArray to take a workspace from. " +
+                "Use Count(workspace).");
+            return source.Count(workspace);
         }
 
         /// <summary>
-        /// Gets the number of elements in the vectorized expression; after a <c>Where</c>, evaluates the expression and
-        /// reads the number from the device (one synchronization).
+        /// Gets the number of elements in the vectorized expression. An expression that contains an operation whose
+        /// evaluation can throw (a division, a square root, a logarithm, <c>Pow</c>) is evaluated first, as
+        /// <c>System.Linq</c> runs every projection it counts; after a <c>Where</c>, the expression is evaluated and
+        /// the number read from the device (one synchronization).
         /// </summary>
         /// <param name="workspace">The GPU workspace used for evaluation.</param>
         /// <returns>The element count.</returns>
+        /// <exception cref="DivideByZeroException">A counted element is divided by zero.</exception>
+        /// <exception cref="InvalidOperationException">An operation is undefined for a counted element.</exception>
+        /// <exception cref="NotSupportedException">
+        /// The expression contains an operation that can throw and the workspace stream is capturing a CUDA graph, or
+        /// the workspace runs under the CPU fallback and the expression must be evaluated.
+        /// </exception>
         public int Count(GpuWorkspace workspace)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(workspace);
-            return source.TryGetLength(out var length)
-                ? length
-                : DeviceCounted.Evaluate(source, workspace).Elements(workspace);
+            if (!source.TryGetLength(out var length))
+            {
+                return DeviceCounted.Evaluate(source, workspace).Elements(workspace);
+            }
+
+            DeviceCounted.EvaluateIfMayThrow(source, workspace);
+            return length;
         }
 
         /// <summary>
@@ -484,6 +513,31 @@ public static class GpuBigFloatVectorLinqExtensions
 
             source.Evaluate(workspace, 0, length, destination);
         }
+    }
+
+    // The workspace of the first GpuBigFloatArray below the expression, found without recursion (an expression built
+    // in a loop is as deep as the loop); null for an expression with no GpuMath array
+    private static GpuWorkspace? ArrayWorkspace(IGpuBigFloatVectorExpression source)
+    {
+        var pending = new Stack<object>();
+        pending.Push(source);
+        while (pending.Count > 0)
+        {
+            switch (pending.Pop())
+            {
+                case GpuBigFloatVectorLeafExpression leaf:
+                    return leaf.Workspace;
+                case IVectorOperator op:
+                    for (var i = op.OperandCount - 1; i >= 0; i--)
+                    {
+                        pending.Push(op.GetOperand(i));
+                    }
+
+                    break;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

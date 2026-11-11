@@ -2053,7 +2053,8 @@ __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSha
 __gsharp_ctx.value = __gsharp_ctx.keys[__gsharp_ctx.tid] switch
 {
 0 => __gsharp_ctx.tid,
-1 => -__gsharp_ctx.tid
+1 => -__gsharp_ctx.tid,
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
 };
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
@@ -2454,7 +2455,8 @@ __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSha
 __gsharp_ctx.step = __gsharp_ctx.keys[__gsharp_ctx.tid] switch
 {
 0 => 1,
-1 => 1
+1 => 1,
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
 };
 __gsharp_ctx.sum = 0;
 __gsharp_ctx.round = 0;

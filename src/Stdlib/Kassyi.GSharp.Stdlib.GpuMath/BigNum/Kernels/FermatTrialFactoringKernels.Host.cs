@@ -46,7 +46,8 @@ public static partial class FermatTrialFactoringKernels
     /// <param name="startOdd">The first candidate; thread <c>t</c> tests <c>startOdd + 2t</c>.</param>
     /// <param name="exp">The exponent of <c>N</c>.</param>
     /// <param name="results">The device buffer that receives the factors found (for example
-    /// <see cref="GpuBuffer{T}.ToProxy"/>); it must hold <paramref name="maxResults"/> elements.</param>
+    /// <see cref="Kassyi.GSharp.Runtime.GpuBuffer{T}.ToProxy"/>); it must hold <paramref name="maxResults"/>
+    /// elements.</param>
     /// <param name="resultCount">The device word that is increased by the number of factors found.</param>
     /// <param name="maxResults">The number of factors stored at most.</param>
     /// <param name="gridDimX">The number of blocks.</param>

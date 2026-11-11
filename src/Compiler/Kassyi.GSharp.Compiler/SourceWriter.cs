@@ -13,6 +13,14 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     [ThreadStatic]
     private static int s_depth;
 
+    // [WHY] StringBuilder.Clear keeps the capacity, so a pooled builder that once held a whole native module
+    // (11 MB for Tests.Cpu) would keep that buffer for the life of the thread. As in Roslyn's
+    // PooledStringBuilder.Free and .NET's StringBuilderCache (MaxBuilderSize), a builder that grew past a limit is
+    // dropped instead of returned. 32K characters keep a pooled buffer at 64 KB, below the 85,000-byte large object
+    // heap threshold, so the pool never holds a large object; a larger text grows a new builder in chunks of at most
+    // 8000 characters, which costs no more than the string that ToString makes from it anyway.
+    internal const int MaxPooledCapacity = 32 * 1024;
+
     private readonly int _myDepth;
 
     private StringBuilder Builder
@@ -40,6 +48,14 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public void Dispose()
     {
+        if (Builder is { Capacity: > MaxPooledCapacity } builder
+            && s_threadStaticBuilders is { } builders
+            && _myDepth < builders.Length
+            && ReferenceEquals(builders[_myDepth], builder))
+        {
+            builders[_myDepth] = null;
+        }
+
         if (_myDepth == s_depth - 1)
         {
             s_depth--;
@@ -267,6 +283,14 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda(string? returnType = null) => new(this, returnType);
 
+    /// <summary>
+    /// Write <c>#pragma warning disable &lt;id&gt;[ // &lt;reason&gt;]</c> now and
+    /// <c>#pragma warning restore &lt;id&gt;</c> on disposal, or nothing when <paramref name="condition"/> is
+    /// <see langword="false"/>.
+    /// </summary>
+    public SourceWriterWarningSuppression WarningSuppressed(string id, string? reason = null, bool condition = true) =>
+        new(this, id, reason, condition);
+
     /// <summary>Name recorded in the <c>GeneratedCodeAttribute</c> of generated types.</summary>
     public const string GeneratorName = "Kassyi.GSharp.Compiler";
 
@@ -382,6 +406,42 @@ public readonly ref struct SourceWriterImmediatelyInvokedLambdaScope
     }
 
     public void Dispose() => _writer.Append("}())");
+}
+
+/// <summary>
+/// A zero-allocation scope that disables a C# warning in generated code on creation and restores it on disposal.
+/// </summary>
+public readonly ref struct SourceWriterWarningSuppression
+{
+    private readonly SourceWriter _writer;
+    private readonly string? _id;
+
+    public SourceWriterWarningSuppression(SourceWriter writer, string id, string? reason, bool condition)
+    {
+        _writer = writer;
+        _id = condition ? id : null;
+        if (!condition)
+        {
+            return;
+        }
+
+        if (reason is null)
+        {
+            _writer.AppendLine($"#pragma warning disable {id}");
+        }
+        else
+        {
+            _writer.AppendLine($"#pragma warning disable {id} // {reason}");
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_id is not null)
+        {
+            _writer.AppendLine($"#pragma warning restore {_id}");
+        }
+    }
 }
 
 #pragma warning disable IDE0060 // Remove unused parameter

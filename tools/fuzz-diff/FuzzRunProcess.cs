@@ -109,9 +109,9 @@ internal static class FuzzRunProcess
     internal static List<JsonObject> ParseJsonLines(string stdout)
     {
         var events = new List<JsonObject>();
-        foreach (string rawLine in stdout.Split('\n'))
+        foreach (Range range in stdout.AsSpan().Split('\n'))
         {
-            string line = rawLine.Trim();
+            ReadOnlySpan<char> line = stdout.AsSpan(range).Trim();
             if (line.Length < 2 || line[0] != '{' || line[^1] != '}')
             {
                 continue;
@@ -119,7 +119,7 @@ internal static class FuzzRunProcess
 
             try
             {
-                if (JsonNode.Parse(line) is JsonObject node)
+                if (JsonNode.Parse(line.ToString()) is JsonObject node)
                 {
                     events.Add(node);
                 }
@@ -153,16 +153,16 @@ internal static class FuzzRunProcess
                 return null;
             }
 
-            foreach (string rawLine in result.Stdout.Split('\n'))
+            foreach (Range range in result.Stdout.AsSpan().Split('\n'))
             {
-                string line = rawLine.Trim();
+                ReadOnlySpan<char> line = result.Stdout.AsSpan(range).Trim();
                 int dot = line.IndexOf('.');
                 if (dot > 0 &&
                     dot == line.LastIndexOf('.') &&
-                    IsDigits(line.AsSpan(0, dot)) &&
-                    IsDigits(line.AsSpan(dot + 1)))
+                    IsDigits(line[..dot]) &&
+                    IsDigits(line[(dot + 1)..]))
                 {
-                    string digits = line.Remove(dot, 1);
+                    string digits = string.Concat(line[..dot], line[(dot + 1)..]);
                     return $"compute_{digits},sm_{digits}";
                 }
             }
@@ -185,7 +185,7 @@ internal static class FuzzRunProcess
         try
         {
             var git = Run("git", ["rev-parse", "--git-common-dir"], repoRoot, 15_000);
-            string commonDir = git.Stdout.Trim();
+            string commonDir = git.Stdout.AsSpan().Trim().ToString();
             string mainRoot = git.Status == 0 && commonDir.Length > 0
                 ? Path.GetFullPath(Path.Combine(Path.GetFullPath(commonDir, repoRoot), ".."))
                 : repoRoot;
@@ -239,9 +239,9 @@ internal static class FuzzRunProcess
             return false;
         }
 
-        foreach (string part in pids.Split(','))
+        foreach (Range range in pids.AsSpan().Split(','))
         {
-            if (int.TryParse(part, out int listed) && listed == pid)
+            if (int.TryParse(pids.AsSpan(range), out int listed) && listed == pid)
             {
                 return true;
             }

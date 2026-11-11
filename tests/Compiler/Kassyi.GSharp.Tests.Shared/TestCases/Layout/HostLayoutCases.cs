@@ -383,7 +383,9 @@ public struct TreeNode
 public unsafe struct AccessMix
 {
     public int A;
+#pragma warning disable CS0649 // Only the layout is read
     internal int B;
+#pragma warning restore CS0649
 #pragma warning disable CS0169 // Only the layout is read
     private int _c;
 #pragma warning restore CS0169
