@@ -319,12 +319,24 @@ public static IGpuBoolVectorExpression IsLessThan<TScalar>(this IGpuBigFloatVect
 public static IGpuBoolVectorExpression IsLessThanOrEqualTo<TScalar>(this IGpuBigFloatVectorExpression source, TScalar scalar)
     where TScalar : struct, IGpuBigNumber<TScalar>;
 
-public static IGpuBoolVectorExpression IsEqualTo(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsNotEqualTo(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsGreaterThan(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsGreaterThanOrEqualTo(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsLessThan(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsLessThanOrEqualTo(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsEqualTo(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsNotEqualTo(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsGreaterThan(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsGreaterThanOrEqualTo(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsLessThan(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsLessThanOrEqualTo(
+    this IGpuBigFloatVectorExpression source,
+    IGpuBigFloatVectorExpression right);
 ```
 
 ## Count(IGpuBigFloatVectorExpression)
