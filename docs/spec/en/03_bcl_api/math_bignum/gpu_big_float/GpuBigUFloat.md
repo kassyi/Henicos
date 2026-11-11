@@ -17,8 +17,10 @@ Represents an arbitrary-precision unsigned floating-point number on the GPU usin
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuBigUFloat>, IDisposable
+public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
 ```
+
+Implements: [`IGpuBigNumber<GpuBigUFloat>`](../gpu_big_int_and_uint/00_index.md#numeric-interfaces), `IGpuNumber<GpuBigUFloat>`, `IGpuBigNumberBase`, `IEquatable<GpuBigUFloat>`, `IComparable<GpuBigUFloat>`, `IDisposable`
 
 ## Constructors
 
@@ -46,8 +48,32 @@ The binary base-2 exponent.
 
 | Name | Description |
 | --- | --- |
+| [CanBeNegative](#canbenegative) | Always `false`: `GpuBigUFloat` is an unsigned type. |
+| [EffectiveScale](#effectivescale) | Gets the effective binary scale (`Exponent + GetBitLength()`) of a non-zero value. |
 | [Exponent](#exponent) | Gets the binary base-2 exponent of the floating-point number. |
+| [IsNegative](#isnegative) | Always `false`. |
+| [Magnitude](#magnitude) | Gets the significand buffer (the same value as `Significand`). |
 | [Significand](#significand) | Gets the significand (mantissa) stored as a dynamic-size unsigned big integer in GPU device memory. |
+| [Workspace](#workspace) | Gets the `GpuWorkspace` that owns the significand buffer. |
+
+`IGpuBigNumber<GpuBigUFloat>.AdditionIsExact` is implemented explicitly and returns `false`: every addition rounds, so a sum adds from the left in the order written.
+
+## CanBeNegative
+
+Always `false`: `GpuBigUFloat` is an unsigned type.
+
+```csharp
+public bool CanBeNegative { get; }
+```
+
+## EffectiveScale
+
+Gets the effective binary scale (`Exponent + GetBitLength()`) of a non-zero value.
+
+```csharp
+public long EffectiveScale { get; }
+```
+
 
 ## Exponent
 
@@ -55,6 +81,22 @@ Gets the binary base-2 exponent of the floating-point number.
 
 ```csharp
 public int Exponent { get; }
+```
+
+## IsNegative
+
+Always `false`.
+
+```csharp
+public bool IsNegative { get; }
+```
+
+## Magnitude
+
+Gets the significand buffer (the same value as `Significand`).
+
+```csharp
+public GpuBigUInt Magnitude { get; }
 ```
 
 ## Significand
@@ -65,17 +107,30 @@ Gets the significand (mantissa) stored as a dynamic-size unsigned big integer in
 public GpuBigUInt Significand { get; }
 ```
 
+## Workspace
+
+Gets the `GpuWorkspace` that owns the significand buffer.
+
+```csharp
+public GpuWorkspace Workspace { get; }
+```
+
 ## Methods
 
 | Name | Description |
 | --- | --- |
 | [Add(GpuBigUFloat)](#addgpubigufloat) | Adds another `GpuBigUFloat` to this instance. |
 | [CompareTo(GpuBigUFloat)](#comparetogpubigufloat) | Compares this instance to another `GpuBigUFloat` and returns an integer indicating their relative order. |
+| [Create(GpuBigUInt, int, bool)](#creategpubiguint-int-bool) | Creates a `GpuBigUFloat` from a magnitude and an exponent; throws `ArgumentOutOfRangeException` for a negative non-zero value. |
+| [Divide(GpuBigUFloat)](#dividegpubigufloat) | Divides this instance by another `GpuBigUFloat` (`this / other`). |
 | [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying `Significand`. |
 | [DivideByUInt32(uint)](#dividebyuint32uint) | Divides the unsigned floating-point number by a 32-bit unsigned integer scalar. |
 | [Equals(GpuBigUFloat)](#equalsgpubigufloat) | Indicates whether the current instance has the same significand buffer and exponent as another `GpuBigUFloat`. |
 | [Equals(object?)](#equalsobject) | Determines whether the specified object is equal to the current instance. |
+| [GetBitLength()](#getbitlength) | Returns the bit length of the significand, or 0 for zero. |
 | [GetHashCode()](#gethashcode) | Returns the hash code of the significand buffer and the exponent, consistent with `Equals(GpuBigUFloat)`. |
+| [IsZero()](#iszero) | Determines whether the value is zero. |
+| [Multiply(GpuBigUFloat)](#multiplygpubigufloat) | Multiplies this instance by another `GpuBigUFloat` (`this * other`). |
 | [Normalize(int, bool)](#normalizeint-bool) | Normalizes the unsigned floating-point value by shifting significand bits and adjusting the exponent. |
 | [Subtract(GpuBigUFloat)](#subtractgpubigufloat) | Subtracts another `GpuBigUFloat` from this instance. |
 
@@ -114,6 +169,22 @@ The `GpuBigUFloat` to compare with this instance.
 
 _int_<br>
 A signed integer that indicates the relative values of this instance and `other`.
+
+## Create(GpuBigUInt, int, bool)
+
+Creates a `GpuBigUFloat` from a magnitude and an exponent. `isNegative` must be `false` unless the magnitude is zero; otherwise `ArgumentOutOfRangeException` is thrown.
+
+```csharp
+public static GpuBigUFloat Create([TakesOwnership] GpuBigUInt magnitude, int exponent, bool isNegative);
+```
+
+## Divide(GpuBigUFloat)
+
+Divides this instance by another `GpuBigUFloat` (`this / other`).
+
+```csharp
+public GpuBigUFloat Divide(GpuBigUFloat other);
+```
 
 ## Dispose()
 
@@ -194,6 +265,30 @@ public override int GetHashCode();
 _int_<br>
 A 32-bit signed integer hash code.
 
+## GetBitLength()
+
+Returns the bit length of the significand, or 0 for zero.
+
+```csharp
+public int GetBitLength();
+```
+
+## IsZero()
+
+Determines whether the value is zero.
+
+```csharp
+public bool IsZero();
+```
+
+## Multiply(GpuBigUFloat)
+
+Multiplies this instance by another `GpuBigUFloat` (`this * other`).
+
+```csharp
+public GpuBigUFloat Multiply(GpuBigUFloat other);
+```
+
 ## Normalize(int, bool)
 
 Normalizes the unsigned floating-point value by shifting significand bits and adjusting the exponent.
@@ -244,8 +339,12 @@ Thrown when `other` is greater than this instance: an unsigned value has no nega
 | --- | --- |
 | `Addition(GpuBigUFloat, GpuBigUFloat)` | Creates a deferred `BinaryExpr<GpuBigUFloat, AddOp>` expression representing the addition of two unsigned floating-point values. |
 | `Subtraction(GpuBigUFloat, GpuBigUFloat)` | Creates a deferred `BinaryExpr<GpuBigUFloat, SubOp>` expression representing the subtraction of two unsigned floating-point values. |
+| `Multiply(GpuBigUFloat, GpuBigUFloat)` | Creates a deferred `BinaryExpr<GpuBigUFloat, MulOp>` expression representing the multiplication of two unsigned floating-point values. |
+| `Division(GpuBigUFloat, GpuBigUFloat)` | Creates a deferred `BinaryExpr<GpuBigUFloat, DivOp>` expression representing the division of two unsigned floating-point values. |
 | `Implicit(BinaryExpr<GpuBigUFloat, AddOp> to GpuBigUFloat)` | Implicitly evaluates and converts an addition expression to an evaluated `GpuBigUFloat` instance. |
 | `Implicit(BinaryExpr<GpuBigUFloat, SubOp> to GpuBigUFloat)` | Implicitly evaluates and converts a subtraction expression to an evaluated `GpuBigUFloat` instance. Throws `OverflowException` when the subtrahend is greater than the minuend. |
+| `Implicit(BinaryExpr<GpuBigUFloat, MulOp> to GpuBigUFloat)` | Implicitly evaluates and converts a multiplication expression to an evaluated `GpuBigUFloat` instance. |
+| `Implicit(BinaryExpr<GpuBigUFloat, DivOp> to GpuBigUFloat)` | Implicitly evaluates and converts a division expression to an evaluated `GpuBigUFloat` instance. |
 | `Equality(GpuBigUFloat, GpuBigUFloat)` | Determines whether two specified `GpuBigUFloat` instances have the same value on the GPU. |
 | `Inequality(GpuBigUFloat, GpuBigUFloat)` | Determines whether two specified `GpuBigUFloat` instances have different values on the GPU. |
 | `LessThan(GpuBigUFloat, GpuBigUFloat)` | Determines whether one specified `GpuBigUFloat` is less than another specified `GpuBigUFloat`. |

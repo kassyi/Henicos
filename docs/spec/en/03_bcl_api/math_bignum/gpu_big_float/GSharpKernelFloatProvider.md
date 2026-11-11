@@ -20,11 +20,11 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
     : IGpuBigFloatArithmetic
 ```
 
-## Properties
+## Fields
 
 | Name | Description |
 | --- | --- |
-| `Instance` | Gets the default singleton instance of `GSharpKernelFloatProvider` using `CSharpCpuBigFloatArithmetic.Instance` as fallback. |
+| `Instance` | `public static readonly GSharpKernelFloatProvider Instance`: gets the default singleton instance of `GSharpKernelFloatProvider` using `CSharpCpuBigFloatArithmetic.Instance` as fallback. |
 
 ## Methods
 

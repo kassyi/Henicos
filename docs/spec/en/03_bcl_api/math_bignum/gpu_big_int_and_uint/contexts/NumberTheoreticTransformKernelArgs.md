@@ -21,9 +21,7 @@ public struct NumberTheoreticTransform
     public uint[] Buffer;
     public uint[] TemporaryBuffer;
     [GpuReadOnly] public uint[] Twiddle;
-    public int M;
-    public int N1;
-    public int N2;
+    public NttGridContext Grid;
     public uint P;
     public ulong Pm;
     public bool IsInverse;
@@ -41,9 +39,7 @@ public struct NumberTheoreticTransform
 | `Buffer` | In-place transform buffer. |
 | `TemporaryBuffer` | Temporary scratch buffer. |
 | `Twiddle` | Read-only twiddle factor table (`[GpuReadOnly]`). |
-| `M` | Batch dimension parameter $M$. |
-| `N1` | First transform length dimension $N_1$. |
-| `N2` | Second transform length dimension $N_2$. |
+| `Grid` | The six-step NTT grid dimensions (`NttGridContext`: `M`, `N1`, `N2`, with $M = N_1 \times N_2$). |
 | `P` | Prime modulus $P$. |
 | `Pm` | Barrett reduction or multiplicative inverse parameter $P_m$. |
 | `IsInverse` | Indicates whether an inverse NTT is performed. |
@@ -51,6 +47,19 @@ public struct NumberTheoreticTransform
 | `ApplyTwiddleAfter` | Indicates whether twiddle multiplication is applied after transform. |
 | `MaxBlocks` | The maximum number of GPU blocks to dispatch. |
 | `CurrentL` | The current transform stage length $L$. |
+
+## NttGridContext Struct
+
+The 2D six-step NTT grid dimensions ($M = N_1 \times N_2$), shared by `NumberTheoreticTransform` and [`DualNtt`](NttContext.md#dualntt-struct).
+
+```csharp
+public struct NttGridContext
+{
+    public int M;
+    public int N1;
+    public int N2;
+}
+```
 
 ## Examples
 
@@ -68,14 +77,12 @@ var kernelArgs = new NumberTheoreticTransform
     Buffer = new uint[256],
     Twiddle = new uint[256],
     TemporaryBuffer = new uint[256],
-    M = 8,
-    N1 = 16,
-    N2 = 16,
+    Grid = new NttGridContext { M = 256, N1 = 16, N2 = 16 },
     P = 0xFFFFFFFF,
     IsInverse = false
 };
 
-Console.WriteLine($"NTT Kernel Args - M: {kernelArgs.M}, N1: {kernelArgs.N1}, Inverse: {kernelArgs.IsInverse}");
+Console.WriteLine($"NTT Kernel Args - M: {kernelArgs.Grid.M}, N1: {kernelArgs.Grid.N1}, Inverse: {kernelArgs.IsInverse}");
 ```
 
 ## See also

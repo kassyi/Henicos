@@ -38,3 +38,9 @@ The rules of [`GpuBigUIntView`](../gpu_big_int_and_uint/GpuBigUIntView.md) apply
 | --- | --- |
 | `GetElement(int index)` | A [`GpuBigFloatView`](GpuBigFloatView.md) of one element; reads its exponent and sign back from the device. |
 | `Slice(int elementOffset, int elementCount)` | A view of a range of the elements. |
+
+## Operators
+
+| Name | Description |
+| --- | --- |
+| `implicit operator GpuBigFloatArrayView(GpuBigFloatArray)` | Converts an owned `GpuBigFloatArray` to a view of its buffers without copying. |

@@ -35,6 +35,8 @@ public static partial class GpuBigIntKernels
 | [UnpackCarryState(uint)](#unpackcarrystateuint) | A GPU device function (`[GpuDeviceFunction]`) that unpacks a `uint` into a `CarryState`. |
 | [WarpScanGp(CarryState, int)](#warpscangpcarrystate-int) | A GPU device function (`[GpuDeviceFunction]`) that computes the warp-wide prefix sum of carry generation and propagation. |
 | [ApplyCarry(CarryState, uint)](#applycarrycarrystate-uint) | A GPU device function (`[GpuDeviceFunction]`) that applies an incoming carry to the carry state. |
+| [GetShiftedRightWord(uint[], int, int, int, int)](#getshiftedrightworduint-int-int-int-int) | A GPU device function (`[GpuDeviceFunction]`) that returns word `destIdx` of `data` shifted right by `wordShift` words and `bitShift` bits (a word outside `[0, numWords)` reads as 0). |
+| [DeviceAddSubAlignedParallel(uint[], int, uint[], int, uint[], int, int, int, int, bool)](#deviceaddsubalignedparalleluint-int-uint-int-uint-int-int-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that adds or subtracts a shifted operand to or from another one in a single block with a warp-level carry scan. |
 | [DeviceAddSubParallel(uint[], uint[], uint[], int, int, bool)](#deviceaddsubparalleluint-uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel addition or subtraction using warp/block Kogge-Stone carry lookahead. |
 | [ParallelAddKernel(uint[], uint[], uint[], int)](#paralleladdkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel addition on large integers. |
 | [ParallelSubKernel(uint[], uint[], uint[], int)](#parallelsubkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel subtraction on large integers. |
@@ -161,6 +163,29 @@ The carry-in bit to propagate through the P bit.
 #### Returns
 _uint_<br>
 The final resolved carry bit (0 or 1) for the current segment.
+
+## GetShiftedRightWord(uint[], int, int, int, int)
+
+A GPU device function (`[GpuDeviceFunction]`) that returns word `destIdx` of `data` shifted right by `wordShift` words and `bitShift` bits (`0 <= bitShift < 32`). A source word outside `[0, numWords)` reads as 0, so a negative `wordShift` shifts left.
+
+```csharp
+[GpuDeviceFunction]
+public static uint GetShiftedRightWord([GpuReadOnly] uint[] data, int numWords, int destIdx, int wordShift, int bitShift);
+```
+
+## DeviceAddSubAlignedParallel(uint[], int, uint[], int, uint[], int, int, int, int, bool)
+
+A GPU device function (`[GpuDeviceFunction]`) run by block 0 (the other blocks return at once): the sum or difference of `larger` and `smaller` shifted right by `wordShift` words and `bitShift` bits, over `numWords` words: `sign` 1 adds, -1 computes `larger - shifted`, -2 computes `shifted - larger`. The carries are resolved by a warp-level generate/propagate scan.
+
+```csharp
+[GpuDeviceFunction]
+public static void DeviceAddSubAlignedParallel(
+    [GpuReadOnly] uint[] larger, int largerWords,
+    [GpuReadOnly] uint[] smaller, int smallerWords,
+    uint[] result, int numWords,
+    int wordShift, int bitShift,
+    int sign = 1, bool syncThreads = true);
+```
 
 ## DeviceAddSubParallel(uint[], uint[], uint[], int, int, bool)
 

@@ -43,6 +43,19 @@ This separation ensures that GPU kernels remain purely mathematical and branchle
 - **[Operators.md](Operators.md)**: Overloads for `+`, `-`, `*`, `/`, and bitwise operators.
 - **[BigIntegerExtensions.md](BigIntegerExtensions.md)**: Host-side math extensions (`BigIntExtensions.Sqrt`) for `System.Numerics.BigInteger`.
 
+### Numeric Interfaces
+
+All of these types are in the root namespace `Kassyi.GSharp.Stdlib.GpuMath.BigNum`.
+
+- **`IGpuBigNumberBase`**: The root contract of every GPU number type: `IsNegative`, `CanBeNegative`, `IsZero()` and `GetBitLength()`.
+- **[`IGpuNumber<TSelf>`](IGpuNumber.md)**: `IGpuBigNumberBase` with `IEquatable<TSelf>` and `IComparable<TSelf>`; implemented by the fixed-width types (`GpuUInt128`, `GpuUInt256`, `GpuUInt512`, `GpuBigUInt<TSize>`).
+- **`IGpuBigNumber<TSelf>`**: `IGpuNumber<TSelf>` and `IDisposable` for the device-backed types (`GpuBigUInt`, `GpuBigInt`, `GpuBigUFloat`, `GpuBigFloat`): `Workspace`, `Magnitude`, `Exponent`, `EffectiveScale`, the static `AdditionIsExact` and `Create(GpuBigUInt, int, bool)`, and the static operators `+`, `-`, `*` and `/`.
+- **[`GenerateGpuNumberOperatorsAttribute`](IGpuNumber.md)**: Marks a struct for which the GpuMath source generator emits the operator overloads.
+- **`GpuBigNumberAlgorithms`**: Algorithms shared by every `IGpuBigNumber<TSelf>` type: `Compare<T>(T, T)` and `CompareAlignedMagnitudes(BitSizedMagnitude, BitSizedMagnitude)`.
+- **`BitSizedMagnitude`**: `readonly record struct (GpuBigUInt Magnitude, int BitLength)`: a magnitude with its exact bit length.
+- **`GpuBigNumberStackLinqExtensions`**: StackLinq extensions over sequences of `IGpuBigNumber<T>` values: `Select*`, `ZipAdd`, `ZipSubtract`, `ZipMultiply`, `ZipDivide`, `SelectModulo` / `ZipModulo` (`GpuBigUInt`) and `Aggregate` (`GpuBigUInt`, `GpuBigUFloat`, `GpuBigFloat`).
+- **`GpuBigIntMemoryHandle`**: `readonly struct` referring to a range (`WordOffset`, `NumWords`) of a device buffer of the memory manager; only the handle of a whole buffer owns it (`OwnsBuffer`). Equality compares the buffer lease and the range.
+
 ### Execution Providers & Handlers
 
 - **[IGpuExecutionProvider.md](providers/IGpuExecutionProvider.md)**: Aggregated contract (`IGpuMemoryProvider`, `IGpuBasicMathProvider`, `IGpuAdvancedMathProvider`, `IGpuGraphProvider`) for GPU execution backends.
@@ -84,6 +97,25 @@ GSharp includes a vast suite of advanced algorithms designed to leverage the GPU
 - **[Hypergeometric.md](algorithms/Hypergeometric.md)**: Binary Splitting primitives (`HypergeometricTerms`) for Hypergeometric Series (Chudnovsky Pi calculation).
 - **[Matrix2x2.md](algorithms/Matrix2x2.md)**: 2x2 Matrix arithmetic for $O(\log N)$ linear recurrences (e.g., Fibonacci).
 - **[DivRem.md](algorithms/DivRem.md)**: Simultaneous extraction of Quotient and Remainder.
+
+### Device Kernels
+
+The kernel classes are `public static partial class` types in `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`. Their `[GpuKernel]` and `[GpuDeviceFunction]` members are the building blocks of the host-side types above.
+
+- **[GpuBigIntKernels.md](kernels/GpuBigIntKernels.md)**, **[GpuBigIntPrimitiveOps.md](kernels/GpuBigIntPrimitiveOps.md)**: Parallel addition, subtraction, bitwise logic, shifts and the low-level multi-limb primitives.
+- **[GpuBigIntCmpKernels.md](kernels/GpuBigIntCmpKernels.md)**, **[GpuBigIntScalarKernels.md](kernels/GpuBigIntScalarKernels.md)**: Comparisons and operations with a 32-bit scalar operand.
+- **[GpuBigIntMulKernels.md](kernels/GpuBigIntMulKernels.md)**, **[GpuBigIntNttKernels.md](kernels/GpuBigIntNttKernels.md)**: Multiplication (Comba, Karatsuba, NTT).
+- **[GpuBigIntDivRemKernels.md](kernels/GpuBigIntDivRemKernels.md)**, **[GpuBigIntSqrtKernels.md](kernels/GpuBigIntSqrtKernels.md)**, **[GpuBigIntGcdKernels.md](kernels/GpuBigIntGcdKernels.md)**: Division, square root and GCD.
+- **[GpuBigIntVectorKernels.md](kernels/GpuBigIntVectorKernels.md)**, **[GpuStreamCompactionKernels.md](kernels/GpuStreamCompactionKernels.md)**: Batched vector arithmetic, reductions and stream compaction.
+- **[GpuBigFloatKernels.md](kernels/GpuBigFloatKernels.md)**: Aligned floating-point addition and significand normalization.
+- **[GpuBigIntFermatKernels.md](kernels/GpuBigIntFermatKernels.md)**, **[FermatTrialFactoringKernels.md](kernels/FermatTrialFactoringKernels.md)**: The Fermat probable-prime test and trial factoring.
+- **`GpuBigIntWideKernels`**: Kernels whose operands and result each have their own word count; a missing word of an operand reads as zero.
+- **`GpuDomainErrors`**: The domain errors that kernels record in the device status words of a workspace (a result that does not fit in the caller's buffer, an unsigned result below zero); the host throws them as `OverflowException` at the next read of the workspace stream.
+- **`NttPrimeArithmetic`**: The 32-bit NTT prime moduli (`k * 2^25 + 1`), Barrett and Garner CRT3 constants, and modular arithmetic device functions.
+- **`Ntt35CarryKernels`**, **`Ntt35TablelessKernels`**: The 3-prime 35-bit NTT convolution pipeline: limb unpacking, pointwise products, Garner CRT3 reconstruction, carry resolution, and tableless shared-memory row NTTs.
+- **`GoldilocksArithmetic`**: Constants and modular arithmetic of the 64-bit Goldilocks prime `P = 2^64 - 2^32 + 1`.
+- **`CooperativeMath`**: Warp-synchronous Montgomery reduction and multiplication (`ComputeMontgomeryMu`, `MontgomeryReduceWarpSync`, `MontgomeryMultiplyWarpSync`).
+- **`ParallelAdder`**: Warp-synchronous carry-lookahead addition and subtraction (`WarpScanGpBrentKung`, `AddParallelWarpSync`, `AddSubParallelBrentKung`).
 
 ### Input / Output
 

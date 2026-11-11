@@ -24,17 +24,17 @@ public static partial class GpuBigFloatKernels
 
 | Name | Description |
 | --- | --- |
-| `GpuBigFloatKernels.GpuBigFloatAddContext` | Parameter context struct for `FloatAddAlignedKernel` holding larger/smaller significand buffers, word/bit shifts, and sign scale. |
+| `GpuBigFloatKernels.GpuBigFloatAddContext` | Parameter context struct for `FloatAddAlignedKernel` holding the base and shifted significand buffers, word/bit shifts, and sign scale. |
 
 ### GpuBigFloatAddContext Struct
 
 ```csharp
 public struct GpuBigFloatAddContext
 {
-    [GpuReadOnly] public uint[] LargerSig;
-    public int LargerWords;
-    [GpuReadOnly] public uint[] SmallerSig;
-    public int SmallerWords;
+    [GpuReadOnly] public uint[] BaseSig;
+    public int BaseWords;
+    [GpuReadOnly] public uint[] ShiftedSig;
+    public int ShiftedWords;
     public uint[] ResultSig;
     public int NumWords;
     public int WordShift;
@@ -42,6 +42,8 @@ public struct GpuBigFloatAddContext
     public int SignScale;
 }
 ```
+
+The kernel computes `ResultSig = BaseSig ± (ShiftedSig` shifted right by `WordShift` words and `BitShift` bits; a negative `WordShift` shifts it left`)`. The provider passes the operand with the smaller exponent as the base and shifts the one with the larger exponent onto it. `SignScale` 1 adds, -1 computes base - shifted, -2 computes shifted - base.
 
 ## Methods
 
@@ -109,8 +111,8 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 var ctx = new GpuBigFloatKernels.GpuBigFloatAddContext
 {
-    LargerWords = 8,
-    SmallerWords = 8,
+    BaseWords = 8,
+    ShiftedWords = 8,
     NumWords = 8,
     WordShift = 0,
     BitShift = 2,
