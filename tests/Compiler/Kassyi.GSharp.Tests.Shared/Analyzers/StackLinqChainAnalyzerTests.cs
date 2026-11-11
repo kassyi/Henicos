@@ -8,15 +8,21 @@ public class StackLinqChainAnalyzerTests : AnalyzerTestBase
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_ShortChain_NoDiagnostics()
+    public async Task StackLinqChain_ShortChain_ProducesNoDiagnostics()
     {
-        await VerifyAnalyzerFromFileAsync("StackLinqChain/ShortChain_HappyPath.cs", new StackLinqChainAnalyzer(), nameof(Test_ShortChain_NoDiagnostics));
+        await VerifyAnalyzerFromFileAsync(
+            "StackLinqChain/ShortChain_HappyPath.cs",
+            new StackLinqChainAnalyzer(),
+            nameof(StackLinqChain_ShortChain_ProducesNoDiagnostics));
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_LongChain_ReportsError()
+    public async Task StackLinqChain_LongChainExceedingLimit_ReportsError()
     {
-        await VerifyAnalyzerFromFileAsync("StackLinqChain/LongChain_SadPath.cs", new StackLinqChainAnalyzer(), nameof(Test_LongChain_ReportsError));
+        await VerifyAnalyzerFromFileAsync(
+            "StackLinqChain/LongChain_SadPath.cs",
+            new StackLinqChainAnalyzer(),
+            nameof(StackLinqChain_LongChainExceedingLimit_ReportsError));
     }
 }

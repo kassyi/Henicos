@@ -19,7 +19,11 @@ public class AotContextNameTests
     [InlineData("AotContextName_ContextSuffix.cs", "Cuda", 7, 19, 7, 22)]
     [InlineData("AotContextName_GenericConstructions.cs", "Cpu", 5, 19, 5, 22)]
     [InlineData("AotContextName_GenericConstructions.cs", "Cuda", 5, 19, 5, 22)]
-    public async Task Test_StructsWithSameName_ReportGsh0058(string file, string dialect, int startLine, int startColumn,
+    public async Task AotContext_StructsWithSameName_ReportsGSH0058(
+        string file,
+        string dialect,
+        int startLine,
+        int startColumn,
         int endLine, int endColumn)
     {
         var source = RoslynTestUtility.ReadTestCase(Path.Combine("Generator", file));
@@ -38,7 +42,7 @@ public class AotContextNameTests
     // The project builds only when the generated AotContexts members are unique.
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OneNameUsedTwice_KeepsReadableNames()
+    public void AotContext_OneNameUsedTwice_KeepsReadableNames()
     {
         Assert.Equal("Pair", nameof(AotContextNameKernels.AotContexts.Pair));
         Assert.Equal("Box", nameof(AotContextNameKernels.AotContexts.Box));

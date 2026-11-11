@@ -8,4 +8,8 @@ internal sealed class IrReturn(IrExpression? value, IrSource source) : IrStateme
 {
     /// <summary>The value, or the location returned by reference; <see langword="null"/> in a void method.</summary>
     public IrExpression? Value { get; } = value;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrReturn Update(IrExpression? value) =>
+        value == Value ? this : new IrReturn(value, Source);
 }

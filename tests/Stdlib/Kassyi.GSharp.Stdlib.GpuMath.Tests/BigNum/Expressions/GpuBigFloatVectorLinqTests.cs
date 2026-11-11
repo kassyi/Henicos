@@ -68,7 +68,7 @@ public class GpuBigFloatVectorLinqTests : GpuBigFloatWorkspaceTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void GpuBigFloatArray_VectorLinq_Comparisons_And_Where_WorkCorrectly()
+    public void VectorLinq_ComparisonsAndWhere_ProducesExpectedResults()
     {
         const int length = 5;
         const int words = 4;
@@ -432,7 +432,7 @@ public class GpuBigFloatVectorLinqTests : GpuBigFloatWorkspaceTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void GpuBigFloatArray_VectorLinq_ElementaryAndTranscendental_SadPath_ThrowsExpectedExceptions()
+    public void Evaluate_InvalidElementaryAndTranscendentalOperations_ThrowsExpectedExceptions()
     {
         using var zeroVec = new GpuBigFloatArray(Context, 2, 4);
         using var z0 = CreateFloat(0);

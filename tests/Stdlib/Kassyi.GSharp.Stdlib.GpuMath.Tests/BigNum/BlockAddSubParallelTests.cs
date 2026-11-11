@@ -71,25 +71,25 @@ public class BlockAddSubParallelTests
     }
 
     [SkippableFact]
-    public void Test_BlockAddSubParallel_Add_Small()
+    public void Add_SmallWordCount_MatchesBigIntegerReference()
     {
         RunTest(128, 1);
     }
 
     [SkippableFact]
-    public void Test_BlockAddSubParallel_Add_ExactBlock()
+    public void Add_ExactBlockSize_MatchesBigIntegerReference()
     {
         RunTest(256, 1);
     }
 
     [SkippableFact]
-    public void Test_BlockAddSubParallel_Add_Large()
+    public void Add_LargeWordCount_MatchesBigIntegerReference()
     {
         RunTest(5000, 1);
     }
 
     [SkippableFact]
-    public void Test_BlockAddSubParallel_Sub_Large()
+    public void Subtract_LargeWordCount_MatchesBigIntegerReference()
     {
         RunTest(5000, -1);
     }

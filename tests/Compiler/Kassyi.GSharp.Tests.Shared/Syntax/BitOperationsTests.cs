@@ -20,7 +20,7 @@ public class BitOperationsTests : TranspilerTestBase
     [InlineData(uint.MaxValue, 16)]
     [InlineData(0x80000000u, 1)]
     [InlineData(0x55555555u, 31)]
-    public void Test_BCL02_Rotate32_Execution(uint val, int shift)
+    public void RotateLeftAndRight_UInt32VaryingValuesAndShifts_MatchesBitOperationsReference(uint val, int shift)
     {
         uint[] vals = [val];
         int[] shifts = [shift];
@@ -43,7 +43,7 @@ public class BitOperationsTests : TranspilerTestBase
     [InlineData(ulong.MaxValue, 33)]
     [InlineData(0x8000000000000000ul, 1)]
     [InlineData(0x5555555555555555ul, 63)]
-    public void Test_BCL02_Rotate64_Execution(ulong val, int shift)
+    public void RotateLeftAndRight_UInt64VaryingValuesAndShifts_MatchesBitOperationsReference(ulong val, int shift)
     {
         ulong[] vals = [val];
         int[] shifts = [shift];
@@ -58,7 +58,7 @@ public class BitOperationsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_BCL02_BitOperations_Rotate32_TranspilesToPtxFunnelShiftIntrinsics()
+    public void Transpile_Rotate32Kernel_EmitsPtxFunnelShiftIntrinsics()
     {
         // 1. Verify wrapper source uses G# rotation prelude intrinsics
         string source = BitOperationsKernels.Rotate32Kernel_Source;
@@ -76,7 +76,7 @@ public class BitOperationsTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BclIntrinsic_Interlocked_ReorderedNamedArguments_Int()
+    public void Interlocked_ReorderedNamedArgumentsInt32_UpdatesTargetsAndReturnsOldValues()
     {
         int[] targets = [10, 20, 30, 40];
         int[] results = new int[4];
@@ -90,7 +90,7 @@ public class BitOperationsTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BclIntrinsic_Interlocked_ReorderedNamedArguments_Long()
+    public void Interlocked_ReorderedNamedArgumentsInt64_UpdatesTargetsAndReturnsOldValues()
     {
         long[] targets = [100L, 200L, 300L];
         long[] results = new long[3];
@@ -104,7 +104,7 @@ public class BitOperationsTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BclIntrinsic_BitOperations_Rotation_ReorderedNamedArguments_UInt()
+    public void RotateLeftAndRight_ReorderedNamedArgumentsUInt32_MatchesBitOperationsReference()
     {
         uint[] values = [0x12345678u];
         uint[] results = new uint[2];
@@ -122,7 +122,7 @@ public class BitOperationsTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BclIntrinsic_BitOperations_Rotation_ReorderedNamedArguments_ULong()
+    public void RotateLeftAndRight_ReorderedNamedArgumentsUInt64_MatchesBitOperationsReference()
     {
         ulong[] values = [0x123456789ABCDEF0ul];
         ulong[] results = new ulong[2];
@@ -140,7 +140,7 @@ public class BitOperationsTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_BclIntrinsic_ReorderedNamedArguments_PreservesLeftToRightEvaluationOrder()
+    public void Evaluate_ReorderedNamedArgumentsWithSideEffects_PreservesLeftToRightOrder()
     {
         int[] targets = [10];
         int[] intResults = new int[1];

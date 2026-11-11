@@ -227,7 +227,7 @@ internal static class SuspensionAnalysis
         }
 
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        var callsBarrier = declaration.DescendantNodes()
+        var callsBarrier = RemovedCalls.DescendantNodesThatRun(declaration, semanticModel)
             .AsStackEnumerable()
             .Any((semanticModel, barriers), static (node, state) =>
                 node is InvocationExpressionSyntax invocation &&
@@ -285,14 +285,14 @@ internal static class SuspensionAnalysis
     }
 
     /// <summary>
-    /// The definitions of the <c>[GpuDeviceFunction]</c> methods that <paramref name="body"/> calls, in call order, with
-    /// repeats: those with a body in the compilation, and those of another assembly that recorded them
-    /// (<see cref="DeviceExportTable"/>).
+    /// The definitions of the <c>[GpuDeviceFunction]</c> methods that <paramref name="body"/> calls, outside the
+    /// calls that C# removes (<see cref="RemovedCalls"/>), in call order, with repeats: those with a body in the
+    /// compilation, and those of another assembly that recorded them (<see cref="DeviceExportTable"/>).
     /// </summary>
     internal static IEnumerable<IMethodSymbol> GetDeviceFunctionCallees(SyntaxNode body, Compilation compilation)
     {
         var semanticModel = compilation.GetSemanticModel(body.SyntaxTree);
-        foreach (var node in body.DescendantNodes())
+        foreach (var node in RemovedCalls.DescendantNodesThatRun(body, semanticModel))
         {
             if (node is InvocationExpressionSyntax invocation &&
                 semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol callee &&

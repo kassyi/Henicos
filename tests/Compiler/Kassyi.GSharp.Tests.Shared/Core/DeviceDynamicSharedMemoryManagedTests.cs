@@ -21,68 +21,68 @@ public class DeviceDynamicSharedMemoryManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SuspendingHelper_DoesNotOverlapCaller() =>
+    public void SuspendingHelper_ManagedExecution_DoesNotOverlapCaller() =>
         DeviceDynamicSharedMemoryScenarios.SuspendingHelperDoesNotOverlapCaller(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_HelperReachedFromTwoKernels_GetsItsOwnBufferInEach() =>
+    public void HelperReachedFromTwoKernels_ManagedExecution_GetsOwnBufferInEach() =>
         DeviceDynamicSharedMemoryScenarios.HelperReachedFromTwoKernels(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_PlainHelper_DoesNotOverlapCaller() =>
+    public void PlainHelper_ManagedExecution_DoesNotOverlapCaller() =>
         DeviceDynamicSharedMemoryScenarios.PlainHelperDoesNotOverlapCaller(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SuspendingHelper_PersistsAcrossCalls() =>
+    public void SuspendingHelper_ManagedExecution_PersistsAcrossCalls() =>
         DeviceDynamicSharedMemoryScenarios.SuspendingHelperPersistsAcrossCalls(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_PlainHelper_PersistsAcrossCalls() =>
+    public void PlainHelper_ManagedExecution_PersistsAcrossCalls() =>
         DeviceDynamicSharedMemoryScenarios.PlainHelperPersistsAcrossCalls(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_StaticHelper_PersistsAcrossCalls() =>
+    public void StaticHelper_ManagedExecution_PersistsAcrossCalls() =>
         DeviceDynamicSharedMemoryScenarios.StaticHelperPersistsAcrossCalls(s_runManaged);
 
     // CUDA traps when a region that is not the last one grows; the managed path throws, as the native one (#544, C10)
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Managed_GrowingHelper_AfterCallerDeclaration_Throws() =>
+    public void GrowingHelper_AfterCallerDeclarationManaged_ThrowsInvalidOperationException() =>
         DeviceDynamicSharedMemoryScenarios.GrowingHelperAfterCallerDeclarationThrows(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_RecursiveHelper_SharesOneBufferAndDoesNotOverlapCaller() =>
+    public void RecursiveHelper_ManagedExecution_SharesOneBufferAndDoesNotOverlapCaller() =>
         DeviceDynamicSharedMemoryScenarios.RecursiveHelperSharesOneBufferAndDoesNotOverlapCaller(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_NestedScopeDeclarations_DoNotOverlap() =>
+    public void NestedScopeDeclarations_ManagedExecution_DoNotOverlap() =>
         DeviceDynamicSharedMemoryScenarios.NestedScopeDeclarationsDoNotOverlap(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ZeroCountDeclaration_GrowsInPlace() =>
+    public void ZeroCountDeclaration_ManagedExecution_GrowsInPlace() =>
         DeviceDynamicSharedMemoryScenarios.ZeroCountDeclarationGrowsInPlace(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_HelperBehindFunctionWithoutDeclaration_DoesNotOverlapCaller() =>
+    public void HelperBehindFunctionWithoutDeclaration_ManagedExecution_DoesNotOverlapCaller() =>
         DeviceDynamicSharedMemoryScenarios.HelperBehindFunctionWithoutDeclaration(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_HelperWithoutParameters_GetsItsBuffer() =>
+    public void HelperWithoutParameters_ManagedExecution_GetsItsBuffer() =>
         DeviceDynamicSharedMemoryScenarios.HelperWithoutParameters(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_HelpersCalledFromLocalFunctionAndLambda_DoNotOverlapCaller() =>
+    public void HelpersCalledFromLocalFunctionAndLambda_ManagedExecution_DoNotOverlapCaller() =>
         DeviceDynamicSharedMemoryScenarios.HelpersCalledFromLocalFunctionAndLambda(s_runManaged);
 
     private static void RunManaged(Action launch)

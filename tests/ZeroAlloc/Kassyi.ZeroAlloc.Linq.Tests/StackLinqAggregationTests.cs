@@ -20,7 +20,7 @@ public class StackLinqAggregationTests
     }
 
     [Fact]
-    public void Max_Min_Average_Int_ShouldReturnCorrectResult()
+    public void MaxMinAverage_IntSequence_ReturnsExtremaAndAverage()
     {
         int[] data = { 5, 2, 9, 1, 7 };
         Assert.Equal(9, data.AsStackEnumerable().Max());
@@ -35,7 +35,7 @@ public class StackLinqAggregationTests
     }
 
     [Fact]
-    public void Max_Min_Average_Float_ShouldReturnCorrectResult()
+    public void MaxMinAverage_FloatSequence_ReturnsExtremaAndAverage()
     {
         float[] data = { 5.5f, 2.2f, 9.9f, 1.1f, 7.7f };
         Assert.Equal(9.9f, data.AsStackEnumerable().Max());
@@ -50,7 +50,7 @@ public class StackLinqAggregationTests
     }
 
     [Fact]
-    public void Max_Min_Average_Double_ShouldReturnCorrectResult()
+    public void MaxMinAverage_DoubleSequence_ReturnsExtremaAndAverage()
     {
         double[] data = { 5.5, 2.2, 9.9, 1.1, 7.7 };
         Assert.Equal(9.9, data.AsStackEnumerable().Max());
@@ -95,7 +95,7 @@ public class StackLinqAggregationTests
 
     [Theory]
     [MemberData(nameof(NaNPlacements))]
-    public void Max_Min_Double_NaNAnywhere_MatchesSystemLinq(double[] data)
+    public void MaxMin_DoubleWithNaNAnywhere_MatchesSystemLinq(double[] data)
     {
         Assert.Equal(data.Max(), data.AsStackEnumerable().Max());
         Assert.Equal(data.Min(), data.AsStackEnumerable().Min());
@@ -105,7 +105,7 @@ public class StackLinqAggregationTests
 
     [Theory]
     [MemberData(nameof(NaNPlacements))]
-    public void Max_Min_Float_NaNAnywhere_MatchesSystemLinq(double[] values)
+    public void MaxMin_FloatWithNaNAnywhere_MatchesSystemLinq(double[] values)
     {
         var data = Array.ConvertAll(values, static x => (float)x);
 

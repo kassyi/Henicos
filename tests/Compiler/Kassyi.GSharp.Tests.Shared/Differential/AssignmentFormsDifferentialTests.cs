@@ -211,35 +211,35 @@ public class AssignmentFormsDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FloatRemainder_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_floatRemainder);
+    public void Remainder_FloatOperands_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_floatRemainder);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullableConversion_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_nullableConversion);
+    public void Conversion_NullableTypes_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_nullableConversion);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullArray_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_nullArray);
+    public void Assignment_NullArray_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_nullArray);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Discard_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_discard);
+    public void Assignment_DiscardPattern_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_discard);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ComputedPropertyAssignment_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_computedProperty);
+    public void Assignment_ComputedProperty_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_computedProperty);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeconstructionShapes_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_deconstruction);
+    public void Deconstruction_VariousShapes_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_deconstruction);
 }

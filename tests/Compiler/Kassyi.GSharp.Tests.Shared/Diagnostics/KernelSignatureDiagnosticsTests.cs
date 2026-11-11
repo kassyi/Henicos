@@ -13,7 +13,7 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnsupportedReturnTypes_ReportGsh0004AtTheMethodName(string dialect)
+    public async Task KernelReturnType_UnsupportedTypes_ReportsGsh0004AtMethodName(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Generator/KernelReturnTypes_SadPath.cs", dialect);
 
@@ -31,7 +31,7 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_InstanceDeviceFunctions_ReportGsh0066AtTheMethodName(string dialect)
+    public async Task DeviceFunction_InstanceMethod_ReportsGsh0066AtMethodName(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/InstanceDeviceFunction_SadPath.cs", dialect);
 
@@ -47,7 +47,7 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FunctionPointerTypes_ReportGsh0003AtTheType(string dialect)
+    public async Task FunctionPointerType_KernelOrDeviceSignature_ReportsGsh0003AtType(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
 
@@ -65,7 +65,7 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_KernelParameterSpace_ReportsGsh0064OnlyOverTheLimit(string dialect)
+    public async Task KernelParameterSpace_ExceedingLimit_ReportsGsh0064(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/StructSizeDiagnostics.cs", dialect);
 
@@ -82,7 +82,7 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnknownTypeParameter_DoesNotCrashAnalyzerWithAD0001(string dialect)
+    public async Task UnknownTypeParameter_SyntaxAnalysis_DoesNotCrashWithAd0001(string dialect)
     {
         const string TestCasePath = "Analyzers/KernelUnknownParameter.cs";
         var source = RoslynTestUtility.ReadTestCase(TestCasePath);
@@ -99,7 +99,7 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_TypeParameter_DoesNotCrashAnalyzerWithAD0001(string dialect)
+    public async Task TypeParameter_SyntaxAnalysis_DoesNotCrashWithAd0001(string dialect)
     {
         const string TestCasePath = "Analyzers/KernelTypeParameter.cs";
         var source = RoslynTestUtility.ReadTestCase(TestCasePath);
@@ -112,7 +112,7 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ReservedLaunchParameterNames_ReportGsh0106AtTheParameterAndSkipWrappers(string dialect)
+    public async Task ReservedLaunchParameterNames_ReservedIdentifiers_ReportsGsh0106AndSkipsWrappers(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase("Analyzers/KernelReservedLaunchParameter_SadPath.cs");
         var compilation = RoslynTestUtility.CreateCompilation(source);

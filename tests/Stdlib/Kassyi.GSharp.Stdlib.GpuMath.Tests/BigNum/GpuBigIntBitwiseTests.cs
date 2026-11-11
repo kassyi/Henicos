@@ -23,7 +23,7 @@ public class GpuBigIntBitwiseTests
     [MemberData(nameof(GetBitwiseTestData))]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BitwiseAnd(uint[] aWords, uint[] bWords)
+    public void BitwiseAnd_MultiWordOperands_MatchesBitwiseAndReference(uint[] aWords, uint[] bWords)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -46,7 +46,7 @@ public class GpuBigIntBitwiseTests
     [MemberData(nameof(GetBitwiseTestData))]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BitwiseOr(uint[] aWords, uint[] bWords)
+    public void BitwiseOr_MultiWordOperands_MatchesBitwiseOrReference(uint[] aWords, uint[] bWords)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -69,7 +69,7 @@ public class GpuBigIntBitwiseTests
     [MemberData(nameof(GetBitwiseTestData))]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BitwiseXor(uint[] aWords, uint[] bWords)
+    public void BitwiseXor_MultiWordOperands_MatchesBitwiseXorReference(uint[] aWords, uint[] bWords)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -92,7 +92,7 @@ public class GpuBigIntBitwiseTests
     [MemberData(nameof(GetBitwiseTestData))]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BitwiseNot(uint[] aWords, uint[] _)
+    public void BitwiseNot_MultiWordOperands_MatchesBitwiseNotReference(uint[] aWords, uint[] _)
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);

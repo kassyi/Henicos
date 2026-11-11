@@ -93,7 +93,7 @@ public class KernelDiagnosticsInventoryTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SadPathInputs_RecordEveryDiagnostic(string dialect)
+    public async Task CompilerDiagnostics_InventoryAllCases_RecordsEveryDiagnostic(string dialect)
     {
         var report = new StringBuilder();
         foreach (var input in Inputs)

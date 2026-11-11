@@ -10,7 +10,7 @@ public class PrimeSearchAlgorithmTests
     [InlineData(64)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PrimeSearch_ValidBitLengths(int bitLength)
+    public void Generate_ValidBitLengths_ReturnsPrimeWithMatchingBitLength(int bitLength)
     {
         var prime = PrimeSearchAlgorithm.Generate(bitLength);
         Assert.Equal(bitLength, prime.GetBitLength());
@@ -23,7 +23,7 @@ public class PrimeSearchAlgorithmTests
     [InlineData(-8)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_PrimeSearch_InvalidBitLength_ThrowsArgumentOutOfRangeException(int invalidBitLength)
+    public void Generate_InvalidBitLengths_ThrowsArgumentOutOfRangeException(int invalidBitLength)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => PrimeSearchAlgorithm.Generate(invalidBitLength));
     }

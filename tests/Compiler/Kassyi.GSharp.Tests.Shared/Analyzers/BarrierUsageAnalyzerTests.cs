@@ -13,7 +13,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_UniformBarriers_HappyPath_HasNoDiagnostics()
+    public async Task UniformBarriers_SynchronizedKernel_HasNoDiagnostics()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/UniformBarrierKernels.cu.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();
@@ -21,7 +21,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentBarrier_IsAWarning()
+    public async Task DivergentBarrier_ThreadIdBranch_ReportsWarning()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/DivergentBarrierKernels.cu.cs");
 
@@ -37,7 +37,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ExceptionHandlingInKernel_ReportsGSH0038()
+    public async Task ExceptionHandling_InKernel_ReportsGSH0038()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/ExceptionHandlingInKernelKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0038");
@@ -45,7 +45,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CrossBarrierRefStruct_ReportsGSH0039()
+    public async Task CrossBarrierRefStruct_VariableDeclaration_ReportsGSH0039()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierRefStructKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0039");
@@ -53,7 +53,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CrossBarrierGoto_ReportsGSH0040()
+    public async Task CrossBarrierGoto_Statement_ReportsGSH0040()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierGotoKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0040");
@@ -62,7 +62,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     // The example of the GSH0040 page: the jump crosses a call to a device function that reaches a barrier
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GotoAcrossSuspendingCall_ReportsGSH0040OnGoto()
+    public async Task GotoAcrossSuspendingCall_Statement_ReportsGSH0040OnGoto()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/BarrierUsage/CrossSuspendingCallGotoKernels.cu.cs", s_analyzer)
@@ -77,7 +77,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CrossBarrierLocalPointer_ReportsGSH0041()
+    public async Task CrossBarrierLocalPointer_Declaration_ReportsGSH0041()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierLocalPointerKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0041");
@@ -85,7 +85,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ExternalBarrierCall_ReportsGSH0042()
+    public async Task ExternalBarrierCall_DirectCall_ReportsGSH0042()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/ExternalBarrierCallKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0042");
@@ -93,7 +93,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FixedBlockBarrier_ReportsGSH0043()
+    public async Task FixedBlockBarrier_Statement_ReportsGSH0043()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/FixedBlockBarrierKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0043");
@@ -101,7 +101,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_ByRefAndRefStructKernelParameters_HasNoDiagnostics()
+    public async Task ByRefAndRefStruct_KernelParameters_HasNoDiagnostics()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/KernelParameterRefStructKernels.cu.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();
@@ -109,7 +109,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_RecursiveBarrier_ReportsGSH0045()
+    public async Task RecursiveBarrier_DirectOrIndirectCall_ReportsGSH0045()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/RecursiveLocalFunctionBarrierKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0045");
@@ -117,7 +117,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_DeviceFunctionBarriers_HappyPath_HasNoDiagnostics()
+    public async Task DeviceFunctionBarriers_NonRecursiveCalls_HasNoDiagnostics()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/NonRecursiveDeviceFunctionBarrierKernels.cu.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();
@@ -125,7 +125,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DirectlyRecursiveDeviceFunctionBarrier_ReportsGSH0061()
+    public async Task DirectlyRecursiveDeviceFunctionBarrier_CallCycle_ReportsGSH0061()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/RecursiveDeviceFunctionBarrierKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0061");
@@ -133,7 +133,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MutuallyRecursiveDeviceFunctionBarrier_ReportsGSH0061()
+    public async Task MutuallyRecursiveDeviceFunctionBarrier_MutualRecursion_ReportsGSH0061()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/MutuallyRecursiveDeviceFunctionBarrierKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0061");
@@ -141,7 +141,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentCallToBarrierDeviceFunction_ReportsGSH0083()
+    public async Task DivergentCallToBarrierDeviceFunction_DivergentBranch_ReportsGSH0083()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/DivergentSuspendingCallKernels.cu.cs");
 
@@ -155,7 +155,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentBarrierInDeviceFunction_ReportsGSH0083()
+    public async Task DivergentBarrierInDeviceFunction_BranchInsideCallee_ReportsGSH0083()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/DivergentBarrierInDeviceFunctionKernels.cu.cs");
 
@@ -169,7 +169,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentCallReachingBarrierTwoLevelsDeep_ReportsGSH0083()
+    public async Task DivergentCallReachingBarrierTwoLevelsDeep_NestedCalls_ReportsGSH0083()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/DivergentNestedSuspendingCallKernels.cu.cs");
 
@@ -183,7 +183,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_BarrierDeviceFunctionOnRightOfShortCircuit_ReportsGSH0083()
+    public async Task BarrierDeviceFunctionOnRightOfShortCircuit_ShortCircuitExpression_ReportsGSH0083()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/ShortCircuitSuspendingCallKernels.cu.cs");
 
@@ -197,7 +197,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_RefStructAcrossSuspendingCallInDeviceFunction_ReportsGSH0039()
+    public async Task RefStructAcrossSuspendingCallInDeviceFunction_DeviceScope_ReportsGSH0039()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/CrossSuspendingCallRefStructKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0039");
@@ -205,7 +205,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ThreadVariantConditions_AreWarnings()
+    public async Task ThreadVariantConditions_ThreadDependentBranches_ReportsWarnings()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/ThreadVariantConditionKernels.cu.cs");
 
@@ -223,7 +223,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_UniformConditions_HasNoDiagnostics()
+    public async Task UniformConditions_ThreadInvariantExpressions_HasNoDiagnostics()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/UniformConditionBarrierKernels.cu.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();
@@ -231,7 +231,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_DeviceFunctionRefParametersAndWarpOnlyBranch_HasNoDiagnostics()
+    public async Task DeviceFunctionRefParametersAndWarpOnlyBranch_UniformExecution_HasNoDiagnostics()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/DeviceFunctionRefParameterBarrierKernels.cu.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();
@@ -243,7 +243,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     [InlineData("SuspendingCallInLocalFunctionKernels.cu.cs")]
     [InlineData("SuspendingCallInSwitchExpressionKernels.cu.cs")]
     [InlineData("RefReturnArgumentKernels.cu.cs")]
-    public async Task Test_SuspendingCallInUnsupportedContext_ReportsGSH0062(string testCase)
+    public async Task SuspendingCallInUnsupportedContext_ConditionalBranch_ReportsGSH0062(string testCase)
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/" + testCase, s_analyzer)
                                .ReportsErrorsAsync("GSH0062");
@@ -254,7 +254,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     // suspends (#1274)
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_WarpShuffleInUnsplitContext_ReportsGSH0062ForTheCpuDialect()
+    public async Task WarpShuffleInUnsplitContext_CpuDialect_ReportsGSH0062()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", "Cpu");
 
@@ -282,7 +282,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     // Gpu.GridStrideLoop body is (#1091)
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_WarpExchangeInScope_ReportsGSH0062ForTheCpuDialect()
+    public async Task WarpExchangeInScope_CpuDialect_ReportsGSH0062()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/WarpExchangeInScopeKernels.cu.cs", "Cpu");
 
@@ -310,7 +310,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_WarpExchangeInScope_IsAcceptedForTheCudaDialect()
+    public async Task WarpExchangeInScope_CudaDialect_ProducesNoDiagnostics()
     {
         Assert.Empty(await RunAsync("Analyzers/BarrierUsage/WarpExchangeInScopeKernels.cu.cs", "Cuda"));
     }
@@ -319,7 +319,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     // every shuffle of the same kernels
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_WarpShuffleInUnsplitContext_IsAcceptedForTheCudaDialect()
+    public async Task WarpShuffleInUnsplitContext_CudaDialect_ProducesNoDiagnostics()
     {
         Assert.Empty(await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", "Cuda"));
     }
@@ -328,7 +328,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     // an in parameter without the keyword (#788 review); variables stay allowed
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_RefReturnMemberArgument_ReportsGSH0062AtTheArgument()
+    public async Task RefReturnMemberArgument_SuspendingCall_ReportsGSH0062AtArgument()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/RefReturnMemberArgumentKernels.cu.cs");
 
@@ -345,7 +345,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     // struct itself; neither is a by-reference argument that GSH0062 reports (#850 review)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_ValueFieldOrOwnFieldArgument_DoesNotReportGSH0062()
+    public async Task ValueFieldOrOwnFieldArgument_SuspendingCall_DoesNotReportGSH0062()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs");
 
@@ -354,7 +354,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_AsyncYieldInKernel_ReportsGSH0046()
+    public async Task AsyncYieldInKernel_AwaitOrYield_ReportsGSH0046()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/AsyncYieldInKernelKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0046");
@@ -362,7 +362,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_LockStatementInKernel_ReportsGSH0047()
+    public async Task LockStatementInKernel_LockSyntax_ReportsGSH0047()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/LockStatementInKernelKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0047");
@@ -370,7 +370,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_UserDefinedGpuType_IsNotTakenForTheBarrier()
+    public async Task UserDefinedGpuType_CustomTypeBarrierCall_IsNotTreatedAsBarrier()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/LookalikeGpuTypeKernels.cu.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();
@@ -378,7 +378,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UserDefinedGpuKernelAttribute_IsNotTakenForAKernel()
+    public async Task UserDefinedGpuKernelAttribute_CustomAttribute_IsNotTreatedAsKernel()
     {
         var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/LookalikeGpuKernelAttributeKernels.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();

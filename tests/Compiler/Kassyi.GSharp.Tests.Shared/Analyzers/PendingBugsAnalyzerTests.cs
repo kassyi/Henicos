@@ -27,7 +27,7 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
     // #926: Expect IsRecursiveSuspendingFunction to return true and 3 GSH0061 diagnostics to be reported once ReducedFrom is normalized.
     [Fact(Skip = "#926: Extension-form recursion does not recognize recursive suspending functions.")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_RecursiveExtensionDeviceFunctionWithBarrier_ReportsGSH0061()
+    public async Task RecursiveExtensionDeviceFunction_DirectRecursionToBarrier_ReportsGSH0061()
     {
         var (compilation, tree, model) =
             RoslynTestUtility.GetTestCaseContext("Analyzers/PendingBugs/RecursiveExtensionBarrierKernels.cu.cs");
@@ -71,7 +71,7 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MutualRecursionBarrierReachability_IsOrderIndependent()
+    public void MutualRecursionBarrierReachability_TraversalOrder_IsOrderIndependent()
     {
         var source = RoslynTestUtility.ReadTestCase(
             "Analyzers/PendingBugs/MutualRecursionBarrierOrderKernels.cu.cs");
@@ -117,7 +117,7 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DirectSyncThreadsInGridStrideLoop_ReportsGSH0037()
+    public async Task SyncThreads_InGridStrideLoop_ReportsGSH0037()
     {
         var (_, tree, _) =
             RoslynTestUtility.GetTestCaseContext("Analyzers/PendingBugs/GridStrideLoopBarrierKernels.cu.cs");
@@ -150,7 +150,7 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
     // in order as Sum does in one thread, and is supported
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_HostOnlyStackLinqTerminalsInKernel_ReportsGSH0003()
+    public async Task StackLinqTerminals_HostOnlyMethodsInKernel_ReportsGSH0003()
     {
         var (_, tree, _) =
             RoslynTestUtility.GetTestCaseContext("Analyzers/PendingBugs/HostOnlyStackLinqProhibitedKernels.cu.cs");
@@ -185,7 +185,7 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
     // #1083: Expect 2 SLQ0001 diagnostics once StackLinqChainAnalyzer counts StackEnumerable.OfType<T>() and static StackLinqExtensions calls.
     [Fact(Skip = "#1083: StackLinqChainAnalyzer does not count OfType or static-form calls.")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StackLinqChainExceedingMaxDepthWithOfTypeOrStaticCall_ReportsSLQ0001()
+    public async Task StackLinqChain_ExceedingMaxDepthWithOfTypeOrStaticCall_ReportsSLQ0001()
     {
         var (_, tree, _) =
             RoslynTestUtility.GetTestCaseContext("Analyzers/PendingBugs/StackLinqChainDepthBypassKernels.cu.cs");

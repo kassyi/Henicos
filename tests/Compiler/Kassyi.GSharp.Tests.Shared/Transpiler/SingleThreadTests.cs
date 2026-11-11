@@ -20,7 +20,7 @@ public class SingleThreadTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SingleThread_OneDimensionalLaunch_BodyRunsOnceOnFirstThread(bool forceManaged)
+    public void SingleThread_OneDimensionalLaunch_RunsBodyOnceOnFirstThread(bool forceManaged)
     {
         var runs = new int[8];
 
@@ -41,7 +41,7 @@ public class SingleThreadTests : TranspilerTestBase
     [InlineData(true, 4u, 1u, 1u, 1u, 1u, 2u)]
     [InlineData(false, 2u, 2u, 2u, 2u, 2u, 2u)]
     [InlineData(true, 2u, 2u, 2u, 2u, 2u, 2u)]
-    public void Test_SingleThread_MultiDimensionalLaunch_BodyRunsOnceOnFirstThread(
+    public void SingleThread_MultiDimensionalLaunch_RunsBodyOnceOnFirstThread(
         bool forceManaged,
         uint blockDimX,
         uint blockDimY,
@@ -70,7 +70,7 @@ public class SingleThreadTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SingleThread_AfterBlockBarrier_BodyRunsOnceOnFirstThread(bool forceManaged)
+    public void SingleThread_AfterBlockBarrier_RunsBodyOnceOnFirstThread(bool forceManaged)
     {
         var runs = new int[16];
 
@@ -88,7 +88,7 @@ public class SingleThreadTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SingleThread_AfterEveryThreadWrites_OverwritesFirstElementOnly(bool forceManaged)
+    public void SingleThread_AfterEveryThreadWrites_OverwritesFirstElementOnly(bool forceManaged)
     {
         var a = new int[8];
 
@@ -105,7 +105,7 @@ public class SingleThreadTests : TranspilerTestBase
     [InlineData(true, 4u, 2u, 1u, 2u, 1u, 1u)]
     [InlineData(false, 2u, 2u, 2u, 2u, 2u, 2u)]
     [InlineData(true, 2u, 2u, 2u, 2u, 2u, 2u)]
-    public void Test_SingleThread_InDeviceFunctionWithoutBarrier_BodyRunsOnceOnFirstThread(
+    public void SingleThread_InDeviceFunctionWithoutBarrier_RunsBodyOnceOnFirstThread(
         bool forceManaged,
         uint blockDimX,
         uint blockDimY,
@@ -142,7 +142,7 @@ public class SingleThreadTests : TranspilerTestBase
     [InlineData(true, 9)]
     [InlineData(false, -1)]
     [InlineData(true, -1)]
-    public void Test_SingleThread_ReturnInBody_LeavesBodyOnly(bool forceManaged, int stop)
+    public void SingleThread_ReturnInBody_LeavesBodyOnly(bool forceManaged, int stop)
     {
         var a = new int[9];
 
@@ -157,7 +157,7 @@ public class SingleThreadTests : TranspilerTestBase
     [InlineData(true, 0)]
     [InlineData(false, 2)]
     [InlineData(true, 2)]
-    public void Test_SingleThread_ReturnInBodyAfterBlockBarrier_LeavesBodyOnly(bool forceManaged, int stop)
+    public void SingleThread_ReturnInBodyAfterBlockBarrier_LeavesBodyOnly(bool forceManaged, int stop)
     {
         var a = new int[9];
 
@@ -172,7 +172,7 @@ public class SingleThreadTests : TranspilerTestBase
     [InlineData(true, 0)]
     [InlineData(false, 2)]
     [InlineData(true, 2)]
-    public void Test_SingleThread_ReturnInDeviceFunctionBody_LeavesBodyOnly(bool forceManaged, int stop)
+    public void SingleThread_ReturnInDeviceFunctionBody_LeavesBodyOnly(bool forceManaged, int stop)
     {
         var a = new int[9];
 
@@ -187,7 +187,7 @@ public class SingleThreadTests : TranspilerTestBase
     [InlineData(true, 0, 0)]
     [InlineData(false, 3, 6)]
     [InlineData(true, 3, 6)]
-    public void Test_SingleThread_ReturnInLocalFunctionOfBody_LeavesLocalFunctionOnly(bool forceManaged, int stop, int first)
+    public void SingleThread_ReturnInLocalFunctionOfBody_LeavesLocalFunctionOnly(bool forceManaged, int stop, int first)
     {
         var a = new int[9];
 
@@ -204,7 +204,7 @@ public class SingleThreadTests : TranspilerTestBase
     [InlineData(true, 1, 10)]
     [InlineData(false, 2, 1)]
     [InlineData(true, 2, 1)]
-    public void Test_SingleThread_ReturnInNestedBodies_LeavesItsOwnBody(bool forceManaged, int stop, int first)
+    public void SingleThread_ReturnInNestedBodies_LeavesOwnBodyOnly(bool forceManaged, int stop, int first)
     {
         var a = new int[9];
 
@@ -217,7 +217,7 @@ public class SingleThreadTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_SingleThread_ReturnInBodyInLoopMacros_LeavesBodyOnly(bool forceManaged)
+    public void SingleThread_ReturnInBodyInLoopMacros_LeavesBodyOnly(bool forceManaged)
     {
         var a = new int[2];
 

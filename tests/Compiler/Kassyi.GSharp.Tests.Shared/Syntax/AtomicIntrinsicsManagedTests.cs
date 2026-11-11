@@ -21,7 +21,7 @@ public class AtomicIntrinsicsManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_AtomicArithmetic_AllThreadsContributeToSingleAddress() =>
+    public void AtomicArithmetic_ManagedExecutionAllThreads_ContributeToSingleAddress() =>
         AtomicIntrinsicsScenarios.Arithmetic(s_runManaged);
 
     [Theory]
@@ -31,29 +31,30 @@ public class AtomicIntrinsicsManagedTests : TranspilerTestBase
     [InlineData(0u, uint.MaxValue)]
     [InlineData(100u, 9u)]
     [InlineData(uint.MaxValue, uint.MaxValue)]
-    public void Test_Managed_AtomicIncDec_WrapsAroundLimit(uint initial, uint limit) =>
+    public void AtomicIncDec_ManagedExecutionVaryingLimits_WrapsAroundLimit(uint initial, uint limit) =>
         AtomicIntrinsicsScenarios.IncDecWrap(s_runManaged, initial, limit);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_AtomicFloatAdd_ManyBlocks() => AtomicIntrinsicsScenarios.FloatAddHighContention(s_runManaged);
+    public void AtomicFloatAdd_ManagedExecutionManyBlocks_ProducesExactSum() =>
+        AtomicIntrinsicsScenarios.FloatAddHighContention(s_runManaged);
 
     // The atomic is in a device function that does not suspend, which the managed path calls as the user's C# method
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_AtomicThroughRefParameter_UpdatesCallerElement() =>
+    public void AtomicThroughRefParameter_ManagedExecutionDeviceFunction_UpdatesCallerElement() =>
         AtomicIntrinsicsScenarios.ThroughRefParameter(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_EveryAtomicOverload_ReturnsTheOldValueOfOneOrder() =>
+    public void AtomicOverloads_ManagedExecutionVariousTypes_ReturnOldValueInExecutionOrder() =>
         AtomicIntrinsicsScenarios.OldValues(s_runManaged);
 
     // Two host threads run managed launches on the same array at the same time: each update is atomic, so none is lost.
     // 2 x 20 launches of 16 x 256 additions of 1 give 163840, which a float holds exactly
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_Managed_ConcurrentLaunchesOnOneArray_LoseNoUpdate()
+    public async Task ConcurrentLaunches_ManagedExecutionSharedArray_LosesNoUpdates()
     {
         const int hostThreads = 2;
         const int launchesPerThread = 20;

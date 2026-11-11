@@ -25,8 +25,39 @@ internal static class MetamorphicDeviceFunctionInliner
         var rng = new FuzzRandom(seed ^ 0xA11CE004UL);
         var scope = EffectScope.ForKernel(method, semanticModel);
 
-        var helperMap = new Dictionary<IMethodSymbol, (MethodDeclarationSyntax Decl, string ReturnType, string ReturnTemplate)>(
-            SymbolEqualityComparer.Default);
+        var helperMap = CollectFoldableHelpers(root, semanticModel);
+        if (helperMap.Count == 0)
+        {
+            return root;
+        }
+
+        var eligibleCalls = CollectEligibleCalls(method, semanticModel, scope, helperMap);
+        if (eligibleCalls.Count == 0)
+        {
+            return root;
+        }
+
+        var chosen = eligibleCalls[rng.NextBelow(eligibleCalls.Count)];
+        var updatedMethod = InlineInvocation(method, chosen);
+        return root.ReplaceNode(method, updatedMethod);
+    }
+
+    private readonly record struct FoldableHelperInfo(
+        MethodDeclarationSyntax Decl,
+        string ReturnType,
+        string ReturnTemplate);
+
+    private readonly record struct InlinedCallTarget(
+        InvocationExpressionSyntax Invocation,
+        IMethodSymbol HelperSymbol,
+        string ReturnType,
+        string ReturnTemplate);
+
+    private static Dictionary<IMethodSymbol, FoldableHelperInfo> CollectFoldableHelpers(
+        CompilationUnitSyntax root,
+        SemanticModel semanticModel)
+    {
+        var helperMap = new Dictionary<IMethodSymbol, FoldableHelperInfo>(SymbolEqualityComparer.Default);
 
         foreach (var helper in FuzzSyntaxHelpers.GetDeviceFunctionMethods(root))
         {
@@ -42,44 +73,39 @@ internal static class MetamorphicDeviceFunctionInliner
             if (PureBodyFolder.TryFold(helper, semanticModel, out string? returnTemplate))
             {
                 string retTypeText = MetamorphicTypeResolver.FormatCSharpType(helperSymbol.ReturnType);
-                helperMap[helperSymbol] = (helper, retTypeText, returnTemplate);
+                helperMap[helperSymbol] = new FoldableHelperInfo(helper, retTypeText, returnTemplate);
             }
         }
 
-        if (helperMap.Count == 0)
+        return helperMap;
+    }
+
+    private static List<InlinedCallTarget> CollectEligibleCalls(
+        MethodDeclarationSyntax method,
+        SemanticModel semanticModel,
+        EffectScope scope,
+        Dictionary<IMethodSymbol, FoldableHelperInfo> helperMap)
+    {
+        var eligibleCalls = new List<InlinedCallTarget>();
+        foreach (var node in method.Body!.DescendantNodes())
         {
-            return root;
+            if (node is InvocationExpressionSyntax inv &&
+                semanticModel.GetSymbolInfo(inv).Symbol is IMethodSymbol targetSymbol &&
+                helperMap.TryGetValue(targetSymbol, out var info) &&
+                inv.ArgumentList.Arguments.Count == targetSymbol.Parameters.Length &&
+                AreAllArgumentsPure(inv, scope))
+            {
+                eligibleCalls.Add(new InlinedCallTarget(inv, targetSymbol, info.ReturnType, info.ReturnTemplate));
+            }
         }
 
-        var eligibleCalls = new List<(InvocationExpressionSyntax Invocation, IMethodSymbol HelperSymbol, string ReturnType, string ReturnTemplate)>();
-        foreach (var node in method.Body.DescendantNodes())
-        {
-            if (node is not InvocationExpressionSyntax inv)
-            {
-                continue;
-            }
+        return eligibleCalls;
+    }
 
-            if (semanticModel.GetSymbolInfo(inv).Symbol is not IMethodSymbol targetSymbol ||
-                !helperMap.TryGetValue(targetSymbol, out var info))
-            {
-                continue;
-            }
-
-            if (inv.ArgumentList.Arguments.Count != targetSymbol.Parameters.Length ||
-                !AreAllArgumentsPure(inv, scope))
-            {
-                continue;
-            }
-
-            eligibleCalls.Add((inv, targetSymbol, info.ReturnType, info.ReturnTemplate));
-        }
-
-        if (eligibleCalls.Count == 0)
-        {
-            return root;
-        }
-
-        var chosen = eligibleCalls[rng.NextBelow(eligibleCalls.Count)];
+    private static MethodDeclarationSyntax InlineInvocation(
+        MethodDeclarationSyntax method,
+        InlinedCallTarget chosen)
+    {
         int paramCount = chosen.HelperSymbol.Parameters.Length;
         var paramNames = new string[paramCount];
         var paramTypes = new string[paramCount];
@@ -97,8 +123,7 @@ internal static class MetamorphicDeviceFunctionInliner
         var replacementExpr = SyntaxFactory.ParseExpression($"(({chosen.ReturnType})({substituted}))")
             .WithTriviaFrom(chosen.Invocation);
 
-        var updatedMethod = method.ReplaceNode(chosen.Invocation, replacementExpr);
-        return root.ReplaceNode(method, updatedMethod);
+        return method.ReplaceNode(chosen.Invocation, replacementExpr);
     }
 
     private static bool HasOnlySupportedByValueParameters(IMethodSymbol helperSymbol)

@@ -28,7 +28,7 @@ public partial class GeneratedNameLeakTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GeneratedCode_DoesNotLeakRawUserIdentifiers()
+    public void GeneratedCode_TranspilerEmission_DoesNotLeakRawUserIdentifiers()
     {
         var compilation = MegaCompilationCache.Compilation;
         var leaks = new List<string>();

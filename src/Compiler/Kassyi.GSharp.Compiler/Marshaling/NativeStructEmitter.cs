@@ -62,7 +62,8 @@ internal static class NativeStructEmitter
     /// <summary>
     /// Whether the launcher reads and writes <paramref name="s"/> through a host mirror: a struct that it converts
     /// member by member and that holds the hidden field of a captured primary constructor parameter (<c>&lt;a&gt;P</c>),
-    /// which generated C# cannot name (#495).
+    /// which generated C# cannot name (#495), or the backing field of a property whose accessors use the <c>field</c>
+    /// keyword, which generated C# must not reach through the accessors: the transfer copies the stored value.
     /// </summary>
     /// <remarks>
     /// The mirror declares the fields of <paramref name="s"/> in <see cref="StructAbiMembers"/> order, which is the CLR
@@ -79,7 +80,7 @@ internal static class NativeStructEmitter
 
         foreach (var member in StructAbiMembers.Get(s))
         {
-            if (member.Kind == StructAbiMemberKind.CapturedParameter)
+            if (member.Kind is StructAbiMemberKind.CapturedParameter or StructAbiMemberKind.FieldBackedProperty)
             {
                 return true;
             }

@@ -126,10 +126,10 @@ public class IntegerShiftAndWrapDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_ShiftCountMaskBoundaryMatrix_MatchesTheOracleOnEveryPath() =>
+    public void IntegerShift_ShiftCountMaskEdgeMatrix_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_shiftCountMaskBoundaryMatrix);
 
     [SkippableFact]
-    public void Test_UncheckedIntegerWrap_MatchesTheOracleOnEveryPath() =>
+    public void IntegerWrap_UncheckedOperations_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_uncheckedIntegerWrap);
 }

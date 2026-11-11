@@ -52,26 +52,12 @@ public static class FuzzPromoter
         var selectedMethod = SelectKernelMethod(root, kernelMethods, targetKernelName)
             ?? throw new InvalidOperationException("No kernel method found in reducedKernelSource.");
 
-        bool hasKernelSeed = TryExtractKernelSeed(selectedMethod, out ulong extractedKernelSeed);
-        ulong effectiveSeed = hasKernelSeed ? extractedKernelSeed : fuzzSeed;
-        string seedHex = FuzzRandom.FormatSeed(effectiveSeed);
-        string shortSeedHex = string.Create(CultureInfo.InvariantCulture, $"{effectiveSeed:X8}");
-
-        bool needsMethodDisambiguator = !hasKernelSeed &&
-            (!string.IsNullOrWhiteSpace(targetKernelName) || kernelMethods.Count > 1);
-        string methodSuffix = needsMethodDisambiguator
-            ? $"_{SanitizeIdentifier(selectedMethod.Identifier.ValueText)}"
-            : string.Empty;
-
-        string reproClassName = $"FuzzRepro_{shortSeedHex}{methodSuffix}_Kernels";
-        string reproMethodName = $"Repro_{shortSeedHex}{methodSuffix}";
-        string reproFileStem = $"Repro_{seedHex}{methodSuffix}";
+        var (reproClassName, reproMethodName, reproFileStem, seedHex) =
+            ResolveReproNames(selectedMethod, fuzzSeed, targetKernelName, kernelMethods.Count);
 
         var renamedMethod = selectedMethod.WithIdentifier(SyntaxFactory.Identifier(reproMethodName));
 
-        string headerLine = string.Create(
-            CultureInfo.InvariantCulture,
-            $"// Found by the differential fuzzer: fuzz-seed {seedHex}, input-seed {inputSeed}, fingerprint {fingerprint} (paths: {fpResult.FailingPathsMask}, kind: {fpResult.FailureKindTag})");
+        string headerLine = BuildHeaderLine(seedHex, inputSeed, fingerprint, fpResult);
 
         string knownDivergenceEntry = BuildKnownDivergenceEntry(
             reproClassName,
@@ -80,26 +66,16 @@ public static class FuzzPromoter
             fpResult.FailingPathsMask);
 
         bool split = FuzzSplitOracle.IsSplitKernel(selectedMethod, root);
-        string kernelFileContent = BuildReproKernelFile(root, renamedMethod, reproClassName, headerLine);
-        if (split)
-        {
-            kernelFileContent = FuzzSplitOracle.WithOracleTwins(kernelFileContent);
-        }
+        string kernelFileContent = BuildReproKernelFile(root, renamedMethod, reproClassName, headerLine, split);
 
-        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+        string caseSnippetContent = BuildCaseSnippet(
             reproClassName,
             reproMethodName,
             inputSeed,
             headerLine,
             normalizedColumn,
-            split: split);
-        string caseSnippetContent =
-            $$"""
-            {{caseProperty}}
-
-            // KnownDivergence entry:
-            {{knownDivergenceEntry}}
-            """;
+            knownDivergenceEntry,
+            split);
 
         return new PromotedDifferentialArtifacts(
             fingerprint,
@@ -109,6 +85,66 @@ public static class FuzzPromoter
             caseSnippetContent,
             knownDivergenceEntry,
             reproFileStem);
+    }
+
+    private static string BuildHeaderLine(
+        string seedHex,
+        int inputSeed,
+        string fingerprint,
+        FuzzFingerprintResult result) =>
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"// Found by the differential fuzzer: fuzz-seed {seedHex}, input-seed {inputSeed}, ") +
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"fingerprint {fingerprint} (paths: {result.FailingPathsMask}, kind: {result.FailureKindTag})");
+
+    private static string BuildCaseSnippet(
+        string reproClassName,
+        string reproMethodName,
+        int inputSeed,
+        string headerLine,
+        string column,
+        string knownDivergenceEntry,
+        bool split)
+    {
+        string caseProperty = FuzzCaseEmitter.RenderDifferentialCaseProperty(
+            reproClassName,
+            reproMethodName,
+            inputSeed,
+            headerLine,
+            column,
+            split: split);
+        return
+            $$"""
+            {{caseProperty}}
+
+            // KnownDivergence entry:
+            {{knownDivergenceEntry}}
+            """;
+    }
+
+    private static (string ClassName, string MethodName, string FileStem, string SeedHex) ResolveReproNames(
+        MethodDeclarationSyntax selectedMethod,
+        ulong fuzzSeed,
+        string? targetKernelName,
+        int totalKernelCount)
+    {
+        bool hasKernelSeed = TryExtractKernelSeed(selectedMethod, out ulong extractedKernelSeed);
+        ulong effectiveSeed = hasKernelSeed ? extractedKernelSeed : fuzzSeed;
+        string seedHex = FuzzRandom.FormatSeed(effectiveSeed);
+        string shortSeedHex = string.Create(CultureInfo.InvariantCulture, $"{effectiveSeed:X8}");
+
+        bool needsMethodDisambiguator = !hasKernelSeed &&
+            (!string.IsNullOrWhiteSpace(targetKernelName) || totalKernelCount > 1);
+        string methodSuffix = needsMethodDisambiguator
+            ? $"_{SanitizeIdentifier(selectedMethod.Identifier.ValueText)}"
+            : string.Empty;
+
+        string reproClassName = $"FuzzRepro_{shortSeedHex}{methodSuffix}_Kernels";
+        string reproMethodName = $"Repro_{shortSeedHex}{methodSuffix}";
+        string reproFileStem = $"Repro_{seedHex}{methodSuffix}";
+        return (reproClassName, reproMethodName, reproFileStem, seedHex);
     }
 
     /// <summary>
@@ -257,7 +293,8 @@ public static class FuzzPromoter
         CompilationUnitSyntax root,
         MethodDeclarationSyntax renamedMethod,
         string reproClassName,
-        string headerLine)
+        string headerLine,
+        bool split)
     {
         using var writer = new SourceWriter();
         FuzzCaseEmitter.AppendKernelsFileHeader(writer, "Kassyi.GSharp.Tests.Shared.Differential", headerLine);
@@ -266,6 +303,18 @@ public static class FuzzPromoter
         var rewrittenMethod = (MethodDeclarationSyntax)rewriter.Visit(renamedMethod);
         string methodText = FuzzSyntaxHelpers.RenderFullNode(rewrittenMethod).AsSpan().TrimEnd().ToString();
 
+        var rewrittenHelpers = CollectUsedRewrittenHelpers(root, rewriter, methodText);
+        AppendDeclarationsAndClass(writer, reproClassName, methodText, rewrittenHelpers);
+
+        // A split kernel is checked against its oracle twin, so the repro carries the twin as the batch did
+        return split ? FuzzSplitOracle.WithOracleTwins(writer.ToString()) : writer.ToString();
+    }
+
+    private static List<string> CollectUsedRewrittenHelpers(
+        CompilationUnitSyntax root,
+        BatchClassQualifierRewriter rewriter,
+        string methodText)
+    {
         var helperDecls = FuzzSyntaxHelpers.GetDeviceFunctionMethods(root);
         bool anyHelperUsed = false;
         foreach (var h in helperDecls)
@@ -287,6 +336,15 @@ public static class FuzzPromoter
             }
         }
 
+        return rewrittenHelpers;
+    }
+
+    private static void AppendDeclarationsAndClass(
+        SourceWriter writer,
+        string reproClassName,
+        string methodText,
+        List<string> rewrittenHelpers)
+    {
         bool usesEnum = methodText.Contains("FuzzEnum", StringComparison.Ordinal) ||
                         ContainsInAny(rewrittenHelpers, static h => h.Contains("FuzzEnum", StringComparison.Ordinal));
         if (usesEnum)
@@ -313,8 +371,6 @@ public static class FuzzPromoter
 
             AppendNormalizedLines(writer, methodText);
         }
-
-        return writer.ToString();
     }
 
     private static bool ContainsInAny(IReadOnlyList<string> items, Func<string, bool> predicate)

@@ -14,20 +14,20 @@ public class EvaluationOrderSplitTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AssignmentBeforeShuffle_ShuffleReadsTheAssignedValue() => AssertAssignmentBeforeShuffle();
+    public void AssignmentBeforeShuffle_DeviceExecution_ShuffleReadsAssignedValue() => AssertAssignmentBeforeShuffle();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LocalAssignmentBeforeShuffle_ShuffleReadsTheAssignedValue() =>
+    public void LocalAssignmentBeforeShuffle_DeviceExecution_ShuffleReadsAssignedValue() =>
         AssertLocalAssignmentBeforeShuffle();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CallBeforeShuffle_ShuffleReadsWhatTheCallWrote() => AssertCallBeforeShuffle();
+    public void CallBeforeShuffle_DeviceExecution_ShuffleReadsWhatTheCallWrote() => AssertCallBeforeShuffle();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AssignmentBeforeSuspendingCall_CallReadsTheAssignedValue() =>
+    public void AssignmentBeforeSuspendingCall_DeviceExecution_CallReadsAssignedValue() =>
         AssertAssignmentBeforeSuspendingCall();
 
     // C#: lane + 100 written, then lane 0's a[0] = 100 read by every lane

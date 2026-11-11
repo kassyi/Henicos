@@ -21,4 +21,10 @@ internal sealed class IrSequence(ImmutableArray<IrVariable> locals, ImmutableArr
 
     /// <summary>The value of the sequence.</summary>
     public IrExpression Value { get; } = value;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrSequence Update(ImmutableArray<IrStatement> sideEffects, IrExpression value) =>
+        sideEffects == SideEffects && value == Value
+            ? this
+            : new IrSequence(Locals, sideEffects, value, Category, Source);
 }

@@ -18,23 +18,23 @@ public class MathMaxMinManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SingleMaxMin_MatchesDotNet() => MathMaxMinScenarios.SingleMaxMin(s_runManaged);
+    public void MaxMin_ManagedSinglePrecision_MatchesDotNet() => MathMaxMinScenarios.SingleMaxMin(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_DoubleMaxMin_MatchesDotNet() => MathMaxMinScenarios.DoubleMaxMin(s_runManaged);
+    public void MaxMin_ManagedDoublePrecision_MatchesDotNet() => MathMaxMinScenarios.DoubleMaxMin(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SingleClamp_MatchesDotNet() => MathMaxMinScenarios.SingleClamp(s_runManaged);
+    public void Clamp_ManagedSinglePrecision_MatchesDotNet() => MathMaxMinScenarios.SingleClamp(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_DoubleClamp_MatchesDotNet() => MathMaxMinScenarios.DoubleClamp(s_runManaged);
+    public void Clamp_ManagedDoublePrecision_MatchesDotNet() => MathMaxMinScenarios.DoubleClamp(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_MixedOperands_PickTheCSharpOverload() => MathMaxMinScenarios.MixedOperands(s_runManaged);
+    public void Overload_ManagedMixedOperands_PicksCSharpOverload() => MathMaxMinScenarios.MixedOperands(s_runManaged);
 
     private static void RunManaged(Action launch)
     {

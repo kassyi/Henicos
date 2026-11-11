@@ -42,23 +42,9 @@ public static class FuzzScalarExpressionEmitter
         var rng = state.Rng;
 
         // Occasionally read from a composite struct member/property or Span element when targeting int/long.
-        if (state.StructLocals.Count > 0 && rng.Chance(0.18))
+        if (TryPickCompositeLeaf(state, targetType, out string? compositeLeaf))
         {
-            if (targetType.Kind == FuzzScalarKind.Int32)
-            {
-                return rng.NextBelow(4) switch
-                {
-                    0 => "(sL3.Mid.Inner.CompA)",
-                    1 => "(sL3.Wrap.Shifted)",
-                    2 => "(sPack1.PackedSum)",
-                    _ => "((int)sL3.Wrap)",
-                };
-            }
-
-            if (targetType.Kind == FuzzScalarKind.Int64)
-            {
-                return rng.NextBool() ? "(sL3.Total)" : "(sPack4.PackedWide)";
-            }
+            return compositeLeaf;
         }
 
         var sameTypeLocals = new List<ScalarLocalVariable>();
@@ -85,18 +71,59 @@ public static class FuzzScalarExpressionEmitter
         if (sameTypeLocals.Count > 0)
         {
             string localName = rng.Choose(sameTypeLocals).Name;
-            return targetType.Kind switch
-            {
-                FuzzScalarKind.Boolean => $"({localName} ^ {lit})",
-                _ when targetType.IsEnum => rng.NextBool() ? lit : $"({localName} ^ {lit})",
-                FuzzScalarKind.Int32 or FuzzScalarKind.UInt32 or FuzzScalarKind.Int64 or FuzzScalarKind.UInt64 =>
-                    $"({localName} ^ {lit})",
-                _ => $"(({targetType.Keyword})({localName} ^ {lit}))",
-            };
+            return BuildLiteralMixExpression(localName, lit, targetType, rng);
         }
 
         var fallbackLocal = rng.Choose(state.Locals);
         return CastBetweenTypes(fallbackLocal.Name, fallbackLocal.Type, targetType);
+    }
+
+    private static bool TryPickCompositeLeaf(
+        KernelGenerationState state,
+        FuzzTypeInfo targetType,
+        [NotNullWhen(true)] out string? leaf)
+    {
+        leaf = null;
+        if (state.StructLocals.Count == 0 || !state.Rng.Chance(0.18))
+        {
+            return false;
+        }
+
+        if (targetType.Kind == FuzzScalarKind.Int32)
+        {
+            leaf = state.Rng.NextBelow(4) switch
+            {
+                0 => "(sL3.Mid.Inner.CompA)",
+                1 => "(sL3.Wrap.Shifted)",
+                2 => "(sPack1.PackedSum)",
+                _ => "((int)sL3.Wrap)",
+            };
+            return true;
+        }
+
+        if (targetType.Kind == FuzzScalarKind.Int64)
+        {
+            leaf = state.Rng.NextBool() ? "(sL3.Total)" : "(sPack4.PackedWide)";
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string BuildLiteralMixExpression(
+        string localName,
+        string lit,
+        FuzzTypeInfo targetType,
+        FuzzRandom rng)
+    {
+        return targetType.Kind switch
+        {
+            FuzzScalarKind.Boolean => $"({localName} ^ {lit})",
+            _ when targetType.IsEnum => rng.NextBool() ? lit : $"({localName} ^ {lit})",
+            FuzzScalarKind.Int32 or FuzzScalarKind.UInt32 or FuzzScalarKind.Int64 or FuzzScalarKind.UInt64 =>
+                $"({localName} ^ {lit})",
+            _ => $"(({targetType.Keyword})({localName} ^ {lit}))",
+        };
     }
 
     /// <summary>Generates a boolean expression.</summary>

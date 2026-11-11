@@ -16,7 +16,7 @@ public class DeviceFunctionBarrierManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SharedMemoryExchangeInDeviceFunction_ReversesBlock()
+    public void SharedMemoryExchangeInDeviceFunction_ManagedExecution_ReversesBlock()
     {
         var input = CreateSequence(Length);
         var output = new int[Length];
@@ -28,7 +28,7 @@ public class DeviceFunctionBarrierManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_WarpShuffleScanInDeviceFunction_ComputesInclusivePrefixPerWarp()
+    public void WarpShuffleScanInDeviceFunction_ManagedExecution_ComputesInclusivePrefixPerWarp()
     {
         var input = CreateSequence(Length);
         var output = new int[Length];
@@ -49,7 +49,7 @@ public class DeviceFunctionBarrierManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_DeviceFunctionCallingBarrierDeviceFunction_KeepsLocalsAcrossInnerCall()
+    public void DeviceFunctionCallingBarrierDeviceFunction_ManagedExecution_KeepsLocalsAcrossInnerCall()
     {
         const int scale = 1000;
         var input = CreateSequence(Length);
@@ -68,7 +68,7 @@ public class DeviceFunctionBarrierManagedTests : TranspilerTestBase
     [InlineData(0)]
     [InlineData(3)]
     [InlineData(67)]
-    public void Test_Managed_BarrierDeviceFunctionCalledInLoop_RestartsOnEveryIteration(int rounds)
+    public void BarrierDeviceFunctionCalledInLoop_ManagedExecution_RestartsOnEveryIteration(int rounds)
     {
         var input = CreateSequence(Length);
         var data = (int[])input.Clone();
@@ -83,7 +83,7 @@ public class DeviceFunctionBarrierManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_BarrierDeviceFunctionArgument_IsEvaluatedOnceAcrossResumes()
+    public void BarrierDeviceFunctionArgument_ManagedExecution_IsEvaluatedOnceAcrossResumes()
     {
         var input = CreateSequence(Length);
         var output = new int[Length];
@@ -100,7 +100,7 @@ public class DeviceFunctionBarrierManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_OutParametersOfBarrierDeviceFunction_ReachTheCaller()
+    public void OutParametersOfBarrierDeviceFunction_ManagedExecution_ReachTheCaller()
     {
         var input = CreateSequence(Length);
         var reversed = new int[Length];
@@ -114,7 +114,7 @@ public class DeviceFunctionBarrierManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_BarrierDeviceFunctionWithSpanParameter_ReversesSelectedSpan()
+    public void BarrierDeviceFunctionWithSpanParameter_ManagedExecution_ReversesSelectedSpan()
     {
         var primary = CreateSequence(32);
         var alternate = CreateSequence(32);

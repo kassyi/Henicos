@@ -14,7 +14,7 @@ public class SpanArrayMethodTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ArrayFillAndClear_MatchesDotNet(bool managed)
+    public void ArrayFillAndClear_StandardBuffers_MatchesDotNetBehavior(bool managed)
     {
         var a = CreateSequential(6, start: 1);
         var b = CreateSequential(6, start: 1);
@@ -44,7 +44,7 @@ public class SpanArrayMethodTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ArrayReverse_FullAndRange_MatchesDotNet(bool managed)
+    public void ArrayReverse_FullAndSubrange_MatchesDotNetBehavior(bool managed)
     {
         var a = CreateSequential(7, start: 1);
         var b = CreateSequential(8, start: 10);
@@ -65,7 +65,7 @@ public class SpanArrayMethodTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ArrayCopy_3And5Arg_MatchesDotNet(bool managed)
+    public void ArrayCopy_ThreeAndFiveArgumentOverloads_MatchesDotNetBehavior(bool managed)
     {
         var src = CreateSequential(8, start: 10);
         var dst3 = CreateSequential(8, start: 100);
@@ -89,7 +89,11 @@ public class SpanArrayMethodTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ArrayCopySameBuffer_HandlesOverlapLikeDotNet(int srcIdx, int dstIdx, int length, bool managed)
+    public void ArrayCopy_OverlappingSameBuffer_HandlesOverlapLikeDotNet(
+        int srcIdx,
+        int dstIdx,
+        int length,
+        bool managed)
     {
         var actual = CreateSequential(20, start: 1);
         var expected = (int[])actual.Clone();
@@ -106,7 +110,7 @@ public class SpanArrayMethodTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ArraySort_KeysAndPairs_MatchesDotNet(bool managed)
+    public void ArraySort_KeysAndPairs_MatchesDotNetBehavior(bool managed)
     {
         int[] keys1 = [9, -2, 5, 0, 5, -10, 3];
         var expectedKeys1 = (int[])keys1.Clone();
@@ -142,7 +146,7 @@ public class SpanArrayMethodTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ArraySortPairs_LengthMismatch_ThrowsArgumentException(bool managed)
+    public void ArraySort_MismatchedKeysAndItemsLength_ThrowsArgumentException(bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
