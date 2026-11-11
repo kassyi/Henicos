@@ -1,0 +1,12 @@
+fallback, LocationNotRebuildable	6
+fallback, OpaqueHoldsSplit	107
+fallback, OpaqueOperand	16
+fallback, RefLikeOperand	2
+known, #991 a conditional is written as an if before the operands to its left	1
+known, #991 a part of a target location	35
+known, #991 a part of a target location + #991 the receiver of an extension call that splits	1
+known, #991 an earlier operand of an operation that does not split	1
+known, #991 an operand before a split inside ?: / && / || is evaluated before it	1
+known, #991 the read of a compound assignment target	2
+known, #991 the receiver of an extension call that splits	3
+known, a ?? with a split on its right is written as an if	1
