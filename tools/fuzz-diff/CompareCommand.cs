@@ -48,8 +48,8 @@ public sealed class CompareCommand : IFuzzCommand
         new("--profile", FuzzOptionTable.Value(ParseProfile)),
         new("--dialects", FuzzOptionTable.Value(ParseDialects)),
         new("--reduce-minutes", FuzzOptionTable.Value(ParseReduceMinutes)),
-        new("--work-dir", FuzzOptionTable.Value(SetWorkDir)),
-        new("--repo-root", FuzzOptionTable.Value(SetRepoRoot)));
+        new("--work-dir", FuzzOptionTable.Value(FuzzOptionSetters.ParseWorkDir)),
+        new("--repo-root", FuzzOptionTable.Value(FuzzOptionSetters.ParseRepoRoot)));
 
     /// <summary>Gets the singleton command instance.</summary>
     public static CompareCommand Instance { get; } = new();
@@ -167,18 +167,6 @@ public sealed class CompareCommand : IFuzzCommand
 
     private static bool TryParsePositive(string text, out int value) =>
         int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value) && value > 0;
-
-    private static string? SetWorkDir(FuzzOptionValues values, string value)
-    {
-        values.WorkDir = value;
-        return null;
-    }
-
-    private static string? SetRepoRoot(FuzzOptionValues values, string value)
-    {
-        values.RepoRoot = value;
-        return null;
-    }
 
     private static bool TryParseDialects(string text, List<string> dialects)
     {
