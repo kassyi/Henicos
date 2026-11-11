@@ -97,9 +97,10 @@ jobs:
         env:
           ARCHIVE: cuda_cudart-linux-x86_64-13.4.49-archive
           SHA256: ec3df9f91560db23a064c6b395d4fde17b2893f5bf954c6bd193dd03a44de522
+          REDIST: https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/linux-x86_64
           INCLUDE_DIR: ${{ runner.temp }}/cuda-include
         run: |
-          curl -fsSL --retry 3 -o "$ARCHIVE.tar.xz" "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/linux-x86_64/$ARCHIVE.tar.xz"
+          curl -fsSL --retry 3 -o "$ARCHIVE.tar.xz" "$REDIST/$ARCHIVE.tar.xz"
           echo "$SHA256  $ARCHIVE.tar.xz" | sha256sum -c -
           tar -xJf "$ARCHIVE.tar.xz" "$ARCHIVE/include/cuda.h"
           mkdir -p "$INCLUDE_DIR"
