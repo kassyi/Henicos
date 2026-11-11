@@ -60,7 +60,7 @@ internal static class StructMarshalMethodEmitter
     private static void WriteMarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
     {
         // GSH0078 reports the member; the shadow struct leaves it out
-        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
+        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
             StructBlockCopyEmitter.TryWriteBlockCopy(writer, member, toNative: true, dialect))
         {
             return;

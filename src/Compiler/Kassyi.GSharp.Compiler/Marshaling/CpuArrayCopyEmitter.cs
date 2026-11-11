@@ -48,7 +48,7 @@ internal static class CpuArrayCopyEmitter
         }
     }
 
-    // <reuse of an earlier [In] copy> <guard against the holders the kernel gets uncopied> { <copy> }
+    // <reuse of an earlier [In] copy> <guard against the holders that share the array with the kernel> { <copy> }
     // [WHY] The CUDA launcher gives every holder of one array one device region, copied back when any holder is
     // writable (#721). So an [In] array that a writable argument or a struct field holds as well is not copied (the
     // kernel writes the caller's array, as the copy back on CUDA does), and [In] arguments that hold one array share one
@@ -63,7 +63,7 @@ internal static class CpuArrayCopyEmitter
         }
 
         var hasCondition = TryWriteEarlierCopyReuse(writer, plan, index);
-        var guarded = TryWriteUncopiedHolderGuard(writer, plan, index, hasCondition);
+        var guarded = TryWriteSharingHolderGuard(writer, plan, index, hasCondition);
         if (!guarded && !hasCondition)
         {
             WriteKernelCopy(writer, shape);
@@ -108,15 +108,15 @@ internal static class CpuArrayCopyEmitter
     }
 
     // [else ]if (!ReferenceEquals(<name>, <writable T[]>) && !HoldsArray_<S>(<struct or elements>, <name>) && ...)
-    // Returns whether it wrote the condition: whether any holder the kernel gets uncopied may hold the array
-    // (ArraySharingPlan.IsZeroCopyHolder).
-    private static bool TryWriteUncopiedHolderGuard(SourceWriter writer, in ArraySharingPlan plan, int index,
+    // Returns whether it wrote the condition: whether any holder may hand the array to the kernel without a copy
+    // (ArraySharingPlan.IsSharingHolder).
+    private static bool TryWriteSharingHolderGuard(SourceWriter writer, in ArraySharingPlan plan, int index,
         bool hasCondition)
     {
         var any = false;
         for (var k = 0; k < plan.Parameters.Length; k++)
         {
-            any |= plan.IsZeroCopyHolder(index, k);
+            any |= plan.IsSharingHolder(index, k);
         }
 
         if (!any)

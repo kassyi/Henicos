@@ -49,7 +49,7 @@ internal static class StructUnmarshalMethodEmitter
 
     private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
     {
-        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
+        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
             StructBlockCopyEmitter.TryWriteBlockCopy(writer, member, toNative: false, dialect))
         {
             return;

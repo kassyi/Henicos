@@ -183,7 +183,8 @@ internal static class CpuHostLaunchEmitter
     // <shadow> __gsharp_native_<ord> = default; var __gsharp_allocated_ptrs_<ord> = new List<IntPtr>();                  (converted struct)
     // byte[]? __gsharp_shadow_<ord> = null; var __gsharp_allocated_ptrs_<ord> = ...; int __gsharp_size_<ord> = checked(...); (converted array)
     // byte[]? __gsharp_shared_shadow_<ord> = null;                         (a converted T[] that an earlier holder may share)
-    // Returns whether the parameter is converted. The size is computed before the try block, when nothing is allocated.
+    // Returns whether it wrote the declarations of a converted parameter. The size is computed before the try block,
+    // when nothing is allocated.
     private static bool TryWriteConvertedDeclaration(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
         var shape = sharing.Parameters[index];
@@ -292,7 +293,7 @@ internal static class CpuHostLaunchEmitter
             case { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal }:
                 writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, hStream);");
                 break;
-            case { IsCpuConvertedArray: true, IsCopyOut: true, IsReadOnlyContainer: false }:
+            case { IsCpuConvertedArray: true, IsCopiedOut: true, IsReadOnlyContainer: false }:
                 ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cpu);
                 break;
         }

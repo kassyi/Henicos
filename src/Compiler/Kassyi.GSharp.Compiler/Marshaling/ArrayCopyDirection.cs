@@ -11,7 +11,7 @@ internal static class ArrayCopyDirection
     /// Only <c>System.Runtime.InteropServices.InAttribute</c> / <c>OutAttribute</c> count; a user's own attribute with the
     /// same name does not (<see cref="KnownAttributes.IsDeclaredInOwnerNamespace"/>).
     /// </remarks>
-    public static (bool CopyIn, bool CopyOut) Get(IParameterSymbol parameter)
+    public static (bool IsCopiedIn, bool IsCopiedOut) Get(IParameterSymbol parameter)
     {
         var hasIn = parameter.HasAttribute(KnownAttributes.In);
         var hasOut = parameter.HasAttribute(KnownAttributes.Out);

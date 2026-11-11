@@ -261,6 +261,6 @@ internal static class NativeBindingEmitter
             elementType = type.AsSpan(0, type.Length - 2).TrimEnd().ToString();
         }
 
-        return new ModuleKernelLaunchParameter(p.Name, type, elementType, CopyIn: true, CopyOut: true);
+        return new ModuleKernelLaunchParameter(p.Name, type, elementType, IsCopiedIn: true, IsCopiedOut: true);
     }
 }

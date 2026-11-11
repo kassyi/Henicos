@@ -185,10 +185,10 @@ internal readonly record struct KernelParameterShape
     public string? DefaultValueLiteral { get; init; }
 
     /// <summary>Whether the launcher copies an array argument to the device (see <see cref="ArrayCopyDirection"/>).</summary>
-    public bool IsCopyIn { get; init; }
+    public bool IsCopiedIn { get; init; }
 
     /// <summary>Whether the launcher copies an array argument back to the host (see <see cref="ArrayCopyDirection"/>).</summary>
-    public bool IsCopyOut { get; init; }
+    public bool IsCopiedOut { get; init; }
 
     /// <summary>
     /// Whether the parameter is a user struct with array fields at any depth
@@ -332,8 +332,8 @@ internal readonly record struct KernelParameterShape
             DefaultValueLiteral = parameter.HasExplicitDefaultValue
                 ? FormatDefaultValue(parameter.Type, parameter.ExplicitDefaultValue)
                 : null,
-            IsCopyIn = copyIn,
-            IsCopyOut = copyOut
+            IsCopiedIn = copyIn,
+            IsCopiedOut = copyOut
         };
 
         // A user struct wins over by-reference: ref MyStruct goes through the native shadow struct as well
