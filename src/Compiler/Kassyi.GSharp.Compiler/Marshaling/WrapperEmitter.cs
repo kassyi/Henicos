@@ -144,10 +144,10 @@ internal static class WrapperEmitter
         WriteDefinedSymbols(writer, header);
         // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
         writer.AppendLine("#nullable enable annotations");
-        writer.AppendLine("""
+        writer.AppendLine($"""
             using System;
             using global::Kassyi.GSharp.Core;
-            using static global::Kassyi.GSharp.Core.ManagedGpuContext;
+            using static {ManagedNames.Context};
             """);
         writer.AppendLineIf(referencesStackLinq, "using global::Kassyi.ZeroAlloc.Linq;");
         writer.AppendLine(GeneratedCSharpWarningSuppressions);
@@ -187,7 +187,7 @@ internal static class WrapperEmitter
         WriteDefinedSymbols(writer, model.Class);
         // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
         writer.AppendLine("#nullable enable annotations");
-        writer.AppendLine("""
+        writer.AppendLine($"""
             using System;
             #pragma warning disable RS1035 // Do not use APIs banned for analyzers
             #pragma warning disable RS1016
@@ -196,7 +196,7 @@ internal static class WrapperEmitter
             using System.Runtime.InteropServices;
             using global::Kassyi.GSharp.Core;
             using global::Kassyi.GSharp.Runtime.Interop;
-            using static global::Kassyi.GSharp.Core.ManagedGpuContext;
+            using static {ManagedNames.Context};
             using global::Kassyi.ZeroAlloc.Linq;
             """);
         writer.AppendLine(GeneratedCSharpWarningSuppressions);
@@ -222,6 +222,14 @@ internal static class WrapperEmitter
                     continue;
                 }
 
+                // GSH0108: the analyzer reports the field type the launcher cannot name; a launcher that throws keeps
+                // the callers compiling, so that the build shows GSH0108 rather than errors in generated code
+                if (kernel.Host.LauncherUnavailableReason is { } reason)
+                {
+                    WriteUnavailableLaunchMethod(writer, kernel, reason);
+                    continue;
+                }
+
                 WriteKernelSource(writer, kernel, config);
 
                 if (config.IsCuda)
@@ -237,6 +245,19 @@ internal static class WrapperEmitter
 
         CloseClassDeclaration(writer, model.Class);
         return writer.ToString();
+    }
+
+    // public static unsafe <return> Launch<Name>(<parameters>, <launch options>)
+    // { throw new NotSupportedException("<reason>"); }
+    private static void WriteUnavailableLaunchMethod(SourceWriter writer, in KernelEmission kernel, string reason)
+    {
+        WriteLaunchMethodSignature(writer, kernel, isDevicePtr: false);
+        using (writer.Scope())
+        {
+            writer.Append("throw new global::System.NotSupportedException(");
+            NativeApi.ModuleKernelLaunchEmitter.AppendStringLiteral(writer, reason);
+            writer.AppendLine(");");
+        }
     }
 
     private static void WriteKernelSource(SourceWriter writer, in KernelEmission kernel, GeneratorConfig config)

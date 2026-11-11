@@ -54,6 +54,25 @@ public static class GpuBigUIntExpressionExtensions
             targetMem = new ScopedBigIntMemory(finalResult.Handle.Borrow());
         }
 
+        try
+        {
+            EvaluateInto(expr, workspace, execContext, targetMem, finalResult);
+        }
+        catch when (targetResult is null)
+        {
+            // The rented result goes back to the pool when the evaluation fails (a domain error under the CPU fallback)
+            finalResult.Dispose();
+            throw;
+        }
+
+        return finalResult;
+    }
+
+    // The root evaluated into finalResult: written there, or copied there from the buffer the root used, and the words
+    // above the result cleared
+    private static void EvaluateInto(IGpuBigUIntExpression expr, GpuWorkspace workspace,
+        GpuBigIntExecutionContext execContext, ScopedBigIntMemory targetMem, GpuBigUInt finalResult)
+    {
         var visitor = new BigIntExpressionVisitor(execContext, targetMem);
 
         // A temporary the root used (its target overlapped an operand) goes back to the pool after the copy; the target
@@ -79,7 +98,6 @@ public static class GpuBigUIntExpressionExtensions
         }
 
         // The root wrote its own width; the words of a wider target above it would keep their old value
-        ResultBuffers.ClearAbove(finalResult, numWords);
-        return finalResult;
+        ResultBuffers.ClearAbove(finalResult, expr.NumWords);
     }
 }

@@ -4,8 +4,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// Checks the user structs of kernel parameters, kernel return types and device locals against the layout model of the
 /// project's dialect: a struct the device cannot lay out (GSH0078) or a member type the device has no type for (GSH0079);
 /// an array or a returned struct whose elements the launcher converts one by one (GSH0080), and on CUDA an array whose
-/// elements each allocate their array fields (GSH0081; the CPU launcher pins them instead). Each is reported at the type
-/// of the parameter, return value or local.
+/// elements each allocate their array fields (GSH0081; the CPU launcher pins them instead); a field, at any depth,
+/// whose type the generated launcher cannot name (GSH0108). Each is reported at the type of the parameter, return
+/// value or local.
 /// </summary>
 /// <remarks>
 /// The layouts are those of <see cref="TypeLayoutCalculator"/>, which the generated device definition, shadow struct
@@ -22,7 +23,8 @@ internal sealed class StructLayoutRule :
         GSharpDiagnostics.StructLayoutNotRepresentable,
         GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation,
         GSharpDiagnostics.StructArrayConvertedPerElement,
-        GSharpDiagnostics.StructArrayFieldAllocatedPerElement);
+        GSharpDiagnostics.StructArrayFieldAllocatedPerElement,
+        GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher);
 
     private StructLayoutRule()
     {
@@ -45,7 +47,8 @@ internal sealed class StructLayoutRule :
                 continue;
             }
 
-            if (ReportUnsupported(structType, typeSyntax, ref context))
+            if (ReportIfUnsupported(structType, typeSyntax, ref context) ||
+                ReportInaccessibleFieldType(structType, typeSyntax, ref context))
             {
                 continue;
             }
@@ -78,7 +81,8 @@ internal sealed class StructLayoutRule :
         // (#704). A managed return type is GSH0004 (KernelSignatureRule).
         if (method.ReturnType.IsUnmanagedType &&
             TryGetUserStruct(method.ReturnType, out var returnStruct, out _) &&
-            !ReportUnsupported(returnStruct, node.ReturnType, ref context) &&
+            !ReportIfUnsupported(returnStruct, node.ReturnType, ref context) &&
+            !ReportInaccessibleFieldType(returnStruct, node.ReturnType, ref context) &&
             TypeLayoutCalculator.GetStructLayout(returnStruct, context.Dialect).Transfer == TransferClass.Convert)
         {
             ReportConverted(returnStruct, node.ReturnType, ref context);
@@ -90,7 +94,7 @@ internal sealed class StructLayoutRule :
         if (context.SemanticModel.GetTypeSymbol(node.Declaration.Type) is { } type &&
             TryGetUserStruct(type, out var structType, out _))
         {
-            ReportUnsupported(structType, node.Declaration.Type, ref context);
+            ReportIfUnsupported(structType, node.Declaration.Type, ref context);
         }
     }
 
@@ -108,8 +112,9 @@ internal sealed class StructLayoutRule :
                !StackLinqHelper.IsStackLinqType(structType);
     }
 
-    // GSH0079 when a member type has no device representation, GSH0078 for any other reason
-    private static bool ReportUnsupported(INamedTypeSymbol structType, SyntaxNode typeSyntax,
+    // GSH0079 when a member type has no device representation, GSH0078 for any other reason. Returns whether it
+    // reported.
+    private static bool ReportIfUnsupported(INamedTypeSymbol structType, SyntaxNode typeSyntax,
         ref ValidationContext context)
     {
         if (GpuCodeConstraints.ContainsMultidimensionalArray(structType))
@@ -143,6 +148,25 @@ internal sealed class StructLayoutRule :
                 unsupported.Reason);
         }
 
+        return true;
+    }
+
+    // GSH0108: a field whose type the kernel's class, where the launcher is generated, cannot name (LauncherTypeAccess)
+    private static bool ReportInaccessibleFieldType(INamedTypeSymbol structType, SyntaxNode typeSyntax,
+        ref ValidationContext context)
+    {
+        var launcherClass = context.MethodSymbol.ContainingType;
+        if (LauncherTypeAccess.Find(structType, launcherClass, context.SemanticModel.Compilation) is not { } found)
+        {
+            return false;
+        }
+
+        context.ReportDiagnostic(
+            GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher,
+            typeSyntax,
+            TypeLayoutCalculator.FormatTypeName(found.FieldType),
+            found.FieldPath,
+            TypeLayoutCalculator.FormatTypeName(launcherClass));
         return true;
     }
 

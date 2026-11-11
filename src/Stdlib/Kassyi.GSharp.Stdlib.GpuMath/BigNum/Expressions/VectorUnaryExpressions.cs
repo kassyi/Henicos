@@ -20,8 +20,6 @@ internal abstract class VectorUnaryExpressionBase(
         int? elementCount,
         GpuBigUIntArrayView targetResult)
     {
-        ValidateBeforeEvaluate();
-
         var evalCount = elementCount ?? (Capacity - elementOffset);
         // The target is checked before the children run, so that a rejected target evaluates nothing
         var targetValues = VectorResultCache.HasTarget(targetResult)
@@ -42,10 +40,6 @@ internal abstract class VectorUnaryExpressionBase(
         }
 
         return new VectorEvaluation(output.Close(workspace, vecResult.Count), vecResult.Count, _cache.Lease);
-    }
-
-    protected virtual void ValidateBeforeEvaluate()
-    {
     }
 
     protected abstract void EvaluateElements(
@@ -108,20 +102,19 @@ internal sealed class VectorDivByUInt32Expression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     uint divisor) : VectorUnaryExpressionBase(vector)
 {
-    protected override void ValidateBeforeEvaluate()
-    {
-        if (divisor == 0)
-        {
-            throw new DivideByZeroException();
-        }
-    }
-
+    // Runs only when there is an element (evalCount > 0): C# divides only the elements, so a zero divisor over none
+    // divides nothing, as System.Linq
     protected override void EvaluateElements(
         GpuWorkspace workspace,
         GpuBigIntArrayView source,
         GpuBigIntArrayView destination,
         int evalCount)
     {
+        if (divisor == 0)
+        {
+            throw new DivideByZeroException();
+        }
+
         var srcSigns = ArrayPool<uint>.Shared.Rent(evalCount);
         var dstSigns = ArrayPool<uint>.Shared.Rent(evalCount);
         try
