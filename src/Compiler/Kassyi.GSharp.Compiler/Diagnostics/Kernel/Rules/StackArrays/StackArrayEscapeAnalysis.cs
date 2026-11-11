@@ -109,7 +109,7 @@ internal sealed class StackArrayEscapeAnalysis
                 if (_model.GetDeclaredSymbol(declarator) is ILocalSymbol local &&
                     declarator.Initializer is { } initializer)
                 {
-                    changed |= TryAddHeld(local, _gatherer.StorageOf(initializer.Value));
+                    changed |= AddHeld(local, _gatherer.StorageOf(initializer.Value));
                 }
             }
 
@@ -119,7 +119,7 @@ internal sealed class StackArrayEscapeAnalysis
                 {
                     if (RootLocal(target) is { } local)
                     {
-                        changed |= TryAddHeld(local, _gatherer.StorageOf(value));
+                        changed |= AddHeld(local, _gatherer.StorageOf(value));
                     }
                 }
             }
@@ -138,7 +138,7 @@ internal sealed class StackArrayEscapeAnalysis
                 {
                     if (callee.FindParameter(arguments, i) is { RefKind: RefKind.None } parameter)
                     {
-                        changed |= TryAddHeld(parameter, _gatherer.StorageOf(arguments[i].Expression));
+                        changed |= AddHeld(parameter, _gatherer.StorageOf(arguments[i].Expression));
                     }
                 }
             }
@@ -150,7 +150,7 @@ internal sealed class StackArrayEscapeAnalysis
                 {
                     if (IsWritableReference(argument) && RootLocal(argument.Expression) is { } local)
                     {
-                        changed |= TryAddHeld(local, passed);
+                        changed |= AddHeld(local, passed);
                     }
                 }
             }
@@ -158,7 +158,8 @@ internal sealed class StackArrayEscapeAnalysis
         while (changed);
     }
 
-    private bool TryAddHeld(ISymbol local, ImmutableArray<Storage> storages)
+    // Adds the storages that local does not hold yet; returns whether a storage was added
+    private bool AddHeld(ISymbol local, ImmutableArray<Storage> storages)
     {
         if (storages.Length == 0)
         {

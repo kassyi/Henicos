@@ -85,7 +85,7 @@ internal static class DeviceExportEmitter
     /// records of a struct live in the assembly that declares it, so that two libraries never record one struct.
     /// </para>
     /// <para>
-    /// [WHY] A struct that no G# assembly records (<see cref="IsNotRecordedStruct"/>: a Kassyi.GSharp.Core vector
+    /// [WHY] A struct that no G# assembly records (<see cref="IsUnrecordedStruct"/>: a Kassyi.GSharp.Core vector
     /// type, a struct of a referenced assembly without G#) has no record a consumer could import, so its definition
     /// stays in the text of every record that names it, in front of that record's own definition (#538 review B1).
     /// Its include guard keeps the copies from redefining it. A struct of another G# library stays a reference: the
@@ -127,13 +127,13 @@ internal static class DeviceExportEmitter
     /// of an assembly without G#, a construction of a generic struct that its library does not use), or one that the
     /// dialect cannot use (written by another G#, or failed in the dialect: a consumer would not import it).
     /// </summary>
-    public static bool IsNotRecordedStruct(INamedTypeSymbol type, Compilation compilation, bool isCuda) =>
+    public static bool IsUnrecordedStruct(INamedTypeSymbol type, Compilation compilation, bool isCuda) =>
         DeviceExportTable.IsOutside(type.OriginalDefinition, compilation) &&
         (!DeviceExportTable.TryFind(type, out var imported) || !imported.IsCompatible || imported.FailedFor(isCuda));
 
     /// <summary>
     /// The definitions and <c>Dispose</c> definitions of <paramref name="parts"/> whose structs no G# assembly
-    /// records (<see cref="IsNotRecordedStruct"/>), in their order, with the C++ names of those structs: a function
+    /// records (<see cref="IsUnrecordedStruct"/>), in their order, with the C++ names of those structs: a function
     /// record keeps them in front of its body.
     /// </summary>
     public static string KeepUnrecorded(ImmutableArray<StructSourcePart>.Builder parts, Compilation compilation,
@@ -142,7 +142,7 @@ internal static class DeviceExportEmitter
         using var text = new SourceWriter();
         foreach (var part in parts)
         {
-            if (IsNotRecordedStruct(part.Type, compilation, isCuda))
+            if (IsUnrecordedStruct(part.Type, compilation, isCuda))
             {
                 text.Append(part.Text);
                 names.Add(GlobalCppNames.GetTypeName(part.Type));
@@ -238,7 +238,7 @@ internal static class DeviceExportEmitter
     {
         foreach (var part in parts)
         {
-            if (IsNotRecordedStruct(part.Type, compilation, isCuda))
+            if (IsUnrecordedStruct(part.Type, compilation, isCuda))
             {
                 var name = GlobalCppNames.GetTypeName(part.Type);
                 if (!unrecorded.ContainsKey(name))

@@ -100,7 +100,7 @@ internal static class SyncGridChecks
         for (var i = 0; i < statements.Elements.Length; i++)
         {
             var node = statements.Elements[i].Node;
-            if (SyncGridBody.CannotSplit(node, model) && !statements.GetGuardBodies(i, model).IsEmpty)
+            if (SyncGridBody.IsUnsplittable(node, model) && !statements.GetGuardBodies(i, model).IsEmpty)
             {
                 context.ReportDiagnostic(
                     GSharpDiagnostics.UnsupportedSyntax,
