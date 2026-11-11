@@ -9,6 +9,12 @@ internal enum MemoryCallTargetKind
     /// <summary>The receiver, which is the memory itself (<c>span.Fill(0)</c>).</summary>
     Receiver,
 
+    /// <summary>
+    /// The element (or a field of one) that a struct member is called on, which it may write through <c>this</c>
+    /// (<c>a[i].Bump()</c>).
+    /// </summary>
+    ReceiverLocation,
+
     /// <summary>An argument that is the memory itself (an array, span or <c>SharedMemory&lt;T&gt;</c>).</summary>
     Argument,
 

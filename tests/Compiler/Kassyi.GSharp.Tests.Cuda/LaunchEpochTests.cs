@@ -33,7 +33,7 @@ public sealed class LaunchEpochTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public unsafe void Test_RecordStillBeingWritten_IsNotConsumed()
+    public unsafe void TryConsumeSlot_RecordStillBeingWritten_ConsumesItOnlyOnceCompleted()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         GpuKernelLoader.EnsureInitialized();
@@ -69,7 +69,7 @@ public sealed class LaunchEpochTests
     // let the launcher return partial results with no exception
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnrelatedCopyToHostOnAnotherThread_NeverTakesTheLaunchersRecord()
+    public async Task DeviceErrorSlot_UnrelatedCopyToHostOnAnotherThread_NeverTakesTheLaunchersRecord()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         const int Launches = 200;
@@ -123,7 +123,7 @@ public sealed class LaunchEpochTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TwoStreams_OnlyTheFailingLaunchThrows()
+    public void DeviceError_FailingLaunchOnOneOfTwoStreams_OnlyItsStreamThrows()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -158,7 +158,7 @@ public sealed class LaunchEpochTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_FailingLaunch_LauncherConsumesItsRecord()
+    public void Launcher_FailingLaunch_ConsumesItsOwnRecord()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         var keys = new int[BlockSize];
@@ -172,7 +172,7 @@ public sealed class LaunchEpochTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UnconsumedRecord_IsThrownByTheLaunchThatReusesIt()
+    public void Launcher_UnconsumedRecordOfEarlierLaunch_ThrowsWhenItReusesTheRecord()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -217,7 +217,7 @@ public sealed class LaunchEpochTests
     // instead of waiting for that hang.
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_RecordConsumedBeforeWaitersLook_WaitersStillLeaveTheGridBarrier()
+    public async Task GridBarrier_RecordConsumedBeforeWaitersLook_WaitersStillLeave()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         const int Blocks = 4;
@@ -283,7 +283,7 @@ public sealed class LaunchEpochTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LaunchCapturedIntoGraph_ErrorIsThrownAtTheSynchronizationAfterEveryReplay()
+    public void GraphLaunch_FailingThread_ThrowsAtTheSynchronizationAfterEveryReplay()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -313,7 +313,7 @@ public sealed class LaunchEpochTests
     // or whole warps failed, and the surviving threads pass every barrier
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LaunchCapturedIntoGraph_SurvivingThreadsPassEveryGridBarrier()
+    public void GraphLaunch_ThreadsFailBeforeGridBarrier_SurvivorsPassEveryBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         AssertSurvivorsPassEveryBarrierOfGraph(GridBarrierKernels.FailKey,
@@ -325,7 +325,7 @@ public sealed class LaunchEpochTests
     // word, so a block that lost threads still arrives and waits, and the surviving threads pass every barrier
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LaunchCapturedIntoGraph_SurvivingThreadsPassEveryFastGridBarrier()
+    public void GraphLaunch_ThreadsFailBeforeFastGridBarrier_SurvivorsPassEveryBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         AssertSurvivorsPassEveryBarrierOfGraph(GridSyncModeKernels.FailKey,
