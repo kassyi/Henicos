@@ -22,22 +22,30 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// </remarks>
 internal static class ArrayNullCheck
 {
-    /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
-    public const string MessagePrefix = "G#: a null array is read at ";
-
     /// <summary>The text of the error of a registered site, whose place the error site table holds.</summary>
     public const string SiteMessage = "G#: a null array is read";
+
+    /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
+    public const string MessagePrefix = SiteMessage + PlaceSeparator;
 
     // The trap kind of the site ID, which tells the site apart from another trap at the same place
     private const string TrapKind = "ArrayNull";
 
-    /// <summary>The text of a null passed where a device function parameter is not nullable, followed by the place.</summary>
-    public const string ArgumentMessagePrefix = "G#: a null array is passed where it is not nullable at ";
-
     /// <summary>The text of the error of a registered site of a null passed where the parameter is not nullable.</summary>
     public const string ArgumentSiteMessage = "G#: a null array is passed where it is not nullable";
 
+    /// <summary>The text of a null passed where a device function parameter is not nullable, followed by the place.</summary>
+    public const string ArgumentMessagePrefix = ArgumentSiteMessage + PlaceSeparator;
+
     private const string ArgumentTrapKind = "ArrayNullArgument";
+
+    /// <summary>The text of the error of a registered site of <c>Gpu.NotNull</c> given a null array.</summary>
+    public const string NotNullSiteMessage = "G#: Gpu.NotNull is given a null array";
+
+    private const string NotNullTrapKind = "ArrayNotNull";
+
+    // Between the text of an error and the place it names, in a method without an error site table
+    private const string PlaceSeparator = " at ";
 
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IParameterSymbol, bool>> s_written =
         new();
@@ -226,16 +234,62 @@ internal static class ArrayNullCheck
     /// <see cref="PlanSite(ExpressionSyntax, ref TranspileContext)"/> with the place already formatted: the place that
     /// lowering recorded for the source of a <c>foreach</c>.
     /// </summary>
-    public static NullCheckSite PlanSite(ExpressionSyntax receiver, string place, ref TranspileContext context)
+    public static NullCheckSite PlanSite(ExpressionSyntax receiver, string place, ref TranspileContext context) =>
+        PlanSite(receiver, place, SiteMessage, TrapKind, ref context);
+
+    // A site of the kernel's error site table for <node> with <message>, or, in a method without a table, the message
+    // followed by the place of the node (<place>, formatted here when it is null)
+    private static NullCheckSite PlanSite(ExpressionSyntax node, string? place, string message, string trapKind,
+        ref TranspileContext context)
     {
+        var model = context.Query.SemanticModel;
         if (context.Emitter.ErrorSites is not { } table)
         {
-            return new NullCheckSite(0u, MessagePrefix + place);
+            return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(model, node)));
         }
 
-        var model = context.Query.SemanticModel;
-        var memberName = GetSourceMemberName(receiver, model) ?? context.Emitter.CurrentMemberName ?? "";
-        return new NullCheckSite(table.Register(receiver, model, memberName, SiteMessage, TrapKind), "");
+        var memberName = GetSourceMemberName(node, model) ?? context.Emitter.CurrentMemberName ?? "";
+        return new NullCheckSite(table.Register(node, model, memberName, message, trapKind), "");
+    }
+
+    /// <summary>
+    /// The check of the call <c>Gpu.NotNull(&lt;array&gt;)</c> (<paramref name="call"/>): none when
+    /// <paramref name="array"/> is proven (<see cref="NonNullProof"/>), otherwise the place of the call to report.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] Not <see cref="NeedsCheck"/>, which skips an unwritten nullable kernel parameter: a null optional kernel
+    /// argument reads as an empty array, but it is null, and <c>Gpu.NotNull</c> throws for it as C# does.
+    /// </remarks>
+    public static NotNullCheck PlanNotNull(InvocationExpressionSyntax call, ExpressionSyntax array,
+        ref TranspileContext context) =>
+        NonNullProof.IsProvenNonNull(array, context.Query.SemanticModel)
+            ? new NotNullCheck(array, null)
+            : new NotNullCheck(array, PlanSite(call, null, NotNullSiteMessage, NotNullTrapKind, ref context));
+
+    /// <summary>
+    /// Writes the plan of <see cref="PlanNotNull"/>: <c>__gsharp_array_not_null(&lt;array&gt;, &lt;site&gt;)</c>, or
+    /// <c>(&lt;array&gt;)</c> when the array is proven.
+    /// </summary>
+    public static void AppendNotNull(in NotNullCheck check, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        if (check.Site is not { } site)
+        {
+            using (writer.Parentheses())
+            {
+                context.Visitor.Visit(check.Array);
+            }
+
+            return;
+        }
+
+        writer.Append(GSharpInternalNames.Prelude.ArrayNotNull);
+        using (writer.Parentheses())
+        {
+            context.Visitor.Visit(check.Array);
+            writer.Append(", ");
+            AppendSite(writer, site);
+        }
     }
 
     // The method that holds the receiver in the user's source, past lambdas and local functions.
@@ -319,17 +373,8 @@ internal static class ArrayNullCheck
     }
 
     // The place of a null passed where the parameter is not nullable
-    private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context)
-    {
-        var model = context.Query.SemanticModel;
-        if (context.Emitter.ErrorSites is not { } table)
-        {
-            return new NullCheckSite(0u, ArgumentMessagePrefix + SourcePlace.Format(model, argument));
-        }
-
-        var memberName = GetSourceMemberName(argument, model) ?? context.Emitter.CurrentMemberName ?? "";
-        return new NullCheckSite(table.Register(argument, model, memberName, ArgumentSiteMessage, ArgumentTrapKind), "");
-    }
+    private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context) =>
+        PlanSite(argument, null, ArgumentSiteMessage, ArgumentTrapKind, ref context);
 
     // <site>u for a registered site, "<message>" otherwise
     private static void AppendSite(SourceWriter writer, NullCheckSite site)
@@ -450,6 +495,12 @@ internal static class ArrayNullCheck
 /// names the place, when the method has no table.
 /// </summary>
 internal readonly record struct NullCheckSite(uint SiteId, string Message);
+
+/// <summary>
+/// The check of a <c>Gpu.NotNull</c> call (<see cref="ArrayNullCheck.PlanNotNull"/>): the array argument, and the place
+/// a null reports, or <see langword="null"/> when the array is proven and the call is the array itself.
+/// </summary>
+internal readonly record struct NotNullCheck(ExpressionSyntax Array, NullCheckSite? Site);
 
 /// <summary>What the check of a device function argument tests (<see cref="ArrayNullCheck.PlanArgument"/>).</summary>
 internal enum ArgumentCheckKind

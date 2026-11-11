@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 /// <summary>
-/// Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions and the grid barrier of
-/// Gpu.SyncGrid(mode).
+/// Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions, the grid barrier of
+/// Gpu.SyncGrid(mode) and the null check of Gpu.NotNull(array).
 /// </summary>
 internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 {
@@ -18,6 +18,10 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 
             case GpuMacroKind.Constant:
                 TranspileConstant(node, ref context);
+                return true;
+
+            case GpuMacroKind.NotNull when call.GetArgument(node.ArgumentList.Arguments, 0) is { } array:
+                ArrayNullCheck.AppendNotNull(ArrayNullCheck.PlanNotNull(node, array.Expression, ref context), ref context);
                 return true;
 
             case GpuMacroKind.SyncGrid when !call.HasBody:

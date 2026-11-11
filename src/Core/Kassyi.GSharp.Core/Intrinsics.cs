@@ -207,6 +207,41 @@ public static partial class Gpu
     /// <returns>A typed placeholder evaluated at GPU compile-time.</returns>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public static int Constant(string macroName) => GpuOnlyException.Throw<int>();
+
+    /// <summary>
+    /// Returns <paramref name="array"/> as a non-nullable array, or throws <see cref="NullReferenceException"/> when it is
+    /// <see langword="null"/>.
+    /// </summary>
+    /// <typeparam name="T">The element type of the array.</typeparam>
+    /// <param name="array">An array that may be <see langword="null"/>, such as a nullable array field of a struct argument.</param>
+    /// <returns><paramref name="array"/> itself.</returns>
+    /// <remarks>
+    /// <para>
+    /// Read a nullable array once through this method into a local, and use the local: the compiler knows that a local
+    /// initialized from <c>Gpu.NotNull</c> and never assigned holds an array, so its later reads, and the calls that pass it
+    /// where a device function parameter is not nullable, need no null check of their own.
+    /// </para>
+    /// <code>
+    /// int[] data = Gpu.NotNull(context.Data);   // throws here when context.Data is null
+    /// for (int i = 0; i &lt; data.Length; i++) { sum += data[i]; }
+    /// </code>
+    /// <para>
+    /// The method works in kernels, in device functions and on the host. A <see langword="null"/> optional kernel argument,
+    /// which reads as an empty array, is still <see langword="null"/> here and throws, and so does an empty one, which the
+    /// launchers pass as <see langword="null"/>.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="NullReferenceException">
+    /// <paramref name="array"/> is <see langword="null"/>. In a kernel the exception carries the place of the call, as the
+    /// exception of any other read of a <see langword="null"/> array does.
+    /// </exception>
+    // [NotNull]: after the call the compiler knows that the argument (a field, a local) is not null either
+    public static T[] NotNull<T>([System.Diagnostics.CodeAnalysis.NotNull] T[]? array) =>
+        array ?? throw new NullReferenceException(NotNullMessage);
+
+    // The message of the host and managed exception; the device reports its own, with the place of the call
+    private const string NotNullMessage = "Gpu.NotNull was given a null array.";
+
     /// <summary>
     /// Injects raw inline PTX assembly or CUDA C++ instructions directly into the transpiled output.
     /// </summary>

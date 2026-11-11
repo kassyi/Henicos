@@ -314,4 +314,32 @@ public class NullArrayAndFieldDifferentialTests
     [SkippableFact]
     public void NullArray_AllThreadsEmptyFirstTrap_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_allThreadsEmptyFirstTrap);
+
+    // Gpu.NotNull: seed 0 passes the array through, seed 1 throws NullReferenceException at the call on every path (the
+    // place of the call on CUDA)
+    [SkippableFact]
+    public void NullValidation_GpuNotNull_ThrowsAtTheCall() =>
+        DifferentialRunner.Run(new DifferentialCase(
+            KernelName(nameof(BoundsAndMemoryDifferentialKernels.GpuNotNullKernel)))
+        {
+            Shape = LaunchShapes.Linear(DefaultRows, 32),
+            Seeds = [0, 1],
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? GpuNotNullCall(674, 23) : null,
+            Inputs = static (rng, shape) => new DiffBuffers()
+                .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
+                .In("flags", new[] { rng.Seed }, readOnly: true)
+                .Out<int>("dst", shape.Rows, ["value"], OutputPolicy.Exact),
+            Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchGpuNotNullKernel(
+                b.Get<int>("src"),
+                b.Get<int>("flags"),
+                b.Get<int>("dst"),
+                s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX),
+            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.GpuNotNullKernel(
+                b.Get<int>("src"),
+                b.Get<int>("flags"),
+                b.Get<int>("dst"),
+                s.Rows),
+        });
 }

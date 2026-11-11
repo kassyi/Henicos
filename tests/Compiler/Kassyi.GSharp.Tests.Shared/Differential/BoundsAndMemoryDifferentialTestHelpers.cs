@@ -51,6 +51,10 @@ internal static class BoundsAndMemoryDifferentialTestHelpers
         new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
 #endif
 
+    // Gpu.NotNull given a null array: NullReferenceException on every path; CUDA, the only path of Tests.Cuda, reports
+    // the place of the call
+    internal static ExceptionPolicy GpuNotNullCall(int line, int column) => NullArrayArgument(line, column);
+
     internal static int[] CreateCanaryBacking()
     {
         var backing = new int[CanaryTotal];

@@ -139,4 +139,42 @@ public static class Reads
         var read = data;
         return read.Length;
     }
+
+    [GpuKernel]
+    public static void KernelNotNullCall(Holder holder, int[] output)
+    {
+        var read = Gpu.NotNull(holder.Inner.Optional);
+        output[0] = read.Length;
+    }
+
+    [GpuDeviceFunction]
+    public static int DeviceNotNullLocal(int[]? data)
+    {
+        var checkedData = Gpu.NotNull(data);
+        var read = checkedData;
+        return read.Length;
+    }
+
+    [GpuDeviceFunction]
+    public static int DeviceReassignedNotNullLocal(int[]? data, int[] other)
+    {
+        var checkedData = Gpu.NotNull(data);
+        checkedData = other;
+        var read = checkedData;
+        return read.Length;
+    }
+
+    // A method of the user's own named NotNull is not Gpu.NotNull
+    [GpuDeviceFunction]
+    public static int DeviceOwnNotNull(int[]? data)
+    {
+        var read = Checks.NotNull(data);
+        return read.Length;
+    }
+}
+
+public static class Checks
+{
+    [GpuDeviceFunction]
+    public static int[] NotNull(int[]? data) => data ?? new int[1];
 }
