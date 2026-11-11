@@ -9,7 +9,7 @@ public class SourceWriterTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Category(TestCategory.Syntax)]
-    public void Test_SourceWriter_FluentChaining_BasicTokens()
+    public void SourceWriter_BasicTokens_AppendsTokensInFluentChain()
     {
         using var writer = new SourceWriter();
         writer
@@ -29,7 +29,7 @@ public class SourceWriterTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Category(TestCategory.Syntax)]
-    public void Test_SourceWriter_FluentChaining_WithNullsAndConditionals()
+    public void SourceWriter_ConditionalsAndNulls_AppendsOnlyMatchingLines()
     {
         using var writer = new SourceWriter();
         writer
@@ -49,7 +49,7 @@ public class SourceWriterTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Category(TestCategory.Syntax)]
-    public void Test_SourceWriter_FluentChaining_StructuralTokens()
+    public void SourceWriter_StructuralTokens_AppendsBracketsAndParentheses()
     {
         using var writer = new SourceWriter();
         writer
@@ -67,7 +67,7 @@ public class SourceWriterTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Category(TestCategory.Syntax)]
-    public void Test_SourceWriter_FluentChaining_RepeatedNewlines()
+    public void SourceWriter_RepeatedNewlines_NormalizesConsecutiveNewlines()
     {
         using var writer = new SourceWriter();
         writer
@@ -83,7 +83,7 @@ public class SourceWriterTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Category(TestCategory.Syntax)]
-    public void Test_SourceWriter_FluentChaining_InterpolatedStrings()
+    public void SourceWriter_InterpolatedStrings_FormatsInterpolatedExpressions()
     {
         using var writer = new SourceWriter();
         string name = "Kernel";
@@ -103,7 +103,7 @@ public class SourceWriterTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Category(TestCategory.Syntax)]
-    public Task Test_SourceWriter_NestedScopeAndIndentation_Snapshots()
+    public Task SourceWriter_NestedScopeAndIndentation_MatchesExpectedSnapshot()
     {
         using var writer = new SourceWriter();
         writer.Line("void kernel()");
@@ -117,7 +117,7 @@ public class SourceWriterTests
             }
         }
 
-        var methodName = nameof(Test_SourceWriter_NestedScopeAndIndentation_Snapshots);
+        var methodName = nameof(SourceWriter_NestedScopeAndIndentation_MatchesExpectedSnapshot);
         return Verifier.Verify(writer.ToString(), "cs").UseFastHashSnapshotName(methodName);
     }
 }

@@ -41,6 +41,6 @@ public class StructBodyDependencyDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StructCreatedOnlyInTheBodiesOfAnotherStruct_MatchesTheOracleOnEveryPath() =>
+    public void StructDefinition_CreatedOnlyInBodiesOfAnotherStruct_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_createdOnlyInBodies);
 }

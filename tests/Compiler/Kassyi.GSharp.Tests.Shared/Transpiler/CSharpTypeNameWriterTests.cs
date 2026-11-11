@@ -20,7 +20,7 @@ public class CSharpTypeNameWriterTests
     [InlineData("ArrayOfNestedInGeneric", "global::Names.Outer<int>.Inner[]")]
     [InlineData("NestedInPlain", "global::Names.Plain.Nested")]
     [InlineData("NullableInt", "int?")]
-    public void Test_AppendCsharpTypeName_WritesContainingTypeArguments(string field, string expected)
+    public void AppendCsharpTypeName_ContainingTypeArgs_WritesContainingTypeArguments(string field, string expected)
     {
         using var writer = new SourceWriter();
         writer.AppendCsharpTypeName(GetFieldType(field));
@@ -35,7 +35,9 @@ public class CSharpTypeNameWriterTests
     [InlineData("ArrayOfNestedInGeneric", "global::Names.Outer<global::System.Int32>.Inner[]")]
     [InlineData("NestedInPlain", "global::Names.Plain.Nested")]
     [InlineData("NullableInt", "global::System.Nullable<global::System.Int32>")]
-    public void Test_AppendFullyQualifiedCsharpName_WritesContainingTypeArguments(string field, string expected)
+    public void AppendFullyQualifiedCsharpName_ContainingTypeArgs_WritesContainingTypeArguments(
+        string field,
+        string expected)
     {
         using var writer = new SourceWriter();
         writer.AppendFullyQualifiedCsharpName(GetFieldType(field));
@@ -45,7 +47,7 @@ public class CSharpTypeNameWriterTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GetFullNamespaceName_JoinsNestedNamespaces()
+    public void GetFullNamespaceName_NestedNamespaces_JoinsNamespaceSegments()
     {
         Assert.Equal("Names", s_holder.ContainingNamespace.GetFullNamespaceName());
         Assert.Equal(

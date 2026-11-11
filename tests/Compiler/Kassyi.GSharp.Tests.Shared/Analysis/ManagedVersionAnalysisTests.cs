@@ -32,7 +32,7 @@ public class ManagedVersionAnalysisTests
     [InlineData("Extensions", "Doubled")]
     [InlineData("Extensions", "AddToIndex")]
     [InlineData("Extensions", "AddGeneric")]
-    public void Test_Needs_ReachesAnOperatorMacro_IsTrue(string type, string name)
+    public void Needs_ReachesAnOperatorMacro_IsTrue(string type, string name)
     {
         Assert.True(ManagedVersionAnalysis.Needs(GetMethod(type, name), s_compilation));
         Assert.True(ManagedVersionAnalysis.HasManagedVersion(GetMethod(type, name), s_compilation));
@@ -45,7 +45,7 @@ public class ManagedVersionAnalysisTests
     [InlineData("Add")]
     [InlineData("IntSumPlain")]
     [InlineData("UserInlinePtx")]
-    public void Test_Needs_ReachesNoOperatorMacro_IsFalse(string name)
+    public void Needs_ReachesNoOperatorMacro_IsFalse(string name)
     {
         Assert.False(ManagedVersionAnalysis.Needs(GetMethod("Functions", name), s_compilation));
         Assert.False(ManagedVersionAnalysis.HasManagedVersion(GetMethod("Functions", name), s_compilation));
@@ -58,7 +58,7 @@ public class ManagedVersionAnalysisTests
     [InlineData("Tock", true)]
     [InlineData("Ping", false)]
     [InlineData("Pong", false)]
-    public void Test_Needs_Cycle_FollowsWhetherTheCycleReachesAMacro(string name, bool expected)
+    public void Needs_Cycle_FollowsWhetherTheCycleReachesAMacro(string name, bool expected)
     {
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase("Analysis/ManagedVersionCases.cs"));
@@ -78,7 +78,7 @@ public class ManagedVersionAnalysisTests
     // A function that suspends is rewritten in its state machine
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Needs_SuspendingFunction_IsFalse()
+    public void Needs_SuspendingFunction_IsFalse()
     {
         var method = GetMethod("Functions", "Suspends");
 
@@ -88,7 +88,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_HasDirectRewrite_OnlyForTheBodyItself()
+    public void HasDirectRewrite_OnlyForTheBodyItself()
     {
         Assert.True(HasDirectRewrite("Direct"));
         Assert.True(HasDirectRewrite("Suspends"));
@@ -106,7 +106,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ManagedVersion_CallsTheVersionOfACallee()
+    public void ManagedVersion_CallsTheVersionOfACallee()
     {
         var source = GenerateManagedVersion("Functions", "Transitive");
 
@@ -117,7 +117,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ManagedVersion_ExpandsTheOperatorMacro()
+    public void ManagedVersion_ExpandsTheOperatorMacro()
     {
         var source = GenerateManagedVersion("Functions", "Direct");
 
@@ -127,7 +127,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ManagedVersion_RewritesFloatAndDoubleSumToSumSequential()
+    public void ManagedVersion_RewritesFloatAndDoubleSumToSumSequential()
     {
         var floatSource = GenerateManagedVersion("Functions", "FloatSumDirect");
         var doubleSource = GenerateManagedVersion("Functions", "DoubleSumSelector");
@@ -150,7 +150,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ManagedVersion_PassesTheVersionOfAMethodGroup()
+    public void ManagedVersion_PassesTheVersionOfAMethodGroup()
     {
         var source = GenerateManagedVersion("Functions", "PassesMethodGroup");
 
@@ -161,7 +161,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ManagedVersion_BindsTheVersionOfAReducedExtensionMethodGroup()
+    public void ManagedVersion_BindsTheVersionOfAReducedExtensionMethodGroup()
     {
         var source = GenerateManagedVersion("Functions", "PassesExtensionMethodGroup");
 
@@ -172,7 +172,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ManagedVersion_BindsTheVersionOfAGenericReducedExtensionMethodGroupWithSubstitutedReceiverType()
+    public void ManagedVersion_BindsTheVersionOfAGenericReducedExtensionMethodGroupWithSubstitutedReceiverType()
     {
         var source = GenerateManagedVersion("Functions", "PassesGenericExtensionMethodGroup");
 
@@ -184,7 +184,7 @@ public class ManagedVersionAnalysisTests
     // The reduced call ctx.Doubled(a) becomes the static call of the version, which has no 'this'
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ManagedVersion_CallsTheVersionOfAReducedExtensionCall()
+    public void ManagedVersion_CallsTheVersionOfAReducedExtensionCall()
     {
         var caller = GenerateManagedVersion("Functions", "CallsExtension");
         var extension = GenerateManagedVersion("Extensions", "Doubled");
@@ -198,7 +198,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ManagedVersion_OfACycle_CallsTheOtherVersion()
+    public void ManagedVersion_OfACycle_CallsTheOtherVersion()
     {
         var source = GenerateManagedVersion("Functions", "Tick");
 
@@ -211,7 +211,7 @@ public class ManagedVersionAnalysisTests
     // runs as written) instead of a version that does not exist (CS0117)
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_HasManagedVersion_OuterClassNotPartial_IsFalseAndNotCalled()
+    public void HasManagedVersion_OuterClassNotPartial_IsFalseAndNotCalled()
     {
         var nested = GetMethod("Outer+Inner", "Nested");
 
@@ -224,7 +224,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ManagedRewrite_UserDefinedInlinePtx_IsNotReplacedWithThrow()
+    public void ManagedRewrite_UserDefinedInlinePtx_IsNotReplacedWithThrow()
     {
         var method = GetMethod("Functions", "UserInlinePtx");
         Assert.True(method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration));
@@ -243,7 +243,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ManagedRewrite_UnqualifiedInlinePtx_IsReplacedWithThrow()
+    public void ManagedRewrite_UnqualifiedInlinePtx_IsReplacedWithThrow()
     {
         var method = GetMethod("Functions", "InlinePtxUnqualified");
         Assert.True(method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration));
@@ -264,7 +264,7 @@ public class ManagedVersionAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ManagedVersion_RewritesQualifiedAndUnqualifiedInlinePtxToThrow()
+    public void ManagedVersion_RewritesQualifiedAndUnqualifiedInlinePtxToThrow()
     {
         var directSource = GenerateManagedVersion("Functions", "InlinePtxDirect");
         var unqualifiedSource = GenerateManagedVersion("Functions", "InlinePtxUnqualified");

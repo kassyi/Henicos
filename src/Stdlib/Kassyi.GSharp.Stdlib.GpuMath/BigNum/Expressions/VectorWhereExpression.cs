@@ -14,6 +14,7 @@ internal class VectorWhereExpression(
     public int Capacity => source.Capacity;
 
     public int WordsPerElement => source.WordsPerElement;
+    public long BitsPerElement => source.BitsPerElement;
 
     // The selected elements, the scan of the predicates, the count word and the block sums of the scan: owned here and
     // reused, so that an evaluation allocates nothing after the first

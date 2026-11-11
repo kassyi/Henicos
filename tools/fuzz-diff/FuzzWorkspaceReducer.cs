@@ -167,7 +167,27 @@ internal static class FuzzWorkspaceReducer
             return false;
         }
 
-        var kernel = kernels[0];
+        var singleBatch = BuildSingleCandidateBatch(candidateSource, root, kernels[0], fuzzSeed, inputSeed);
+        var failing = EvaluateSpeculativeBatchInWorkspace(
+            singleBatch,
+            workDir,
+            repoRoot,
+            useCuda: profile == "G",
+            noGpuLock: noGpuLock,
+            expectedSignature: expectedSignature,
+            managedOnly: profile == "M");
+
+        return failing.Contains("Candidate_00");
+    }
+
+    // The candidate kernel alone, renamed Candidate_00, with its case and the oracle twins of its split methods
+    private static SpeculativeCandidateBatch BuildSingleCandidateBatch(
+        string candidateSource,
+        CompilationUnitSyntax root,
+        MethodDeclarationSyntax kernel,
+        ulong fuzzSeed,
+        int inputSeed)
+    {
         var specBatch = FuzzReducer.GenerateSpeculativeBatchCandidates(
             candidateSource,
             fuzzSeed,
@@ -179,23 +199,19 @@ internal static class FuzzWorkspaceReducer
         {
             CandidateKernelName = "Candidate_00",
             CandidateKernelMethodSource = FuzzSyntaxHelpers.RenderFullNode(exactMethod),
+            CandidateCasePropertySource = FuzzSpeculativeBatchBuilder.RenderCandidateCaseProperty(
+                exactMethod,
+                FuzzReducer.GetDeviceFunctionMethods(root),
+                fuzzSeed,
+                inputSeed),
         };
-        var singleBatch = specBatch with
+        return specBatch with
         {
-            KernelsSource = FuzzSyntaxHelpers.RenderFullNode(root.ReplaceNode(kernel, exactMethod)),
+            KernelsSource = FuzzSplitOracle.WithOracleTwins(
+                FuzzSyntaxHelpers.RenderFullNode(root.ReplaceNode(kernel, exactMethod))),
+            CasesSource = FuzzSpeculativeBatchBuilder.BuildSpeculativeCasesCompilationUnit([exactCand], fuzzSeed),
             Candidates = [exactCand],
         };
-
-        var failing = EvaluateSpeculativeBatchInWorkspace(
-            singleBatch,
-            workDir,
-            repoRoot,
-            useCuda: profile == "G",
-            noGpuLock: noGpuLock,
-            expectedSignature: expectedSignature,
-            managedOnly: profile == "M");
-
-        return failing.Contains("Candidate_00");
     }
 
     private static HashSet<string> EvaluateSpeculativeBatchInWorkspace(

@@ -21,7 +21,7 @@ public class HoistedSymbolConsistencyTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_LoweredBodies_MaintainHoistedDeclarationIdentityConsistency()
+    public void LoweredBodies_AllGpuMethods_MaintainHoistedDeclarationIdentityConsistency()
     {
         var compilation = MegaCompilationCache.Compilation;
         var dialect = new StandardCppDialect();

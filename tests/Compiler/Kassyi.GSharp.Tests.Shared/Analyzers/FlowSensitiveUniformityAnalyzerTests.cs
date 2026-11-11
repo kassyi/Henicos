@@ -14,7 +14,7 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentBarriers_FollowTheControlFlowGraph()
+    public async Task DivergentBarriers_ControlFlowGraph_FollowsControlFlowGraph()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/FlowSensitiveUniformityKernels.cu.cs");
 
@@ -48,7 +48,7 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
     // a uniform condition (UniformReturnKernel) and a device function body are not reported
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_ExitOnlyBarriers_ReportGSH0084()
+    public async Task ExitOnlyBarriers_EarlyExitBranch_ReportsGSH0084()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/ExitOnlyBarrierKernels.cu.cs");
 
@@ -73,7 +73,7 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_BarrierAfterDivergentExit_IsAWarningWithTheBarrier()
+    public async Task BarrierAfterDivergentExit_DivergentReturnPrecedingBarrier_ReportsWarning()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/BarrierUsage/ExitOnlyBarrierKernels.cu.cs", s_analyzer)

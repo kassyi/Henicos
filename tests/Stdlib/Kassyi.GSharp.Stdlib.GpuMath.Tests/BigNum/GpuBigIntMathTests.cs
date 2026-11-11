@@ -24,46 +24,42 @@ public sealed class GpuBigIntMathTests : IDisposable
     }
 
     /// <summary>
-    /// Operation name and the word counts of (left, right, result). Exactly one count differs from 4 in each row,
-    /// once in every position, so each comparison of the size check is needed.
+    /// Operation name and the word counts of (left, right, result): a result one word narrower than the minimum of the
+    /// method, from each operand that sets the minimum. Wider results and operands of different widths are accepted
+    /// (DirectMethodWidthTests).
     /// </summary>
-    public static TheoryData<string, int, int, int> MismatchedSizes()
+    public static TheoryData<string, int, int, int> MismatchedSizes() => new()
     {
-        var data = new TheoryData<string, int, int, int>();
-        foreach (var operation in new[] { "Add", "Sub", "BitwiseAnd", "BitwiseOr", "BitwiseXor", "Gcd", "ModInverse" })
-        {
-            data.Add(operation, 5, 4, 4);
-            data.Add(operation, 4, 5, 4);
-            data.Add(operation, 4, 4, 5);
-            data.Add(operation, 4, 4, 3);
-        }
+        // At least the wider operand
+        { "Add", 5, 4, 4 },
+        { "Add", 4, 5, 4 },
+        { "BitwiseOr", 5, 4, 4 },
+        { "BitwiseOr", 4, 5, 4 },
+        { "BitwiseXor", 5, 4, 4 },
+        { "BitwiseXor", 4, 5, 4 },
 
-        // Unary operations: (operand, -, result) with a longer and a shorter result.
-        foreach (var operation in new[] { "DivideByUInt32", "ShiftLeft", "ShiftRight", "BitwiseNot" })
-        {
-            data.Add(operation, 4, 0, 5);
-            data.Add(operation, 4, 0, 3);
-        }
+        // At least the minuend, the narrower operand, the modulus, the product
+        { "Sub", 5, 4, 4 },
+        { "BitwiseAnd", 4, 5, 3 },
+        { "Gcd", 5, 4, 3 },
+        { "ModInverse", 4, 5, 4 },
+        { "Mul", 4, 4, 7 },
 
-        // IsLessThan compares two operands of the same size.
-        data.Add("IsLessThan", 4, 5, 0);
-        data.Add("IsLessThan", 5, 4, 0);
-
-        // Mul needs exactly left + right words.
-        data.Add("Mul", 4, 4, 7);
-        data.Add("Mul", 4, 4, 9);
-        return data;
-    }
+        // Unary operations: (operand, -, result)
+        { "DivideByUInt32", 4, 0, 3 },
+        { "ShiftLeft", 4, 0, 3 },
+        { "ShiftRight", 4, 0, 3 },
+        { "BitwiseNot", 4, 0, 3 },
+        { "BitwiseNot", 4, 0, 5 }
+    };
 
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
     [MemberData(nameof(MismatchedSizes))]
     public void Operations_MismatchedBufferSizes_ThrowArgumentException(string operation, int leftWords, int rightWords, int resultWords)
     {
-        // A size mismatch is rejected on the host instead of running the kernel past a buffer.
-        // mutant: GpuBigIntMath.cs:43 / :95 / :196 / :210 / :333 / :347 / :361 `ThrowIfSizeMismatch(...)` removed (Add, Sub, Gcd, ModInverse, And, Or, Xor)
-        // mutant: GpuBigIntMath.cs:121 `!=` -> `==` (Mul); :182 / :223 / :236 / :373 removed (DivideByUInt32, shifts, Not)
-        // mutant: GpuBigIntMath.cs:386 `ThrowIfSizeMismatch(leftOperand, rightOperand)` removed (IsLessThan)
+        // A result narrower than the minimum is rejected on the host instead of running the kernel past a buffer.
+        // mutant: GpuBigIntMath.cs ThrowIfResultNarrower `<` -> `<=` (every row but BitwiseNot fails to throw)
         using var left = new GpuBigUInt(_workspace, Words(leftWords, 7u));
         using var right = new GpuBigUInt(_workspace, Words(Math.Max(rightWords, 1), 3u));
         using var result = new GpuBigUInt(_workspace, Math.Max(resultWords, 1));
@@ -81,7 +77,6 @@ public sealed class GpuBigIntMathTests : IDisposable
             "ShiftLeft" => () => GpuBigIntMath.ShiftLeft(left, 3, result),
             "ShiftRight" => () => GpuBigIntMath.ShiftRight(left, 3, result),
             "BitwiseNot" => () => GpuBigIntMath.BitwiseNot(left, result),
-            "IsLessThan" => () => GpuBigIntMath.IsLessThan(left, right),
             "Mul" => () => GpuBigIntMath.Mul(left, right, result),
             _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Unknown operation."),
         };
@@ -104,8 +99,8 @@ public sealed class GpuBigIntMathTests : IDisposable
     {
         // The magnitude and the returned sign are those of the BigInteger sum. BigInteger has no negative zero, so a
         // zero sum (equal magnitudes with opposite signs, -5 + 5) must return false.
-        // mutant: GpuBigIntMath.cs:114 `return rightNegative` -> `return !rightNegative` / `leftNegative` (3 + -5, -3 + 5)
-        // mutant: GpuBigIntMath.cs:110 `return comparison > 0 && leftNegative` -> `return leftNegative` (-5 + 5)
+        // mutant: BigIntWideOps.cs AddSigned `negated ? bNegative : aNegative` -> `aNegative` (3 + -5, -3 + 5)
+        // mutant: BigIntWideOps.cs AddSigned `!isZero && (...)` -> `(...)` (-5 + 5)
         using var left = new GpuBigUInt(_workspace, Words(2, (uint)Math.Abs(leftValue)));
         using var right = new GpuBigUInt(_workspace, Words(2, (uint)Math.Abs(rightValue)));
         using var result = new GpuBigUInt(_workspace, 2);
@@ -179,9 +174,9 @@ public sealed class GpuBigIntMathTests : IDisposable
     {
         // Shifting a value in place: 2048 words take two passes of a 1024-thread block, and the second pass of a left
         // shift reads words that the first pass writes, so an in-place kernel would corrupt the result.
-        // mutant: GpuBigIntMath.cs:260 `==` -> `!=` (the kernel runs in place)
-        // mutant: GpuBigIntMath.cs:263 / :264 temporary copy or launch removed
-        // mutant: GpuBigIntMath.cs:279 `return` removed (the host path shifts a second time)
+        // mutant: GpuBigIntMath.cs:580 `==` -> `!=` (the kernel runs in place)
+        // mutant: GpuBigIntMath.cs:583 / :584 temporary copy or launch removed
+        // mutant: GpuBigIntMath.cs:599 `return` removed (the host path shifts a second time)
         const int Words = 2048;
         var value = RandomValue(seed: 598, Words);
         using var buffer = GpuBigUInt.FromBigInteger(_workspace, value, Words);
@@ -204,9 +199,9 @@ public sealed class GpuBigIntMathTests : IDisposable
     {
         // The host path shifts left for a positive amount and right for a negative one, truncated or zero-extended to
         // the result size.
-        // mutant: GpuBigIntMath.cs:286 copy removed; :288 `val << signedBitShift` -> `val >> signedBitShift`,
+        // mutant: GpuBigIntMath.cs:606 copy removed; :609-610 `val << signedBitShift` -> `val >> signedBitShift`,
         //         `val >> -signedBitShift` -> `val << -signedBitShift` / `val >> +signedBitShift`
-        // mutant: GpuBigIntMath.cs:289 / :290 WriteLimbs or upload removed
+        // mutant: GpuBigIntMath.cs:611 / :612 WriteLimbs or upload removed
         // ForceCpuFallback is AsyncLocal, so the override cannot leak into other tests.
         GpuKernelLoader.ForceCpuFallback = true;
         try
@@ -238,7 +233,7 @@ public sealed class GpuBigIntMathTests : IDisposable
     public void NormalizeToMsb_ZeroSource_ClearsPrefilledResult()
     {
         // A zero source has no top bit: the result is cleared and the shift and bit count are 0.
-        // mutant: GpuBigIntMath.cs:313 `ClearMemoryAsync(resultBuffer...)` removed
+        // mutant: GpuBigIntMath.cs:643 `ClearMemoryAsync(resultBuffer...)` removed
         using var source = new GpuBigUInt(_workspace, 4);
         using var result = new GpuBigUInt(_workspace, Enumerable.Repeat(uint.MaxValue, 6).ToArray());
 
@@ -255,7 +250,7 @@ public sealed class GpuBigIntMathTests : IDisposable
     public void Pow10_ResultHasMinimalWords(int exponent)
     {
         // 10^e is exact and trimmed to the words its bit length needs.
-        // mutant: GpuBigIntMath.cs:467 `(actualBits + 31) / 32` -> `(actualBits + 31) * 32`
+        // mutant: GpuBigIntMath.cs:843 `(actualBits + 31) / 32` -> `(actualBits + 31) * 32`
         var expected = BigInteger.Pow(10, exponent);
         using var power = GpuBigIntMath.Pow10(_workspace, exponent);
 
@@ -268,7 +263,7 @@ public sealed class GpuBigIntMathTests : IDisposable
     {
         // The largest documented exponent is accepted; one more is rejected. 10^50,000,000 has about 5.2 million words
         // (under a second on an RTX 3070 Ti); the value is checked by its bit length (log2(10) * e, rounded up).
-        // mutant: GpuBigIntMath.cs:403 `exponent > MaxPow10Exponent` -> `exponent >= MaxPow10Exponent`
+        // mutant: GpuBigIntMath.cs:779 `exponent > MaxPow10Exponent` -> `exponent >= MaxPow10Exponent`
         const int MaxExponent = 50_000_000;
         Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigIntMath.Pow10(_workspace, MaxExponent + 1));
         Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigIntMath.Pow10(_workspace, -1));

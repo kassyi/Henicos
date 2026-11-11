@@ -8,9 +8,13 @@ internal sealed class SignedDivideByCountExpression(IGpuBigIntExpression sum, ui
 {
     internal uint Count { get; } = count > 0 ? count : throw new ArgumentOutOfRangeException(nameof(count));
 
+    // A quotient by a positive host count: planned as a division whose divisor sign is +
+    public override SignedOperation Operation => SignedOperation.Divide;
+
     protected override GpuBigInt Execute(GpuBigInt targetEval, GpuBigUInt resultBuffer)
     {
         var workspace = resultBuffer.Workspace;
+        CaptureChecks.ThrowIfCapturing(workspace, CaptureChecks.DivisionReads);
         using var divisor = workspace.RentTemp(1);
         using var remainder = workspace.RentTemp(1);
         workspace.Provider.WriteWord(divisor.DevicePointer, 0, Count, workspace.Stream);
@@ -18,5 +22,13 @@ internal sealed class SignedDivideByCountExpression(IGpuBigIntExpression sum, ui
 
         // The count is positive: the quotient has the sign of the sum (a zero quotient may keep it, as for /)
         return new GpuBigInt(resultBuffer, targetEval.IsNegative);
+    }
+
+    // A sum whose sign is on the device (Xor with the + count): the quotient of its magnitude, with its sign copied
+    protected override SignSource ExecuteDevice(GpuWorkspace workspace, SignedValue operand, GpuBigUInt resultBuffer,
+        SignPlan plan)
+    {
+        Execute(new GpuBigInt(operand.Magnitude, false), resultBuffer);
+        return SignedDeviceOps.Xor(workspace, operand.Sign, SignSource.Host(false));
     }
 }

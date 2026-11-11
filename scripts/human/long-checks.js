@@ -11,7 +11,9 @@
 // Output: tmp/long-checks/<yyyyMMdd-HHmmss>-<commit>/
 //   <step>.log            full output of the step
 //   bench/generator/      BenchmarkDotNet reports of the generator benchmark (input of `just bench-compare`)
-//   summary.md            one row per step: exit code, duration, log
+//   summary.md            one row per step: exit code, duration, log; on Windows also the kernel pools after the
+//                         step and the nvlddmkm Event 153 entries during it (gpu-fault-watch.js): the kernel pools
+//                         grew after GPU faults and were freed only by a reboot
 //
 // Usage:
 //   node scripts/human/long-checks.js [--steps <list>] [--fuzz-minutes <n>] [--stability <count|duration>]
@@ -23,6 +25,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
+const faultWatch = require('./gpu-fault-watch.js');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const gpuLock = path.join(repoRoot, 'scripts', 'agent', 'gpu-lock.js');
@@ -179,17 +182,46 @@ function runStep(name, step, logPath) {
   });
 }
 
-function writeSummary(summaryPath, header, results, steps) {
-  const rows = results.map((r) => {
+function poolCells(before, after) {
+  if (!after.supported) return '';
+  const mb = (bytes) => (bytes === null ? 'unknown' : String(Math.round(bytes / (1024 * 1024))));
+  const entries = faultWatch.compare(before, after).event153Entries;
+  const why = after.errors.length === 0 ? '' : ` (${after.errors.join('; ').replace(/\|/g, '/')})`;
+  return ` ${mb(after.nonpagedBytes)} / ${mb(after.pagedBytes)}${why} | ${entries === null ? 'unknown' : entries} |`;
+}
+
+// The pool lines under the table: the reading before the first step and, on Windows, the change over the whole run.
+function poolLines(poolsBefore, results) {
+  if (!poolsBefore.supported) return [];
+  const lines = ['', `- Before the first step: ${faultWatch.describe(poolsBefore)}`];
+  if (faultWatch.isNonpagedHigh(poolsBefore)) lines.push(`- WARNING: ${faultWatch.startWarningText(poolsBefore)}`);
+  if (results.length > 0) {
+    const last = results[results.length - 1].pools;
+    const comparison = faultWatch.compare(poolsBefore, last);
+    lines.push(`- After the last step: ${faultWatch.describe(last)}`);
+    if (comparison.warn) lines.push(`- WARNING: ${faultWatch.warningText(comparison)}`);
+  }
+  return lines;
+}
+
+function writeSummary(summaryPath, header, results, steps, poolsBefore) {
+  const pools = poolsBefore.supported;
+  const rows = results.map((r, i) => {
     const status = r.code === 0 ? 'ok' : `failed (${r.code})`;
-    return `| ${r.name} | ${steps[r.name].gpu ? 'yes' : 'no'} | ${status} | ${formatDuration(r.ms)} | ${r.name}.log |`;
+    const previous = i === 0 ? poolsBefore : results[i - 1].pools;
+    const cells = pools ? poolCells(previous, r.pools) : '';
+    const gpu = steps[r.name].gpu ? 'yes' : 'no';
+    return `| ${r.name} | ${gpu} | ${status} | ${formatDuration(r.ms)} |${cells} ${r.name}.log |`;
   });
   const text = [
     ...header,
     '',
-    '| Step | GPU | Result | Time | Log |',
-    '| :- | :- | :- | -: | :- |',
+    pools
+      ? '| Step | GPU | Result | Time | Pools after (nonpaged / paged MB) | Event 153 entries | Log |'
+      : '| Step | GPU | Result | Time | Log |',
+    pools ? '| :- | :- | :- | -: | -: | -: | :- |' : '| :- | :- | :- | -: | :- |',
     ...rows,
+    ...poolLines(poolsBefore, results),
     '',
   ].join('\n');
   fs.writeFileSync(summaryPath, text);
@@ -232,14 +264,17 @@ async function main() {
   ];
 
   const results = [];
+  const poolsBefore = faultWatch.measure({ slowFallback: true });
   for (const name of options.steps) {
     if (steps[name].windowsOnly && process.platform !== 'win32') {
       console.log(`\n[long-checks] ${name}: skipped (Windows only)`);
       continue;
     }
     console.log(`\n[long-checks] ${name}: ${describe(steps[name])}`);
-    results.push(await runStep(name, steps[name], path.join(outDir, `${name}.log`)));
-    writeSummary(summaryPath, header, results, steps);
+    const result = await runStep(name, steps[name], path.join(outDir, `${name}.log`));
+    result.pools = faultWatch.measure({ slowFallback: true });
+    results.push(result);
+    writeSummary(summaryPath, header, results, steps, poolsBefore);
   }
 
   console.log(`\n[long-checks] summary: ${summaryPath}`);

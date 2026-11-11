@@ -7,7 +7,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestSharedMemoryKernel()
+    public void SharedMemory_BlockOfFourThreads_ComputesPrefixSums()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         int[] dataArray = [1, 2, 3, 4];
@@ -22,7 +22,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestSharedMemory_WarpSyncAcross256Threads()
+    public void SharedMemory_TwoHundredFiftySixThreadsWithWarpSync_ReversesArray()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         const int Size = 256;
@@ -43,7 +43,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestIntrinsicsKernel()
+    public void HardwareAtomics_TenThreads_CalculatesSumAndMax()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] dataArray = new int[2];
@@ -59,7 +59,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stress)]
-    public void TestAtomicAddStress_HighContention()
+    public void AtomicAdd_HighContentionManyBlocks_MatchesExpectedSum()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] globalSum = [0];
@@ -79,7 +79,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stress)]
-    public void TestAtomicOrMaxStress_HighContention()
+    public void AtomicOrAndMax_HighContentionManyBlocks_MatchesExpectedBitwiseOrAndMax()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         uint[] globalState = [0, 0];
@@ -103,7 +103,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_WarpPrimitives_Transpilation()
+    public void Transpile_WarpReductionKernel_EmitsShuffleDownSync()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
             typeof(WarpShuffleKernels), nameof(WarpShuffleKernels.WarpReductionKernel), isDevice: false, dialect: new GSharpCudaDialect());
@@ -114,7 +114,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_CooperativeGroups_Transpilation()
+    public void Transpile_CooperativeGroups_EmitsGridSync()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ConcurrencyAndWarpTarget>(
             nameof(ConcurrencyAndWarpTarget.CooperativeGroups), dialect: new GSharpCudaDialect());
@@ -125,7 +125,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_AsyncCopyTma_Transpilation()
+    public void Transpile_AsyncCopyTma_EmitsAsyncPtxIntrinsics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ConcurrencyAndWarpTarget>(
             nameof(ConcurrencyAndWarpTarget.AsyncCopyTma), dialect: new GSharpCudaDialect());

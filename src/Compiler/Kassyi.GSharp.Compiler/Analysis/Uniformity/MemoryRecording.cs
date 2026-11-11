@@ -176,7 +176,9 @@ internal static class MemoryRecording
     {
         if (IsMemoryType(field.Type))
         {
-            var name = field.AssociatedSymbol is IPropertySymbol property ? property : (ISymbol)field;
+            var name = StructAbiMembers.TryGetBackingFieldProperty(field, out var property)
+                ? property
+                : (ISymbol)field;
             targets.Add(new MemoryCallTarget(MemoryCallTargetKind.Field, null, values.MemoryOf(name)));
         }
         else if (field.Type is INamedTypeSymbol { IsValueType: true, IsRefLikeType: false } nested)

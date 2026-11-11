@@ -14,7 +14,7 @@ public class CarryAndBitIntrinsicTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BitIntrinsicsKernel_MatchesReference()
+    public void BitIntrinsics_DeviceExecution_MatchesReference()
     {
         var input = CreateValues(seed: 0x9E3779B9u);
         var output = new uint[Length * 3];
@@ -36,7 +36,7 @@ public class CarryAndBitIntrinsicTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CarryChainKernel_PropagatesCarryAndBorrow()
+    public void CarryChain_DeviceExecution_PropagatesCarryAndBorrow()
     {
         var a = CreateValues(seed: 0x85EBCA6Bu);
         var b = CreateValues(seed: 0xC2B2AE35u);

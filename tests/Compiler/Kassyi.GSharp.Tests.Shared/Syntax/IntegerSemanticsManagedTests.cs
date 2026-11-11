@@ -19,37 +19,37 @@ public class IntegerSemanticsManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_IntOperators_WrapAndMaskAsInCSharp() =>
+    public void EvaluateManaged_IntOperators_WrapAndMaskAsInCSharp() =>
         IntegerSemanticsScenarios.IntTriples(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_LongOperators_WrapAndMaskAsInCSharp() =>
+    public void EvaluateManaged_LongOperators_WrapAndMaskAsInCSharp() =>
         IntegerSemanticsScenarios.LongTriples(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_FloatToIntegerConversions_SaturateAsInDotNet() =>
+    public void EvaluateManaged_FloatToIntegerConversions_SaturatesAsInDotNet() =>
         IntegerSemanticsScenarios.Conversions(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ThreadBuiltIns_AreSignedInt() =>
+    public void EvaluateManaged_ThreadBuiltIns_AreSignedInt() =>
         IntegerSemanticsScenarios.SignedBuiltIns(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_LoopCountersNearIntLimits_CountAsInCSharp() =>
+    public void EvaluateManaged_LoopCountersNearIntLimits_CountsAsInCSharp() =>
         IntegerSemanticsScenarios.LoopCounters(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_PackedTargetsWithSideEffects_AreWrittenOnce() =>
+    public void EvaluateManaged_PackedTargetsWithSideEffects_WritesOnce() =>
         IntegerSemanticsScenarios.PackedTargets(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_OperatorsAcrossBarriers_KeepCSharpSemantics() =>
+    public void EvaluateManaged_OperatorsAcrossBarriers_KeepsCSharpSemantics() =>
         IntegerSemanticsScenarios.AcrossBarrier(s_runManaged);
 
     private static void RunManaged(Action launch)

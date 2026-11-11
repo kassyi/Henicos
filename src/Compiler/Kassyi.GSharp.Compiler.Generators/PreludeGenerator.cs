@@ -4,8 +4,8 @@ using Kassyi.GSharp.Hashing;
 namespace Kassyi.GSharp.Compiler.Generators;
 
 /// <summary>
-/// Resolves and embeds <c>Prelude.cu</c> and <c>Prelude.cpp</c> (including relative <c>#include</c> directives)
-/// into compile-time C# string constants, eliminating runtime <c>System.Reflection</c> resource lookups in the compiler.
+/// Resolves and embeds <c>Prelude.cu</c> and <c>Prelude.cpp</c> (including relative <c>#include</c> directives) into
+/// compile-time C# string constants, eliminating runtime <c>System.Reflection</c> resource lookups in the compiler.
 /// </summary>
 public static class PreludeGenerator
 {
@@ -15,8 +15,9 @@ public static class PreludeGenerator
         OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
     /// <summary>
-    /// Reads prelude resource files from <paramref name="resourcesDir"/> and writes <c>GSharpPreludeResources.g.cs</c> to
-    /// <paramref name="outputDir"/>, with the hash of the preludes and of <c>InternalNames.yml</c> in the same directory.
+    /// Reads prelude resource files from <paramref name="resourcesDir"/> and writes <c>GSharpPreludeResources.g.cs</c>
+    /// to <paramref name="outputDir"/>, with the hash of the preludes and of <c>InternalNames.yml</c> in the same
+    /// directory.
     /// </summary>
     public static void Run(string resourcesDir, string outputDir)
     {
@@ -40,11 +41,12 @@ public static class PreludeGenerator
 
         var content = ReadText(rootPath) + "\n";
         var includeChain = new List<string> { rootPath };
-        return RemoveIndentation(ResolveEmbeddedIncludes(resourcesDir, rootPath, content, isCuda, atDocumentEnd: true, includeChain));
+        return RemoveIndentation(ResolveEmbeddedIncludes(
+            resourcesDir, rootPath, content, isCuda, atDocumentEnd: true, includeChain));
     }
 
-    // Generated code is left-aligned (transpiler-emission §3); the resources stay indented for reading. They contain no
-    // raw string literal, so the leading whitespace of a line is never part of a value.
+    // Generated code is left-aligned (transpiler-emission §3); the resources stay indented for reading. They contain
+    // no raw string literal, so the leading whitespace of a line is never part of a value.
     private static string RemoveIndentation(string text)
     {
         using var unindented = new SourceWriter();
@@ -90,7 +92,8 @@ public static class PreludeGenerator
             var pathEnd = content.IndexOfAny(['"', '\n'], pathStart);
             if (pathEnd < 0 || content[pathEnd] != '"')
             {
-                throw new GeneratorInputException(file, line, "The #include directive has no closing quote on its line.");
+                throw new GeneratorInputException(
+                    file, line, "The #include directive has no closing quote on its line.");
             }
 
             var relativeInclude = string.Create(pathEnd - pathStart, (content, pathStart), static (span, state) =>
@@ -106,12 +109,14 @@ public static class PreludeGenerator
             if (!File.Exists(includedFilePath))
             {
                 throw new GeneratorInputException(file, line,
-                    $"Cannot find the included file '{content[pathStart..pathEnd]}' ({includedFilePath}); prelude includes are relative to the resources directory.");
+                    $"Cannot find the included file '{content[pathStart..pathEnd]}' ({includedFilePath}); " +
+                    "prelude includes are relative to the resources directory.");
             }
 
             if (includeChain.FindIndex(p => s_pathComparer.Equals(p, includedFilePath)) >= 0)
             {
-                throw new GeneratorInputException(file, line, $"Include cycle: {DescribeCycle(includeChain, includedFilePath)}.");
+                throw new GeneratorInputException(
+                    file, line, $"Include cycle: {DescribeCycle(includeChain, includedFilePath)}.");
             }
 
             var includedAtDocumentEnd = atDocumentEnd && content.AsSpan(pathEnd + 1).Trim().IsEmpty;
@@ -202,7 +207,9 @@ public static class PreludeGenerator
             writer.AppendLine($"public const string Cpp = {CSharpStringLiteral.Quote(cppPrelude)};");
             writer.Line();
             writer.Line("/// <summary>");
-            writer.Line("/// The FNV-1a 64 hash of <see cref=\"Cuda\"/>, <see cref=\"Cpp\"/> and <c>InternalNames.yml</c> (the spelling of the");
+            writer.Line(
+                "/// The FNV-1a 64 hash of <see cref=\"Cuda\"/>, <see cref=\"Cpp\"/> and " +
+                "<c>InternalNames.yml</c> (the spelling of the");
             writer.Line("/// generated names), without carriage returns.");
             writer.Line("/// </summary>");
             writer.AppendLine($"public const string Hash = \"{ComputeHash(cudaPrelude, cppPrelude, internalNames)}\";");
@@ -213,8 +220,8 @@ public static class PreludeGenerator
 
     // [WHY] A device code export records this hash with its record layout (GpuDeviceExportAttribute.PreludeHash), and a
     // consumer compares it with its own: an imported text calls the prelude's helpers and spells the generated names as
-    // InternalNames.yml does. Carriage returns are skipped, so a Windows checkout (CRLF) and a WSL one (LF) give the same
-    // hash.
+    // InternalNames.yml does. Carriage returns are skipped, so a Windows checkout (CRLF) and a WSL one (LF) give the
+    // same hash.
     private static string ComputeHash(string cudaPrelude, string cppPrelude, string internalNames)
     {
         var hash = new Fnv1A64();

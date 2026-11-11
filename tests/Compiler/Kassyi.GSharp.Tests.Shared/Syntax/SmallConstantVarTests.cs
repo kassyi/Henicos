@@ -15,21 +15,21 @@ public class SmallConstantVarTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_VarOfSmallConstField_WrapsAtFieldType_Execution() =>
+    public void VarDeclaration_SmallConstField_WrapsAtFieldType() =>
         SmallConstantVarScenarios.Increment(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_VarOfSmallEnumMember_WrapsAtBaseType_Execution() =>
+    public void VarDeclaration_SmallEnumMember_WrapsAtBaseType() =>
         SmallConstantVarScenarios.EnumIncrement(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_VarOfSmallConstLocal_WrapsAtLocalType_Execution() =>
+    public void VarDeclaration_SmallConstLocal_WrapsAtLocalType() =>
         SmallConstantVarScenarios.LocalConst(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NarrowConstantInSwitchMathConditionalAndArguments_Execution() =>
+    public void NarrowConstant_InSwitchMathConditionalAndArguments_WrapsAtNarrowType() =>
         SmallConstantVarScenarios.NarrowUses(s_runNative);
 }

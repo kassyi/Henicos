@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// <para>
 /// A field or auto-property is assigned directly on the copy, and a computed property with a <c>set</c> or <c>init</c>
 /// body is assigned through the setter member function emitted by <c>StructPropertyEmitter</c>
-/// (<see cref="ComputedPropertyGetterCall"/>). A <c>with</c> on a class would allocate and is reported (GSH0003).
+/// (<see cref="PropertyAccessorCall"/>). A <c>with</c> on a class would allocate and is reported (GSH0003).
 /// </para>
 /// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
 /// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>

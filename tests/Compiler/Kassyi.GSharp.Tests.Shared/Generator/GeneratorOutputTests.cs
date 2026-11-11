@@ -19,7 +19,11 @@ public class GeneratorOutputTests
     [Scenario(TestScenario.Boundary)]
     [InlineData("GpuKernel_PartialDefinition.cu.cs", "PartialDefinitionKernels", "data", "value")]
     [InlineData("GpuKernel_PartialImplementation.cu.cs", "PartialImplementationKernels", "values", "fill")]
-    public void Test_PartialKernel_IsOneKernel(string testCase, string className, string arrayName, string valueName)
+    public void PartialKernel_MultiplePartialDeclarations_GeneratesSingleKernel(
+        string testCase,
+        string className,
+        string arrayName,
+        string valueName)
     {
         var compilation = CreateCompilation(
             Parse(RoslynTestUtility.ReadTestCase("Generators/" + testCase), "partial.cs"));
@@ -43,7 +47,7 @@ public class GeneratorOutputTests
     [InlineData("Cpu", "UsingAliasKernels")]
     [InlineData("Cuda", "GlobalAliasKernels")]
     [InlineData("Cpu", "GlobalAliasKernels")]
-    public void Test_AliasedAttribute_GeneratesWrapper(string dialect, string className)
+    public void AliasedAttribute_UsingAliasDirective_GeneratesWrapper(string dialect, string className)
     {
         var compilation = CreateCompilation(
             Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_GlobalAlias_Usings.cs"), "usings.cs"),
@@ -59,7 +63,7 @@ public class GeneratorOutputTests
     // The warmups follow the kernels, not the classes: OuterKernels is split by MiddleKernels
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ModuleContext_WarmsUpInKernelOrder()
+    public void ModuleContext_KernelSequence_WarmsUpInKernelOrder()
     {
         var compilation = CreateCompilation(
             Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_InterleavedClasses_A1.cu.cs"), "a1.cs"),
@@ -79,7 +83,7 @@ public class GeneratorOutputTests
     // context after the assembly symbol's name, as before the outputs were split
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_NoAssemblyName_KeepsBothNames()
+    public void ModuleContext_MissingAssemblyName_KeepsBothNames()
     {
         var compilation = CSharpCompilation.Create(assemblyName: null)
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
@@ -103,7 +107,7 @@ public class GeneratorOutputTests
     // would otherwise change
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ManagedBody_QualifiesNamesFromUsingDirectives()
+    public void ManagedBody_UsingDirectives_QualifiesNamesFromUsingDirectives()
     {
         var compilation = CreateCompilation(
             Parse(RoslynTestUtility.ReadTestCase("Generators/ManagedQualification.cs"), "qualification.cs"));
@@ -146,7 +150,7 @@ public class GeneratorOutputTests
     // auto-property of a value without 'in', an element returned by reference as it is. The generated code compiles
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ManagedOperatorMacro_PassesEachOperandFormThatCompiles()
+    public void ManagedOperatorMacro_VariousOperandForms_PassesEachFormThatCompiles()
     {
         var compilation = CreateCompilation(
             Parse(RoslynTestUtility.ReadTestCase("Generators/ManagedOperatorMacroForms.cs"), "forms.cs"));
@@ -165,7 +169,7 @@ public class GeneratorOutputTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TypeKeyedSharedMemorySites_RespectsPathMap()
+    public void TypeKeyedSharedMemorySites_PathMapOption_NormalizesSourcePaths()
     {
         var baseDirectory = Path.GetFullPath(@"C:\test_project");
         var filePath = Path.Combine(baseDirectory, "Source.cs");
@@ -202,7 +206,7 @@ public class GeneratorOutputTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TypeKeyedSharedMemorySites_RespectsLineDirective()
+    public void TypeKeyedSharedMemorySites_LineDirective_UsesMappedLineNumber()
     {
         const string filePath = "source.cs";
         const string mappedFile = "mapped_file.cs";
