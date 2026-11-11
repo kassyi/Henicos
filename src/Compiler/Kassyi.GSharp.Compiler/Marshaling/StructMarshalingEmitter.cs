@@ -48,12 +48,13 @@ internal static class StructMarshalingEmitter
         CollectReturnStruct(kernel.ReturnType, HostDialects.Cpu, cpuStructs);
 
         var sources = ImmutableArray.CreateBuilder<StructHostSource>(structTypes.Length);
+        var launcherAssembly = kernel.ContainingAssembly;
         foreach (var s in structTypes)
         {
             sources.Add(new StructHostSource(
                 AotHostNames.GetAotStructPath(s),
-                RenderStructForDialect(s, HostDialects.Cuda, kernel.ContainingAssembly),
-                cpuStructs.Contains(s) ? RenderStructForDialect(s, HostDialects.Cpu, kernel.ContainingAssembly) : string.Empty));
+                RenderStructForDialect(s, HostDialects.Cuda, launcherAssembly),
+                cpuStructs.Contains(s) ? RenderStructForDialect(s, HostDialects.Cpu, launcherAssembly) : string.Empty));
         }
 
         return sources.MoveToImmutable().AsEquatableArray();

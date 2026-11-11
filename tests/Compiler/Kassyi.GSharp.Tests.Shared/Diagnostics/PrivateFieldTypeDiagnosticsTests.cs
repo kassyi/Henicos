@@ -27,10 +27,14 @@ public class PrivateFieldTypeDiagnosticsTests
                 (DiagnosticOrigin.Analyzer, 65, 50, 65, 75),
             ],
             diagnostics.Ranges(GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher.Id));
+        const string FieldPart = "HiddenTypeHolder.Hidden' of field '_hidden' is not accessible from";
+        const string Ending =
+            ".PrivateFieldTypeInaccessibleKernels', where the generated launcher copies the field. " +
+            "Make the type internal or public.";
         Assert.Contains(
             diagnostics,
             static d => d.Id == GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher.Id &&
-                        d.Message.Contains("HiddenTypeHolder.Hidden' of field '_hidden' is not accessible from", StringComparison.Ordinal) &&
-                        d.Message.EndsWith(".PrivateFieldTypeInaccessibleKernels', where the generated launcher copies the field. Make the type internal or public.", StringComparison.Ordinal));
+                        d.Message.Contains(FieldPart, StringComparison.Ordinal) &&
+                        d.Message.EndsWith(Ending, StringComparison.Ordinal));
     }
 }

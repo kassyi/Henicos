@@ -39,7 +39,8 @@ public class PrivateFieldStructTests : TranspilerTestBase
         Assert.Equal(-3, holder.Scale);
         Assert.Same(data, holder.Data);
 
-        // Fixed buffer in (first + last element, 100 + 400) through the nested struct's private array, and out (each + 1)
+        // Fixed buffer in (first + last element, 100 + 400) through the nested struct's private array, and out
+        // (each + 1)
         // mutant: StructBlockCopyEmitter.WriteBlockCopy FixedBuffer copies 0 bytes (`MemoryCopy(..., 0, 0)`) -> the sum
         // is 0
         Assert.Equal(100 + 400, innerValues[0]);
@@ -52,8 +53,9 @@ public class PrivateFieldStructTests : TranspilerTestBase
         Assert.Equal(15, holder.Inner.Bias);
 
         // Struct array in (7 + 11 into the second element's private array) and out (first element's _bias + 1)
-        // mutant: StructMarshalMethodEmitter.WriteCpuMarshalArrayMember writes `if (false) ` before Marshal_<element> ->
-        // the elements reach the device without their arrays and the launch throws NullReferenceException
+        // mutant: StructMarshalMethodEmitter.WriteCpuMarshalArrayMember writes `if (false) ` before
+        // Marshal_<element> -> the elements reach the device without their arrays and the launch throws
+        // NullReferenceException
         Assert.Equal(18, secondItemValues[0]);
         Assert.Equal(8, holder.Items[0].Bias);
         Assert.Equal(11, holder.Items[1].Bias);

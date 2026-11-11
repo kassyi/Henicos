@@ -4,13 +4,13 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class NativeStructEmitter
 {
     /// <summary>Emits the explicit struct declaration with computed field offsets for <paramref name="dialect"/>.</summary>
-    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, ITranspilerDialect dialect,
-        IAssemblySymbol launcherAssembly) =>
+    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s,
+        ITranspilerDialect dialect, IAssemblySymbol launcherAssembly) =>
         WriteNativeStructDeclaration(writer, s, TypeLayoutCalculator.GetStructLayout(s, dialect), launcherAssembly);
 
     /// <summary>Emits the explicit struct declaration with computed field offsets from <paramref name="structLayout"/>.</summary>
-    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
-        IAssemblySymbol launcherAssembly)
+    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s,
+        StructLayoutInfo structLayout, IAssemblySymbol launcherAssembly)
     {
         var parents = AotHostNames.GetEnclosingCustomStructs(s);
 
@@ -66,8 +66,8 @@ internal static class NativeStructEmitter
     /// member by member and that holds the hidden field of a captured primary constructor parameter (<c>&lt;a&gt;P</c>),
     /// which generated C# cannot name (#495), the backing field of a property whose accessors use the <c>field</c>
     /// keyword, which generated C# must not reach through the accessors: the transfer copies the stored value, or a
-    /// field or fixed buffer that code generated into <paramref name="launcherAssembly"/> cannot name (a private field, an
-    /// internal field of another assembly; #808).
+    /// field or fixed buffer that code generated into <paramref name="launcherAssembly"/> cannot name (a private field,
+    /// an internal field of another assembly; #808).
     /// </summary>
     /// <remarks>
     /// The mirror declares the fields of <paramref name="s"/> in <see cref="StructAbiMembers"/> order, which is the CLR
@@ -146,9 +146,10 @@ internal static class NativeStructEmitter
     internal const string HostMirrorOffsetsMatch = "FieldOffsetsMatch";
 
     // [WHY] The size check alone misses two fields that trade places. Each field that generated code can name on the
-    // struct itself (an ordinary field that HostFieldAccess.CanName accepts) is compared with the mirror's, by Unsafe.ByteOffset from
-    // the start of a default value; the hidden fields and the backing fields of auto-properties have no name to compare.
-    // The result is computed once, when the mirror is first used.
+    // struct itself (an ordinary field that HostFieldAccess.CanName accepts) is compared with the mirror's, by
+    // Unsafe.ByteOffset from the start of a default value; the hidden fields, the backing fields of auto-properties
+    // and the fields the launcher cannot name have no name to compare. The result is computed once, when the mirror is
+    // first used.
     private static void WriteFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s, IAssemblySymbol launcherAssembly)
     {
         const string Unsafe = HostTypeNames.Unsafe;
