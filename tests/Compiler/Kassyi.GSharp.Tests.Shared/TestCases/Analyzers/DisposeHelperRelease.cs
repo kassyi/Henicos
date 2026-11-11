@@ -280,8 +280,8 @@ public sealed class LocalDirect : IDisposable
     }
 }
 
-// No GSH0022: the object itself passed to a method whose body the analysis cannot see, which may release its fields (a
-// tree of nodes disposed by one walk)
+// No GSH0022: the object itself passed to a method of the same assembly whose body the analysis cannot see, which may
+// release its fields (a tree of nodes disposed by one walk)
 public sealed class EscapedThis : IDisposable
 {
     private Resource? _a = new Resource();
@@ -295,3 +295,12 @@ public static class TreeDisposal
 {
     public static void Dispose(EscapedThis node) => node.Release();
 }
+
+// GSH0022: the object itself passed to a method of another assembly, which does not know its fields
+public sealed class ThisToOtherAssembly : IDisposable
+{
+    private Resource? _a = new Resource();
+
+    public void Dispose() => GC.KeepAlive(this);
+}
+

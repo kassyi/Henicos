@@ -197,7 +197,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
         foreach (var member in ctx.DisposableMembers)
         {
-            var release = GetRelease(disposeBodies, ctx.NamedType, member.Name);
+            var release = GetRelease(disposeBodies, ctx.NamedType, ctx.AnalysisContext.Compilation, member.Name);
             var isBorrowed = ctx.BorrowedFields.Contains(member.Name);
 
             // [WHY] GSH0027 needs a certain release (an escaped field may only be logged); GSH0022 reports only a field
@@ -293,13 +293,14 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     private const int MaxHelperDepth = 3;
 
     private static FieldRelease GetRelease(ImmutableArray<SyntaxNode>.Builder disposeBodies, INamedTypeSymbol type,
-        string fieldName)
+        Compilation compilation, string fieldName)
     {
         var visited = new Dictionary<(SyntaxNode Body, string Name), int>();
         var release = FieldRelease.None;
         foreach (var body in disposeBodies)
         {
-            release = Max(release, GetRelease(body, body, fieldName, isField: true, type, depth: 0, visited));
+            release = Max(release,
+                GetRelease(body, body, fieldName, isField: true, type, compilation, depth: 0, visited));
         }
 
         return release;
@@ -312,7 +313,8 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     // [WHY] <visited> keeps the smallest depth each body was walked at for <name>: a body reached first on a deep path
     // is walked again from a shallower one, which may follow its helpers further. A cycle stops there with None.
     private static FieldRelease GetRelease(SyntaxNode body, SyntaxNode member, string name, bool isField,
-        INamedTypeSymbol type, int depth, Dictionary<(SyntaxNode Body, string Name), int> visited)
+        INamedTypeSymbol type, Compilation compilation, int depth,
+        Dictionary<(SyntaxNode Body, string Name), int> visited)
     {
         if (visited.TryGetValue((body, name), out var seen) && seen <= depth)
         {
@@ -336,7 +338,8 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                 return FieldRelease.Disposed;
             }
 
-            release = Max(release, GetHelperRelease(invocation, member, name, isField, type, depth, visited));
+            release = Max(release,
+                GetHelperRelease(invocation, member, name, isField, type, compilation, depth, visited));
             if (release == FieldRelease.Disposed)
             {
                 return release;
@@ -347,7 +350,8 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     }
 
     private static FieldRelease GetHelperRelease(InvocationExpressionSyntax invocation, SyntaxNode member, string name,
-        bool isField, INamedTypeSymbol type, int depth, Dictionary<(SyntaxNode Body, string Name), int> visited)
+        bool isField, INamedTypeSymbol type, Compilation compilation, int depth,
+        Dictionary<(SyntaxNode Body, string Name), int> visited)
     {
         var arguments = invocation.ArgumentList.Arguments;
         var passedAt = arguments
@@ -361,8 +365,9 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         if (helpers.Length == 0)
         {
             // nameof(<name>) only names it; a method the analysis cannot see (another type, a base type, a delegate)
-            // may release what it is given, and given this, any field of it
-            var escapes = passedAt >= 0 || (isField && PassesThis(arguments));
+            // may release what it is given, and a method of the same assembly given this, any field of it
+            var escapes = passedAt >= 0 || (isField && PassesThis(arguments) &&
+                IsInAssemblyOf(invocation, type, compilation));
             return escapes && !IsNameOf(invocation) ? FieldRelease.Escaped : FieldRelease.None;
         }
 
@@ -382,13 +387,14 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             if (isField)
             {
                 release = Max(release,
-                    GetRelease(helperBody, helperMember, name, isField: true, type, depth + 1, visited));
+                    GetRelease(helperBody, helperMember, name, isField: true, type, compilation, depth + 1, visited));
             }
 
             if (passedAt >= 0 && GetParameterName(arguments[passedAt], passedAt, parameters) is { } parameter)
             {
                 release = Max(release,
-                    GetRelease(helperBody, helperMember, parameter, isField: false, type, depth + 1, visited));
+                    GetRelease(helperBody, helperMember, parameter, isField: false, type, compilation, depth + 1,
+                        visited));
             }
         }
 
@@ -449,6 +455,18 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     // The body of a local function; an extern one has none, so its declaration (which holds no call) stands for it
     private static SyntaxNode GetLocalFunctionBody(LocalFunctionStatementSyntax local) =>
         (SyntaxNode?)local.Body ?? local.ExpressionBody ?? (SyntaxNode)local;
+
+    // Whether the method <invocation> calls belongs to the assembly of <type>: an object handed to its own assembly may
+    // be released there (a tree of nodes disposed by one walk); a method of another assembly does not know its fields
+    private static bool IsInAssemblyOf(InvocationExpressionSyntax invocation, INamedTypeSymbol type,
+        Compilation compilation)
+    {
+#pragma warning disable RS1030 // Only reached for a Dispose that passes this to a method the syntax alone cannot place
+        var model = compilation.GetSemanticModel(invocation.SyntaxTree);
+#pragma warning restore RS1030
+        return model.GetSymbolInfo(invocation).Symbol is IMethodSymbol method &&
+            SymbolEqualityComparer.Default.Equals(method.ContainingAssembly, type.ContainingAssembly);
+    }
 
     // this as an argument: the callee reaches every field of the object
     private static bool PassesThis(SeparatedSyntaxList<ArgumentSyntax> arguments) =>
