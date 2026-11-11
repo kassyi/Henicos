@@ -66,7 +66,7 @@ internal sealed class UnsupportedConstructRule :
     public void Analyze(PredefinedTypeSyntax node, ref ValidationContext context)
     {
         if (!node.Keyword.IsKind(SyntaxKind.StringKeyword) ||
-            node.Parent is VariableDeclarationSyntax declaration && declaration.Type == node ||
+            (node.Parent is VariableDeclarationSyntax declaration && declaration.Type == node) ||
             IsInSignature(node))
         {
             return;

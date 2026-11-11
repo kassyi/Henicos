@@ -79,7 +79,7 @@ internal sealed class IteratorConsumptionRule :
         }
 
         var top = IteratorTypeResolver.UnwrapParentheses(node);
-        if (top.Parent is ForEachStatementSyntax forEach && forEach.Expression == top ||
+        if ((top.Parent is ForEachStatementSyntax forEach && forEach.Expression == top) ||
             IsHandledByEnclosingRule(top))
         {
             return;
@@ -194,7 +194,7 @@ internal sealed class IteratorConsumptionRule :
         };
 
     private static bool IsDirectForEachOrLocalInitializer(ExpressionSyntax top) =>
-        top.Parent is ForEachStatementSyntax forEach && forEach.Expression == top ||
+        (top.Parent is ForEachStatementSyntax forEach && forEach.Expression == top) ||
         top.Parent is EqualsValueClauseSyntax
         {
             Parent: VariableDeclaratorSyntax

@@ -21,8 +21,9 @@ internal readonly struct ValidationContext(
 {
     private sealed class MethodAnalysisCache
     {
-        public MethodFlowGraph? FlowGraph;
-        public readonly Dictionary<ArgumentMasks, UniformityAnalysis?> Uniformity = new();
+        public MethodFlowGraph? FlowGraph { get; set; }
+
+        public Dictionary<ArgumentMasks, UniformityAnalysis?> Uniformity { get; } = new();
     }
 
     private readonly MethodAnalysisCache _analysisCache = new();
