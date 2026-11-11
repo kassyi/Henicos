@@ -203,10 +203,14 @@ internal sealed class IrEffectWalker(Compilation compilation)
 
         WriteRoot(root);
         if (assignment.Target is IrPropertyReference { Property: var property } &&
-            MemberEffects.IsUserAccessorProperty(property) &&
-            MayWriteMemory(property.SetMethod))
+            MemberEffects.IsUserAccessorProperty(property))
         {
-            WriteMemory();
+            // The setter may read anything
+            ReadMemory();
+            if (MayWriteMemory(property.SetMethod))
+            {
+                WriteMemory();
+            }
         }
     }
 
@@ -228,24 +232,15 @@ internal sealed class IrEffectWalker(Compilation compilation)
 
         if (target is IrPropertyReference { Property: var property } && MemberEffects.IsUserAccessorProperty(property))
         {
-            AddComputedPropertyUpdate(property, isIncrement: value == null);
+            AddComputedPropertyUpdate(property);
         }
     }
 
-    // The accessors an update of a computed property calls: the getter of an increment, and the setter
-    private void AddComputedPropertyUpdate(IPropertySymbol property, bool isIncrement)
+    // The accessors an update of a computed property calls: the getter, which may read anything, then the setter
+    private void AddComputedPropertyUpdate(IPropertySymbol property)
     {
-        if (isIncrement)
-        {
-            // An increment of a computed property calls its getter, which may read anything
-            ReadMemory();
-            if (MayWriteMemory(property.GetMethod))
-            {
-                WriteMemory();
-            }
-        }
-
-        if (MayWriteMemory(property.SetMethod))
+        ReadMemory();
+        if (MayWriteMemory(property.GetMethod) || MayWriteMemory(property.SetMethod))
         {
             WriteMemory();
         }

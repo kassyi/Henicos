@@ -108,8 +108,9 @@ internal static class MemberEffects
     }
 
     /// <summary>
-    /// Whether reading <paramref name="expression"/> calls a getter whose effects count: a computed property
-    /// (<c>s.P</c>, or <c>P</c> through the implicit <c>this</c>) or an indexer that may change its struct.
+    /// Whether reading <paramref name="expression"/> calls a getter whose result is a temporary: a computed property
+    /// (<c>s.P</c>, or <c>P</c> through the implicit <c>this</c>), or an indexer that returns by value (an element of an
+    /// <c>ImmutableArray&lt;T&gt;</c> or an <c>ArraySegment&lt;T&gt;</c> lives in memory, not in the struct).
     /// </summary>
     public static bool IsGetterCall(ExpressionSyntax expression, SemanticModel model)
     {
@@ -120,8 +121,7 @@ internal static class MemberEffects
 
         return expression is IdentifierNameSyntax or MemberAccessExpressionSyntax or ElementAccessExpressionSyntax &&
                model.GetSymbol(expression) is IPropertySymbol property &&
-               (IsUserAccessorProperty(property) ||
-                property.IsIndexer && MayMutateValueTypeReceiver(property, model.Compilation));
+               (IsUserAccessorProperty(property) || property is { IsIndexer: true, RefKind: RefKind.None });
     }
 
     // __gsharp_ctx-><local>: ContextHoister moves a local (or a lowering temporary) of a state machine into its frame,
