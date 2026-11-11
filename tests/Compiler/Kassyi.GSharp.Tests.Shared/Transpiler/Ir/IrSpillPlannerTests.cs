@@ -35,9 +35,22 @@ public class IrSpillPlannerTests
     }
 
     [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("TargetIndexThatCanThrow", "spill[TargetPart](t / u) split(Suspend())")]
+    [InlineData("StructElementFieldTarget", "spill[TargetPart](b[i]) split(Suspend())")]
+    [InlineData("RefElementArgumentOfACallThatDoesNotSplit", "spill[TargetPart](b[i]) split(Suspend())")]
+    [InlineData("TargetIndexWrittenByTheValue", "spill[TargetPart](t + 1) spill[SplitArgument](Inc(ref t)) " +
+                                                "split(SuspendWith(Inc(ref t), 0))")]
+    public void Plan_PartOfATargetLocation_IsSpilledBeforeTheSplit(string kernel, string expected)
+    {
+        Assert.Equal(expected, PrintLast(kernel));
+    }
+
+    [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("LocalLeftOperandStays", "split(Warp.ShuffleSync(0xffffffffu, y, 0))")]
     [InlineData("SpanLocalStays", "split(Suspend())")]
+    [InlineData("TargetIndexOverLocals", "split(Warp.ActiveMask())")]
     public void Plan_OperandNothingCanChange_StaysInPlace(string kernel, string expected)
     {
         Assert.Equal(expected, PrintLast(kernel));
@@ -62,7 +75,7 @@ public class IrSpillPlannerTests
         var steps = Plan("LeftOperandOfAConditionalSplit").Statements[^1].Steps;
 
         Assert.Equal("spill[LeftOperand](a[0]) cond{split(Suspend())|}", Print(steps));
-        Assert.True(steps[0].ForcedByConditional);
+        Assert.True(Assert.IsType<IrSpillValue>(steps[0]).ForcedByConditional);
     }
 
     [Theory]
@@ -95,11 +108,13 @@ public class IrSpillPlannerTests
 
     // spill[<role>](<source>), split(<source>), cond{<branch>|<branch>}
     private static string Print(IEnumerable<IrSpillStep> steps) =>
-        string.Join(" ", steps.Select(static step => step.Kind switch
+        string.Join(" ", steps.Select(static step => step switch
         {
-            IrSpillStepKind.Spill => $"spill[{step.Role}]({Source(step.Node)})",
-            IrSpillStepKind.Split => $"split({Source(step.Node)})",
-            _ => "cond{" + string.Join("|", step.Branches.Select(static branch => Print(branch))) + "}"
+            IrSpillValue spill => $"spill[{spill.Role}]({Source(step.Node)})",
+            IrSpillSplit => $"split({Source(step.Node)})",
+            IrSpillConditional conditional =>
+                "cond{" + string.Join("|", conditional.Branches.Select(static branch => Print(branch))) + "}",
+            _ => throw new InvalidOperationException("Unknown step " + step.GetType().Name)
         }));
 
     private static string Source(IrExpression node) =>

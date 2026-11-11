@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Ir.Splitting;
 
 /// <summary>
-/// Why an operand is evaluated into a temporary before a split (<see cref="IrSpillStepKind.Spill"/>).
+/// Why an operand is evaluated into a temporary before a split (<see cref="IrSpillValue"/>).
 /// </summary>
 internal enum IrSpillRole
 {

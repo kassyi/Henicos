@@ -3,6 +3,11 @@ using Kassyi.GSharp.Core;
 
 namespace IrSpillPlannerCases;
 
+public struct Cell
+{
+    public int F;
+}
+
 // Each kernel ends with the statement the test plans; the split points are a warp shuffle and device functions that
 // suspend (they reach a barrier)
 public static class Cases
@@ -127,6 +132,48 @@ public static class Cases
     public static void LeftOperandOfAConditionalSplit(int[] a, bool c, int[] result)
     {
         result[0] = a[0] + (c ? Suspend() : 0);
+    }
+
+    [GpuDeviceFunction]
+    public static int Store(ref int target, int value)
+    {
+        target = value;
+        return value;
+    }
+
+    [GpuKernel]
+    public static void TargetIndexOverLocals(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        r[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void TargetIndexThatCanThrow(int[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        r[t / u] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void TargetIndexWrittenByTheValue(int[] r)
+    {
+        int t = ThreadIndex.X;
+        r[t + 1] = SuspendWith(Inc(ref t), 0);
+    }
+
+    [GpuKernel]
+    public static void StructElementFieldTarget(Cell[] cells, int[] b)
+    {
+        int i = ThreadIndex.X;
+        cells[b[i]].F = Suspend();
+    }
+
+    [GpuKernel]
+    public static void RefElementArgumentOfACallThatDoesNotSplit(int[] a, int[] b, int[] result)
+    {
+        int i = ThreadIndex.X;
+        result[0] = Store(ref a[b[i]], Suspend());
     }
 
     [GpuKernel]

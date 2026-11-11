@@ -28,11 +28,13 @@ internal static class IrSpillTrace
         var tokens = new List<Token>();
         foreach (var step in steps)
         {
-            tokens.Add(step.Kind switch
+            tokens.Add(step switch
             {
-                IrSpillStepKind.Spill => Leaf("spill", step.Node.Source.Span, text),
-                IrSpillStepKind.Split => Leaf("split", step.Node.Source.Span, text),
-                _ => Conditional(step.Branches.Select(branch => Of(branch, text)).ToList(), step.Node.Source.Span)
+                IrSpillValue => Leaf("spill", step.Node.Source.Span, text),
+                IrSpillSplit => Leaf("split", step.Node.Source.Span, text),
+                IrSpillConditional conditional => Conditional(
+                    conditional.Branches.Select(branch => Of(branch, text)).ToList(), step.Node.Source.Span),
+                _ => throw new InvalidOperationException("Unknown step " + step.GetType().Name)
             });
         }
 
@@ -51,21 +53,21 @@ internal static class IrSpillTrace
         var rest = new List<Token>();
         foreach (var step in steps)
         {
-            switch (step.Kind)
+            switch (step)
             {
-                case IrSpillStepKind.Spill when IsMadeBySyntaxPasses(step):
+                case IrSpillValue spill when IsMadeBySyntaxPasses(spill):
                     rest.Add(Leaf("spill", step.Node.Source.Span, text));
                     break;
-                case IrSpillStepKind.Split:
+                case IrSpillSplit:
                     rest.Add(Leaf("split", step.Node.Source.Span, text));
                     break;
-                case IrSpillStepKind.Conditional when step.Node is IrCoalesce:
+                case IrSpillConditional { Node: IrCoalesce } coalesce:
                     // The syntax passes do not lower ??: its right operand runs unconditionally, in place
-                    rest.AddRange(AsSyntaxPassesDo(step.Branches[0], text));
+                    rest.AddRange(AsSyntaxPassesDo(coalesce.Branches[0], text));
                     break;
-                case IrSpillStepKind.Conditional:
+                case IrSpillConditional conditional:
                     conditionals.Add(Conditional(
-                        step.Branches.Select(branch => AsSyntaxPassesDo(branch, text)).ToList(),
+                        conditional.Branches.Select(branch => AsSyntaxPassesDo(branch, text)).ToList(),
                         step.Node.Source.Span));
                     break;
             }
@@ -75,7 +77,7 @@ internal static class IrSpillTrace
     }
 
     /// <summary>Whether the syntax-based passes make the spill of this step.</summary>
-    public static bool IsMadeBySyntaxPasses(IrSpillStep step) =>
+    public static bool IsMadeBySyntaxPasses(IrSpillValue step) =>
         step.Role is IrSpillRole.SplitArgument or IrSpillRole.LeftOperand && !step.ForcedByConditional;
 
     /// <summary>

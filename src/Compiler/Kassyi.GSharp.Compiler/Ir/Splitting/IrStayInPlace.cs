@@ -2,6 +2,7 @@ using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Ir.Splitting;
 
@@ -44,6 +45,35 @@ internal static class IrStayInPlace
         return variable.IsRefLike
             ? !read.InterferesWith(later)
             : IsUnaliased(variable, compilation) && !read.InterferesWith(others);
+    }
+
+    /// <summary>
+    /// Whether the index of a target, read once before the split, can be read after it instead: it stays in place
+    /// (<see cref="Stays"/>), or it is built without a user-defined or checked operator and without division or
+    /// remainder (which can throw) from operands that stay and from values that read nothing (<c>ThreadIndex.X</c>).
+    /// </summary>
+    public static bool StaysAsIndex(IrExpression index, in ExpressionEffects others, in ExpressionEffects later,
+        Compilation compilation)
+    {
+        if (Stays(index, others, later, compilation))
+        {
+            return true;
+        }
+
+        return WithoutBuiltInImplicitConversions(index) switch
+        {
+            IrBinary { Operator: { Method: null, IsChecked: false } @operator } binary =>
+                @operator.Kind is not (BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder) &&
+                StaysAsIndex(binary.Left, others, later, compilation) &&
+                StaysAsIndex(binary.Right, others, later, compilation),
+            IrUnary { Operator: { Method: null, IsChecked: false } } unary =>
+                StaysAsIndex(unary.Operand, others, later, compilation),
+            IrConversion { Conversion: { Method: null, IsChecked: false } } conversion =>
+                StaysAsIndex(conversion.Operand, others, later, compilation),
+            IrPropertyReference { Receiver: null, Arguments.IsEmpty: true } property =>
+                IrEffects.Of(property, compilation).IsEmpty,
+            _ => false
+        };
     }
 
     /// <summary>What evaluating <paramref name="operand"/> as its holder uses it reads and writes.</summary>
