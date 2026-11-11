@@ -263,6 +263,114 @@ public sealed class WhereDeviceCountTests : IDisposable
         Assert.Equal(nameof(InvalidOperationException), error);
     }
 
+    public static TheoryData<string> ScalarDivisions() => ["SelectDivide", "SelectModulo", "SelectDivideByUInt32"];
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ScalarDivisions))]
+    public void ScalarDivision_ZeroDivisorAfterWhereSelectingNone_MatchesSystemLinq(string operation)
+    {
+        // P: System.Linq divides only the elements, so a zero divisor over a Where that selects nothing divides
+        // nothing: Count 0, Sum 0 and an empty Evaluate. The flags select none ([0, 0, 0]) or one element that Skip(1)
+        // then drops (a device count with a skip), while the capacity stays 3.
+        // mutant: VectorBinaryScalarExpressions.cs:68 `if (vecResult.Count.Read(workspace) > 0)` -> `if (evalCount > 0)`
+        // input: SelectDivide, SelectModulo (DivideByZeroException from the capacity)
+        // mutant: VectorUnaryExpressions.cs:113 the `if (divisor == 0)` check moved back before the count is read
+        // input: SelectDivideByUInt32
+        BigInteger[] values = [1, -2, 3];
+        foreach (var (flags, skip) in new[] { (new uint[] { 0, 0, 0 }, 0), (new uint[] { 0, 1, 0 }, 1) })
+        {
+            var selected = values.Where((_, i) => flags[i] == 1).Skip(skip).ToArray();
+            var expected = selected.Select(v => Reference(v, operation, 0)).ToArray();
+            var array = CreateArray(values);
+
+            IGpuBigIntVectorExpression Divided() =>
+                DivideBy(array.AsVectorizedEnumerable().Where(Flags(flags)).Skip(skip), operation, 0);
+
+            Assert.Equal(new BigInteger(expected.Length), ReadScalar(Divided().Count()));
+            Assert.Equal(expected.Aggregate(BigInteger.Zero, (s, v) => s + v), ReadScalar(Divided().Sum()));
+            using var divided = Divided();
+            Assert.Equal(expected, Read(divided.Evaluate(_workspace)));
+        }
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [MemberData(nameof(ScalarDivisions))]
+    public void ScalarDivision_ZeroDivisorAfterWhereSelectingSome_ThrowsDivideByZeroException(string operation)
+    {
+        // P: a zero divisor throws as soon as one element is divided, as System.Linq does; the only selected element
+        // is the middle one, so the count (1) and not the capacity (3) decides.
+        // mutant: VectorBinaryScalarExpressions.cs:70 `throw new DivideByZeroException();` removed
+        // input: SelectDivide, SelectModulo (the division is skipped and Sum is 0)
+        // mutant: VectorUnaryExpressions.cs:37 `if (elements > 0)` -> `if (elements > 1)`
+        // input: SelectDivideByUInt32
+        // survives: VectorUnaryExpressions.cs:113 `if (divisor == 0)` -> `if (divisor == 1)` (DivideByUInt32 throws too)
+        BigInteger[] values = [1, -2, 3];
+        uint[] flags = [0, 1, 0];
+        var array = CreateArray(values);
+
+        Assert.Throws<DivideByZeroException>(
+            () => values.Where((_, i) => flags[i] == 1).Select(v => Reference(v, operation, 0)).ToArray());
+        using var sum = DivideBy(array.AsVectorizedEnumerable().Where(Flags(flags)), operation, 0).Sum();
+        Assert.Throws<DivideByZeroException>(() => sum.Evaluate(_workspace));
+        using var divided = DivideBy(array.AsVectorizedEnumerable().Where(Flags(flags)), operation, 0);
+        Assert.Throws<DivideByZeroException>(() => divided.Evaluate(_workspace));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ScalarDivisions))]
+    public void ScalarDivision_ZeroDivisorOverAnEmptyVector_ReturnsEmptyResult(string operation)
+    {
+        // P: a vector of capacity 0 has no element to divide: an empty result and Sum 0, as System.Linq.
+        // mutant: VectorUnaryExpressions.cs:113 the `if (divisor == 0)` check moved back before the count is read
+        // input: SelectDivideByUInt32 (it threw before the count was known)
+        var array = CreateArray([]);
+        var expected = Array.Empty<BigInteger>().Select(v => Reference(v, operation, 0)).ToArray();
+
+        Assert.Equal(expected.Aggregate(BigInteger.Zero, (s, v) => s + v),
+            ReadScalar(DivideBy(array.AsVectorizedEnumerable(), operation, 0).Sum()));
+        using var divided = DivideBy(array.AsVectorizedEnumerable(), operation, 0);
+        Assert.Equal(expected, Read(divided.Evaluate(_workspace)));
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [MemberData(nameof(ScalarDivisions))]
+    public void ScalarDivision_NonZeroDivisorAfterWhere_MatchesSystemLinq(string operation)
+    {
+        // P: the zero divisor handling leaves the division by a non-zero divisor as it was: the selected elements
+        // divided by 3 (truncated toward zero, the remainder with the sign of the dividend), as BigInteger.
+        // mutant: VectorBinaryScalarExpressions.cs:77 `DispatchKernel(workspace, operands, (uint)evalCount);` removed
+        // input: SelectDivide, SelectModulo (the results are whatever the cache held)
+        BigInteger[] values = [7, -9, 10, -11, 4];
+        uint[] flags = [1, 0, 1, 1, 0];
+        var expected = values.Where((_, i) => flags[i] == 1).Select(v => Reference(v, operation, 3)).ToArray();
+        var array = CreateArray(values);
+
+        using var divided = DivideBy(array.AsVectorizedEnumerable().Where(Flags(flags)), operation, 3);
+
+        Assert.Equal(expected, Read(divided.Evaluate(_workspace)));
+    }
+
+    // The scalar division named by the theory data, by a non-negative divisor
+    private IGpuBigIntVectorExpression DivideBy(IGpuBigIntVectorExpression source, string operation, uint divisor)
+    {
+        var scalar = new GpuBigInt(Keep(GpuBigUInt.FromBigInteger(_workspace, divisor, Words)), false);
+        return operation switch
+        {
+            "SelectDivide" => source.SelectDivide(scalar),
+            "SelectModulo" => source.SelectModulo(scalar),
+            "SelectDivideByUInt32" => source.SelectDivideByUInt32(divisor),
+            _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null)
+        };
+    }
+
+    // The same operation on BigInteger: division truncates toward zero, the remainder has the dividend's sign
+    private static BigInteger Reference(BigInteger value, string operation, uint divisor) =>
+        operation == "SelectModulo" ? BigInteger.Remainder(value, divisor) : BigInteger.Divide(value, divisor);
+
     // A view cannot be captured by a lambda, so Assert.Throws cannot take the evaluation
     private string? EvaluateAndCatch(IGpuBigIntVectorExpression expression)
     {

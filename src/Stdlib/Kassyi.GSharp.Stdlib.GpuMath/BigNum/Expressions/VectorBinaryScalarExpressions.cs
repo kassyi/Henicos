@@ -56,11 +56,25 @@ internal abstract class VectorBinaryScalarExpressionBase(
                 scalar: scalarResult.Value.Handle);
             var operands = new VectorScalarOperands(vecResult.Storage, scalarResult, output.Destination);
             // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
-            if (evalCount > 0)
+            if (evalCount == 0)
             {
-                DispatchKernel(workspace, operands, (uint)evalCount);
+                return new VectorEvaluation(output.Close(workspace), vecResult.Count, _cache.Lease);
             }
 
+            if (DividesByZero(operands))
+            {
+                // C# divides only the elements, so a zero divisor throws only when there is one; after a Where that
+                // selects none nothing is divided and nothing is written. Only this path reads a device count.
+                if (vecResult.Count.Read(workspace) > 0)
+                {
+                    throw new DivideByZeroException();
+                }
+
+                return new VectorEvaluation(output.Close(workspace, DeviceElementCount.Static(0)), vecResult.Count,
+                    _cache.Lease);
+            }
+
+            DispatchKernel(workspace, operands, (uint)evalCount);
             return new VectorEvaluation(output.Close(workspace), vecResult.Count, _cache.Lease);
         }
         finally
@@ -94,6 +108,11 @@ internal abstract class VectorBinaryScalarExpressionBase(
             ScalarSign = operands.Scalar.IsNegative ? 1u : 0u,
             IsScalar = true
         };
+
+    /// <summary>
+    /// Gets whether the operation is a division whose scalar divisor is zero (one read of the scalar).
+    /// </summary>
+    protected virtual bool DividesByZero(VectorScalarOperands operands) => false;
 
     protected abstract void DispatchKernel(
         GpuWorkspace workspace,
@@ -182,16 +201,13 @@ internal sealed class VectorDivScalarExpression(
     : VectorBinaryScalarExpressionBase(vector, scalar,
         BigIntWidths.OfWords(Math.Max(vector.WordsPerElement, scalar.NumWords)))
 {
+    protected override bool DividesByZero(VectorScalarOperands operands) => operands.Scalar.IsZero();
+
     protected override void DispatchKernel(
         GpuWorkspace workspace,
         VectorScalarOperands operands,
         uint gridDimX)
     {
-        if (operands.Scalar.IsZero())
-        {
-            throw new DivideByZeroException();
-        }
-
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
         {
             Op = CreateScalarOp(operands),
@@ -210,16 +226,13 @@ internal sealed class VectorModScalarExpression(
     : VectorBinaryScalarExpressionBase(vector, scalar,
         BigIntWidths.OfWords(Math.Max(vector.WordsPerElement, scalar.NumWords)))
 {
+    protected override bool DividesByZero(VectorScalarOperands operands) => operands.Scalar.IsZero();
+
     protected override void DispatchKernel(
         GpuWorkspace workspace,
         VectorScalarOperands operands,
         uint gridDimX)
     {
-        if (operands.Scalar.IsZero())
-        {
-            throw new DivideByZeroException();
-        }
-
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
         {
             Op = CreateScalarOp(operands),
