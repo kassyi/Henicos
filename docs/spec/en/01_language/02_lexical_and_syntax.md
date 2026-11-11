@@ -210,9 +210,9 @@ public static partial class MathDeviceHelpers
 }
 ```
 
-Transpiled CUDA C++ equivalent, simplified: the real output mangles every name (the kernel becomes
-`__gsharp_k_<Namespace>__MathDeviceHelpers__SampleKernel`, the parameter `__gsharp_id_0_data`), and has no comments and
-no indentation:
+Transpiled CUDA C++ equivalent, simplified: the real output mangles every name (the kernel name starts with
+`__gsharp_k_` followed by its namespace and type, and the parameter becomes `__gsharp_id_0_data`), and has no comments
+and no indentation:
 ```cpp
 // Execution Context: Generated CUDA C++ (Device)
 inline __device__ int ComputeStep(int input, int offset, int scale)
