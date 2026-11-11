@@ -158,13 +158,13 @@ catch (GpuOnlyException ex)
 
 Thrown when a native CUDA Driver API invocation fails (returns a `CUresult` other than `CUDA_SUCCESS` / `0`).
 
-Common failure scenarios include:
+Common failure scenarios include (the `CudaException.Result` value of type `CUresult`):
 
-- `CUDA_ERROR_OUT_OF_MEMORY` (2): Insufficient device VRAM during buffer allocation (`cuMemAlloc_v2`).
-- `CUDA_ERROR_INVALID_VALUE` (1): Invalid grid or block launch dimensions, null pointers, or mismatched kernel parameter signatures.
-- `CUDA_ERROR_NO_DEVICE` (100): No CUDA-capable GPU detected on the host system.
-- `CUDA_ERROR_ILLEGAL_ADDRESS` (700): The kernel accessed an invalid device address (e.g., an out-of-bounds pointer dereference).
-- `CUDA_ERROR_LAUNCH_FAILED` (719): An unspecified device exception occurred during kernel execution.
+- `CudaErrorOutOfMemory` (2): Insufficient device VRAM during buffer allocation (`cuMemAlloc_v2`).
+- `CudaErrorInvalidValue` (1): Invalid grid or block launch dimensions, null pointers, or mismatched kernel parameter signatures.
+- `CudaErrorNoDevice` (100): No CUDA-capable GPU detected on the host system.
+- `CudaErrorIllegalAddress` (700): The kernel accessed an invalid device address (e.g., an out-of-bounds pointer dereference).
+- `CudaErrorLaunchFailed` (719): An unspecified device exception occurred during kernel execution.
 
 When a kernel fault comes with an error that G# device code recorded before it stopped, the launcher throws the matching .NET exception instead (see below), with the `CudaException` as its inner exception.
 
