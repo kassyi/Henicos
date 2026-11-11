@@ -22,8 +22,14 @@ To solve this, GSharp provides an ultra-optimized **Number Theoretic Transform (
 The `*` operator (or expression tree multiplication) and [`GpuBigIntMath.Mul`](../GpuBigIntMath.md) choose the multiplication algorithm from the size of the operands and route large products to the NTT implementation. [`GpuBigIntMath.MultiplyNtt`](../GpuBigIntMath.md) runs the NTT path whatever the size:
 
 ```csharp
-public static void Mul(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
-public static void MultiplyNtt(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView rightOperand, scoped GpuBigUIntView resultBuffer);
+public static void Mul(
+    scoped GpuBigUIntView leftOperand,
+    scoped GpuBigUIntView rightOperand,
+    scoped GpuBigUIntView resultBuffer);
+public static void MultiplyNtt(
+    scoped GpuBigUIntView leftOperand,
+    scoped GpuBigUIntView rightOperand,
+    scoped GpuBigUIntView resultBuffer);
 ```
 
 Both throw `ArgumentException` when `resultBuffer` has fewer than `leftOperand.NumWords + rightOperand.NumWords` words.
@@ -63,7 +69,7 @@ var expr = a * b;
 
 // Evaluate the AST node to perform the multiplication natively on the GPU
 // (Internally routes to the NTT implementation for massive numbers)
-using var result = expr.Node.Evaluate(workspace, null);
+using var result = expr.Evaluate(workspace);
 
 Console.WriteLine($"Result Size: {result.Value.NumWords} words.");
 ```

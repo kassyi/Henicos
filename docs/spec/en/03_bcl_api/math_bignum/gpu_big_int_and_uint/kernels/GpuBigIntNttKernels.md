@@ -85,8 +85,14 @@ A GPU device function (`[GpuDeviceFunction]`) that recombines the two inverse-NT
 
 ```csharp
 [GpuDeviceFunction]
-public static void ExecuteCrtComputeCoefficientsTransposed([GpuReadOnly] uint[] deviceResult1, [GpuReadOnly] uint[] deviceResult2,
-    uint[] uncarriedLow, uint[] uncarriedHigh, int transformLength, int n1, int n2);
+public static void ExecuteCrtComputeCoefficientsTransposed(
+    [GpuReadOnly] uint[] deviceResult1,
+    [GpuReadOnly] uint[] deviceResult2,
+    uint[] uncarriedLow,
+    uint[] uncarriedHigh,
+    int transformLength,
+    int n1,
+    int n2);
 ```
 
 ## ExecuteResolveNttCarriesBlocked(uint[], uint[], uint[], uint[], int, int, int)

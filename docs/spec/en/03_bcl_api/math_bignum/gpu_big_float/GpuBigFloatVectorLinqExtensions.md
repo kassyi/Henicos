@@ -19,6 +19,8 @@ Provides extension methods for constructing and evaluating vectorized GPU LINQ e
 public static class GpuBigFloatVectorLinqExtensions
 ```
 
+The members are declared in a C# 14 `extension(IGpuBigFloatVectorExpression source)` block and are called as extension methods; the signatures below show them in the classic `this` form.
+
 ## Methods
 
 ### Conversion & Slicing
@@ -251,51 +253,51 @@ public static IGpuBigFloatVectorExpression SelectLog(this IGpuBigFloatVectorExpr
 
 ## ZipAdd(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise addition of `left` and `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`.
+Performs element-wise addition of `source` and `right`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, right.WordsPerElement) + 1`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipAdd(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
 ## ZipSubtract(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise subtraction of `right` from `left`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`.
+Performs element-wise subtraction of `right` from `source`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, right.WordsPerElement) + 1`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipSubtract(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
 ## ZipMultiply(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise multiplication of `left` and `right`. Output `WordsPerElement` is `left.WordsPerElement + right.WordsPerElement`.
+Performs element-wise multiplication of `source` and `right`. Output `WordsPerElement` is `source.WordsPerElement + right.WordsPerElement`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipMultiply(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
 ## ZipDivide(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Performs element-wise division of `left` by `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero. The check is read back from the device (one synchronization of the workspace stream), so evaluating it while the stream captures a CUDA graph throws `NotSupportedException`. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
+Performs element-wise division of `source` by `right`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, right.WordsPerElement) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if any active divisor element in `right` is zero. The check is read back from the device (one synchronization of the workspace stream), so evaluating it while the stream captures a CUDA graph throws `NotSupportedException`. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipDivide(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
 ## ZipPow(IGpuBigFloatVectorExpression, IGpuBigFloatVectorExpression)
 
-Raises each element of `left` to the power of the corresponding element in `right`. Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement)`.
+Raises each element of `source` to the power of the corresponding element in `right`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, right.WordsPerElement)`.
 
 ```csharp
 public static IGpuBigFloatVectorExpression ZipPow(
-    this IGpuBigFloatVectorExpression left,
+    this IGpuBigFloatVectorExpression source,
     IGpuBigFloatVectorExpression right);
 ```
 
@@ -317,12 +319,12 @@ public static IGpuBoolVectorExpression IsLessThan<TScalar>(this IGpuBigFloatVect
 public static IGpuBoolVectorExpression IsLessThanOrEqualTo<TScalar>(this IGpuBigFloatVectorExpression source, TScalar scalar)
     where TScalar : struct, IGpuBigNumber<TScalar>;
 
-public static IGpuBoolVectorExpression IsEqualTo(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsNotEqualTo(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsGreaterThan(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsGreaterThanOrEqualTo(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsLessThan(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
-public static IGpuBoolVectorExpression IsLessThanOrEqualTo(this IGpuBigFloatVectorExpression left, IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsEqualTo(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsNotEqualTo(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsGreaterThan(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsGreaterThanOrEqualTo(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsLessThan(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
+public static IGpuBoolVectorExpression IsLessThanOrEqualTo(this IGpuBigFloatVectorExpression source, IGpuBigFloatVectorExpression right);
 ```
 
 ## Count(IGpuBigFloatVectorExpression)

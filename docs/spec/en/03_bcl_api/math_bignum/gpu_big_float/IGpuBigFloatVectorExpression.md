@@ -153,7 +153,10 @@ using var zero = new GpuBigFloat(new GpuBigUInt(workspace, 4), exponent: 0, isNe
 
 for (int i = 0; i < 4; i++)
 {
-    using var val = new GpuBigFloat(new GpuBigUInt(workspace, [(uint)(i + 1), 0u, 0u, 0u]), exponent: 0, isNegative: i % 2 == 1);
+    using var val = new GpuBigFloat(
+        new GpuBigUInt(workspace, [(uint)(i + 1), 0u, 0u, 0u]),
+        exponent: 0,
+        isNegative: i % 2 == 1);
     array.SetElement(i, val);
 }
 

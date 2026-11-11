@@ -284,7 +284,7 @@ var valB = new GpuBigInt(uintB, isNegative: true);
 GpuBigIntExpr sumExpr = valA + valB;
 
 // Evaluate dynamically to a new buffer
-using GpuBigInt sumResult = sumExpr.Node.Evaluate(workspace, null);
+using GpuBigInt sumResult = sumExpr.Evaluate(workspace);
 
 Console.WriteLine($"Sum evaluated to={sumResult.Value.ToBigInteger(sumResult.IsNegative)}");
 ```

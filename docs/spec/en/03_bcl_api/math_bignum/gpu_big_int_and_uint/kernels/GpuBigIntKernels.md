@@ -170,7 +170,12 @@ A GPU device function (`[GpuDeviceFunction]`) that returns word `destIdx` of `da
 
 ```csharp
 [GpuDeviceFunction]
-public static uint GetShiftedRightWord([GpuReadOnly] uint[] data, int numWords, int destIdx, int wordShift, int bitShift);
+public static uint GetShiftedRightWord(
+    [GpuReadOnly] uint[] data,
+    int numWords,
+    int destIdx,
+    int wordShift,
+    int bitShift);
 ```
 
 ## DeviceAddSubAlignedParallel(uint[], int, uint[], int, uint[], int, int, int, int, bool)

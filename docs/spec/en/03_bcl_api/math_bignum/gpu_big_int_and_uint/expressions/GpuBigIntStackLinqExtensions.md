@@ -454,7 +454,8 @@ Each method below has an overload for `GpuBigInt` elements and one for `GpuBigIn
 ## ZipStackEnumerator Struct
 
 ```csharp
-public ref struct ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, TLeft, TRight, TResult> : IStackEnumerator<TResult>
+public ref struct ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, TLeft, TRight, TResult>
+    : IStackEnumerator<TResult>
     where TLeftEnumerator : struct, IStackEnumerator<TLeft>, allows ref struct
     where TRightEnumerator : struct, IStackEnumerator<TRight>, allows ref struct
     where TResult : struct

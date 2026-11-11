@@ -82,7 +82,8 @@ var kernelArgs = new NumberTheoreticTransform
     IsInverse = false
 };
 
-Console.WriteLine($"NTT Kernel Args - M: {kernelArgs.Grid.M}, N1: {kernelArgs.Grid.N1}, Inverse: {kernelArgs.IsInverse}");
+Console.WriteLine(
+    $"NTT Kernel Args - M: {kernelArgs.Grid.M}, N1: {kernelArgs.Grid.N1}, Inverse: {kernelArgs.IsInverse}");
 ```
 
 ## See also
