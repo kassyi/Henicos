@@ -249,7 +249,7 @@ public class GlobalCppNamesTests
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .AddReferences(RoslynTestUtility.BaseReferences)
             .AddSyntaxTrees(files.Select(f =>
-                CSharpSyntaxTree.ParseText(f.Source, new CSharpParseOptions(LanguageVersion.Preview), f.Path)));
+                RoslynTestUtility.CreateCompilationAt(f.Path, f.Source).SyntaxTrees.Single()));
 
     // In declaration order.
     private static IMethodSymbol[] GetMethods(string typeMetadataName, string name) =>
@@ -267,5 +267,5 @@ public class GlobalCppNamesTests
         CSharpCompilation.Create("GlobalCppNamesTests")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(s_source, new CSharpParseOptions(LanguageVersion.Preview)));
+            .AddSyntaxTrees(RoslynTestUtility.CreateCompilation(s_source).SyntaxTrees.Single());
 }

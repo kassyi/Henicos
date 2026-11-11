@@ -40,7 +40,7 @@ public static class DeviceLibraryBuilder
             .AddReferences(RoslynTestUtility.BaseReferences)
             .AddReferences(references)
             .AddSyntaxTrees(files.Select(static file =>
-                CSharpSyntaxTree.ParseText(file.Source, s_parseOptions, path: file.Path)));
+                RoslynTestUtility.CreateCompilationAt(file.Path, file.Source).SyntaxTrees.Single()));
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: [new GpuKernelGenerator().AsSourceGenerator()],
@@ -66,5 +66,5 @@ public static class DeviceLibraryBuilder
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
             .AddReferences(RoslynTestUtility.BaseReferences)
             .AddReferences(libraries)
-            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(source, s_parseOptions, path: "consumer.cs"));
+            .AddSyntaxTrees(RoslynTestUtility.CreateCompilationAt("consumer.cs", source).SyntaxTrees.Single());
 }

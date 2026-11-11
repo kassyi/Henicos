@@ -89,7 +89,7 @@ public class GSharpArrayProxyTests
     [Scenario(TestScenario.SadPath)]
     public void IntPtr_DoesNotConvertToAProxy()
     {
-        var tree = CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase("Runtime/ArrayProxyConversionCases.cs"));
+        var (_, tree, _) = RoslynTestUtility.GetTestCaseContext("Runtime/ArrayProxyConversionCases.cs");
         var runtime = MetadataReference.CreateFromFile(typeof(GSharpArrayProxy).Assembly.Location);
         var compilation = CSharpCompilation.Create(
             "ArrayProxyConversionCases",

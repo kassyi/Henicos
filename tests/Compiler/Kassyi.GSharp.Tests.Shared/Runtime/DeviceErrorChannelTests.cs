@@ -164,10 +164,11 @@ public sealed class DeviceErrorChannelTests
     [Scenario(TestScenario.Boundary)]
     public void ErrorSiteTable_VaryingLineEndings_ProducesIdenticalSiteIds()
     {
-        var source = RoslynTestUtility.ReadTestCase("Runtime/ErrorSiteLineEndingCases.cs").Replace("\r\n", "\n");
+        var rawSource = RoslynTestUtility.ReadTestCase("Runtime/ErrorSiteLineEndingCases.cs");
+        var source = ToLf(rawSource);
 
         var lf = CreateSitesForTerminals(source);
-        var crlf = CreateSitesForTerminals(source.Replace("\n", "\r\n"));
+        var crlf = CreateSitesForTerminals(ToCrlf(source));
 
         // Three terminals on different lines, each with a real file name, so the comparison below cannot pass vacuously
         Assert.Equal(3, lf.Count);
@@ -176,12 +177,48 @@ public sealed class DeviceErrorChannelTests
         Assert.Equal(lf, crlf);
     }
 
+    private static string ToLf(string text)
+    {
+        var sb = new System.Text.StringBuilder(text.Length);
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (text[i] == '\r' && i + 1 < text.Length && text[i + 1] == '\n')
+            {
+                continue;
+            }
+
+            sb.Append(text[i]);
+        }
+
+        return sb.ToString();
+    }
+
+    private static string ToCrlf(string text)
+    {
+        var sb = new System.Text.StringBuilder(text.Length * 2);
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (text[i] == '\r')
+            {
+                continue;
+            }
+
+            if (text[i] == '\n')
+            {
+                sb.Append("\r\n");
+            }
+            else
+            {
+                sb.Append(text[i]);
+            }
+        }
+
+        return sb.ToString();
+    }
+
     private static List<ErrorSiteEntry> CreateSitesForTerminals(string source)
     {
-        var tree = CSharpSyntaxTree.ParseText(
-            source,
-            new CSharpParseOptions(LanguageVersion.Preview),
-            path: "ErrorSiteLineEndingCases.cs");
+        var tree = RoslynTestUtility.CreateCompilationAt("ErrorSiteLineEndingCases.cs", source).SyntaxTrees.Single();
         var compilation = CSharpCompilation.Create("ErrorSiteLineEndings")
             .AddReferences(RoslynTestUtility.BaseReferences)
             .AddSyntaxTrees(tree);
@@ -224,7 +261,7 @@ public sealed class DeviceErrorChannelTests
             }
             """;
 
-        var syntaxTree = CSharpSyntaxTree.ParseText(source);
+        var syntaxTree = RoslynTestUtility.CreateCompilation(source).SyntaxTrees.Single();
         var references = new List<MetadataReference>
         {
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
