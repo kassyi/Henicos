@@ -1,11 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.StackArrays;
 
-/// <summary>A stack array storage: the C++ scope it lives in, and its name in the message.</summary>
-internal readonly record struct Storage(SyntaxNode Scope, string Name);
-
-/// <summary>A use that lets a storage outlive its scope: where to report it, the storage, and the use.</summary>
-internal readonly record struct Finding(SyntaxNode Node, string Name, string Reason);
-
 /// <summary>
 /// The GSH0091 analysis of one method body, the only type <see cref="StackArrayEscapeRule"/> calls: collects the
 /// declarations, assignments, calls and returns, propagates to each local the storages it may point into until nothing
