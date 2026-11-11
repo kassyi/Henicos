@@ -3,28 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Kassyi.GSharp.Core;
 using Xunit;
+using static Kassyi.GSharp.Tests.Shared.Differential.DifferentialHarnessFakes;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+/// <summary>
+/// Tests of <see cref="DifferentialRunner"/>: a case run on each path and compared with its oracle or reference model,
+/// the mismatches it reports, the oracle's thread-order check and malformed cases; the last test runs a real kernel
+/// (<see cref="HarnessProbeKernels"/>) on the paths of this process. Each check names, above it, the one-line change of
+/// the harness (mutant) that makes it fail; the fake case is <see cref="DifferentialHarnessFakes"/>.
+/// </summary>
 public class DifferentialRunnerTests
 {
-    private const string FakeCaseName = "HarnessTests.FakeAddKernel";
-
-    private static readonly string[] s_fakeColumns = ["sum", "xor"];
-
-    // A host "path": the launch runs as it is, on the calling thread
-    private static readonly IReadOnlyList<DiffPathRunner> s_nativeOnly = [new(DiffPath.Native, DiffPaths.RunDirect)];
-
-    private static readonly IReadOnlyList<KnownDivergence> s_noEntries = [];
-
-    // 5 rows in 3 blocks of 2: the last thread has no row and must return without writing
-    private static readonly LaunchShape s_fakeShape = LaunchShape.ForRows(5, blockX: 2);
-
     private static readonly DifferentialCase s_uint32Add = new("HarnessProbeKernels.UInt32AddMatrixKernel")
     {
         // Seed 0: the 441 rows of the boundary cross product, 7 blocks of 64 (the last block is partly idle)
@@ -142,7 +136,7 @@ public class DifferentialRunnerTests
             Oracle = static (b, _) => HarnessProbeKernels.LastWriterKernel(b.Get<int>("r")),
         };
 
-        var ex = Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(racing, [0], s_nativeOnly, s_noEntries));
+        var ex = Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(racing, [0], NativeOnly, NoEntries));
         Assert.Contains("kernel output depends on thread order", ex.Message);
         Assert.Contains("r[0] column \"r\" is 7 (0x00000007) in forward order and 0 (0x00000000) in reverse order", ex.Message);
 
@@ -155,7 +149,7 @@ public class DifferentialRunnerTests
             Launch = static (_, _) => { },
             Oracle = racing.Oracle,
         };
-        Assert.False(DifferentialRunner.Evaluate(ignored, [0], s_nativeOnly, s_noEntries).HasFailures);
+        Assert.False(DifferentialRunner.Evaluate(ignored, [0], NativeOnly, NoEntries).HasFailures);
     }
 
     [Fact]
@@ -174,7 +168,7 @@ public class DifferentialRunnerTests
             Launch = static (b, _) => b.Get<float>("r")[0] = float.NaN,
             Oracle = static (b, _) => b.Get<float>("r")[0] = NextPayloadNaN(),
         };
-        Assert.False(DifferentialRunner.Evaluate(computed, [0], s_nativeOnly, s_noEntries).HasFailures);
+        Assert.False(DifferentialRunner.Evaluate(computed, [0], NativeOnly, NoEntries).HasFailures);
 
         // mutant: DiffBuffers.cs CellsMatch lets an Exact cell match any NaN, as it does for Bitwise
         var moved = new DifferentialCase("HarnessTests.NaNPayloadPerCall")
@@ -184,7 +178,7 @@ public class DifferentialRunnerTests
             Launch = static (_, _) => throw new InvalidOperationException("no path may run after the order check fails"),
             Oracle = computed.Oracle,
         };
-        var ex = Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(moved, [0], s_nativeOnly, s_noEntries));
+        var ex = Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(moved, [0], NativeOnly, NoEntries));
         Assert.Contains("kernel output depends on thread order", ex.Message);
     }
 
@@ -197,21 +191,21 @@ public class DifferentialRunnerTests
         // Neither or both of Oracle and Reference: the case cannot be judged
         var neither = new DifferentialCase(FakeCaseName)
         {
-            Shape = s_fakeShape,
+            Shape = FakeShape,
             Inputs = static (_, _) => new DiffBuffers(),
             Launch = static (_, _) => { },
         };
-        Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(neither, [0], s_nativeOnly, s_noEntries));
+        Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(neither, [0], NativeOnly, NoEntries));
 
         // An oracle that throws is reported with its seed, not as a path divergence
         var throwing = new DifferentialCase(FakeCaseName)
         {
-            Shape = s_fakeShape,
+            Shape = FakeShape,
             Inputs = static (_, _) => new DiffBuffers(),
             Launch = static (_, _) => { },
             Oracle = static (_, _) => throw new DivideByZeroException(),
         };
-        var ex = Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(throwing, [4], s_nativeOnly, s_noEntries));
+        var ex = Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(throwing, [4], NativeOnly, NoEntries));
         Assert.Contains("threw for seed 4", ex.Message);
         Assert.IsType<DivideByZeroException>(ex.InnerException);
     }
@@ -226,13 +220,13 @@ public class DifferentialRunnerTests
         // mutant: DifferentialRunner.cs RunOracle `reference(expected, shape)` -> `reference(initial.Clone(), shape)`
         var withReference = new DifferentialCase(FakeCaseName)
         {
-            Shape = s_fakeShape,
+            Shape = FakeShape,
             Inputs = static (_, _) => new DiffBuffers().Out<int>("r", 2, OutputPolicy.Exact),
             Launch = static (b, _) => b.Get<int>("r")[1] = 42,
             Reference = static (b, _) => b.Get<int>("r")[1] = 42,
         };
 
-        var report = DifferentialRunner.Evaluate(withReference, [0], s_nativeOnly, s_noEntries);
+        var report = DifferentialRunner.Evaluate(withReference, [0], NativeOnly, NoEntries);
         Assert.False(report.HasFailures, report.ToString());
     }
 
@@ -250,7 +244,7 @@ public class DifferentialRunnerTests
         var fake = FakeCase(DiffPath.Native, static _ => throw new InvalidOperationException("no launch may run"));
 
         var ex = Assert.Throws<DifferentialHarnessException>(
-            () => DifferentialRunner.Evaluate(fake.Case, [0], [DiffPaths.Native(missing)], s_noEntries)
+            () => DifferentialRunner.Evaluate(fake.Case, [0], [DiffPaths.Native(missing)], NoEntries)
         );
         Assert.Equal($"native library not found: {missing}; the Native path would run managed", ex.Message);
     }
@@ -265,7 +259,7 @@ public class DifferentialRunnerTests
     {
         // Tests.Cpu compares the managed and the native path, Tests.Cuda the CUDA path, with the oracle over seeds 0 to 8
         // (seed 0: the boundary cross product, 441 rows in 7 blocks of 64)
-        // mutant: HarnessTests.cs s_uint32Add Launch `gridDimX: s.GridX` -> `gridDimX: s.GridX - 1` (the last 57 rows stay 0)
+        // mutant: DifferentialRunnerTests.cs s_uint32Add Launch `gridDimX: s.GridX` -> `gridDimX: s.GridX - 1` (the last 57 rows stay 0)
         // On Tests.Cpu the native path's preflight finds the real library (the name the launcher loads)
         // mutant: DiffPaths.cs NativeLibraryPath `Kassyi.GSharp.Kernels_` -> `Kassyi.GSharp.Kernel_` (native library not found)
         Assert.NotEmpty(DiffPaths.Available);
@@ -304,7 +298,7 @@ public class DifferentialRunnerTests
             Oracle = static (b, _) => HarnessProbeKernels.LastWriterKernel(b.Get<int>("r")),
         };
 
-        var cudaReport = DifferentialRunner.Evaluate(cudaPtrCase, [0], DiffPaths.Available, s_noEntries);
+        var cudaReport = DifferentialRunner.Evaluate(cudaPtrCase, [0], DiffPaths.Available, NoEntries);
         Assert.False(cudaReport.HasFailures, cudaReport.ToString());
 #else
         var hostSimCase = new DifferentialCase("HarnessTests.FakePointerKernel")
@@ -325,7 +319,7 @@ public class DifferentialRunnerTests
             hostSimCase,
             [0],
             [new DiffPathRunner(DiffPath.Cuda, DiffPaths.RunDirect)],
-            s_noEntries
+            NoEntries
         );
         Assert.False(simReport.HasFailures, simReport.ToString());
 #endif
@@ -337,82 +331,4 @@ public class DifferentialRunnerTests
 
     private static float NextPayloadNaN() =>
         BitConverter.UInt32BitsToSingle(0x7FC0_0000u | (uint)(Interlocked.Increment(ref s_nanPayload) & 0x3F_FFFF));
-
-    private static void CorruptSums(int[] r)
-    {
-        for (int i = 0; i < r.Length; i += 2)
-        {
-            r[i]++;
-        }
-    }
-
-    // r[t * 2] = a + b, r[t * 2 + 1] = a ^ b for 5 rows. The oracle is C# that reads the thread context, as a kernel
-    // does; the launch computes on the host, then applies corrupt to r when it runs on one of the corrupted paths
-    private static FakeRun FakeCase(
-        DiffPath paths = DiffPath.Managed | DiffPath.Native,
-        Action<int[]>? corrupt = null,
-        DiffPath corrupted = DiffPath.Managed | DiffPath.Native | DiffPath.Cuda
-    )
-    {
-        // Set by the path runner before each launch: whether this launch is on a corrupted path
-        var corruptThisLaunch = new StrongBox<bool>();
-        var runners = new[] { DiffPath.Managed, DiffPath.Native, DiffPath.Cuda }
-            .Where(p => (paths & p) != 0)
-            .Select(p => new DiffPathRunner(p, launch =>
-            {
-                corruptThisLaunch.Value = (corrupted & p) != 0;
-                launch();
-            }))
-            .ToList();
-
-        var testCase = new DifferentialCase(FakeCaseName)
-        {
-            Shape = s_fakeShape,
-            Inputs = static (rng, rows) =>
-            {
-                var (a, b) = DiffValues.Int32Pairs(rng, rows);
-                return new DiffBuffers().In("a", a).In("b", b).Out<int>("r", rows, s_fakeColumns, OutputPolicy.Exact);
-            },
-            Launch = (buffers, shape) =>
-            {
-                var a = buffers.Get<int>("a");
-                var b = buffers.Get<int>("b");
-                var r = buffers.Get<int>("r");
-                for (int t = 0; t < shape.Rows; t++)
-                {
-                    r[t * 2] = unchecked(a[t] + b[t]);
-                    r[(t * 2) + 1] = a[t] ^ b[t];
-                }
-
-                if (corruptThisLaunch.Value)
-                {
-                    corrupt?.Invoke(r);
-                }
-            },
-            Oracle = static (buffers, _) =>
-            {
-                var a = buffers.Get<int>("a");
-                var b = buffers.Get<int>("b");
-                var r = buffers.Get<int>("r");
-                int blockId = BlockIndex.X + (BlockIndex.Y * GridDimension.X);
-                int threadInBlock = ThreadIndex.X + (ThreadIndex.Y * BlockDimension.X);
-                int t = (blockId * BlockDimension.X * BlockDimension.Y) + threadInBlock;
-                if (t >= a.Length)
-                {
-                    return;
-                }
-
-                r[t * 2] = unchecked(a[t] + b[t]);
-                r[(t * 2) + 1] = a[t] ^ b[t];
-            },
-        };
-        return new FakeRun(testCase, runners);
-    }
-
-    // A fake case with the host paths that run it
-    private sealed record FakeRun(DifferentialCase Case, IReadOnlyList<DiffPathRunner> Paths)
-    {
-        public DifferentialReport Evaluate(IReadOnlyList<int> seeds, IReadOnlyList<KnownDivergence>? entries = null) =>
-            DifferentialRunner.Evaluate(Case, seeds, Paths, entries ?? []);
-    }
 }

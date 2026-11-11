@@ -6,13 +6,18 @@ using System.IO;
 using System.Linq;
 using Kassyi.GSharp.Core;
 using Xunit;
+using static Kassyi.GSharp.Tests.Shared.Differential.DifferentialHarnessFakes;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+/// <summary>
+/// Tests of the exception side of the differential harness: <see cref="ExceptionPolicy"/>, the CUDA fault seeds,
+/// skipped paths and the child process protocol of <see cref="CudaTrapSubprocessRunner"/>. Each check names, above it,
+/// the one-line change of the harness (mutant) that makes it fail; the shared fakes are
+/// <see cref="DifferentialHarnessFakes"/>.
+/// </summary>
 public class DifferentialExceptionTests
 {
-    private static readonly IReadOnlyList<KnownDivergence> s_noEntries = [];
-
     // ---- Exception policies and CUDA traps ----
 
     [Fact]
@@ -74,7 +79,7 @@ public class DifferentialExceptionTests
         ];
 
         // Seed 0 succeeds and compares cells; Seed 1 throws IndexOutOfRangeException on Oracle, Managed, and Native
-        var passingReport = DifferentialRunner.Evaluate(matchOracleCase, [0, 1], bothCpuPaths, s_noEntries);
+        var passingReport = DifferentialRunner.Evaluate(matchOracleCase, [0, 1], bothCpuPaths, NoEntries);
         Assert.False(passingReport.HasFailures, passingReport.ToString());
         Assert.Empty(passingReport.Failures);
         Assert.Empty(passingReport.UnexpectedMismatches);
@@ -102,7 +107,7 @@ public class DifferentialExceptionTests
             new(DiffPath.Native, DiffPaths.RunDirect),
         ];
 
-        var missingThrowReport = DifferentialRunner.Evaluate(silentNativeCase, [1], managedThrowsNativeSilent, s_noEntries);
+        var missingThrowReport = DifferentialRunner.Evaluate(silentNativeCase, [1], managedThrowsNativeSilent, NoEntries);
         Assert.True(missingThrowReport.HasFailures);
         Assert.Single(missingThrowReport.UnexpectedMismatches);
         Assert.Equal(KnownDivergence.ExceptionColumn, missingThrowReport.UnexpectedMismatches[0].ColumnName);
@@ -148,14 +153,14 @@ public class DifferentialExceptionTests
             new(DiffPath.Cuda, DiffPaths.DirectRunner),
         ];
 
-        var report = DifferentialRunner.Evaluate(faultCase, [1, 2], paths, s_noEntries);
+        var report = DifferentialRunner.Evaluate(faultCase, [1, 2], paths, NoEntries);
 
         Assert.False(report.HasFailures, report.ToString());
         Assert.Equal(4, launches);
 
         // A launch that does not throw is a mismatch of its cell
         var silentCase = faultCase with { Launch = static (_, _) => { } };
-        var silentReport = DifferentialRunner.Evaluate(silentCase, [1], paths, s_noEntries);
+        var silentReport = DifferentialRunner.Evaluate(silentCase, [1], paths, NoEntries);
         Assert.True(silentReport.HasFailures, silentReport.ToString());
         Assert.Contains("no exception thrown", silentReport.ToString());
     }
@@ -235,7 +240,7 @@ public class DifferentialExceptionTests
             }),
         ];
 
-        var report = DifferentialRunner.Evaluate(skippedNativeCase, [1], paths, s_noEntries);
+        var report = DifferentialRunner.Evaluate(skippedNativeCase, [1], paths, NoEntries);
         Assert.False(report.HasFailures, report.ToString());
         Assert.False(nativeRan);
         Assert.Empty(report.Mismatches);
@@ -246,7 +251,7 @@ public class DifferentialExceptionTests
             new(DiffPath.Managed, static _ => { }),
             new(DiffPath.Native, run => run()),
         ];
-        var mismatchReport = DifferentialRunner.Evaluate(skippedNativeCase, [1], pathsWithMismatch, s_noEntries);
+        var mismatchReport = DifferentialRunner.Evaluate(skippedNativeCase, [1], pathsWithMismatch, NoEntries);
         Assert.True(mismatchReport.HasFailures);
         var mismatch = Assert.Single(mismatchReport.Mismatches);
         var nativeCell = Assert.Single(mismatch.Paths.Where(static p => p.Path == DiffPath.Native));
@@ -342,7 +347,7 @@ public class DifferentialExceptionTests
                 },
             };
 
-            DifferentialRunner.Evaluate(trapCase, [0, 3], [new DiffPathRunner(DiffPath.Cuda, DiffPaths.RunDirect)], s_noEntries);
+            DifferentialRunner.Evaluate(trapCase, [0, 3], [new DiffPathRunner(DiffPath.Cuda, DiffPaths.RunDirect)], NoEntries);
             Assert.True(CudaTrapSubprocessRunner.TryReadChildResult(tempResultFile, out var reconstructed));
             Assert.NotNull(reconstructed);
 
@@ -404,36 +409,4 @@ public class DifferentialExceptionTests
     // ---- Helpers ----
 
     private sealed class FakeCudaException(string message) : Exception(message);
-
-    private static FakeRun FakeCase() =>
-        new(
-            new DifferentialCase("HarnessTests.FakeAddKernel")
-            {
-                Shape = LaunchShape.ForRows(5, blockX: 2),
-                Inputs = static (rng, rows) =>
-                {
-                    var (a, b) = DiffValues.Int32Pairs(rng, rows);
-                    return new DiffBuffers().In("a", a).In("b", b).Out<int>("r", rows, ["sum", "xor"], OutputPolicy.Exact);
-                },
-                Launch = static (buffers, shape) =>
-                {
-                    var a = buffers.Get<int>("a");
-                    var b = buffers.Get<int>("b");
-                    var r = buffers.Get<int>("r");
-                    for (int t = 0; t < shape.Rows; t++)
-                    {
-                        r[t * 2] = unchecked(a[t] + b[t]);
-                        r[(t * 2) + 1] = a[t] ^ b[t];
-                    }
-                },
-                Reference = static (_, _) => { },
-            },
-            [new DiffPathRunner(DiffPath.Managed, DiffPaths.RunDirect), new DiffPathRunner(DiffPath.Native, DiffPaths.RunDirect)]
-        );
-
-    private sealed record FakeRun(DifferentialCase Case, IReadOnlyList<DiffPathRunner> Paths)
-    {
-        public DifferentialReport Evaluate(IReadOnlyList<int> seeds) =>
-            DifferentialRunner.Evaluate(Case, seeds, Paths, []);
-    }
 }

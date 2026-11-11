@@ -6,6 +6,10 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+/// <summary>
+/// Tests of the inputs of the differential harness: <see cref="DiffRandom"/>, <see cref="DiffValues"/> and
+/// <see cref="DifferentialSeeds"/>. Each check names, above it, the one-line change (mutant) that makes it fail.
+/// </summary>
 public class DifferentialRandomTests
 {
     // ---- DiffRandom ----

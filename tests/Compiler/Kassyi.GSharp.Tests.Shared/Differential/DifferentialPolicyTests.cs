@@ -5,16 +5,17 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 using Xunit;
+using static Kassyi.GSharp.Tests.Shared.Differential.DifferentialHarnessFakes;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+/// <summary>
+/// Tests of the comparison policies of <see cref="DiffBuffers"/>: bitwise and exact cells, deep struct aliasing in
+/// clones, multiset columns and ULP tolerances. Each check names, above it, the one-line change of the harness (mutant)
+/// that makes it fail.
+/// </summary>
 public class DifferentialPolicyTests
 {
-    // A host "path": the launch runs as it is, on the calling thread
-    private static readonly IReadOnlyList<DiffPathRunner> s_nativeOnly = [new(DiffPath.Native, DiffPaths.RunDirect)];
-
-    private static readonly IReadOnlyList<KnownDivergence> s_noEntries = [];
-
     // ---- Comparison policies ----
 
     [Theory]
@@ -181,7 +182,7 @@ public class DifferentialPolicyTests
                 r[3] = 20;
             },
         };
-        Assert.False(DifferentialRunner.Evaluate(permutedWithinCols, [0], s_nativeOnly, s_noEntries).HasFailures);
+        Assert.False(DifferentialRunner.Evaluate(permutedWithinCols, [0], NativeOnly, NoEntries).HasFailures);
 
         var swappedAcrossCols = permutedWithinCols with
         {
@@ -195,7 +196,7 @@ public class DifferentialPolicyTests
                 r[3] = 40;
             },
         };
-        Assert.True(DifferentialRunner.Evaluate(swappedAcrossCols, [0], s_nativeOnly, s_noEntries).HasFailures);
+        Assert.True(DifferentialRunner.Evaluate(swappedAcrossCols, [0], NativeOnly, NoEntries).HasFailures);
         _ = cols;
 
         // 2. Float Multiset total order: -0.0f and +0.0f are kept distinct and ordered deterministically alongside NaNs
@@ -223,7 +224,7 @@ public class DifferentialPolicyTests
                 f[3] = +0.0f;
             },
         };
-        Assert.False(DifferentialRunner.Evaluate(floatMultiset, [0], s_nativeOnly, s_noEntries).HasFailures);
+        Assert.False(DifferentialRunner.Evaluate(floatMultiset, [0], NativeOnly, NoEntries).HasFailures);
 
         // Replacing -0.0f with +0.0f must fail under Multiset
         var wrongZeroSign = floatMultiset with
@@ -237,7 +238,7 @@ public class DifferentialPolicyTests
                 f[3] = +0.0f;
             },
         };
-        Assert.True(DifferentialRunner.Evaluate(wrongZeroSign, [0], s_nativeOnly, s_noEntries).HasFailures);
+        Assert.True(DifferentialRunner.Evaluate(wrongZeroSign, [0], NativeOnly, NoEntries).HasFailures);
 
         // 3. Verify and VerifyAgainstInitial work without Oracle/Reference when output buffers use OutputPolicy.Ignore
         var verifyCase = new DifferentialCase("HarnessTests.VerifyAgainstInitial")
@@ -259,13 +260,13 @@ public class DifferentialPolicyTests
                     ? PropertyResult.Passed
                     : PropertyResult.Failed("old values did not match initial state"),
         };
-        Assert.False(DifferentialRunner.Evaluate(verifyCase, [0], s_nativeOnly, s_noEntries).HasFailures);
+        Assert.False(DifferentialRunner.Evaluate(verifyCase, [0], NativeOnly, NoEntries).HasFailures);
 
         var failingVerify = verifyCase with
         {
             Verify = static (_, _) => PropertyResult.Failed("invariant broken"),
         };
-        var failReport = DifferentialRunner.Evaluate(failingVerify, [0], s_nativeOnly, s_noEntries);
+        var failReport = DifferentialRunner.Evaluate(failingVerify, [0], NativeOnly, NoEntries);
         Assert.True(failReport.HasFailures);
         Assert.Single(failReport.PropertyFailures);
         Assert.Contains("failed property check: invariant broken", failReport.ToString());

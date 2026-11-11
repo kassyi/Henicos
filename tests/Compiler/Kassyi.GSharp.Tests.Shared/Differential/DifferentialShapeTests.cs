@@ -7,6 +7,11 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+/// <summary>
+/// Tests of the launch shapes of the differential harness: <see cref="LaunchShape"/>, <see cref="LaunchShapes"/> and
+/// the thread orders that the oracle runs in. Each check names, above it, the one-line change (mutant) that makes it
+/// fail.
+/// </summary>
 public class DifferentialShapeTests
 {
     // ---- LaunchShape and ThreadOrder ----

@@ -2,26 +2,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 using Xunit;
+using static Kassyi.GSharp.Tests.Shared.Differential.DifferentialHarnessFakes;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+/// <summary>
+/// Tests of <see cref="KnownDivergence"/> entries in <see cref="DifferentialRunner"/>: which divergence an entry excuses
+/// (case, column, path, host, shape) and when an entry that no longer diverges is reported as stale. Each check names,
+/// above it, the one-line change of the harness (mutant) that makes it fail; the fake case is
+/// <see cref="DifferentialHarnessFakes"/>.
+/// </summary>
 public class DifferentialKnownDivergencesTests
 {
-    private const string FakeCaseName = "HarnessTests.FakeAddKernel";
-
-    private static readonly string[] s_fakeColumns = ["sum", "xor"];
-
-    // A host "path": the launch runs as it is, on the calling thread
-    private static readonly IReadOnlyList<DiffPathRunner> s_nativeOnly = [new(DiffPath.Native, DiffPaths.RunDirect)];
-
-    private static readonly IReadOnlyList<KnownDivergence> s_noEntries = [];
-
-    // 5 rows in 3 blocks of 2: the last thread has no row and must return without writing
-    private static readonly LaunchShape s_fakeShape = LaunchShape.ForRows(5, blockX: 2);
-
     // ---- Known divergences ----
 
     [Fact]
@@ -143,7 +137,7 @@ public class DifferentialKnownDivergencesTests
 
         // When a matching 2D shape actually runs and does not diverge, the entry IS reported as stale
         var twoDimCase = FakeCase().Case with { Shapes = [LaunchShapes.TwoDimensional(5)] };
-        var twoDimReport = DifferentialRunner.Evaluate(twoDimCase, [0], s_nativeOnly, twoDimOnlyEntry);
+        var twoDimReport = DifferentialRunner.Evaluate(twoDimCase, [0], NativeOnly, twoDimOnlyEntry);
         Assert.True(twoDimReport.HasFailures);
         Assert.Single(twoDimReport.StaleDivergences);
     }
@@ -186,7 +180,7 @@ public class DifferentialKnownDivergencesTests
         ];
 
         // Without KnownDivergence, the thrown exception causes failure
-        var unexcusedReport = DifferentialRunner.Evaluate(throwingCase, [0], paths, s_noEntries);
+        var unexcusedReport = DifferentialRunner.Evaluate(throwingCase, [0], paths, NoEntries);
         Assert.True(unexcusedReport.HasFailures);
 
         // With KnownDivergence covering $exception, the failure is waived
@@ -197,85 +191,5 @@ public class DifferentialKnownDivergencesTests
         var excusedReport = DifferentialRunner.Evaluate(throwingCase, [0], paths, known);
         Assert.False(excusedReport.HasFailures, excusedReport.ToString());
         Assert.Empty(excusedReport.StaleDivergences);
-    }
-
-    // ---- Helpers ----
-
-    private static void CorruptSums(int[] r)
-    {
-        for (int i = 0; i < r.Length; i += 2)
-        {
-            r[i]++;
-        }
-    }
-
-    // r[t * 2] = a + b, r[t * 2 + 1] = a ^ b for 5 rows. The oracle is C# that reads the thread context, as a kernel
-    // does; the launch computes on the host, then applies corrupt to r when it runs on one of the corrupted paths
-    private static FakeRun FakeCase(
-        DiffPath paths = DiffPath.Managed | DiffPath.Native,
-        Action<int[]>? corrupt = null,
-        DiffPath corrupted = DiffPath.Managed | DiffPath.Native | DiffPath.Cuda
-    )
-    {
-        // Set by the path runner before each launch: whether this launch is on a corrupted path
-        var corruptThisLaunch = new StrongBox<bool>();
-        var runners = new[] { DiffPath.Managed, DiffPath.Native, DiffPath.Cuda }
-            .Where(p => (paths & p) != 0)
-            .Select(p => new DiffPathRunner(p, launch =>
-            {
-                corruptThisLaunch.Value = (corrupted & p) != 0;
-                launch();
-            }))
-            .ToList();
-
-        var testCase = new DifferentialCase(FakeCaseName)
-        {
-            Shape = s_fakeShape,
-            Inputs = static (rng, rows) =>
-            {
-                var (a, b) = DiffValues.Int32Pairs(rng, rows);
-                return new DiffBuffers().In("a", a).In("b", b).Out<int>("r", rows, s_fakeColumns, OutputPolicy.Exact);
-            },
-            Launch = (buffers, shape) =>
-            {
-                var a = buffers.Get<int>("a");
-                var b = buffers.Get<int>("b");
-                var r = buffers.Get<int>("r");
-                for (int t = 0; t < shape.Rows; t++)
-                {
-                    r[t * 2] = unchecked(a[t] + b[t]);
-                    r[(t * 2) + 1] = a[t] ^ b[t];
-                }
-
-                if (corruptThisLaunch.Value)
-                {
-                    corrupt?.Invoke(r);
-                }
-            },
-            Oracle = static (buffers, _) =>
-            {
-                var a = buffers.Get<int>("a");
-                var b = buffers.Get<int>("b");
-                var r = buffers.Get<int>("r");
-                int blockId = BlockIndex.X + (BlockIndex.Y * GridDimension.X);
-                int threadInBlock = ThreadIndex.X + (ThreadIndex.Y * BlockDimension.X);
-                int t = (blockId * BlockDimension.X * BlockDimension.Y) + threadInBlock;
-                if (t >= a.Length)
-                {
-                    return;
-                }
-
-                r[t * 2] = unchecked(a[t] + b[t]);
-                r[(t * 2) + 1] = a[t] ^ b[t];
-            },
-        };
-        return new FakeRun(testCase, runners);
-    }
-
-    // A fake case with the host paths that run it
-    private sealed record FakeRun(DifferentialCase Case, IReadOnlyList<DiffPathRunner> Paths)
-    {
-        public DifferentialReport Evaluate(IReadOnlyList<int> seeds, IReadOnlyList<KnownDivergence>? entries = null) =>
-            DifferentialRunner.Evaluate(Case, seeds, Paths, entries ?? []);
     }
 }
