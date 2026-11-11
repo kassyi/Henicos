@@ -228,8 +228,8 @@ internal static class ManagedStateMachineEmitter
 
                 AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
                 writer.AppendLine(bodySource);
-                writer.AppendLine(
-                    "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
+                writer.AppendLine("throw new global::System.InvalidOperationException(" +
+                                  "\"The device function state machine reached an unknown state.\");");
             }
         }
 

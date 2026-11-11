@@ -18,8 +18,8 @@ internal static class OperationExtensions
     public static bool IsVariable(this IOperation? operation) => operation switch
     {
         null => false,
-        // [WHY] C# classifies a constant as a value (§12.2.1): ref readonly takes a temporary for it (CS9193), and in or
-        // ref of it does not compile (CS8156)
+        // [WHY] C# classifies a constant as a value (§12.2.1): ref readonly takes a temporary for it (CS9193), and
+        // in or ref of it does not compile (CS8156)
         ILocalReferenceOperation { Local.IsConst: true } or IFieldReferenceOperation { Field.IsConst: true } => false,
         ILocalReferenceOperation or IParameterReferenceOperation or IInstanceReferenceOperation
             or IArrayElementReferenceOperation => true,

@@ -16,7 +16,8 @@ internal static class StructMarshalingEmitter
     {
         if (structs.Length > 0)
         {
-            using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.Description);
+            using var suppression =
+                writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.Description);
             foreach (var s in structs)
             {
                 writer.Append(s.GetText(isCuda));

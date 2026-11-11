@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
-/// CS8500 (a pointer to, the address of or the size of a managed type), which the generated launchers and unsafe managed
-/// state machines suppress where the pointer is to memory they pinned.
+/// CS8500 (a pointer to, the address of or the size of a managed type), which the generated launchers and unsafe
+/// managed state machines suppress where the pointer is to memory they pinned.
 /// </summary>
 internal static class ManagedPointerWarning
 {

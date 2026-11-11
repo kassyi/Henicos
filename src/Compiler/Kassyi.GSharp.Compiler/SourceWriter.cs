@@ -268,8 +268,9 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda(string? returnType = null) => new(this, returnType);
 
     /// <summary>
-    /// Write <c>#pragma warning disable &lt;id&gt;[ // &lt;reason&gt;]</c> now and <c>#pragma warning restore &lt;id&gt;</c>
-    /// on disposal, or nothing when <paramref name="condition"/> is <see langword="false"/>.
+    /// Write <c>#pragma warning disable &lt;id&gt;[ // &lt;reason&gt;]</c> now and
+    /// <c>#pragma warning restore &lt;id&gt;</c> on disposal, or nothing when <paramref name="condition"/> is
+    /// <see langword="false"/>.
     /// </summary>
     public SourceWriterWarningSuppression WarningSuppressed(string id, string? reason = null, bool condition = true) =>
         new(this, id, reason, condition);
