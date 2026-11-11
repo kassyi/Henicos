@@ -163,7 +163,22 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
         Assert.Equal(-1.0, ToDouble(result.GetElement(1)));
     }
 
-    public static TheoryData<string> ScalarDivisions() => ["SelectDivide", "SelectDivideByUInt32"];
+    private static readonly string[] s_scalarDivisions = ["SelectDivide", "SelectDivideByUInt32"];
+
+    public static TheoryData<string> ScalarDivisions() => new(s_scalarDivisions);
+
+    // Divisor 3 divides [6, 9] exactly; divisor 1 is the identity
+    public static TheoryData<string, uint> NonZeroDivisions()
+    {
+        var data = new TheoryData<string, uint>();
+        foreach (var operation in s_scalarDivisions)
+        {
+            data.Add(operation, 3);
+            data.Add(operation, 1);
+        }
+
+        return data;
+    }
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -172,7 +187,7 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
     {
         // P: System.Linq divides only the elements, so a zero divisor over a Where that selects nothing divides
         // nothing: Count 0 and Sum 0.
-        // mutant: FloatVectorBinaryScalarExpressions.cs:59 `if (vecResult.Elements(workspace) > 0)` -> `if (evalCount > 0)`
+        // mutant: ZeroDivisorCheck.cs:28 `if (count.Read(workspace) > 0)` -> `if (count.Capacity > 0)`
         // input: SelectDivide
         // mutant: FloatVectorUnaryExpressions.cs:237 the `if (divisor == 0)` check moved back before the count is read
         // input: SelectDivideByUInt32
@@ -193,11 +208,12 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
     public void ScalarDivision_ZeroDivisorAfterWhereSelectingSome_ThrowsDivideByZeroException(string operation)
     {
         // P: a zero divisor throws as soon as one element is divided, as System.Linq does (one of three selected).
-        // mutant: FloatVectorBinaryScalarExpressions.cs:61 `throw new DivideByZeroException();` removed
+        // mutant: ZeroDivisorCheck.cs:30 `throw new DivideByZeroException();` removed
         // input: SelectDivide
         // mutant: FloatVectorUnaryExpressions.cs:231 `if (count == 0)` -> `if (count <= 1)`
         // input: SelectDivideByUInt32
-        // survives: FloatVectorUnaryExpressions.cs:237 `if (divisor == 0)` -> `if (divisor == 1)` (Divide throws too)
+        // equivalent: removing the check at FloatVectorUnaryExpressions.cs:237 `if (divisor == 0)`; the element
+        // division throws the same exception
         var array = CreateArray([-3, 1, 2]);
 
         using var divided = DivideBy(
@@ -224,19 +240,23 @@ public sealed class FloatWhereDeviceCountTests : IDisposable
 
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
-    [MemberData(nameof(ScalarDivisions))]
-    public void ScalarDivision_NonZeroDivisorAfterWhere_DividesTheSelected(string operation)
+    [MemberData(nameof(NonZeroDivisions))]
+    public void ScalarDivision_NonZeroDivisorAfterWhere_DividesTheSelected(string operation, uint divisor)
     {
-        // P: the zero divisor handling leaves the division by a non-zero divisor as it was: [6, 9] / 3 sums to 5
-        // (exact in the significand).
-        // mutant: FloatVectorBinaryScalarExpressions.cs:71 `DispatchKernel(workspace, operands, (uint)elements);` removed
+        // P: the zero divisor handling leaves the division by a non-zero divisor as it was: the sum of [6, 9] divided
+        // by 3 or 1 (exact in the significand).
+        // mutant: FloatVectorBinaryScalarExpressions.cs:66 `DispatchKernel(workspace, operands, (uint)elements);`
+        // removed
         // input: SelectDivide
+        // mutant: FloatVectorUnaryExpressions.cs:237 `if (divisor == 0)` -> `if (divisor == 1)`
+        // input: SelectDivideByUInt32 by 1 (DivideByZeroException)
         var array = CreateArray([6, -3, 9]);
 
         using var divided = DivideBy(
-            array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsGreaterThan(Float(0))), operation, 3);
+            array.AsVectorizedEnumerable().Where(array.AsVectorizedEnumerable().IsGreaterThan(Float(0))), operation,
+            divisor);
 
-        Assert.Equal(new[] { 6.0, 9.0 }.Select(v => v / 3).Sum(), ReadOwned(divided.Sum(_workspace)));
+        Assert.Equal(new[] { 6.0, 9.0 }.Select(v => v / divisor).Sum(), ReadOwned(divided.Sum(_workspace)));
     }
 
     // The scalar division named by the theory data

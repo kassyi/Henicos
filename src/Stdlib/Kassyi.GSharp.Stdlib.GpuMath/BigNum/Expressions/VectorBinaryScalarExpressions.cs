@@ -55,27 +55,16 @@ internal abstract class VectorBinaryScalarExpressionBase(
             var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, vecResult.Storage,
                 scalar: scalarResult.Value.Handle);
             var operands = new VectorScalarOperands(vecResult.Storage, scalarResult, output.Destination);
-            // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
-            if (evalCount == 0)
+            // An empty vector launches nothing (a grid of 0 blocks is an invalid launch), nor does a zero divisor over
+            // no element; neither writes an element
+            var launches = evalCount > 0 && !SkipsZeroDivision(workspace, operands, vecResult.Count);
+            if (launches)
             {
-                return new VectorEvaluation(output.Close(workspace), vecResult.Count, _cache.Lease);
+                DispatchKernel(workspace, operands, (uint)evalCount);
             }
 
-            if (DividesByZero(operands))
-            {
-                // C# divides only the elements, so a zero divisor throws only when there is one; after a Where that
-                // selects none nothing is divided and nothing is written. Only this path reads a device count.
-                if (vecResult.Count.Read(workspace) > 0)
-                {
-                    throw new DivideByZeroException();
-                }
-
-                return new VectorEvaluation(output.Close(workspace, DeviceElementCount.Static(0)), vecResult.Count,
-                    _cache.Lease);
-            }
-
-            DispatchKernel(workspace, operands, (uint)evalCount);
-            return new VectorEvaluation(output.Close(workspace), vecResult.Count, _cache.Lease);
+            var written = DeviceElementCount.Static(launches ? evalCount : 0);
+            return new VectorEvaluation(output.Close(workspace, written), vecResult.Count, _cache.Lease);
         }
         finally
         {
@@ -109,10 +98,25 @@ internal abstract class VectorBinaryScalarExpressionBase(
             IsScalar = true
         };
 
+    // Whether a zero divisor ends the evaluation with nothing divided; it throws when the vector has an element
+    private bool SkipsZeroDivision(GpuWorkspace workspace, VectorScalarOperands operands, DeviceElementCount count)
+    {
+        if (!DividesByZero(workspace, operands))
+        {
+            return false;
+        }
+
+        ZeroDivisorCheck.ThrowIfAnyElement(workspace, count);
+        return true;
+    }
+
     /// <summary>
     /// Gets whether the operation is a division whose scalar divisor is zero (one read of the scalar).
     /// </summary>
-    protected virtual bool DividesByZero(VectorScalarOperands operands) => false;
+    /// <exception cref="NotSupportedException">
+    /// A division, while the workspace stream captures a CUDA graph.
+    /// </exception>
+    protected virtual bool DividesByZero(GpuWorkspace workspace, VectorScalarOperands operands) => false;
 
     protected abstract void DispatchKernel(
         GpuWorkspace workspace,
@@ -201,7 +205,11 @@ internal sealed class VectorDivScalarExpression(
     : VectorBinaryScalarExpressionBase(vector, scalar,
         BigIntWidths.OfWords(Math.Max(vector.WordsPerElement, scalar.NumWords)))
 {
-    protected override bool DividesByZero(VectorScalarOperands operands) => operands.Scalar.IsZero();
+    protected override bool DividesByZero(GpuWorkspace workspace, VectorScalarOperands operands)
+    {
+        ZeroDivisorCheck.ThrowIfCapturingScalarTest(workspace);
+        return operands.Scalar.IsZero();
+    }
 
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -226,7 +234,11 @@ internal sealed class VectorModScalarExpression(
     : VectorBinaryScalarExpressionBase(vector, scalar,
         BigIntWidths.OfWords(Math.Max(vector.WordsPerElement, scalar.NumWords)))
 {
-    protected override bool DividesByZero(VectorScalarOperands operands) => operands.Scalar.IsZero();
+    protected override bool DividesByZero(GpuWorkspace workspace, VectorScalarOperands operands)
+    {
+        ZeroDivisorCheck.ThrowIfCapturingScalarTest(workspace);
+        return operands.Scalar.IsZero();
+    }
 
     protected override void DispatchKernel(
         GpuWorkspace workspace,

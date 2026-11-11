@@ -51,20 +51,15 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
         var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, vecResult.Storage,
             scalar: scalar.Significand);
         var operands = new FloatVectorScalarOperands(vecResult.Storage, scalar, output.Destination);
-        // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
+        // A zero divisor over no element divides and writes nothing; over an element it throws
         if (evalCount > 0 && DividesByZero(workspace, operands))
         {
-            // C# divides only the elements, so a zero divisor throws only when there is one; after a Where that
-            // selects none nothing is divided and nothing is written. Only this path reads a device count.
-            if (vecResult.Elements(workspace) > 0)
-            {
-                throw new DivideByZeroException();
-            }
-
+            ZeroDivisorCheck.ThrowIfAnyElement(workspace, vecResult.Count);
             return new FloatVectorEvaluation(output.Close(workspace, DeviceElementCount.Static(0)), vecResult.Count,
                 _cache.Lease);
         }
 
+        // An empty vector launches nothing: a grid of 0 blocks is an invalid launch.
         var elements = RunsOnHost ? vecResult.Elements(workspace) : evalCount;
         if (elements > 0)
         {
@@ -85,6 +80,9 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
     /// <summary>
     /// Gets whether the operation is a division whose scalar divisor is zero (one read of the scalar).
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// A division, while the workspace stream captures a CUDA graph.
+    /// </exception>
     protected virtual bool DividesByZero(GpuWorkspace workspace, FloatVectorScalarOperands operands) => false;
 
     protected static GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation CreateScalarFloatOp(FloatVectorScalarOperands operands)
@@ -220,8 +218,11 @@ internal sealed class FloatVectorDivScalarExpression(
         scalar,
         Math.Max(vector.WordsPerElement, scalar.Significand.NumWords) + 1)
 {
-    protected override bool DividesByZero(GpuWorkspace workspace, FloatVectorScalarOperands operands) =>
-        new GpuBigUIntView(workspace, operands.Scalar.Significand).IsZero();
+    protected override bool DividesByZero(GpuWorkspace workspace, FloatVectorScalarOperands operands)
+    {
+        ZeroDivisorCheck.ThrowIfCapturingScalarTest(workspace);
+        return new GpuBigUIntView(workspace, operands.Scalar.Significand).IsZero();
+    }
 
     protected override void DispatchKernel(
         GpuWorkspace workspace,
