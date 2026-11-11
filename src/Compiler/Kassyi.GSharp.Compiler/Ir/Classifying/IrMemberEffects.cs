@@ -253,8 +253,9 @@ internal static class IrMemberEffects
         !property.Property.IsStatic && !IsThis(receiver) && receiver.Type.IsValueType &&
         (!property.Property.IsIndexer || receiver.Type is { IsRefLikeType: false } and not IPointerTypeSymbol);
 
-    // Whether expression names storage rather than computing a temporary value
-    private static bool IsVariable(IrExpression expression) => expression switch
+    /// <summary>Whether <paramref name="expression"/> names storage rather than computing a temporary
+    /// value.</summary>
+    public static bool IsVariable(IrExpression expression) => expression switch
     {
         IrVariableReference or IrElementReference => true,
         IrFieldReference { Receiver: null } => true,

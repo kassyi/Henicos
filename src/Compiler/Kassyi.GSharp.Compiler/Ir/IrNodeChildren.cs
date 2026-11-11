@@ -49,6 +49,31 @@ internal static class IrNodeChildren
         }
     }
 
+    /// <summary>Whether <paramref name="predicate"/> holds for <paramref name="node"/> or a node below it; stops at
+    /// the first match.</summary>
+    public static bool Exists(IrNode node, Func<IrNode, bool> predicate) =>
+        predicate(node) ||
+        Of(node)
+            .AsStackEnumerable()
+            .Any(predicate, static (child, match) => Exists(child, match));
+
+    /// <summary><paramref name="node"/> and every node below it, depth first.</summary>
+    public static ImmutableArray<IrNode> DescendantsAndSelf(IrNode node)
+    {
+        var nodes = ImmutableArray.CreateBuilder<IrNode>();
+        AddDescendantsAndSelf(node, nodes);
+        return nodes.ToImmutable();
+    }
+
+    private static void AddDescendantsAndSelf(IrNode node, ImmutableArray<IrNode>.Builder nodes)
+    {
+        nodes.Add(node);
+        foreach (var child in Of(node))
+        {
+            AddDescendantsAndSelf(child, nodes);
+        }
+    }
+
     /// <summary>Whether <paramref name="child"/> is the location that <paramref name="parent"/> writes.</summary>
     public static bool IsWriteTarget(IrNode? parent, IrNode child) => parent switch
     {
