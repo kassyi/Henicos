@@ -41,12 +41,46 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 
 ## 5.2 Dialect Syntax Support
 
-Both `GSharpCudaDialect` and `StandardCppDialect` fully support device synchronization and warp-level intrinsics:
+The GPU (`GSharpCudaDialect`) is the target. The CPU paths, the native C++ build of `StandardCppDialect` and the
+managed path, exist to reproduce the GPU result and check it; a result that only a CPU path produces is never treated
+as the correct one ([Semantics Charter §6.5](06_semantics.md#65-the-cpu-paths)). They run synchronization and warp
+intrinsics as follows:
 
-* **Device Synchronization (`Gpu.SyncThreads()`, `Gpu.SyncGrid()`)**: Hardware thread block barriers (`__syncthreads()`) execute natively on CUDA. On the CPU backend (`StandardCppDialect`), barriers are lowered into a switch-based state machine (`StateMachineLowerer`) that synchronizes OpenMP threads across barrier steps without race conditions or deadlocks.
-* **Warp Shuffles (`Warp.ShuffleSync`, `Warp.ActiveMask()`)**: Hardware warp intrinsics execute via PTX shuffle instructions on CUDA. On the CPU backend, `WarpInstructionRewriter` hoists warp operations so the CPU runtime emulates warp communication deterministically.
+* **Block barriers (`Gpu.SyncThreads()`)**: `__syncthreads()` on CUDA. The native CPU build runs the blocks of the grid
+  in an OpenMP `parallel for`, one block per iteration. Inside that iteration the threads of the block run one after
+  another, each as a state machine (`StateMachineLowerer`) that returns at a barrier and resumes after it in the next
+  round, so the block passes the barrier once every thread has reached it. The managed path also runs each thread as a
+  state machine. A cooperative kernel (`Gpu.SyncGrid()`) runs in grid phases on both CPU paths.
+* **Warp intrinsics (`Warp.ShuffleSync`, `Warp.ActiveMask()`, votes and reductions)**: PTX instructions on CUDA. On the
+  CPU paths, `WarpInstructionRewriter` splits the method at each warp operation, so the lanes of a warp exchange their
+  values at the same point. Where the GPU leaves the value of `Warp.ActiveMask()` open, the CPU paths return one of the
+  values the GPU may return ([Semantics Charter §6.5](06_semantics.md#65-the-cpu-paths)).
 
-Per the [Semantics Charter](06_semantics.md), the CPU fallback is a reference implementation of the GPU model that executes the same barriers and warp steps as hardware SIMT execution.
+The CPU paths cannot split every shape into states. These forms are compile errors, reported for every dialect, except
+that a project built only for CUDA accepts a warp shuffle in the places that GSH0062 lists:
+
+* [GSH0037](../03_bcl_api/diagnostics/GSH0037.md): a barrier in a lambda or a local function that the CPU dialects do
+  not split.
+* [GSH0039](../03_bcl_api/diagnostics/GSH0039.md): a `ref` variable or a `ref struct` (such as `Span<T>`) used across a
+  barrier.
+* [GSH0040](../03_bcl_api/diagnostics/GSH0040.md): a `goto` that jumps across a barrier.
+* [GSH0041](../03_bcl_api/diagnostics/GSH0041.md): a pointer to a local or to `stackalloc` memory held across a
+  barrier.
+* [GSH0061](../03_bcl_api/diagnostics/GSH0061.md): a recursive device function that reaches a barrier or a warp
+  shuffle.
+* [GSH0062](../03_bcl_api/diagnostics/GSH0062.md): a warp shuffle, vote or reduction, `Gpu.SyncWarp`,
+  `Warp.ActiveMask()`, or a device function that reaches a barrier, called from a lambda, a local function, a switch
+  expression arm, a `when` clause, after `?.` or as the right operand of `??`.
+
+Other differences of the CPU paths:
+
+* `Gpu.InlinePtx` has no CPU equivalent: [GSH0054](../03_bcl_api/diagnostics/GSH0054.md) warns, and the call fails at
+  run time.
+* Two `SharedMemory<T>` declarations on one line share a buffer in managed execution
+  ([GSH0063](../03_bcl_api/diagnostics/GSH0063.md)).
+* A thread that is inside more than 16 thread-dependent branches and loops at once, in methods that reach
+  `Warp.ActiveMask()`, stops the launch with `InvalidOperationException`: the CPU paths cannot follow which lanes run
+  together beyond that depth.
 
 ## 5.3 Standard Diagnostics and Warnings
 
@@ -61,7 +95,9 @@ Since all pointer validity checks are pushed to the AOT/Runtime phase, developer
 
 ## 5.4 Custom G# Diagnostics
 
-The `Kassyi.GSharp.Compiler` AOT pipeline enforces constraints natively during compilation by traversing the C# AST and reporting specific MSBuild diagnostics. Click any Diagnostic ID for detailed causes, solutions, and Before/After code examples:
+The `Kassyi.GSharp.Compiler` AOT pipeline enforces constraints natively during compilation by traversing the C# AST and
+reporting specific MSBuild diagnostics. Click any Diagnostic ID for detailed causes, solutions, and Before/After code
+examples:
 
 | ID | Severity | Title | Condition |
 | :--- | :--- | :--- | :--- |
@@ -86,9 +122,9 @@ The `Kassyi.GSharp.Compiler` AOT pipeline enforces constraints natively during c
 | [**GSH0018**](../03_bcl_api/diagnostics/GSH0018.md) | Error | GPU intrinsic called from host | Triggered when a GPU-specific intrinsic is invoked from standard CPU host code. |
 | [**GSH0019**](../03_bcl_api/diagnostics/GSH0019.md) | Error | Manual GetEnumerator calls are not supported | Triggered when explicit calls to `GetEnumerator()` are made in device code. |
 | [**GSH0020**](../03_bcl_api/diagnostics/GSH0020.md) | Error | Missing IDisposable implementation | Triggered when a class holds an owned disposable GPU resource but does not implement `IDisposable`. |
-| [**GSH0021**](../03_bcl_api/diagnostics/GSH0021.md) | Warning | Undisposed GPU resource (Deprecated) | Triggered when `Dispose()` fails to dispose all owned GPU resources. (Deprecated, integrated into GSH0022) |
-| [**GSH0022**](../03_bcl_api/diagnostics/GSH0022.md) | Error | Undisposed GPU scope | Triggered when an `IGpuResourceScope` is not disposed. |
-| [**GSH0023**](../03_bcl_api/diagnostics/GSH0023.md) | Error | Property getter side-effect (Deprecated) | Triggered when a property getter allocates a disposable GPU resource. (Deprecated) |
+| [**GSH0021**](../03_bcl_api/diagnostics/GSH0021.md) | Warning | Undisposed GPU resource (Deprecated) | Was triggered when `Dispose()` failed to dispose all owned GPU resources. (Deprecated, replaced by composite scopes; no longer reported) |
+| [**GSH0022**](../03_bcl_api/diagnostics/GSH0022.md) | Error | Undisposed GPU scope | Triggered when the parameterless `Dispose()` of a type releases, on no path, a disposable field the type owns. |
+| [**GSH0023**](../03_bcl_api/diagnostics/GSH0023.md) | Error | Property getter side-effect | Triggered when a property getter allocates a disposable GPU resource. |
 | [**GSH0024**](../03_bcl_api/diagnostics/GSH0024.md) | Error | Cast operator side-effect | Triggered when a cast operator allocates a disposable GPU resource. |
 | [**GSH0025**](../03_bcl_api/diagnostics/GSH0025.md) | Error | Unguarded multi-allocation | Triggered when multiple allocations in a constructor are not guarded with try-catch. |
 | [**GSH0026**](../03_bcl_api/diagnostics/GSH0026.md) | Error | Static disposable allocation | Triggered when a static field allocates a disposable GPU resource. |
@@ -103,7 +139,7 @@ The `Kassyi.GSharp.Compiler` AOT pipeline enforces constraints natively during c
 | [**GSH0035**](../03_bcl_api/diagnostics/GSH0035.md) | Error | Cannot call parallel-dependent processing from a single-thread context | Triggered when parallel intrinsics are called from a single-thread context. |
 | [**GSH0036**](../03_bcl_api/diagnostics/GSH0036.md) | Error | GPU code type must be partial | Triggered when a type containing `[GpuKernel]` or `[GpuDeviceFunction]` is not declared `partial`. |
 | [**GSH0037**](../03_bcl_api/diagnostics/GSH0037.md) | Error | Barrier in a lambda or local function that the CPU dialects do not split | Triggered when a barrier is used in a nested lambda that CPU dialects cannot split. |
-| [**GSH0038**](../03_bcl_api/diagnostics/GSH0038.md) | Error | Exception handling is not supported in GPU kernels | Triggered when `try`, `catch`, `finally`, or `throw` is used in a kernel. |
+| [**GSH0038**](../03_bcl_api/diagnostics/GSH0038.md) | Error | Exception handling is not supported in GPU kernels | Triggered when a `try` statement (`try` / `catch` / `finally`) is used in a kernel. A `throw` statement is reported as **GSH0003** instead. |
 | [**GSH0039**](../03_bcl_api/diagnostics/GSH0039.md) | Error | ref structs cannot be held across barrier synchronization | Triggered when a `ref struct` spans a barrier. |
 | [**GSH0040**](../03_bcl_api/diagnostics/GSH0040.md) | Error | goto statements cannot cross barrier synchronization | Triggered when a `goto` statement jumps across a barrier. |
 | [**GSH0041**](../03_bcl_api/diagnostics/GSH0041.md) | Error | Stack pointers cannot be held across barrier synchronization | Triggered when a stack pointer spans a barrier. |
@@ -116,6 +152,12 @@ The `Kassyi.GSharp.Compiler` AOT pipeline enforces constraints natively during c
 | [**GSH0049**](../03_bcl_api/diagnostics/GSH0049.md) | Error | [TakesOwnership] applied to non-IDisposable type | Triggered when `[TakesOwnership]` is applied to a parameter whose type does not implement `IDisposable`. |
 | [**GSH0050**](../03_bcl_api/diagnostics/GSH0050.md) | Error | [TakesOwnership] is only allowed on constructor parameters | Triggered when `[TakesOwnership]` is used on a method parameter. |
 | [**GSH0051**](../03_bcl_api/diagnostics/GSH0051.md) | Error | Cannot take ownership of a reference parameter | Triggered when `[TakesOwnership]` is applied to a `ref` or `out` parameter. |
+| [**GSH0052**](../03_bcl_api/diagnostics/GSH0052.md) | Error | Native API definition is not valid YAML | Triggered when a YAML native API definition marked with `GSharpApi="true"` cannot be parsed. |
+| [**GSH0053**](../03_bcl_api/diagnostics/GSH0053.md) | Error | Native API definition violates the schema | Triggered when a YAML native API definition is well-formed but does not satisfy the G# native API schema. |
+| [**GSH0054**](../03_bcl_api/diagnostics/GSH0054.md) | Warning | Gpu.InlinePtx is not supported by the target dialect | Triggered when `Gpu.InlinePtx` is transpiled for a dialect that cannot embed inline assembly, such as the CPU dialect; the call is replaced with a run-time failure. |
+| [**GSH0055**](../03_bcl_api/diagnostics/GSH0055.md) | Error | Identifier containing '__' is reserved | Triggered when an identifier declared in GPU code, or a member of a struct used there, contains a double underscore. |
+| [**GSH0056**](../03_bcl_api/diagnostics/GSH0056.md) | Error | GPU method name is a C++ keyword (Deprecated) | No longer reported: a `[GpuKernel]` or `[GpuDeviceFunction]` method whose name is a C++/CUDA keyword is renamed automatically. |
+| [**GSH0057**](../03_bcl_api/diagnostics/GSH0057.md) | Error | Malformed trusted key line | Triggered when a line in `trusted_keys.txt` is not a valid key followed by a matching fnv1a64 fingerprint. |
 | [**GSH0058**](../03_bcl_api/diagnostics/GSH0058.md) | Error | Two structs share one AotContexts name | Triggered when two structs collide on their generated AotContexts name. |
 | [**GSH0059**](../03_bcl_api/diagnostics/GSH0059.md) | Error | Kernel overloads cannot be told apart by their launch wrappers | Triggered when overloaded kernels produce identical launch wrapper signatures. |
 | [**GSH0060**](../03_bcl_api/diagnostics/GSH0060.md) | Error | User-defined operators are not supported in GPU code | Triggered when a user-defined operator is used in device code. |
@@ -128,10 +170,10 @@ The `Kassyi.GSharp.Compiler` AOT pipeline enforces constraints natively during c
 | [**GSH0067**](../03_bcl_api/diagnostics/GSH0067.md) | Error | Disposable resource is created and discarded | Triggered when a disposable resource is allocated without being assigned or returned. |
 | [**GSH0068**](../03_bcl_api/diagnostics/GSH0068.md) | Error | Disposable local is never disposed | Triggered when a disposable local variable is not disposed on all exit paths. |
 | [**GSH0069**](../03_bcl_api/diagnostics/GSH0069.md) | Error | SharedMemory element type must not be disposable | Triggered when `SharedMemory<T>` uses an `IDisposable` element type. |
-| [**GSH0070**](../03_bcl_api/diagnostics/GSH0070.md) | Error | Device iterator shape not supported | Triggered when a GPU iterator method has an unsupported return type, element type, parameter modifier, or declaration shape. |
-| [**GSH0071**](../03_bcl_api/diagnostics/GSH0071.md) | Error | Iterator value must be enumerated in place | Triggered when an `IEnumerable<T>` iterator value is not consumed directly by `foreach` or stored in a single-assignment local variable. |
-| [**GSH0072**](../03_bcl_api/diagnostics/GSH0072.md) | Error | Iterator body construct not supported | Triggered when `Gpu.SyncThreads()`, `SharedMemory<T>`, or an iterator local crossing a barrier is used in an iterator or its consuming `foreach`. |
-| [**GSH0073**](../03_bcl_api/diagnostics/GSH0073.md) | Warning | Iterator expansion too large | Triggered when expanding an iterator at a consumer `foreach` duplicates the loop body more than 32 times. |
+| [**GSH0070**](../03_bcl_api/diagnostics/GSH0070.md) | Error | Iterator method must be a static [GpuDeviceFunction] returning IEnumerable<T> with a value-type element | Triggered when a GPU iterator method has an unsupported return type, element type, parameter modifier, or declaration shape. |
+| [**GSH0071**](../03_bcl_api/diagnostics/GSH0071.md) | Error | Iterator value must be consumed directly by foreach | Triggered when an `IEnumerable<T>` iterator value is not consumed directly by `foreach` or stored in a single-assignment local variable. |
+| [**GSH0072**](../03_bcl_api/diagnostics/GSH0072.md) | Error | Unsupported construct in or around an iterator | Triggered when `Gpu.SyncThreads()`, `SharedMemory<T>`, or an iterator local crossing a barrier is used in an iterator or its consuming `foreach`. |
+| [**GSH0073**](../03_bcl_api/diagnostics/GSH0073.md) | Warning | Iterator expansion copies the foreach body too many times | Triggered when expanding an iterator at a consumer `foreach` duplicates the loop body more than 32 times. |
 | [**GSH0074**](../03_bcl_api/diagnostics/GSH0074.md) | Error | CopyAsyncWaitGroup count must be a compile-time constant between 0 and 7 | Triggered when `CopyAsyncWaitGroup` count is out of range or not constant. |
 | [**GSH0075**](../03_bcl_api/diagnostics/GSH0075.md) | Error | Gpu.CopyAsync requires a SharedMemory<T> destination and a global memory source | Triggered when `Gpu.CopyAsync` arguments are invalid. |
 | [**GSH0076**](../03_bcl_api/diagnostics/GSH0076.md) | Error | Unsupported warp matrix fragment or operation | Triggered when WMMA matrix types or operations are unsupported. |
@@ -142,17 +184,18 @@ The `Kassyi.GSharp.Compiler` AOT pipeline enforces constraints natively during c
 | [**GSH0081**](../03_bcl_api/diagnostics/GSH0081.md) | Warning | Struct array allocates the array field of each element | Triggered when deep marshaling allocates nested arrays per element. |
 | [**GSH0083**](../03_bcl_api/diagnostics/GSH0083.md) | Warning | Barrier that only some threads may reach, depending on the launch or on run-time values | Triggered when a barrier may be reached by only some threads. |
 | [**GSH0084**](../03_bcl_api/diagnostics/GSH0084.md) | Warning | Barrier after an exit that only some threads take | Triggered when a barrier follows a conditional thread exit. |
-| [**GSH0088**](../03_bcl_api/diagnostics/GSH0088.md) | Error | Device code of another assembly is not exported | Triggered when cross-assembly device code is not marked with `[assembly: GpuDeviceExport]`. |
+| [**GSH0088**](../03_bcl_api/diagnostics/GSH0088.md) | Error | Device code of another assembly is not exported | Triggered when GPU code uses a `[GpuDeviceFunction]`, or the constructor or computed property of a struct, of a referenced assembly whose device code export holds no record of it (for example, the assembly was built with `GSharpExportDeviceCode=false`). The export is written by the generator; users never write `[assembly: GpuDeviceExport]`. |
 | [**GSH0089**](../03_bcl_api/diagnostics/GSH0089.md) | Error | Device code of another assembly cannot be used | Triggered when cross-assembly device code cannot be imported. |
 | [**GSH0090**](../03_bcl_api/diagnostics/GSH0090.md) | Error | Device code of two assemblies has the same C++ name | Triggered when two assemblies declare colliding device code symbols. |
 | [**GSH0091**](../03_bcl_api/diagnostics/GSH0091.md) | Error | Stack array outlives its scope | Triggered when a stack array reference escapes its enclosing scope. |
 | [**GSH0095**](../03_bcl_api/diagnostics/GSH0095.md) | Error | Warp shuffle width must be 1, 2, 4, 8, 16 or 32 | Triggered when a warp shuffle width is not a valid power of two. |
-| [**GSH0099**](../03_bcl_api/diagnostics/GSH0099.md) | Warning | An AsParallel() aggregate runs sequentially in each thread | Triggered when `AsParallel()` is used without parallel reduction. |
+| [**GSH0099**](../03_bcl_api/diagnostics/GSH0099.md) | Warning | An AsParallel() aggregate runs sequentially in each thread | Triggered when an `AsParallel()` aggregate in a kernel cannot be shared between the threads of a block, so each thread sums the whole sequence on its own. |
 | [**GSH0100**](../03_bcl_api/diagnostics/GSH0100.md) | Warning | Every block reduces the whole sequence of an AsParallel() aggregate | Triggered when parallel aggregation is redundant across blocks. |
 | [**GSH0102**](../03_bcl_api/diagnostics/GSH0102.md) | Error | Method is too deeply nested or too complex to compile | Triggered when expression or control flow depth exceeds compiler limits. |
 | [**GSH0103**](../03_bcl_api/diagnostics/GSH0103.md) | Error | Error site ID collision in device error channel | Triggered when two error sites produce the same ID. |
 | [**GSH0106**](../03_bcl_api/diagnostics/GSH0106.md) | Error | Kernel parameter name conflicts with a launch parameter | Triggered when a kernel parameter shares a name with a launch wrapper parameter. |
 | [**GSH0107**](../03_bcl_api/diagnostics/GSH0107.md) | Error | A method without [GpuDeviceFunction] is called from GPU code | Triggered when unmarked code is invoked from device context. |
+| [**GSH0108**](../03_bcl_api/diagnostics/GSH0108.md) | Error | Struct field type is not accessible to the generated launcher | Triggered when a struct used by a kernel parameter or return value has a field whose type the generated launcher cannot name, such as a private type nested in the struct. |
 | [**SLQ0001**](../03_bcl_api/diagnostics/SLQ0001.md) | Error | StackLinq method chain is too deep | Triggered when a StackLinq chain exceeds the compiler depth limit. |
 | [**RS0030**](../03_bcl_api/diagnostics/RS0030.md) | Error | Banned API in GPU kernel | Triggered via `BannedApiAnalyzers` when a banned API is used in GPU kernels or GPU intrinsics in host code. |
 

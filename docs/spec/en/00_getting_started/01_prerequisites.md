@@ -23,9 +23,15 @@ To leverage actual hardware acceleration:
 
 For local debugging, unit testing, and CI/CD pipelines without GPU hardware:
 
-- Requires a standard **C++ Host Compiler** (MSVC on Windows, or GCC/Clang on Linux via `GccClangToolchain`). G# transpiles kernels to C++17 and compiles native shared libraries (`.dll` on Windows, `.so` on Linux). When a native C++ compiler is not available, G# falls back to pure C# managed execution via `CpuKernelLoader.ShouldUseManagedExecution`.
-- **No NVIDIA GPU, Driver, or CUDA Toolkit is required**. While execution speeds are reduced compared to hardware execution, this allows seamless local debugging and CI/CD testing on GPU-less machines.
-- See [Dialect Architecture](../02_architecture/01_aot_transpiler.md#123-transpiler-dialect-architecture-two-tier-design) and [CPU Dialect Limitations](../01_language/05_limitations.md#52-dialect-syntax-support).
+- Requires a standard **C++ Host Compiler** (MSVC on Windows, or GCC/Clang on Linux via `GccClangToolchain`). G#
+  transpiles kernels to C++17 and compiles native shared libraries (`.dll` on Windows, `.so` on Linux). When the native
+  library of the kernels does not exist (for example, no C++ compiler built it), or when
+  `CpuKernelLoader.ForceManagedExecution` is set, G# runs the kernels as managed C# instead
+  (`CpuKernelLoader.ShouldUseManagedExecution`).
+- **No NVIDIA GPU, Driver, or CUDA Toolkit is required**. While execution speeds are reduced compared to hardware
+  execution, this allows seamless local debugging and CI/CD testing on GPU-less machines.
+- See [Dialect Architecture](../02_architecture/01_aot_transpiler.md#123-transpiler-dialect-architecture-two-tier-design)
+  and [CPU Dialect Limitations](../01_language/05_limitations.md#52-dialect-syntax-support).
 
 Once your environment is set up, proceed to [2. The Mental Model & Safety Net](02_mental_model.md) to understand how G# maps C# code to CUDA.
 

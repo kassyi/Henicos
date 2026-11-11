@@ -50,14 +50,18 @@ Because G# uses C# syntax to write GPU kernels, this specification uses the foll
 
 The G# framework strictly operates on a **Pure AOT (Ahead-Of-Time) Static Execution Model**. All C# kernel logic is completely resolved and compiled during the .NET build phase.
 
-- The **AOT Generator (`Kassyi.GSharp.Compiler`)** translates C# syntax into CUDA C++ and orchestrates the native compilation into machine code (`.fatbin`) during the standard MSBuild process.
+- The **AOT Generator (`Kassyi.GSharp.Compiler`)** translates C# syntax into CUDA C++ and orchestrates the native
+  compilation into machine code (`.fatbin`) during the standard MSBuild process.
 - The **Runtime Loader (`Kassyi.GSharp.Runtime`)** serves as an ultra-lightweight loader that validates binary integrity (via [trailing hash verification](../02_architecture/02_runtime_loader.md#22-aot-module-loading-and-validation)) and loads the precompiled AOT binaries directly into the NVIDIA driver, instantly dispatching the kernel with zero compilation overhead.
 
 ## 1.3 Transpiler Dialect Architecture (Two-Tier Design)
 
 A defining strength of G# is its **Two-Tier Transpiler Architecture**. Rather than hardcoding C# directly to NVIDIA CUDA C++, G# separates the Abstract Syntax Tree (AST) analysis engine from the backend syntax generation via the `ITranspilerDialect` interface.
 
-- **Primary Dialect**: The default `GSharpCudaDialect` acts as a language overlay, mapping C# constructs to highly optimized NVIDIA CUDA C++ and PTX. For CPU execution and fallback testing, `StandardCppDialect` compiles C# kernels to standard C++17 with parallel execution via OpenMP and barrier state machines.
+- **Primary Dialect**: The default `GSharpCudaDialect` acts as a language overlay, mapping C# constructs to highly
+  optimized NVIDIA CUDA C++ and PTX. `StandardCppDialect` compiles the kernels to standard C++17 for the CPU paths,
+  which reproduce the GPU result to check it: OpenMP runs the blocks in parallel, and the threads of a block run as
+  state machines that stop at each barrier.
 - **Backend Agnosticism**: By simply swapping the active Dialect, the identical Roslyn AST engine can target entirely different GPU backends (e.g., OpenCL C, Apple Metal Shading Language, or Vulkan GLSL) without rewriting the core compilation logic.
 
 > For deep internal architecture details of the transpiler and runtime execution, refer to **Part II: Implementation Overview** (`../02_architecture/01_aot_transpiler.md` and `../02_architecture/02_runtime_loader.md`).
