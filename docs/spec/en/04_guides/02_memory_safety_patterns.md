@@ -14,7 +14,7 @@ description: "This specification defines the complete matrix of C# memory manage
 
 This specification defines the complete matrix of C# memory management patterns (ownership, lifecycle, disposal, and unsafe escape hatches) enforced by G#.
 
-By encoding these rules into Roslyn Diagnostic Analyzers (`ObjectLifecycleAnalyzer`), G# guarantees **zero VRAM leaks and zero false positives** at compile-time without requiring a garbage collector on the GPU.
+By encoding these rules into Roslyn Diagnostic Analyzers (`DisposableOwnershipAnalyzer` and `LocalDisposableOwnershipAnalyzer`), G# guarantees **zero VRAM leaks and zero false positives** at compile-time without requiring a garbage collector on the GPU.
 
 ### 11.1.1 Strict Ownership Model
 
@@ -33,7 +33,7 @@ public class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
 }
 ```
 
-2. **Moving / Ownership Transfer (`[TakesOwnership]`)**: When ownership must be transferred (e.g., factories, context wrappers), the parameter is marked with `[TakesOwnership]`. This explicit contract dictates that the caller is relinquishing control, and the receiving class is now the sole owner. The analyzer then strongly enforces that the receiving class _must_ implement `IDisposable` (`GSH0020`) and _must_ explicitly call `.Dispose()` on that resource in its own `Dispose()` method (`GSH0021`).
+2. **Moving / Ownership Transfer (`[TakesOwnership]`)**: When ownership must be transferred (e.g., factories, context wrappers), the parameter is marked with `[TakesOwnership]`. This explicit contract dictates that the caller is relinquishing control, and the receiving class is now the sole owner. The analyzer then strongly enforces that the receiving class _must_ implement `IDisposable` (`GSH0020`) and _must_ explicitly call `.Dispose()` on that resource in its own `Dispose()` method (`GSH0022`, `UndisposedGpuScope`; note that `GSH0021` is obsolete and disabled by default).
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
@@ -41,7 +41,7 @@ public class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
 // GpuBigInt MUST implement IDisposable because it takes ownership of `value`.
 public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value) : IDisposable
 {
-    // ❌ ERROR (GSH0021) if Dispose is missing or doesn't dispose `value`.
+    // ❌ ERROR (GSH0022) if Dispose is missing or doesn't dispose `value`.
     // Note: Dispose() is only invoked on the Host side.
     public void Dispose()
     {
@@ -150,9 +150,9 @@ Patterns where resources are retained as class fields and their lifecycle is tie
 | Pattern | Code Example & Preconditions | Analyzer Evaluation & Diagnostics |
 | :--- | :--- | :--- |
 | **Missing `IDisposable` on Class** | `class A { GpuWorkspace _c = new(); }` | ❌ **Error (GSH0020)**: Class `A` holds a disposable GPU resource but does not implement `IDisposable`. |
-| **Undisposed Field in `Dispose()`** | `class A : IDisposable { GpuWorkspace _c = new(); public void Dispose() { } }` | ❌ **Error (GSH0021)**: `Dispose()` AST does not contain an invocation of `_c.Dispose()` or `_c?.Dispose()`. |
+| **Undisposed Field in `Dispose()`** | `class A : IDisposable { GpuWorkspace _c = new(); public void Dispose() { } }` | ❌ **Error (GSH0022)**: The `Dispose()` method must explicitly invoke `.Dispose()` on the owned `IGpuResourceScope` (note: `GSH0021` is obsolete/disabled). |
 | **Clean Chained Disposal** | `class A : IDisposable { ... public void Dispose() { _c.Dispose(); } }` | ⭕ **OK**: Layer 3 validation passed. Resource lifecycle is safely chained. |
-| **Unsafe Field Overwrite** | `_c = new GpuWorkspace();` (Reassignment) | ❌ **Error**: Reassigning an owned field without prior disposal leaks the previous instance. |
+| **Unsafe Field Overwrite** | `_c = new GpuWorkspace();` (Reassignment) | ❌ **Antipattern**: Reassigning an owned field without prior disposal leaks the previous instance (note: `GSH0022` is `UndisposedGpuScope` in `Dispose()`, not field reassignment). |
 
 **Code Examples:**
 
@@ -164,7 +164,7 @@ class A {
     GpuWorkspace _c = new GpuWorkspace();
 }
 
-// ❌ Error (GSH0021): `Dispose()` AST does not contain an invocation of `_c.Dispose()`.
+// ❌ Error (GSH0022): The Dispose() method must explicitly invoke .Dispose() on the owned IGpuResourceScope '_c' (GSH0021 is obsolete).
 class B : IDisposable {
     GpuWorkspace _c = new GpuWorkspace();
     public void Dispose() { }
@@ -178,7 +178,7 @@ class C : IDisposable {
     }
 }
 
-// ❌ Error: Reassigning an owned field without prior disposal leaks the previous instance.
+// ❌ Antipattern: Reassigning an owned field without prior disposal leaks the previous instance.
 class D : IDisposable {
     GpuWorkspace _c = new GpuWorkspace();
     public void Reassign() {

@@ -8,7 +8,7 @@ description: "Detailed explanation of AST-based lazy evaluation, computational g
 
 # 4. BigNum Expression Trees Guide
 
-To provide highly readable syntax without sacrificing GPU memory allocation performance (such as avoiding repeated `cudaMalloc` overheads per operation), `GpuBigInt` and `GpuBigFloat` employ a **Lazy Evaluation / Computational Graph** architecture on the host side.
+To provide highly readable syntax without sacrificing GPU memory allocation performance (such as avoiding repeated `cudaMalloc` overheads per operation), `GpuBigInt` and `GpuBigFloat` employ a **Lazy Evaluation / Computational Graph** architecture on the host side. Note that `GpuBigFloat` and `GpuBigUFloat` are non-generic structs; generic parameterizations and fictitious fixed-precision float wrappers (such as GpuFloat128) do not exist.
 
 Instead of computing immediately, operator overloads construct an AST (Abstract Syntax Tree), represented by `GpuBigIntExpr`.
 
@@ -25,11 +25,17 @@ When you use operator overloads (`+`, `-`, `*`, `/`, `<<`, `>>`, `&`), the opera
 **Example: Comprehensive Expression Tree**
 ```csharp
 // Execution Context: Host (CPU)
-// 1. Construct the AST (No GPU execution yet)
-var expr = (gpuA + gpuB) * gpuC - gpuA;
+// GpuBigInt wraps a GpuBigUInt buffer with a sign flag (primary constructor is (GpuBigUInt, bool)):
+using var workspace = new GpuWorkspace(1024);
+using var uA = GpuBigUInt.FromBigInteger(workspace, 100);
+using var gpuA = new GpuBigInt(uA, isNegative: false);
+using var uB = GpuBigUInt.FromBigInteger(workspace, 50);
+using var gpuB = new GpuBigInt(uB, isNegative: true);
+using var uC = GpuBigUInt.FromBigInteger(workspace, 2);
+using var gpuC = new GpuBigInt(uC, isNegative: false);
 
-// 2. Evaluate the tree and return the result as a new buffer
-using var gpuResult = expr.Node.Evaluate(workspace, null);
+// Evaluate the expression tree directly into a result buffer without declaring intermediate GpuBigIntExpr locals:
+using var gpuResult = ((gpuA + gpuB) * gpuC - gpuA).Evaluate(workspace);
 ```
 
 This ensures that intermediate buffers can be efficiently reused, and the sequence of kernel dispatches can be pipelined optimally.
@@ -48,7 +54,7 @@ To prevent this, the G# Roslyn Analyzer introduces **GSH0005** (`GpuBigIntExpr` 
 // GpuBigIntExpr recipe = (gpuA + gpuB) * gpuC - gpuA;
 
 // ✨ CORRECT: Enforced evaluation
-using var gpuResult = ((gpuA + gpuB) * gpuC - gpuA).Node.Evaluate(workspace, null);
+using var gpuResult = ((gpuA + gpuB) * gpuC - gpuA).Evaluate(workspace);
 ```
 
 ---
@@ -60,21 +66,20 @@ The standard library (`Kassyi.GSharp.Stdlib.GpuMath`) has been enhanced to suppo
 **Example**
 ```csharp
 // Execution Context: Host (CPU)
+using System.Numerics;
+using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-public static void EvaluateBigInt(uint[] hostData, int dynamicValue)
+public static void EvaluateBigInt(GpuWorkspace workspace, int dynamicValue)
 {
-    // 'a' has a dynamically resolved sign at runtime based on 'dynamicValue'
-    using var gpuA = new GpuBigUInt<L1024>(workspace);
-    gpuA.SetFrom(dynamicValue);
-    GpuBigIntExpr a = gpuA;
-    using var gpuB = new GpuBigUInt<L1024>(workspace);
-    gpuB.SetFrom(42);
-    GpuBigIntExpr b = gpuB; 
-    
-    // The multiplication seamlessly handles positive/negative permutations dynamically
-    GpuBigIntExpr result = a * b;
+    using var uA = GpuBigUInt.FromBigInteger(workspace, BigInteger.Abs(dynamicValue));
+    using var gpuA = new GpuBigInt(uA, dynamicValue < 0);
+
+    using var uB = GpuBigUInt.FromBigInteger(workspace, 42);
+    using var gpuB = new GpuBigInt(uB, isNegative: false);
+
+    using var result = (gpuA * gpuB).Evaluate(workspace);
 }
 ```
 
