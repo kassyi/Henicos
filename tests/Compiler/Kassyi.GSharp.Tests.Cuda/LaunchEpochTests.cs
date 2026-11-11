@@ -225,8 +225,8 @@ public sealed class LaunchEpochTests
     }
 
     // [WHY] While every record is owned, a launch takes an epoch of the shared range (bit 31) and records into the
-    // shared record: its launcher throws the error, the waiters of its grid barrier leave on its own abort word, and the
-    // next launch of the same kernel runs completely
+    // shared record: its launcher throws the error, the waiters of its grid barrier leave on its own abort word, and
+    // the next launch of the same kernel runs completely
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public Task SharedEpoch_EveryRecordHeld_LauncherThrowsAndWaitersLeave()
