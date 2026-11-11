@@ -37,10 +37,17 @@ internal static class ManagedCSharpTranspiler
 
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
                        ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
-        var unhoistedBody = RewriteResumeLocals(loweredBody, unhoistedLocals, renamedLocals, semanticModel, kernelName,
-            methodSymbol.AreLocalsZeroed());
         var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
-        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false, accessors, isUnsafe);
+        var bodySource = ManagedContextFields.FindHeldRefLocal(contextFields) is { } heldRefLocal
+            ? ManagedContextFields.CreateHeldRefLocalThrow(kernelName, heldRefLocal)
+            : RewriteAndNormalizeBody(
+                RewriteResumeLocals(loweredBody, unhoistedLocals, renamedLocals, semanticModel, kernelName,
+                    methodSymbol.AreLocalsZeroed()),
+                semanticModel,
+                isDeviceFunction: false,
+                accessors,
+                isUnsafe
+            );
 
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
@@ -96,10 +103,17 @@ internal static class ManagedCSharpTranspiler
 
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
                        ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
-        var unhoistedBody = RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals, semanticModel,
-            functionName, methodSymbol.AreLocalsZeroed());
         var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
-        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true, accessors, isUnsafe);
+        var bodySource = ManagedContextFields.FindHeldRefLocal(lowered.ContextFields) is { } heldRefLocal
+            ? ManagedContextFields.CreateHeldRefLocalThrow(functionName, heldRefLocal)
+            : RewriteAndNormalizeBody(
+                RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals, semanticModel, functionName,
+                    methodSymbol.AreLocalsZeroed()),
+                semanticModel,
+                isDeviceFunction: true,
+                accessors,
+                isUnsafe
+            );
 
         // As visible as the function (a consumer of another assembly calls a public one); the frame's fields are the
         // assembly's own (#538 3rd review M1)

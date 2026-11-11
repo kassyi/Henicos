@@ -76,7 +76,8 @@ public static class AstLoweringPipeline
 
         // [WHY] Found once, before ContextHoister rewrites declarations, and given to both passes so that they agree
         var statePlan = StateLabelPlanner.Plan(hoistedBody, bodyModel);
-        var hoister = new ContextHoister(copiedParameters, bodyModel, owner, statePlan);
+        var hoister = new ContextHoister(copiedParameters, bodyModel, owner, statePlan,
+            RefLocalLiveness.FindNotLiveAcrossSplit(body, bodyModel));
         var (contextHoistedBody, contextFields) = hoister.Hoist(hoistedBody);
         if (!hoister.HasSplitPoint)
         {

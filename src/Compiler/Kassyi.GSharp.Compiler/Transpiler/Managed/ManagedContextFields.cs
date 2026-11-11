@@ -23,6 +23,32 @@ internal static class ManagedContextFields
     private static readonly StandardCppDialect s_cppDialect = new();
 
     /// <summary>
+    /// The first hoisted <c>ref</c> local of <paramref name="contextFields"/>, or <see langword="null"/> when there is none.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] The lowering hoists a ref local only when it is live after a split point (<see cref="RefLocalLiveness"/>),
+    /// which the analyzer reports (GSH0039), or when it is rebound with <c>= ref</c> in the method (hoisted as before,
+    /// until #921 keeps ref locals in the frame). A class cannot hold a ref field (CS9059), and generated code that does not
+    /// compile hides every analyzer diagnostic of the build, GSH0039 included; so the state machine of such a method
+    /// only throws, and its frame class leaves the ref local out (#1640).
+    /// </remarks>
+    public static VariableDeclaratorSyntax? FindHeldRefLocal(IReadOnlyList<VariableDeclaratorSyntax>? contextFields) =>
+        contextFields?
+            .AsStackEnumerable()
+            .FirstOrDefault(static field =>
+                field.Parent is VariableDeclarationSyntax declaration && RefLocalLiveness.IsRefType(declaration.Type)
+            );
+
+    /// <summary>
+    /// <c>throw new global::System.NotSupportedException("...");</c>: the body of a state machine whose method holds the
+    /// ref local <paramref name="refLocal"/> across a split point (<see cref="FindHeldRefLocal"/>).
+    /// </summary>
+    public static string CreateHeldRefLocalThrow(string methodName, VariableDeclaratorSyntax refLocal) =>
+        $"throw new global::System.NotSupportedException(\"{methodName} cannot run on the CPU: the ref local " +
+        $"'{refLocal.Identifier.ValueText}' cannot be kept across a barrier or a call that may suspend " +
+        $"({GSharpDiagnostics.CrossBarrierRefStructProhibited.Id}).\");";
+
+    /// <summary>
     /// Categorizes hoisted fields into regular context fields and the ref struct and stackalloc pointer locals that are
     /// declared again at the top of the state function on every resume (<see cref="ResumeLocals"/>).
     /// </summary>
@@ -50,7 +76,8 @@ internal static class ManagedContextFields
         var sharedNames = FindSharedNames(contextFields);
         foreach (var field in contextFields)
         {
-            if (field.Parent is not VariableDeclarationSyntax declaration)
+            // A held ref local gets no field: the state machine only throws (FindHeldRefLocal)
+            if (field.Parent is not VariableDeclarationSyntax declaration || RefLocalLiveness.IsRefType(declaration.Type))
             {
                 continue;
             }
