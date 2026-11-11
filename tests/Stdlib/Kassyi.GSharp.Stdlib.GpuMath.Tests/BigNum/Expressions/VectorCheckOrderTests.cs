@@ -100,15 +100,27 @@ public sealed class VectorCheckOrderTests : IDisposable
         Assert.Equal([3u, 3u, 2u], values);
     }
 
-    public static TheoryData<string, int, int> IntZipLengths
+    // The five integer Zips, each with its GPU call and its host oracle
+    private static readonly IntZipCase s_zipAdd = new("ZipAdd", static (l, r) => l.ZipAdd(r), static (l, r) => l + r);
+    private static readonly IntZipCase s_zipSubtract =
+        new("ZipSubtract", static (l, r) => l.ZipSubtract(r), static (l, r) => l - r);
+    private static readonly IntZipCase s_zipMultiply =
+        new("ZipMultiply", static (l, r) => l.ZipMultiply(r), static (l, r) => l * r);
+    private static readonly IntZipCase s_zipDivide =
+        new("ZipDivide", static (l, r) => l.ZipDivide(r), static (l, r) => l / r);
+    private static readonly IntZipCase s_zipModulo =
+        new("ZipModulo", static (l, r) => l.ZipModulo(r), static (l, r) => l % r);
+    private static readonly IntZipCase[] s_intZips = [s_zipAdd, s_zipSubtract, s_zipMultiply, s_zipDivide, s_zipModulo];
+
+    public static TheoryData<IntZipCase, int, int> IntZipLengths
     {
         get
         {
-            var data = new TheoryData<string, int, int>();
-            foreach (var op in s_intZips)
+            var data = new TheoryData<IntZipCase, int, int>();
+            foreach (var zip in s_intZips)
             {
-                data.Add(op, 4, 6);
-                data.Add(op, 6, 4);
+                data.Add(zip, 4, 6);
+                data.Add(zip, 6, 4);
             }
 
             return data;
@@ -124,24 +136,32 @@ public sealed class VectorCheckOrderTests : IDisposable
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [MemberData(nameof(IntZipLengths))]
-    public void IntZip_DifferentLengths_ThrowsBeforeEvaluatingAnInput(string op, int leftLength, int rightLength)
+    public void IntZip_DifferentLengths_ThrowsBeforeEvaluatingAnInput(IntZipCase zip, int leftLength, int rightLength)
     {
         using var left = IntArray(Ones(leftLength));
         using var right = IntArray(Ones(rightLength));
-        using var zipped = Zip(op, Leaf("left", left), Leaf("right", right));
+        using var zipped = zip.Build(Leaf("left", left), Leaf("right", right));
 
         Assert.Throws<ArgumentException>(() => zipped.Evaluate(_workspace));
         Assert.Empty(_log);
     }
 
-    public static TheoryData<string, string[]> NestedMismatches => new()
-    {
-        { "a6.ZipAdd(a4.ZipAdd(b4))", [] },
-        { "a6.ZipDivide(b6.ZipAdd(b4))", ["a6"] },
-        { "a6.ZipAdd(b6).ZipAdd(a4.ZipSubtract(b4))", [] },
-        { "a6.ZipMultiply(b6.ZipModulo(b4))", ["a6"] },
-        { "a6.ZipAdd(b6.Take(4))", [] },
-    };
+    public static TheoryData<NestedCase> NestedMismatches =>
+    [
+        new("a6.ZipAdd(a4.ZipAdd(b4))", static leaf => leaf("a6").ZipAdd(leaf("a4").ZipAdd(leaf("b4"))), []),
+        new("a6.ZipDivide(b6.ZipAdd(b4))", static leaf => leaf("a6").ZipDivide(leaf("b6").ZipAdd(leaf("b4"))), ["a6"]),
+        new(
+            "a6.ZipAdd(b6).ZipAdd(a4.ZipSubtract(b4))",
+            static leaf => leaf("a6").ZipAdd(leaf("b6")).ZipAdd(leaf("a4").ZipSubtract(leaf("b4"))),
+            []
+        ),
+        new(
+            "a6.ZipMultiply(b6.ZipModulo(b4))",
+            static leaf => leaf("a6").ZipMultiply(leaf("b6").ZipModulo(leaf("b4"))),
+            ["a6"]
+        ),
+        new("a6.ZipAdd(b6.Take(4))", static leaf => leaf("a6").ZipAdd(leaf("b6").Take(4)), []),
+    ];
 
     // A mismatch at or one level below a Zip: the Zip whose inputs differ rejects them with its ArgumentException
     // before either of them is evaluated (Assert.Throws is exact, so the ArgumentOutOfRangeException of a sliced leaf
@@ -152,77 +172,103 @@ public sealed class VectorCheckOrderTests : IDisposable
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [MemberData(nameof(NestedMismatches))]
-    public void IntZip_MismatchBelowAnotherZip_ThrowsBeforeEvaluatingItsInputs(string shape, string[] evaluated)
+    public void IntZip_MismatchBelowAnotherZip_ThrowsBeforeEvaluatingItsInputs(NestedCase shape)
     {
-        using var a6 = IntArray(Ones(6));
-        using var b6 = IntArray(Ones(6));
-        using var a4 = IntArray(Ones(4));
-        using var b4 = IntArray(Ones(4));
-        using var expr = shape switch
+        // a6 and b6 have 6 elements, a4 and b4 have 4; each leaf logs its name when it is evaluated
+        var arrays = new Dictionary<string, GpuBigIntArray>
         {
-            "a6.ZipAdd(a4.ZipAdd(b4))" => Leaf("a6", a6).ZipAdd(Leaf("a4", a4).ZipAdd(Leaf("b4", b4))),
-            "a6.ZipDivide(b6.ZipAdd(b4))" => Leaf("a6", a6).ZipDivide(Leaf("b6", b6).ZipAdd(Leaf("b4", b4))),
-            "a6.ZipAdd(b6).ZipAdd(a4.ZipSubtract(b4))" => Leaf("a6", a6).ZipAdd(Leaf("b6", b6))
-                .ZipAdd(Leaf("a4", a4).ZipSubtract(Leaf("b4", b4))),
-            "a6.ZipMultiply(b6.ZipModulo(b4))" =>
-                Leaf("a6", a6).ZipMultiply(Leaf("b6", b6).ZipModulo(Leaf("b4", b4))),
-            "a6.ZipAdd(b6.Take(4))" => Leaf("a6", a6).ZipAdd(Leaf("b6", b6).Take(4)),
-            _ => throw new ArgumentOutOfRangeException(nameof(shape), shape, null)
+            ["a6"] = IntArray(Ones(6)),
+            ["b6"] = IntArray(Ones(6)),
+            ["a4"] = IntArray(Ones(4)),
+            ["b4"] = IntArray(Ones(4)),
         };
+        try
+        {
+            using var expr = shape.Build(name => Leaf(name, arrays[name]));
 
-        var error = Assert.Throws<ArgumentException>(() => expr.Evaluate(_workspace));
-        Assert.Equal("Vector lengths must match for Zip operations.", error.Message);
-        Assert.Equal(evaluated, _log);
+            var error = Assert.Throws<ArgumentException>(() => expr.Evaluate(_workspace));
+            Assert.Equal(VectorShape.ZipLengthsMessage, error.Message);
+            Assert.Equal(shape.Evaluated, _log);
+        }
+        finally
+        {
+            foreach (var array in arrays.Values)
+            {
+                array.Dispose();
+            }
+        }
     }
 
-    // Inputs of the same length are evaluated left, then right, and every element is combined (the check rejects
-    // nothing it should accept).
+    public static TheoryData<IntZipCase> IntZips => [.. s_intZips];
+
+    // Inputs of the same length are evaluated left, then right, and every element is combined as the oracle of the
+    // operation combines the same values (the check rejects nothing it should accept).
     // mutant: VectorShape.ThrowIfLengthsDiffer `leftCapacity != rightCapacity` -> `leftCapacity == rightCapacity`
     [Theory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData("ZipAdd", new uint[] { 9, 12, 17 })]
-    [InlineData("ZipSubtract", new uint[] { 5, 6, 7 })]
-    [InlineData("ZipMultiply", new uint[] { 14, 27, 60 })]
-    [InlineData("ZipDivide", new uint[] { 3, 3, 2 })]
-    [InlineData("ZipModulo", new uint[] { 1, 0, 2 })]
-    public void IntZip_SameLengths_EvaluatesLeftThenRight(string op, uint[] expected)
+    [MemberData(nameof(IntZips))]
+    public void IntZip_SameLengths_EvaluatesLeftThenRight(IntZipCase zip)
     {
         uint[] left = [7, 9, 12];
         uint[] right = [2, 3, 5];
         using var leftArray = IntArray(left);
         using var rightArray = IntArray(right);
-        using var zipped = Zip(op, Leaf("left", leftArray), Leaf("right", rightArray));
+        using var zipped = zip.Build(Leaf("left", leftArray), Leaf("right", rightArray));
 
         var values = ReadInts(zipped.Evaluate(_workspace));
 
         Assert.Equal(["left", "right"], _log);
-        // The expected row is the operation of each pair, as System.Linq's Zip computes it over the same values.
-        Assert.Equal(left.Zip(right, (l, r) => Apply(op, l, r)).ToArray(), expected);
-        Assert.Equal(expected, values);
+        Assert.Equal(left.Zip(right, zip.Oracle).ToArray(), values);
     }
 
-    private static readonly string[] s_intZips = ["ZipAdd", "ZipSubtract", "ZipMultiply", "ZipDivide", "ZipModulo"];
-
-    private static uint Apply(string op, uint left, uint right) => op switch
+    // An input implemented outside GpuMath that reports 3 elements and returns 2: the capacities match, so only the
+    // comparison after evaluation stops the Zip before its kernel reads past the shorter input.
+    // mutant: VectorShape.ThrowIfEvaluatedLengthsDiffer -> an empty body (the Zip launches over 3 elements)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void IntZip_InputReturningFewerElementsThanItReports_ThrowsArgumentException()
     {
-        "ZipAdd" => left + right,
-        "ZipSubtract" => left - right,
-        "ZipMultiply" => left * right,
-        "ZipDivide" => left / right,
-        "ZipModulo" => left % right,
-        _ => throw new ArgumentOutOfRangeException(nameof(op), op, null)
-    };
+        using var left = IntArray([1, 2, 3]);
+        using var right = IntArray([1, 2, 3]);
+        using var zipped = left.AsVectorizedEnumerable().ZipAdd(new ShortIntInput(right.AsVectorizedEnumerable()));
 
-    private static IGpuBigIntVectorExpression Zip(string op, IGpuBigIntVectorExpression left,
-        IGpuBigIntVectorExpression right) => op switch
+        var error = Assert.Throws<ArgumentException>(() => zipped.Evaluate(_workspace));
+        Assert.Equal(VectorShape.ZipLengthsMessage, error.Message);
+    }
+
+    // The same for a floating-point Zip, which shares the check.
+    // mutant: the same empty VectorShape.ThrowIfEvaluatedLengthsDiffer
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void FloatZip_InputReturningFewerElementsThanItReports_ThrowsArgumentException()
     {
-        "ZipAdd" => left.ZipAdd(right),
-        "ZipSubtract" => left.ZipSubtract(right),
-        "ZipMultiply" => left.ZipMultiply(right),
-        "ZipDivide" => left.ZipDivide(right),
-        "ZipModulo" => left.ZipModulo(right),
-        _ => throw new ArgumentOutOfRangeException(nameof(op), op, null)
-    };
+        using var left = FloatArray([1, 2, 3]);
+        using var right = FloatArray([1, 2, 3]);
+        using var zipped = left.AsVectorizedEnumerable().ZipAdd(new ShortFloatInput(right.AsVectorizedEnumerable()));
+
+        var error = Assert.Throws<ArgumentException>(() => zipped.Evaluate(_workspace));
+        Assert.Equal(VectorShape.ZipLengthsMessage, error.Message);
+    }
+
+    /// <summary>An integer Zip: its name, its GPU call and the host operation it computes per pair.</summary>
+    public sealed record IntZipCase(
+        string Name,
+        Func<IGpuBigIntVectorExpression, IGpuBigIntVectorExpression, IGpuBigIntVectorExpression> Build,
+        Func<uint, uint, uint> Oracle)
+    {
+        /// <inheritdoc />
+        public override string ToString() => Name;
+    }
+
+    /// <summary>A nested Zip shape built from named leaves, and the leaves evaluated before it throws.</summary>
+    public sealed record NestedCase(
+        string Name,
+        Func<Func<string, IGpuBigIntVectorExpression>, IGpuBigIntVectorExpression> Build,
+        string[] Evaluated)
+    {
+        /// <inheritdoc />
+        public override string ToString() => Name;
+    }
 
     private static uint[] Ones(int length) => Enumerable.Repeat(1u, length).ToArray();
 
@@ -282,6 +328,34 @@ public sealed class VectorCheckOrderTests : IDisposable
             log.Add(name);
             return inner.Evaluate(workspace, elementOffset, elementCount, targetResult);
         }
+
+        public void Dispose() => inner.Dispose();
+    }
+
+    // An integer input that reports its length but returns one element less than asked for
+    private sealed class ShortIntInput(IGpuBigIntVectorExpression inner) : IGpuBigIntVectorExpression
+    {
+        public int Length => inner.Length;
+
+        public int WordsPerElement => inner.WordsPerElement;
+
+        public GpuBigIntArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
+            GpuBigUIntArrayView targetResult = default) =>
+            inner.Evaluate(workspace, elementOffset, (elementCount ?? (Length - elementOffset)) - 1, targetResult);
+
+        public void Dispose() => inner.Dispose();
+    }
+
+    // The same for a floating-point input
+    private sealed class ShortFloatInput(IGpuBigFloatVectorExpression inner) : IGpuBigFloatVectorExpression
+    {
+        public int Length => inner.Length;
+
+        public int WordsPerElement => inner.WordsPerElement;
+
+        public GpuBigFloatArrayView Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
+            GpuBigFloatArrayView targetResult = default) =>
+            inner.Evaluate(workspace, elementOffset, (elementCount ?? (Length - elementOffset)) - 1, targetResult);
 
         public void Dispose() => inner.Dispose();
     }

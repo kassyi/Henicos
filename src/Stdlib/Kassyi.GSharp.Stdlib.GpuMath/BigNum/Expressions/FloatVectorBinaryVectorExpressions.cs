@@ -60,7 +60,7 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     // nothing
     public void Enter(in VectorRequest request)
     {
-        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, "Vector lengths must match for Zip operations.");
+        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, VectorShape.ZipLengthsMessage);
         request.FloatTarget(Capacity, WordsPerElement);
     }
 
@@ -81,10 +81,7 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     private FloatVectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigFloatArrayView target,
         FloatVectorEvaluation leftResult, FloatVectorEvaluation rightResult)
     {
-        if (leftResult.Storage.Length != rightResult.Storage.Length)
-        {
-            throw new ArgumentException("Vector lengths must match for Zip operations.");
-        }
+        VectorShape.ThrowIfEvaluatedLengthsDiffer(leftResult.Storage.Length, rightResult.Storage.Length);
 
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
         // A target that shares words with an input is written from the cache after the launch (#864)

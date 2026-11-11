@@ -61,7 +61,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
     // nothing, and a Zip below another one rejects its own inputs before any leaf is sliced
     public void Enter(in VectorRequest request)
     {
-        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, "Vector lengths must match for Zip operations.");
+        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, VectorShape.ZipLengthsMessage);
         request.IntTarget(Capacity, WordsPerElement);
     }
 
@@ -82,11 +82,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
     private VectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigUIntArrayView targetValues,
         VectorEvaluation leftResult, VectorEvaluation rightResult)
     {
-        // Enter compared the capacities; an input implemented outside GpuMath may still return another length
-        if (leftResult.Storage.Length != rightResult.Storage.Length)
-        {
-            throw new ArgumentException("Vector lengths must match for Zip operations.");
-        }
+        VectorShape.ThrowIfEvaluatedLengthsDiffer(leftResult.Storage.Length, rightResult.Storage.Length);
 
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
         // A target that shares words with an input is written from the cache after the launch (#864)
