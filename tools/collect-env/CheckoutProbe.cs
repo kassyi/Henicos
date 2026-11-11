@@ -40,7 +40,8 @@ internal static class CheckoutProbe
         string? commit = Run("git", "rev-parse --short HEAD", repo);
         if (commit is null)
         {
-            // Inside a clone, so say why git failed (dubious ownership, a worktree whose .git file points to another OS, ...).
+            // Inside a clone, so say why git failed (dubious ownership, a worktree whose .git file points to another
+            // OS, ...).
             string reason = LastError.Length > 0 ? LastError : "no output";
             return Clean($"git failed: {reason}");
         }

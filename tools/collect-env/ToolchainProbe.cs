@@ -22,7 +22,14 @@ internal static class ToolchainProbe
             return NotFound;
         }
 
-        string? toolset = ReadFile(Path.Combine(installPath.Trim(), "VC", "Auxiliary", "Build", "Microsoft.VCToolsVersion.default.txt"))?.Trim();
+        string toolsetFile = Path.Combine(
+            installPath.Trim(),
+            "VC",
+            "Auxiliary",
+            "Build",
+            "Microsoft.VCToolsVersion.default.txt"
+        );
+        string? toolset = ReadFile(toolsetFile)?.Trim();
         string? vsVersion = Run(vswhere, query + " -property catalog_productDisplayVersion");
         string vs = vsVersion is null ? string.Empty : $" (Visual Studio {FirstLine(vsVersion)}, via vswhere)";
         return toolset is null ? $"MSVC {NotFound}{vs}" : $"MSVC {toolset}{vs}";
@@ -80,7 +87,11 @@ internal static class ToolchainProbe
     {
         try
         {
-            var options = new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+            var options = new JsonDocumentOptions
+            {
+                CommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+            };
             using JsonDocument document = JsonDocument.Parse(File.ReadAllText(globalJsonPath), options);
             if (document.RootElement.TryGetProperty("sdk", out JsonElement sdk)
                 && sdk.TryGetProperty("version", out JsonElement version)

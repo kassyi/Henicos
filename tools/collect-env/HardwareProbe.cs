@@ -27,7 +27,8 @@ internal static class HardwareProbe
                 _ => null,
             };
         }
-        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+        catch (Exception ex) when (
+            ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
         {
             Warn($@"cannot read registry value HKLM\{subKey}\{name}", ex);
             return null;
@@ -38,7 +39,8 @@ internal static class HardwareProbe
     {
         const string key = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion";
         string name = RegistryString(key, "ProductName") ?? "Windows";
-        string build = RegistryString(key, "CurrentBuild") ?? Environment.OSVersion.Version.Build.ToString(CultureInfo.InvariantCulture);
+        string build = RegistryString(key, "CurrentBuild")
+            ?? Environment.OSVersion.Version.Build.ToString(CultureInfo.InvariantCulture);
         // The registry still says "Windows 10" on Windows 11.
         if (int.TryParse(build, NumberStyles.None, CultureInfo.InvariantCulture, out int buildNumber)
             && buildNumber >= 22000
@@ -50,7 +52,8 @@ internal static class HardwareProbe
         string display = RegistryString(key, "DisplayVersion") ?? RegistryString(key, "ReleaseId") ?? string.Empty;
         string ubr = RegistryString(key, "UBR") is { } u ? "." + u : string.Empty;
         string label = display.Length > 0 ? $"{name} {display}" : name;
-        return $"{label} ({Environment.OSVersion.Version.Major}.{Environment.OSVersion.Version.Minor}.{build}{ubr}), {Architecture()}";
+        Version version = Environment.OSVersion.Version;
+        return $"{label} ({version.Major}.{version.Minor}.{build}{ubr}), {Architecture()}";
     }
 
     private static string Architecture() => RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
@@ -69,9 +72,12 @@ internal static class HardwareProbe
         string kernel = Run("uname", "-r") ?? ReadFile("/proc/sys/kernel/osrelease")?.Trim() ?? NotFound;
         string wsl = string.Empty;
         string? procVersion = ReadFile("/proc/version");
-        if (IsSet("WSL_DISTRO_NAME") || (procVersion is not null && procVersion.Contains("microsoft", StringComparison.OrdinalIgnoreCase)))
+        if (IsSet("WSL_DISTRO_NAME")
+            || (procVersion is not null && procVersion.Contains("microsoft", StringComparison.OrdinalIgnoreCase)))
         {
-            wsl = procVersion is not null && procVersion.Contains("WSL2", StringComparison.OrdinalIgnoreCase) ? ", WSL2" : ", WSL";
+            wsl = procVersion is not null && procVersion.Contains("WSL2", StringComparison.OrdinalIgnoreCase)
+                ? ", WSL2"
+                : ", WSL";
         }
 
         return Clean($"{name}, kernel {kernel}{wsl}, {Architecture()}");
@@ -116,7 +122,9 @@ internal static class HardwareProbe
             {
                 if (line.StartsWith("MemTotal:", StringComparison.Ordinal))
                 {
-                    string number = line.Substring("MemTotal:".Length).Replace("kB", string.Empty, StringComparison.Ordinal).Trim();
+                    string number = line.Substring("MemTotal:".Length)
+                        .Replace("kB", string.Empty, StringComparison.Ordinal)
+                        .Trim();
                     if (long.TryParse(number, NumberStyles.None, CultureInfo.InvariantCulture, out long kb))
                     {
                         bytes = kb * 1024;

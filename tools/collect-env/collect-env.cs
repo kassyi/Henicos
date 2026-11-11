@@ -19,6 +19,8 @@
 
 // collect-env: prints the hardware and software environment of a G# bug report as Markdown (default) or JSON.
 //
+// Needs the .NET SDK 10.0.300 or later: older SDKs reject #:include ("Unrecognized directive 'include'").
+//
 // Usage:
 //   dotnet run tools/collect-env/collect-env.cs [-- --output <file>] [--json] [--help]
 //   collect-env-win-x64.exe | collect-env-linux-x64   (NativeAOT build, see below)

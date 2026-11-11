@@ -16,7 +16,9 @@ internal static class ProcessProbe
 
     internal static string LastError => s_lastError;
 
-    /// <summary>Runs a tool and returns its trimmed standard output, or null when it is missing, fails or times out.</summary>
+    /// <summary>
+    /// Runs a tool and returns its trimmed standard output, or null when it is missing, fails or times out.
+    /// </summary>
     internal static string? Run(string fileName, string arguments, string? workingDirectory = null)
     {
         try
@@ -98,7 +100,9 @@ internal static class ProcessProbe
         }
     }
 
-    /// <summary>Writes why a value is missing to standard error, so the report on standard output stays clean.</summary>
+    /// <summary>
+    /// Writes why a value is missing to standard error, so the report on standard output stays clean.
+    /// </summary>
     internal static void Warn(string what, Exception ex) =>
         Console.Error.WriteLine(Clean($"collect-env: {what}: {ex.Message}"));
 

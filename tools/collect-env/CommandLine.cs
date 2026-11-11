@@ -1,5 +1,4 @@
 using System.Text;
-using static Collector;
 using static Privacy;
 
 /// <summary>
@@ -10,6 +9,21 @@ internal readonly record struct CommandLineOptions(bool Json, string? OutputPath
 /// <summary>Reads the arguments and writes the report to standard output or a file.</summary>
 internal static class CommandLine
 {
+    public const string HelpText =
+        """
+        collect-env: prints the environment of a G# bug report (OS, CPU, GPU, CUDA, host C++ compiler, .NET, checkout).
+
+        Usage: collect-env [--output <file>] [--json] [--help]
+
+          --output <file>   write the report to <file> instead of stdout
+          --json            machine-readable JSON instead of Markdown
+          --help            show this text
+
+        The report leaves out the user name, host name, serial numbers and paths under the user profile (shown as ~).
+        CUDA_PATH is reported as set or unset only. A missing tool is shown as "not found".
+
+        """;
+
     public static CommandLineOptions Parse(string[] args)
     {
         bool json = false;
@@ -20,7 +34,7 @@ internal static class CommandLine
             switch (arg)
             {
                 case "--help" or "-h":
-                    Console.Out.Write(Collector.HelpText);
+                    Console.Out.Write(HelpText);
                     return Stop(0);
                 case "--json":
                     json = true;
