@@ -193,16 +193,28 @@ internal sealed class LivenessRecorder : IFlowRecorder
         _log.EventsOf(node).Add(LivenessEvent.Split);
     }
 
-    /// <summary>Records out parameter assignment writes after a call returns.</summary>
+    /// <summary>
+    /// Records the writes of the <c>out</c> arguments after a call returns: a local, or a tracked parameter, which is
+    /// written whole and changed (#1003).
+    /// </summary>
     public void OnCallReturned(IInvocationOperation invocation, ControlFlowGraph graph, int node)
     {
         var syntax = invocation == _splitCall ? null : invocation.Syntax;
         foreach (var argument in invocation.Arguments)
         {
-            if (argument is
-                { Parameter.RefKind: RefKind.Out, Value: ILocalReferenceOperation { Local: { IsRef: false } local } })
+            if (argument.Parameter?.RefKind != RefKind.Out)
             {
-                _log.AddAssigned(local, syntax, node, replaces: true);
+                continue;
+            }
+
+            switch (argument.Value)
+            {
+                case ILocalReferenceOperation { Local: { IsRef: false } local }:
+                    _log.AddAssigned(local, syntax, node, replaces: true);
+                    break;
+                case IParameterReferenceOperation { Parameter: var parameter } when IsTrackedParameter(parameter):
+                    _log.AddParameterAssigned(_log.Index(parameter), syntax, node);
+                    break;
             }
         }
     }
@@ -212,11 +224,16 @@ internal sealed class LivenessRecorder : IFlowRecorder
     {
         _log.Flush(node);
         _log.PushStatement();
-        if (!body.IsOpaque)
+        if (body.IsOpaque)
         {
-            return;
+            PushFrame(body);
         }
+    }
 
+    // An opaque body: run where it is spliced, carried by the local it is stored in, or a delegate that pins its
+    // captures
+    private void PushFrame(SplicedBody body)
+    {
         var carrier = _pendingCarrier is { } pending && pending.Body == body.Syntax ? pending.Carrier : -1;
         _pendingCarrier = null;
         var mode = body.Kind == SplicedBodyKind.LocalFunctionCall ||
@@ -231,11 +248,15 @@ internal sealed class LivenessRecorder : IFlowRecorder
     {
         _log.Flush(node);
         _log.PopStatement();
-        if (!body.IsOpaque)
+        if (body.IsOpaque)
         {
-            return;
+            PopFrame(node);
         }
+    }
 
+    // The captures of the opaque body that ends: carried by its local, or pinned where it was made
+    private void PopFrame(int node)
+    {
         var frame = _frames.Pop();
         if (frame.Mode == LivenessBodyMode.Carried && !frame.MakesDelegate)
         {

@@ -1,0 +1,730 @@
+﻿tree 0 words=2 target=none
+leaf L2
+result b0+0:2
+tree 1 words=1 target=wide
+leaf L1
+lease b0 1w
+release b0
+result b1+0:3
+tree 2 words=1 target=operand
+leaf L0
+result b0+0:1
+tree 3 words=1 target=none
+leaf L2
+result b0+0:1
+tree 4 words=41 target=wide
+leaf L5
+leaf L5
+lease b0 41w
+lease b1 41w
+release b0
+leaf L5
+leaf L0
+lease b2 1w
+lease b3 40w
+lease b4 1w
+release b4
+release b3
+leaf L2
+leaf L3
+lease b5 6w
+lease b4 1w
+lease b6 1w
+lease b7 6w
+release b7
+release b6
+release b2
+release b5
+leaf L1
+lease b8 2w
+leaf L0
+leaf L4
+lease b2 1w
+lease b6 1w
+release b6
+lease b6 1w
+lease b9 2w
+lease b10 1w
+release b10
+release b9
+release b8
+release b2
+lease b2 1w
+lease b10 1w
+lease b11 1w
+release b11
+release b10
+release b4
+release b6
+leaf L5
+leaf L5
+lease b0 41w
+lease b3 40w
+lease b12 40w
+lease b13 41w
+lease b14 41w
+lease b15 98w
+lease b16 98w
+lease b17 138w
+lease b18 81w
+lease b19 41w
+lease b20 41w
+lease b21 41w
+lease b22 41w
+lease b23 40w
+lease b24 41w
+lease b25 41w
+lease b26 40w
+release b26
+release b25
+release b24
+release b23
+release b22
+release b21
+release b20
+release b19
+release b18
+release b17
+release b16
+release b15
+release b14
+release b13
+release b12
+release b0
+lease b12 40w
+release b2
+release b3
+release b1
+release b12
+result b27+0:43
+tree 5 words=1 target=operand
+leaf L4
+leaf L4
+leaf L5
+lease b0 40w
+leaf L3
+leaf L1
+lease b1 3w
+lease b2 1w
+release b2
+lease b3 43w
+release b0
+release b1
+lease b4 43w
+release b3
+leaf L0
+lease b3 43w
+lease b1 3w
+lease b5 3w
+lease b6 63w
+lease b7 63w
+lease b8 106w
+lease b9 46w
+lease b10 44w
+lease b11 44w
+lease b12 44w
+lease b13 44w
+lease b14 43w
+lease b15 44w
+lease b16 44w
+lease b17 43w
+release b17
+release b16
+release b15
+release b14
+release b13
+release b12
+release b11
+release b10
+release b9
+release b8
+release b7
+release b6
+release b5
+release b1
+release b4
+leaf L2
+lease b4 43w
+lease b2 1w
+release b2
+release b4
+release b3
+result b18+0:3
+tree 6 words=1 target=none
+leaf L0
+result b0+0:1
+tree 7 words=4 target=wide
+leaf L4
+lease b0 3w
+lease b1 4w
+release b0
+leaf L2
+leaf L1
+lease b2 2w
+lease b3 2w
+lease b4 2w
+lease b5 2w
+lease b6 21w
+lease b7 21w
+lease b8 23w
+lease b9 4w
+lease b0 3w
+lease b10 3w
+lease b11 3w
+lease b12 3w
+lease b13 2w
+lease b14 3w
+lease b15 3w
+lease b16 2w
+release b16
+release b15
+release b14
+release b13
+release b12
+release b11
+release b10
+release b0
+release b9
+release b8
+release b7
+release b6
+release b5
+release b4
+release b3
+lease b3 2w
+release b2
+leaf L0
+lease b2 2w
+lease b0 3w
+release b0
+release b3
+lease b9 4w
+release b1
+release b2
+leaf L4
+leaf L4
+lease b0 3w
+lease b10 3w
+lease b11 3w
+lease b8 23w
+lease b17 23w
+lease b18 26w
+lease b19 6w
+lease b1 4w
+lease b20 4w
+lease b21 4w
+lease b22 4w
+lease b12 3w
+lease b23 4w
+lease b24 4w
+lease b14 3w
+release b14
+release b24
+release b23
+release b12
+release b22
+release b21
+release b20
+release b1
+release b19
+release b18
+release b17
+release b8
+release b11
+release b10
+leaf L1
+leaf L5
+lease b2 2w
+lease b25 40w
+release b25
+leaf L5
+lease b3 2w
+lease b4 2w
+lease b25 40w
+release b25
+release b4
+release b2
+lease b1 4w
+release b0
+release b3
+leaf L1
+lease b0 3w
+leaf L1
+lease b10 3w
+lease b11 3w
+release b0
+release b10
+leaf L3
+lease b10 3w
+leaf L4
+leaf L2
+lease b0 3w
+lease b12 3w
+lease b14 3w
+release b14
+release b10
+release b0
+lease b0 3w
+release b11
+release b12
+lease b20 4w
+release b1
+release b0
+lease b1 4w
+lease b21 4w
+lease b22 4w
+lease b26 24w
+lease b27 24w
+lease b28 28w
+lease b29 8w
+lease b23 4w
+lease b24 4w
+lease b30 4w
+lease b31 4w
+lease b32 4w
+lease b33 4w
+lease b34 4w
+lease b35 4w
+release b35
+release b34
+release b33
+release b32
+release b31
+release b30
+release b24
+release b23
+release b29
+release b28
+release b27
+release b26
+release b22
+release b21
+release b1
+release b9
+release b20
+result b36+0:6
+tree 8 words=4 target=operand
+leaf L2
+result b0+0:40
+tree 9 words=1 target=none
+leaf L2
+result b0+0:1
+tree 10 words=41 target=wide
+leaf L5
+leaf L2
+lease b0 41w
+leaf L3
+leaf L0
+lease b1 2w
+lease b2 41w
+release b0
+release b1
+leaf L5
+lease b3 81w
+release b2
+leaf L5
+leaf L3
+leaf L3
+lease b1 2w
+lease b2 41w
+release b1
+leaf L3
+lease b0 41w
+release b2
+lease b2 41w
+lease b4 81w
+lease b5 41w
+lease b6 41w
+lease b7 138w
+lease b8 138w
+lease b9 219w
+lease b10 122w
+lease b11 81w
+lease b12 81w
+lease b13 81w
+lease b14 81w
+lease b15 81w
+lease b16 81w
+lease b17 81w
+lease b18 81w
+release b18
+release b17
+release b16
+release b15
+release b14
+release b13
+release b12
+release b11
+release b10
+release b9
+release b8
+release b7
+release b6
+release b5
+release b4
+release b3
+release b0
+leaf L0
+lease b19 3w
+leaf L3
+leaf L2
+lease b20 3w
+lease b21 6w
+release b19
+release b20
+leaf L2
+leaf L3
+leaf L3
+lease b1 2w
+lease b20 3w
+lease b22 2w
+lease b23 2w
+lease b24 22w
+lease b25 22w
+lease b26 25w
+lease b27 5w
+lease b28 4w
+lease b29 4w
+lease b30 4w
+lease b31 4w
+lease b19 3w
+lease b32 4w
+lease b33 4w
+lease b34 3w
+release b34
+release b33
+release b32
+release b19
+release b31
+release b30
+release b29
+release b28
+release b27
+release b26
+release b25
+release b24
+release b23
+release b22
+release b1
+lease b35 6w
+release b21
+release b20
+lease b21 6w
+release b35
+release b2
+release b21
+result b36+0:43
+tree 11 words=40 target=operand
+leaf L5
+leaf L2
+lease b0 40w
+leaf L5
+leaf L3
+lease b1 1w
+lease b2 40w
+lease b3 1w
+release b3
+release b2
+leaf L0
+leaf L1
+lease b4 3w
+lease b5 4w
+release b1
+release b4
+leaf L0
+leaf L3
+lease b4 3w
+leaf L3
+lease b1 1w
+lease b6 3w
+lease b3 1w
+release b3
+release b4
+release b1
+lease b7 7w
+release b5
+release b6
+lease b2 40w
+lease b8 7w
+lease b9 7w
+lease b10 64w
+lease b11 64w
+lease b12 104w
+lease b13 47w
+lease b14 41w
+lease b15 41w
+lease b16 41w
+lease b17 41w
+lease b18 40w
+lease b19 41w
+lease b20 41w
+lease b21 40w
+release b21
+release b20
+release b19
+release b18
+release b17
+release b16
+release b15
+release b14
+release b13
+release b12
+release b11
+release b10
+release b9
+release b8
+release b0
+release b7
+release b2
+result b22+0:40
+tree 12 words=40 target=none
+leaf L2
+leaf L3
+leaf L3
+lease b0 4w
+lease b1 4w
+release b0
+leaf L1
+leaf L1
+leaf L0
+lease b0 4w
+lease b2 6w
+release b0
+lease b0 4w
+lease b3 6w
+release b3
+release b1
+release b2
+leaf L3
+leaf L1
+lease b4 3w
+leaf L3
+leaf L5
+lease b5 40w
+lease b6 40w
+release b4
+release b5
+leaf L5
+lease b5 40w
+lease b7 40w
+release b6
+release b5
+lease b5 40w
+release b0
+release b7
+leaf L0
+lease b7 40w
+release b5
+result b7+0:40
+release b7
+tree 13 words=3 target=wide
+leaf L0
+result b0+0:5
+tree 14 words=2 target=operand
+leaf L2
+result b0+0:2
+tree 15 words=41 target=none
+leaf L4
+leaf L5
+lease b0 41w
+lease b1 41w
+release b0
+result b1+0:41
+release b1
+tree 16 words=2 target=wide
+leaf L4
+result b0+0:4
+tree 17 words=3 target=operand
+leaf L0
+leaf L1
+leaf L4
+leaf L1
+lease b0 2w
+lease b1 3w
+lease b2 2w
+lease b3 2w
+lease b4 2w
+release b4
+release b3
+lease b3 2w
+lease b5 22w
+lease b6 22w
+lease b7 25w
+lease b8 5w
+lease b9 4w
+lease b10 4w
+lease b11 4w
+lease b12 4w
+lease b13 3w
+lease b14 4w
+lease b15 4w
+lease b16 3w
+release b16
+release b15
+release b14
+release b13
+release b12
+release b11
+release b10
+release b9
+release b8
+release b7
+release b6
+release b5
+release b3
+release b2
+release b1
+lease b1 3w
+release b0
+leaf L1
+lease b0 2w
+lease b13 3w
+lease b2 2w
+lease b3 2w
+lease b4 2w
+release b4
+release b3
+lease b3 2w
+lease b17 21w
+lease b18 21w
+lease b19 24w
+lease b8 5w
+lease b16 3w
+lease b20 3w
+lease b21 3w
+lease b22 3w
+lease b23 3w
+lease b24 3w
+lease b25 3w
+lease b26 3w
+release b26
+release b25
+release b24
+release b23
+release b22
+release b21
+release b20
+release b16
+release b8
+release b19
+release b18
+release b17
+release b3
+release b2
+release b1
+release b0
+lease b1 3w
+release b13
+leaf L2
+leaf L1
+leaf L4
+lease b0 2w
+lease b13 3w
+release b13
+lease b13 3w
+release b0
+lease b16 3w
+lease b20 3w
+release b20
+release b16
+release b1
+release b13
+result b27+0:3
+tree 18 words=3 target=none
+leaf L2
+result b0+0:3
+tree 19 words=1 target=wide
+leaf L1
+result b0+0:3
+tree 20 words=3 target=operand
+leaf L2
+result b0+0:3
+tree 21 words=41 target=none
+leaf L1
+leaf L2
+leaf L5
+lease b0 3w
+lease b1 40w
+release b1
+leaf L5
+lease b1 40w
+release b0
+leaf L0
+leaf L0
+lease b2 1w
+lease b3 1w
+release b3
+leaf L3
+lease b4 2w
+lease b5 2w
+release b2
+release b4
+lease b6 41w
+release b1
+release b5
+leaf L4
+leaf L4
+lease b5 2w
+lease b7 41w
+release b6
+release b5
+lease b6 41w
+release b7
+result b6+0:41
+release b6
+tree 22 words=86 target=wide
+leaf L4
+leaf L1
+leaf L0
+leaf L5
+leaf L0
+lease b0 41w
+lease b1 41w
+release b0
+leaf L0
+leaf L5
+lease b2 40w
+leaf L0
+lease b3 42w
+release b2
+lease b4 83w
+release b1
+release b3
+lease b5 83w
+release b4
+release b5
+result b6+0:88
+tree 23 words=45 target=none
+leaf L1
+leaf L0
+leaf L2
+leaf L5
+lease b0 42w
+lease b1 1w
+lease b2 1w
+lease b3 42w
+release b3
+release b2
+release b0
+leaf L0
+lease b4 2w
+release b1
+leaf L5
+leaf L4
+leaf L5
+lease b0 42w
+leaf L3
+leaf L2
+lease b5 2w
+lease b6 44w
+release b0
+release b5
+lease b7 44w
+release b6
+lease b6 44w
+release b4
+release b7
+lease b8 45w
+release b6
+result b8+0:45
+release b8
