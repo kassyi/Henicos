@@ -155,6 +155,10 @@ public static unsafe class GpuKernelLoader
     /// Ensures that the global CUDA driver and primary context are initialized in a thread-safe manner.
     /// Falls back to CPU emulation mode if the CUDA driver or hardware is unavailable.
     /// </summary>
+    /// <exception cref="NotSupportedException">
+    /// The installed NVIDIA driver is older than the CUDA 13.0 driver (R580). The message names the CUDA version the
+    /// driver supports and the one required.
+    /// </exception>
     public static void EnsureInitialized()
     {
         // ReSharper disable once InconsistentlySynchronizedField -- Double-checked locking pattern
@@ -173,6 +177,9 @@ public static unsafe class GpuKernelLoader
             try
             {
                 CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
+                // Not caught below: an old driver is a setup error to report, not a reason to run on the CPU
+                CudaException.ThrowIfError(CudaDriverApi.cuDriverGetVersion(out var driverVersion));
+                CudaDriverVersion.ThrowIfUnsupported(driverVersion);
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
 
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));

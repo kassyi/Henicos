@@ -6,7 +6,7 @@
 
 **A zero-overhead C#-to-CUDA AOT transpiler. Write bare-metal GPU kernels in standard C#.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![.NET 8.0](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/) [![CUDA](https://img.shields.io/badge/CUDA-12%2B-green.svg)](https://developer.nvidia.com/cuda-toolkit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![.NET 8.0](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/) [![CUDA](https://img.shields.io/badge/CUDA-13%2B-green.svg)](https://developer.nvidia.com/cuda-toolkit)
 
 🔥 **Highlights:**
 - **Zero-Allocation Architecture:** 100% value-type (`struct`) driven, absolutely no garbage collection overhead on the device.
@@ -38,6 +38,16 @@ You write C#, but the runtime semantics are strictly native CUDA.
 - **Execution:** You program massively parallel hardware threads structured into Grids, Blocks, and Warps, with direct access to registers, Shared Memory, and VRAM.
 
 Skip the C++ headers, CMake setups, and P/Invoke boilerplate. Write C#, command bare-metal NVIDIA hardware.
+
+---
+
+## Requirements
+
+- **GPU execution**: an NVIDIA GPU (compute capability 8.6 and newer with the default build settings) and a driver for **CUDA 13.0 or newer** (R580 branch or newer; 580.65.06 or newer on Linux). An older driver makes the runtime throw a `NotSupportedException` naming the version found and the version required.
+- **Build**: the .NET 10 SDK, the NVIDIA CUDA Toolkit 13.0 or newer (`nvcc`) and a C++ host compiler (MSVC on Windows, `gcc` / `clang` on Linux).
+- **CPU mode**: a C++ host compiler only; no GPU, driver or CUDA Toolkit.
+
+Details: [Prerequisites & Installation](docs/spec/en/00_getting_started/01_prerequisites.md).
 
 ---
 
