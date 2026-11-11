@@ -65,41 +65,29 @@ public sealed class PreludeSpillBudgetTests
 
     private static bool CompileProbe(string directory, MockBuildEngine engine, RecordingProcessRunner runner)
     {
-        // Forward slashes: the host preprocessor reads backslashes in an #include path as escapes
-        string preludePath = RepositoryPaths.Combine(
-            "src", "Compiler", "Kassyi.GSharp.Compiler", "Resources", "Prelude.cu"
-        );
-        string prelude = string.Create(
-            preludePath.Length,
-            preludePath,
-            static (span, path) =>
-            {
-                path.AsSpan().CopyTo(span);
-                span.Replace('\\', '/');
-            }
-        );
-        string source = Path.Combine(directory, "probe.cu");
-        File.WriteAllText(source, $$"""
-            #include "{{prelude}}"
-            __device__ int __gsharp_fn_Depth(int n, int* a) {
-            if (n < 0) { __gsharp_trap(GSharpErrorCode::IndexOutOfRange, 1u); }
-            return n == 0 ? a[0] : __gsharp_fn_Depth(n - 1, a) + 1;
-            }
-            extern "C" __global__ void __gsharp_k_Probe(int* a, unsigned int __gsharp_epoch) {
-            __gsharp_launch_epoch = __gsharp_epoch;
-            a[threadIdx.x] = __gsharp_fn_Depth(a[threadIdx.x], a);
-            }
-            """);
         var task = new CompileCudaToFatbinTask
         {
             BuildEngine = engine,
             ProcessRunner = runner,
-            CudaSources = [new TaskItem(source)],
+            CudaSources = [new TaskItem(WriteProbeSource(directory))],
             OutputDirectory = directory,
             CombinedFatbinName = "probe",
             TargetArchitectures = CompileCudaToFatbinTask.DefaultTargetArchitectures
         };
         return task.Execute();
+    }
+
+    // Writes the probe (TestCases/Tasks/PreludeSpillProbe.cu) behind an #include of the repository's Prelude.cu and
+    // returns its path
+    private static string WriteProbeSource(string directory)
+    {
+        string prelude = RepositoryPaths.Combine(
+            "src", "Compiler", "Kassyi.GSharp.Compiler", "Resources", "Prelude.cu"
+        );
+        string probe = RoslynTestUtility.ReadTestCase("Tasks/PreludeSpillProbe.cu");
+        string source = Path.Combine(directory, "probe.cu");
+        File.WriteAllText(source, $"#include \"{prelude}\"\n{probe}");
+        return source;
     }
 
     // Reads "<n> bytes spill stores" from the line after "Function properties for <function>"
