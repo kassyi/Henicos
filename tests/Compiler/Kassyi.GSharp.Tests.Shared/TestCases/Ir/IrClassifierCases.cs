@@ -141,6 +141,17 @@ public static class Cases
         data[0] = 1;
     }
 
+    // Not GPU methods, so that the tests over every GPU method of the test cases do not see them: a discard
+    // assigned the result of a call that writes memory, and of one that does not; a tree four levels deep
+    public static void DiscardWrite(int[] data) => _ = Write(data);
+
+    public static void DiscardPure(int x) => _ = Pure(x);
+
+    public static void Nested(int a, int b, int c, int d)
+    {
+        var result = (a + b) * c - d;
+    }
+
     [GpuKernel]
     public static void FenceInLoop(int[] data)
     {

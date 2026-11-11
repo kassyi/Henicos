@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// </summary>
 internal static class IrEffectDifferences
 {
-    private const string Less = "IR finds less";
+    internal const string Less = "IR finds less";
     private const string More = "IR finds more";
 
     /// <summary>The reason of a difference at <paramref name="node"/>, or <see langword="null"/>.</summary>
@@ -56,7 +56,7 @@ internal static class IrEffectDifferences
             IrClassificationEquivalence.KnownPrefix + "an initializer writes the new value",
         // The syntax walk reads the location of a struct temporary (a call result, a creation) as memory
         IrFieldReference { Receiver: { Type.IsValueType: true } receiver }
-            when !IrMemberEffects.IsVariable(receiver) &&Differs(ir, old, reads: Memory()) =>
+            when !IrMemberEffects.IsVariable(receiver) && Differs(ir, old, reads: Memory()) =>
             IrClassificationEquivalence.KnownPrefix + "a field of a struct temporary reads no memory",
         _ => null
     };

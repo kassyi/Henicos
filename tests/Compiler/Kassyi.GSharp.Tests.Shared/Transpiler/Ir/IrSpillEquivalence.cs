@@ -237,7 +237,7 @@ internal sealed class IrSpillEquivalence
                            (node is StatementSyntax && (node is not BlockSyntax || node.Span == span)));
 
     // Whether the statement at key is a statement of the IR (not inside an opaque statement)
-    private static bool IsIrStatement(IrMethod method, TextSpan key, SyntaxNode root) =>
+    internal static bool IsIrStatement(IrMethod method, TextSpan key, SyntaxNode root) =>
         IrNodeChildren.Exists(method.Body, node =>
             node is IrStatement statement and not (IrBlock or IrOpaqueStatement) &&
             StatementOf(root, statement.Source.Span).Span == key);
