@@ -27,6 +27,14 @@ internal static class SymbolExtensions
             { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
         };
 
+    public static bool IsSystemDiagnostics(this INamespaceSymbol? ns) =>
+        ns is
+        {
+            Name: "Diagnostics",
+            ContainingNamespace:
+            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+        };
+
     public static bool IsSystemLinq(this INamespaceSymbol? ns) =>
         ns is
         {
