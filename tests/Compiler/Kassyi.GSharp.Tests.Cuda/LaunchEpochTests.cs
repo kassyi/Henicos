@@ -218,68 +218,10 @@ public sealed class LaunchEpochTests
     // instead of waiting for that hang.
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task GridBarrier_RecordConsumedBeforeWaitersLook_WaitersStillLeave()
+    public Task GridBarrier_RecordConsumedBeforeWaitersLook_WaitersStillLeave()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        const int Blocks = 4;
-        const int Threads = 128;
-        long cycles = 100L * GpuClock.RateKilohertz();
-
-        // Every thread of block 1 fails at once; the other blocks reach the barrier only after about 100 ms, by which
-        // time the consumer below has taken the record
-        var keys = new int[Blocks * Threads];
-        for (int t = 0; t < Threads; t++)
-        {
-            keys[Threads + t] = LaunchEpochKernels.FailKey;
-        }
-
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        using var stream = new CudaStream();
-        using var dKeys = new GpuBuffer<int>(keys.Length);
-        using var dResult = new GpuBuffer<int>(keys.Length);
-        dKeys.CopyToDevice(keys);
-        dResult.CopyToDevice(Filled(keys.Length));
-
-        using var stop = new CancellationTokenSource();
-        GSharpDeviceErrorSlot consumed = default;
-        var consumer = Task.Run(() =>
-        {
-            while (!stop.IsCancellationRequested)
-            {
-                if (DeviceErrorSlot.TryConsumeSlot(out consumed))
-                {
-                    return true;
-                }
-
-                Thread.Sleep(1);
-            }
-
-            return false;
-        });
-
-        try
-        {
-            var launch = Task.Run(() =>
-            {
-                using var launchScope = new GpuKernelLoader.CudaContextScope();
-                LaunchEpochKernels.LaunchDelayedGridSyncAfterFailKernelPtr(dKeys.ToProxy(), cycles, dResult.ToProxy(),
-                    gridDimX: Blocks, blockDimX: Threads, hStream: stream.Handle);
-                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream.Handle));
-            });
-            await launch.WaitAsync(TimeSpan.FromSeconds(30));
-            Assert.True(await consumer.WaitAsync(TimeSpan.FromSeconds(10)), "the consumer found no record");
-        }
-        finally
-        {
-            await stop.CancelAsync();
-        }
-
-        Assert.Equal(1u, consumed.BlockX);
-        Assert.NotEqual(0u, consumed.Epoch);
-        // The barrier never completes, so no thread writes after it
-        var result = new int[keys.Length];
-        dResult.CopyToHost(result);
-        Assert.All(result, static value => Assert.Equal(Untouched, value));
+        return AssertWaitersLeaveAfterRecordConsumedAsync(captured: false);
     }
 
     [SkippableFact]
@@ -330,14 +272,21 @@ public sealed class LaunchEpochTests
                 result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
     }
 
-    // [WHY] A synchronization on another thread consumes the shared record of a captured launch long before the waiters
-    // reach the barrier. They leave on the abort word, which no host synchronization clears; a waiter that looked at
-    // the record would wait until the driver resets the GPU. The timeout fails the test instead of waiting for that hang.
+    // [WHY] The same for a captured launch, which records into the shared record: the waiters leave on the abort word
+    // of the capture epoch, which no host synchronization clears either
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task GraphLaunch_RecordConsumedBeforeWaitersLook_WaitersStillLeave()
+    public Task GraphLaunch_RecordConsumedBeforeWaitersLook_WaitersStillLeave()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        return AssertWaitersLeaveAfterRecordConsumedAsync(captured: true);
+    }
+
+    // Every thread of block 1 fails at once; the other blocks reach the barrier only after about 100 ms, by which time a
+    // consumer on another thread has taken the record. The launch is a Ptr launch, or a graph that captured it; the
+    // record names block 1 and the launch's epoch, and no thread writes after the barrier, which never completes.
+    private static async Task AssertWaitersLeaveAfterRecordConsumedAsync(bool captured)
+    {
         long cycles = 100L * GpuClock.RateKilohertz();
         var keys = new int[GraphBlocks * GraphThreads];
         for (int t = 0; t < GraphThreads; t++)
@@ -351,9 +300,9 @@ public sealed class LaunchEpochTests
         using var dResult = new GpuBuffer<int>(keys.Length);
         dKeys.CopyToDevice(keys);
         dResult.CopyToDevice(Filled(keys.Length));
-        using var graph = CapturedGraph.Capture(stream, hStream =>
-            LaunchEpochKernels.LaunchDelayedGridSyncAfterFailKernelPtr(dKeys.ToProxy(), cycles, dResult.ToProxy(),
-                gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: hStream));
+        Action<IntPtr> launch = hStream => LaunchEpochKernels.LaunchDelayedGridSyncAfterFailKernelPtr(dKeys.ToProxy(),
+            cycles, dResult.ToProxy(), gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: hStream);
+        using var graph = captured ? CapturedGraph.Capture(stream, launch) : null;
 
         using var stop = new CancellationTokenSource();
         GSharpDeviceErrorSlot consumed = default;
@@ -374,13 +323,21 @@ public sealed class LaunchEpochTests
 
         try
         {
-            var launch = Task.Run(() =>
+            var run = Task.Run(() =>
             {
                 using var launchScope = new GpuKernelLoader.CudaContextScope();
-                graph.Launch(stream);
+                if (graph is not null)
+                {
+                    graph.Launch(stream);
+                }
+                else
+                {
+                    launch(stream.Handle);
+                }
+
                 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream.Handle));
             });
-            await launch.WaitAsync(TimeSpan.FromSeconds(30));
+            await run.WaitAsync(TimeSpan.FromSeconds(30));
             Assert.True(await consumer.WaitAsync(TimeSpan.FromSeconds(10)), "the consumer found no record");
         }
         finally
@@ -389,7 +346,9 @@ public sealed class LaunchEpochTests
         }
 
         Assert.Equal(1u, consumed.BlockX);
-        Assert.NotEqual(0u, consumed.Epoch & 0x80000000u);
+        // A capture epoch has bit 31 set
+        Assert.Equal(captured ? 0x80000000u : 0u, consumed.Epoch & 0x80000000u);
+        Assert.NotEqual(0u, consumed.Epoch);
         var result = new int[keys.Length];
         dResult.CopyToHost(result);
         Assert.All(result, static value => Assert.Equal(Untouched, value));
