@@ -16,7 +16,7 @@ public class StructConstructorDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_VectorConstructorWithoutMapping_ReportsGsh0003AtTheCreation(string dialect)
+    public async Task VectorConstructorWithoutMapping_UnmappedConstructor_ReportsGsh0003AtCreation(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -33,7 +33,7 @@ public class StructConstructorDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ConstructorFromAnotherAssembly_ReportsGsh0003AtTheCreation(string dialect)
+    public async Task ConstructorFromAnotherAssembly_ForeignAssemblyConstructor_ReportsGsh0003AtCreation(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -48,7 +48,7 @@ public class StructConstructorDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OnlyTheUnsupportedConstructorsAreReported(string dialect)
+    public async Task UnsupportedConstructors_ConstructorAudit_ReportsOnlyUnsupportedConstructors(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 

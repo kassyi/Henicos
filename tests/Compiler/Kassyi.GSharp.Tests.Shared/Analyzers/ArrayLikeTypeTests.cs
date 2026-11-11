@@ -44,7 +44,7 @@ public class ArrayLikeTypeTests
     [InlineData("ArraySegmentField")]
     [InlineData("ImmutableArrayField")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryGetArrayLikeElementType_HappyPath_ReturnsTrue(string fieldName)
+    public void TryGetArrayLikeElementType_ArrayLikeField_ReturnsTrue(string fieldName)
     {
         var (compilation, _, _) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "ArrayLikeTypeTestCase.cs"));
         var fieldSymbol = GetFieldSymbol(compilation, fieldName);
@@ -63,7 +63,7 @@ public class ArrayLikeTypeTests
     [InlineData("FakeSystemSpanField")]
     [InlineData("FakeMemoryField")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TryGetArrayLikeElementType_SadPath_ReturnsFalse(string fieldName)
+    public void TryGetArrayLikeElementType_NonArrayLikeField_ReturnsFalse(string fieldName)
     {
         var (compilation, _, _) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "ArrayLikeTypeTestCase.cs"));
         var fieldSymbol = GetFieldSymbol(compilation, fieldName);
@@ -77,7 +77,7 @@ public class ArrayLikeTypeTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TryGetArrayLikeElementType_NullType_ReturnsFalse()
+    public void TryGetArrayLikeElementType_NullType_ReturnsFalse()
     {
         ITypeSymbol? nullType = null;
 

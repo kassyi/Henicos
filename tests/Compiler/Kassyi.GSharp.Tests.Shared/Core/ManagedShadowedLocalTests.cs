@@ -72,63 +72,75 @@ public class ManagedShadowedLocalTests : TranspilerTestBase
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GridStrideLoop_LambdaLocalShadowsMethodLocal() => RunNative(ShadowCase.GridStrideLoop);
+    public void GridStrideLoop_LambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
+        RunNative(ShadowCase.GridStrideLoop);
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SingleThread_LambdaLocalShadowsMethodLocal() => RunNative(ShadowCase.SingleThread);
+    public void SingleThread_LambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
+        RunNative(ShadowCase.SingleThread);
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ForUnroll_LambdaLocalShadowsMethodLocal() => RunNative(ShadowCase.ForUnroll);
+    public void ForUnroll_LambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
+        RunNative(ShadowCase.ForUnroll);
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_NestedAndLater_LambdaLocalsShadowOuterNames() => RunNative(ShadowCase.NestedAndLater);
+    public void NestedAndLater_LambdaLocalsShadowOuterNames_PreservesOuterAndInnerValues() =>
+        RunNative(ShadowCase.NestedAndLater);
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LocalFunction_ShadowsAndIsShadowed() => RunNative(ShadowCase.LocalFunction);
+    public void LocalFunction_ShadowsAndIsShadowed_PreservesOuterAndInnerValues() =>
+        RunNative(ShadowCase.LocalFunction);
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ManagedVersion_LambdaLocalShadowsMethodLocal() => RunNative(ShadowCase.ManagedVersion);
+    public void ManagedVersion_LambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
+        RunNative(ShadowCase.ManagedVersion);
 
 #if GSHARP_CPU
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_GridStrideLoop_LambdaLocalShadowsMethodLocal() => RunManaged(ShadowCase.GridStrideLoop);
+    public void GridStrideLoop_ManagedLambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
+        RunManaged(ShadowCase.GridStrideLoop);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SingleThread_LambdaLocalShadowsMethodLocal() => RunManaged(ShadowCase.SingleThread);
+    public void SingleThread_ManagedLambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
+        RunManaged(ShadowCase.SingleThread);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ForUnroll_LambdaLocalShadowsMethodLocal() => RunManaged(ShadowCase.ForUnroll);
+    public void ForUnroll_ManagedLambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
+        RunManaged(ShadowCase.ForUnroll);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_NestedAndLater_LambdaLocalsShadowOuterNames() => RunManaged(ShadowCase.NestedAndLater);
+    public void NestedAndLater_ManagedLambdaLocalsShadowOuterNames_PreservesOuterAndInnerValues() =>
+        RunManaged(ShadowCase.NestedAndLater);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_LocalFunction_ShadowsAndIsShadowed() => RunManaged(ShadowCase.LocalFunction);
+    public void LocalFunction_ManagedShadowsAndIsShadowed_PreservesOuterAndInnerValues() =>
+        RunManaged(ShadowCase.LocalFunction);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ManagedVersion_LambdaLocalShadowsMethodLocal() => RunManaged(ShadowCase.ManagedVersion);
+    public void ManagedVersion_ManagedLambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
+        RunManaged(ShadowCase.ManagedVersion);
 
     private static void RunManaged(ShadowCase shadowCase)
     {

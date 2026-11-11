@@ -17,7 +17,7 @@ public class NestedVectorAlignmentTests
     }
 
     [Fact]
-    public void Test_CUDA_ABI_Offsets()
+    public void VectorAlignment_CudaAbiLayout_MatchesExpectedOffsets()
     {
         // ジェネレーターが生成したワイヤ表現である `__Native_GEN56_AlignmentTestStruct` の
         // メモリオフセットが、CUDA ABI互換のサイズ/パディングになっているか検証する。
@@ -62,7 +62,7 @@ public class NestedVectorAlignmentTests
     }
 
     [Fact]
-    public void Test_Roundtrip_Marshaling()
+    public void VectorAlignment_RoundTripMarshaling_PreservesAllFields()
     {
         // ホスト側で値をセットし、デバイス側で書き換え、再度ホスト側で読むことで
         // 異なるメモリレイアウト間でのパディングのズレが吸収されているかを検証する

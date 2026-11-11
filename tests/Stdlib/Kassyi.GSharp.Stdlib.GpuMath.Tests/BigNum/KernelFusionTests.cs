@@ -22,7 +22,7 @@ public class KernelFusionTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ComplexExpressionTreeFusion_AdditionAndMultiplication()
+    public void Evaluate_AddAndMulFusion_MatchesBigIntegerReference()
     {
         CudaCapability.EnsureGpuAvailable();
         // (a + b) * c
@@ -48,7 +48,7 @@ public class KernelFusionTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ChainedAddSubMulExpressionFusion()
+    public void Evaluate_ChainedAddSubMulFusion_MatchesBigIntegerReference()
     {
         CudaCapability.EnsureGpuAvailable();
         // (a + b) * (c - d)
@@ -82,7 +82,7 @@ public class KernelFusionTests : IDisposable
     [InlineData(0x80000000u, 0x80000000u, 2u, 0u)]
     [InlineData(0x55555555u, 0xAAAAAAAAu, 3u, 0u)]
     [InlineData(uint.MaxValue, uint.MaxValue, uint.MaxValue, 0u)]
-    public void Test_Fusion_BoundaryValues(uint valA, uint valB, uint valC, uint dummy)
+    public void Evaluate_ExtremaOperandsFusion_MatchesBigIntegerReference(uint valA, uint valB, uint valC, uint dummy)
     {
         CudaCapability.EnsureGpuAvailable();
         using var a = new GpuBigUInt(_context, new uint[] { valA, 0, 0, 0 });

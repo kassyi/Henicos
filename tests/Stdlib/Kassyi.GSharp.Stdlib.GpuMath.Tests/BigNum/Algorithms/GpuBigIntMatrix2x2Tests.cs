@@ -22,7 +22,7 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Identity_And_Multiply_And_Apply()
+    public void MultiplyAndApply_IdentityMatrix_ProducesExpectedResult()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -108,7 +108,7 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Multiply_And_Apply_WithConsecutiveFibonacciTwoWords_MatchesBigInteger()
+    public void MultiplyAndApply_ConsecutiveFibonacciTwoWords_MatchesBigInteger()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -148,7 +148,7 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Constructor_And_Methods_ThrowExpectedExceptions_OnInvalidOrDisposedInputs()
+    public void Operations_InvalidOrDisposedInputs_ThrowsExpectedExceptions()
     {
         CudaCapability.EnsureGpuAvailable();
 

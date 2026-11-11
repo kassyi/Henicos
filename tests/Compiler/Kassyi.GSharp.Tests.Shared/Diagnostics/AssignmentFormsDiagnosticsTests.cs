@@ -17,7 +17,7 @@ public class AssignmentFormsDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DeconstructionOfANonTupleValue_ReportsGsh0003AtTheValue(string dialect)
+    public async Task Deconstruction_NonTupleValue_ReportsGsh0003AtValue(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -30,7 +30,7 @@ public class AssignmentFormsDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DeconstructionWhoseValueIsUsed_ReportsGsh0003AtTheAssignment(string dialect)
+    public async Task Deconstruction_ValueIsUsed_ReportsGsh0003AtAssignment(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -43,7 +43,7 @@ public class AssignmentFormsDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ComputedPropertyWithALiftedOperator_ReportsGsh0003AtTheAssignment(string dialect)
+    public async Task ComputedProperty_LiftedOperator_ReportsGsh0003AtAssignment(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -59,7 +59,7 @@ public class AssignmentFormsDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ConditionalDeconstructionOfAGenericType_ReportsGsh0003AtTheConditional(string dialect)
+    public async Task ConditionalDeconstruction_GenericType_ReportsGsh0003AtConditional(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 

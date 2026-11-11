@@ -49,7 +49,11 @@ public class TranspilerIssuesTests : TranspilerTestBase
     [InlineData(10, 2, 5, 2)]
     [InlineData(2, 5, 1, 3)]
     [InlineData(2, 5, 3, 4)]
-    public void Test_ComplexConditionalExpression(int x, int y, int z, int expectedResult)
+    public void ComplexConditionalExpression_NestedTernaryOperators_EvaluatesCorrectResult(
+        int x,
+        int y,
+        int z,
+        int expectedResult)
     {
         int[] a = [x];
         int[] b = [y];
@@ -63,7 +67,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public void Test_GeneralTupleSupport()
+    public void GeneralTupleSupport_TupleExpressions_EmitsTupleStructsWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TranspilerIssuesTarget>(
             nameof(TranspilerIssuesTarget.GeneralTupleSupport), isDevice: false, dialect: CurrentDialect);
@@ -77,7 +81,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public void Test_LocalFunctionsSupport()
+    public void LocalFunctionsSupport_CapturedLocalsInLocalFunction_EmitsLambdaWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TranspilerIssuesTarget>(
             nameof(TranspilerIssuesTarget.LocalFunctionsSupport), isDevice: false, dialect: CurrentDialect);
@@ -93,7 +97,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public void Test_StackAllocFixedArray()
+    public void StackAllocFixedArray_StackAllocatedBuffer_EmitsFixedArrayWithoutDiagnostics()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TranspilerIssuesTarget>(
             nameof(TranspilerIssuesTarget.StackAllocFixedArray), isDevice: false, dialect: CurrentDialect);
@@ -105,7 +109,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public void Test_GenericsConstraintResolution()
+    public void GenericsConstraintResolution_ConcreteStructConstraints_ResolvesWithoutTemplates()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TranspilerIssuesTarget>(
             nameof(TranspilerIssuesTarget.GenericsConstraintResolution), isDevice: false, dialect: CurrentDialect);

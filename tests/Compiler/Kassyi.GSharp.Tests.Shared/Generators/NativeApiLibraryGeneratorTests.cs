@@ -16,17 +16,17 @@ public class NativeApiLibraryGeneratorTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public Task Test_LibraryDefinition_GeneratesLibraryImportsAndResolver()
+    public Task LibraryDefinition_GeneratesLibraryImportsAndResolver()
     {
         var result = RunGenerator(Api("mylib.yml", LibraryYaml));
 
         Assert.Empty(result.Diagnostics);
-        return VerifyGenerated(result, nameof(Test_LibraryDefinition_GeneratesLibraryImportsAndResolver));
+        return VerifyGenerated(result, nameof(LibraryDefinition_GeneratesLibraryImportsAndResolver));
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public Task Test_LibraryDefinition_WithStringMarshallingAndMultilineSummary_GeneratesDllImports()
+    public Task LibraryDefinition_WithStringMarshallingAndMultilineSummary_GeneratesDllImports()
     {
         const string Yaml = """
             namespace: MyApp.Interop
@@ -55,12 +55,12 @@ public class NativeApiLibraryGeneratorTests
         Assert.Empty(result.Diagnostics);
         return VerifyGenerated(
             result,
-            nameof(Test_LibraryDefinition_WithStringMarshallingAndMultilineSummary_GeneratesDllImports));
+            nameof(LibraryDefinition_WithStringMarshallingAndMultilineSummary_GeneratesDllImports));
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LibraryWithoutAlternativeNames_DoesNotEmitResolver()
+    public void LibraryWithoutAlternativeNames_DoesNotEmitResolver()
     {
         const string Yaml = """
             namespace: MyApp.Interop
@@ -79,7 +79,7 @@ public class NativeApiLibraryGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RelativeLibraryPath_IsRoutedThroughResolver()
+    public void RelativeLibraryPath_IsRoutedThroughResolver()
     {
         const string Yaml = """
             namespace: MyApp.Interop
@@ -98,7 +98,7 @@ public class NativeApiLibraryGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MultipleLibraryDefinitions_ShareSingleResolver()
+    public void MultipleLibraryDefinitions_ShareSingleResolver()
     {
         const string SecondYaml = """
             namespace: MyApp.Interop
@@ -122,7 +122,7 @@ public class NativeApiLibraryGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StringValues_AreEscapedInGeneratedLiterals()
+    public void StringValues_AreEscapedInGeneratedLiterals()
     {
         const string Yaml = """
             namespace: MyApp.Interop
@@ -144,7 +144,7 @@ public class NativeApiLibraryGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LibraryDefinition_RefAndStringParameters_RemainAllowed()
+    public void LibraryDefinition_RefAndStringParameters_RemainAllowed()
     {
         const string Yaml = """
             namespace: My.Interop

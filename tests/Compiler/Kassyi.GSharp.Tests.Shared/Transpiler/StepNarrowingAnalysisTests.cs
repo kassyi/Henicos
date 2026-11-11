@@ -29,7 +29,7 @@ public class StepNarrowingAnalysisTests
     [InlineData("SByteEnumStep", SpecialType.System_SByte)]
     [InlineData("ShortEnumStep", SpecialType.System_Int16)]
     [InlineData("UShortEnumStep", SpecialType.System_UInt16)]
-    public void Test_GetStepNarrowing_NarrowTypes_ReturnsTargetType(string method, SpecialType expected)
+    public void GetStepNarrowing_NarrowTypes_ReturnsTargetType(string method, SpecialType expected)
     {
         var op = GetStepOperation(method);
         var narrowing = IntegerSemantics.GetStepNarrowing(op);
@@ -49,7 +49,7 @@ public class StepNarrowingAnalysisTests
     [InlineData("NIntStep")]
     [InlineData("NUIntStep")]
     [InlineData("IntEnumStep")]
-    public void Test_GetStepNarrowing_NonNarrowTypes_ReturnsNull(string method)
+    public void GetStepNarrowing_NonNarrowTypes_ReturnsNull(string method)
     {
         var op = GetStepOperation(method);
         var narrowing = IntegerSemantics.GetStepNarrowing(op);

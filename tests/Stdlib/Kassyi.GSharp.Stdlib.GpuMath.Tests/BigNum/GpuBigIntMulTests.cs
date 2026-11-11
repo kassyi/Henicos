@@ -7,7 +7,7 @@ public class GpuBigIntMulTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Mul_SmallValues()
+    public void Multiply_SmallValues_ProducesExpectedProduct()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -25,7 +25,7 @@ public class GpuBigIntMulTests
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Mul_LargeValues()
+    public void Multiply_LargeValues_ProducesNonEmptyResult()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);

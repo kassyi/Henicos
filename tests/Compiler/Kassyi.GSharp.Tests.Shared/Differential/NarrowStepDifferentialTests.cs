@@ -102,29 +102,29 @@ public class NarrowStepDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NarrowStep_SByte_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_sbyteStep);
+    public void NarrowStep_SByte_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_sbyteStep);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NarrowStep_Byte_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_byteStep);
+    public void NarrowStep_Byte_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_byteStep);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NarrowStep_Int16_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_int16Step);
+    public void NarrowStep_Int16_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_int16Step);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NarrowStep_UInt16_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_uint16Step);
+    public void NarrowStep_UInt16_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_uint16Step);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NarrowStep_Char_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_charStep);
+    public void NarrowStep_Char_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_charStep);
 }

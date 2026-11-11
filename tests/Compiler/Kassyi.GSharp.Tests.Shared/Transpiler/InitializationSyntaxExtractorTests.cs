@@ -13,7 +13,10 @@ public class InitializationSyntaxExtractorTests
     [InlineData("span", "int", false)]
     [InlineData("readOnlySpan", "float", true)]
     [InlineData("array", "int", false)]
-    public void Test_TryGetArrayElementType_SystemSpansAndArrays(string parameter, string elementType, bool isConst)
+    public void TryGetArrayElementType_SystemSpansAndArrays_ExtractsElementType(
+        string parameter,
+        string elementType,
+        bool isConst)
     {
         Assert.True(InitializationSyntaxExtractor.TryGetArrayElementType(GetParameterType(parameter), out var element, out var readOnly));
         Assert.Equal(elementType, element?.ToDisplayString());
@@ -25,7 +28,7 @@ public class InitializationSyntaxExtractorTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("userSpan")]
     [InlineData("userReadOnlySpan")]
-    public void Test_TryGetArrayElementType_UserTypeWithSpanName_IsNotAnArray(string parameter)
+    public void TryGetArrayElementType_UserTypeWithSpanName_ReturnsFalse(string parameter)
     {
         Assert.False(InitializationSyntaxExtractor.TryGetArrayElementType(GetParameterType(parameter), out _, out _));
     }

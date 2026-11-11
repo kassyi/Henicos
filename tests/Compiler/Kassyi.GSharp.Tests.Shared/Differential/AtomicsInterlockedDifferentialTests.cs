@@ -379,26 +379,26 @@ public class AtomicsInterlockedDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InterlockedInt32Overloads_MatchesTheReferenceOnEveryPath() =>
+    public void Interlocked_Int32Overloads_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_interlockedInt32Overloads);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InterlockedUInt32Overloads_MatchesTheReferenceOnEveryPath() =>
+    public void Interlocked_UInt32Overloads_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_interlockedUInt32Overloads);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InterlockedInt64Overloads_MatchesTheReferenceOnEveryPath() =>
+    public void Interlocked_Int64Overloads_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_interlockedInt64Overloads);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_InterlockedUInt64Overloads_MatchesTheReferenceOnEveryPath() =>
+    public void Interlocked_UInt64Overloads_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_interlockedUInt64Overloads);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_InterlockedReturnExpression_MatchesTheReferenceOnEveryPath() =>
+    public void Interlocked_ReturnExpression_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_interlockedReturnExpression);
 }

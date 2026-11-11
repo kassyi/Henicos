@@ -24,18 +24,18 @@ public static partial class FermatTrialFactoringKernels
 
 | Name | Description |
 | --- | --- |
-| [Device_ModPow64_Under32Bit(ulong, ulong, ulong)](#device_modpow64_under32bitulong-ulong-ulong) | A GPU device function (`[GpuDeviceFunction, GpuInline]`) that computes 64-bit modular exponentiation for moduli under 32 bits. |
+| [ModPow64Under32Bits(ulong, ulong, ulong)](#modpow64under32bitsulong-ulong-ulong) | A GPU device function (`[GpuDeviceFunction, GpuInline]`) that computes 64-bit modular exponentiation for moduli under 32 bits. |
 | [SearchFactors32(uint, uint, uint[], uint[], int, uint, uint)](#searchfactors32uint-uint-uint-uint-int-uint-uint) | Checks the arguments and launches `SearchFactors32Kernel` on arrays. |
 | [SearchFactors32(uint, uint, GSharpArrayProxy, GSharpArrayProxy, int, uint, uint, IntPtr)](#searchfactors32uint-uint-gsharparrayproxy-gsharparrayproxy-int-uint-uint-intptr) | Checks the arguments and launches `SearchFactors32Kernel` on device buffers. |
 | [SearchFactors32Kernel(uint, uint, uint[], uint[], int)](#searchfactors32kerneluint-uint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that searches for 32-bit factors of a Fermat number. |
 
-## Device_ModPow64_Under32Bit(ulong, ulong, ulong)
+## ModPow64Under32Bits(ulong, ulong, ulong)
 
 A GPU device function (`[GpuDeviceFunction, GpuInline]`) that computes 64-bit modular exponentiation ($\text{baseVal}^{\text{exp}} \bmod m$) for moduli under 32 bits.
 
 ```csharp
 [GpuDeviceFunction, GpuInline]
-public static ulong Device_ModPow64_Under32Bit(ulong baseVal, ulong exp, ulong m);
+public static ulong ModPow64Under32Bits(ulong baseVal, ulong exp, ulong m);
 ```
 
 #### Parameters
@@ -142,7 +142,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
 // This is a GPU kernel class and its methods are launched via the G# execution pipeline.
-ulong rem = FermatTrialFactoringKernels.Device_ModPow64_Under32Bit(2UL, 10UL, 1000UL);
+ulong rem = FermatTrialFactoringKernels.ModPow64Under32Bits(2UL, 10UL, 1000UL);
 Console.WriteLine($"2^10 mod 1000 = {rem}");
 ```
 

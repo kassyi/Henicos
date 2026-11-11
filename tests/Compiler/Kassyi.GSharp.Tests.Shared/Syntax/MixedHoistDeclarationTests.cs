@@ -15,17 +15,17 @@ public class MixedHoistDeclarationTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_HoistedBeforeLocalKernel_LaterDeclaratorReadsHoistedValue() =>
+    public void HoistDeclaration_HoistedBeforeLocal_LaterDeclaratorReadsHoistedValue() =>
         AssertHoistedBeforeLocal();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SideEffectOrderKernel_DeclaratorsRunInSourceOrder() =>
+    public void HoistDeclaration_SideEffectOrder_DeclaratorsRunInSourceOrder() =>
         AssertSideEffectOrder();
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AlternatingHoistKernel_DeclaratorsRunInSourceOrder() =>
+    public void HoistDeclaration_AlternatingHoist_DeclaratorsRunInSourceOrder() =>
         AssertAlternatingHoist();
 
     internal static void AssertHoistedBeforeLocal()

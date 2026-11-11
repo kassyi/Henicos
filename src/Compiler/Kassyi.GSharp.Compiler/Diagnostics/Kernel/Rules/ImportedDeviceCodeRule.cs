@@ -72,7 +72,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
     public void Analyze(MemberAccessExpressionSyntax node, ref ValidationContext context)
     {
         if (context.SemanticModel.GetSymbol(node) is IPropertySymbol { IsStatic: false } property &&
-            property.ContainingType is { } type && StructAbiMembers.IsComputedProperty(property) &&
+            property.ContainingType is { } type && StructAbiMembers.HasAccessorFunctions(property) &&
             IsImportedStruct(type, context.SemanticModel.Compilation))
         {
             Check(type, type, node.Name.GetLocation(), ref context);

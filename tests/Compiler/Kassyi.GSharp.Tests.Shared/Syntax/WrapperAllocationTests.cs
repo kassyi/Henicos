@@ -13,7 +13,7 @@ public class WrapperAllocationTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LaunchAllocationTestKernel_PassesConstantParameter()
+    public void Launch_ConstantParameterBelowAndAboveThreshold_PassesConstantAndUpdatesOutputs()
     {
         int[] arrayVal = [42];
 
@@ -30,7 +30,7 @@ public class WrapperAllocationTests : TranspilerTestBase
 
 #if GSHARP_CUDA
     [SkippableFact]
-    public void Test_LaunchDevice_ShouldNotAllocateOnHotPath()
+    public void LaunchHotPath_PreallocatedDeviceMemory_RemainsWithinDriverOverheadBound()
     {
         using var _ctx = new GpuKernelLoader.CudaContextScope();
         // Setup
@@ -93,7 +93,7 @@ public class WrapperAllocationTests : TranspilerTestBase
     // the 360 bytes of a DeviceArrayRegions per launch would exceed the bound by far over 100 launches
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchSingleArray_ShouldNotAllocateRegionTable()
+    public void Launch_SingleArrayArgument_DoesNotAllocateRegionTable()
     {
         using var _ctx = new GpuKernelLoader.CudaContextScope();
         int[] array = [0];
@@ -113,7 +113,7 @@ public class WrapperAllocationTests : TranspilerTestBase
     // The same for two T[] arguments: whether they hold one array is tested pairwise, with no table (#721)
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchTwoArrays_ShouldNotAllocateRegionTable()
+    public void Launch_TwoArrayArguments_DoesNotAllocateRegionTable()
     {
         using var _ctx = new GpuKernelLoader.CudaContextScope();
         int[] a = [0];
@@ -135,7 +135,7 @@ public class WrapperAllocationTests : TranspilerTestBase
     // A struct argument that holds no array needs no table (#707), also next to two T[] arguments
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchArrayFreeStruct_ShouldNotAllocateRegionTable()
+    public void Launch_ArrayFreeStructArgument_DoesNotAllocateRegionTable()
     {
         using var _ctx = new GpuKernelLoader.CudaContextScope();
         var counter = new ArrayFreeCounter[1];
@@ -154,7 +154,7 @@ public class WrapperAllocationTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LaunchStructAndTwoArrays_ShouldNotAllocateRegionTable()
+    public void Launch_StructAndTwoArrayArguments_DoesNotAllocateRegionTable()
     {
         using var _ctx = new GpuKernelLoader.CudaContextScope();
         var counter = new ArrayFreeCounter[1];
@@ -213,7 +213,7 @@ public class WrapperAllocationTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    public void Test_LaunchEmptyArray_ShouldThrowArgumentException()
+    public void Launch_EmptyArrayArgument_ThrowsArgumentException()
     {
         using var _ctx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 
@@ -229,7 +229,7 @@ public class WrapperAllocationTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    public void Test_LaunchDevice_ConcurrentAccess_ShouldBeThreadSafe()
+    public void Launch_ConcurrentWorkerThreads_ExecutesSafelyWithoutInterference()
     {
         // Warm up and JIT compile on primary thread
         using (var _initCtx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())

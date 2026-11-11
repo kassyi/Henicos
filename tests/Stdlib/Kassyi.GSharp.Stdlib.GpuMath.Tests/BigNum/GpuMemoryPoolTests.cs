@@ -158,7 +158,7 @@ public sealed class GpuMemoryPoolTests : IDisposable
     public void FreshAllocation_IsZeroed()
     {
         // A newly allocated value reads as zero even when the driver hands back memory that held other data.
-        // FromBigInteger(workspace, 0) relies on this (GpuBigUInt.cs:497-500).
+        // FromBigInteger(workspace, 0) relies on this (GpuBigUInt.cs:602-605).
         // mutant: DefaultGpuMemoryManager.Allocate `provider.ClearMemoryAsync(ptr, numWords, stream)` removed
         var provider = _workspace.Provider;
         var reused = 0;

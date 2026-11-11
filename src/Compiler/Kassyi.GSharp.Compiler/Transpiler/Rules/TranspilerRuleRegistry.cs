@@ -31,7 +31,8 @@ internal sealed class TranspilerRuleRegistry
             new SpilledExpressionInterceptor(),
             new ArrayNullCheckInterceptor(),
             new ImplicitConversionInterceptor(),
-            new UninvokedSpanMethodInterceptor()
+            new UninvokedSpanMethodInterceptor(),
+            new FieldKeywordInterceptor()
         );
 
     /// <summary>

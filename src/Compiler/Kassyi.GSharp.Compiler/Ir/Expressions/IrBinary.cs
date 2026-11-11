@@ -25,4 +25,10 @@ internal sealed class IrBinary(IrOperator<BinaryOperatorKind> @operator, IrExpre
 
     /// <summary>The right operand.</summary>
     public IrExpression Right { get; } = right;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrBinary Update(IrExpression left, IrExpression right) =>
+        left == Left && right == Right
+            ? this
+            : new IrBinary(Operator, left, right, Type, Category, ConstantValue, Source);
 }

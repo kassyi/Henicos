@@ -17,7 +17,7 @@ public class ExtensionCallDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ExtensionCall_ReportsSuspendingCallee(string dialect)
+    public async Task ExtensionCall_SuspendingCallee_ReportsUnsupportedSyntax(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 

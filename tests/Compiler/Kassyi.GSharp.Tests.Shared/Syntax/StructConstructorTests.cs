@@ -10,7 +10,8 @@ public class StructConstructorTests : TranspilerTestBase
     [InlineData(nameof(StructConstructorKernels.ConstructorDefaultArgumentKernel))]
     [InlineData(nameof(StructConstructorKernels.ConstructorNamedArgumentKernel))]
     [Scenario(TestScenario.SadPath)]
-    public void Test_StructConstructorCall_IsNotEmittedAsAggregateInitialization(string kernel)
+    public void StructConstructorCall_UserDefinedConstructorInvocation_AvoidsAggregateInitializationAndRunsConstructor(
+        string kernel)
     {
         var (source, failures) = RoslynTestUtility.TranspileMethod(
             typeof(StructConstructorKernels), kernel, isDevice: false, dialect: CurrentDialect);
@@ -26,7 +27,7 @@ public class StructConstructorTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConstructorBody_Runs()
+    public void ConstructorBody_ExplicitConstructorInvocation_ExecutesConstructorBody()
     {
         var output = new int[Count];
         StructConstructorKernels.LaunchConstructorBodyKernel(output, blockDimX: Count);
@@ -40,7 +41,7 @@ public class StructConstructorTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConstructorDefaultArgument_IsApplied()
+    public void ConstructorDefaultArgument_OmittedOptionalParameter_AppliesDefaultArgumentValue()
     {
         var output = new int[Count];
         StructConstructorKernels.LaunchConstructorDefaultArgumentKernel(output, blockDimX: Count);
@@ -54,7 +55,7 @@ public class StructConstructorTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConstructorNamedArguments_AreMatchedByName()
+    public void ConstructorNamedArguments_OutOfOrderNamedArguments_MatchesArgumentsByName()
     {
         var output = new int[Count];
         StructConstructorKernels.LaunchConstructorNamedArgumentKernel(output, blockDimX: Count);
@@ -71,7 +72,7 @@ public class StructConstructorTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConstructorChainedThis_RunsTargetThenBody()
+    public void ConstructorChainedThis_ChainedThisConstructorInvocation_RunsTargetConstructorThenBody()
     {
         var output = new int[Count];
         StructConstructorKernels.LaunchConstructorChainedThisKernel(output, blockDimX: Count);
@@ -85,7 +86,8 @@ public class StructConstructorTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConstructorFieldAndPropertyInitializers_RunBeforeBody()
+    public void
+        ConstructorInitializers_FieldAndPropertyInitializersWithConstructor_RunsInitializersBeforeConstructorBody()
     {
         var output = new int[Count];
         StructConstructorKernels.LaunchConstructorFieldInitializersKernel(output, blockDimX: Count);
@@ -99,7 +101,8 @@ public class StructConstructorTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ConstructorFieldAndPropertyInitializers_AreNotRunWithoutConstructorCall()
+    public void
+        ConstructorInitializers_DefaultOrUninitializedStructInstantiation_DoesNotRunInitializersWithoutConstructorCall()
     {
         var output = new int[Count];
         StructConstructorKernels.LaunchConstructorFieldInitializersDefaultKernel(output, blockDimX: Count);

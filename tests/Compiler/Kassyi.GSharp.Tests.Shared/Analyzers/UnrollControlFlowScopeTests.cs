@@ -10,7 +10,7 @@ public class UnrollControlFlowScopeTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_UnrollControlFlowScope_HappyPath_HasNoErrors()
+    public async Task UnrollControlFlowScope_UniformLoops_HasNoErrors()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/UnrollControlFlowScope_HappyPath.cs", s_analyzer)
                                .HasNoErrorsAsync();
@@ -19,7 +19,7 @@ public class UnrollControlFlowScopeTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnrollControlFlowScope_SadPath_ReportsExpectedDiagnostics()
+    public async Task UnrollControlFlowScope_DivergentControlFlow_ReportsExpectedDiagnostics()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/UnrollControlFlowScope_SadPath.cs", s_analyzer)
                                .ReportsDiagnosticsAsync(new[]
