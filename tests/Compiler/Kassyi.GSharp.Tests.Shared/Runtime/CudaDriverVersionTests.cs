@@ -10,30 +10,32 @@ public class CudaDriverVersionTests
     [Theory]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData(12000, "12.0")]
-    [InlineData(12080, "12.8")]
-    [InlineData(12090, "12.9")]
-    public void ThrowIfUnsupported_DriverOlderThanCuda13_ThrowsNamingBothVersions(int reported, string reportedText)
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(12000, false)]
+    [InlineData(12090, false)]
+    [InlineData(13000, true)]
+    [InlineData(13040, true)]
+    [InlineData(14000, true)]
+    public void IsSupported_ReportedVersion_IsCuda13OrNewer(int reported, bool expected)
     {
-        var exception = Assert.Throws<NotSupportedException>(() => CudaDriverVersion.ThrowIfUnsupported(reported));
-
-        Assert.Contains($"supports CUDA {reportedText},", exception.Message);
-        Assert.Contains("requires a driver for CUDA 13.0 or newer", exception.Message);
+        Assert.Equal(expected, CudaDriverVersion.IsSupported(reported));
     }
 
     [Theory]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.Boundary)]
-    [InlineData(13000)]
-    [InlineData(13040)]
-    [InlineData(14000)]
-    public void ThrowIfUnsupported_Cuda13OrNewerDriver_DoesNotThrow(int reported)
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(12000, "12.0")]
+    [InlineData(12080, "12.8")]
+    [InlineData(12090, "12.9")]
+    public void DescribeUnsupported_DriverOlderThanCuda13_NamesBothVersions(int reported, string reportedText)
     {
-        var exception = Record.Exception(() => CudaDriverVersion.ThrowIfUnsupported(reported));
+        var message = CudaDriverVersion.DescribeUnsupported(reported);
 
-        Assert.Null(exception);
+        Assert.Contains($"supports CUDA {reportedText},", message);
+        Assert.Contains("requires a driver for CUDA 13.0 or newer", message);
+        Assert.Contains($"driver branch {CudaDriverVersion.MinimumDriverBranch} or newer", message);
+        Assert.Contains($"{CudaDriverVersion.MinimumLinuxDriver} or newer on Linux", message);
     }
 
     [Theory]
@@ -48,13 +50,25 @@ public class CudaDriverVersionTests
         Assert.Equal(expected, CudaDriverVersion.Format(version));
     }
 
+    // Reads the driver directly: GpuKernelLoader.IsDriverAvailable is false on an old driver, so a skip through
+    // CudaCapability would hide exactly the machine this test is for
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
     public void DriverGetVersion_InstalledDriver_MeetsTheMinimum()
     {
-        CudaCapability.EnsureGpuAvailable();
+        CUresult initResult;
+        try
+        {
+            initResult = CudaDriverApi.cuInit(0);
+        }
+        catch (DllNotFoundException ex)
+        {
+            throw new SkipException($"No CUDA driver library: {ex.Message}");
+        }
+
+        Skip.If(initResult != CUresult.CudaSuccess, $"cuInit failed: {initResult}");
 
         var result = CudaDriverApi.cuDriverGetVersion(out var version);
 
@@ -63,5 +77,6 @@ public class CudaDriverVersionTests
             version >= CudaDriverVersion.Minimum,
             $"The driver reports CUDA {CudaDriverVersion.Format(version)}."
         );
+        Assert.Null(GpuKernelLoader.DriverUnavailableReason);
     }
 }

@@ -43,8 +43,8 @@ Skip the C++ headers, CMake setups, and P/Invoke boilerplate. Write C#, command 
 
 ## Requirements
 
-- **GPU execution**: an NVIDIA GPU (compute capability 8.6 and newer with the default build settings) and a driver for **CUDA 13.0 or newer** (R580 branch or newer; 580.65.06 or newer on Linux). An older driver makes the runtime throw a `NotSupportedException` naming the version found and the version required.
-- **Build**: the .NET 10 SDK, the NVIDIA CUDA Toolkit 13.0 or newer (`nvcc`) and a C++ host compiler (MSVC on Windows, `gcc` / `clang` on Linux).
+- **GPU execution**: an NVIDIA GPU (compute capability 8.6 and newer with the default build settings) and a driver for **CUDA 13.0 or newer** (R580 branch or newer; 580.65.06 or newer on Linux). On an older driver, GPU use throws a `NotSupportedException` naming the version found and the version required; `GpuKernelLoader.IsDriverAvailable` is `false` and `GpuKernelLoader.DriverUnavailableReason` gives the same message.
+- **Build**: the .NET 10 SDK, the NVIDIA CUDA Toolkit 13.0 or newer (`nvcc`) and a C++ host compiler (MSVC on Windows, GCC / Clang on Linux).
 - **CPU mode**: a C++ host compiler only; no GPU, driver or CUDA Toolkit.
 
 Details: [Prerequisites & Installation](docs/spec/en/00_getting_started/01_prerequisites.md).

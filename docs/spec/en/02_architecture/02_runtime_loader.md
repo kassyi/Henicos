@@ -18,7 +18,11 @@ The runtime engine utilizes a robust scope-based context management lifecycle to
 
 Instead of a singleton context tracked via `[ThreadStatic]`, the AOT generated launcher stub automatically emits a local scope instance (`using var _cudaCtxScope = new CudaContextScope();`) at the beginning of each kernel invocation. This `CudaContextScope` pushes the active CUDA context to the calling thread (`cuCtxPushCurrent`) and safely pops it upon disposal (`cuCtxPopCurrent`), natively supporting parallel kernel dispatches from multiple host threads.
 
-`GpuKernelLoader.EnsureInitialized` initializes the driver once per process (`cuInit`, then the global context on device 0). Without a driver or a device it switches to the CPU fallback mode. A driver that supports a CUDA version older than 13.0 (`cuDriverGetVersion` below 13000) is not a fallback case: the call throws a `NotSupportedException` naming the version the driver supports and the required one (see [Prerequisites](../00_getting_started/01_prerequisites.md#1-gpu-execution-default--recommended)), and every later call throws it again. The bindings of `cuda_driver_api.yml` therefore bind the versioned symbols of the CUDA 13 `cuda.h` (`cuEventElapsedTime_v2`, `cuMemAllocHost_v2`, ...) without a fallback for older drivers.
+The runtime initializes the driver once per process, on the first use or query (`cuInit`, `cuDriverGetVersion`, then the global context on device 0), and keeps the result. Without a driver or a device, or when a driver call fails, it switches to the CPU fallback mode. A driver that supports a CUDA version older than 13.0 (`cuDriverGetVersion` below 13000) is not a fallback case; see [Prerequisites](../00_getting_started/01_prerequisites.md#1-gpu-execution-default--recommended):
+
+- The queries do not throw: `IsDriverAvailable` and `IsCpuFallbackMode` are `false`, and `DriverUnavailableReason` holds the message (the CUDA version the driver supports and the required one; for the fallback cases, the failed call or the missing library).
+- GPU use throws a `NotSupportedException` with that message: `EnsureInitialized`, `GlobalContext`, a `CudaContextScope` and so every launch, transfer, stream completion and event timer.
+- `ForceCpuFallback` still runs on the CPU and does not touch the driver. The bindings of `cuda_driver_api.yml` therefore bind the versioned symbols of the CUDA 13 `cuda.h` (`cuEventElapsedTime_v2`, `cuMemAllocHost_v2`, ...) without a fallback for older drivers.
 
 ## 2.2 AOT Module Loading and Validation
 
