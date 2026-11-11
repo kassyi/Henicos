@@ -78,6 +78,17 @@ public class IrSpillPlannerTests
         Assert.True(Assert.IsType<IrSpillValue>(steps[0]).ForcedByConditional);
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_OperandBeforeAnUnconditionalSplitAndAConditionalOne_IsNotMarkedAsForced()
+    {
+        var steps = Plan("EarlierOperandBeforeAnUnconditionalSplit").Statements[^1].Steps;
+
+        Assert.Equal("spill[EarlierOperand](a[0]) split(Warp.ShuffleSync(0xffffffffu, x, 0)) cond{split(Suspend())|}",
+            Print(steps));
+        Assert.False(Assert.IsType<IrSpillValue>(steps[0]).ForcedByConditional);
+    }
+
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("SpanValueBeforeSplit", "RefLikeOperand")]

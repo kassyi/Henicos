@@ -176,6 +176,15 @@ public static class Cases
         result[0] = Store(ref a[b[i]], Suspend());
     }
 
+    [GpuDeviceFunction]
+    public static int Triple(int a, int b, int c) => a + b + c;
+
+    [GpuKernel]
+    public static void EarlierOperandBeforeAnUnconditionalSplit(int[] a, int x, bool c, int[] result)
+    {
+        result[0] = Triple(a[0], Warp.ShuffleSync(0xffffffffu, x, 0), c ? Suspend() : 0);
+    }
+
     [GpuKernel]
     public static void SplitInLoop(int[] result)
     {

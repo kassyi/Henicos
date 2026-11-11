@@ -42,6 +42,10 @@
   IrSpillPlannerCases.cs Cases.EarlierArgumentOfACallThatDoesNotSplit: result[0] = Pair(a[0], Suspend());
     ir:     spill(a[0]) split(Suspend())
     syntax: split(Suspend())
+#991 an earlier operand of an operation that does not split
+  IrSpillPlannerCases.cs Cases.EarlierOperandBeforeAnUnconditionalSplit: result[0] = Triple(a[0], Warp.ShuffleSync(0xffffffffu, x, 0), c ? Suspend() : 0);
+    ir:     spill(a[0]) split(Warp.ShuffleSync(0xffffffffu, x, 0)) cond{split(Suspend())|}
+    syntax: cond{split(Suspend())|} split(Warp.ShuffleSync(0xffffffffu, x, 0))
 #991 an operand before a split inside ?: / && / || is evaluated before it
   IrSpillPlannerCases.cs Cases.LeftOperandOfAConditionalSplit: result[0] = a[0] + (c ? Suspend() : 0);
     ir:     spill(a[0]) cond{split(Suspend())|}
