@@ -98,7 +98,8 @@ internal sealed partial class ManagedExecutionRewriter
         TypeArgumentListSyntax? typeArguments)
     {
         using var writer = new SourceWriter();
-        writer.Append("global::Kassyi.GSharp.Core.ManagedGpuContext.")
+        writer.Append(ManagedNames.Context)
+            .Append('.')
             .Append(GSharpInternalNames.ManagedVersion.Bind)
             .Append('<');
         writer.AppendCsharpTypeName(reduced.ReceiverType ?? extension.Parameters[0].Type);
