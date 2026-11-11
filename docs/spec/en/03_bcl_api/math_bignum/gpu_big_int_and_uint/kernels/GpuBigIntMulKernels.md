@@ -210,6 +210,8 @@ The length of the NTT transform.
 `n1`, `n2` _int_<br>
 The six-step grid dimensions; the coefficients are read in the transposed order of the grid.
 
+<a id="multiplynttspanuint-spanuint-spanuint"></a>
+
 ## MultiplyNtt(Span&lt;uint&gt;, Span&lt;uint&gt;, Span&lt;uint&gt;)
 
 A GPU device function (`[GpuDeviceFunction]`) that multiplies `a` by `b` into `result` with a cooperative NTT in the shared memory of one block, for operands whose product fits in 512 32-bit words (1024 16-bit half-words). The word counts are the lengths of the spans.
@@ -218,6 +220,8 @@ A GPU device function (`[GpuDeviceFunction]`) that multiplies `a` by `b` into `r
 [GpuDeviceFunction]
 public static void MultiplyNtt([GpuReadOnly] Span<uint> a, [GpuReadOnly] Span<uint> b, Span<uint> result);
 ```
+
+<a id="multiplynttspanuint-int-spanuint-int-spanuint-int"></a>
 
 ## MultiplyNtt(Span&lt;uint&gt;, int, Span&lt;uint&gt;, int, Span&lt;uint&gt;, int)
 

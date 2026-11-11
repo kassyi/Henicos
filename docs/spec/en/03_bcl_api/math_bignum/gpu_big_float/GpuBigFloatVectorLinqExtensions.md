@@ -142,6 +142,8 @@ public static IGpuBigFloatVectorExpression Take(this IGpuBigFloatVectorExpressio
 `ArgumentOutOfRangeException`<br>
 `count < 0`.
 
+<a id="selectaddtscalarigpubigfloatvectorexpression-tscalar"></a>
+
 ## SelectAdd\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)
 
 Adds `scalar` to every element of `source`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Magnitude.NumWords) + 1`.

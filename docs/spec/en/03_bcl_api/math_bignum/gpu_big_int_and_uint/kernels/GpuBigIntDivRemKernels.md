@@ -35,14 +35,14 @@ The correction status codes that a correction writes to `status[1]` (after addin
 
 | Name | Description |
 | --- | --- |
-| [AddSmallSigned(uint[], int, int)](#addsmallsigneduint-int-int) | A GPU device function (`[GpuDeviceFunction]`) that adds a small signed count to a multi-word unsigned value in place, propagating the carry or the borrow; serial, call it from one thread. |
+| `AddSmallSigned(uint[], int, int)` | A GPU device function (`[GpuDeviceFunction]`) that adds a small signed count to a multi-word unsigned value in place, propagating the carry or the borrow; serial, call it from one thread. |
 | [BarrettCorrectionKernel(uint[], uint[], uint[], int, int, uint[])](#barrettcorrectionkerneluint-uint-uint-int-int-uint) | A GPU kernel (`[GpuKernel]`) that corrects the remainder `diff = a - q * b` into `[0, b)` and the quotient by the same number of steps. |
-| [CorrectIntoDivisorRange(uint[], uint[], int, int, int, uint[], uint)](#correctintodivisorrangeuint-uint-int-int-int-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that moves a signed remainder into `[0, divisor)` one divisor at a time and returns the steps to add to the quotient. |
-| [ExecuteNttMultiplyMacro(NewtonRaphsonContext, uint[], uint[], uint[], int, int, int, int)](#executenttmultiplymacronewtonraphsoncontext-uint-uint-uint-int-int-int-int) | A GPU device function (`[GpuDeviceFunction]`) that multiplies two operands by NTT inside the Newton-Raphson mega-kernels. |
-| [InitializeOneModuloKernel(uint[], uint[], int)](#initializeonemodulokerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that writes the low word of `1 mod m` into `result[0]`; the caller clears the other words. Launch with one block of one thread. |
+| `CorrectIntoDivisorRange(uint[], uint[], int, int, int, uint[], uint)` | A GPU device function (`[GpuDeviceFunction]`) that moves a signed remainder into `[0, divisor)` one divisor at a time and returns the steps to add to the quotient. |
+| `ExecuteNttMultiplyMacro(NewtonRaphsonContext, uint[], uint[], uint[], int, int, int, int)` | A GPU device function (`[GpuDeviceFunction]`) that multiplies two operands by NTT inside the Newton-Raphson mega-kernels. |
+| `InitializeOneModuloKernel(uint[], uint[], int)` | A GPU kernel (`[GpuKernel]`) that writes the low word of `1 mod m` into `result[0]`; the caller clears the other words. Launch with one block of one thread. |
 | [ModPowNttMegaKernel(ModPowNttContext)](#modpownttmegakernelmodpownttcontext) | A cooperative GPU mega-kernel (`[GpuKernel(Cooperative = true)]`) that executes multi-bit binary exponentiation with dual-prime NTT multiplication and Barrett reduction on the GPU. |
 | [ReciprocalNewtonRaphsonMegaKernel(NewtonRaphsonContext)](#reciprocalnewtonraphsonmegakernelnewtonraphsoncontext) | A cooperative GPU mega-kernel (`[GpuKernel(Cooperative = true)]`) that executes iterative Newton-Raphson reciprocal refinement using grid-wide synchronization and NTT multiplication. |
-| [TruncatedBoundCorrectionKernel(uint[], int, uint[], int, uint[], int)](#truncatedboundcorrectionkerneluint-int-uint-int-uint-int) | A GPU kernel (`[GpuKernel]`) that subtracts 1 from `estimate` when `product` is greater than `bound`: the correction of a quotient or an inverse square root computed from a truncated operand. |
+| `TruncatedBoundCorrectionKernel(uint[], int, uint[], int, uint[], int)` | A GPU kernel (`[GpuKernel]`) that subtracts 1 from `estimate` when `product` is greater than `bound`: the correction of a quotient or an inverse square root computed from a truncated operand. |
 
 ## BarrettCorrectionKernel(uint[], uint[], uint[], int, int, uint[])
 

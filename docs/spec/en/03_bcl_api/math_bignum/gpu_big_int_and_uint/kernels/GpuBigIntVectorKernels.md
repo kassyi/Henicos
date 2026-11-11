@@ -696,6 +696,8 @@ Computes the block-wide maximum of `myVal` across all warps in the thread block 
 public static ulong ReduceBlockMaxUInt64(ulong myVal, SharedMemory<ulong> warpMax);
 ```
 
+<a id="compareshiftedlimbsblockparallelshiftedlimbcomparecontext-sharedmemoryulong"></a>
+
 ## CompareShiftedLimbsBlockParallel(ShiftedLimbCompareContext, SharedMemory\<ulong\>)
 
 Compares two bit-shifted multi-word slices across a thread block by packing the highest differing word index (`idx + 1`) and outcome (`2` if left > right, `1` if left < right) into a 64-bit integer and reducing via `ReduceBlockMaxUInt64`.
