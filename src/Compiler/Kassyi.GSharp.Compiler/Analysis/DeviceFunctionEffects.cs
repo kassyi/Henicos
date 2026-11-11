@@ -524,7 +524,7 @@ internal static class DeviceFunctionEffects
     {
         if (DeviceExportTable.TryFindFunction(method, compilation, out var imported))
         {
-            return imported.Record.Effect switch
+            return imported.Record.Traits.Effect switch
             {
                 "None" => DeviceFunctionEffect.None,
                 "RefParameters" => DeviceFunctionEffect.RefParameters,
