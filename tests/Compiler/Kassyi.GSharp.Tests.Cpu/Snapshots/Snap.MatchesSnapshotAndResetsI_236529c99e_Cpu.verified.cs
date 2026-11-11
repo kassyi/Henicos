@@ -14,6 +14,6 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Sample
 inline void DefaultLiteral(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SampleData> __gsharp_id_0_items, GSharpArray<int> __gsharp_id_1_counts){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__SampleData __gsharp_id_2_s = {};
 int __gsharp_id_3_c = {};
-__gsharp_array_at(__gsharp_id_0_items, 0, "G#: a null array is read at ControlFlowTargets.cs(28,9)")=__gsharp_id_2_s;
-__gsharp_array_at(__gsharp_id_1_counts, 0, "G#: a null array is read at ControlFlowTargets.cs(29,9)")=__gsharp_id_3_c;
+__gsharp_array_at(__gsharp_id_0_items, 0, "G#: a null array is read at ControlFlowTarget.cu.cs(28,9)")=__gsharp_id_2_s;
+__gsharp_array_at(__gsharp_id_1_counts, 0, "G#: a null array is read at ControlFlowTarget.cu.cs(29,9)")=__gsharp_id_3_c;
 }
