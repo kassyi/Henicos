@@ -36,6 +36,10 @@ Gets the global CUDA context handle, initializing the driver if necessary.
 public static IntPtr GlobalContext { get; }
 ```
 
+The global context is the primary context of device 0 (`cuDevicePrimaryCtxRetain`), retained until the process ends. It is the context the CUDA Runtime and the libraries built on it (cuBLAS, cuFFT) use, so their streams and events can be passed to G# directly (device memory could already be shared across contexts of the same device). A library that resets the device (`cudaDeviceReset`, `cuDevicePrimaryCtxReset`) destroys it as well, with the device memory, modules and page-locked memory of G#. G# records the context ID (`cuCtxGetId`) when it initializes the context and checks it whenever it makes the global context current; after a reset every such call throws `InvalidOperationException`, also once the CUDA Runtime has initialized the primary context again under the same handle.
+
+A potentially unsafe driver call (an allocation, a free, an event query) made while a stream captures in `CUstreamCaptureMode.Global` or `CUstreamCaptureMode.ThreadLocal` fails in this context with `CudaException` (`CudaErrorStreamCaptureUnsupported`) and invalidates the capture. In a context created with `cuCtxCreate`, such as the one of an isolated `GpuWorkspace`, the driver currently ends the process with an access violation instead (NVIDIA bug 7081224, driver 621.14 on Windows).
+
 ## ForceCpuFallback
 
 Gets or sets a value indicating whether to forcibly emulate the GPU runtime on CPU host memory (stored in an `AsyncLocal<bool>`).
