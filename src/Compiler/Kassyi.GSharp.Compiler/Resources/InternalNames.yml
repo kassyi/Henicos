@@ -408,6 +408,14 @@ StackLinq:
     GridBlockRank: { Value: __gsharp_grid_block_rank, Prelude: ../Prelude.cu }
     GridBlockCount: { Value: __gsharp_grid_block_count, Prelude: ../Prelude.cu }
     GridReduce: { Value: __gsharp_grid_reduce, Prelude: ../Prelude.cu }
+    # Temporaries and prefixes of a fused loop (StackLinqFusionRule and its stage and terminal strategies)
+    ValuePrefix: __gsharp_val_
+    LoopIndex: __gsharp_i
+    FusionSource: __gsharp_fusion_src
+    FusionLow: __gsharp_fusion_lo
+    FusionHigh: __gsharp_fusion_hi
+    FusionResult: __gsharp_fusion_res
+    StagePrefix: __gsharp_stage_
 
 Wmma:
   Summary: Tensor Core warp matrix fragment types and tags (nvcuda::wmma).
