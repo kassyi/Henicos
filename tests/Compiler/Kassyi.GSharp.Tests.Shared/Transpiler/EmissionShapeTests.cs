@@ -201,7 +201,10 @@ public partial class EmissionShapeTests
             "auto __gsharp_id_10_addFound = [&](int __gsharp_id_11_x) {",
             "int __gsharp_id_13_found;",
             $"int __gsharp_id_12_r = ({Statements}TryGet(__gsharp_id_0_data,&__gsharp_id_13_found)?__gsharp_add_i32(__gsharp_id_13_found,__gsharp_id_11_x):__gsharp_id_11_x);");
-        Assert.Single(Regex.Matches(cuda, @"int __gsharp_id_13_found;"));
+        int foundFirst = cuda.IndexOf("int __gsharp_id_13_found;", StringComparison.Ordinal);
+        Assert.True(foundFirst >= 0);
+        int foundSecond = cuda.IndexOf("int __gsharp_id_13_found;", foundFirst + "int __gsharp_id_13_found;".Length, StringComparison.Ordinal);
+        Assert.Equal(-1, foundSecond);
         AssertContainsLines(cpu,
             "int __gsharp_id_1_w;",
             $"*__gsharp_result = ({Statements}TryGet(__gsharp_ctx->__gsharp_id_0_data,&__gsharp_id_1_w)?__gsharp_id_1_w:0);");
@@ -238,8 +241,7 @@ public partial class EmissionShapeTests
     {
         var body = KernelSource(Generate("StatementShapeKernels", dialect), kernel);
 
-        var labels = LabelRegex().Matches(body).Select(static m => m.Groups[1].Value).ToList();
-        var gotos = GotoRegex().Matches(body).Select(static m => m.Groups[1].Value).ToList();
+        var (labels, gotos) = ExtractLabelsAndGotos(body);
 
         Assert.Equal(labels.Count, labels.Distinct(StringComparer.Ordinal).Count());
         Assert.All(gotos, target => Assert.Contains(target, labels));
@@ -265,9 +267,9 @@ public partial class EmissionShapeTests
     {
         var source = Generate("IteratorDepthKernels", dialect);
 
-        Assert.Equal(16, Regex.Matches(KernelSource(source, "SixteenLevelsKernel"), @"__gsharp_iter_end_\d+:;").Count);
-        Assert.Equal(17, Regex.Matches(KernelSource(source, "SeventeenLevelsKernel"), @"__gsharp_iter_end_\d+:;").Count);
-        Assert.Equal(17, Regex.Matches(KernelSource(source, "SiblingsKernel"), @"__gsharp_iter_end_\d+:;").Count);
+        Assert.Equal(16, CountIteratorEndLabels(KernelSource(source, "SixteenLevelsKernel")));
+        Assert.Equal(17, CountIteratorEndLabels(KernelSource(source, "SeventeenLevelsKernel")));
+        Assert.Equal(17, CountIteratorEndLabels(KernelSource(source, "SiblingsKernel")));
     }
 
     // What the transpiler cannot emit is stated as #error in the generated source, once per failure, at the place the
@@ -387,11 +389,26 @@ public partial class EmissionShapeTests
         foreach (var dialect in (string[])["Cpu", "Cuda"])
         {
             var source = Generate(testCase, dialect);
-            var declaration = new Regex($@"\n{elementType} \S*_{local}\[4\](.*);\n");
+            string actualInitializer = "";
+            bool found = false;
+            string suffix = $"_{local}[4]";
 
-            var match = declaration.Match(source);
-            Assert.True(match.Success, $"{local} is not declared as a stack array ({dialect}).");
-            Assert.Equal(initializer, match.Groups[1].Value);
+            foreach (var line in source.AsSpan().EnumerateLines())
+            {
+                var trimmed = line.Trim();
+                if (trimmed.StartsWith(elementType, StringComparison.Ordinal) &&
+                    trimmed.Contains(suffix, StringComparison.Ordinal) &&
+                    trimmed.EndsWith(';'))
+                {
+                    int idx = trimmed.IndexOf(suffix, StringComparison.Ordinal);
+                    actualInitializer = trimmed[(idx + suffix.Length)..^1].ToString();
+                    found = true;
+                    break;
+                }
+            }
+
+            Assert.True(found, $"{local} is not declared as a stack array ({dialect}).");
+            Assert.Equal(initializer, actualInitializer);
         }
     }
 
@@ -405,9 +422,20 @@ public partial class EmissionShapeTests
     {
         var body = KernelSource(Generate("SkipLocalsInitKernels", "Cuda"), kernel);
 
-        var storage = Regex.Match(body, @"\nint (__gsharp_stackalloc_\d+)\[4\];\n");
-        Assert.True(storage.Success, "The storage of the stackalloc is not declared.");
-        Assert.Contains($"ReadFirst({view}({storage.Groups[1].Value}))", body, StringComparison.Ordinal);
+        string storageName = "";
+        foreach (var line in body.AsSpan().EnumerateLines())
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("int __gsharp_stackalloc_", StringComparison.Ordinal) &&
+                trimmed.EndsWith("[4];", StringComparison.Ordinal))
+            {
+                storageName = trimmed["int ".Length..trimmed.IndexOf('[')].ToString();
+                break;
+            }
+        }
+
+        Assert.NotEmpty(storageName);
+        Assert.Contains($"ReadFirst({view}({storageName}))", body, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -453,11 +481,76 @@ public partial class EmissionShapeTests
             gsh0070Diagnostics);
     }
 
-    [GeneratedRegex(@"(?m)^(\w+):;?$")]
-    private static partial Regex LabelRegex();
+    private static (List<string> Labels, List<string> Gotos) ExtractLabelsAndGotos(string body)
+    {
+        var labels = new List<string>();
+        var gotos = new List<string>();
 
-    [GeneratedRegex(@"goto (\w+);")]
-    private static partial Regex GotoRegex();
+        foreach (var line in body.AsSpan().EnumerateLines())
+        {
+            var trimmed = line.Trim();
+            if (trimmed.IsEmpty)
+            {
+                continue;
+            }
+
+            if (trimmed.EndsWith(":;", StringComparison.Ordinal) || trimmed.EndsWith(':'))
+            {
+                int colonIdx = trimmed.IndexOf(':');
+                var nameSpan = trimmed[..colonIdx];
+                if (!nameSpan.IsEmpty && IsIdentifier(nameSpan))
+                {
+                    labels.Add(nameSpan.ToString());
+                }
+            }
+
+            int gotoIdx = trimmed.IndexOf("goto ", StringComparison.Ordinal);
+            if (gotoIdx >= 0)
+            {
+                var afterGoto = trimmed[(gotoIdx + 5)..];
+                int semiIdx = afterGoto.IndexOf(';');
+                if (semiIdx >= 0)
+                {
+                    var targetSpan = afterGoto[..semiIdx].Trim();
+                    if (!targetSpan.IsEmpty && IsIdentifier(targetSpan))
+                    {
+                        gotos.Add(targetSpan.ToString());
+                    }
+                }
+            }
+        }
+
+        return (labels, gotos);
+
+        static bool IsIdentifier(ReadOnlySpan<char> span)
+        {
+            foreach (var c in span)
+            {
+                if (!char.IsAsciiLetterOrDigit(c) && c != '_')
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    private static int CountIteratorEndLabels(string source)
+    {
+        int count = 0;
+        foreach (var line in source.AsSpan().EnumerateLines())
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("__gsharp_iter_end_", StringComparison.Ordinal) &&
+                trimmed.EndsWith(":;", StringComparison.Ordinal))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
 
     private static string KernelSource(string generated, string kernel)
     {

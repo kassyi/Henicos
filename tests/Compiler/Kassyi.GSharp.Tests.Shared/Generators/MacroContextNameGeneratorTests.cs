@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace Kassyi.GSharp.Tests.Shared.Generators;
 
 /// <summary>A <c>[GpuOperatorMacro]</c> call has to name the macro target and the caller's context as the C++ declares them.</summary>
@@ -36,6 +34,10 @@ public class MacroContextNameGeneratorTests
         var text = Generate(dialect);
 
         // The target is declared as __gsharp_fn_<namespace>__<type>__MacroCtxAdd; a bare MacroCtxAdd( call has no declaration.
-        Assert.DoesNotMatch(new Regex(@"(?<![A-Za-z0-9_])MacroCtxAdd\(&"), text);
+        Assert.DoesNotContain(" MacroCtxAdd(&", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("\tMacroCtxAdd(&", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("\nMacroCtxAdd(&", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("(MacroCtxAdd(&", text, StringComparison.Ordinal);
+        Assert.Contains("__MacroCtxAdd(&", text, StringComparison.Ordinal);
     }
 }

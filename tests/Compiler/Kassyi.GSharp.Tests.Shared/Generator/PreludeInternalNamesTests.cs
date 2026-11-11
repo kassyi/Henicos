@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+using System.Globalization;
 using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Runtime.Aot;
 
@@ -7,19 +7,34 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 /// <summary>
 /// Keeps the hand-written C++ prelude in sync with the internal names that the C# emitters produce.
 /// </summary>
-public partial class PreludeInternalNamesTests
+public class PreludeInternalNamesTests
 {
-    [GeneratedRegex(@"(?<![A-Za-z0-9_])_(ctx|state|yieldedForGridSync|warpExchange|all_contexts)(?![A-Za-z0-9_])")]
-    private static partial Regex LegacyInternalNameRegex();
+    private static readonly string[] s_legacyInternalNames =
+        ["_ctx", "_state", "_yieldedForGridSync", "_warpExchange", "_all_contexts"];
 
-    [GeneratedRegex(@"enum\s+class\s+GSharpErrorCode\s*:\s*[A-Za-z0-9_]+\s*\{(?<body>[^}]+)\}", RegexOptions.Singleline)]
-    private static partial Regex ErrorCodeEnumRegex();
+    private static bool ContainsIdentifier(string source, string identifier)
+    {
+        var span = source.AsSpan();
+        while (true)
+        {
+            int idx = span.IndexOf(identifier, StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                return false;
+            }
 
-    [GeneratedRegex(@"(?<name>[A-Za-z0-9_]+)\s*=\s*(?<value>[0-9]+)")]
-    private static partial Regex ErrorCodeEntryRegex();
+            bool beforeOk = idx == 0 || (!char.IsAsciiLetterOrDigit(span[idx - 1]) && span[idx - 1] != '_');
+            int afterIdx = idx + identifier.Length;
+            bool afterOk = afterIdx >= span.Length || (!char.IsAsciiLetterOrDigit(span[afterIdx]) && span[afterIdx] != '_');
 
-    private static bool ContainsIdentifier(string source, string identifier) =>
-        Regex.IsMatch(source, $"(?<![A-Za-z0-9_]){Regex.Escape(identifier)}(?![A-Za-z0-9_])");
+            if (beforeOk && afterOk)
+            {
+                return true;
+            }
+
+            span = span[(idx + 1)..];
+        }
+    }
 
     // The names that InternalNames.yml marks as declared by the Prelude.
     public static TheoryData<string, string> PreludeDeclaredNames()
@@ -63,8 +78,13 @@ public partial class PreludeInternalNamesTests
     [Scenario(TestScenario.SadPath)]
     public void Preludes_ContainNoLegacyInternalNames()
     {
-        Assert.DoesNotMatch(LegacyInternalNameRegex(), GSharpPreludeResources.Cpp);
-        Assert.DoesNotMatch(LegacyInternalNameRegex(), GSharpPreludeResources.Cuda);
+        foreach (var legacyName in s_legacyInternalNames)
+        {
+            Assert.False(ContainsIdentifier(GSharpPreludeResources.Cpp, legacyName),
+                $"Legacy internal name '{legacyName}' found in C++ prelude.");
+            Assert.False(ContainsIdentifier(GSharpPreludeResources.Cuda, legacyName),
+                $"Legacy internal name '{legacyName}' found in CUDA prelude.");
+        }
     }
 
     [Fact]
@@ -91,13 +111,37 @@ public partial class PreludeInternalNamesTests
 
     private static List<(string Name, int Value)> ParseErrorCodeEntries(string preludeSource)
     {
-        var enumMatch = ErrorCodeEnumRegex().Match(preludeSource);
-        Assert.True(enumMatch.Success, "GSharpErrorCode enum declaration was not found in prelude.");
+        int enumIdx = preludeSource.IndexOf("enum class GSharpErrorCode", StringComparison.Ordinal);
+        Assert.True(enumIdx >= 0, "GSharpErrorCode enum declaration was not found in prelude.");
+        int openBrace = preludeSource.IndexOf('{', enumIdx);
+        Assert.True(openBrace >= 0, "Opening brace for GSharpErrorCode was not found.");
+        int closeBrace = preludeSource.IndexOf('}', openBrace);
+        Assert.True(closeBrace >= 0, "Closing brace for GSharpErrorCode was not found.");
 
+        var body = preludeSource.AsSpan(openBrace + 1, closeBrace - openBrace - 1);
         var entries = new List<(string Name, int Value)>();
-        foreach (Match match in ErrorCodeEntryRegex().Matches(enumMatch.Groups["body"].Value))
+        foreach (var line in body.EnumerateLines())
         {
-            entries.Add((match.Groups["name"].Value, int.Parse(match.Groups["value"].Value)));
+            var trimmed = line.Trim();
+            if (trimmed.IsEmpty)
+            {
+                continue;
+            }
+
+            if (trimmed.EndsWith(','))
+            {
+                trimmed = trimmed[..^1].Trim();
+            }
+
+            int eq = trimmed.IndexOf('=');
+            if (eq < 0)
+            {
+                continue;
+            }
+
+            var name = trimmed[..eq].Trim().ToString();
+            var value = int.Parse(trimmed[(eq + 1)..].Trim(), CultureInfo.InvariantCulture);
+            entries.Add((name, value));
         }
 
         return entries;
