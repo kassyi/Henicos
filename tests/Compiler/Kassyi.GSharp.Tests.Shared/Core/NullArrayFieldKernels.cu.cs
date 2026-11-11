@@ -3,6 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
+#nullable enable annotations
 /// <summary>A struct with an array field that a caller may leave null or set to an empty array.</summary>
 public struct NullArrayHolder
 {
@@ -16,6 +17,7 @@ public struct NullArrayPair
     public int[]? A;
     public int[]? B;
 }
+#nullable disable
 
 public static partial class NullArrayFieldKernels
 {
@@ -102,6 +104,7 @@ public static partial class NullArrayFieldKernels
 #pragma warning restore CS8604
     }
 #nullable restore
+#pragma warning disable CS8600, CS8602 // These kernels read null arrays on purpose: C# throws, and the tests check that the device does too
 
     [GpuKernel]
     public static void StructArrayKernel(NullArrayHolder[] holders, int[] o)
@@ -156,6 +159,7 @@ public static partial class NullArrayFieldKernels
         o[0] = values.Length;
     }
 
+#pragma warning restore CS8600, CS8602
 #nullable enable
     // An optional parameter that the kernel assigns is no longer the launcher's value: a null read throws on every path
     [GpuKernel]
@@ -178,6 +182,7 @@ public static partial class NullArrayFieldKernels
     }
 #nullable restore
 
+#pragma warning disable CS8602 // C#: NullReferenceException, which the test checks
     // C# reads h.Data (null) before Replace swaps h for g, so the access throws although g.Data is not null
     [GpuKernel]
     public static void IndexReplacesReceiverKernel(NullArrayHolder h, NullArrayHolder g, int[] o)
@@ -185,6 +190,7 @@ public static partial class NullArrayFieldKernels
         o[0] = h.Data[Replace(ref h, g)];
     }
 
+#pragma warning restore CS8602
     [GpuDeviceFunction]
     private static int Replace(ref NullArrayHolder target, NullArrayHolder source)
     {

@@ -790,6 +790,8 @@ public static partial class SwitchDifferentialKernels
     // 10. Flattened switch statements (SwitchStatementFlattener / SwitchJumpRewriter):
     //     float classification + 64-bit long switch (goto case, goto default) and shared section consts/locals across Gpu.SyncThreads()
     // -------------------------------------------------------------------------
+    // fv != fv is the NaN test this kernel checks: float.IsNaN has no mapping on C++ and CUDA yet (#948).
+#pragma warning disable CS1718
     [GpuKernel]
     public static void SwitchFlattenedFloatAndGotoKernel(int[] a, float[] fa, int[] dst, int n)
     {
@@ -909,4 +911,5 @@ public static partial class SwitchDifferentialKernels
         dst[col + 0] = fRes;
         dst[col + 1] = iRes;
     }
+#pragma warning restore CS1718
 }

@@ -81,7 +81,7 @@ public class IrBuilderCategoryTests
     }
 
     /// <summary>
-    /// Every location the builder makes is a variable by <see cref="OperationExtensions.IsVariable"/>, the one rule the
+    /// Every location the builder makes is a variable by <see cref="Kassyi.GSharp.Compiler.Extensions.OperationExtensions.IsVariable"/>, the one rule the
     /// analyses use: for each argument of a by-reference parameter in the cases, the category matches the operation.
     /// </summary>
     [Theory]

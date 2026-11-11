@@ -49,6 +49,8 @@ public static partial class RouteExtensions
 // does not see two public extension methods on int[] (#940)
 internal static partial class RouteGroupExtensions
 {
+    // ctx is the context the operator macro of vx + vy passes to RouteOps.Add, a use that C# does not see
+#pragma warning disable CS0219
     [GpuDeviceFunction]
     public static int AddElement(this int[] x, int a)
     {
@@ -59,6 +61,7 @@ internal static partial class RouteGroupExtensions
         vz = vx + vy;
         return vz.Value;
     }
+#pragma warning restore CS0219
 }
 
 /// <summary>

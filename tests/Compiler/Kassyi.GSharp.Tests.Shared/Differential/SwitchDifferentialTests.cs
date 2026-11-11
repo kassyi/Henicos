@@ -308,7 +308,7 @@ public sealed class SwitchDifferentialTests
                 _ => fa[t]
             };
 
-            long fTag = (fv != fv) ? long.MinValue
+            long fTag = float.IsNaN(fv) ? long.MinValue
                 : (fv == 0.0f ? 0L
                 : (fv == float.PositiveInfinity ? long.MaxValue
                 : (fv == float.NegativeInfinity ? -5_000_000_000L
