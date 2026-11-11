@@ -286,12 +286,15 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 
 /// <summary>The partial class that the generated host members of a kernel or device function go into.</summary>
 /// <param name="HintName">The source hint name of the class's wrapper (<see cref="GlobalCppNames.GetHintName"/>).</param>
-/// <param name="Namespace">The dot-separated namespace, or empty for the global namespace.</param>
-/// <param name="Name">The class name.</param>
+/// <param name="Namespace">
+/// The namespace as C# source spells it (<c>@event.P3</c>), or empty for the global namespace.
+/// </param>
+/// <param name="Name">The class name as C# source spells it (<c>@class</c>).</param>
 /// <param name="Accessibility">The declared accessibility keywords, which the generated part must repeat (CS0262).</param>
 /// <param name="IsPublic">Whether the class is public, which decides the CS0649 suppression.</param>
 /// <param name="OuterDeclarations">
-/// The partial declarations of the types that contain the class, outermost first (<c>partial class Outer</c>), so
+/// The partial declarations of the types that contain the class, outermost first (<c>partial class Outer</c>, names
+/// as <see cref="CSharpTypeNameWriter.GetDeclaredTypeName"/> spells them), so
 /// that a part of a nested class is written inside them.
 /// </param>
 /// <param name="FullyQualifiedName">The <c>global::</c>-qualified C# type name, including any enclosing types.</param>
@@ -314,8 +317,8 @@ internal readonly record struct HostClassHeader(
 
     public static HostClassHeader Create(INamedTypeSymbol type, Compilation compilation) => new(
         GlobalCppNames.GetHintName(type),
-        type.ContainingNamespace.GetFullNamespaceName(),
-        type.Name,
+        type.ContainingNamespace.GetCsharpNamespaceName(),
+        type.Name.ToCSharpIdentifier(),
         SyntaxFacts.GetText(type.DeclaredAccessibility),
         type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
         CreateOuterDeclarations(type),
@@ -335,14 +338,7 @@ internal readonly record struct HostClassHeader(
             var keyword = outer.IsRecord
                 ? outer.TypeKind == TypeKind.Struct ? "record struct" : "record"
                 : outer.TypeKind == TypeKind.Struct ? "struct" : outer.TypeKind == TypeKind.Interface ? "interface" : "class";
-            var name = outer.Name;
-            for (var i = 0; i < outer.TypeParameters.Length; i++)
-            {
-                name += (i == 0 ? "<" : ", ") + outer.TypeParameters[i].Name;
-            }
-
-            name += outer.TypeParameters.IsEmpty ? "" : ">";
-            declarations.Insert(0, $"partial {keyword} {name}");
+            declarations.Insert(0, $"partial {keyword} {outer.GetDeclaredTypeName()}");
         }
 
         return declarations.ToImmutable().AsEquatableArray();

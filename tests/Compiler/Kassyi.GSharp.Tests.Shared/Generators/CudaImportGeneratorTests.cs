@@ -104,6 +104,27 @@ public class CudaImportGeneratorTests
         throw new Xunit.Sdk.XunitException($"The body of '{signature}' is not closed.");
     }
 
+    // The namespace of a [CudaImport] class whose name is a keyword is written as C# source spells it, so the generated
+    // part compiles
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CudaImportClass_KeywordNamespace_GeneratedPartCompiles()
+    {
+        var compilation = CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Generators/CudaImport_KeywordNamespace.cu.cs")
+        );
+        var driver = CreateDriver().RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
+
+        var errors = diagnostics
+            .Concat(output.GetDiagnostics())
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => d.ToString())
+            .ToList();
+        Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
+        var generated = driver.GetRunResult().GeneratedTrees.Single().GetText().ToString();
+        Assert.Contains("namespace @event.Imports;", generated, StringComparison.Ordinal);
+    }
+
     private static CSharpCompilation CreateCompilation(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);

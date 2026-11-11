@@ -75,8 +75,11 @@ internal static class AotHostNames
     public static string GetAotStructPath(ISymbol symbol) =>
         GetAotStructPath(symbol, kernelClass: null);
 
-    /// <summary>The name that the native shadow struct of <paramref name="symbol"/> declares: the type name without a trailing <c>Context</c>.</summary>
-    public static string GetNativeStructName(ISymbol symbol) => TrimContextSuffix(symbol.Name);
+    /// <summary>
+    /// The name that the native shadow struct of <paramref name="symbol"/> declares: the type name without a trailing
+    /// <c>Context</c>, as C# source spells it (<c>@struct</c>).
+    /// </summary>
+    public static string GetNativeStructName(ISymbol symbol) => TrimContextSuffix(symbol.Name).ToCSharpIdentifier();
 
     /// <summary>
     /// The custom structs that enclose <paramref name="structSymbol"/>, outermost first, which the native declaration

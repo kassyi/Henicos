@@ -223,7 +223,7 @@ internal static class ManagedNameQualifier
             : GetNamespaceName(symbol.ContainingNamespace);
 
     private static string GetNamespaceName(INamespaceSymbol? ns) =>
-        ns is null or { IsGlobalNamespace: true } ? string.Empty : "global::" + ns.GetFullNamespaceName();
+        ns is null or { IsGlobalNamespace: true } ? string.Empty : "global::" + ns.GetCsharpNamespaceName();
 
     // [WHY] The C# 12 alias of any type (using Ints = int[]; using Pair = (int A, int B);) keeps its tuple element
     // names, which only the display format writes; this runs once per alias use, not per emitted line.

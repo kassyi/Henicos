@@ -353,7 +353,7 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
         }
         else if (type.ContainingNamespace is { IsGlobalNamespace: false } ns)
         {
-            name.Append($"{ns.GetFullNamespaceName()}.");
+            name.Append($"{ns.GetMetadataNamespaceName()}.");
         }
 
         name.Append(type.MetadataName);

@@ -335,7 +335,7 @@ public class StructAbiMembersTests
 
         return type.ContainingNamespace.IsGlobalNamespace
             ? type.MetadataName
-            : type.ContainingNamespace.GetFullNamespaceName() + "." + type.MetadataName;
+            : type.ContainingNamespace.GetMetadataNamespaceName() + "." + type.MetadataName;
     }
 
     private static void CollectStructs(INamespaceOrTypeSymbol container, List<INamedTypeSymbol> structs)
