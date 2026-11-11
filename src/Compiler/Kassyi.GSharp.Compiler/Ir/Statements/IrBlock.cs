@@ -12,4 +12,8 @@ internal sealed class IrBlock(ImmutableArray<IrStatement> statements, ImmutableA
 
     /// <summary>The locals whose scope is the block.</summary>
     public ImmutableArray<IrVariable> Locals { get; } = locals;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrBlock Update(ImmutableArray<IrStatement> statements) =>
+        statements == Statements ? this : new IrBlock(statements, Locals, Source);
 }

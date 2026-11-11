@@ -67,7 +67,7 @@ internal static class StructTranspiler
                type.GetMembers()
                    .AsStackEnumerable()
                    .Any(compilation, static (member, c) =>
-                       (member is IPropertySymbol property && StructAbiMembers.IsComputedProperty(property)) ||
+                       (member is IPropertySymbol property && StructAbiMembers.HasAccessorFunctions(property)) ||
                        (member is IMethodSymbol conversion &&
                         StructConversionEmitter.IsEmittedStructConversion(conversion, c))) ||
                UsingTranspiler.FindDisposeMethod(type, compilation) != null;

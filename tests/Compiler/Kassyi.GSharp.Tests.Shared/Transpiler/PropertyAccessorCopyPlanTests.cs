@@ -6,11 +6,11 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
 /// The copy of the receiver that a read of a getter which may change its struct is called on (#610):
-/// <c>ComputedPropertyGetterCall.PlanCopyType</c>, without C++.
+/// <c>PropertyAccessorCall.PlanCopyType</c>, without C++.
 /// </summary>
 [Category(TestCategory.Unit)]
 [TestTarget(ExecutionTarget.CpuExecution)]
-public class ComputedPropertyCopyPlanTests
+public class PropertyAccessorCopyPlanTests
 {
     // The member access or name that reads the property in the body of the named member of this file
     private static (SyntaxNode Node, ISymbol? Symbol, SemanticModel Model) FindRead(
@@ -46,7 +46,7 @@ public class ComputedPropertyCopyPlanTests
     {
         var (node, symbol, model) = FindRead(nameof(CopyPlanCases.ReadIn), nameof(CopyPlanCounter.Next));
 
-        var copy = ComputedPropertyGetterCall.PlanCopyType(node, symbol, model, new StandardCppDialect(), null);
+        var copy = PropertyAccessorCall.PlanCopyType(node, symbol, model, new StandardCppDialect(), null);
 
         Assert.Equal(nameof(CopyPlanCounter), copy?.Name);
     }
@@ -59,8 +59,8 @@ public class ComputedPropertyCopyPlanTests
         var (constant, constSymbol, _) = FindRead(nameof(CopyPlanCases.ReadConstIn), nameof(CopyPlanCounter.Doubled));
         var dialect = new StandardCppDialect();
 
-        Assert.Null(ComputedPropertyGetterCall.PlanCopyType(local, localSymbol, model, dialect, null));
-        Assert.Null(ComputedPropertyGetterCall.PlanCopyType(constant, constSymbol, model, dialect, null));
+        Assert.Null(PropertyAccessorCall.PlanCopyType(local, localSymbol, model, dialect, null));
+        Assert.Null(PropertyAccessorCall.PlanCopyType(constant, constSymbol, model, dialect, null));
     }
 
     // Inside a readonly member of a generic struct, the copy is of the struct being defined, not of the open Box<T>
@@ -72,7 +72,7 @@ public class ComputedPropertyCopyPlanTests
         var box = GetType(model, "CopyPlanBox");
         var boxOfFloat = box.Construct(model.Compilation.GetSpecialType(SpecialType.System_Single));
 
-        var copy = ComputedPropertyGetterCall.PlanCopyType(node, symbol, model, new StandardCppDialect(), boxOfFloat);
+        var copy = PropertyAccessorCall.PlanCopyType(node, symbol, model, new StandardCppDialect(), boxOfFloat);
 
         Assert.NotNull(copy);
         Assert.True(SymbolEqualityComparer.Default.Equals(boxOfFloat, copy));

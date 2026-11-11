@@ -39,7 +39,7 @@ public class GSharpKernelFloatProviderDispatchTests
 
         // With a GPU the provider runs its own kernels: the fallback is never consulted.
         // mutant: GSharpKernelFloatProvider.cs:47 `is not GSharpKernelProvider || IsCpuFallbackMode` -> `... || !IsCpuFallbackMode`
-        // (and the same negation at L76, L164, L198, L233, L272, L311, L390, L409, L429, L445)
+        // (and the same negation at L80, L194, L227, L270, L309, L353, L504, L523, L543)
         Assert.Empty(spy.Calls);
 
         // The kernel path computes the same exact values as the reference.
@@ -64,7 +64,7 @@ public class GSharpKernelFloatProviderDispatchTests
 
             // In CPU fallback mode each operation is forwarded to the fallback exactly once.
             // mutant: GSharpKernelFloatProvider.cs:47 `||` -> `&&` (and L80, L194, L227, L270, L309, L353, L504, L523,
-            // L520)
+            // L543)
             // mutant: GSharpKernelFloatProvider.cs:559 `&&` -> `||`
             // mutant: GSharpKernelFloatProvider.cs Pow `return fallbackStrategy.Pow(...)` -> `return
             // GpuBigFloatTranscendentals.Pow(...)` (Pow not forwarded)

@@ -12,6 +12,7 @@ public class GSharpNameEncodingTests
     [InlineData("__gsharp_id_12_x1", "x1")]
     [InlineData("__gsharp_id_template", "template")]
     [InlineData("__gsharp_mb_Length", "Length")]
+    [InlineData("__gsharp_bf_Scale", "Scale.field")]
     [InlineData("__gsharp_id_0__Value", "_Value")]
     [InlineData("__gsharp_id__Value", "_Value")]
     public void TryDecode_RenamedIdentifier_ReturnsCSharpName(string identifier, string expected)
@@ -26,6 +27,7 @@ public class GSharpNameEncodingTests
     [InlineData("__gsharp_ctx")]
     [InlineData("__gsharp_id_")]
     [InlineData("__gsharp_mb_")]
+    [InlineData("__gsharp_bf_")]
     [InlineData("data")]
     [InlineData("")]
     public void TryDecode_OtherIdentifier_ReturnsFalse(string identifier)

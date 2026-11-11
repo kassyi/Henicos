@@ -787,7 +787,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
-global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.NotImplemented(global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.Bump(data, i));
+;
 data[i] += 1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -934,18 +934,15 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_i = (int)threadIdx.x;
 auto __gsharp_id_2_Forget = [&](int __gsharp_id_3_value) {
-return ((void)0);
 }
 ;
 // [GpuUnroll] start=0, count=2
 {
-((void)0);
 }
 {
-((void)0);
 }
 __gsharp_id_2_Forget(3);
-for(int __gsharp_id_5_k = 0;__gsharp_id_5_k<2;__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1),((void)0))
+for(int __gsharp_id_5_k = 0;__gsharp_id_5_k<2;__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1))
 {
 __gsharp_id_0_data[__gsharp_id_1_i]=__gsharp_add_i32(__gsharp_id_0_data[__gsharp_id_1_i],1);
 }
@@ -1045,14 +1042,16 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int i = global::Kassyi.GSharp.Core.ThreadIndex.X;
-void Forget(int value) => global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.NotImplemented(global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.Bump(data, i) + value);
+void Forget(int value)
+{
+}
+
 for (int __gsharp_unroll_0 = 0; __gsharp_unroll_0 < unchecked(0 + 2); __gsharp_unroll_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.NotImplemented(global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.Bump(data, i));
 }
 
 Forget(3);
-for (int k = 0; k < 2; k++, global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.NotImplemented(global::Kassyi.GSharp.Tests.Shared.Syntax.PartialMethodKernels.Bump(data, i)))
+for (int k = 0; k < 2; k++)
 {
 data[i] += 1;
 }
