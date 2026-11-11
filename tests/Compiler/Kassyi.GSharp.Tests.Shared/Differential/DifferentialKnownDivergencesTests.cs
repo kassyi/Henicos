@@ -9,9 +9,9 @@ using static Kassyi.GSharp.Tests.Shared.Differential.DifferentialHarnessFakes;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Tests of <see cref="KnownDivergence"/> entries in <see cref="DifferentialRunner"/>: which divergence an entry excuses
-/// (case, column, path, host, shape) and when an entry that no longer diverges is reported as stale. Each check names,
-/// above it, the one-line change of the harness (mutant) that makes it fail; the fake case is
+/// Tests of <see cref="KnownDivergence"/> entries in <see cref="DifferentialRunner"/>: which divergence an entry
+/// excuses (case, column, path, host, shape) and when an entry that no longer diverges is reported as stale. Each check
+/// names, above it, the one-line change of the harness (mutant) that makes it fail; the fake case is
 /// <see cref="DifferentialHarnessFakes"/>.
 /// </summary>
 public class DifferentialKnownDivergencesTests
