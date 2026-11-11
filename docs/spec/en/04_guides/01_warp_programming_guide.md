@@ -14,7 +14,7 @@ description: "A comprehensive guide to GPU warp-level communication, active thre
 
 In GPU architectures, threads are executed in lockstep groups of 32 called **Warps**. While threads within a block can communicate through Shared Memory (`SharedMemory<T>`), doing so incurs memory access latency and requires explicit barriers.
 
-**Warp Shuffle Primitives** (`Gpu.ShuffleUpSync`, `Gpu.ShuffleDownSync`, `Gpu.ShuffleXorSync`) solve this by allowing threads to read variables directly from each other's registers.
+**Warp Shuffle Primitives** (`Warp.ShuffleUpSync`, `Warp.ShuffleDownSync`, `Warp.ShuffleXorSync`) solve this by allowing threads to read variables directly from each other's registers.
 
 ```mermaid
 flowchart LR
@@ -56,8 +56,8 @@ public static void DemonstrateItsBehavior(int myVal)
         // [ITS Behavior] Threads 0-15 arrive here. Threads 16-31 are doing something else.
         // If we tell the hardware "Wait for all 32 threads" (0xFFFFFFFF), it will wait forever!
         // We must pass a mask indicating ONLY threads 0-15 are participating.
-        uint mask = Gpu.ActiveMask();
-        int val = Gpu.ShuffleDownSync(mask, myVal, 1);
+        uint mask = Warp.ActiveMask();
+        int val = Warp.ShuffleDownSync(mask, myVal, 1);
     }
 }
 ```
@@ -112,7 +112,7 @@ flowchart TD
     A[Warp Shuffle Call] --> B{"All 32 threads<br>active?"}
     B -- Yes --> C["Use 0xFFFFFFFF"]
     B -- No --> D{"Inside divergent<br>branch (if)?"}
-    D -- Yes --> E["Use Gpu.ActiveMask()"]
+    D -- Yes --> E["Use Warp.ActiveMask()"]
     D -- No (Tail boundary) --> F["Use (1u << count) - 1"]
 ```
 
@@ -129,7 +129,7 @@ public static void UniformExecution(int val)
 {
     // SAFE: There is no divergence here. All 32 threads are guaranteed to arrive.
     // Therefore, we can safely tell the hardware to wait for everyone.
-    int result = Gpu.ShuffleDownSync(0xFFFFFFFF, val, 16);
+    int result = Warp.ShuffleDownSync(0xFFFFFFFF, val, 16);
 }
 ```
 
@@ -185,7 +185,7 @@ public static void PartialWarpProcessing(int totalElements, int warpOffset, int 
 
     if (tailMask != 0)
     {
-        int result = Gpu.ShuffleDownSync(tailMask, val, 1);
+        int result = Warp.ShuffleDownSync(tailMask, val, 1);
     }
 }
 ```
@@ -217,7 +217,7 @@ public static void DeadlockExample(int val)
         // The mask 0xFFFFFFFF tells the hardware: "Wait until all 32 threads arrive."
         // However, threads 16..31 bypassed this block and will never arrive.
         // Result: Threads 0..15 wait indefinitely. (Deadlock)
-        int partner = Gpu.ShuffleXorSync(0xFFFFFFFF, val, 1);
+        int partner = Warp.ShuffleXorSync(0xFFFFFFFF, val, 1);
     }
 }
 ```
@@ -235,7 +235,7 @@ public static void SafeActiveMaskExample(int val)
     if (ThreadIndex.X < 16)
     {
         uint mask = Warp.ActiveMask(); // 0x0000FFFF
-        int partner = Gpu.ShuffleXorSync(mask, val, 1);
+        int partner = Warp.ShuffleXorSync(mask, val, 1);
     }
 }
 ```
@@ -269,7 +269,7 @@ public static unsafe void WarpSumReduction(int* data, int* results)
     // Tree reduction across 32 lanes
     for (uint offset = 16; offset > 0; offset /= 2)
     {
-        val += Gpu.ShuffleDownSync(0xFFFFFFFF, val, offset);
+        val += Warp.ShuffleDownSync(0xFFFFFFFF, val, offset);
     }
 
     // Lane 0 holds the warp sum
@@ -294,7 +294,7 @@ public static unsafe void WarpButterflyAllReduce(int* data)
     // Butterfly reduction: 16 -> 8 -> 4 -> 2 -> 1
     for (int offset = 16; offset > 0; offset /= 2)
     {
-        val += Gpu.ShuffleXorSync(0xFFFFFFFF, val, offset);
+        val += Warp.ShuffleXorSync(0xFFFFFFFF, val, offset);
     }
 
     // Every thread now has the total sum

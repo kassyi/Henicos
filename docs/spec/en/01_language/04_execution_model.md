@@ -32,7 +32,9 @@ When threads within the same warp take different execution paths due to data-dep
 
 - **Behavior:** The hardware executes each branch path serially, disabling threads that are not on that path. When all paths complete, the threads converge back to the same execution path.
 
-> Warp divergence severely degrades performance. G# developers should avoid branching on condition variables that vary across threads within a warp (e.g., `ThreadIndex.X`). Condition variables based on `BlockIndex.X` or `[Constant]` parameters do not cause divergence within a block.
+> Warp divergence severely degrades performance. G# developers should avoid branching on condition variables that vary
+> across threads within a warp (e.g., `ThreadIndex.X`). Condition variables based on `BlockIndex.X` or uniform
+> parameters (such as `[GpuConstexpr]` parameters) do not cause divergence within a block.
 
 ### 4.2.2 Warp Intrinsics (Synchronization and Shuffle)
 
