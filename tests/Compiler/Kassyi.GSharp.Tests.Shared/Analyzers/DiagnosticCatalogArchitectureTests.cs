@@ -1,8 +1,9 @@
-using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Compiler.NativeApi;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
@@ -17,8 +18,28 @@ public partial class DiagnosticCatalogArchitectureTests
     // The catalog generator itself cites an example ID in its schema-error message.
     private const string CatalogGeneratorFile = "DiagnosticGenerator.cs";
 
-    [GeneratedRegex(@"\b(GSH|SLQ)\d{4}\b")]
-    private static partial Regex DiagnosticIdPattern();
+    private static bool ContainsDiagnosticId(ReadOnlySpan<char> text)
+    {
+        for (int i = 0; i + 7 <= text.Length; i++)
+        {
+            var slice = text.Slice(i, 7);
+            if ((slice.StartsWith("GSH", StringComparison.Ordinal) || slice.StartsWith("SLQ", StringComparison.Ordinal)) &&
+                char.IsAsciiDigit(slice[3]) &&
+                char.IsAsciiDigit(slice[4]) &&
+                char.IsAsciiDigit(slice[5]) &&
+                char.IsAsciiDigit(slice[6]))
+            {
+                bool leftWord = i == 0 || (!char.IsAsciiLetterOrDigit(text[i - 1]) && text[i - 1] != '_');
+                bool rightWord = i + 7 == text.Length || (!char.IsAsciiLetterOrDigit(text[i + 7]) && text[i + 7] != '_');
+                if (leftWord && rightWord)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
@@ -34,11 +55,11 @@ public partial class DiagnosticCatalogArchitectureTests
                 continue;
             }
 
-            var root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
+            var root = RoslynTestUtility.CreateCompilation(File.ReadAllText(path)).SyntaxTrees.First().GetRoot();
             foreach (var token in root.DescendantTokens())
             {
                 if (token.Kind() is not (SyntaxKind.StringLiteralToken or SyntaxKind.InterpolatedStringTextToken) ||
-                    !DiagnosticIdPattern().IsMatch(token.ValueText))
+                    !ContainsDiagnosticId(token.ValueText))
                 {
                     continue;
                 }
@@ -61,12 +82,12 @@ public partial class DiagnosticCatalogArchitectureTests
 
         foreach (var path in EnumerateSourceFiles())
         {
-            var root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
+            var root = RoslynTestUtility.CreateCompilation(File.ReadAllText(path)).SyntaxTrees.First().GetRoot();
             foreach (var creation in root.DescendantNodes().OfType<BaseObjectCreationExpressionSyntax>())
             {
                 var isDescriptor = creation switch
                 {
-                    ObjectCreationExpressionSyntax explicitNew => explicitNew.Type.ToString().EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+                    ObjectCreationExpressionSyntax explicitNew => IsDiagnosticDescriptorType(explicitNew.Type),
                     // Target-typed `new(...)` bound to a DiagnosticDescriptor field or local.
                     ImplicitObjectCreationExpressionSyntax implicitNew => IsDescriptorDeclaration(implicitNew),
                     _ => false,
@@ -102,13 +123,21 @@ public partial class DiagnosticCatalogArchitectureTests
     public void StackLinqChainAnalyzer_DiagnosticId_ComesFromCatalog() =>
         Assert.Equal(GSharpDiagnostics.StackLinqChainTooDeep.Id, StackLinqChainAnalyzer.DiagnosticId);
 
+    private static bool IsDiagnosticDescriptorType(TypeSyntax type) =>
+        type switch
+        {
+            IdentifierNameSyntax id => id.Identifier.ValueText.EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+            QualifiedNameSyntax q => q.Right.Identifier.ValueText.EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+            _ => false,
+        };
+
     private static bool IsDescriptorDeclaration(ImplicitObjectCreationExpressionSyntax creation) =>
         creation.Parent switch
         {
             EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } } =>
-                declaration.Type.ToString().EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+                IsDiagnosticDescriptorType(declaration.Type),
             ArrowExpressionClauseSyntax { Parent: PropertyDeclarationSyntax property } =>
-                property.Type.ToString().EndsWith("DiagnosticDescriptor", StringComparison.Ordinal),
+                IsDiagnosticDescriptorType(property.Type),
             _ => false,
         };
 

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 
@@ -108,11 +107,28 @@ public class RefLocalAcrossSplitDiagnosticsTests
 
         // No build may succeed with a state machine that only throws: each one belongs to a method whose held ref
         // locals are GSH0039 (analyzer) or GSH0003 (generator)
-        var throwingMethods = Regex.Matches(
-                generated,
-                "NotSupportedException\\(\"(?<method>\\w+) cannot run on the CPU: the ref local '(?<local>\\w+)'")
-            .Select(static m => m.Groups["method"].Value)
-            .ToList();
+        const string prefix = "NotSupportedException(\"";
+        const string middle = " cannot run on the CPU: the ref local '";
+        var throwingMethods = new List<string>();
+        var span = generated.AsSpan();
+        while (true)
+        {
+            var idx = span.IndexOf(prefix, StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                break;
+            }
+
+            span = span.Slice(idx + prefix.Length);
+            var midIdx = span.IndexOf(middle, StringComparison.Ordinal);
+            if (midIdx < 0)
+            {
+                break;
+            }
+
+            throwingMethods.Add(span.Slice(0, midIdx).ToString());
+            span = span.Slice(midIdx + middle.Length);
+        }
         Assert.NotEmpty(throwingMethods);
         var errorLines = run.Analyzer.Concat(run.Generator)
             .Where(static d => d.Severity == DiagnosticSeverity.Error &&
