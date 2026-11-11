@@ -104,7 +104,7 @@ public static partial class NullArrayFieldKernels
 #pragma warning restore CS8604
     }
 #nullable restore
-#pragma warning disable CS8600, CS8602 // These kernels read null arrays on purpose: C# throws, and the tests check that the device does too
+#pragma warning disable CS8600, CS8602 // The kernels below read null arrays on purpose, as the tests check
 
     [GpuKernel]
     public static void StructArrayKernel(NullArrayHolder[] holders, int[] o)

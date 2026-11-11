@@ -12,9 +12,9 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 internal sealed record QualificationCase(Action<int[], int[]> Launch, Func<int[], int[]> Expected);
 
 /// <summary>
-/// The cases that <see cref="ManagedQualificationNativeTests"/> and <c>ManagedQualificationManagedTests</c> (CPU only) share,
-/// one per kernel. Each loop or query form has a kernel and a device-function variant with the same body; the expected
-/// values are those of C#: <c>Thrice(x) = 3x</c>, and the constants come from <see cref="QualifyConstants"/>.
+/// The cases that <see cref="ManagedQualificationNativeTests"/> and <c>ManagedQualificationManagedTests</c> (CPU only)
+/// share, one per kernel. Each loop or query form has a kernel and a device-function variant with the same body; the
+/// expected values are those of C#: <c>Thrice(x) = 3x</c>, and the constants come from <see cref="QualifyConstants"/>.
 /// </summary>
 internal static class ManagedQualificationCases
 {

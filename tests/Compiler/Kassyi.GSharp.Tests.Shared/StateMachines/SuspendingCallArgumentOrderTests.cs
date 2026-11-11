@@ -93,7 +93,9 @@ public class SuspendingCallArgumentOrderTests
             .Where(static v => v.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix,
                 StringComparison.Ordinal))
             .ToArray();
-        Assert.Equal(["v++", "W()", "M()", "L()"], temps.Select(static t => t.Initializer?.Value.ToString() ?? "").ToArray());
+        Assert.Equal(
+            ["v++", "W()", "M()", "L()"],
+            temps.Select(static t => t.Initializer?.Value.ToString() ?? "").ToArray());
         var shuffle = rewritten.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Single(static i => i.Expression.ToString() == "Warp.ShuffleSync");

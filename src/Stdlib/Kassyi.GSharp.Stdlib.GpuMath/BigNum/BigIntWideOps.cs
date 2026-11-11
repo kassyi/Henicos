@@ -133,8 +133,9 @@ internal static class BigIntWideOps
 
     /// <summary>
     /// The sum of two signed values given as sign and magnitude: <c>|result| = |(±a) + (±b)|</c>. Magnitudes of the
-    /// same sign are added (<see cref="AddSubtract(GpuBigUInt, GpuBigUInt, GpuBigUInt, bool)"/>, no read); different signs are subtracted in one kernel, which
-    /// reads the borrow and zero flags once (<see cref="SubtractMagnitudes"/>).
+    /// same sign are added (<see cref="AddSubtract(GpuBigUInt, GpuBigUInt, GpuBigUInt, bool)"/>, no read); different
+    /// signs are subtracted in one kernel, which reads the borrow and zero flags once
+    /// (<see cref="SubtractMagnitudes"/>).
     /// </summary>
     /// <param name="a">The magnitude of the first value.</param>
     /// <param name="aNegative">Whether the first value is negative.</param>

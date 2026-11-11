@@ -92,46 +92,22 @@ public class DiagnosticGeneratorTests
     [Scenario(TestScenario.SadPath)]
     public void InvalidSeverity_IsAnErrorDirective()
     {
-        var definition = new DiagnosticDefinition
-        {
-            Name = "Probe",
-            Id = "GSH9999",
-            Title = "t",
-            MessageFormat = "m",
-            Category = "c",
-            DefaultSeverity = "Fatal",
-        };
+        var source = DiagnosticGenerator.GenerateSource([Definition("Probe", "GSH9999", "Fatal")]);
 
-        var source = DiagnosticGenerator.GenerateSource([definition]);
-
-        Assert.Contains("#error Invalid defaultSeverity 'Fatal' in diagnostics.json (ID: GSH9999).", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "#error Invalid defaultSeverity 'Fatal' in diagnostics.json (ID: GSH9999).",
+            source,
+            StringComparison.Ordinal);
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void ObsoleteDiagnostic_IsDeclaredButLeftOutOfAll()
+    public void ObsoleteDiagnostic_IsDeclaredButLeftOutOfReported()
     {
         DiagnosticDefinition[] definitions =
         [
-            new()
-            {
-                Name = "Reported",
-                Id = "GSH9998",
-                Title = "t",
-                MessageFormat = "m",
-                Category = "c",
-                DefaultSeverity = "Error",
-            },
-            new()
-            {
-                Name = "Retired",
-                Id = "GSH9999",
-                Title = "t",
-                MessageFormat = "m",
-                Category = "c",
-                DefaultSeverity = "Warning",
-                IsObsolete = true,
-            },
+            Definition("Current", "GSH9998", "Error"),
+            Definition("Retired", "GSH9999", "Warning", isObsolete: true),
         ];
 
         var root = GeneratorRun.ParseWithoutErrors(DiagnosticGenerator.GenerateSource(definitions));
@@ -140,9 +116,24 @@ public class DiagnosticGeneratorTests
         var retired = fields.Single(static f => f.Identifier.Text == "Retired");
         var retiredAttributes = retired.Ancestors().OfType<FieldDeclarationSyntax>().First().AttributeLists.ToString();
         Assert.Contains("Obsolete", retiredAttributes, StringComparison.Ordinal);
-        var all = fields.Single(static f => f.Identifier.Text == "All");
-        var listed = all.DescendantNodes().OfType<IdentifierNameSyntax>().Select(static n => n.Identifier.Text).ToList();
-        Assert.Contains("Reported", listed);
+        var reported = fields.Single(static f => f.Identifier.Text == "Reported");
+        var listed = reported.DescendantNodes()
+            .OfType<IdentifierNameSyntax>()
+            .Select(static n => n.Identifier.Text)
+            .ToList();
+        Assert.Contains("Current", listed);
         Assert.DoesNotContain("Retired", listed);
     }
+
+    private static DiagnosticDefinition Definition(string name, string id, string severity, bool isObsolete = false) =>
+        new()
+        {
+            Name = name,
+            Id = id,
+            Title = "t",
+            MessageFormat = "m",
+            Category = "c",
+            DefaultSeverity = severity,
+            IsObsolete = isObsolete,
+        };
 }

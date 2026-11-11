@@ -105,31 +105,36 @@ public static partial class DiagnosticGenerator
             {
                 var name = EmitDiagnosticDescriptor(writer, diag, seenIds, seenNames);
 
-                // An obsolete descriptor is never reported, so no analyzer lists it as supported; naming it in All
-                // would also make the generated file reference an [Obsolete] member (CS0618)
+                // An obsolete descriptor is never reported, so no analyzer lists it as supported; naming it in
+                // Reported would also make the generated file reference an [Obsolete] member (CS0618)
                 if (!diag.IsObsolete)
                 {
                     descriptorNames.Add(name);
                 }
             }
 
-            writer.Line(
-                "/// <summary>Gets the diagnostic descriptors of diagnostics.json that the compiler reports (every one " +
-                "that is not obsolete).</summary>");
-            writer.Line(
-                "public static readonly ImmutableArray<DiagnosticDescriptor> All = " +
-                "ImmutableArray.Create<DiagnosticDescriptor>(");
-            using (writer.Scope("", ");"))
-            {
-                for (var i = 0; i < descriptorNames.Count; i++)
-                {
-                    var isLast = i == descriptorNames.Count - 1;
-                    writer.Line($"{descriptorNames[i]}{(isLast ? "" : ",")}");
-                }
-            }
+            EmitReported(writer, descriptorNames);
         }
 
         return writer.ToString();
+    }
+
+    // public static readonly ImmutableArray<DiagnosticDescriptor> Reported = ImmutableArray.Create<...>(<names>);
+    private static void EmitReported(SourceWriter writer, List<string> descriptorNames)
+    {
+        writer.Line("/// <summary>Gets the descriptors of diagnostics.json that the compiler reports: every one");
+        writer.Line("/// that is not obsolete.</summary>");
+        writer.Line(
+            "public static readonly ImmutableArray<DiagnosticDescriptor> Reported = " +
+            "ImmutableArray.Create<DiagnosticDescriptor>(");
+        using (writer.Scope("", ");"))
+        {
+            for (var i = 0; i < descriptorNames.Count; i++)
+            {
+                var isLast = i == descriptorNames.Count - 1;
+                writer.Line($"{descriptorNames[i]}{(isLast ? "" : ",")}");
+            }
+        }
     }
 
     private static string EmitDiagnosticDescriptor(

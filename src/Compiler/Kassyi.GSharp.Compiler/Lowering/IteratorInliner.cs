@@ -155,8 +155,8 @@ internal static class IteratorInliner
     }
 
     /// <summary>
-    /// Adds a local per iterator parameter, initialized from the backing arguments of the iterator local that
-    /// the <c>foreach</c> of <paramref name="site"/> enumerates, or from the arguments of the iterator call it enumerates.
+    /// Adds a local per iterator parameter, initialized from the backing arguments of the iterator local that the
+    /// <c>foreach</c> of <paramref name="site"/> enumerates, or from the arguments of the iterator call it enumerates.
     /// </summary>
     private static void AddParameterLocals(
         ImmutableArray<StatementSyntax>.Builder expansionStatements,

@@ -46,22 +46,25 @@ public static class NativeSanitizerParser
                 continue;
             }
 
-            if (string.Equals(name, "address", StringComparison.OrdinalIgnoreCase))
-            {
-                sanitizers |= NativeSanitizers.Address;
-            }
-            else if (string.Equals(name, "undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                sanitizers |= NativeSanitizers.Undefined;
-            }
-            else
+            if (!TryParseName(name, out var sanitizer))
             {
                 sanitizers = NativeSanitizers.None;
                 invalidToken = name;
                 return false;
             }
+
+            sanitizers |= sanitizer;
         }
 
         return true;
+    }
+
+    // One name of the list, address or undefined in any case
+    private static bool TryParseName(string name, out NativeSanitizers sanitizer)
+    {
+        sanitizer = string.Equals(name, "address", StringComparison.OrdinalIgnoreCase) ? NativeSanitizers.Address
+            : string.Equals(name, "undefined", StringComparison.OrdinalIgnoreCase) ? NativeSanitizers.Undefined
+            : NativeSanitizers.None;
+        return sanitizer != NativeSanitizers.None;
     }
 }
