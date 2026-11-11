@@ -290,21 +290,21 @@ internal sealed class IrEffectWalker(Compilation compilation)
 
     /// <summary>
     /// Whether <paramref name="variable"/> is a local or by-value parameter that no other name reaches (its address is
-    /// not taken, no <c>ref</c> expression names it, no lambda captures it), or a temporary of a pass.
+    /// not taken, no <c>ref</c> expression names it, no lambda captures it), or a temporary of a pass that holds a value.
     /// </summary>
     public static bool IsUnaliased(IrVariable variable, Compilation compilation) => variable.Kind switch
     {
-        IrVariableKind.Temporary => true,
+        IrVariableKind.Temporary => variable.RefKind == RefKind.None,
         IrVariableKind.Local or IrVariableKind.Parameter when variable.RefKind == RefKind.None &&
                                                               variable.Symbol is { } symbol =>
             !AliasedVariables.Contains(symbol, compilation),
         _ => false
     };
 
-    // A non-ref variable that no other name reaches as itself (its symbol, or the temporary), anything else (this, a
-    // ref local, a ref / out / in parameter) as memory
+    // A variable that no other name reaches as itself (its symbol, or the temporary), anything else (this, a ref local,
+    // a ref / out / in parameter) as memory
     private EffectRoot RootOf(IrVariable variable) =>
-        variable.RefKind == RefKind.None && IsUnaliased(variable, compilation)
+        IsUnaliased(variable, compilation)
             ? new EffectRoot((object?)variable.Symbol ?? variable)
             : new EffectRoot(null);
 
