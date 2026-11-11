@@ -388,8 +388,8 @@ public class CudaImportGenerator : IIncrementalGenerator
                 param.Name,
                 typeWriter.ToString(),
                 elementTypeName,
-                CopyIn: hasIn || !hasOut,
-                CopyOut: hasOut || !hasIn));
+                IsCopiedIn: hasIn || !hasOut,
+                IsCopiedOut: hasOut || !hasIn));
         }
 
         return builder.MoveToImmutable();

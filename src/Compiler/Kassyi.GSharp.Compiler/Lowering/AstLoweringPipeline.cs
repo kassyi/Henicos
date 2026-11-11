@@ -96,6 +96,19 @@ public static class AstLoweringPipeline
             WarpSiteCount: lowerer.WarpSiteCount);
     }
 
+    /// <summary>
+    /// The body after its preparation and the first round of the two passes that hoist split points out of
+    /// expressions (<see cref="ConditionalEvaluationRewriter"/>, <see cref="WarpInstructionRewriter"/>): what the split
+    /// plan of the IR (<c>IrSpillPlanner</c>) is compared with until it replaces them.
+    /// </summary>
+    internal static BlockSyntax HoistSplitPoints(CSharpSyntaxNode body, bool returnsValue, SemanticModel semanticModel)
+    {
+        var bodyModel = ResolveBodyModel(body, semanticModel);
+        var prepared = PrepareBody(body, returnsValue, bodyModel);
+        var conditionalsLowered = new ConditionalEvaluationRewriter().Rewrite(prepared);
+        return new WarpInstructionRewriter(bodyModel).Rewrite(conditionalsLowered);
+    }
+
     // The body as one block that the passes can rewrite: annotated with its original spans and split points, without
     // Stryker's switches, with the pre-lowering expansions applied and labeled statements split from their statements
     private static BlockSyntax PrepareBody(CSharpSyntaxNode body, bool returnsValue, SemanticModel? bodyModel)
