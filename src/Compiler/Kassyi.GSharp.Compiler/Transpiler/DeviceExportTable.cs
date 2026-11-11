@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Models;
+using AttributeNames = Kassyi.GSharp.Compiler.Models.DeviceExportAttributeNames;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -164,11 +165,12 @@ internal sealed class DeviceExportTable
         if (symbol is IMethodSymbol structMethod && IsStructMethod(structMethod))
         {
             var id = structMethod.OriginalDefinition.GetDocumentationCommentId();
-            for (var i = 0; i < imported.Record.Names.DefinedIds.Length && i < imported.Record.Names.DefinedNames.Length; i++)
+            var names = imported.Record.Names;
+            for (var i = 0; i < names.DefinedIds.Length && i < names.DefinedNames.Length; i++)
             {
-                if (string.Equals(imported.Record.Names.DefinedIds[i], id, StringComparison.Ordinal))
+                if (string.Equals(names.DefinedIds[i], id, StringComparison.Ordinal))
                 {
-                    cppName = imported.Record.Names.DefinedNames[i];
+                    cppName = names.DefinedNames[i];
                     return true;
                 }
             }
@@ -283,51 +285,52 @@ internal sealed class DeviceExportTable
         }
 
         var names = new DeviceExportRecord.ExportNames(
-            GetString(named, nameof(DeviceExportRecord.CppName)),
-            GetString(named, nameof(DeviceExportRecord.CppFullName)),
-            GetArray(named, nameof(DeviceExportRecord.DefinedNames)),
-            GetArray(named, nameof(DeviceExportRecord.DefinedIds)),
-            GetArray(named, nameof(DeviceExportRecord.DefinedFullNames)));
-
-        var cuda = ReadDialectText(named, isCuda: true);
-        var cpp = ReadDialectText(named, isCuda: false);
+            CppName: GetString(named, AttributeNames.CppName),
+            CppFullName: GetString(named, AttributeNames.CppFullName),
+            DefinedNames: GetArray(named, AttributeNames.DefinedNames),
+            DefinedIds: GetArray(named, AttributeNames.DefinedIds),
+            DefinedFullNames: GetArray(named, AttributeNames.DefinedFullNames));
 
         var traits = new DeviceExportRecord.FunctionTraits(
-            GetString(named, nameof(DeviceExportRecord.FrameName)),
-            GetArray(named, nameof(DeviceExportRecord.FrameDependencies)),
-            GetBool(named, nameof(DeviceExportRecord.Suspends)),
-            GetBool(named, nameof(DeviceExportRecord.ReachesBlockBarrier)),
-            GetBool(named, nameof(DeviceExportRecord.IsParallelDependent)),
-            GetBool(named, nameof(DeviceExportRecord.ReachesDynamicSharedMemory)),
-            GetArray(named, nameof(DeviceExportRecord.DynamicSharedMemorySites)),
-            named.TryGetValue(nameof(DeviceExportRecord.Effect), out var effect) && effect.Value is string e ? e : "Memory",
-            GetBool(named, nameof(DeviceExportRecord.ManagedStateMachine)),
-            GetBool(named, nameof(DeviceExportRecord.ManagedVersion)),
-            GetInt(named, nameof(DeviceExportRecord.DivergentConditionParameters)),
-            GetInt(named, nameof(DeviceExportRecord.DivergentExitOnlyParameters)),
-            GetBool(named, nameof(DeviceExportRecord.HasExitOnlyBarrier)));
+            FrameName: GetString(named, AttributeNames.FrameName),
+            FrameDependencies: GetArray(named, AttributeNames.FrameDependencies),
+            Suspends: GetBool(named, AttributeNames.Suspends),
+            ReachesBlockBarrier: GetBool(named, AttributeNames.ReachesBlockBarrier),
+            IsParallelDependent: GetBool(named, AttributeNames.IsParallelDependent),
+            ReachesDynamicSharedMemory: GetBool(named, AttributeNames.ReachesDynamicSharedMemory),
+            DynamicSharedMemorySites: GetArray(named, AttributeNames.DynamicSharedMemorySites),
+            Effect: named.TryGetValue(AttributeNames.Effect, out var effect) && effect.Value is string e
+                ? e
+                : DeviceExportRecord.FunctionTraits.None.Effect,
+            ManagedStateMachine: GetBool(named, AttributeNames.ManagedStateMachine),
+            ManagedVersion: GetBool(named, AttributeNames.ManagedVersion),
+            DivergentConditionParameters: GetInt(named, AttributeNames.DivergentConditionParameters),
+            DivergentExitOnlyParameters: GetInt(named, AttributeNames.DivergentExitOnlyParameters),
+            HasExitOnlyBarrier: GetBool(named, AttributeNames.HasExitOnlyBarrier));
 
         var record = new DeviceExportRecord(
             kind,
             id,
             names,
-            cuda,
-            cpp,
+            ReadDialectText(named, AttributeNames.Cuda),
+            ReadDialectText(named, AttributeNames.Cpp),
             traits,
-            GetString(named, nameof(DeviceExportRecord.InternalError)));
+            GetString(named, AttributeNames.InternalError));
 
         imported = new ImportedDeviceRecord(record, assemblyName, formatVersion, preludeHash);
         return record.Names.CppName.Length > 0;
     }
 
-    private static DeviceExportRecord.DialectText ReadDialectText(Dictionary<string, TypedConstant> named, bool isCuda) =>
+    private static DeviceExportRecord.DialectText ReadDialectText(
+        Dictionary<string, TypedConstant> named,
+        AttributeNames.DialectNames dialect) =>
         new(
-            GetArray(named, isCuda ? "CudaReferences" : "CppReferences"),
-            GetString(named, isCuda ? "CudaSignature" : "CppSignature"),
-            GetString(named, isCuda ? "CudaBody" : "CppBody"),
-            GetString(named, isCuda ? "CudaDispose" : "CppDispose"),
-            GetArray(named, isCuda ? "CudaIncludes" : "CppIncludes"),
-            GetBool(named, isCuda ? "CudaFailed" : "CppFailed"));
+            References: GetArray(named, dialect.References),
+            Signature: GetString(named, dialect.Signature),
+            Body: GetString(named, dialect.Body),
+            Dispose: GetString(named, dialect.Dispose),
+            Includes: GetArray(named, dialect.Includes),
+            Failed: GetBool(named, dialect.Failed));
 
     private static string GetString(Dictionary<string, TypedConstant> named, string name) =>
         named.TryGetValue(name, out var value) && value.Value is string text ? text : "";

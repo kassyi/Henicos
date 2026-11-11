@@ -312,7 +312,11 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
             // The managed form of the caller calls the function's managed state machine in its assembly; the state
             // machines of what that one reaches come with it (its assembly emits it only with them)
             if (needsManagedStateMachine &&
-                imported.Record is { Kind: DeviceExportRecord.FunctionKind, Traits: { Suspends: true, ManagedStateMachine: false } })
+                imported.Record is
+                {
+                    Kind: DeviceExportRecord.FunctionKind,
+                    Traits: { Suspends: true, ManagedStateMachine: false }
+                })
             {
                 return new Problem(GSharpDiagnostics.DeviceExportUnusable,
                 [
@@ -343,7 +347,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
                 (start.AssemblyName, start.Record.Id)
             };
             var pending = new Queue<(string Name, ImportedDeviceRecord Referrer)>();
-            foreach (var name in start.Record.GetReferences(isCuda))
+            foreach (var name in start.Record.GetDialect(isCuda).References)
             {
                 pending.Enqueue((name, start));
             }
@@ -377,7 +381,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
                     continue;
                 }
 
-                foreach (var reference in chosen.Record.GetReferences(isCuda))
+                foreach (var reference in chosen.Record.GetDialect(isCuda).References)
                 {
                     pending.Enqueue((reference, chosen));
                 }
@@ -403,7 +407,8 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
         }
 
         /// <summary>The assembly (or this compilation) that gives the record's C++ name to another declaration.</summary>
-        public string? FindCollision(ImportedDeviceRecord imported) => FindCollision(imported, Find(imported.Record.Names.CppName));
+        public string? FindCollision(ImportedDeviceRecord imported) =>
+            FindCollision(imported, Find(imported.Record.Names.CppName));
 
         // The assembly (or this compilation) that gives the record's C++ name to another declaration, or null
         private string? FindCollision(ImportedDeviceRecord imported, ImportedDeviceRecord[] records)

@@ -136,18 +136,18 @@ internal static class DeviceImportAssembler
         using var source = new SourceWriter();
         foreach (var record in functions)
         {
-            source.AppendLine((isCuda ? record.Cuda : record.Cpp).Signature);
+            source.AppendLine(record.GetDialect(isCuda).Signature);
         }
 
         var orderedStructs = OrderStructs(structs, isCuda);
         foreach (var record in orderedStructs)
         {
-            source.Append((isCuda ? record.Cuda : record.Cpp).Body);
+            source.Append(record.GetDialect(isCuda).Body);
         }
 
         foreach (var record in orderedStructs)
         {
-            source.Append((isCuda ? record.Cuda : record.Cpp).Dispose);
+            source.Append(record.GetDialect(isCuda).Dispose);
         }
 
         AppendFunctionBodies(source, functions, isCuda);
@@ -203,7 +203,7 @@ internal static class DeviceImportAssembler
 
             reached.Add(index);
 
-            foreach (var reference in records[index].Record.GetReferences(isCuda))
+            foreach (var reference in records[index].Record.GetDialect(isCuda).References)
             {
                 pending.Enqueue((reference, records[index].AssemblyName));
             }
@@ -230,7 +230,7 @@ internal static class DeviceImportAssembler
             return true;
         }
 
-        foreach (var name in records[index].Record.GetReferences(isCuda))
+        foreach (var name in records[index].Record.GetDialect(isCuda).References)
         {
             if (!byName.TryGetValue(name, out var indices) || IsDefinedByTwoAssemblies(records, indices) ||
                 !IsUsable(records, byName, Choose(records, indices, records[index].AssemblyName), isCuda, visiting))
@@ -304,7 +304,7 @@ internal static class DeviceImportAssembler
             }
 
             state[index] = 1;
-            foreach (var name in structs[index].GetReferences(isCuda))
+            foreach (var name in structs[index].GetDialect(isCuda).References)
             {
                 if (byName.TryGetValue(name, out var dependency))
                 {
@@ -357,7 +357,7 @@ internal static class DeviceImportAssembler
                 }
             }
 
-            source.AppendLine((isCuda ? record.Cuda : record.Cpp).Body);
+            source.AppendLine(record.GetDialect(isCuda).Body);
         }
     }
 
@@ -367,14 +367,14 @@ internal static class DeviceImportAssembler
         var includes = new HashSet<string>(StringComparer.Ordinal);
         foreach (var record in structs)
         {
-            (isCuda ? record.Cuda : record.Cpp).Includes
+            record.GetDialect(isCuda).Includes
                 .AsStackEnumerable()
                 .AddTo(includes);
         }
 
         foreach (var record in functions)
         {
-            (isCuda ? record.Cuda : record.Cpp).Includes
+            record.GetDialect(isCuda).Includes
                 .AsStackEnumerable()
                 .AddTo(includes);
         }
@@ -409,16 +409,17 @@ internal static class DeviceImportAssembler
     private static void AddFullNames(ImmutableArray<(string Name, string FullName)>.Builder names,
         DeviceExportRecord record)
     {
-        if (record.Names.CppFullName.Length > 0)
+        var recordNames = record.Names;
+        if (recordNames.CppFullName.Length > 0)
         {
-            names.Add((record.Names.CppName, record.Names.CppFullName));
+            names.Add((recordNames.CppName, recordNames.CppFullName));
         }
 
-        for (var i = 0; i < record.Names.DefinedFullNames.Length && i < record.Names.DefinedNames.Length; i++)
+        for (var i = 0; i < recordNames.DefinedFullNames.Length && i < recordNames.DefinedNames.Length; i++)
         {
-            if (record.Names.DefinedFullNames[i].Length > 0)
+            if (recordNames.DefinedFullNames[i].Length > 0)
             {
-                names.Add((record.Names.DefinedNames[i], record.Names.DefinedFullNames[i]));
+                names.Add((recordNames.DefinedNames[i], recordNames.DefinedFullNames[i]));
             }
         }
     }

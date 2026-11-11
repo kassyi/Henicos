@@ -324,12 +324,12 @@ internal sealed class BarrierClassifier(UniformityState state)
 
         var variant = ExportBits(masks.Block);
         var record = imported.Record;
-        if ((record.DivergentConditionParameters & variant) != 0)
+        if ((record.Traits.DivergentConditionParameters & variant) != 0)
         {
             return BarrierDivergence.Condition;
         }
 
-        return (record.HasExitOnlyBarrier || (record.DivergentExitOnlyParameters & variant) != 0) &&
+        return (record.Traits.HasExitOnlyBarrier || (record.Traits.DivergentExitOnlyParameters & variant) != 0) &&
                ReachesSplitAfter(call)
             ? BarrierDivergence.Condition
             : BarrierDivergence.None;

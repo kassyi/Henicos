@@ -29,7 +29,20 @@ internal readonly record struct DeviceExportRecord(
         string Body,
         string Dispose,
         EquatableArray<string> Includes,
-        bool Failed);
+        bool Failed)
+    {
+        /// <summary>No text and no references, not failed.</summary>
+        public static DialectText Empty => new(
+            References: default,
+            Signature: "",
+            Body: "",
+            Dispose: "",
+            Includes: default,
+            Failed: false);
+
+        /// <summary>No text, failed: a consumer copies nothing of the dialect.</summary>
+        public static DialectText NotTranspiled => Empty with { Failed = true };
+    }
 
     /// <summary>The traits and execution requirements of a device function.</summary>
     public readonly record struct FunctionTraits(
@@ -45,7 +58,24 @@ internal readonly record struct DeviceExportRecord(
         bool ManagedVersion,
         int DivergentConditionParameters = 0,
         int DivergentExitOnlyParameters = 0,
-        bool HasExitOnlyBarrier = false);
+        bool HasExitOnlyBarrier = false)
+    {
+        /// <summary>
+        /// The traits of a record that is not a transpiled function (a struct, or a function that failed): no frame, no
+        /// barrier, no dynamic shared memory, the <c>Memory</c> effect (the attribute's default).
+        /// </summary>
+        public static FunctionTraits None => new(
+            FrameName: "",
+            FrameDependencies: default,
+            Suspends: false,
+            ReachesBlockBarrier: false,
+            IsParallelDependent: false,
+            ReachesDynamicSharedMemory: false,
+            DynamicSharedMemorySites: default,
+            Effect: "Memory",
+            ManagedStateMachine: false,
+            ManagedVersion: false);
+    }
 
     /// <summary>The kind of a device function record.</summary>
     public const string FunctionKind = "Function";
@@ -77,101 +107,11 @@ internal readonly record struct DeviceExportRecord(
         HashHelper.ComputeFnv1A64($"{GSharpPreludeResources.Hash}/{CurrentFormatVersion}")
             .ToString("x16", CultureInfo.InvariantCulture);
 
-    /// <summary>The global C++ names that the text of a dialect refers to and does not define itself.</summary>
-    public EquatableArray<string> GetReferences(bool isCuda) => (isCuda ? Cuda : Cpp).References;
+    /// <summary>The text of the CUDA or the C++ dialect.</summary>
+    public DialectText GetDialect(bool isCuda) => isCuda ? Cuda : Cpp;
 
     /// <summary>Whether the record holds a value: a default record has no ID.</summary>
     public bool IsValid => !string.IsNullOrEmpty(Id);
-
-    /// <summary>The short C++ name of the declaration.</summary>
-    public string CppName => Names.CppName;
-
-    /// <summary>The full C++ name of the declaration.</summary>
-    public string CppFullName => Names.CppFullName;
-
-    /// <summary>The short C++ names of the functions a struct defines.</summary>
-    public EquatableArray<string> DefinedNames => Names.DefinedNames;
-
-    /// <summary>The documentation comment IDs of the functions a struct defines.</summary>
-    public EquatableArray<string> DefinedIds => Names.DefinedIds;
-
-    /// <summary>The full C++ names of the functions a struct defines.</summary>
-    public EquatableArray<string> DefinedFullNames => Names.DefinedFullNames;
-
-    /// <summary>The C++ names that the CUDA text refers to.</summary>
-    public EquatableArray<string> CudaReferences => Cuda.References;
-
-    /// <summary>The C++ names that the C++ text refers to.</summary>
-    public EquatableArray<string> CppReferences => Cpp.References;
-
-    /// <summary>The frame struct name of a suspending function.</summary>
-    public string FrameName => Traits.FrameName;
-
-    /// <summary>The frames that the frame struct embeds.</summary>
-    public EquatableArray<string> FrameDependencies => Traits.FrameDependencies;
-
-    /// <summary>Whether the function reaches a phase barrier.</summary>
-    public bool Suspends => Traits.Suspends;
-
-    /// <summary>Whether the function reaches a block barrier.</summary>
-    public bool ReachesBlockBarrier => Traits.ReachesBlockBarrier;
-
-    /// <summary>Whether the function requires parallel execution.</summary>
-    public bool IsParallelDependent => Traits.IsParallelDependent;
-
-    /// <summary>Whether the function reaches dynamic shared memory.</summary>
-    public bool ReachesDynamicSharedMemory => Traits.ReachesDynamicSharedMemory;
-
-    /// <summary>The allocation sites of dynamic shared memory.</summary>
-    public EquatableArray<string> DynamicSharedMemorySites => Traits.DynamicSharedMemorySites;
-
-    /// <summary>The side-effect classification of the function.</summary>
-    public string Effect => Traits.Effect;
-
-    /// <summary>The CUDA signature of the function.</summary>
-    public string CudaSignature => Cuda.Signature;
-
-    /// <summary>The CUDA body of the function or definition of the struct.</summary>
-    public string CudaBody => Cuda.Body;
-
-    /// <summary>The CUDA dispose function text of the struct.</summary>
-    public string CudaDispose => Cuda.Dispose;
-
-    /// <summary>The C++ signature of the function.</summary>
-    public string CppSignature => Cpp.Signature;
-
-    /// <summary>The C++ body of the function or definition of the struct.</summary>
-    public string CppBody => Cpp.Body;
-
-    /// <summary>The C++ dispose function text of the struct.</summary>
-    public string CppDispose => Cpp.Dispose;
-
-    /// <summary>The headers the CUDA text includes.</summary>
-    public EquatableArray<string> CudaIncludes => Cuda.Includes;
-
-    /// <summary>The headers the C++ text includes.</summary>
-    public EquatableArray<string> CppIncludes => Cpp.Includes;
-
-    /// <summary>Whether transpilation failed for CUDA.</summary>
-    public bool CudaFailed => Cuda.Failed;
-
-    /// <summary>Whether transpilation failed for C++.</summary>
-    public bool CppFailed => Cpp.Failed;
-
-    /// <summary>Whether the function has an emitted managed state machine.</summary>
-    public bool ManagedStateMachine => Traits.ManagedStateMachine;
-
-    /// <summary>Whether the function has an emitted managed version.</summary>
-    public bool ManagedVersion => Traits.ManagedVersion;
-
-    /// <summary>The parameter bits that make a barrier condition diverge.</summary>
-    public int DivergentConditionParameters => Traits.DivergentConditionParameters;
-
-    /// <summary>The parameter bits that make a barrier exit diverge.</summary>
-    public int DivergentExitOnlyParameters => Traits.DivergentExitOnlyParameters;
-
-    /// <summary>Whether the function reaches an exit-only barrier.</summary>
-    public bool HasExitOnlyBarrier => Traits.HasExitOnlyBarrier;
 }
 
 /// <summary>The device code export records of one compilation, and the generator's own failures in building them.</summary>

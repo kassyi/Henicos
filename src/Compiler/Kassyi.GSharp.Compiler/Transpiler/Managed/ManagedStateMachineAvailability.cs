@@ -101,7 +101,7 @@ internal static class ManagedStateMachineAvailability
         if (DeviceExportTable.IsOutside(method, compilation))
         {
             return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
-                   imported.Record.ManagedStateMachine;
+                   imported.Record.Traits.ManagedStateMachine;
         }
 
         if (!AreContainingTypesPartial(method) ||

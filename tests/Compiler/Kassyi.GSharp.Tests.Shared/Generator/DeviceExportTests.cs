@@ -1,6 +1,7 @@
 #nullable enable
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Hashing;
@@ -301,16 +302,7 @@ public class DeviceExportTests
     [Scenario(TestScenario.Boundary)]
     public void DeviceExport_DialectOutputs_TakesEachDialectFromRecordThatDidNotFailIt()
     {
-        var cudaOnly = default(DeviceExportRecord) with
-        {
-            Kind = DeviceExportRecord.StructKind,
-            Id = "T:N.S",
-            Names = new DeviceExportRecord.ExportNames("__gsharp_ty_N__S", "", default, default, default),
-            Traits = new DeviceExportRecord.FunctionTraits("", default, false, false, false, false, default, "Memory", false, false),
-            Cuda = new DeviceExportRecord.DialectText(default, "", "/*CUDA_TEXT*/", "", default, Failed: false),
-            Cpp = new DeviceExportRecord.DialectText(default, "", "", "", default, Failed: true),
-            InternalError = ""
-        };
+        var cudaOnly = CreateCudaOnlyStructRecord(internalError: "");
         var cppOnly = cudaOnly with
         {
             Cuda = cudaOnly.Cuda with { Body = "", Failed = true },
@@ -329,16 +321,7 @@ public class DeviceExportTests
     [Scenario(TestScenario.Boundary)]
     public void DeviceExport_FailedExport_KeepsMessageOfFailureItKeeps()
     {
-        var cudaOnly = default(DeviceExportRecord) with
-        {
-            Kind = DeviceExportRecord.StructKind,
-            Id = "T:N.S",
-            Names = new DeviceExportRecord.ExportNames("__gsharp_ty_N__S", "", default, default, default),
-            Traits = new DeviceExportRecord.FunctionTraits("", default, false, false, false, false, default, "Memory", false, false),
-            Cuda = new DeviceExportRecord.DialectText(default, "", "/*CUDA_TEXT*/", "", default, Failed: false),
-            Cpp = new DeviceExportRecord.DialectText(default, "", "", "", default, Failed: true),
-            InternalError = "CUDA_ONLY_ERROR"
-        };
+        var cudaOnly = CreateCudaOnlyStructRecord(internalError: "CUDA_ONLY_ERROR");
         var cppOnly = cudaOnly with
         {
             Cuda = cudaOnly.Cuda with { Body = "", Failed = true },
@@ -356,6 +339,43 @@ public class DeviceExportTests
 
         Assert.DoesNotContain("InternalError", merged, StringComparison.Ordinal);
         Assert.Contains("InternalError = @\"CUDA_ONLY_ERROR\"", stillFailed, StringComparison.Ordinal);
+    }
+
+    // A struct record with the CUDA text only, the C++ dialect failed
+    private static DeviceExportRecord CreateCudaOnlyStructRecord(string internalError) =>
+        new(
+            DeviceExportRecord.StructKind,
+            "T:N.S",
+            new DeviceExportRecord.ExportNames(
+                CppName: "__gsharp_ty_N__S",
+                CppFullName: "",
+                DefinedNames: default,
+                DefinedIds: default,
+                DefinedFullNames: default),
+            Cuda: DeviceExportRecord.DialectText.Empty with { Body = "/*CUDA_TEXT*/" },
+            Cpp: DeviceExportRecord.DialectText.NotTranspiled,
+            DeviceExportRecord.FunctionTraits.None,
+            internalError);
+
+    // The names the emitter writes and the table reads are the named arguments of the attribute, all of them
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void DeviceExportAttributeNames_EveryConstant_NamesASettablePropertyOfTheAttribute()
+    {
+        var constants = typeof(DeviceExportAttributeNames)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(static f => f.IsLiteral)
+            .Select(static f => f.GetRawConstantValue() as string ?? throw new InvalidOperationException(f.Name))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        var properties = typeof(Kassyi.GSharp.Core.GpuDeviceExportAttribute)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(static p => p.SetMethod is { IsPublic: true })
+            .Select(static p => p.Name)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(properties, constants);
     }
 
     // Two functions write the struct of the guard, one without its Dispose: the record keeps the Dispose text

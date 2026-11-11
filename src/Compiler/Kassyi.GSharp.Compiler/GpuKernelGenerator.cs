@@ -572,21 +572,18 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var cppName = GlobalCppNames.GetFunctionName(method);
         var names = new DeviceExportRecord.ExportNames(
-            cppName,
-            GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
-            default,
-            default,
-            default);
-        var failedCuda = new DeviceExportRecord.DialectText(default, "", "", "", default, Failed: true);
-        var failedCpp = new DeviceExportRecord.DialectText(default, "", "", "", default, Failed: true);
-        var traits = new DeviceExportRecord.FunctionTraits("", default, false, false, false, false, default, "Memory", false, false);
+            CppName: cppName,
+            CppFullName: GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
+            DefinedNames: default,
+            DefinedIds: default,
+            DefinedFullNames: default);
         return new DeviceExportRecord(
             DeviceExportRecord.FunctionKind,
             method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
             names,
-            failedCuda,
-            failedCpp,
-            traits,
+            Cuda: DeviceExportRecord.DialectText.NotTranspiled,
+            Cpp: DeviceExportRecord.DialectText.NotTranspiled,
+            DeviceExportRecord.FunctionTraits.None,
             internalError);
     }
 
@@ -594,15 +591,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
         string cppName,
         ExportedFunctionText text) =>
         new(
-            DeviceExportEmitter.CollectReferences(
+            References: DeviceExportEmitter.CollectReferences(
                 DeviceExportEmitter.OwnNames(cppName, default, text.KeptNames),
                 text.Signature,
                 text.Body),
-            text.Signature,
-            text.Body,
+            Signature: text.Signature,
+            Body: text.Body,
             Dispose: "",
-            text.Includes,
-            text.Failed);
+            Includes: text.Includes,
+            Failed: text.Failed);
 
     private static DeviceExportRecord CreateFunctionRecord(IMethodSymbol method, Compilation compilation,
         ExportedFunctionText cuda, ExportedFunctionText cpp, string frameName, EquatableArray<string> frameDependencies,
@@ -620,39 +617,37 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var divergence = UniformityAnalysis.GetExportedDivergence(method, compilation);
 
         var names = new DeviceExportRecord.ExportNames(
-            cppName,
-            GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
-            default,
-            default,
-            default);
-
-        var cudaText = BuildFunctionDialectText(cppName, cuda);
-        var cppText = BuildFunctionDialectText(cppName, cpp);
+            CppName: cppName,
+            CppFullName: GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
+            DefinedNames: default,
+            DefinedIds: default,
+            DefinedFullNames: default);
 
         var traits = new DeviceExportRecord.FunctionTraits(
-            frameName,
-            frameDependencies,
-            SuspensionAnalysis.IsSuspendingFunction(method, compilation),
-            SuspensionAnalysis.ReachesBlockBarrier(method, compilation),
-            ContextInferenceEngine.IsParallelDependent(method,
+            FrameName: frameName,
+            FrameDependencies: frameDependencies,
+            Suspends: SuspensionAnalysis.IsSuspendingFunction(method, compilation),
+            ReachesBlockBarrier: SuspensionAnalysis.ReachesBlockBarrier(method, compilation),
+            IsParallelDependent: ContextInferenceEngine.IsParallelDependent(method,
                 new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default), compilation),
-            DynamicSharedMemoryAnalysis.ReachesDynamicSharedMemory(method, compilation),
-            siteNames.MoveToImmutable().AsEquatableArray(),
-            DeviceExportEmitter.FormatEffect(DeviceFunctionEffects.Classify(method, compilation)),
+            ReachesDynamicSharedMemory: DynamicSharedMemoryAnalysis.ReachesDynamicSharedMemory(method, compilation),
+            DynamicSharedMemorySites: siteNames.MoveToImmutable().AsEquatableArray(),
+            Effect: DeviceExportEmitter.FormatEffect(DeviceFunctionEffects.Classify(method, compilation)),
+            // The records and the state machines are emitted together (GSharpExportDeviceCode)
             ManagedStateMachine: hasManagedStateMachine,
             ManagedVersion: hasManagedVersion,
-            divergence.ConditionParameters,
-            divergence.ExitOnlyParameters,
-            divergence.HasExitOnlyBarrier);
+            DivergentConditionParameters: divergence.ConditionParameters,
+            DivergentExitOnlyParameters: divergence.ExitOnlyParameters,
+            HasExitOnlyBarrier: divergence.HasExitOnlyBarrier);
 
         return new DeviceExportRecord(
             DeviceExportRecord.FunctionKind,
             method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
             names,
-            cudaText,
-            cppText,
+            Cuda: BuildFunctionDialectText(cppName, cuda),
+            Cpp: BuildFunctionDialectText(cppName, cpp),
             traits,
-            "");
+            InternalError: "");
     }
 
     // A struct that other assemblies can name, rendered for both dialects (StructTranspiler.IsExportedOnItsOwn), with
