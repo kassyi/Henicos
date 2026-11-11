@@ -83,6 +83,8 @@ _Boolean_<br>
 `ArgumentNullException`<br>
 `image` is `null`.
 
+<a id="verifysignaturereadonlyspanbyte-readonlyspanbyte"></a>
+
 ## VerifySignature(ReadOnlySpan\<Byte\>, ReadOnlySpan\<Byte\>)
 
 Verifies an Ed25519 signature against any embedded or dynamically registered trusted key.
@@ -103,6 +105,8 @@ The 64-byte Ed25519 signature.
 
 _Boolean_<br>
 `true` if the signature matches an authorized trusted key; otherwise, `false`.
+
+<a id="verifysignaturereadonlyspanbyte-readonlyspanbyte-readonlyspanbyte"></a>
 
 ## VerifySignature(ReadOnlySpan\<Byte\>, ReadOnlySpan\<Byte\>, ReadOnlySpan\<Byte\>)
 

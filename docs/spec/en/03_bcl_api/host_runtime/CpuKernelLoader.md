@@ -127,6 +127,8 @@ Unloads all cached CPU modules and clears the in-memory cache to reclaim memory.
 public static void Shutdown();
 ```
 
+<a id="registererrorsitesstring-readonlyspangsharperrorsite"></a>
+
 ## RegisterErrorSites(string, ReadOnlySpan\<GSharpErrorSite\>)
 
 Registers the error site table of a native CPU library, so that an error the library records can be reported with its source location. The generated launchers call it; user code does not need to.

@@ -71,6 +71,8 @@ The number of bits.
 
 None. Returns `64` if `value` is `0`.
 
+<a id="trailingzerocount-nuint"></a>
+
 ## TrailingZeroCount(nuint)
 
 Count the number of trailing zero bits in an integer. (pointer-sized)

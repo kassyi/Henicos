@@ -123,6 +123,8 @@ The value exchanged from the source thread.
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
 Thrown when evaluated on the host CPU.
 
+<a id="shuffledownsync-uint-double-uint-int"></a>
+
 ## ShuffleDownSync(uint, double, uint, int)
 
 Exchanges a double-precision doubleing-point number by shifting data down by a specified delta.

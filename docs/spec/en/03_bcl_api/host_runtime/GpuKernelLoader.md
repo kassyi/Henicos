@@ -231,6 +231,8 @@ A watchdog tick did not leave the driver in time; the context was not destroyed.
 
 The awaiters of the faulted waits observe an `ObjectDisposedException`. The GPU work they were waiting for is not canceled; it is drained or torn down together with the context.
 
+<a id="registererrorsitesreadonlyspanbyte-readonlyspangsharperrorsite"></a>
+
 ## RegisterErrorSites(ReadOnlySpan\<byte\>, ReadOnlySpan\<GSharpErrorSite\>)
 
 Registers the error site table of an AOT Fatbin, so that a device error recorded by its kernels is reported with its source location. The generated launchers call it; user code does not need to.

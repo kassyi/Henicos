@@ -78,6 +78,8 @@ The computed value.
 
 None. Does not throw exceptions.
 
+<a id="max-int-int"></a>
+
 ## Max(int, int)
 
 Returns the larger of two 32-bit signed integers.

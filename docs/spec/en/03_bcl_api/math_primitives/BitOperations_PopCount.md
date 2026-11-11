@@ -71,6 +71,8 @@ The number of bits.
 
 None. Returns `0` if `value` is `0`.
 
+<a id="popcount-nuint"></a>
+
 ## PopCount(nuint)
 
 Returns the population count (number of bits set) of a mask. (pointer-sized)

@@ -72,6 +72,8 @@ The computed value.
 
 None. Does not throw exceptions; returns `double.NaN` if `x` is `double.NaN`.
 
+<a id="abs-int"></a>
+
 ## Abs(int)
 
 Returns the absolute value of a 32-bit signed integer.

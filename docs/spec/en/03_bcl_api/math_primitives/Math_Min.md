@@ -78,6 +78,8 @@ The computed value.
 
 None. Does not throw exceptions.
 
+<a id="min-int-int"></a>
+
 ## Min(int, int)
 
 Returns the smaller of two 32-bit signed integers.

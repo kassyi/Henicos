@@ -72,6 +72,8 @@ The number of bits.
 
 None. Returns `64` if `value` is `0`.
 
+<a id="leadingzerocount-nuint"></a>
+
 ## LeadingZeroCount(nuint)
 
 Count the number of leading zero bits in an integer. (pointer-sized)

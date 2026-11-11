@@ -21,6 +21,8 @@ Hints the compiler to unroll the immediately following loop.
 | --- | --- |
 | [Unroll(int)](#unroll-int) | Hints the compiler to unroll the immediately following loop by a specific factor (`0` leaves the factor to NVCC). |
 
+<a id="unroll-int"></a>
+
 ## Unroll(int)
 
 Hints the compiler to unroll the immediately following loop by a specific factor.
