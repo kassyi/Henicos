@@ -25,7 +25,7 @@ public class CppIdentifierRenameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_KeywordAndAlternativeTokenNames_KeepValues()
+    public void Rename_KeywordAndAlternativeTokenNames_KeepsValues()
     {
         var register = CreateSequence(1);
         var template = new int[ThreadCount];
@@ -41,7 +41,7 @@ public class CppIdentifierRenameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_VerbatimBuiltinAndMacroNames_KeepValues()
+    public void Rename_VerbatimBuiltinAndMacroNames_KeepsValues()
     {
         var input = CreateSequence(1);
         var output = new int[ThreadCount];
@@ -57,7 +57,7 @@ public class CppIdentifierRenameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LocalsNamedAfterMappedFunctions_DoNotShadowMathCalls()
+    public void Rename_LocalsNamedAfterMappedFunctions_DoesNotShadowMathCalls()
     {
         var data = CreateSequence(1);
 
@@ -78,7 +78,7 @@ public class CppIdentifierRenameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ReservedNamesInDeclarationForms_KeepValues()
+    public void Rename_ReservedNamesInDeclarationForms_KeepsValues()
     {
         var data = CreateSequence(1);
 
@@ -93,7 +93,7 @@ public class CppIdentifierRenameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ReservedStructMemberNames_RoundTrip()
+    public void Rename_ReservedStructMemberNames_RoundTripsFieldValues()
     {
         var items = new CppKeywordFields[ThreadCount];
         for (int i = 0; i < ThreadCount; i++)
@@ -122,7 +122,7 @@ public class CppIdentifierRenameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ReservedNamesAcrossBarrier_SurviveContextHoisting()
+    public void Rename_ReservedNamesAcrossBarrier_SurvivesContextHoisting()
     {
         var data = CreateSequence(1);
 
@@ -139,7 +139,7 @@ public class CppIdentifierRenameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ReservedLambdaParameterName_InGridStrideLoop()
+    public void Rename_ReservedLambdaParameterNameInGridStrideLoop_ComputesExpectedValues()
     {
         var data = new int[ThreadCount];
 
@@ -154,7 +154,7 @@ public class CppIdentifierRenameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ReservedLabelName_IsAGotoTarget()
+    public void Rename_ReservedLabelName_BranchesToGotoTarget()
     {
         const int Rounds = 3;
         var data = CreateSequence(1);
@@ -170,7 +170,7 @@ public class CppIdentifierRenameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_KeywordMethodNames_AreCalledAndLaunched()
+    public void Rename_KeywordMethodNames_LaunchesAndCallsSuccessfully()
     {
         var data = CreateSequence(1);
 

@@ -11,7 +11,7 @@ public class AotLoaderLifecycleTests
     [InlineData("")]
     [InlineData(" ")]
     [InlineData("NonExistentKernel")]
-    public void Test_CpuKernelLoader_InvalidPaths_ThrowAppropriateExceptions(string kernelName)
+    public void CpuKernelLoader_InvalidPaths_ThrowsIOException(string kernelName)
     {
         // Boundary Testing: Empty string and non-existent DLL file path
         var nonExistentPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "empty.dll");
@@ -27,7 +27,7 @@ public class AotLoaderLifecycleTests
     [InlineData(1)]
     [InlineData(16)]
     [InlineData(31)]
-    public void Test_GpuKernelLoader_AotBufferTooSmall_ThrowsInvalidOperationException(int length)
+    public void GpuKernelLoader_AotBufferTooSmall_ThrowsInvalidOperationException(int length)
     {
         // Boundary Testing: Exact boundary for hash extraction is 32 bytes; < 32 bytes must be rejected
         byte[] tinyBuffer = new byte[length];
@@ -41,7 +41,7 @@ public class AotLoaderLifecycleTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GpuKernelLoader_DriverAvailability_ReturnsWithoutException()
+    public void GpuKernelLoader_DriverAvailabilityCheck_ReturnsBooleanWithoutException()
     {
         // Happy Path: IsDriverAvailable should gracefully return boolean without bubbling unhandled DllNotFoundException
         var isAvailable = GpuKernelLoader.IsDriverAvailable;

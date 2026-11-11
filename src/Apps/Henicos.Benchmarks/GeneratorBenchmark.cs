@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using GSharpCompiler::Kassyi.GSharp.Compiler;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Building;
+using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Classifying;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -184,6 +185,27 @@ public class GeneratorBenchmark
         var compilation = CSharpCompilation.Create("GeneratorBenchmarkIrCompilation", State.Compilation.SyntaxTrees,
             State.Compilation.References, State.Compilation.Options);
         return BuildIr(compilation, FindGpuMethods(compilation));
+    }
+
+    /// <summary>
+    /// Builds and classifies the IR of every GPU method of the suite on the compilation the generator already bound:
+    /// the build plus the decision of each call's split and effect.
+    /// </summary>
+    [Benchmark]
+    public int BuildAndClassifyIr_Warm()
+    {
+        var compilation = State.Compilation;
+        var classified = 0;
+        foreach (var method in State.GpuMethods)
+        {
+            if (IrBuilder.TryBuild(method, compilation, CancellationToken.None) is { } built)
+            {
+                _ = IrClassifier.Classify(built, compilation);
+                classified++;
+            }
+        }
+
+        return classified;
     }
 
     private static int BuildIr(Compilation compilation, ImmutableArray<IMethodSymbol> methods)

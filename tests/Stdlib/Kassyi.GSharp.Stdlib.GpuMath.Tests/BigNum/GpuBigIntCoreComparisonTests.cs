@@ -15,7 +15,7 @@ public class GpuBigIntCoreComparisonTests
 
     [SkippableFact]
     [Category(TestCategory.Benchmark)]
-    public void Test_GpuReductionCompareAndFlags()
+    public void CompareTo_ReductionFlagsAndExtrema_MatchesExpectedOrdering()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -52,7 +52,7 @@ public class GpuBigIntCoreComparisonTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_ComparisonOperators_Correctness(GpuExecutionEngine engine)
+    public void ComparisonOperators_RandomOperands_MatchesExpectedBooleans(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -88,7 +88,7 @@ public class GpuBigIntCoreComparisonTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_ComparisonOperators_ReductionEdgeCases(GpuExecutionEngine engine)
+    public void ComparisonOperators_ZeroAndLsbMsbDifferences_MatchesExpectedBooleans(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -135,7 +135,7 @@ public class GpuBigIntCoreComparisonTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_CompareTo_Correctness(GpuExecutionEngine engine)
+    public void CompareTo_RandomOperands_MatchesExpectedOrdering(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -158,7 +158,7 @@ public class GpuBigIntCoreComparisonTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_LengthProperties_Correctness(GpuExecutionEngine engine)
+    public void LengthProperties_RandomAndZeroOperands_MatchesBitAndByteCounts(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords, engine);
@@ -188,7 +188,7 @@ public class GpuBigIntCoreComparisonTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_GetBitLength_AtomicStress(GpuExecutionEngine engine)
+    public void GetBitLength_StressRandomInputs_MatchesBigIntegerLengths(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         const int stressWords = 65536;
@@ -216,7 +216,7 @@ public class GpuBigIntCoreComparisonTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    public void Test_State_Correctness(GpuExecutionEngine engine)
+    public void StateProperties_ZeroOneAndSignedValues_MatchesExpectedFlags(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 2, engine);
@@ -271,8 +271,8 @@ public class GpuBigIntCoreComparisonTests
         using var equal = new GpuBigUInt(ctx, [5u, 7u, 0u, 0u]);
         using var larger = new GpuBigUInt(ctx, [6u, 7u, 0u, 0u]);
 
-        // mutant: KernelBasicMathHandler.cs:169 / 174 `<` -> `>` / negated, L171 / 176 PadTo removed,
-        // L181 / 182 the padded pointer replaced by the operand's own
+        // mutant: KernelBasicMathHandler.cs:172 / 177 `<` -> `>` / negated, L174 / 179 PadTo removed,
+        // L184 / 185 the padded pointer replaced by the operand's own
         Assert.Equal(0, shortView.CompareTo(equal));
         Assert.Equal(0, equal.CompareTo(shortView));
         Assert.Equal(-1, shortView.CompareTo(larger));

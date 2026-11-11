@@ -15,52 +15,52 @@ public class VectorConstructorManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_Splat_SetsEveryComponent() =>
+    public void Splat_ManagedScalarArgument_SetsEveryComponent() =>
         VectorConstructorScenarios.SplatSetsEveryComponent(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_Extend_AppendsComponents() =>
+    public void Extend_ManagedSmallerVector_AppendsComponents() =>
         VectorConstructorScenarios.ExtendAppendsComponents(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_TargetTypedSplat_SetsEveryComponent() =>
+    public void TargetTypedSplat_ManagedImplicitTarget_SetsEveryComponent() =>
         VectorConstructorScenarios.TargetTypedSplatSetsEveryComponent(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_Splat_EvaluatesItsArgumentOnce() =>
+    public void Splat_ManagedSideEffectArgument_EvaluatesItsArgumentOnce() =>
         VectorConstructorScenarios.SplatEvaluatesItsArgumentOnce(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_PositionalConstructors_KeepTheirMeaning() =>
+    public void PositionalConstructors_ManagedComponentArguments_KeepTheirMeaning() =>
         VectorConstructorScenarios.PositionalConstructorsKeepTheirMeaning(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_TargetTypedUserConstructor_RunsItsBody() =>
+    public void TargetTypedUserConstructor_ManagedStructInstantiation_RunsItsBody() =>
         VectorConstructorScenarios.TargetTypedUserConstructorRunsItsBody(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_NamedArguments_ReachTheirParameters() =>
+    public void NamedArguments_ManagedReorderedParameters_ReachTheirParameters() =>
         VectorConstructorScenarios.NamedArgumentsReachTheirParameters(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_NamedArguments_AreEvaluatedInTheWrittenOrder() =>
+    public void NamedArguments_ManagedSideEffects_AreEvaluatedInWrittenOrder() =>
         VectorConstructorScenarios.NamedArgumentsAreEvaluatedInTheWrittenOrder(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_NamedSpanArguments_ReachTheirParameters() =>
+    public void NamedSpanArguments_ManagedSpanParameters_ReachTheirParameters() =>
         VectorConstructorScenarios.NamedSpanArgumentsReachTheirParameters(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_NamedCallArguments_AreEvaluatedInTheWrittenOrder() =>
+    public void NamedCallArguments_ManagedSideEffects_AreEvaluatedInWrittenOrder() =>
         VectorConstructorScenarios.NamedCallArgumentsAreEvaluatedInTheWrittenOrder(s_runManaged);
 }
 #endif

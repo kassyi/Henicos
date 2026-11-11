@@ -226,67 +226,69 @@ public sealed class SwitchDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SwitchIntStatement_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_switchIntStatement);
+    public void SwitchStatement_Int32_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_switchIntStatement);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SwitchWideInt64Statement_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_switchWideInt64Statement);
+    public void SwitchStatement_WideInt64_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_switchWideInt64Statement);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SwitchNarrowCharEnumStatement_MatchesTheOracleOnEveryPath() =>
+    public void SwitchStatement_NarrowCharEnum_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_switchNarrowCharEnumStatement);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SwitchGotoAndSharedLocalsStatement_MatchesTheOracleOnEveryPath() =>
+    public void SwitchStatement_GotoAndSharedLocals_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_switchGotoAndSharedLocals);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SwitchExpressionIntAndLong_MatchesTheOracleOnEveryPath() =>
+    public void SwitchExpression_IntAndLong_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_switchExpressionIntAndLong);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SwitchExpressionFloatSpecial_MatchesTheOracleOnEveryPath() =>
+    public void SwitchExpression_FloatSpecial_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_switchExpressionFloatSpecial);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TernaryNestedAndRef_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_ternaryNestedAndRef);
+    public void TernaryOperator_NestedAndRef_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_ternaryNestedAndRef);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TernaryTargetTypedAndNarrow_MatchesTheOracleOnEveryPath() =>
+    public void TernaryOperator_TargetTypedAndNarrow_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_ternaryTargetTypedAndNarrow);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullCoalesceAndNullCheckMatching_MatchesTheOracleOnEveryPath() =>
+    public void NullCoalesce_NullCheckMatching_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_nullCoalesceAndNullCheckMatching);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SwitchFlattenedFloatAndGoto_MatchesTheReferenceOnEveryPath() =>
+    public void SwitchStatement_FlattenedFloatAndGoto_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_switchFlattenedFloatAndGoto);
 
     private static void FlattenedFloatAndGotoReference(int[] a, float[] fa, int[] dst)

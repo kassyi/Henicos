@@ -97,7 +97,7 @@ public sealed class UnsignedWidthCpuFallbackTests
     [Theory]
     [MemberData(nameof(WidthPairs))]
     [Scenario(TestScenario.Boundary)]
-    public void FollowsTheSameRules(int aWords, int bWords)
+    public void UnsignedWidth_CpuFallbackWithVaryingWords_FollowsTheSameRules(int aWords, int bWords)
     {
         GpuKernelLoader.ForceCpuFallback = true;
         try

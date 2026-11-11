@@ -5,7 +5,7 @@ public class NativeStructGenerationTests
 {
     [Fact]
     [Category(TestCategory.Syntax)]
-    public async Task Test_NativeStructGeneration_ArrayFieldsAndNestedStructs()
+    public async Task NativeStructGeneration_ArrayFieldsAndNestedStructs_EmitsMatchingCppStructs()
     {
         var testConfig = RoslynTestUtility.TestGenerator("Analyzers/NativeStructGeneration.cs");
 

@@ -15,7 +15,7 @@ public class UniformityCalleeCacheTests
     [Scenario(TestScenario.Boundary)]
     [InlineData("KernelA", "KernelB")]
     [InlineData("KernelB", "KernelA")]
-    public void Test_RecursionCycle_ReturnVarianceDoesNotDependOnOrder(string first, string second)
+    public void RecursionCycle_ReturnVarianceDoesNotDependOnOrder(string first, string second)
     {
         // A fresh compilation per order: the summaries are cached per compilation
         var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(TestCase));
@@ -27,7 +27,7 @@ public class UniformityCalleeCacheTests
     // A recursive call with other argument masks than the call in progress is analyzed, not left out as uniform
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RecursiveCallWithOtherMasks_IsAnalyzed()
+    public void RecursiveCallWithOtherMasks_IsAnalyzed()
     {
         var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(TestCase));
 

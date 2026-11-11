@@ -186,8 +186,8 @@ public class GpuBigIntLinqBenchmark : IDisposable
     }
 
     // --- CPU Baselines ---
-    [Benchmark(Baseline = true)]
-    public BigInteger Cpu_MapReduce_PLINQ()
+    [Benchmark(Baseline = true, Description = "Cpu_MapReduce_PLINQ")]
+    public BigInteger CpuMapReducePlinq()
     {
 #pragma warning disable RS0030
         return ParallelEnumerable.Aggregate(
@@ -199,7 +199,7 @@ public class GpuBigIntLinqBenchmark : IDisposable
 #pragma warning restore RS0030
     }
 
-    public BigInteger Cpu_FilterReduce_PLINQ()
+    public BigInteger CpuFilterReducePlinq()
     {
 #pragma warning disable RS0030
         return ParallelEnumerable.Aggregate(
@@ -211,7 +211,7 @@ public class GpuBigIntLinqBenchmark : IDisposable
 #pragma warning restore RS0030
     }
 
-    public BigInteger Cpu_Pipeline_PLINQ()
+    public BigInteger CpuPipelinePlinq()
     {
 #pragma warning disable RS0030
         return ParallelEnumerable.Aggregate(
@@ -226,12 +226,12 @@ public class GpuBigIntLinqBenchmark : IDisposable
     }
 
     // --- GPU Executions ---
-    public void Gpu_VectorMap_Precompiled() => _precompiledVectorMapGraph.Execute();
-    public void Gpu_VectorFilter_Precompiled() => _precompiledVectorFilterGraph.Execute();
-    public void Gpu_VectorPipeline_Precompiled() => _precompiledVectorPipelineGraph.Execute();
-    public void Gpu_Filter_Precompiled() => _precompiledFilterGraph.Execute();
-    public void Gpu_Pipeline_Precompiled() => _precompiledPipelineGraph.Execute();
-    public void Gpu_StackMap_Precompiled() => _precompiledMapGraph.Execute();
+    public void GpuVectorMapPrecompiled() => _precompiledVectorMapGraph.Execute();
+    public void GpuVectorFilterPrecompiled() => _precompiledVectorFilterGraph.Execute();
+    public void GpuVectorPipelinePrecompiled() => _precompiledVectorPipelineGraph.Execute();
+    public void GpuFilterPrecompiled() => _precompiledFilterGraph.Execute();
+    public void GpuPipelinePrecompiled() => _precompiledPipelineGraph.Execute();
+    public void GpuStackMapPrecompiled() => _precompiledMapGraph.Execute();
 
     public static void RunDirectBenchmark(int elementCount = 256, int numWords = 8, int iterations = 10)
     {
@@ -250,36 +250,36 @@ public class GpuBigIntLinqBenchmark : IDisposable
         bench.Setup();
 
         Logger<GpuBigIntLinqBenchmark>.Info("Warming up...");
-        _ = bench.Cpu_MapReduce_PLINQ();
-        _ = bench.Cpu_FilterReduce_PLINQ();
-        _ = bench.Cpu_Pipeline_PLINQ();
-        bench.Gpu_VectorMap_Precompiled();
-        bench.Gpu_VectorFilter_Precompiled();
-        bench.Gpu_VectorPipeline_Precompiled();
+        _ = bench.CpuMapReducePlinq();
+        _ = bench.CpuFilterReducePlinq();
+        _ = bench.CpuPipelinePlinq();
+        bench.GpuVectorMapPrecompiled();
+        bench.GpuVectorFilterPrecompiled();
+        bench.GpuVectorPipelinePrecompiled();
 
         if (elementCount <= 1024)
         {
-            bench.Gpu_StackMap_Precompiled();
-            bench.Gpu_Filter_Precompiled();
-            bench.Gpu_Pipeline_Precompiled();
+            bench.GpuStackMapPrecompiled();
+            bench.GpuFilterPrecompiled();
+            bench.GpuPipelinePrecompiled();
         }
 
         var sw = new Stopwatch();
 
-        var cpuMapMs = measure(() => _ = bench.Cpu_MapReduce_PLINQ());
-        var cpuFilterMs = measure(() => _ = bench.Cpu_FilterReduce_PLINQ());
-        var cpuPipelineMs = measure(() => _ = bench.Cpu_Pipeline_PLINQ());
+        var cpuMapMs = measure(() => _ = bench.CpuMapReducePlinq());
+        var cpuFilterMs = measure(() => _ = bench.CpuFilterReducePlinq());
+        var cpuPipelineMs = measure(() => _ = bench.CpuPipelinePlinq());
 
-        var gpuVecMapMs = measure(bench.Gpu_VectorMap_Precompiled);
-        var gpuVecFilterMs = measure(bench.Gpu_VectorFilter_Precompiled);
-        var gpuVecPipelineMs = measure(bench.Gpu_VectorPipeline_Precompiled);
+        var gpuVecMapMs = measure(bench.GpuVectorMapPrecompiled);
+        var gpuVecFilterMs = measure(bench.GpuVectorFilterPrecompiled);
+        var gpuVecPipelineMs = measure(bench.GpuVectorPipelinePrecompiled);
 
         double gpuStackMapMs = 0, gpuFilterMs = 0, gpuPipelineMs = 0;
         if (elementCount <= 1024)
         {
-            gpuStackMapMs = measure(bench.Gpu_StackMap_Precompiled);
-            gpuFilterMs = measure(bench.Gpu_Filter_Precompiled);
-            gpuPipelineMs = measure(bench.Gpu_Pipeline_Precompiled);
+            gpuStackMapMs = measure(bench.GpuStackMapPrecompiled);
+            gpuFilterMs = measure(bench.GpuFilterPrecompiled);
+            gpuPipelineMs = measure(bench.GpuPipelinePrecompiled);
         }
 
         Logger<GpuBigIntLinqBenchmark>.Info("");

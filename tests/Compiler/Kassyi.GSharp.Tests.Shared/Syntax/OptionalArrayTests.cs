@@ -14,7 +14,7 @@ public class OptionalArrayTests : TranspilerTestBase
     [SkippableTheory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_IsNullBiasKernel_WithNonNullAndNull_ShouldExecuteCorrectly(bool forceManaged)
+    public void IsNullBias_NonNullAndNullInputs_ComputesExpectedValues(bool forceManaged)
     {
         float[] x = [1f, 2f];
         Run(forceManaged, () => OptionalArrayKernels.LaunchIsNullBiasKernel(x, [10f, 20f], blockDimX: 2));
@@ -29,7 +29,7 @@ public class OptionalArrayTests : TranspilerTestBase
     [SkippableTheory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_IsNullBiasKernel_WithEmptyBias_ShouldTreatAsNull(bool forceManaged)
+    public void IsNullBias_EmptyBias_TreatsAsNull(bool forceManaged)
     {
         float[] x = [1f, 2f];
         Run(forceManaged, () => OptionalArrayKernels.LaunchIsNullBiasKernel(x, [], blockDimX: 2));
@@ -40,7 +40,7 @@ public class OptionalArrayTests : TranspilerTestBase
     [SkippableTheory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_EqualsNullBiasKernel_WithNullAndNonNull_ShouldExecuteCorrectly(bool forceManaged)
+    public void EqualsNullBias_NullAndNonNullInputs_ComputesExpectedValues(bool forceManaged)
     {
         float[] x = [1f, 2f];
         Run(forceManaged, () => OptionalArrayKernels.LaunchEqualsNullBiasKernel(x, null, blockDimX: 2));
@@ -53,7 +53,7 @@ public class OptionalArrayTests : TranspilerTestBase
 
     [Scenario(TestScenario.HappyPath)]
     [Fact]
-    public void Test_MemoryAddKernel_ShouldModifyBackingArray()
+    public void MemoryAdd_SpanInputs_ModifiesBackingArray()
     {
         float[] xArray = [1f, 2f];
         float[] yArray = [10f, 20f];
@@ -63,7 +63,7 @@ public class OptionalArrayTests : TranspilerTestBase
 
     [Scenario(TestScenario.Boundary)]
     [Fact]
-    public void Test_SegmentScaleKernel_WithOffset_ShouldHonorOffsetAndCount()
+    public void SegmentScale_WithOffsetAndCount_HonorsOffsetAndCount()
     {
         float[] backing = [0f, 1f, 2f, 3f];
         var segment = new ArraySegment<float>(backing, 1, 2);
@@ -73,7 +73,7 @@ public class OptionalArrayTests : TranspilerTestBase
 
     [Scenario(TestScenario.HappyPath)]
     [Fact]
-    public void Test_ImmutableAddKernel_ShouldExecuteAndLeaveImmutableArrayUnchanged()
+    public void ImmutableAdd_ImmutableArrayInput_LeavesImmutableArrayUnchanged()
     {
         float[] x = [1f, 2f];
         var y = ImmutableArray.Create(10f, 20f);
@@ -85,7 +85,7 @@ public class OptionalArrayTests : TranspilerTestBase
 
     [Scenario(TestScenario.HappyPath)]
     [Fact]
-    public void Test_OptionalMemoryKernel_WithNullDefaultAndValue_ShouldExecuteCorrectly()
+    public void OptionalMemory_NullDefaultAndValues_ComputesExpectedValues()
     {
         float[] x = [1f, 2f];
         OptionalArrayKernels.LaunchOptionalMemoryKernel(x, null, blockDimX: 2);
@@ -102,7 +102,7 @@ public class OptionalArrayTests : TranspilerTestBase
 
     [Scenario(TestScenario.HappyPath)]
     [Fact]
-    public void Test_OptionalSegmentKernel_WithNullAndValue_ShouldExecuteCorrectly()
+    public void OptionalSegment_NullAndValues_ComputesExpectedValues()
     {
         float[] x = [1f, 2f];
         OptionalArrayKernels.LaunchOptionalSegmentKernel(x, null, blockDimX: 2);
@@ -115,7 +115,7 @@ public class OptionalArrayTests : TranspilerTestBase
 
     [Scenario(TestScenario.SadPath)]
     [Fact]
-    public void Test_IsNullBiasKernel_NullX_ShouldThrowArgumentNullException()
+    public void IsNullBias_NullInputArray_ThrowsArgumentNullException()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
             // Intentionally passing null to assert ArgumentNullException guard; this is the only allowed !.
@@ -125,7 +125,7 @@ public class OptionalArrayTests : TranspilerTestBase
 
     [Scenario(TestScenario.SadPath)]
     [Fact]
-    public void Test_IsNullBiasKernel_EmptyX_ShouldThrowArgumentException()
+    public void IsNullBias_EmptyInputArray_ThrowsArgumentException()
     {
         var ex = Assert.Throws<ArgumentException>(() =>
             OptionalArrayKernels.LaunchIsNullBiasKernel([], [10f, 20f], blockDimX: 2));
@@ -134,7 +134,7 @@ public class OptionalArrayTests : TranspilerTestBase
 
     [Scenario(TestScenario.SadPath)]
     [Fact]
-    public void Test_MemoryAddKernel_EmptyX_ShouldThrowArgumentException()
+    public void MemoryAdd_EmptyInputArray_ThrowsArgumentException()
     {
         var ex = Assert.Throws<ArgumentException>(() =>
             OptionalArrayKernels.LaunchMemoryAddKernel(Memory<float>.Empty, new float[] { 10f, 20f }, blockDimX: 2));
@@ -143,7 +143,7 @@ public class OptionalArrayTests : TranspilerTestBase
 
     [Scenario(TestScenario.SadPath)]
     [Fact]
-    public void Test_ScaleKernel_EmptyValues_ShouldThrowArgumentException()
+    public void Scale_EmptyValues_ThrowsArgumentException()
     {
         var ex = Assert.Throws<ArgumentException>(() =>
             OptionalArrayKernels.LaunchScaleKernel([], blockDimX: 2));
@@ -156,7 +156,7 @@ public class OptionalArrayTests : TranspilerTestBase
     [SkippableTheory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_LengthOptionalKernel_NullAndEmptyBias_ReadLengthZero(bool forceManaged)
+    public void LengthOptional_NullAndEmptyBias_ReadsZeroLength(bool forceManaged)
     {
         var o = new[] { -1, -1 };
         Run(forceManaged, () => OptionalArrayKernels.LaunchLengthOptionalKernel(o, null));
@@ -176,7 +176,7 @@ public class OptionalArrayTests : TranspilerTestBase
     [SkippableTheory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Test_WriteOptionalKernels_NullAndValue_AgreeOnEveryPath(bool forceManaged)
+    public void WriteOptional_NullAndValueInputs_ProducesAgreedOutputs(bool forceManaged)
     {
         var o = new[] { -1 };
         Run(forceManaged, () => OptionalArrayKernels.LaunchOutOptionalKernel(null, o));

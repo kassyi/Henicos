@@ -22,4 +22,10 @@ internal sealed class IrPropertyReference(IrExpression? receiver, IPropertySymbo
 
     /// <summary>The indexer arguments in parameter order; empty for a property.</summary>
     public ImmutableArray<IrArgument> Arguments { get; } = arguments;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrPropertyReference Update(IrExpression? receiver, ImmutableArray<IrArgument> arguments) =>
+        receiver == Receiver && arguments == Arguments
+            ? this
+            : new IrPropertyReference(receiver, Property, arguments, Category, ConstantValue, Source);
 }

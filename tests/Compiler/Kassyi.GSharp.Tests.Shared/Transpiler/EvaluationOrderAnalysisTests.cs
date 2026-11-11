@@ -29,7 +29,8 @@ public class EvaluationOrderAnalysisTests
     [InlineData("CapturedAlias", 1)]
     [InlineData("RefReturnAlias", 1)]
     [InlineData("MutatingStructGetterRead", 1)]
-    public void Test_LastSpilledOperand_InterferingOperands_IsTheLastOneThatInterferes(string method, int expected) =>
+    [InlineData("FieldThenWrite", 1)]
+    public void LastSpilledOperand_InterferingOperands_IsTheLastOneThatInterferes(string method, int expected) =>
         Assert.Equal(expected, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 
     [Theory]
@@ -44,14 +45,14 @@ public class EvaluationOrderAnalysisTests
     [InlineData("ArrayLengthAndElement")]
     [InlineData("StructPureGetterAndConstant")]
     [InlineData("PureStructGetterRead")]
-    public void Test_LastSpilledOperand_IndependentOperands_IsNone(string method) =>
+    public void LastSpilledOperand_IndependentOperands_IsNone(string method) =>
         Assert.Equal(-1, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Constant")]
     [InlineData("ThreadIndexRead")]
-    public void Test_Of_ConstantsAndIntrinsics_AreEmpty(string method)
+    public void EffectsOf_ConstantsAndIntrinsics_AreEmpty(string method)
     {
         var effects = GetEffects(method);
 
@@ -60,7 +61,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Of_LocalRead_ReadsTheLocal()
+    public void EffectsOf_LocalRead_ReadsTheLocal()
     {
         var (effects, i) = GetEffects("LocalRead", "i");
 
@@ -71,7 +72,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Of_Increment_ReadsAndWritesTheLocal()
+    public void EffectsOf_Increment_ReadsAndWritesTheLocal()
     {
         var (effects, i) = GetEffects("Increment", "i");
 
@@ -82,7 +83,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Of_ElementRead_ReadsMemoryAndTheIndex()
+    public void EffectsOf_ElementRead_ReadsMemoryAndTheIndex()
     {
         var (effects, i) = GetEffects("ElementRead", "i");
 
@@ -93,7 +94,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Of_CallWithRefArgument_ReadsAndWritesTheArgument()
+    public void EffectsOf_CallWithRefArgument_ReadsAndWritesTheArgument()
     {
         var (effects, i) = GetEffects("RefCall", "i");
 
@@ -109,7 +110,7 @@ public class EvaluationOrderAnalysisTests
     [InlineData("RefLocalRead")]
     [InlineData("SharedMemoryRead")]
     [InlineData("PointerRead")]
-    public void Test_Of_ReadThroughAnotherName_ReadsMemory(string method)
+    public void EffectsOf_ReadThroughAnotherName_ReadsMemory(string method)
     {
         var effects = GetEffects(method);
 
@@ -120,7 +121,7 @@ public class EvaluationOrderAnalysisTests
     // Roslyn reuses the syntax tree of an unchanged file in the next compilation, with new symbols
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LastSpilledOperand_AliasInASecondCompilationOfTheSameTree_IsStillFound()
+    public void LastSpilledOperand_AliasInSecondCompilationOfSameTree_IsStillFound()
     {
         var options = (CSharpParseOptions)s_compilation.SyntaxTrees.First().Options;
         var second = s_compilation.AddSyntaxTrees(
@@ -134,7 +135,7 @@ public class EvaluationOrderAnalysisTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("ExplicitConversion")]
     [InlineData("ImplicitConversion")]
-    public void Test_Of_UserDefinedConversion_WritesWhatTheOperatorWrites(string method)
+    public void EffectsOf_UserDefinedConversion_WritesWhatTheOperatorWrites(string method)
     {
         var effects = GetEffects(method);
 
@@ -144,7 +145,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Of_FieldOfThis_ReadsMemory()
+    public void EffectsOf_FieldOfThis_ReadsMemory()
     {
         var effects = GetEffects("ThisFieldRead");
 
@@ -152,9 +153,24 @@ public class EvaluationOrderAnalysisTests
         Assert.True(effects.Writes.IsEmpty);
     }
 
+    // The field keyword reads the backing field of the property, a field of this, as the implicit this field read of
+    // ThisFieldRead does
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void EffectsOf_FieldKeyword_ReadsMemoryAsAFieldOfThis()
+    {
+        var effects = GetEffects("FieldRead");
+        var thisField = GetEffects("ThisFieldRead");
+
+        Assert.True(effects.Reads.Memory);
+        Assert.True(effects.Writes.IsEmpty);
+        Assert.Equal(thisField.Reads.Memory, effects.Reads.Memory);
+        Assert.Equal(thisField.Writes.IsEmpty, effects.Writes.IsEmpty);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Of_FieldOfStructLocal_ReadsTheLocal()
+    public void EffectsOf_FieldOfStructLocal_ReadsTheLocal()
     {
         var (effects, pair) = GetEffects("StructLocalFieldRead", "pair");
 
@@ -164,7 +180,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Of_OutVarArgument_WritesTheDeclaredLocal()
+    public void EffectsOf_OutVarArgument_WritesTheDeclaredLocal()
     {
         var (effects, y) = GetEffects("OutVarArgument", "y");
 
@@ -174,7 +190,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Of_WithExpression_WritesOnlyTheCopy()
+    public void EffectsOf_WithExpression_WritesOnlyTheCopy()
     {
         var (effects, pair) = GetEffects("WithExpression", "pair");
 
@@ -186,7 +202,7 @@ public class EvaluationOrderAnalysisTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("MemoryCall", true)]
     [InlineData("PureCall", false)]
-    public void Test_Of_Call_WritesWhatTheCalleeWrites(string method, bool writesMemory)
+    public void EffectsOf_Call_WritesWhatTheCalleeWrites(string method, bool writesMemory)
     {
         var effects = GetEffects(method);
 
@@ -196,7 +212,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Of_RefParameterRead_ReadsMemory()
+    public void EffectsOf_RefParameterRead_ReadsMemory()
     {
         var effects = GetEffects("RefParameterRead");
 
@@ -206,7 +222,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Of_Conditional_IsTheUnionOfItsOperands()
+    public void EffectsOf_Conditional_IsUnionOfItsOperands()
     {
         var (effects, i) = GetEffects("ConditionalUnion", "i");
 
@@ -216,7 +232,7 @@ public class EvaluationOrderAnalysisTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_Of_LocalFunctionCall_MayTouchEveryLocal()
+    public void EffectsOf_LocalFunctionCall_MayTouchEveryLocal()
     {
         var effects = GetEffects("LocalFunctionCall");
 
@@ -270,10 +286,15 @@ public class EvaluationOrderAnalysisTests
     {
         var tree = compilation.SyntaxTrees.First(t => t.ToString().Contains("namespace OrderCases"));
         var model = compilation.GetSemanticModel(tree);
+        // A case is a method, or a property whose getter holds the case (the field keyword is only in accessors)
         var declaration = tree.GetRoot()
             .DescendantNodes()
-            .OfType<MethodDeclarationSyntax>()
-            .First(m => m.Identifier.ValueText == method);
+            .First(n => n switch
+            {
+                MethodDeclarationSyntax m => m.Identifier.ValueText == method,
+                PropertyDeclarationSyntax p => p.Identifier.ValueText == method,
+                _ => false
+            });
         var result = declaration.DescendantNodes()
             .OfType<VariableDeclaratorSyntax>()
             .Last(v => v.Identifier.ValueText == "result");

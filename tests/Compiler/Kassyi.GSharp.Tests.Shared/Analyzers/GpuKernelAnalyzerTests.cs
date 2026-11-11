@@ -14,7 +14,10 @@ public class GpuKernelAnalyzerTests
     [InlineData("SYN-68", "Analyzers/UnsupportedMathMethod.cs", "GSH0003")]
     [InlineData("SYN-155", "Analyzers/UnsupportedBitOperationsMethod.cs", "GSH0003")]
     [InlineData("GSH-36", "Analyzers/KernelClassMustBePartial_SadPath.cs", "GSH0036")]
-    public async Task Test_GpuKernelAnalyzer_ReportsExpectedError(string featureId, string testCasePath, string expectedErrorId)
+    public async Task GpuKernelAnalyzer_KernelWithErrorConstruct_ReportsTheGivenDiagnostic(
+        string featureId,
+        string testCasePath,
+        string expectedErrorId)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsErrorsAsync(expectedErrorId);
@@ -31,7 +34,10 @@ public class GpuKernelAnalyzerTests
     [InlineData("GSH-32-Sad", "Analyzers/UnrollStaticDeterminism_SadPath.cs", new[] { "GSH0032", "GSH0032", "GSH0032", "GSH0033", "GSH0033" })]
     [InlineData("GSH-30", "Analyzers/SyncGridCooperativeSadPath.cs", new[] { "GSH0030", "GSH0030", "GSH0030", "GSH0030", "GSH0030", "GSH0030", "GSH0030", "GSH0030" })]
     [InlineData("GSH-34-Sad", "Analyzers/ParamsProhibited_SadPath.cs", new[] { "GSH0034", "GSH0034" })]
-    public async Task Test_GpuKernelAnalyzer_ReportsMultipleExpectedDiagnostics(string featureId, string testCasePath, string[] expectedDiagnosticIds)
+    public async Task GpuKernelAnalyzer_KernelWithMultipleDiagnostics_ReportsMultipleExpectedDiagnostics(
+        string featureId,
+        string testCasePath,
+        string[] expectedDiagnosticIds)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsDiagnosticsAsync(expectedDiagnosticIds);
@@ -42,7 +48,7 @@ public class GpuKernelAnalyzerTests
     [InlineData("GSH-00", "Analyzers/GpuKernel/ValidSyntax_InGpuKernel.cu.cs")]
     [InlineData("GSH-32-Happy", "Analyzers/UnrollStaticDeterminism_HappyPath.cs")]
     [InlineData("GSH-34-Happy", "Analyzers/ParamsProhibited_HappyPath.cs")]
-    public async Task Test_GpuKernelAnalyzer_HasNoErrors(string featureId, string testCasePath)
+    public async Task GpuKernelAnalyzer_ValidKernelConstruct_HasNoErrors(string featureId, string testCasePath)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
                                .HasNoErrorsAsync();
@@ -50,7 +56,7 @@ public class GpuKernelAnalyzerTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UserDefinedGpuMacros_AreNotValidatedAsGpuMacros()
+    public async Task UserDefinedGpuMacros_CustomMacroMethods_AreNotValidatedAsGpuMacros()
     {
         var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/GpuKernel/LookalikeGpuMacros_InGpuKernel.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
@@ -64,7 +70,7 @@ public class GpuKernelAnalyzerTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_EnclosingTypesMustBePartial_ReportsGsh0036AtIdentifierSpan()
+    public async Task EnclosingTypesMustBePartial_NonPartialOuterTypes_ReportsGSH0036AtIdentifierSpan()
     {
         const string ExpectedMessageFormat =
             "The type '{0}' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.";
@@ -98,7 +104,7 @@ public class GpuKernelAnalyzerTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_TranspilerFailureCheck_NoDepthLimit_ReportsOnlyTheOtherDiagnosticWithoutThrowingAD0001()
+    public async Task TranspilerFailureCheck_NoDepthLimit_ReportsOnlyOtherDiagnosticWithoutThrowingAD0001()
     {
         var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/IteratorInlineDepth_SadPath.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
@@ -130,7 +136,7 @@ public class GpuKernelAnalyzerTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SupportedDiagnostics_CoversAllDefinedDiagnostics()
+    public void SupportedDiagnostics_DefinedDiagnosticDescriptors_CoversAllDefinedDiagnostics()
     {
         var supportedIds = s_analyzer.SupportedDiagnostics
             .Select(static d => d.Id)

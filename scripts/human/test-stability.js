@@ -2,7 +2,9 @@
 // Runs the test suite repeatedly to detect flaky tests (`just test-stability`).
 // Builds once, then runs `dotnet test --no-build` per iteration with a TEST_SEED of its own (the input seed of the
 // tests); the extra arguments go to `dotnet test` only, not to the build.
-// Writes one log per iteration and summary.json under TestResults/<os>/<time>/.
+// Writes one log per iteration and summary.json under TestResults/<os>/<time>/. On Windows the summary also holds the
+// kernel pools and the nvlddmkm Event 153 entries before and after the run (gpu-fault-watch.js): the kernel pools
+// grew after GPU faults and were freed only by a reboot.
 //
 // Usage:
 //   node scripts/human/test-stability.js [--count <n|duration>] [--continue-on-error] [--no-shuffle]
@@ -14,6 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const faultWatch = require('./gpu-fault-watch.js');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 // Same names as GSharpHostOs in Directory.Build.props.
@@ -179,8 +182,35 @@ function writeSummary(ctx) {
         failed: failed.length,
         totalElapsedSeconds: Math.round((Date.now() - ctx.start) / 10) / 100,
         failedIterations: failed,
+        kernelPools: poolSummary(ctx),
     };
     fs.writeFileSync(path.join(repoRoot, ctx.resultDir, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
+}
+
+// The pools before the first iteration and, once the run has ended, after the last one.
+function poolSummary(ctx) {
+    const { poolsBefore, poolsAfter } = ctx;
+    if (!poolsBefore.supported) { return { supported: false }; }
+    const summary = { before: poolsBefore, after: poolsAfter };
+    if (poolsAfter !== null) {
+        const comparison = faultWatch.compare(poolsBefore, poolsAfter);
+        summary.growthMB = comparison.growthBytes === null ? null : Math.round(comparison.growthBytes / (1024 * 1024));
+        summary.event153Entries = comparison.event153Entries;
+        summary.warning = comparison.warn ? faultWatch.warningText(comparison) : null;
+    }
+    if (faultWatch.isNonpagedHigh(poolsBefore)) { summary.startWarning = faultWatch.startWarningText(poolsBefore); }
+    return summary;
+}
+
+// Reads the pools after the run, warns when they grew past the thresholds, and writes the final summary.
+function finish(ctx) {
+    ctx.poolsAfter = faultWatch.measure({ slowFallback: true });
+    if (ctx.poolsAfter.supported) {
+        console.log(faultWatch.describe(ctx.poolsAfter));
+        const comparison = faultWatch.compare(ctx.poolsBefore, ctx.poolsAfter);
+        if (comparison.warn) { console.log(color(33, `WARNING: ${faultWatch.warningText(comparison)}`)); }
+    }
+    writeSummary(ctx);
 }
 
 function recordFailure(ctx, i, result) {
@@ -226,7 +256,14 @@ function main() {
     const build = spawnSync('dotnet', ['build'], { cwd: repoRoot, env, stdio: 'inherit' });
     if (build.status !== 0) { return build.status || 1; }
 
+    const poolsBefore = faultWatch.measure({ slowFallback: true });
+    if (poolsBefore.supported) { console.log(faultWatch.describe(poolsBefore)); }
+    if (faultWatch.isNonpagedHigh(poolsBefore)) {
+        console.log(color(33, `WARNING: ${faultWatch.startWarningText(poolsBefore)}`));
+    }
     const ctx = { opts, target, env, noCuda, ts, resultDir, failed: [], executed: 0, start: Date.now() };
+    ctx.poolsBefore = poolsBefore;
+    ctx.poolsAfter = null;
     for (let i = 1; ; i++) {
         const elapsed = (Date.now() - ctx.start) / 1000;
         if (!target.timeMode && i > target.maxCount) { break; }
@@ -239,11 +276,14 @@ function main() {
             continue;
         }
         recordFailure(ctx, i, result);
-        if (!opts.continueOnError) { return result.status; }
+        if (!opts.continueOnError) {
+            finish(ctx);
+            return result.status;
+        }
         console.log(color(33, 'Continuing to next iteration (--continue-on-error is set)...'));
     }
 
-    writeSummary(ctx);
+    finish(ctx);
     return printTotal(ctx);
 }
 

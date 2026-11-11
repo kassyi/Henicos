@@ -143,6 +143,104 @@ public class StructAbiMembersTests
         Assert.Equal([("A", StructAbiMemberKind.Field)], ListMembers(withAccessors));
     }
 
+    // A property with a backing field and an accessor of its own that uses the field keyword is field-backed: it is
+    // listed through its backing field like an auto-property, and its accessors are member functions. A partial
+    // property always has bodies, so it is field-backed even when it behaves like an auto-property; the accessors then
+    // read and write the same storage (the differential test compares it with an auto-property)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Get_FieldKeywordProperties_ListsThemAsFieldBackedWithTheirBackingField()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext("Layout/FieldKeywordPropertyCases.cs");
+        var declaration = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<StructDeclarationSyntax>()
+            .First();
+        var structType = Assert.IsAssignableFrom<INamedTypeSymbol>(model.GetDeclaredSymbol(declaration));
+
+        AssertFieldKeywordLayout(structType);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Get_PositionalRecordProperties_ListsThemAsAutoPropertiesUnlessRedeclared()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext("Layout/FieldKeywordPropertyCases.cs");
+        var declaration = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<RecordDeclarationSyntax>()
+            .First();
+        var structType = Assert.IsAssignableFrom<INamedTypeSymbol>(model.GetDeclaredSymbol(declaration));
+
+        Assert.Equal(
+            [("X", StructAbiMemberKind.AutoProperty), ("Y", StructAbiMemberKind.FieldBackedProperty)],
+            ListMembers(structType));
+    }
+
+    // From metadata, the C# compiler marks only the accessors it implements [CompilerGenerated]
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Get_FieldKeywordPropertiesFromMetadata_ListsThemAsFieldBacked()
+    {
+        var library = DeviceLibraryBuilder.Build(
+            "FieldKeywordLib",
+            null,
+            RoslynTestUtility.ReadTestCase("Layout/FieldKeywordPropertyCases.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer("class Consumer { }", library);
+        var structType = consumer.GetTypeByMetadataName(
+            "Kassyi.GSharp.Tests.Shared.TestCases.Layout.FieldKeywordLayout"
+        );
+
+        Assert.NotNull(structType);
+        Assert.True(structType.DeclaringSyntaxReferences.IsEmpty);
+        AssertFieldKeywordLayout(structType);
+    }
+
+    private static void AssertFieldKeywordLayout(INamedTypeSymbol structType)
+    {
+        const StructAbiMemberKind FieldBacked = StructAbiMemberKind.FieldBackedProperty;
+        Assert.Equal(
+            [
+                ("A", StructAbiMemberKind.Field),
+                ("Auto", StructAbiMemberKind.AutoProperty),
+                ("AutoInit", StructAbiMemberKind.AutoProperty),
+                ("SetterOnly", FieldBacked),
+                ("GetterOnly", FieldBacked),
+                ("Both", FieldBacked),
+                ("InitOnly", FieldBacked),
+                ("ReadOnly", FieldBacked),
+                ("Partial", FieldBacked),
+            ],
+            ListMembers(structType));
+
+        foreach (var member in StructAbiMembers.Get(structType))
+        {
+            if (member.Kind != FieldBacked)
+            {
+                continue;
+            }
+
+            var property = Assert.IsAssignableFrom<IPropertySymbol>(member.Symbol);
+            var storage = Assert.IsAssignableFrom<IFieldSymbol>(member.StorageField);
+            // From metadata, Roslyn does not link the backing field to its property; it is found by its name
+            Assert.True(StructAbiMembers.TryGetBackingFieldProperty(storage, out var owner), member.Name);
+            Assert.True(SymbolEqualityComparer.Default.Equals(property, owner), member.Name);
+            Assert.True(StructAbiMembers.IsFieldBackedProperty(property), member.Name);
+            Assert.True(StructAbiMembers.HasAccessorFunctions(property), member.Name);
+            Assert.False(StructAbiMembers.IsAutoProperty(property), member.Name);
+        }
+
+        var auto = structType.GetMembers("Auto").OfType<IPropertySymbol>().Single();
+        Assert.True(StructAbiMembers.IsAutoProperty(auto));
+        Assert.False(StructAbiMembers.HasAccessorFunctions(auto));
+        Assert.False(StructAbiMembers.IsFieldBackedProperty(auto));
+
+        var computed = structType.GetMembers("Computed").OfType<IPropertySymbol>().Single();
+        Assert.True(StructAbiMembers.HasAccessorFunctions(computed));
+        Assert.False(StructAbiMembers.IsFieldBackedProperty(computed));
+        Assert.False(StructAbiMembers.IsAutoProperty(computed));
+    }
+
     private static List<(string, StructAbiMemberKind)> ListMembers(INamedTypeSymbol structType)
     {
         var members = new List<(string, StructAbiMemberKind)>();

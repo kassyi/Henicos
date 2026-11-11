@@ -22,6 +22,7 @@ internal static partial class GSharpInternalNames
         public const string IdentifierPrefix = GSharpNameEncoding.IdentifierPrefix;
         public const string InlinedIdentifierPrefix = GSharpNameEncoding.InlinedIdentifierPrefix;
         public const string MemberPrefix = GSharpNameEncoding.MemberPrefix;
+        public const string BackingFieldPrefix = GSharpNameEncoding.BackingFieldPrefix;
     }
 
     internal static partial class StateMachine

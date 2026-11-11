@@ -8,7 +8,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestSimpleWhereSelectSum()
+    public void Execute_SimpleWhereSelectSum_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -22,7 +22,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestMultipleWhere()
+    public void Execute_MultipleWhereFilters_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -36,7 +36,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestMultipleSelect()
+    public void Execute_MultipleSelectProjections_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -50,7 +50,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestHellPattern()
+    public void Execute_ComplexChainedPipeline_MatchesReference()
     {
         int[] data = Enumerable.Range(1, 100).ToArray();
         int[] result = [0];
@@ -76,7 +76,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestCount()
+    public void Execute_CountPredicate_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -87,7 +87,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestAny()
+    public void Execute_AnyPredicate_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -98,7 +98,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestAll()
+    public void Execute_AllPredicate_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -109,7 +109,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestFirst()
+    public void Execute_FirstPredicate_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -120,7 +120,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestFirstOrDefault()
+    public void Execute_FirstOrDefaultPredicate_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -131,7 +131,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestLast()
+    public void Execute_LastPredicate_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -142,7 +142,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestLastOrDefault()
+    public void Execute_LastOrDefaultPredicate_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -153,7 +153,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestMax()
+    public void Execute_Max_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -164,7 +164,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestMin()
+    public void Execute_Min_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -175,7 +175,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestAverage()
+    public void Execute_Average_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -186,7 +186,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestAggregate()
+    public void Execute_AggregateCustomAccumulator_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -197,7 +197,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestContains()
+    public void Execute_ContainsValue_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -208,7 +208,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestTake()
+    public void Execute_TakeCount_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -219,7 +219,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestSkip()
+    public void Execute_SkipCount_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -230,7 +230,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestTakeWhile()
+    public void Execute_TakeWhilePredicate_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -241,7 +241,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestSkipWhile()
+    public void Execute_SkipWhilePredicate_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -252,7 +252,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestTakeLast()
+    public void Execute_TakeLastCount_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];
@@ -263,7 +263,7 @@ public class StackLinqFusionExecutionTests
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void TestSkipLast()
+    public void Execute_SkipLastCount_MatchesReference()
     {
         int[] data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         int[] result = [0];

@@ -156,7 +156,7 @@ internal static class StructConversionEmitter
             {
                 if (hasFirstMember)
                 {
-                    var name = StructMemberEmitter.GetMemberName(firstMember.Symbol, ref context);
+                    var name = StructMemberEmitter.GetMemberName(firstMember, ref context);
                     context.Emitter.Writer.AppendLine($"this->{name} = v;");
                 }
             }
@@ -172,7 +172,7 @@ internal static class StructConversionEmitter
         {
             if (hasFirstMember)
             {
-                var name = StructMemberEmitter.GetMemberName(firstMember.Symbol, ref context);
+                var name = StructMemberEmitter.GetMemberName(firstMember, ref context);
                 context.Emitter.Writer.Append($"return this->{name}");
                 context.Emitter.Writer.AppendLine(";");
             }

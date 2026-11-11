@@ -14,7 +14,7 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CrossBarrierLocals_ReportedOnlyWhenLiveAfterASplit()
+    public async Task CrossBarrierLocals_LiveAfterSplit_ReportedOnlyWhenLiveAfterSplit()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierFlowKernels.cu.cs", s_analyzer)
@@ -67,7 +67,7 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
     // argument changes stays in place, so the call reads it again when it resumes
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CrossBarrierSpilledArgument_SpanChangedByAnEarlierArgumentIsReported()
+    public async Task CrossBarrierSpilledArgument_SpanChangedByEarlierArgument_ReportsChangedSpan()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierSpilledArgumentKernels.cu.cs", s_analyzer)
@@ -93,7 +93,7 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
     // again when the state machine resumes, so a change made before a split point is lost (#965)
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CrossBarrierRefStructParameters_ReportedOnlyWhenChangedBeforeAndLiveAfterASplit()
+    public async Task CrossBarrierRefStructParameters_ChangedBeforeAndLiveAfterSplit_ReportsDiagnostics()
     {
         // The case binds: an invalid body builds no control flow graph and would report nothing
         var (compilation, _, _) = RoslynTestUtility.GetTestCaseContext("Analyzers/BarrierUsage/CrossBarrierRefStructParameterKernels.cu.cs");

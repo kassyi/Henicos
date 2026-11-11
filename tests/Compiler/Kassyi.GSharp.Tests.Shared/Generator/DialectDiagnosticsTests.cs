@@ -12,7 +12,7 @@ public class DialectDiagnosticsTests
     // reported once at the call: the device function's (line 11) and the kernel's, whose C++ output is lowered (line 18).
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CpuDialect_ReportsInlinePtxOncePerCall()
+    public async Task InlinePtx_CpuDialect_ReportsOncePerCall()
     {
         var diagnostics = await KernelDiagnostics.RunAsync(s_source, "Cpu");
 
@@ -26,7 +26,7 @@ public class DialectDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_CudaDialect_DoesNotReportTheCppDialectsFailures()
+    public async Task InlinePtx_CudaDialect_DoesNotReportCpuDialectFailures()
     {
         var diagnostics = await KernelDiagnostics.RunAsync(s_source, "Cuda");
 

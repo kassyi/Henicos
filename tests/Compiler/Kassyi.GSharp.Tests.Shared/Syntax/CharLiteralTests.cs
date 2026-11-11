@@ -7,7 +7,7 @@ public class CharLiteralTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CharLiteral_KeepsCharacterCode_Execution()
+    public void CharLiteral_DeviceExecution_KeepsCharacterCode()
     {
         int[] output = new int[10];
         char[] text = new char[2];

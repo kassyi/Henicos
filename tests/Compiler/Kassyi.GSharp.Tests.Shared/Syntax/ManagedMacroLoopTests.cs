@@ -23,171 +23,171 @@ public class ManagedMacroLoopTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ForUnrollSumKernel_SumsTheIterations() => AssertForUnrollSum();
+    public void ForUnroll_SumKernel_SumsTheIterations() => AssertForUnrollSum();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ForUnrollExpressionBodyKernel_SumsTheIterations() => AssertForUnrollExpressionBody();
+    public void ForUnroll_ExpressionBodyKernel_SumsTheIterations() => AssertForUnrollExpressionBody();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ForUnrollRefContextKernel_AccumulatesIntoTheContext() => AssertForUnrollRefContext();
+    public void ForUnroll_RefContextKernel_AccumulatesIntoContext() => AssertForUnrollRefContext();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GridStrideRefContextKernel_KeepsTheContextPerThread() => AssertGridStrideRefContext();
+    public void GridStride_RefContextPerThread_KeepsContextPerThread() => AssertGridStrideRefContext();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NestedForUnrollKernel_UsesEachLoopVariable() => AssertNestedForUnroll();
+    public void ForUnroll_NestedLoopVariables_UsesEachLoopVariable() => AssertNestedForUnroll();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ForUnrollAroundGridStrideKernel_RunsEveryRound() => AssertForUnrollAroundGridStride();
+    public void ForUnroll_AroundGridStrideKernel_RunsEveryRound() => AssertForUnrollAroundGridStride();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideAroundForUnrollKernel_UnrollsPerIndex() => AssertGridStrideAroundForUnroll();
+    public void GridStride_AroundForUnrollKernel_UnrollsPerIndex() => AssertGridStrideAroundForUnroll();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ForUnrollSameNameAsLocalKernel_KeepsTheLocal() => AssertForUnrollSameNameAsLocal();
+    public void ForUnroll_SameNameAsLocalKernel_KeepsLocal() => AssertForUnrollSameNameAsLocal();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ForUnrollCompoundStartKernel_RunsTheIterationsOfTheStart() => AssertForUnrollCompoundStart();
+    public void ForUnroll_CompoundStartKernel_RunsIterationsOfStart() => AssertForUnrollCompoundStart();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BarrierRefContextForUnrollKernel_AccumulatesIntoTheLiftedContext() =>
+    public void BarrierRefContext_ForUnrollKernel_AccumulatesIntoLiftedContext() =>
         AssertBarrierRefContextForUnroll();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ForUnrollSharedMemoryKernel_DeclaresSharedMemoryInTheBody() => AssertForUnrollSharedMemory();
+    public void ForUnroll_SharedMemoryKernel_DeclaresSharedMemoryInBody() => AssertForUnrollSharedMemory();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceForUnrollKernel_SumsInTheDeviceFunction() => AssertDeviceForUnroll();
+    public void DeviceForUnroll_SumKernel_SumsInDeviceFunction() => AssertDeviceForUnroll();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceForUnrollContextKernel_AccumulatesInTheDeviceFunction() => AssertDeviceForUnrollContext();
+    public void DeviceForUnroll_ContextKernel_AccumulatesInDeviceFunction() => AssertDeviceForUnrollContext();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceGridStrideKernel_FillsInTheDeviceFunction() => AssertDeviceGridStride();
+    public void DeviceGridStride_FillKernel_FillsInDeviceFunction() => AssertDeviceGridStride();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceGridStrideContextKernel_KeepsTheContextInTheDeviceFunction() =>
+    public void DeviceGridStride_ContextKernel_KeepsContextInDeviceFunction() =>
         AssertDeviceGridStrideContext();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideSameNameAsLocalKernel_KeepsTheLocal() => AssertGridStrideSameNameAsLocal();
+    public void GridStride_SameNameAsLocalKernel_KeepsLocal() => AssertGridStrideSameNameAsLocal();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideContextSameNameAsLocalKernel_KeepsTheLocal() =>
+    public void GridStride_ContextSameNameAsLocalKernel_KeepsLocal() =>
         AssertGridStrideContextSameNameAsLocal();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideVisitCountKernel_VisitsEveryElementOnceOverTheGrid() =>
+    public void GridStride_VisitCountKernel_VisitsEveryElementOnceOverGrid() =>
         AssertVisitsOnce(LaunchGridStrideVisitCount);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeviceGridStrideVisitCountKernel_VisitsEveryElementOnceOverTheGrid() =>
+    public void DeviceGridStride_VisitCountKernel_VisitsEveryElementOnceOverGrid() =>
         AssertVisitsOnce(LaunchDeviceGridStrideVisitCount);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideRefContextKernel_StepsByTheWholeGrid() =>
+    public void GridStride_RefContextStepping_StepsByWholeGrid() =>
         AssertRunningSumOverTheGrid(LaunchGridStrideRefContext);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DeviceGridStrideContextKernel_StepsByTheWholeGrid() =>
+    public void DeviceGridStride_ContextStepping_StepsByWholeGrid() =>
         AssertRunningSumOverTheGrid(LaunchDeviceGridStrideContext);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ForUnrollNearIntMaxKernel_RunsNoIteration() => AssertForUnrollNearIntMax();
+    public void ForUnroll_NearIntMaxKernel_RunsNoIteration() => AssertForUnrollNearIntMax();
 
 #if GSHARP_CPU
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ForUnrollSumKernel_SumsTheIterations() => RunManaged(AssertForUnrollSum);
+    public void ForUnroll_ManagedSumKernel_SumsTheIterations() => RunManaged(AssertForUnrollSum);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ForUnrollExpressionBodyKernel_SumsTheIterations() =>
+    public void ForUnroll_ManagedExpressionBodyKernel_SumsTheIterations() =>
         RunManaged(AssertForUnrollExpressionBody);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ForUnrollRefContextKernel_AccumulatesIntoTheContext() =>
+    public void ForUnroll_ManagedRefContextKernel_AccumulatesIntoContext() =>
         RunManaged(AssertForUnrollRefContext);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_GridStrideRefContextKernel_KeepsTheContextPerThread() =>
+    public void GridStride_ManagedRefContextPerThread_KeepsContextPerThread() =>
         RunManaged(AssertGridStrideRefContext);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_NestedForUnrollKernel_UsesEachLoopVariable() => RunManaged(AssertNestedForUnroll);
+    public void ForUnroll_ManagedNestedLoopVariables_UsesEachLoopVariable() => RunManaged(AssertNestedForUnroll);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ForUnrollAroundGridStrideKernel_RunsEveryRound() =>
+    public void ForUnroll_ManagedAroundGridStrideKernel_RunsEveryRound() =>
         RunManaged(AssertForUnrollAroundGridStride);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GridStrideAroundForUnrollKernel_UnrollsPerIndex() =>
+    public void GridStride_ManagedAroundForUnrollKernel_UnrollsPerIndex() =>
         RunManaged(AssertGridStrideAroundForUnroll);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ForUnrollSameNameAsLocalKernel_KeepsTheLocal() =>
+    public void ForUnroll_ManagedSameNameAsLocalKernel_KeepsLocal() =>
         RunManaged(AssertForUnrollSameNameAsLocal);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_BarrierForUnrollWithInnerForUnroll_ComputesBothLoops() =>
+    public void BarrierForUnroll_ManagedWithInnerForUnroll_ComputesBothLoops() =>
         RunManaged(static () =>
         {
             int[] buffer = new int[BlockSize];
@@ -203,84 +203,84 @@ public class ManagedMacroLoopTests : TranspilerTestBase
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ForUnrollCompoundStartKernel_RunsTheIterationsOfTheStart() =>
+    public void ForUnroll_ManagedCompoundStartKernel_RunsIterationsOfStart() =>
         RunManaged(AssertForUnrollCompoundStart);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_BarrierRefContextForUnrollKernel_AccumulatesIntoTheLiftedContext() =>
+    public void BarrierRefContext_ManagedForUnrollKernel_AccumulatesIntoLiftedContext() =>
         RunManaged(AssertBarrierRefContextForUnroll);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ForUnrollSharedMemoryKernel_DeclaresSharedMemoryInTheBody() =>
+    public void ForUnroll_ManagedSharedMemoryKernel_DeclaresSharedMemoryInBody() =>
         RunManaged(AssertForUnrollSharedMemory);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_DeviceForUnrollKernel_SumsInTheDeviceFunction() => RunManaged(AssertDeviceForUnroll);
+    public void DeviceForUnroll_ManagedSumKernel_SumsInDeviceFunction() => RunManaged(AssertDeviceForUnroll);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_DeviceForUnrollContextKernel_AccumulatesInTheDeviceFunction() =>
+    public void DeviceForUnroll_ManagedContextKernel_AccumulatesInDeviceFunction() =>
         RunManaged(AssertDeviceForUnrollContext);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_DeviceGridStrideKernel_FillsInTheDeviceFunction() =>
+    public void DeviceGridStride_ManagedFillKernel_FillsInDeviceFunction() =>
         RunManaged(AssertDeviceGridStride);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_DeviceGridStrideContextKernel_KeepsTheContextInTheDeviceFunction() =>
+    public void DeviceGridStride_ManagedContextKernel_KeepsContextInDeviceFunction() =>
         RunManaged(AssertDeviceGridStrideContext);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GridStrideSameNameAsLocalKernel_KeepsTheLocal() =>
+    public void GridStride_ManagedSameNameAsLocalKernel_KeepsLocal() =>
         RunManaged(AssertGridStrideSameNameAsLocal);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GridStrideContextSameNameAsLocalKernel_KeepsTheLocal() =>
+    public void GridStride_ManagedContextSameNameAsLocalKernel_KeepsLocal() =>
         RunManaged(AssertGridStrideContextSameNameAsLocal);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GridStrideVisitCountKernel_VisitsEveryElementOnceOverTheGrid() =>
+    public void GridStride_ManagedVisitCountKernel_VisitsEveryElementOnceOverGrid() =>
         RunManaged(static () => AssertVisitsOnce(LaunchGridStrideVisitCount));
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_DeviceGridStrideVisitCountKernel_VisitsEveryElementOnceOverTheGrid() =>
+    public void DeviceGridStride_ManagedVisitCountKernel_VisitsEveryElementOnceOverGrid() =>
         RunManaged(static () => AssertVisitsOnce(LaunchDeviceGridStrideVisitCount));
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_GridStrideRefContextKernel_StepsByTheWholeGrid() =>
+    public void GridStride_ManagedRefContextStepping_StepsByWholeGrid() =>
         RunManaged(static () => AssertRunningSumOverTheGrid(LaunchGridStrideRefContext));
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_DeviceGridStrideContextKernel_StepsByTheWholeGrid() =>
+    public void DeviceGridStride_ManagedContextStepping_StepsByWholeGrid() =>
         RunManaged(static () => AssertRunningSumOverTheGrid(LaunchDeviceGridStrideContext));
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ForUnrollNearIntMaxKernel_RunsNoIteration() => RunManaged(AssertForUnrollNearIntMax);
+    public void ForUnroll_ManagedNearIntMaxKernel_RunsNoIteration() => RunManaged(AssertForUnrollNearIntMax);
 
     private static void RunManaged(Action run)
     {

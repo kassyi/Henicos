@@ -12,7 +12,7 @@ public class WarpShuffleAnalyzerTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_95_HostCallToShuffleDownSync_ReportsExpectedError()
+    public async Task ShuffleDownSync_HostCallToShuffleDownSync_ReportsHostIntrinsicCallError()
     {
         // Asserting diagnostic error for host-side intrinsic use
         // Replace with actual analyzer if HostIntrinsicAnalyzer doesn't exist
@@ -22,7 +22,7 @@ public class WarpShuffleAnalyzerTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_95_GpuCallToShuffleDownSync_ReportsNoError()
+    public async Task ShuffleDownSync_GpuCallFromDevice_ProducesNoError()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/WarpShuffleHappyPath.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();
@@ -30,7 +30,7 @@ public class WarpShuffleAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_IntrinsicInLambdaNestedInGpuFunction_ReportsNoError()
+    public async Task HostIntrinsic_NestedLambdaInDeviceFunction_ProducesNoError()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/HostIntrinsicNestedHappyPath.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();

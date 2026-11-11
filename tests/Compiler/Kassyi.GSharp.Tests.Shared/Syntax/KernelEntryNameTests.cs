@@ -18,7 +18,7 @@ public class KernelEntryNameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_EntryPointsWithUnderscoreAcrossTypeAndMethod_AreDistinct()
+    public void Launch_EntryPointsWithUnderscoreAcrossTypeAndMethod_KeepsEntryPointsDistinct()
     {
         var first = new int[ThreadCount];
         var second = new int[ThreadCount];
@@ -36,7 +36,7 @@ public class KernelEntryNameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SameNamedKernelClassesInDifferentNamespaces_AreDistinct()
+    public void Launch_SameNamedKernelClassesInDifferentNamespaces_KeepsNamespacesDistinct()
     {
         var first = new int[ThreadCount];
         var second = new int[ThreadCount];
@@ -54,7 +54,7 @@ public class KernelEntryNameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OverloadedKernels_RunTheOverloadThatCsharpSelects()
+    public void Launch_OverloadedKernelsWithArrayBuffers_RunsSelectedOverload()
     {
         var ints = new int[ThreadCount];
         var floats = new float[ThreadCount];
@@ -73,7 +73,7 @@ public class KernelEntryNameTests : TranspilerTestBase
     [SkippableFact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OverloadedKernels_TypedPtrWrappers_RunTheOverloadThatCsharpSelects()
+    public void Launch_OverloadedKernelsWithTypedPtrWrappers_RunsSelectedOverload()
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();

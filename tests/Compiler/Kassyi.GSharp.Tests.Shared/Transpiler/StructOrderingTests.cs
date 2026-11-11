@@ -20,7 +20,7 @@ public class StructOrderingTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Unit)]
-    public void Test_TopologicallySortedStructs_EmptyStruct()
+    public void TopologicallySortedStructs_EmptyStruct_EmitsStructDeclaration()
     {
         var structSym = GetLocalTypeSymbol("EmptyStruct");
         var sorted = StructOrdering.GetTopologicallySortedStructs([structSym], GetLocalCompilation());
@@ -31,7 +31,7 @@ public class StructOrderingTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Unit)]
-    public void Test_TopologicallySortedStructs_DeepNesting()
+    public void TopologicallySortedStructs_DeepNesting_OrdersNestedStructsFirst()
     {
         var symA = GetLocalTypeSymbol("StructEdgeCases_StructA");
         var symB = GetLocalTypeSymbol("StructEdgeCases_StructB");
@@ -50,7 +50,7 @@ public class StructOrderingTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Unit)]
-    public void Test_TopologicallySortedStructs_ExcludesSystemTypes()
+    public void TopologicallySortedStructs_SystemTypes_ExcludesSystemTypes()
     {
         var structSym = GetLocalTypeSymbol(nameof(MyStruct));
         var sorted = StructOrdering.GetTopologicallySortedStructs([structSym], GetLocalCompilation());
@@ -63,7 +63,7 @@ public class StructOrderingTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TopologicallySortedStructs_PutsAStructCreatedInAConstructorFirst()
+    public void TopologicallySortedStructs_StructInstantiatedInConstructor_PutsInstantiatedStructFirst()
     {
         var outer = GetLocalTypeSymbol("StructBodyEdge_Outer");
         var inner = GetLocalTypeSymbol("StructBodyEdge_Inner");
@@ -77,7 +77,7 @@ public class StructOrderingTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StructBodyDependencies_ListsTheStructsOfTheEmittedBodiesOnly()
+    public void StructBodyDependencies_EmittedBodies_ListsStructsOfEmittedBodiesOnly()
     {
         var outer = GetLocalTypeSymbol("StructBodyEdge_Outer");
 
@@ -92,7 +92,7 @@ public class StructOrderingTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_StructBodyDependencies_LeavesOutTypesNamedOnlyForConstantsStaticMembersAndNameof()
+    public void StructBodyDependencies_TypesNamedOnlyInStaticOrNameofContexts_LeavesOutTypes()
     {
         var user = GetLocalTypeSymbol("StructBodyEdge_NamesOnly");
 
@@ -106,7 +106,7 @@ public class StructOrderingTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructBodyDependencies_SubstitutesTheTypeArgumentsOfAGenericStruct()
+    public void StructBodyDependencies_GenericStructTypeArguments_SubstitutesTypeArguments()
     {
         var holder = GetLocalTypeSymbol("StructBodyEdge_Holder");
         var inner = GetLocalTypeSymbol("StructBodyEdge_Inner");

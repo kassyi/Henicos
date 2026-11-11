@@ -13,67 +13,69 @@ public class UserLabelTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LabeledShuffle_RunsAgainOnEveryGoto() => UserLabelScenarios.LabeledShuffleLoop(s_runNative);
+    public void LabeledShuffle_NativeLoopWithGoto_RunsAgainOnEveryGoto() =>
+        UserLabelScenarios.LabeledShuffleLoop(s_runNative);
 
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(3)]
     [InlineData(0)]
-    public void Test_LabelLoop_KeepsLocalsDeclaredBeforeTheLabel(int rounds) =>
+    public void LabelLoop_NativeVaryingRounds_KeepsLocalsDeclaredBeforeTheLabel(int rounds) =>
         UserLabelScenarios.LabelLoop(s_runNative, rounds);
 
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_BranchExitLabel_GotoFromLaterStateReachesLabel(int flag) =>
+    public void BranchExitLabel_NativeConditionalFlag_GotoFromLaterStateReachesLabel(int flag) =>
         UserLabelScenarios.BranchExitLabel(s_runNative, flag);
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_ChainedLabel_LabelSplitByAnotherSplitLabel(int flag) =>
+    public void ChainedLabel_NativeInterleavedSplitLabels_ExecutesInCorrectOrder(int flag) =>
         UserLabelScenarios.ChainedLabel(s_runNative, flag);
 
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_CrossLabelWrite_LocalUsedAfterSplitLabel(int flag) =>
+    public void CrossLabelWrite_NativeLocalUsedAfterSplitLabel_PreservesValueAcrossLabels(int flag) =>
         UserLabelScenarios.CrossLabelWrite(s_runNative, flag);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GotoPastInitialization_SkipsTheDeclarations() =>
+    public void GotoPastInitialization_NativeForwardJump_SkipsDeclarations() =>
         UserLabelScenarios.GotoPastInitialization(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GotoPastConstAndArrays_SkipsTheDeclarations() =>
+    public void GotoPastConstAndArrays_NativeForwardJump_SkipsDeclarations() =>
         UserLabelScenarios.GotoPastConstAndArrays(s_runNative);
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_SiblingSameLabel_SpanStaysLocal(int flag) => UserLabelScenarios.SiblingSameLabel(s_runNative, flag);
+    public void SiblingSameLabel_NativeConditionalBranches_SpanStaysLocal(int flag) =>
+        UserLabelScenarios.SiblingSameLabel(s_runNative, flag);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SameStateSameLabel_EachGotoReachesItsLabel() =>
+    public void SameStateSameLabel_NativeMultipleGotos_EachGotoReachesItsLabel() =>
         UserLabelScenarios.SameStateSameLabel(s_runNative);
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
-    public void Test_CrossLabelInitialized_LocalUsedAfterSplitLabel(int flag) =>
+    public void CrossLabelInitialized_NativeLocalUsedAfterSplitLabel_PreservesInitializedValue(int flag) =>
         UserLabelScenarios.CrossLabelInitialized(s_runNative, flag);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LabeledBarrier_SeparatesWritesFromReads()
+    public void LabeledBarrier_NativeSharedMemory_SeparatesWritesFromReads()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         UserLabelScenarios.LabeledBarrier(s_runNative);

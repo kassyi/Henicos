@@ -13,7 +13,7 @@ public class UnsupportedSyntaxKindDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CheckedAndUnchecked_ReportGsh0003AtTheNode(string dialect)
+    public async Task CheckedAndUnchecked_ExpressionsAndStatements_ReportsGsh0003AtNode(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
 
@@ -27,7 +27,7 @@ public class UnsupportedSyntaxKindDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UncheckedInsideAConstant_ReportsGsh0003AtTheNode(string dialect)
+    public async Task UncheckedInsideAConstant_ConstantContext_ReportsGsh0003AtNode(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
 
@@ -44,7 +44,10 @@ public class UnsupportedSyntaxKindDiagnosticsTests
     [InlineData("Cpu", "'ForEachVariableStatement'", 32, 9, 35, 10)]
     [InlineData("Cuda", "'ForEachVariableStatement'", 32, 9, 35, 10)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_SyntaxWithoutARule_ReportsGsh0003AtTheNode(string dialect, string kind, int startLine,
+    public async Task SyntaxWithoutARule_UnrecognizedSyntax_ReportsGsh0003AtNode(
+        string dialect,
+        string kind,
+        int startLine,
         int startColumn, int endLine, int endColumn)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxKinds.cu.cs", dialect);
@@ -60,7 +63,7 @@ public class UnsupportedSyntaxKindDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_NewerSyntaxKind_ReportsGsh0003FromTheAnalyzer(string dialect)
+    public async Task NewerSyntaxKind_UnsupportedLanguageFeature_ReportsGsh0003FromAnalyzer(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxKinds.cu.cs", dialect);
 

@@ -7,7 +7,7 @@ public class StructLayoutTests
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_StructLayout_IsMaintained_InGpuKernel()
+    public void StructLayout_ExecutionInGpuKernel_MaintainsExpectedLayout()
     {
         var data = new CustomLayoutStruct[1]
         {
@@ -27,7 +27,7 @@ public class StructLayoutTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_PackedInlineArray_IsMaintained_InGpuKernel()
+    public void PackedInlineArray_ExecutionInGpuKernel_MaintainsExpectedLayout()
     {
         var data = new StructWithPackedInlineArray[1];
         data[0] = new StructWithPackedInlineArray { A = 5, B = 10 };

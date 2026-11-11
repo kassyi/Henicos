@@ -237,56 +237,56 @@ public class StructDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructMutationAndCopySemantics_MatchesTheOracleOnEveryPath() =>
+    public void StructSemantics_MutationAndCopy_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mutationAndCopy);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructDefaultVsNewAndFieldInitializers_MatchesTheOracleOnEveryPath() =>
+    public void StructSemantics_DefaultVsNewAndFieldInitializers_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_defaultVsNew);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RecordStructWithExpressions_MatchesTheOracleOnEveryPath() =>
+    public void StructSemantics_RecordStructWithExpressions_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_recordWith);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_AutoPropertyPassedToInParameterDefensiveCopy_MatchesTheOracleOnEveryPath() =>
+    public void StructSemantics_AutoPropertyInParamDefensiveCopy_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_autoPropInDefensiveCopy);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructUserDefinedImplicitConversion_MatchesTheOracleOnEveryPath() =>
+    public void StructSemantics_UserDefinedImplicitConversion_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_userDefinedImplicitConv);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructUserDefinedExplicitConversion_MatchesTheOracleOnEveryPath() =>
+    public void StructSemantics_UserDefinedExplicitConversion_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_userDefinedExplicitConv);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructLiftedUserDefinedConversion_MatchesTheOracleOnEveryPath() =>
+    public void StructSemantics_LiftedUserDefinedConversion_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_liftedUserDefinedConv);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_DefaultOfConvertingStruct_MatchesTheOracleOnEveryPath() =>
+    public void StructSemantics_DefaultOfConvertingStruct_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_repro1103Default);
 
     // A fixed buffer sized by a constant of a struct declared in another file (#1283)
@@ -294,6 +294,6 @@ public class StructDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ConstantSizedFixedBufferOfStructInAnotherFile_MatchesTheOracleOnEveryPath() =>
+    public void StructSemantics_ConstantSizedFixedBufferAcrossFiles_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_constantSizedFixedBuffer);
 }

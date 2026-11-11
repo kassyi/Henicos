@@ -95,6 +95,7 @@ The transpiler derives the C++ name of every user declaration from its symbol ra
 | :--- | :--- |
 | Parameter, local, `out var`, `foreach` variable, label, local function, lambda parameter | `__gsharp_id_{ordinal}_{name}`, where `ordinal` is the declaration's position within the containing method |
 | Instance field or property of a struct that G# emits | `__gsharp_mb_{name}` |
+| Backing field of a property of such a struct whose accessors use the `field` keyword | `__gsharp_bf_{property name}` (the accessors keep `__gsharp_mb_{name}`) |
 | Struct that G# emits | `__gsharp_ty_{path}` |
 | Type parameter | `__gsharp_tp_{name}` |
 | Static `[GpuDeviceFunction]` method | `__gsharp_fn_{path}` |
