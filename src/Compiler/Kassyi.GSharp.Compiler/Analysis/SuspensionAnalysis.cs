@@ -18,17 +18,23 @@ internal static class SuspensionAnalysis
 {
     // [WHY] Only the queried function is cached: a depth-first walk that stops at an already visited function would
     // record a wrong 'false' for the functions inside a cycle.
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_suspending = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_suspending = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_blockBarrier = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_blockBarrier = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_gridBarrier = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_gridBarrier = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_warpShuffle = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_warpShuffle = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_activeMask = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_activeMask = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_arrivalBarrier = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_arrivalBarrier = new();
 
     // Which barriers a query looks for
     private enum BarrierSet

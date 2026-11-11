@@ -40,5 +40,5 @@ using Kassyi.GSharp.Core;
 [assembly: GpuDeviceExport(3, "PRELUDE_HASH", "Struct", "T:H.Twin", CppName = "__gsharp_ty_H__Twin",
     CudaReferences = new[] { "__gsharp_fn_H__Lib__Dup" }, CppReferences = new[] { "__gsharp_fn_H__Lib__Dup" },
     CudaBody = "/*TWIN_BODY*/", CppBody = "/*TWIN_BODY*/")]
-[assembly: GpuDeviceExport(3, "PRELUDE_HASH", "Struct", "T:H.Box{System.Int32}", CppName = "__gsharp_ty_H__Box_g1_bint_e",
-    CudaBody = "/*BOX_BODY*/", CppBody = "/*BOX_BODY*/")]
+[assembly: GpuDeviceExport(3, "PRELUDE_HASH", "Struct", "T:H.Box{System.Int32}",
+    CppName = "__gsharp_ty_H__Box_g1_bint_e", CudaBody = "/*BOX_BODY*/", CppBody = "/*BOX_BODY*/")]
