@@ -209,7 +209,7 @@ public static void SyncVsAtomicExample(int[] data, int[] histogram) {
     // -------------------------------------------------------------
     // 2. Execution Barrier: SyncThreads
     // -------------------------------------------------------------
-    var sharedCache = SharedMemory<int>.Allocate(256);
+    var sharedCache = new SharedMemory<int>(256);
     sharedCache[ThreadIndex.X] = localValue;
 
     // ⚠️ BARRIER: We must wait for ALL threads to finish writing to
