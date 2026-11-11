@@ -65,18 +65,8 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     public static VariableSet RootOf(ExpressionSyntax expression, SemanticModel model)
     {
         var walker = new EffectWalker(model);
-        var root = walker.AddLocation(expression);
         var reads = default(VariableSet);
-        foreach (var variable in root.Variables)
-        {
-            reads.Add(variable);
-        }
-
-        if (root.IsMemory)
-        {
-            reads.Memory = true;
-        }
-
+        reads.AddRoot(walker.AddLocation(expression));
         return reads;
     }
 

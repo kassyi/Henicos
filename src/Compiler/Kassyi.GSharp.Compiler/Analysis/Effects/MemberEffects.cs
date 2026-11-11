@@ -100,11 +100,7 @@ internal static class MemberEffects
             return;
         }
 
-        walker.Reads.Memory = true;
-        if (walker.MayWriteMemory(property.GetMethod))
-        {
-            walker.Writes.Memory = true;
-        }
+        walker.AddUserCode(property.GetMethod);
     }
 
     /// <summary>

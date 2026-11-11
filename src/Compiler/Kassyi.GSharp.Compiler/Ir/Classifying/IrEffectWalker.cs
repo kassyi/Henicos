@@ -37,9 +37,19 @@ internal sealed class IrEffectWalker(Compilation compilation)
     /// <summary>Adds a write of the location <paramref name="root"/>.</summary>
     public void WriteRoot(EffectRoot? root) => Add(ref _writes, root);
 
-    /// <summary>Whether a call of <paramref name="method"/> (or none) may write memory.</summary>
-    public bool MayWriteMemory(IMethodSymbol? method) =>
-        method != null && DeviceFunctionEffects.Classify(method, compilation) == DeviceFunctionEffect.Memory;
+    /// <summary>
+    /// Adds a call of user code (accessors, an operator, a conversion; <see langword="null"/> for none): it may read
+    /// anything, and writes memory when <see cref="DeviceFunctionEffects"/> says one of them does.
+    /// </summary>
+    public void AddUserCode(IMethodSymbol? first, IMethodSymbol? second = null)
+    {
+        ReadMemory();
+        if (DeviceFunctionEffects.WritesMemory(first, compilation) ||
+            DeviceFunctionEffects.WritesMemory(second, compilation))
+        {
+            WriteMemory();
+        }
+    }
 
     /// <summary>Adds the effects of evaluating <paramref name="expression"/> for its value.</summary>
     public void AddValue(IrExpression expression)
@@ -178,11 +188,7 @@ internal sealed class IrEffectWalker(Compilation compilation)
         if (conversion.Conversion.Method is { } method &&
             !(conversion.Operand.ConstantValue.HasValue && method.DeclaringSyntaxReferences.Length == 0))
         {
-            ReadMemory();
-            if (MayWriteMemory(method))
-            {
-                WriteMemory();
-            }
+            AddUserCode(method);
         }
 
         AddValue(conversion.Operand);
@@ -217,11 +223,7 @@ internal sealed class IrEffectWalker(Compilation compilation)
             return;
         }
 
-        ReadMemory();
-        if (MayWriteMemory(property.SetMethod))
-        {
-            WriteMemory();
-        }
+        AddUserCode(property.SetMethod);
     }
 
     // A compound assignment (with its value) or an increment (without): the target is read and written
@@ -240,19 +242,10 @@ internal sealed class IrEffectWalker(Compilation compilation)
             WriteMemory();
         }
 
+        // The accessors an update of a computed property calls: the getter, then the setter
         if (target is IrPropertyReference { Property: var property } && MemberEffects.IsUserAccessorProperty(property))
         {
-            AddComputedPropertyUpdate(property);
-        }
-    }
-
-    // The accessors an update of a computed property calls: the getter, which may read anything, then the setter
-    private void AddComputedPropertyUpdate(IPropertySymbol property)
-    {
-        ReadMemory();
-        if (MayWriteMemory(property.GetMethod) || MayWriteMemory(property.SetMethod))
-        {
-            WriteMemory();
+            AddUserCode(property.GetMethod, property.SetMethod);
         }
     }
 
@@ -291,21 +284,29 @@ internal sealed class IrEffectWalker(Compilation compilation)
 
     private void AddUnknown()
     {
-        _reads.Memory = _reads.AllLocals = true;
-        _writes.Memory = _writes.AllLocals = true;
+        _reads.AddUnknown();
+        _writes.AddUnknown();
     }
 
-    // A non-ref local or by-value parameter as itself unless it has another name, a temporary as itself, anything else
-    // (this, a ref local, a ref / out / in parameter) as memory
-    private EffectRoot RootOf(IrVariable variable) => variable switch
+    /// <summary>
+    /// Whether <paramref name="variable"/> is a local or by-value parameter that no other name reaches (its address is
+    /// not taken, no <c>ref</c> expression names it, no lambda captures it), or a temporary of a pass.
+    /// </summary>
+    public static bool IsUnaliased(IrVariable variable, Compilation compilation) => variable.Kind switch
     {
-        { RefKind: not RefKind.None } or { Kind: IrVariableKind.This } => new EffectRoot(null),
-        { Kind: IrVariableKind.Temporary } => new EffectRoot(variable),
-        { Symbol: { } symbol } => AliasedVariables.Contains(symbol, compilation)
-            ? new EffectRoot(null)
-            : new EffectRoot(symbol),
-        _ => new EffectRoot(null)
+        IrVariableKind.Temporary => true,
+        IrVariableKind.Local or IrVariableKind.Parameter when variable.RefKind == RefKind.None &&
+                                                              variable.Symbol is { } symbol =>
+            !AliasedVariables.Contains(symbol, compilation),
+        _ => false
     };
+
+    // A non-ref variable that no other name reaches as itself (its symbol, or the temporary), anything else (this, a
+    // ref local, a ref / out / in parameter) as memory
+    private EffectRoot RootOf(IrVariable variable) =>
+        variable.RefKind == RefKind.None && IsUnaliased(variable, compilation)
+            ? new EffectRoot((object?)variable.Symbol ?? variable)
+            : new EffectRoot(null);
 
     private static EffectRoot? Combine(EffectRoot? whenTrue, EffectRoot? whenFalse) =>
         (whenTrue, whenFalse) switch
@@ -318,19 +319,9 @@ internal sealed class IrEffectWalker(Compilation compilation)
 
     private static void Add(ref VariableSet set, EffectRoot? root)
     {
-        if (root is not { } location)
+        if (root is { } location)
         {
-            return;
-        }
-
-        foreach (var variable in location.Variables)
-        {
-            set.Add(variable);
-        }
-
-        if (location.IsMemory)
-        {
-            set.Memory = true;
+            set.AddRoot(location);
         }
     }
 }

@@ -58,6 +58,13 @@ internal static class DeviceFunctionEffects
             : Classify(definition, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
     }
 
+    /// <summary>
+    /// Whether a call of <paramref name="method"/> (an accessor, an operator or a conversion, or none) may write memory
+    /// (<see cref="DeviceFunctionEffect.Memory"/>).
+    /// </summary>
+    public static bool WritesMemory(IMethodSymbol? method, Compilation compilation) =>
+        method != null && Classify(method, compilation) == DeviceFunctionEffect.Memory;
+
     private static ConcurrentDictionary<IMethodSymbol, DeviceFunctionEffect> GetCache(Compilation compilation) =>
         s_effects.GetValue(compilation,
             static _ => new ConcurrentDictionary<IMethodSymbol, DeviceFunctionEffect>(SymbolEqualityComparer.Default));

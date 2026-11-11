@@ -85,7 +85,8 @@ internal static class IrMemberEffects
         AddArgumentValues(walker, reference.Arguments);
         if (property.IsIndexer)
         {
-            AddIndexerGetter(walker, property, mutatesReceiver);
+            // An indexer reads memory, and writes it when its getter may change the receiver and writes memory
+            walker.AddUserCode(mutatesReceiver ? property.GetMethod : null);
         }
         else
         {
@@ -156,16 +157,6 @@ internal static class IrMemberEffects
         }
     }
 
-    // An indexer reads memory, and writes it when its getter may change the receiver and writes memory
-    private static void AddIndexerGetter(IrEffectWalker walker, IPropertySymbol indexer, bool mutatesReceiver)
-    {
-        walker.ReadMemory();
-        if (mutatesReceiver && walker.MayWriteMemory(indexer.GetMethod))
-        {
-            walker.WriteMemory();
-        }
-    }
-
     // The getter of a computed property of a struct may read anything, and writes what DeviceFunctionEffects says
     private static void AddComputedGetter(IrEffectWalker walker, IPropertySymbol property)
     {
@@ -174,11 +165,7 @@ internal static class IrMemberEffects
             return;
         }
 
-        walker.ReadMemory();
-        if (walker.MayWriteMemory(property.GetMethod))
-        {
-            walker.WriteMemory();
-        }
+        walker.AddUserCode(property.GetMethod);
     }
 
     // Evaluates the arguments by value or by reference and returns the locations the callee may write through
