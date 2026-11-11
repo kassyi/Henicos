@@ -123,10 +123,10 @@ internal static class CpuHostLaunchEmitter
         var hasConverted = false;
         for (var i = 0; i < parameters.Length; i++)
         {
-            hasConverted |= WriteConvertedDeclaration(writer, sharing, i);
+            hasConverted |= TryWriteConvertedDeclaration(writer, sharing, i);
         }
 
-        hasConverted |= AutoResultEmitter.WriteCpuConvertedDeclaration(writer, kernel);
+        hasConverted |= AutoResultEmitter.TryWriteCpuConvertedDeclaration(writer, kernel);
 
         if (!hasConverted)
         {
@@ -183,8 +183,9 @@ internal static class CpuHostLaunchEmitter
     // <shadow> __gsharp_native_<ord> = default; var __gsharp_allocated_ptrs_<ord> = new List<IntPtr>();                  (converted struct)
     // byte[]? __gsharp_shadow_<ord> = null; var __gsharp_allocated_ptrs_<ord> = ...; int __gsharp_size_<ord> = checked(...); (converted array)
     // byte[]? __gsharp_shared_shadow_<ord> = null;                         (a converted T[] that an earlier holder may share)
-    // Returns whether the parameter is converted. The size is computed before the try block, when nothing is allocated.
-    private static bool WriteConvertedDeclaration(SourceWriter writer, in ArraySharingPlan sharing, int index)
+    // Returns whether it wrote the declarations of a converted parameter. The size is computed before the try block,
+    // when nothing is allocated.
+    private static bool TryWriteConvertedDeclaration(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
         var shape = sharing.Parameters[index];
         writer.AppendLineIf(sharing.HasShadowSource(index), $"byte[]? {KernelHostNames.GetLocal(LauncherLocal.SharedShadow, shape)} = null;");
@@ -292,7 +293,7 @@ internal static class CpuHostLaunchEmitter
             case { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal }:
                 writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, hStream);");
                 break;
-            case { IsCpuConvertedArray: true, CopyOut: true, IsReadOnlyContainer: false }:
+            case { IsCpuConvertedArray: true, IsCopiedOut: true, IsReadOnlyContainer: false }:
                 ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cpu);
                 break;
         }
@@ -347,7 +348,7 @@ internal static class CpuHostLaunchEmitter
             }
         }
 
-        hasFixed |= AutoResultEmitter.WriteCpuFixed(writer, kernel);
+        hasFixed |= AutoResultEmitter.TryWriteCpuFixed(writer, kernel);
 
         if (hasFixed)
         {

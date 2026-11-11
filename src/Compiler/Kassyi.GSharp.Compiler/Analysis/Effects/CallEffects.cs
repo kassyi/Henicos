@@ -46,7 +46,7 @@ internal static class CallEffects
             return null;
         }
 
-        var receiver = walker.AddLocation(access.Expression);
+        var receiver = walker.AddReceiver(access.Expression);
         walker.AddRead(receiver);
         return receiver;
     }

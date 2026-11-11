@@ -30,7 +30,7 @@ UnsupportedOperation	SwitchExpression	SwitchExpression	44
 UnsupportedOperation	TranslatedQuery	QueryExpression	1
 UnsupportedOperation	Tuple	TupleExpression	1
 UnsupportedOperation	TypeOf	TypeOfExpression	2
-UnsupportedOperation	With	WithExpression	13
+UnsupportedOperation	With	WithExpression	14
 UnsupportedShape	ArrayCreation	ArrayCreationExpression	2
 UnsupportedShape	ArrayElementReference	ElementAccessExpression	8
 UnsupportedShape	Binary	AddExpression	1
