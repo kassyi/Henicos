@@ -49,34 +49,17 @@ public static class AstLoweringPipeline
             ? FindCopiedValueParameters(owner)
             : ImmutableArray<string>.Empty;
 
-        // [WHY] A loop header is evaluated at its own place in every iteration. The first round leaves headers alone;
-        // once LoopRewriter has turned them into statements of the flat list, the second round lowers them there. Each
-        // pass keeps one instance across both rounds so that temporaries and labels stay unique.
-        var conditionalRewriter = new ConditionalEvaluationRewriter();
-        var warpRewriter = new WarpInstructionRewriter(bodyModel);
-        var branchRewriter = new BranchRewriter(bodyModel);
-        // [WHY] A method that reaches Warp.ActiveMask() makes its lanes wait for each other where a thread-dependent
-        // branch or loop ends (#844), on the structure of the source, before the branches and loops are flattened
         var reconvergence = ReconvergenceInserter.TryCreate(bodyModel, owner, isDeviceFunction);
-        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(9);
-        passes.Add(conditionalRewriter);
-        passes.Add(warpRewriter);
-        if (reconvergence != null)
-        {
-            passes.Add(reconvergence);
-        }
-
-        passes.AddRange(branchRewriter, new ForEachRewriter(bodyModel), new LoopRewriter(), conditionalRewriter,
-            warpRewriter, branchRewriter);
         var hoistedBody = annotatedBody;
-        foreach (var pass in passes)
+        foreach (var pass in CreatePasses(bodyModel, reconvergence))
         {
             hoistedBody = pass.Rewrite(hoistedBody);
         }
 
         // [WHY] Found once, before ContextHoister rewrites declarations, and given to both passes so that they agree
         var statePlan = StateLabelPlanner.Plan(hoistedBody, bodyModel);
-        var hoister = new ContextHoister(copiedParameters, bodyModel, owner, statePlan);
+        var refLocals = RefLocalLiveness.Analyze(body, bodyModel);
+        var hoister = new ContextHoister(copiedParameters, bodyModel, owner, statePlan, refLocals?.StaysLocal);
         var (contextHoistedBody, contextFields) = hoister.Hoist(hoistedBody);
         if (!hoister.HasSplitPoint)
         {
@@ -93,7 +76,55 @@ public static class AstLoweringPipeline
         }
 
         return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters,
-            WarpSiteCount: lowerer.WarpSiteCount);
+            WarpSiteCount: lowerer.WarpSiteCount)
+        {
+            HeldRefLocals = FindHeldRefLocals(contextFields, bodyModel, refLocals)
+        };
+    }
+
+    // [WHY] A loop header is evaluated at its own place in every iteration. The first round leaves headers alone; once
+    // LoopRewriter has turned them into statements of the flat list, the second round lowers them there. Each pass
+    // keeps one instance across both rounds so that temporaries and labels stay unique. A method that reaches
+    // Warp.ActiveMask() makes its lanes wait for each other where a thread-dependent branch or loop ends (#844,
+    // reconvergence), on the structure of the source, before the branches and loops are flattened.
+    private static ImmutableArray<IBlockLoweringPass> CreatePasses(SemanticModel? bodyModel,
+        ReconvergenceInserter? reconvergence)
+    {
+        var conditionalRewriter = new ConditionalEvaluationRewriter();
+        var warpRewriter = new WarpInstructionRewriter(bodyModel);
+        var branchRewriter = new BranchRewriter(bodyModel);
+        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(9);
+        passes.Add(conditionalRewriter);
+        passes.Add(warpRewriter);
+        if (reconvergence != null)
+        {
+            passes.Add(reconvergence);
+        }
+
+        passes.AddRange(branchRewriter, new ForEachRewriter(bodyModel), new LoopRewriter(), conditionalRewriter,
+            warpRewriter, branchRewriter);
+        return passes.ToImmutable();
+    }
+
+    // The hoisted ref locals, each with whether GSH0039 reports it (RefLocalLiveness.ReportedLive)
+    private static ImmutableArray<HeldRefLocal> FindHeldRefLocals(IReadOnlyList<VariableDeclaratorSyntax> contextFields,
+        SemanticModel? bodyModel, RefLocalLiveness? refLocals)
+    {
+        var held = ImmutableArray.CreateBuilder<HeldRefLocal>();
+        foreach (var field in contextFields)
+        {
+            if (field.Parent is not VariableDeclarationSyntax declaration ||
+                !RefLocalLiveness.IsRefType(declaration.Type))
+            {
+                continue;
+            }
+
+            var symbol = LoweringIdentity.ForDeclaration(field, bodyModel).Symbol;
+            var isReportedLive = symbol != null && refLocals != null && refLocals.ReportedLive.Contains(symbol);
+            held.Add(new HeldRefLocal(field, isReportedLive));
+        }
+
+        return held.ToImmutable();
     }
 
     /// <summary>
