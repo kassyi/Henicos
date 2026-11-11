@@ -45,8 +45,8 @@ public static partial class DeviceErrorExitKernels
         result[tid] = sum;
     }
 
-    // An mbarrier that expects every thread of the block: a failing thread never arrives, so the waiters see the
-    // recorded error and trap
+    // An mbarrier that expects every thread of the block: a failing thread never arrives, so the waiters see the abort
+    // word of their launch and exit
     [GpuKernel]
     public static void MBarrierFailKernel(int[] keys, int[] result)
     {
