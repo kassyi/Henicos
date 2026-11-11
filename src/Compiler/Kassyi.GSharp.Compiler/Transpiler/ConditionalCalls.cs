@@ -12,7 +12,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </remarks>
 internal static class ConditionalCalls
 {
-    private const string ConditionalAttributeName = "System.Diagnostics.ConditionalAttribute";
+    // System.Diagnostics.ConditionalAttribute
+    private const string ConditionalAttributeName = "ConditionalAttribute";
 
     /// <summary>Whether C# removes a call of <paramref name="method"/> written in <paramref name="tree"/>.</summary>
     public static bool IsRemoved(IMethodSymbol method, SyntaxTree tree)
@@ -49,7 +50,8 @@ internal static class ConditionalCalls
         var conditions = ImmutableArray<string>.Empty;
         foreach (var attribute in declared.GetAttributes())
         {
-            if (attribute.AttributeClass?.ToDisplayString() == ConditionalAttributeName &&
+            if (attribute.AttributeClass is { Name: ConditionalAttributeName, ContainingType: null } attributeClass &&
+                attributeClass.ContainingNamespace.IsSystemDiagnostics() &&
                 attribute.ConstructorArguments is [{ Value: string symbol }])
             {
                 conditions = conditions.Add(symbol);

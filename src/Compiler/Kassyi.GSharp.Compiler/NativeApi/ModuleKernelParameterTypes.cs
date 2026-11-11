@@ -22,7 +22,7 @@ internal static class ModuleKernelParameterTypes
     public static string? GetUnsupportedReason(string type)
     {
         var space = type.IndexOf(' ');
-        if (space > 0 && type.Substring(0, space) is "ref" or "out" or "in" or "params" or "scoped")
+        if (space > 0 && type.AsSpan(0, space) is "ref" or "out" or "in" or "params" or "scoped")
         {
             return "'ref', 'out', 'in', 'scoped' and 'params' parameters are not supported; " +
                    "the launcher passes a copy and never writes the kernel's value back. " +
@@ -38,18 +38,18 @@ internal static class ModuleKernelParameterTypes
         var bracket = type.IndexOf('[');
         if (bracket >= 0)
         {
-            if (type.Substring(bracket).Replace(" ", string.Empty) != "[]")
+            if (!IsOneDimensionalRank(type.AsSpan(bracket)))
             {
                 return "only one-dimensional arrays are supported, not multidimensional or jagged arrays. " +
                        "Flatten the data into a one-dimensional array.";
             }
 
-            elementType = type.Substring(0, bracket).TrimEnd();
+            elementType = type.AsSpan(0, bracket).TrimEnd().ToString();
         }
 
         if (elementType.StartsWith(GlobalPrefix, StringComparison.Ordinal))
         {
-            elementType = elementType.Substring(GlobalPrefix.Length);
+            elementType = elementType[GlobalPrefix.Length..];
         }
 
         // [WHY] The launcher file starts with 'using System;', so the names without 'System.' are the same types
@@ -58,5 +58,28 @@ internal static class ModuleKernelParameterTypes
             ? "reference types are not supported; " +
               "a kernel takes unmanaged values, pointers and one-dimensional arrays of unmanaged elements."
             : null;
+    }
+
+    // Whether <rank> is "[]" once its spaces are removed
+    private static bool IsOneDimensionalRank(ReadOnlySpan<char> rank)
+    {
+        const string OneDimensional = "[]";
+        var matched = 0;
+        foreach (var character in rank)
+        {
+            if (character == ' ')
+            {
+                continue;
+            }
+
+            if (matched == OneDimensional.Length || character != OneDimensional[matched])
+            {
+                return false;
+            }
+
+            matched++;
+        }
+
+        return matched == OneDimensional.Length;
     }
 }

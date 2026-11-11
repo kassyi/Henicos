@@ -3,6 +3,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal sealed class GpuBigFloatVectorLeafExpression(GpuBigFloatArray array) : IGpuBigFloatVectorExpression
 {
     public int Length => array.Length;
+
+    /// <summary>Gets the workspace of the array.</summary>
+    public GpuWorkspace Workspace => array.Workspace;
     public int WordsPerElement => array.WordsPerElement;
 
     public GpuBigFloatArrayView Evaluate(

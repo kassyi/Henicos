@@ -39,6 +39,7 @@ _writer.AppendLine();
 | `Parentheses()` | `(` `)` inline |
 | `Brackets()` | `[` `]` inline |
 | `ImmediatelyInvokedLambda()` | `([&]() {` ... `})()` |
+| `WarningSuppressed(id, reason, condition)` | `#pragma warning disable <id> // <reason>` ... `#pragma warning restore <id>` |
 
 To keep the C# order of evaluation, an emitted form whose operands interfere is wrapped by `EvaluationOrder`
 (`BeginCall` for calls, `BeginSequence` with `DeclareTemp` for operators and assignments); see

@@ -57,7 +57,8 @@ internal static partial class RouteGroupExtensions
         RouteValue vy = new RouteValue(a);
         RouteValue vz = new RouteValue(0);
         vz = vx + vy;
-        return vz.Value;
+        // 1 when the operator macro passed this ctx to RouteOps.Add; 0 fails the test
+        return vz.Value * ctx.Calls;
     }
 }
 

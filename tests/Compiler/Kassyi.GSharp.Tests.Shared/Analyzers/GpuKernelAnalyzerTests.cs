@@ -136,14 +136,14 @@ public class GpuKernelAnalyzerTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void SupportedDiagnostics_DefinedDiagnosticDescriptors_CoversAllDefinedDiagnostics()
+    public void SupportedDiagnostics_ReportedDescriptors_CoversEveryReportedDiagnostic()
     {
         var supportedIds = s_analyzer.SupportedDiagnostics
             .Select(static d => d.Id)
             .ToHashSet(StringComparer.Ordinal);
 
-        Assert.NotEmpty(GSharpDiagnostics.All);
-        foreach (var descriptor in GSharpDiagnostics.All)
+        Assert.NotEmpty(GSharpDiagnostics.Reported);
+        foreach (var descriptor in GSharpDiagnostics.Reported)
         {
             Assert.Contains(descriptor.Id, supportedIds);
         }

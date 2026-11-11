@@ -101,6 +101,8 @@ Performs element-wise addition, subtraction, or multiplication across two vector
 
 Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1` for `ZipAdd` and `ZipSubtract`, so the sum or difference never wraps, and `left.WordsPerElement + right.WordsPerElement` for `ZipMultiply`.
 
+Inputs whose capacities differ throw `ArgumentException` (`"Vector lengths must match for Zip operations."`) at evaluation, before either input is evaluated, as every integer and floating-point Zip does (`ZipDivide` and `ZipModulo` included); unlike `System.Linq`'s `Zip`, the longer input is not truncated. A Zip nested inside another expression checks its own inputs, so the exception names the Zip whose inputs differ. After a `Where`, whose capacity is that of its input, the selected elements are paired with the first elements of the other input, as `System.Linq`'s `Zip` does.
+
 ```csharp
 public static IGpuBigIntVectorExpression ZipAdd(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
 public static IGpuBigIntVectorExpression ZipSubtract(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
@@ -317,6 +319,7 @@ public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source);
 - Evaluation reads two words back from the device: the sign and the number of reduced elements.
 - A difference of equal magnitudes (`ZipSubtract`, `SelectSubtract`) has the sign `+`, as `BigInteger` has no negative zero.
 - An empty vector behaves as in `System.Linq`: `Max` and `Min` throw `InvalidOperationException` ("Sequence contains no elements") on evaluation without evaluating the vector or launching anything, so a destination is not touched, `Sum` is +0 (a destination is cleared), and `Count` is 0.
+- `Count` follows `System.Linq`, which runs the projection of every element it counts: when the chain contains an operation that can throw (a division or modulo, `SelectSqrt`, `SelectDivideByUInt32(0)`, inputs of different lengths), the evaluation of `Count` evaluates the counted elements first and throws as `Evaluate` does (`DivideByZeroException`, `InvalidOperationException`, `ArgumentException`). A chain without such an operation is not evaluated: its length is written from the host, also under the CPU fallback and inside a CUDA graph. A chain that must be evaluated throws `NotSupportedException` inside a CUDA graph capture, before any work, so that the capture stays valid; count it without a graph.
 
 ## Element-Wise Comparisons (IsEqualTo, IsNotEqualTo, IsGreaterThan, IsGreaterThanOrEqualTo, IsLessThan, IsLessThanOrEqualTo)
 

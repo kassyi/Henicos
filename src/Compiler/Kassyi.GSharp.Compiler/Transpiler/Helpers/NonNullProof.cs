@@ -7,12 +7,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The contract: an array declared non-nullable (<c>T[]</c>, <see cref="NullableAnnotation.NotAnnotated"/>) holds an
-/// array. A nullable (<c>T[]?</c>) or oblivious (<c>#nullable disable</c>) one may hold null. The launchers reject a
-/// null in a non-nullable kernel array parameter and in a non-nullable array field that a by-value struct argument
-/// reaches through struct fields (<see cref="GetNonNullableArrayFields"/>); a call of a device function checks such an
-/// argument once, at the call, when the caller has not proved it (<see cref="NeedsBoundaryCheck"/>). C# throws only
-/// when such a null is read; G# throws at the boundary, earlier, and only for a null in a non-nullable place.
+/// The contract: an array declared non-nullable (<c>T[]</c>,
+/// <see cref="Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated"/>) holds an array. A nullable (<c>T[]?</c>) or
+/// oblivious (<c>#nullable disable</c>) one may hold null. The launchers reject a null in a non-nullable kernel array
+/// parameter and in a non-nullable array field that a by-value struct argument reaches through struct fields
+/// (<see cref="GetNonNullableArrayFields"/>); a call of a device function checks such an argument once, at the call,
+/// when the caller has not proved it (<see cref="NeedsBoundaryCheck"/>). C# throws only when such a null is read; G#
+/// throws at the boundary, earlier, and only for a null in a non-nullable place.
 /// </para>
 /// <para>
 /// The proof (<see cref="IsProvenNonNull"/>): an array is non-null when it is a stack array (a local array of a
