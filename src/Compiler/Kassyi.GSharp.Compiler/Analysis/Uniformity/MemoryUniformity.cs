@@ -23,8 +23,8 @@ internal sealed class MemoryUniformity(UniformityRecorder recorder)
 
     private readonly Dictionary<IInvocationOperation, ImmutableArray<MemoryCallTarget>> _callTargets = new();
 
-    // The summary of each call's callee and whether the call may write memory, read on first use
-    private readonly Dictionary<IInvocationOperation, (CalleeVariance Summary, bool WritesMemory)> _callEffects = new();
+    // What each call may write, read on first use
+    private readonly Dictionary<IInvocationOperation, MemoryCallEffect> _callEffects = new();
 
     /// <summary>The number of values the memory takes.</summary>
     public int Count => _values.Count;
@@ -64,19 +64,17 @@ internal sealed class MemoryUniformity(UniformityRecorder recorder)
 
     /// <summary>
     /// <paramref name="target"/> written. A write is an assignment, compound assignment, increment or deconstruction
-    /// whose target is a location of memory: an element (<c>arr[i]</c>, <c>span[i]</c>, <c>shared[i]</c>), a ref local
-    /// bound to one, a <c>ref</c> / <c>out</c> parameter, or the result of a device function that returns by reference.
+    /// whose target is a location of memory: an element (<c>arr[i]</c>, <c>span[i]</c>, <c>shared[i]</c>), a field or
+    /// auto-property of one (<c>arr[i].X</c>), a property or indexer of one whose setter is not readonly
+    /// (<c>arr[i][0]</c>), a ref local bound to one, a <c>ref</c> / <c>out</c> parameter, or the result of a device
+    /// function that returns by reference.
     /// </summary>
     public void AddWrite(IOperation target, int node)
     {
-        target = Unwrap(target);
+        target = ContainingLocation(target);
         if (target is ITupleOperation tuple)
         {
-            foreach (var element in tuple.Elements)
-            {
-                AddWrite(element, node);
-            }
-
+            AddTupleWrites(tuple, node);
             return;
         }
 
@@ -85,6 +83,15 @@ internal sealed class MemoryUniformity(UniformityRecorder recorder)
             MemoryRecording.AllocateLocation(_values, target);
             AddEvent(node, new UniformityEvent(UniformityEventKind.MemoryWrite, target, null, null,
                 Variance: ThreadVariance.Block));
+        }
+    }
+
+    // (a[i], b[j]) = ...: each element of the deconstruction
+    private void AddTupleWrites(ITupleOperation tuple, int node)
+    {
+        foreach (var element in tuple.Elements)
+        {
+            AddWrite(element, node);
         }
     }
 
@@ -118,18 +125,24 @@ internal sealed class MemoryUniformity(UniformityRecorder recorder)
         switch (memoryEvent)
         {
             case { Kind: UniformityEventKind.MemoryWrite, Operation: { } target }:
-                var written = MemoryResolver.Resolve(_values, _references, target);
-                MemoryCallEffects.Write(written, memoryEvent.Variance, current);
+                ApplyWrite(target, memoryEvent.Variance, current);
                 break;
             case { Kind: UniformityEventKind.MemorySync }:
                 _values.Sync(memoryEvent.Variance, current);
                 break;
             case { Kind: UniformityEventKind.MemoryCall, Operation: IInvocationOperation invocation }:
-                var effect = GetCallEffect(invocation, reader, compilation);
-                MemoryCallEffects.Apply(_values, _references, _callTargets[invocation], effect, current);
+                ApplyCall(invocation, current, reader, compilation);
                 break;
         }
     }
+
+    private void ApplyWrite(IOperation target, ThreadVariance variance, ThreadVariance[] current) =>
+        MemoryCallEffects.Write(MemoryResolver.Resolve(_values, _references, target), variance, current);
+
+    private void ApplyCall(IInvocationOperation invocation, ThreadVariance[] current, UniformityValueReader reader,
+        Compilation compilation) =>
+        MemoryCallEffects.Apply(_values, _references, _callTargets[invocation],
+            GetCallEffect(invocation, reader, compilation), current);
 
     /// <summary>
     /// A read of a location (an element, a ref local, the result of a device function that returns by reference): how
@@ -155,7 +168,7 @@ internal sealed class MemoryUniformity(UniformityRecorder recorder)
     public (ImmutableArray<ThreadVariance> Parameters, ThreadVariance Fields, ThreadVariance BarrierOnEveryPath)
         Summarize(IMethodSymbol method, ThreadVariance[] exit) => _values.Summarize(method, exit);
 
-    private (CalleeVariance Summary, bool WritesMemory) GetCallEffect(IInvocationOperation invocation,
+    private MemoryCallEffect GetCallEffect(IInvocationOperation invocation,
         UniformityValueReader reader, Compilation compilation)
     {
         if (!_callEffects.TryGetValue(invocation, out var effect))

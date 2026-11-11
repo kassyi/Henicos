@@ -23,10 +23,30 @@ internal static class MetamorphicControlFlowWrapper
             return root;
         }
 
+        var statements = method.Body.Statements;
+        var candidateIndices = CollectCandidateIndices(statements, semanticModel, root);
+        if (candidateIndices.Count == 0)
+        {
+            return root;
+        }
+
         var rng = new FuzzRandom(seed ^ 0xA11CE007UL);
         var usedNames = MetamorphicTarget.CollectIdentifiers(root);
-        var statements = method.Body.Statements;
+        int chosenStmtIdx = candidateIndices[rng.NextBelow(candidateIndices.Count)];
+        var effectiveWrapKind = wrapKind ?? (MetamorphicWrapKind)rng.NextBelow(3);
+        string stmtText = FuzzSyntaxHelpers.RenderNodeText(statements[chosenStmtIdx]);
 
+        string wrappedText = BuildWrappedStatementText(effectiveWrapKind, stmtText, usedNames);
+        var wrappedStmt = SyntaxFactory.ParseStatement(wrappedText + "\n");
+        var updatedMethod = FuzzSyntaxHelpers.ReplaceSingleStatement(method, chosenStmtIdx, wrappedStmt);
+        return root.ReplaceNode(method, updatedMethod);
+    }
+
+    private static List<int> CollectCandidateIndices(
+        SyntaxList<StatementSyntax> statements,
+        SemanticModel semanticModel,
+        CompilationUnitSyntax root)
+    {
         var candidateIndices = new List<int>();
         for (int i = 0; i < statements.Count; i++)
         {
@@ -36,52 +56,40 @@ internal static class MetamorphicControlFlowWrapper
             }
         }
 
-        if (candidateIndices.Count == 0)
+        return candidateIndices;
+    }
+
+    private static string BuildWrappedStatementText(
+        MetamorphicWrapKind wrapKind,
+        string stmtText,
+        HashSet<string> usedNames)
+    {
+        if (wrapKind == MetamorphicWrapKind.Block)
         {
-            return root;
+            return $$"""
+                {
+                {{stmtText}}
+                }
+                """;
         }
 
-        int chosenStmtIdx = candidateIndices[rng.NextBelow(candidateIndices.Count)];
-        var effectiveWrapKind = wrapKind ?? (MetamorphicWrapKind)rng.NextBelow(3);
-        string stmtText = FuzzSyntaxHelpers.RenderNodeText(statements[chosenStmtIdx]);
-
-        string wrappedText;
-        switch (effectiveWrapKind)
+        if (wrapKind == MetamorphicWrapKind.IfTrue)
         {
-            case MetamorphicWrapKind.Block:
-                wrappedText =
-                    $$"""
-                    {
-                    {{stmtText}}
-                    }
-                    """;
-                break;
-
-            case MetamorphicWrapKind.IfTrue:
-                wrappedText =
-                    $$"""
-                    if (true)
-                    {
-                    {{stmtText}}
-                    }
-                    """;
-                break;
-
-            default:
-                string loopVar = MetamorphicTarget.AllocateFreshIdentifier("metaOnce", usedNames);
-                wrappedText =
-                    $$"""
-                    for (int {{loopVar}} = 0; {{loopVar}} < 1; {{loopVar}}++)
-                    {
-                    {{stmtText}}
-                    }
-                    """;
-                break;
+            return $$"""
+                if (true)
+                {
+                {{stmtText}}
+                }
+                """;
         }
 
-        var wrappedStmt = SyntaxFactory.ParseStatement(wrappedText + "\n");
-        var updatedMethod = FuzzSyntaxHelpers.ReplaceSingleStatement(method, chosenStmtIdx, wrappedStmt);
-        return root.ReplaceNode(method, updatedMethod);
+        string loopVar = MetamorphicTarget.AllocateFreshIdentifier("metaOnce", usedNames);
+        return $$"""
+            for (int {{loopVar}} = 0; {{loopVar}} < 1; {{loopVar}}++)
+            {
+            {{stmtText}}
+            }
+            """;
     }
 
     private static bool IsWrappableExecutableStatement(
