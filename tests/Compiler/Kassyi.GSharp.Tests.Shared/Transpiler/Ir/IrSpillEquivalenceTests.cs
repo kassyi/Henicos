@@ -49,7 +49,7 @@ public class IrSpillEquivalenceTests(ITestOutputHelper output)
         Assert.Equal(expected, actual);
     }
 
-    // Under tmp/, named after the test assembly: Tests.Cpu and Tests.Cuda both compile this test and may run together
+    // Named after the test assembly: Tests.Cpu and Tests.Cuda both compile this test and may run together
     private void WriteReceived(IrSpillEquivalence equivalence, string known)
     {
         var assembly = typeof(IrSpillEquivalenceTests).Assembly.GetName().Name ?? "tests";
