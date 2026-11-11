@@ -60,8 +60,8 @@ public static partial class NativeOptimizerDifferentialKernels
 
     /// <summary>
     /// Hashes one <c>short</c> widened through <c>uint</c> and widened directly to <c>ulong</c> (both sign-extend).
-    /// MSVC <c>/Og</c> reuses the wrong sign extension for one of them. Only the hash is stored: storing the two widened
-    /// values as well makes MSVC keep both extensions, and the miscompile no longer shows.
+    /// MSVC <c>/Og</c> reuses the wrong sign extension for one of them. Only the hash is stored: storing the two
+    /// widened values as well makes MSVC keep both extensions, and the miscompile no longer shows.
     /// </summary>
     [GpuKernel]
     public static void ShortWidenedTwiceKernel(int[] src, ulong[] dst, int rows)
