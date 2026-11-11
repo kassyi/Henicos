@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 /// <summary>Guards that every diagnostic is defined in <c>diagnostics.json</c> and nowhere else.</summary>
 [Category(TestCategory.Compiler)]
-public partial class DiagnosticCatalogArchitectureTests
+public class DiagnosticCatalogArchitectureTests
 {
     // The build-time generator executable cannot link the generated GSharpDiagnostics, so this file mirrors
     // the NativeApi YAML IDs (see NativeApiReadError.DiagnosticId); NativeApiReadErrorIds_MatchCatalog pins them.
@@ -18,28 +18,8 @@ public partial class DiagnosticCatalogArchitectureTests
     // The catalog generator itself cites an example ID in its schema-error message.
     private const string CatalogGeneratorFile = "DiagnosticGenerator.cs";
 
-    private static bool ContainsDiagnosticId(ReadOnlySpan<char> text)
-    {
-        for (int i = 0; i + 7 <= text.Length; i++)
-        {
-            var slice = text.Slice(i, 7);
-            if ((slice.StartsWith("GSH", StringComparison.Ordinal) || slice.StartsWith("SLQ", StringComparison.Ordinal)) &&
-                char.IsAsciiDigit(slice[3]) &&
-                char.IsAsciiDigit(slice[4]) &&
-                char.IsAsciiDigit(slice[5]) &&
-                char.IsAsciiDigit(slice[6]))
-            {
-                bool leftWord = i == 0 || (!char.IsAsciiLetterOrDigit(text[i - 1]) && text[i - 1] != '_');
-                bool rightWord = i + 7 == text.Length || (!char.IsAsciiLetterOrDigit(text[i + 7]) && text[i + 7] != '_');
-                if (leftWord && rightWord)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
+    // Every ID the catalog defines (diagnostics.json, generated into GSharpDiagnostics)
+    private static readonly string[] s_catalogIds = [.. GSharpDiagnostics.All.Select(static d => d.Id)];
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
@@ -59,7 +39,7 @@ public partial class DiagnosticCatalogArchitectureTests
             foreach (var token in root.DescendantTokens())
             {
                 if (token.Kind() is not (SyntaxKind.StringLiteralToken or SyntaxKind.InterpolatedStringTextToken) ||
-                    !ContainsDiagnosticId(token.ValueText))
+                    !s_catalogIds.Any(id => token.ValueText.Contains(id, StringComparison.Ordinal)))
                 {
                     continue;
                 }

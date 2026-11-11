@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Compiler.Extensions;
-using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
@@ -14,9 +13,15 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 /// member accesses, string literals and comments.
 /// </remarks>
 [Collection(TestCollections.CorpusScan)]
-public class GeneratedNameLeakTests
+public partial class GeneratedNameLeakTests
 {
     private const string LeakId = "GCNR0001";
+
+    [GeneratedRegex(@"""(?:\\.|[^""\\])*""|'(?:\\.|[^'\\])*'|//[^\n]*|/\*.*?\*/", RegexOptions.Singleline)]
+    private static partial Regex LiteralOrCommentRegex();
+
+    [GeneratedRegex(@"(?<![A-Za-z0-9_])[A-Za-z_][A-Za-z0-9_]*")]
+    private static partial Regex IdentifierRegex();
 
     private static readonly Lazy<HashSet<string>> s_systemVocabulary = new(BuildSystemVocabulary);
 
@@ -25,10 +30,7 @@ public class GeneratedNameLeakTests
     [Scenario(TestScenario.SadPath)]
     public void GeneratedCode_TranspilerEmission_DoesNotLeakRawUserIdentifiers()
     {
-        var (entryModel, _) = RoslynTestUtility.GetLocalMethodContext(
-            "GeneratedNameLeakTests",
-            nameof(GeneratedCode_TranspilerEmission_DoesNotLeakRawUserIdentifiers));
-        var compilation = entryModel.Compilation;
+        var compilation = RoslynTestUtility.SharedCompilation;
         var leaks = new List<string>();
         var transpiled = 0;
 
@@ -102,127 +104,29 @@ public class GeneratedNameLeakTests
         return names;
     }
 
-    private static List<string> FindRawNames(string source, HashSet<string> declaredNames)
+    private static IEnumerable<string> FindRawNames(string source, HashSet<string> declaredNames)
     {
-        var results = new List<string>();
-        var cleanSource = StripLiteralsAndComments(source);
-        foreach (var lineSpan in cleanSource.AsSpan().EnumerateLines())
+        var code = LiteralOrCommentRegex().Replace(source, " ");
+        foreach (var line in code.Split('\n'))
         {
-            if (lineSpan.TrimStart().StartsWith("#", StringComparison.Ordinal))
+            if (line.TrimStart().StartsWith('#'))
             {
                 continue;
             }
 
-            for (int i = 0; i < lineSpan.Length;)
+            foreach (Match match in IdentifierRegex().Matches(line))
             {
-                if (char.IsAsciiDigit(lineSpan[i]))
+                if (!declaredNames.Contains(match.Value) || IsMemberPosition(line, match.Index))
                 {
-                    while (i < lineSpan.Length && (char.IsAsciiLetterOrDigit(lineSpan[i]) || lineSpan[i] == '_' || lineSpan[i] == '.'))
-                    {
-                        i++;
-                    }
+                    continue;
                 }
-                else if (char.IsAsciiLetter(lineSpan[i]) || lineSpan[i] == '_')
-                {
-                    int start = i;
-                    while (i < lineSpan.Length && (char.IsAsciiLetterOrDigit(lineSpan[i]) || lineSpan[i] == '_'))
-                    {
-                        i++;
-                    }
 
-                    var id = lineSpan.Slice(start, i - start).ToString();
-                    if (declaredNames.Contains(id) && !IsMemberPosition(lineSpan, start))
-                    {
-                        results.Add(id);
-                    }
-                }
-                else
-                {
-                    i++;
-                }
+                yield return match.Value;
             }
         }
-
-        return results;
     }
 
-    private static string StripLiteralsAndComments(string text)
-    {
-        var chars = text.ToCharArray();
-        int i = 0;
-        int n = chars.Length;
-        while (i < n)
-        {
-            if (chars[i] == '"' || chars[i] == '\'')
-            {
-                char quote = chars[i];
-                chars[i] = ' ';
-                i++;
-                while (i < n && chars[i] != quote)
-                {
-                    if (chars[i] == '\\' && i + 1 < n)
-                    {
-                        chars[i] = ' ';
-                        i++;
-                    }
-
-                    if (chars[i] != '\r' && chars[i] != '\n')
-                    {
-                        chars[i] = ' ';
-                    }
-
-                    i++;
-                }
-
-                if (i < n)
-                {
-                    chars[i] = ' ';
-                    i++;
-                }
-            }
-            else if (chars[i] == '/' && i + 1 < n && chars[i + 1] == '/')
-            {
-                chars[i] = ' ';
-                chars[i + 1] = ' ';
-                i += 2;
-                while (i < n && chars[i] != '\n' && chars[i] != '\r')
-                {
-                    chars[i] = ' ';
-                    i++;
-                }
-            }
-            else if (chars[i] == '/' && i + 1 < n && chars[i + 1] == '*')
-            {
-                chars[i] = ' ';
-                chars[i + 1] = ' ';
-                i += 2;
-                while (i + 1 < n && !(chars[i] == '*' && chars[i + 1] == '/'))
-                {
-                    if (chars[i] != '\r' && chars[i] != '\n')
-                    {
-                        chars[i] = ' ';
-                    }
-
-                    i++;
-                }
-
-                if (i + 1 < n)
-                {
-                    chars[i] = ' ';
-                    chars[i + 1] = ' ';
-                    i += 2;
-                }
-            }
-            else
-            {
-                i++;
-            }
-        }
-
-        return new string(chars);
-    }
-
-    private static bool IsMemberPosition(ReadOnlySpan<char> line, int index)
+    private static bool IsMemberPosition(string line, int index)
     {
         var i = index - 1;
         while (i >= 0 && line[i] == ' ')
@@ -233,6 +137,15 @@ public class GeneratedNameLeakTests
         return i >= 0 && (line[i] == '.' || (line[i] == '>' && i > 0 && line[i - 1] == '-') ||
                           (line[i] == ':' && i > 0 && line[i - 1] == ':'));
     }
+
+    [GeneratedRegex(@"(?<![A-Za-z0-9_])([A-Za-z_][A-Za-z0-9_]*)\s*\(")]
+    private static partial Regex CalledNameRegex();
+
+    [GeneratedRegex(@"\b(?:struct|class|union|enum|typedef|using|define)\s+([A-Za-z_][A-Za-z0-9_]*)")]
+    private static partial Regex DeclaredTypeOrMacroRegex();
+
+    [GeneratedRegex(@":\s*""([^""]*)""")]
+    private static partial Regex YamlMappingValueRegex();
 
     // Names that kernel output uses on its own: CUDA built-ins, prelude functions, types and macros, and the targets of
     // dialect type/intrinsic mappings. Parameter and local names inside the preludes are not included, because the
@@ -246,172 +159,29 @@ public class GeneratedNameLeakTests
 
         foreach (var prelude in new[] { GSharpPreludeResources.Cpp, GSharpPreludeResources.Cuda })
         {
-            AddCalledNames(vocabulary, prelude);
-            AddDeclaredTypeOrMacroNames(vocabulary, prelude);
+            AddGroups(vocabulary, CalledNameRegex(), prelude);
+            AddGroups(vocabulary, DeclaredTypeOrMacroRegex(), prelude);
         }
 
         foreach (var yaml in Directory.EnumerateFiles(Path.Combine(RepositoryPaths.CompilerProject, "Dialects"), "*.yml"))
         {
-            AddYamlIdentifiers(vocabulary, File.ReadAllText(yaml));
+            foreach (Match mapping in YamlMappingValueRegex().Matches(File.ReadAllText(yaml)))
+            {
+                foreach (Match identifier in IdentifierRegex().Matches(mapping.Groups[1].Value))
+                {
+                    vocabulary.Add(identifier.Value);
+                }
+            }
         }
 
         return vocabulary;
     }
 
-    private static void AddCalledNames(HashSet<string> vocabulary, string text)
+    private static void AddGroups(HashSet<string> vocabulary, Regex regex, string text)
     {
-        var span = text.AsSpan();
-        for (int i = 0; i < span.Length;)
+        foreach (Match match in regex.Matches(text))
         {
-            if (char.IsAsciiDigit(span[i]))
-            {
-                while (i < span.Length && (char.IsAsciiLetterOrDigit(span[i]) || span[i] == '_' || span[i] == '.'))
-                {
-                    i++;
-                }
-            }
-            else if (char.IsAsciiLetter(span[i]) || span[i] == '_')
-            {
-                int start = i;
-                while (i < span.Length && (char.IsAsciiLetterOrDigit(span[i]) || span[i] == '_'))
-                {
-                    i++;
-                }
-
-                int idEnd = i;
-                while (i < span.Length && span[i] == ' ')
-                {
-                    i++;
-                }
-
-                if (i < span.Length && span[i] == '(')
-                {
-                    vocabulary.Add(span.Slice(start, idEnd - start).ToString());
-                }
-            }
-            else
-            {
-                i++;
-            }
-        }
-    }
-
-    private static void AddDeclaredTypeOrMacroNames(HashSet<string> vocabulary, string text)
-    {
-        string[] keywords = ["struct", "class", "union", "enum", "typedef", "using", "define"];
-        var span = text.AsSpan();
-        for (int i = 0; i < span.Length;)
-        {
-            if (char.IsAsciiDigit(span[i]))
-            {
-                while (i < span.Length && (char.IsAsciiLetterOrDigit(span[i]) || span[i] == '_' || span[i] == '.'))
-                {
-                    i++;
-                }
-            }
-            else if (char.IsAsciiLetter(span[i]) || span[i] == '_')
-            {
-                int start = i;
-                while (i < span.Length && (char.IsAsciiLetterOrDigit(span[i]) || span[i] == '_'))
-                {
-                    i++;
-                }
-
-                var word = span.Slice(start, i - start);
-                bool isKeyword = false;
-                foreach (var kw in keywords)
-                {
-                    if (word.SequenceEqual(kw.AsSpan()))
-                    {
-                        isKeyword = true;
-                        break;
-                    }
-                }
-
-                if (isKeyword)
-                {
-                    while (i < span.Length && (span[i] == ' ' || span[i] == '\t'))
-                    {
-                        i++;
-                    }
-
-                    if (i < span.Length && (char.IsAsciiLetter(span[i]) || span[i] == '_'))
-                    {
-                        int idStart = i;
-                        while (i < span.Length && (char.IsAsciiLetterOrDigit(span[i]) || span[i] == '_'))
-                        {
-                            i++;
-                        }
-
-                        vocabulary.Add(span.Slice(idStart, i - idStart).ToString());
-                    }
-                }
-            }
-            else
-            {
-                i++;
-            }
-        }
-    }
-
-    private static void AddYamlIdentifiers(HashSet<string> vocabulary, string yamlText)
-    {
-        var span = yamlText.AsSpan();
-        for (int i = 0; i < span.Length;)
-        {
-            if (span[i] == ':')
-            {
-                i++;
-                while (i < span.Length && (span[i] == ' ' || span[i] == '\t'))
-                {
-                    i++;
-                }
-
-                if (i < span.Length && span[i] == '"')
-                {
-                    i++;
-                    int valStart = i;
-                    while (i < span.Length && span[i] != '"')
-                    {
-                        i++;
-                    }
-
-                    var valSpan = span.Slice(valStart, i - valStart);
-                    if (i < span.Length)
-                    {
-                        i++;
-                    }
-
-                    for (int j = 0; j < valSpan.Length;)
-                    {
-                        if (char.IsAsciiDigit(valSpan[j]))
-                        {
-                            while (j < valSpan.Length && (char.IsAsciiLetterOrDigit(valSpan[j]) || valSpan[j] == '_' || valSpan[j] == '.'))
-                            {
-                                j++;
-                            }
-                        }
-                        else if (char.IsAsciiLetter(valSpan[j]) || valSpan[j] == '_')
-                        {
-                            int idStart = j;
-                            while (j < valSpan.Length && (char.IsAsciiLetterOrDigit(valSpan[j]) || valSpan[j] == '_'))
-                            {
-                                j++;
-                            }
-
-                            vocabulary.Add(valSpan.Slice(idStart, j - idStart).ToString());
-                        }
-                        else
-                        {
-                            j++;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                i++;
-            }
+            vocabulary.Add(match.Groups[1].Value);
         }
     }
 }

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Models;
+
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 public class GeneratorDiagnosticsTests : TranspilerTestBase
@@ -20,8 +22,11 @@ public class GeneratorDiagnosticsTests : TranspilerTestBase
                                             .GetDriverAsync();
 
         // The hash of the preludes and the internal names changes with every edit of a prelude, the format version with
-        // every change of the record layout
-        await Verify(driver).ScrubLinesWithReplace(ScrubGpuDeviceExportAttribute);
+        // every change of the record layout, so the values this compiler writes become placeholders
+        await Verify(driver).ScrubLinesWithReplace(static line => line.Replace(
+            $"GpuDeviceExportAttribute({DeviceExportRecord.CurrentFormatVersion}, @\"{DeviceExportRecord.CurrentPreludeHash}\"",
+            "GpuDeviceExportAttribute({FormatVersion}, @\"{PreludeHash}\"",
+            StringComparison.Ordinal));
     }
 
     [Fact]
@@ -32,59 +37,5 @@ public class GeneratorDiagnosticsTests : TranspilerTestBase
                                             .GetDriverAsync();
 
         await Verify(driver);
-    }
-
-    private static string ScrubGpuDeviceExportAttribute(string line)
-    {
-        const string targetPrefix = "GpuDeviceExportAttribute(";
-        int idx = line.IndexOf(targetPrefix, StringComparison.Ordinal);
-        if (idx < 0)
-        {
-            return line;
-        }
-
-        int start = idx + targetPrefix.Length;
-        int commaIdx = line.IndexOf(',', start);
-        if (commaIdx < 0)
-        {
-            return line;
-        }
-
-        for (int i = start; i < commaIdx; i++)
-        {
-            if (!char.IsAsciiDigit(line[i]))
-            {
-                return line;
-            }
-        }
-
-        const string hashPrefix = " @\"";
-        int hashStart = commaIdx + 1;
-        if (hashStart + hashPrefix.Length > line.Length ||
-            !line.AsSpan(hashStart, hashPrefix.Length).SequenceEqual(hashPrefix.AsSpan()))
-        {
-            return line;
-        }
-
-        int hexStart = hashStart + hashPrefix.Length;
-        if (hexStart + 17 > line.Length)
-        {
-            return line;
-        }
-
-        for (int i = 0; i < 16; i++)
-        {
-            if (!char.IsAsciiHexDigit(line[hexStart + i]))
-            {
-                return line;
-            }
-        }
-
-        if (line[hexStart + 16] != '"')
-        {
-            return line;
-        }
-
-        return line[..idx] + "GpuDeviceExportAttribute({FormatVersion}, @\"{PreludeHash}\"" + line[(hexStart + 17)..];
     }
 }
