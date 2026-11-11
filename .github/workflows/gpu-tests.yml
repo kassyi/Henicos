@@ -79,6 +79,39 @@ jobs:
           key: nuget-${{ runner.os }}-${{ matrix.suite }}-${{ hashFiles('**/*.csproj', '**/Directory.Build.props', '**/Directory.Build.targets', '**/Directory.Packages.props', '**/global.json', '**/nuget.config', '**/NuGet.Config') }}
           restore-keys: nuget-${{ runner.os }}-${{ matrix.suite }}-
 
+      # cuda.h alone, for the scan of CudaDriverApiEntryPointTests that checks the driver bindings against the
+      # redirects of the header (the runners have no CUDA toolkit). One archive serves both OSes: the header text is
+      # the same. Pinned to the CUDA version of the bindings; the test fails instead of skipping when CI=true.
+      - name: Cache the CUDA header
+        if: matrix.suite != 'rest'
+        id: cuda-header
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/cuda-include
+          key: cuda-header-13.4.49-ec3df9f91560db23
+
+      - name: Fetch the CUDA header
+        if: matrix.suite != 'rest' && steps.cuda-header.outputs.cache-hit != 'true'
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        env:
+          ARCHIVE: cuda_cudart-linux-x86_64-13.4.49-archive
+          SHA256: ec3df9f91560db23a064c6b395d4fde17b2893f5bf954c6bd193dd03a44de522
+          INCLUDE_DIR: ${{ runner.temp }}/cuda-include
+        run: |
+          curl -fsSL --retry 3 -o "$ARCHIVE.tar.xz" "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/linux-x86_64/$ARCHIVE.tar.xz"
+          echo "$SHA256  $ARCHIVE.tar.xz" | sha256sum -c -
+          tar -xJf "$ARCHIVE.tar.xz" "$ARCHIVE/include/cuda.h"
+          mkdir -p "$INCLUDE_DIR"
+          mv "$ARCHIVE/include/cuda.h" "$INCLUDE_DIR/cuda.h"
+
+      - name: Point the tests at the CUDA header
+        if: matrix.suite != 'rest'
+        shell: bash
+        env:
+          INCLUDE_DIR: ${{ runner.temp }}/cuda-include
+        run: echo "GSHARP_CUDA_INCLUDE_DIR=$INCLUDE_DIR" >> "$GITHUB_ENV"
+
       - name: Select the other test projects
         if: matrix.suite == 'rest'
         run: >-
