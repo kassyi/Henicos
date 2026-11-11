@@ -76,7 +76,7 @@ public static bool WriteToConsole { get; set; }
 
 ## Log(LogLevel, string, string?)
 
-Writes a formatted log message to standard output (or standard error for `LogLevel.Error`) if enabled, and always writes to `System.Diagnostics.Debug`.
+Does nothing when `level` is below the active log level or `message` is `null`. Otherwise writes the formatted message to standard output (or standard error for `LogLevel.Error`) when console output is enabled, and always writes it to `System.Diagnostics.Debug`.
 
 ```csharp
 public static void Log(LogLevel level, string tag, string? message);

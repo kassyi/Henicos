@@ -63,7 +63,7 @@ Helps the NVIDIA CUDA compiler (`nvcc`) optimize register allocation and place c
 While both attributes optimize constant values, their underlying mechanics differ:
 
 - **`[GpuReadOnly]` is like an `in` parameter or `readonly` field:** The parameter physically exists in memory and is passed as an argument, but the compiler qualifies it with `const`, allowing it to be placed in a fast, read-only constant cache.
-- **[[GpuConstexpr]](ConstantAttribute.md) indicates compile-time specialization:** It marks a kernel parameter as a compile-time constant (e.g., for loop unrolling or specialization bounds). Unlike `[GpuReadOnly]`, `[GpuConstexpr]` communicates compile-time constant intent to the transpiler.
+- **[[GpuConstexpr]](ConstantAttribute.md) marks a compile-time constant:** It marks a kernel parameter whose value is meant to be fixed at compile time. Its candidate values are not used yet: the parameter is still passed as an ordinary runtime argument. A later release compiles one `constexpr` specialization per candidate value.
 
 #### [GpuReadOnly]
 
@@ -83,7 +83,7 @@ __global__ void ProcessData(float* data, const float scaleFactor)
 
 #### [[GpuConstexpr]](ConstantAttribute.md)
 
-Marks a kernel parameter as an Ahead-Of-Time compile-time constant. It is used when kernel parameters provide bounds for loop unrolling or specialized evaluation.
+Marks a kernel parameter as a compile-time constant. The candidate values (`10` below) are not used yet, and `iterations` is passed at runtime like any other argument; see [GpuConstexprAttribute](ConstantAttribute.md).
 
 **C# Source:**
 

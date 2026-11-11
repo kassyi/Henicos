@@ -52,7 +52,7 @@ The `[TakesOwnership]` attribute is permitted **only** on parameters of instance
 
 ### 2. Target Type Must Implement `IDisposable`
 
-The parameter type decorated with `[TakesOwnership]` must implement `System.IDisposable` (**GSH0049**, diagnostic descriptor defined). Transferring ownership of non-disposable types (e.g., primitives like `int` or plain data structs) is a semantic contradiction and produces a compile error.
+The parameter type decorated with `[TakesOwnership]` must implement `System.IDisposable` (**GSH0049**, diagnostic descriptor defined). Transferring ownership of non-disposable types (e.g., primitives like `int` or plain data structs) is a semantic contradiction; the analyzer that reports it is not implemented yet (#934).
 
 ### 3. No Pass-by-Reference Modifiers (`ref`, `in`, `out`)
 

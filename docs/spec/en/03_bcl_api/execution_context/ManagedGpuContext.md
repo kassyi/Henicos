@@ -50,7 +50,7 @@ public static class ManagedGpuContext
 | [InitializeGrid(int)](#initializegridint) | Initializes or resets the shared memory arrays for the entire grid execution. |
 | `InitializeGrid(int, uint)` | Initializes grid execution with static shared memory byte size. |
 | `InitializeGrid(int, uint, bool)` | Initializes grid execution with static shared memory size and phase execution policy. |
-| `EndGrid()` | Concludes grid execution, resetting shared memory regions and thread allocations. |
+| `EndGrid()` | Releases the dynamic shared memory of the blocks at the end of a grid; the next grid allocates its own. |
 | [AllocateSharedMemory\<T\>(ulong, int)](#allocatesharedmemorytulong-int) | Returns the shared memory of a `SharedMemory<T>` declaration in the current block. |
 | `AllocateDynamicSharedMemory<T>(ulong, int, string)` | Allocates dynamic shared memory at a specific declaration site. |
 | `FindDynamicSharedMemory<T>(ulong)` | Finds previously allocated dynamic shared memory for a declaration site. |

@@ -32,8 +32,9 @@ public sealed class CudaIntrinsicPatternAttribute(string pattern) : Attribute
 public sealed class BclIntrinsicMapAttribute : Attribute
 
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-public sealed class GpuOperatorMacroAttribute(Type targetType, string targetMethod) : Attribute
+public sealed class GpuOperatorMacroAttribute : Attribute
 {
+    public GpuOperatorMacroAttribute(Type targetType, string targetMethod);
     public Type TargetType { get; }
     public string TargetMethod { get; }
 }
