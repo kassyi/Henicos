@@ -243,6 +243,27 @@ public class RunCommandTests
         Assert.Equal(["cpu_batch", "cpu_K1"], [merged[0].Stage, merged[1].Stage]);
     }
 
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void FuzzRunTotals_CountsPerKnownIssue()
+    {
+        var totals = new FuzzRunTotals();
+
+        totals.Count(new JsonObject { ["suspectedIssue"] = 1078 });
+        totals.Count(new JsonObject { ["suspectedIssue"] = 998 });
+        totals.Count(new JsonObject { ["suspectedIssue"] = 1078 });
+        totals.Count(new JsonObject { ["status"] = "hang" });
+        totals.Count(new JsonObject { ["status"] = "failed" });
+
+        Assert.Equal(5, totals.Failures);
+        Assert.Equal(2, totals.SuspectedIssues[1078]);
+        Assert.Equal(1, totals.SuspectedIssues[998]);
+        Assert.Equal(1, totals.Hangs);
+        Assert.Equal(1, totals.OtherFindings);
+    }
+
     private static JsonObject Failure(string kernel, string path) =>
         new() { ["status"] = "failed", ["kernel"] = kernel, ["failingPaths"] = new JsonArray(path) };
 
