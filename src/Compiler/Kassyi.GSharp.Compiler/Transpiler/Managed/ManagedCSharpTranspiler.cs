@@ -239,7 +239,8 @@ internal static class ManagedCSharpTranspiler
     // The source of the state machine body: the lowered body rewritten for managed execution, or only a throw when the
     // body holds a ref local (LoweredStateMachine.HeldRefLocals), which is an error of its own
     private static string CreateBody(LoweredStateMachine lowered,
-        Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals, Dictionary<DeclarationKey, string> renamedLocals,
+        Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals,
+        Dictionary<DeclarationKey, string> renamedLocals,
         SemanticModel semanticModel, string methodName, bool zeroFill, bool isDeviceFunction,
         ManagedAccessorSet accessors, bool isUnsafe)
     {

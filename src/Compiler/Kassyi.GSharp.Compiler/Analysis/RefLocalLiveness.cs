@@ -1,9 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
-/// What the CPU state machine may do with each <c>ref</c> local of a kernel or device function, from the liveness behind
-/// GSH0039 (<see cref="CrossBarrierLiveness"/>): which ones it keeps as locals of their state, and which ones GSH0039
-/// reports.
+/// What the CPU state machine may do with each <c>ref</c> local of a kernel or device function, from the liveness
+/// behind GSH0039 (<see cref="CrossBarrierLiveness"/>): which ones it keeps as locals of their state, and which ones
+/// GSH0039 reports.
 /// </summary>
 /// <param name="StaysLocal">
 /// The <c>ref</c> locals of declaration statements that no state after a split reads and that are never rebound: their
@@ -22,8 +22,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <remarks>
 /// [WHY] A <c>ref</c> local cannot be a field of the managed frame class (CS9059), and the native frame would hold a
 /// copy of its target. A ref local that the lowering still hoists is an error: GSH0039 when it is in
-/// <see cref="ReportedLive"/>, otherwise GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>), which
-/// the generator reports (#1640).
+/// <see cref="ReportedLive"/>, otherwise GSH0003
+/// (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>), which the generator reports (#1640).
 /// </remarks>
 internal sealed record RefLocalLiveness(HashSet<ISymbol> StaysLocal, HashSet<ISymbol> ReportedLive)
 {
@@ -117,7 +117,8 @@ internal sealed record RefLocalLiveness(HashSet<ISymbol> StaysLocal, HashSet<ISy
         node.Ancestors()
             .AsStackEnumerable()
             .FirstOrDefault(static ancestor =>
-                ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or BaseMethodDeclarationSyntax
+                ancestor is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
+                    or BaseMethodDeclarationSyntax
             ) == method;
 
     // A ref local of the method: its symbol and whether it is rebound

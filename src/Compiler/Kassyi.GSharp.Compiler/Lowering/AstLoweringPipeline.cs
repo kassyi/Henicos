@@ -83,8 +83,8 @@ public static class AstLoweringPipeline
     }
 
     // [WHY] A loop header is evaluated at its own place in every iteration. The first round leaves headers alone; once
-    // LoopRewriter has turned them into statements of the flat list, the second round lowers them there. Each pass keeps
-    // one instance across both rounds so that temporaries and labels stay unique. A method that reaches
+    // LoopRewriter has turned them into statements of the flat list, the second round lowers them there. Each pass
+    // keeps one instance across both rounds so that temporaries and labels stay unique. A method that reaches
     // Warp.ActiveMask() makes its lanes wait for each other where a thread-dependent branch or loop ends (#844,
     // reconvergence), on the structure of the source, before the branches and loops are flattened.
     private static ImmutableArray<IBlockLoweringPass> CreatePasses(SemanticModel? bodyModel,

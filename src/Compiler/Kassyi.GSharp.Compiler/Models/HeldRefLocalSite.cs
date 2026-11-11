@@ -2,14 +2,16 @@ namespace Kassyi.GSharp.Compiler.Models;
 
 /// <summary>
 /// Where a <c>ref</c> local is declared that the CPU state machine would keep in its frame and GSH0039 does not report
-/// (<see cref="HeldRefLocal"/> without <see cref="HeldRefLocal.IsReportedLive"/>): the generator reports GSH0003 there on
-/// a CPU dialect build (#1640).
+/// (<see cref="HeldRefLocal"/> without <see cref="HeldRefLocal.IsReportedLive"/>): the generator reports GSH0003 there
+/// on a CPU dialect build (#1640).
 /// </summary>
 /// <remarks>
 /// Values only (the path and the spans of the declaration), so a result taken from the cache never refers to an earlier
 /// compilation.
 /// </remarks>
-/// <param name="Path">The file of the declaration, or empty when its tree has no path or it has no source location.</param>
+/// <param name="Path">
+/// The file of the declaration, or empty when its tree has no path or it has no source location.
+/// </param>
 /// <param name="TreeOrdinal">
 /// The position of its tree in the compilation, which finds a tree without a path (one built in memory); -1 when it has
 /// no source location.
@@ -42,8 +44,8 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
     }
 
     /// <summary>
-    /// Reports GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>) at this site: in the syntax tree
-    /// of <paramref name="compilation"/> that declares it, so that the editor marks the declaration.
+    /// Reports GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>) at this site: in the syntax
+    /// tree of <paramref name="compilation"/> that declares it, so that the editor marks the declaration.
     /// </summary>
     public void Report(SourceProductionContext context, Compilation compilation)
     {
@@ -88,7 +90,7 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
             _ => location.SourceSpan
         };
         var lineSpan = tree.GetLineSpan(span);
-        return new HeldRefLocalSite(lineSpan.Path, SemanticModelExtensions.GetSyntaxTreeOrdinal(compilation, tree), span,
-            lineSpan.Span);
+        var ordinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(compilation, tree);
+        return new HeldRefLocalSite(lineSpan.Path, ordinal, span, lineSpan.Span);
     }
 }

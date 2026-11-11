@@ -53,7 +53,9 @@ public class RefLocalAcrossSplitTests
         // mutant: RefLocalLiveness.Analyze without `!local.IsRebound` -> the rebound locals stay locals (CS0103)
         var held = string.Join(
             ",",
-            lowered.HeldRefLocals.Select(static h => h.Declarator.Identifier.ValueText + (h.IsReportedLive ? ":live" : "")));
+            lowered.HeldRefLocals.Select(static h =>
+                h.Declarator.Identifier.ValueText + (h.IsReportedLive ? ":live" : "")
+            ));
         Assert.Equal(expected, held);
         Assert.Equal(
             lowered.HeldRefLocals.Select(static h => h.Declarator.Identifier.ValueText),

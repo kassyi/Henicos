@@ -1026,8 +1026,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
     // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite); a device
     // function's sites once, however many results it has
     private static void ReportHeldRefLocals(SourceProductionContext context,
-        ImmutableArray<EquatableArray<HeldRefLocalSite>> kernels, ImmutableArray<EquatableArray<HeldRefLocalSite>> devices,
-        GeneratorConfig config, Compilation compilation)
+        ImmutableArray<EquatableArray<HeldRefLocalSite>> kernels,
+        ImmutableArray<EquatableArray<HeldRefLocalSite>> devices,
+        GeneratorConfig config,
+        Compilation compilation)
     {
         if (config.IsCuda)
         {

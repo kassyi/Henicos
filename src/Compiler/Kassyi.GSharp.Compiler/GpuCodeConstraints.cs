@@ -133,11 +133,12 @@ internal static class GpuCodeConstraints
     /// <summary>
     /// The GSH0003 text for a <c>ref</c> local that the CPU state machine would have to keep in its frame and GSH0039
     /// does not report: one rebound with <c>= ref</c>, one used in another state than its declaration (a switch
-    /// section), or the <c>ref</c> iteration variable of a <c>foreach</c> used across a barrier. The frame cannot hold a
-    /// reference (#921).
+    /// section), or the <c>ref</c> iteration variable of a <c>foreach</c> used across a barrier. The frame cannot hold
+    /// a reference (#921).
     /// </summary>
     public const string RefLocalHeldByCpuStateMachine =
-        "ref local that the CPU state machine keeps across a barrier or a call that may suspend (rebound with '= ref', used in another switch section, or a ref foreach variable)";
+        "ref local that the CPU state machine keeps across a barrier or a call that may suspend " +
+        "(rebound with '= ref', used in another switch section, or a ref foreach variable)";
 
     /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
     public const string DynamicArraySize = "dynamic array size";

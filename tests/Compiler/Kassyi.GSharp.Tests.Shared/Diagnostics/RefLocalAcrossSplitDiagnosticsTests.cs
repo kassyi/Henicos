@@ -50,7 +50,8 @@ public class RefLocalAcrossSplitDiagnosticsTests
         // foreach variable read after the barrier of its iteration (in a kernel and in a device function) and one used
         // only before it; not the locals that GSH0039 reports
         // mutant: AstLoweringPipeline.FindHeldRefLocals `isReportedLive` always true -> nothing is reported
-        // mutant: GpuKernelGenerator.ReportHeldRefLocals `if (config.IsCuda)` -> `if (!config.IsCuda)` -> nothing on Cpu
+        // mutant: GpuKernelGenerator.ReportHeldRefLocals `if (config.IsCuda)` -> `if (!config.IsCuda)` -> nothing on
+        // the CPU dialect
         const string Constraint = GpuCodeConstraints.RefLocalHeldByCpuStateMachine;
         Assert.Equal([(DiagnosticOrigin.Generator, 131, 17, 131, 22)], diagnostics.Ranges(Gsh0003, Constraint));
         Assert.Equal(
