@@ -29,17 +29,6 @@ internal sealed partial class ManagedExecutionRewriter(
     bool isUnsafe = false) : CSharpSyntaxRewriter
 {
     private readonly bool _isUnsafe = isUnsafe;
-    /// <summary>
-    /// The thread-static flag through which a managed state machine requests a grid sync from the managed launcher
-    /// (<see cref="CpuHostLaunchEmitter"/>).
-    /// </summary>
-    internal const string ManagedGridSyncRequested = "global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested";
-
-    /// <summary>
-    /// The thread-static flag through which a managed state machine tells the managed launcher that the thread waits at a
-    /// block barrier (<see cref="CpuHostLaunchEmitter"/>).
-    /// </summary>
-    internal const string ManagedBlockBarrierRequested = "global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested";
 
     private int _inLambdaOrLocalFuncCount;
 
@@ -85,8 +74,6 @@ internal sealed partial class ManagedExecutionRewriter(
         return next;
     }
 
-    private const string ManagedGpuContextTypeName = "global::Kassyi.GSharp.Core.ManagedGpuContext";
-
     public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
         VisitCreation(node, base.VisitObjectCreationExpression(node));
 
@@ -131,28 +118,18 @@ internal sealed partial class ManagedExecutionRewriter(
             DeclaresSharedMemoryInStruct(structType, semanticModel.Compilation))
         {
             var typeSyntax = SyntaxFactory.ParseTypeName(structType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-            var contextType = SyntaxFactory.ParseTypeName(ManagedGpuContextTypeName);
+            var typeArgs = SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(typeSyntax));
             var beginCall = SyntaxFactory.InvocationExpression(
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    contextType,
-                    SyntaxFactory.GenericName(
-                        SyntaxFactory.Identifier("BeginTypeKeyScope"),
-                        SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(typeSyntax))
-                    )
+                ManagedNames.CreateMemberAccess(
+                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("BeginTypeKeyScope"), typeArgs)
                 )
             );
             // <context>.EndTypeKeyScope<<struct>>(<context>.BeginTypeKeyScope<<struct>>(), <creation>)
             // The type argument is spelled: a target-typed new(...) has no type of its own as an argument, so C# could
             // not infer it (CS0411, #1255)
             return SyntaxFactory.InvocationExpression(
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    contextType,
-                    SyntaxFactory.GenericName(
-                        SyntaxFactory.Identifier("EndTypeKeyScope"),
-                        SyntaxFactory.TypeArgumentList(SyntaxFactory.SingletonSeparatedList(typeSyntax))
-                    )
+                ManagedNames.CreateMemberAccess(
+                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("EndTypeKeyScope"), typeArgs)
                 ),
                 SyntaxFactory.ArgumentList(
                     SyntaxFactory.SeparatedList<ArgumentSyntax>(
@@ -262,10 +239,10 @@ internal sealed partial class ManagedExecutionRewriter(
             // A grid sync request goes to the launcher whether a kernel or a device function makes it (#665):
             // global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested
             GSharpInternalNames.StateMachine.YieldedForGridSync =>
-                SyntaxFactory.ParseExpression(ManagedGridSyncRequested).WithTriviaFrom(node),
+                ManagedNames.CreateMemberAccess(ManagedNames.GridSyncRequestedName).WithTriviaFrom(node),
             // A block barrier the same way: global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested
             GSharpInternalNames.StateMachine.YieldedForBlockBarrier =>
-                SyntaxFactory.ParseExpression(ManagedBlockBarrierRequested).WithTriviaFrom(node),
+                ManagedNames.CreateMemberAccess(ManagedNames.BlockBarrierRequestedName).WithTriviaFrom(node),
             // __gsharp_ctx.<name> or __gsharp_ctx-><name>
             GSharpInternalNames.StateMachine.State =>
                 SyntaxFactory.MemberAccessExpression(

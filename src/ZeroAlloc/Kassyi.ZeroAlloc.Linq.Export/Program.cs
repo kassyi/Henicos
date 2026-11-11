@@ -29,7 +29,7 @@ internal static class Program
         CleanOutputDirectory(outputDir);
 
         var trees = LoadAndRewriteSourceTrees(sourceDir);
-        if (!DropMembersThatNoLongerBuild(trees))
+        if (!TryDropMembersThatNoLongerBuild(trees))
         {
             return 1;
         }
@@ -104,7 +104,7 @@ internal static class Program
 
     // A member that calls a dropped member (Sum(selector) calls Sum()) no longer builds either. Compile the copy, drop
     // every member that holds an error and repeat until it builds.
-    private static bool DropMembersThatNoLongerBuild(List<SyntaxTree> trees)
+    private static bool TryDropMembersThatNoLongerBuild(List<SyntaxTree> trees)
     {
         var references = GetTrustedPlatformReferences();
         var options = new CSharpCompilationOptions(
