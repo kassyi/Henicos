@@ -119,8 +119,10 @@ public static IGpuBigIntVectorExpression SelectDivide(
     GpuBigInt scalar);
 ```
 
-When the vector is non-empty and `scalar` is zero, evaluation throws `DivideByZeroException` before the
-division runs. Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
+When the vector has at least one element and `scalar` is zero, evaluation throws `DivideByZeroException` before
+the division runs. As in System.Linq, a zero `scalar` over no element (an empty vector, or a `Where` that selects
+none) divides nothing and does not throw; after a `Where`, only this case reads the device element count (one
+synchronization). Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
 `ArgumentException` before evaluating the inputs. When `WordsPerElement` exceeds 512 words, each evaluation allocates
 `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words)
 and releases it after the launch.
@@ -149,8 +151,9 @@ public static IGpuBigIntVectorExpression SelectDivideByUInt32(
     uint divisor);
 ```
 
-Evaluation throws `DivideByZeroException` immediately when `divisor == 0`, before evaluating `source` or inspecting
-`targetResult` (including on an empty vector). Passing a `targetResult` with a different `WordsPerElement` or fewer
+Evaluation throws `DivideByZeroException` when `divisor == 0` and the vector has at least one element. As in
+System.Linq, a zero `divisor` over no element (an empty vector, or a `Where` that selects none) divides nothing and
+does not throw. Passing a `targetResult` with a different `WordsPerElement` or fewer
 elements than evaluated throws `ArgumentException`. When `source` is filtered by `Where`, evaluation reads the device
 element count (one synchronization) and divides only the selected elements.
 
@@ -176,8 +179,10 @@ public static IGpuBigIntVectorExpression SelectModulo(
     GpuBigInt scalar);
 ```
 
-When the vector is non-empty and `scalar` is zero, evaluation throws `DivideByZeroException` before the
-division runs. Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
+When the vector has at least one element and `scalar` is zero, evaluation throws `DivideByZeroException` before
+the division runs. As in System.Linq, a zero `scalar` over no element (an empty vector, or a `Where` that selects
+none) divides nothing and does not throw; after a `Where`, only this case reads the device element count (one
+synchronization). Passing a `targetResult` with a different `WordsPerElement` or fewer elements than evaluated throws
 `ArgumentException` before evaluating the inputs. When `WordsPerElement` exceeds 512 words, each evaluation allocates
 `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words)
 and releases it after the launch.

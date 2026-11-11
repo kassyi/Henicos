@@ -138,10 +138,12 @@ internal static class IrMemberEffects
             AddArgumentValues(walker, creation.Arguments);
         }
 
-        // The members that the initializer assigns belong to the new value; only their values are evaluated
+        // The members that the initializer assigns belong to the new value: their values are evaluated, and the setter of
+        // a computed property is called
         foreach (var initializer in creation.Initializers)
         {
             walker.AddValue(initializer.Value);
+            walker.AddSetterCall(initializer.Target);
         }
     }
 

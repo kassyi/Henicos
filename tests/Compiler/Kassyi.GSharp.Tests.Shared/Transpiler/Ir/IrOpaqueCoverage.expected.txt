@@ -30,7 +30,7 @@ UnsupportedOperation	SwitchExpression	SwitchExpression	44
 UnsupportedOperation	TranslatedQuery	QueryExpression	1
 UnsupportedOperation	Tuple	TupleExpression	1
 UnsupportedOperation	TypeOf	TypeOfExpression	2
-UnsupportedOperation	With	WithExpression	13
+UnsupportedOperation	With	WithExpression	14
 UnsupportedShape	ArrayCreation	ArrayCreationExpression	2
 UnsupportedShape	ArrayElementReference	ElementAccessExpression	8
 UnsupportedShape	Binary	AddExpression	1
@@ -47,7 +47,7 @@ statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
 statement UnsupportedOperation	Loop	ForEachStatement	131
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
-statement UnsupportedOperation	Loop	ForStatement	111
+statement UnsupportedOperation	Loop	ForStatement	112
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	5
 statement UnsupportedOperation	Switch	SwitchStatement	38

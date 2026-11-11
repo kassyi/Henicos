@@ -48,7 +48,9 @@ public static class GpuBigFloatVectorLinqExtensions
         /// The result elements have one word more than the wider of the element and the scalar; each is the exact
         /// quotient rounded toward zero to that precision (32 bits per word), with the significand normalized to its
         /// top bit, whatever the normalization of the operands. The evaluation throws
-        /// <see cref="DivideByZeroException"/> when the scalar is zero.
+        /// <see cref="DivideByZeroException"/> when the scalar is zero and the vector has at least one element; as in
+        /// System.Linq, a zero scalar over no element (an empty vector, or a <c>Where</c> that selects none) divides
+        /// nothing and does not throw.
         /// </remarks>
         public IGpuBigFloatVectorExpression SelectDivide<TScalar>(TScalar scalar)
             where TScalar : struct, IGpuBigNumber<TScalar> =>
@@ -83,8 +85,10 @@ public static class GpuBigFloatVectorLinqExtensions
         /// <remarks>
         /// Each element of the result is the exact quotient rounded toward zero to the precision of the element (32
         /// bits per word), with the significand normalized to its top bit, as
-        /// <see cref="IGpuBigFloatArithmetic.Divide"/> by <paramref name="divisor"/>. The evaluation throws <see cref="DivideByZeroException"/> when
-        /// <paramref name="divisor"/> is zero.
+        /// <see cref="IGpuBigFloatArithmetic.Divide"/> by <paramref name="divisor"/>. The evaluation throws
+        /// <see cref="DivideByZeroException"/> when <paramref name="divisor"/> is zero and the vector has at least one
+        /// element; as in System.Linq, a zero divisor over no element (an empty vector, or a <c>Where</c> that selects
+        /// none) divides nothing and does not throw.
         /// </remarks>
         public IGpuBigFloatVectorExpression SelectDivideByUInt32(uint divisor) =>
             new FloatVectorDivByUInt32Expression(source, divisor);
