@@ -28,8 +28,13 @@ internal static class IrCoverageInputs
     /// Calls <paramref name="visit"/> with each compilation and the trees of it to cover; the test case files run in
     /// parallel.
     /// </summary>
-    /// <returns>The number of test case files and of differential files.</returns>
-    public static (int TestCaseFiles, int DifferentialFiles) ForEach(Action<Compilation, SyntaxTree[]> visit)
+    /// <param name="visit">Called with a compilation and the trees to cover in it.</param>
+    /// <param name="everyKernelFile">
+    /// Whether to cover every <c>*.cu.cs</c> file of the shared compilation instead of the differential kernels only.
+    /// </param>
+    /// <returns>The number of test case files and of shared kernel files.</returns>
+    public static (int TestCaseFiles, int DifferentialFiles) ForEach(Action<Compilation, SyntaxTree[]> visit,
+        bool everyKernelFile = false)
     {
         var testCases = Directory.GetFiles(
                 RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "TestCases"), "*.cs",
@@ -48,9 +53,10 @@ internal static class IrCoverageInputs
 
         var shared = MegaCompilationCache.Compilation;
         var differential = shared.SyntaxTrees
-            .Where(static tree => tree.FilePath.Contains(Path.DirectorySeparatorChar + "Differential" +
-                                                         Path.DirectorySeparatorChar) &&
-                                  tree.FilePath.EndsWith("Kernels.cu.cs", StringComparison.Ordinal))
+            .Where(tree => everyKernelFile
+                ? tree.FilePath.EndsWith(".cu.cs", StringComparison.Ordinal)
+                : tree.FilePath.Contains(Path.DirectorySeparatorChar + "Differential" + Path.DirectorySeparatorChar) &&
+                  tree.FilePath.EndsWith("Kernels.cu.cs", StringComparison.Ordinal))
             .ToArray();
         Assert.NotEmpty(differential);
         visit(shared, differential);

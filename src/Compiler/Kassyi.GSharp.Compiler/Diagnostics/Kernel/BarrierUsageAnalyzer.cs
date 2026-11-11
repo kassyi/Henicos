@@ -182,7 +182,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             // [WHY] The callee is called again on every resume, which would compute the reference again
             context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
                 byReferenceArgument.GetLocation(),
-                callee.Name, "with a by-reference argument that is not a local, parameter, field or array element",
+                callee.Name, "with a by-reference argument that a call, a property or a ref conditional selects",
                 SuspendingDeviceFunctionCallee);
         }
     }
@@ -269,36 +269,18 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         GpuMacroClassifier.ClassifyBody(lambda, semanticModel).Kind is GpuMacroKind.ForUnroll or GpuMacroKind.SyncGrid;
 
     // [WHY] A suspending call is called again on every resume, and the lowering keeps a by-reference argument as the
-    // location it names, evaluating only its array and indices once. A reference into the result of a call (a ref
-    // return, also through a member access or parentheses) cannot be kept that way, so it is reported. An argument of an
-    // in parameter without the keyword is passed by reference too when C# passes the variable itself (#788 review).
+    // location it names, evaluating only its array or pointer and its indices once. A reference that a call, a property
+    // or a ref conditional selects would be selected again on every resume, so it is reported; the lowering and this
+    // rule read the same classification (SpilledArguments.ClassifyByReference). An argument of an in parameter without
+    // the keyword is passed by reference too when C# passes the variable itself (#788 review, #1585). #927 is to keep
+    // the reference itself instead.
     private static ArgumentSyntax? FindNonVariableByReferenceArgument(InvocationExpressionSyntax invocation,
         SemanticModel semanticModel) =>
         invocation.ArgumentList.Arguments
             .AsStackEnumerable()
             .FirstOrDefault(semanticModel, static (argument, model) =>
-                IsPassedByReference(argument, model) && !IsVariable(argument.Expression)
+                SpilledArguments.ClassifyByReference(argument, model) == ByReferencePassing.ReselectedLocation
             );
-
-    // (the operation of the expression is the argument's value only when no conversion sits between them, and a value
-    // that is not a variable, a field of a value included, is copied into a temporary)
-    private static bool IsPassedByReference(ArgumentSyntax argument, SemanticModel semanticModel) =>
-        !argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
-        semanticModel.GetSafeOperation(argument.Expression) is
-        {
-            Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
-        } operation &&
-        operation.IsVariable();
-
-    // A local, parameter, field or array element, also as a field of one of them or of the struct itself (this, base)
-    private static bool IsVariable(ExpressionSyntax expression) => expression switch
-    {
-        IdentifierNameSyntax or ElementAccessExpressionSyntax or DeclarationExpressionSyntax or ThisExpressionSyntax
-            or BaseExpressionSyntax => true,
-        MemberAccessExpressionSyntax member => IsVariable(member.Expression),
-        ParenthesizedExpressionSyntax parenthesized => IsVariable(parenthesized.Expression),
-        _ => false
-    };
 
     private static bool IsInGpuMethod(ISymbol? symbol)
     {

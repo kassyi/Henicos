@@ -61,4 +61,16 @@ internal static class IrEffects
 
         return walker.ToEffects();
     }
+
+    /// <summary>
+    /// The effects of evaluating <paramref name="expression"/> to the location it names and of writing that location:
+    /// a <see langword="ref"/> or <see langword="out"/> argument, an assignment target.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A call in the expression is not classified.</exception>
+    public static ExpressionEffects OfWrittenLocation(IrExpression expression, Compilation compilation)
+    {
+        var walker = new IrEffectWalker(compilation);
+        walker.WriteRoot(walker.AddLocation(expression));
+        return walker.ToEffects();
+    }
 }

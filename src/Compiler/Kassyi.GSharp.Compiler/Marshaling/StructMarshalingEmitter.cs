@@ -48,28 +48,30 @@ internal static class StructMarshalingEmitter
         CollectReturnStruct(kernel.ReturnType, HostDialects.Cpu, cpuStructs);
 
         var sources = ImmutableArray.CreateBuilder<StructHostSource>(structTypes.Length);
+        var launcherAssembly = kernel.ContainingAssembly;
         foreach (var s in structTypes)
         {
             sources.Add(new StructHostSource(
                 AotHostNames.GetAotStructPath(s),
-                RenderStructForDialect(s, HostDialects.Cuda),
-                cpuStructs.Contains(s) ? RenderStructForDialect(s, HostDialects.Cpu) : string.Empty));
+                RenderStructForDialect(s, HostDialects.Cuda, launcherAssembly),
+                cpuStructs.Contains(s) ? RenderStructForDialect(s, HostDialects.Cpu, launcherAssembly) : string.Empty));
         }
 
         return sources.MoveToImmutable().AsEquatableArray();
     }
 
-    private static string RenderStructForDialect(INamedTypeSymbol s, ITranspilerDialect dialect)
+    private static string RenderStructForDialect(INamedTypeSymbol s, ITranspilerDialect dialect,
+        IAssemblySymbol launcherAssembly)
     {
         var structLayout = TypeLayoutCalculator.GetStructLayout(s, dialect);
         using var writer = new SourceWriter();
-        NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout);
-        StructMarshalMethodEmitter.WriteMarshalMethod(writer, s, structLayout, dialect);
-        StructUnmarshalMethodEmitter.WriteUnmarshalMethod(writer, s, structLayout, dialect);
+        NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout, launcherAssembly);
+        StructMarshalMethodEmitter.WriteMarshalMethod(writer, s, structLayout, dialect, launcherAssembly);
+        StructUnmarshalMethodEmitter.WriteUnmarshalMethod(writer, s, structLayout, dialect, launcherAssembly);
         if (!dialect.IsCuda)
         {
-            StructArrayHelperEmitter.WriteCopyArraysMethod(writer, s, structLayout);
-            StructArrayHelperEmitter.WriteHoldsArrayMethods(writer, s, structLayout);
+            StructArrayHelperEmitter.WriteCopyArraysMethod(writer, s, structLayout, launcherAssembly);
+            StructArrayHelperEmitter.WriteHoldsArrayMethods(writer, s, structLayout, launcherAssembly);
         }
 
         return writer.ToString();

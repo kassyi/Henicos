@@ -202,7 +202,26 @@ internal static class IrExpressionBuilder
         }
 
         // Whether the call splits and what it writes are G#'s decisions, made by the classify pass
-        return new IrCall(method, receiver, arguments, IrCallClassification.Unclassified, type, category, source);
+        return new IrCall(method, receiver, WithExtensionReceiver(operation, arguments),
+            IrCallClassification.Unclassified, type, category, source);
+    }
+
+    // An extension method called on its receiver ('x.M()'): its first argument is the receiver written before the name
+    private static ImmutableArray<IrArgument> WithExtensionReceiver(IInvocationOperation operation,
+        ImmutableArray<IrArgument> arguments)
+    {
+        if (!operation.TargetMethod.IsExtensionMethod ||
+            operation.Syntax is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } ||
+            arguments.IsEmpty)
+        {
+            return arguments;
+        }
+
+        var first = arguments[0];
+        return access.Expression.Span.Contains(first.Value.Source.Span)
+            ? arguments.SetItem(0, new IrArgument(first.Parameter, first.Value, IrArgumentKind.ExtensionReceiver,
+                first.EvaluationIndex))
+            : arguments;
     }
 
     private static IrExpression BuildUnary(IUnaryOperation operation, ITypeSymbol type, IrCategory category,

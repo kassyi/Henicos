@@ -177,7 +177,7 @@ public static IGpuBigFloatVectorExpression SelectMultiply<TScalar>(
 
 ## SelectDivide\<TScalar\>(IGpuBigFloatVectorExpression, TScalar)
 
-Divides every element of `source` by `scalar`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Words) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if `scalar` is zero. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
+Divides every element of `source` by `scalar`. Output `WordsPerElement` is `Math.Max(source.WordsPerElement, scalar.Words) + 1`; each result is the exact quotient rounded toward zero to that precision, with the significand normalized to its top bit, whatever the normalization of the operands. Throws `DivideByZeroException` during evaluation if `scalar` is zero and the vector has at least one element; as in System.Linq, a zero `scalar` over no element (an empty vector, or a `Where` that selects none) divides nothing and does not throw. When the widest of the significands and the result has more than 512 words, each evaluation allocates `2 * width` words of temporary device memory per element (4 bytes each: about 480 MB for 100,000 elements of 600 words) and releases it after the launch.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectDivide<TScalar>(
@@ -199,7 +199,7 @@ public static IGpuBigFloatVectorExpression SelectPow<TScalar>(
 
 ## SelectDivideByUInt32(IGpuBigFloatVectorExpression, uint)
 
-Divides every element in `source` by a 32-bit unsigned integer `divisor` with [`IGpuBigFloatArithmetic.Divide`](IGpuBigFloatArithmetic.md): each result is the exact quotient rounded toward zero to the precision of the element, with the significand normalized to its top bit. Output `WordsPerElement` equals `source.WordsPerElement`. Throws `DivideByZeroException` during evaluation if `divisor == 0`.
+Divides every element in `source` by a 32-bit unsigned integer `divisor` with [`IGpuBigFloatArithmetic.Divide`](IGpuBigFloatArithmetic.md): each result is the exact quotient rounded toward zero to the precision of the element, with the significand normalized to its top bit. Output `WordsPerElement` equals `source.WordsPerElement`. Throws `DivideByZeroException` during evaluation if `divisor == 0` and the vector has at least one element; as in System.Linq, a zero `divisor` over no element (an empty vector, or a `Where` that selects none) divides nothing and does not throw.
 
 ```csharp
 public static IGpuBigFloatVectorExpression SelectDivideByUInt32(
