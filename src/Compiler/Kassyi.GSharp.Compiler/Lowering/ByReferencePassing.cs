@@ -1,7 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
-/// How the CPU lowering passes an argument of a call that may suspend (<see cref="SpilledArguments.ClassifyByReference"/>).
+/// How the CPU lowering passes an argument of a call that may suspend
+/// (<see cref="SpilledArguments.ClassifyByReference"/>).
 /// </summary>
 internal enum ByReferencePassing
 {

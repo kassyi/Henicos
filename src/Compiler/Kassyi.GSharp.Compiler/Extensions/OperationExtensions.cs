@@ -31,9 +31,9 @@ internal static class OperationExtensions
         _ => IsPointerDereference(operation)
     };
 
-    // [WHY] *p, p[i], the p of p->F and an element of a fixed-size buffer are variables in C# (23.6.4 to 23.6.6, 23.8.3),
-    // whatever operation the Roslyn that runs the generator represents them with (today one of kind None), so they are
-    // recognized by their syntax and the pointer type they read through
+    // [WHY] *p, p[i], the p of p->F and an element of a fixed-size buffer are variables in C# (23.6.4 to 23.6.6,
+    // 23.8.3), whatever operation the Roslyn that runs the generator represents them with (today one of kind None), so
+    // they are recognized by their syntax and the pointer type they read through
     private static bool IsPointerDereference(IOperation operation) => operation.Syntax switch
     {
         PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } => true,

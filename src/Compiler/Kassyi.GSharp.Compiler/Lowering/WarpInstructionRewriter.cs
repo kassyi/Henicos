@@ -315,7 +315,10 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                     return parenthesized.WithExpression(SpillLocation(parenthesized.Expression, arguments, index));
                 case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } member:
                     return member.WithExpression(SpillLocation(member.Expression, arguments, index));
-                case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.PointerMemberAccessExpression } pointerMember:
+                case MemberAccessExpressionSyntax
+                {
+                    RawKind: (int)SyntaxKind.PointerMemberAccessExpression
+                } pointerMember:
                     return pointerMember.WithExpression(SpillPointer(pointerMember.Expression, arguments, index));
                 case PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } indirection:
                     return indirection.WithOperand(SpillPointer(indirection.Operand, arguments, index));
@@ -360,7 +363,9 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
         // The pointer of *p or p->F: a value, evaluated once unless it can stay in place
         private ExpressionSyntax SpillPointer(ExpressionSyntax pointer, SeparatedSyntaxList<ArgumentSyntax> arguments,
             int index) =>
-            SpilledArguments.CanStayInPlace(pointer, arguments, index, parent._semanticModel) ? pointer : Spill(pointer);
+            SpilledArguments.CanStayInPlace(pointer, arguments, index, parent._semanticModel)
+                ? pointer
+                : Spill(pointer);
 
         private IdentifierNameSyntax Spill(ExpressionSyntax expression)
         {

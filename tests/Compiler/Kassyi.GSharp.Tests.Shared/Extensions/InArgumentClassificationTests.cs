@@ -10,9 +10,10 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Extensions;
 
 /// <summary>
-/// Classifies the argument of an in / ref parameter: whether C# passes a variable (<see cref="OperationExtensions.IsVariable"/>),
-/// and how the CPU lowering passes it to a call that may suspend (<see cref="SpilledArguments.ClassifyByReference"/>),
-/// which GSH0062 reports when the variable would be selected again on every resume (#1585).
+/// Classifies the argument of an in / ref parameter: whether C# passes a variable
+/// (<see cref="OperationExtensions.IsVariable"/>), and how the CPU lowering passes it to a call that may suspend
+/// (<see cref="SpilledArguments.ClassifyByReference"/>), which GSH0062 reports when the variable would be selected
+/// again on every resume (#1585).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class InArgumentClassificationTests

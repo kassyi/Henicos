@@ -34,8 +34,8 @@ internal static class SpilledArguments
 
     /// <summary>
     /// Whether <paramref name="use"/>, inside the location of the by-reference argument at <paramref name="index"/>, is
-    /// in a part that is evaluated into a temporary before the call: an index, the array or pointer of an element, or the
-    /// pointer of <c>*p</c> and <c>p-&gt;F</c>.
+    /// in a part that is evaluated into a temporary before the call: an index, the array or pointer of an element, or
+    /// the pointer of <c>*p</c> and <c>p-&gt;F</c>.
     /// </summary>
     public static bool IsInSpilledLocationPart(ExpressionSyntax location, SyntaxNode use,
         SeparatedSyntaxList<ArgumentSyntax> arguments, int index, SemanticModel? model)
@@ -69,8 +69,8 @@ internal static class SpilledArguments
     }
 
     /// <summary>
-    /// Whether the receiver of an element access in a by-reference argument is evaluated into a temporary: an array or a
-    /// pointer (<see cref="IsValueReceiver"/>) that cannot stay in place. Without a semantic model no receiver is.
+    /// Whether the receiver of an element access in a by-reference argument is evaluated into a temporary: an array or
+    /// a pointer (<see cref="IsValueReceiver"/>) that cannot stay in place. Without a semantic model no receiver is.
     /// </summary>
     public static bool IsSpilledReceiver(ExpressionSyntax receiver, SeparatedSyntaxList<ArgumentSyntax> arguments,
         int index, SemanticModel? model) =>
@@ -104,8 +104,8 @@ internal static class SpilledArguments
     /// selects, which every resume would select again (GSH0062).
     /// </summary>
     // [WHY] One answer for the lowering, the liveness of the cross-barrier rules and GSH0062, so that what the analyzer
-    // accepts is what the lowering keeps. A span element without the keyword stays a copy: the span is not kept across a
-    // resume (#990)
+    // accepts is what the lowering keeps. A span element without the keyword stays a copy: the span is not kept across
+    // a resume (#990)
     public static ByReferencePassing ClassifyByReference(ArgumentSyntax argument, SemanticModel? model)
     {
         var hasKeyword = !argument.RefKindKeyword.IsKind(SyntaxKind.None);

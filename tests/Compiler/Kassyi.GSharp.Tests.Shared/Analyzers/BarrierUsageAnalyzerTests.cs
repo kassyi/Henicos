@@ -326,8 +326,8 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     // A reference into the result of a call cannot be kept across a resume, also through a member access, parentheses or
     // an in parameter without the keyword (#788 review), nor a ref conditional, with or without the keyword and in
-    // parentheses, nor an element of an inline array that a call returns (#1585; #927 is to keep the reference instead).
-    // Variables stay allowed: an element of an inline array local, and what a pointer points to
+    // parentheses, nor an element of an inline array that a call returns (#1585; #927 is to keep the reference
+    // instead). Variables stay allowed: an element of an inline array local, and what a pointer points to
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task RefReturnMemberArgument_SuspendingCall_ReportsGSH0062AtArgument()
