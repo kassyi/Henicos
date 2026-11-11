@@ -98,7 +98,7 @@ internal static class NativeBindingEmitter
 
             foreach (var m in def.Methods)
             {
-                var parameters = CreateLaunchParameters(m);
+                var plan = ModuleBindingPlanner.Plan(m);
 
                 NativeApiDocumentation.EmitDocumentation(writer, m);
                 writer.Append($"public static void {m.Name}(");
@@ -122,7 +122,7 @@ internal static class NativeBindingEmitter
                 {
                     var entryPoint = string.IsNullOrEmpty(m.EntryPoint) ? m.Name : m.EntryPoint ?? m.Name;
                     ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleName, entryPoint, m.Name, $"{def.ClassName}.{m.Name}",
-                        parameters, packContext: false);
+                        plan, packContext: false);
                 }
 
                 writer.AppendLine();
@@ -239,28 +239,5 @@ internal static class NativeBindingEmitter
 
         ModuleKernelLaunchEmitter.AppendStringLiteral(writer, libraryName ?? string.Empty);
         writer.AppendLine("];");
-    }
-
-    private static ImmutableArray<ModuleKernelLaunchParameter> CreateLaunchParameters(ApiMethodDefinition method)
-    {
-        var builder = ImmutableArray.CreateBuilder<ModuleKernelLaunchParameter>(method.Parameters.Length);
-        method.Parameters
-            .AsStackEnumerable()
-            .Select(CreateLaunchParameter)
-            .AddTo(builder);
-
-        return builder.MoveToImmutable();
-    }
-
-    private static ModuleKernelLaunchParameter CreateLaunchParameter(ParameterDefinition p)
-    {
-        var type = p.Type.AsSpan().Trim().ToString();
-        string? elementType = null;
-        if (type.EndsWith("[]", StringComparison.Ordinal))
-        {
-            elementType = type.AsSpan(0, type.Length - 2).TrimEnd().ToString();
-        }
-
-        return new ModuleKernelLaunchParameter(p.Name, type, elementType, IsCopiedIn: true, IsCopiedOut: true);
     }
 }

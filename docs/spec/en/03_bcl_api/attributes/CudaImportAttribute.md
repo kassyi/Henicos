@@ -115,6 +115,21 @@ Applied to C# `partial` or `extern` method declarations that are implemented in 
 
 Parameters named `gridDimX/Y/Z`, `blockDimX/Y/Z`, `sharedMemBytes` and `stream` configure the launch and are not passed to the kernel. A `sharedMemBytes` above what the kernel currently allows (48 KB minus its static shared memory) opts the kernel in to the device maximum, and a request whose static plus dynamic shared memory is above the device limit throws `ArgumentOutOfRangeException` before the launch, as for a `[GpuKernel]` launch (see [SharedMemory: Size limit per block](../memory/SharedMemory.md#size-limit-per-block)).
 
+A launch setting parameter must have the type the launch takes: a type that converts implicitly to `uint` for the
+dimensions and `sharedMemBytes`, and `IntPtr` (`nint`) for `stream`. The other parameters are the kernel's arguments,
+in order:
+
+| Parameter type | The kernel receives |
+| :--- | :--- |
+| An unmanaged value (`int`, `float`, an unmanaged struct, an enum) | The value |
+| A pointer or function pointer | The pointer |
+| A one-dimensional array of unmanaged elements (`float[]`) | A pointer to a device copy of the array; `[In]` copies it only to the device, `[Out]` only back, neither or both copies it both ways |
+
+Any other parameter is reported as [GSH0110](../diagnostics/GSH0110.md), and the generated method throws
+`NotSupportedException`: a reference type (`string`, a class, a delegate) or an array of them would reach the kernel as
+a host address, `Nullable<T>` has no counterpart in a kernel, and `ref` / `out` / `in` parameters, nullable arrays,
+multidimensional and jagged arrays are not supported yet.
+
 ## See also
 
 ### BCL API > Attributes

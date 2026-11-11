@@ -23,9 +23,9 @@ var p_a = d_a.DevicePointer;
 var p_b = d_b.DevicePointer;
 var p_scalarValue = scalarValue;
 var kernelParams = stackalloc void*[3];
-kernelParams[0] = &p_a;
-kernelParams[1] = &p_b;
-kernelParams[2] = &p_scalarValue;
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_a);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_b);
+kernelParams[2] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<float>(ref p_scalarValue);
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 kernel,
 gridDimX, 1, 1,

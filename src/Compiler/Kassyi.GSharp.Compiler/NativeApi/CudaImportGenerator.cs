@@ -95,7 +95,7 @@ public class CudaImportGenerator : IIncrementalGenerator
         ExtractAttributeArguments(attributeData, methodSyntax, methodSymbol.Name,
             out var moduleName, out var entryPoint, out var packContext);
 
-        var parameters = CreateLaunchParameters(methodSymbol).AsEquatableArray();
+        var plan = CudaImportPlanner.Plan(methodSymbol, ctx.SemanticModel.Compilation);
         var namespaceName = GetNamespaceName(containingClass);
         var classHeader = RenderClassHeader(containingClass);
         var signature = RenderMethodSignature(methodSyntax, methodSymbol);
@@ -107,11 +107,12 @@ public class CudaImportGenerator : IIncrementalGenerator
             namespaceName,
             classHeader,
             methodSymbol.Name,
+            CudaImportPlanner.GetMessageName(methodSymbol),
             moduleName,
             entryPoint,
             packContext,
             signature,
-            parameters);
+            plan);
     }
 
     private static string GetNamespaceName(INamedTypeSymbol containingClass)
@@ -162,22 +163,37 @@ public class CudaImportGenerator : IIncrementalGenerator
 
             foreach (var method in classGroup.Methods)
             {
-                var parameters = method.Parameters.AsImmutableArray();
-                if (method.PackContext)
-                {
-                    ModuleKernelLaunchEmitter.EmitNativeContextStruct(writer, method.MethodName, parameters);
-                }
-
-                writer.AppendLine(method.Signature);
-                using (writer.Scope())
-                {
-                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, method.ModuleName, method.EntryPoint, method.MethodName,
-                        $"{classGroup.ClassName}.{method.MethodName}", parameters, method.PackContext);
-                }
+                EmitMethod(writer, method);
             }
         }
 
         context.AddSource($"{classGroup.ClassName}_CudaImport.g.cs", writer.ToString());
+    }
+
+    // A method whose parameters the launcher cannot pass gets a body that throws the GSH0110 message, so the partial
+    // method stays implemented and the build shows the diagnostic instead of CS8795
+    private static void EmitMethod(SourceWriter writer, CudaImportMethodModel method)
+    {
+        var plan = method.Plan;
+        if (method.PackContext && plan.CanLaunch)
+        {
+            ModuleKernelLaunchEmitter.EmitNativeContextStruct(writer, method.MethodName, plan);
+        }
+
+        writer.AppendLine(method.Signature);
+        using (writer.Scope())
+        {
+            if (plan.CanLaunch)
+            {
+                ModuleKernelLaunchEmitter.EmitLaunchBody(writer, method.ModuleName, method.EntryPoint,
+                    method.MethodName, method.MessageName, plan, method.PackContext);
+            }
+            else
+            {
+                ModuleKernelLaunchEmitter.EmitUnavailableBody(writer,
+                    CudaImportPlanner.FormatProblem(method.MessageName, plan.Problems[0]));
+            }
+        }
     }
 
     private static void EmitFileHeader(SourceWriter writer)
@@ -364,34 +380,5 @@ public class CudaImportGenerator : IIncrementalGenerator
             QualifiedNameSyntax q => KnownAttributes.IsAttributeName(q.Right.Identifier.ValueText, KnownAttributes.CudaImport),
             _ => false
         };
-    }
-
-    private static ImmutableArray<ModuleKernelLaunchParameter> CreateLaunchParameters(IMethodSymbol methodSymbol)
-    {
-        var builder = ImmutableArray.CreateBuilder<ModuleKernelLaunchParameter>(methodSymbol.Parameters.Length);
-        foreach (var param in methodSymbol.Parameters)
-        {
-            using var typeWriter = new SourceWriter();
-            typeWriter.AppendCsharpTypeName(param.Type);
-
-            string? elementTypeName = null;
-            if (param.Type is IArrayTypeSymbol arrayType)
-            {
-                using var elementWriter = new SourceWriter();
-                elementWriter.AppendCsharpTypeName(arrayType.ElementType);
-                elementTypeName = elementWriter.ToString();
-            }
-
-            var hasIn = param.HasAttribute(KnownAttributes.In);
-            var hasOut = param.HasAttribute(KnownAttributes.Out);
-            builder.Add(new ModuleKernelLaunchParameter(
-                param.Name,
-                typeWriter.ToString(),
-                elementTypeName,
-                IsCopiedIn: hasIn || !hasOut,
-                IsCopiedOut: hasOut || !hasIn));
-        }
-
-        return builder.MoveToImmutable();
     }
 }

@@ -21,8 +21,8 @@ unsafe
 var p_data = d_data.DevicePointer;
 var p_factor = factor;
 var kernelParams = stackalloc void*[2];
-kernelParams[0] = &p_data;
-kernelParams[1] = &p_factor;
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_data);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<float>(ref p_factor);
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,

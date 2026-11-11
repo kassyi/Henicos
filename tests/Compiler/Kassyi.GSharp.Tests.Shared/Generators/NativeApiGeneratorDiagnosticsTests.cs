@@ -57,20 +57,23 @@ public class NativeApiGeneratorDiagnosticsTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("\"float[]?\"", "nullable types")]
-    [InlineData("\"int?\"", "nullable types")]
-    [InlineData("\"float[,]\"", "one-dimensional arrays")]
-    [InlineData("\"float[][]\"", "one-dimensional arrays")]
-    [InlineData("string", "reference types")]
-    [InlineData("\"string[]\"", "reference types")]
-    [InlineData("global::System.Object", "reference types")]
-    [InlineData("String", "reference types")]
-    [InlineData("Object", "reference types")]
-    [InlineData("System.Array", "reference types")]
-    [InlineData("ref int", "'ref', 'out', 'in', 'scoped' and 'params'")]
-    [InlineData("out int", "'ref', 'out', 'in', 'scoped' and 'params'")]
-    [InlineData("in int", "'ref', 'out', 'in', 'scoped' and 'params'")]
-    [InlineData("scoped ref int", "'ref', 'out', 'in', 'scoped' and 'params'")]
+    [InlineData("\"float[]?\"", ModuleKernelParameterTypes.NullableArrayReason)]
+    [InlineData("\"float[ ]?\"", ModuleKernelParameterTypes.NullableArrayReason)]
+    [InlineData("\"int?\"", ModuleKernelParameterTypes.NullableValueReason)]
+    [InlineData("\"float[,]\"", ModuleKernelParameterTypes.MultidimensionalArrayReason)]
+    [InlineData("\"float[][]\"", ModuleKernelParameterTypes.JaggedArrayReason)]
+    [InlineData("\"float [ ] [ ]\"", ModuleKernelParameterTypes.JaggedArrayReason)]
+    [InlineData("string", ModuleKernelParameterTypes.ManagedTypeReason)]
+    [InlineData("\"string[]\"", ModuleKernelParameterTypes.ManagedElementReason)]
+    [InlineData("global::System.Object", ModuleKernelParameterTypes.ManagedTypeReason)]
+    [InlineData("String", ModuleKernelParameterTypes.ManagedTypeReason)]
+    [InlineData("Object", ModuleKernelParameterTypes.ManagedTypeReason)]
+    [InlineData("System.Array", ModuleKernelParameterTypes.ManagedTypeReason)]
+    [InlineData("ref int", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("out int", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("in int", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("scoped ref int", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("\"float[\"", ModuleKernelParameterTypes.NotATypeReason)]
     public void ModuleDefinition_ParameterTheLauncherCannotPass_ReportsSchemaDiagnostic(
         string type,
         string reason)
@@ -99,6 +102,40 @@ public class NativeApiGeneratorDiagnosticsTests
         var message = diagnostic.GetMessage();
         Assert.Contains("Parameter 'p' of kernel method 'Run'", message);
         Assert.Contains(reason, message);
+        Assert.Empty(result.GeneratedTrees);
+    }
+
+    // A launch setting is chosen by its name; one of another type is an error instead of a silent conversion to the
+    // stream handle or a missing kernel argument
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("stream", "int", ModuleKernelParameterTypes.StreamTypeReason)]
+    [InlineData("blockDimX", "int", ModuleKernelParameterTypes.DimensionTypeReason)]
+    public void ModuleDefinition_LaunchSettingOfAnotherType_ReportsSchemaDiagnostic(
+        string name,
+        string type,
+        string reason)
+    {
+        var yaml = $$"""
+            namespace: My.Kernels
+            className: K
+            moduleName: k.fatbin
+            methods:
+              - name: Run
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: {{name}}, type: {{type}} }
+            """;
+
+        var result = RunGenerator(Api("k.yml", yaml));
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal(GSharpDiagnostics.NativeApiSchemaViolation.Id, diagnostic.Id);
+        var span = diagnostic.Location.GetLineSpan();
+        Assert.Equal(new LinePosition(7, 0), span.StartLinePosition);
+        Assert.Equal(new LinePosition(7, 0), span.EndLinePosition);
+        Assert.Contains($"Parameter '{name}' of kernel method 'Run' has type '{type}'", diagnostic.GetMessage());
+        Assert.Contains(reason, diagnostic.GetMessage());
         Assert.Empty(result.GeneratedTrees);
     }
 

@@ -21,8 +21,8 @@ unsafe
 var p_input = d_input.DevicePointer;
 var p_factor = factor;
 var kernelParams = stackalloc void*[2];
-kernelParams[0] = &p_input;
-kernelParams[1] = &p_factor;
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_input);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<float>(ref p_factor);
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,
@@ -51,7 +51,7 @@ count = count
 unsafe
 {
 var kernelParams = stackalloc void*[1];
-kernelParams[0] = &ctx;
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<__gsharp_native_context_MethodTwo>(ref ctx);
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,
@@ -74,9 +74,9 @@ var p_input = d_input.DevicePointer;
 var p_output = d_output.DevicePointer;
 var p_length = length;
 var kernelParams = stackalloc void*[3];
-kernelParams[0] = &p_input;
-kernelParams[1] = &p_output;
-kernelParams[2] = &p_length;
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_input);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_output);
+kernelParams[2] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<int>(ref p_length);
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,
@@ -98,8 +98,8 @@ unsafe
 var p_output = d_output.DevicePointer;
 var p_n = n;
 var kernelParams = stackalloc void*[2];
-kernelParams[0] = &p_output;
-kernelParams[1] = &p_n;
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_output);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<int>(ref p_n);
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 kernel,
 gridDimX, 1, 1,
@@ -134,8 +134,8 @@ unsafe
 var p_data = d_data.DevicePointer;
 var p_scale = scale;
 var kernelParams = stackalloc void*[2];
-kernelParams[0] = &p_data;
-kernelParams[1] = &p_scale;
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_data);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<double>(ref p_scale);
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,

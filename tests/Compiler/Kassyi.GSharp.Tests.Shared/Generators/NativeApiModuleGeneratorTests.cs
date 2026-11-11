@@ -62,6 +62,40 @@ public class NativeApiModuleGeneratorTests
         Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
     }
 
+    // A class named in YAML cannot be told from a struct without the compilation; the launcher takes the address of
+    // the argument through a method constrained to unmanaged types, so a class is a compile error in the generated
+    // launcher instead of reaching the kernel as the host address of the reference (#1417)
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Action")]
+    [InlineData("System.Text.StringBuilder")]
+    [InlineData("MyApp.Native.UserClass")]
+    public void ModuleDefinition_ClassTypedValueParameter_FailsToCompileInLauncher(string type)
+    {
+        var yaml = $$"""
+            namespace: MyApp.Native
+            className: ClassKernels
+            moduleName: ./native/class.fatbin
+            methods:
+              - name: Run
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: callback, type: "{{type}}" }
+            """;
+        var userClass = CSharpSyntaxTree.ParseText("namespace MyApp.Native; public sealed class UserClass { }",
+            new CSharpParseOptions(LanguageVersion.Latest));
+        var compilation = CreateCompilation().AddSyntaxTrees(userClass);
+        var driver = CreateDriver(Api("class.yml", yaml));
+
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
+
+        Assert.Empty(generatorDiagnostics);
+        var errors = output.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
+        var error = Assert.Single(errors);
+        Assert.Equal("CS8377", error.Id);
+        Assert.EndsWith("MyApp.Native.ClassKernels.NativeApi.g.cs", error.Location.SourceTree?.FilePath);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void ModuleDefinition_WithStreamParameter_EmitsCuStreamSynchronize()
