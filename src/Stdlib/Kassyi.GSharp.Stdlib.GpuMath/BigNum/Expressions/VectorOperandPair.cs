@@ -16,19 +16,18 @@ internal sealed class VectorOperandPair : IDisposable
     private readonly VectorResultCache _kept = new();
 
     /// <summary>
-    /// Evaluates <paramref name="left"/>, then <paramref name="right"/>, each with its result intact.
+    /// After <paramref name="left"/> and then the right input were evaluated over the same window: when the right
+    /// evaluation overwrote the left result, keeps the right result here and evaluates <paramref name="left"/> again,
+    /// so that both results are intact.
     /// </summary>
-    public void Evaluate(
+    public void KeepBoth(
         IGpuBigIntVectorExpression left,
-        IGpuBigIntVectorExpression right,
         GpuWorkspace workspace,
         int elementOffset,
         int? elementCount,
-        out VectorEvaluation leftResult,
-        out VectorEvaluation rightResult)
+        ref VectorEvaluation leftResult,
+        ref VectorEvaluation rightResult)
     {
-        leftResult = DeviceCounted.Evaluate(left, workspace, elementOffset, elementCount);
-        rightResult = DeviceCounted.Evaluate(right, workspace, elementOffset, elementCount);
         if (leftResult.Lease.IsCurrent)
         {
             return;

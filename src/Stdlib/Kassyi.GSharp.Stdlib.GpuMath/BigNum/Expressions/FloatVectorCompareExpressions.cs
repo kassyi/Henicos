@@ -3,18 +3,27 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal sealed class FloatVectorCompareScalarExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
     GpuFloatOperand scalar,
-    VectorCompareOperator opType) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
+    VectorCompareOperator opType) : IGpuBoolVectorExpression, IBoolVectorOperator
 {
-    public int Length => vector.Length;
-    public int Capacity => vector.Capacity;
+    private readonly VectorShape _shape = VectorShape.Of(vector);
+
+    public int Length => _shape.Length;
+    public int Capacity => _shape.Capacity;
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
 
-    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
+    public int OperandCount => 1;
+
+    public object GetOperand(int index) => vector;
+
+    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
+        in VectorValue second) =>
+        VectorValue.Of(Apply(workspace, first.Float));
+
+    private BoolVectorEvaluation Apply(GpuWorkspace workspace, FloatVectorEvaluation evaluated)
     {
-        var evaluated = DeviceCounted.Evaluate(vector, workspace);
         var vecResult = evaluated.Storage;
         var count = evaluated.Count;
         var capacity = Capacity;
@@ -63,41 +72,73 @@ internal sealed class FloatVectorCompareScalarExpression(
         return new BoolVectorEvaluation(_finalValues, count);
     }
 
-    public void Dispose()
+    public void DisposeOwn()
     {
         if (_allocated)
         {
             _finalValues.Dispose();
             _allocated = false;
         }
+    }
 
-        vector.Dispose();
+    public void Dispose()
+    {
+        try
+        {
+            DisposeOwn();
+        }
+        finally
+        {
+            VectorWalk.DisposeInputs(this);
+        }
     }
 }
 
 internal sealed class FloatVectorCompareVectorExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression left,
     [TakesOwnership] IGpuBigFloatVectorExpression right,
-    VectorCompareOperator opType) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
+    VectorCompareOperator opType) : IGpuBoolVectorExpression, IBoolVectorOperator
 {
-    public int Length => left.Length;
-    public int Capacity => left.Capacity;
+    private readonly VectorShape _shape = VectorShape.Of(left);
+
+    public int Length => _shape.Length;
+    public int Capacity => _shape.Capacity;
+
+    // The capacity of the right input, for the length check before anything is evaluated
+    private readonly int _rightCapacity = right.Capacity;
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
     // Evaluates the operands so that a shared sub-expression read at two offsets keeps both results
     private readonly FloatVectorOperandPair _operands = new();
 
-    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
 
-    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
+    public int OperandCount => 2;
+
+    public object GetOperand(int index) => index == 0 ? left : right;
+
+    // The lengths are checked before the inputs are evaluated, so that a rejected request evaluates nothing
+    public void Enter(in VectorRequest request)
     {
-        if (left.Capacity != right.Capacity)
+        if (Capacity != _rightCapacity)
         {
             throw new ArgumentException("Lengths must match");
         }
+    }
 
-        _operands.Evaluate(left, right, workspace, 0, null, out var leftEvaluated, out var rightEvaluated);
+    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
+        in VectorValue second)
+    {
+        var leftEvaluated = first.Float;
+        var rightEvaluated = second.Float;
+        _operands.KeepBoth(left, workspace, 0, null, ref leftEvaluated, ref rightEvaluated);
+        return VectorValue.Of(Apply(workspace, leftEvaluated, rightEvaluated));
+    }
+
+    private BoolVectorEvaluation Apply(GpuWorkspace workspace, FloatVectorEvaluation leftEvaluated,
+        FloatVectorEvaluation rightEvaluated)
+    {
         var count = DeviceCounted.Combine(leftEvaluated.Count, rightEvaluated.Count);
         var leftResult = leftEvaluated.Storage;
         var rightResult = rightEvaluated.Storage;
@@ -146,7 +187,7 @@ internal sealed class FloatVectorCompareVectorExpression(
         return new BoolVectorEvaluation(_finalValues, count);
     }
 
-    public void Dispose()
+    public void DisposeOwn()
     {
         if (_allocated)
         {
@@ -155,7 +196,17 @@ internal sealed class FloatVectorCompareVectorExpression(
         }
 
         _operands.Dispose();
-        left.Dispose();
-        right.Dispose();
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            DisposeOwn();
+        }
+        finally
+        {
+            VectorWalk.DisposeInputs(this);
+        }
     }
 }

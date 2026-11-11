@@ -5,18 +5,15 @@ internal sealed class FloatVectorOperandPair : IDisposable
 {
     private readonly VectorResultCache _kept = new();
 
-    /// <inheritdoc cref="VectorOperandPair.Evaluate"/>
-    public void Evaluate(
+    /// <inheritdoc cref="VectorOperandPair.KeepBoth"/>
+    public void KeepBoth(
         IGpuBigFloatVectorExpression left,
-        IGpuBigFloatVectorExpression right,
         GpuWorkspace workspace,
         int elementOffset,
         int? elementCount,
-        out FloatVectorEvaluation leftResult,
-        out FloatVectorEvaluation rightResult)
+        ref FloatVectorEvaluation leftResult,
+        ref FloatVectorEvaluation rightResult)
     {
-        leftResult = DeviceCounted.Evaluate(left, workspace, elementOffset, elementCount);
-        rightResult = DeviceCounted.Evaluate(right, workspace, elementOffset, elementCount);
         if (leftResult.Lease.IsCurrent)
         {
             return;

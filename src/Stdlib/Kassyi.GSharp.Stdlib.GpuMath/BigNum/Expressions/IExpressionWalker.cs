@@ -2,7 +2,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
 /// What the post-order walk of <see cref="ExpressionWalk"/> asks of the expression tree it evaluates: the signed tree
-/// (<see cref="SignedTree"/>) and the unsigned one (<see cref="BigIntExpressionVisitor"/>).
+/// (<see cref="SignedTree"/>), the unsigned one (<see cref="BigIntExpressionVisitor"/>) and the vector expressions
+/// (<see cref="VectorWalk"/>).
 /// </summary>
 /// <typeparam name="TNode">The node type of the tree.</typeparam>
 /// <typeparam name="TValue">The value of an evaluated node.</typeparam>
@@ -11,11 +12,12 @@ internal interface IExpressionWalker<TNode, TValue, TTarget>
     where TNode : class
     where TValue : struct
 {
-    /// <summary>Gets the operand count of a node.</summary>
+    /// <summary>Gets the operand count of a node; called after <see cref="Enter"/>.</summary>
     /// <param name="node">The node.</param>
-    /// <returns>1 or 2 for an operator node; 0 for a node that evaluates itself (a leaf, or a node implemented
-    /// outside GpuMath).</returns>
-    int OperandCount(TNode node);
+    /// <param name="target">Its target.</param>
+    /// <returns>1 or 2 for an operator node; 0 for a node that evaluates itself (a leaf, a node implemented outside
+    /// GpuMath, or a node that needs no operand for this target).</returns>
+    int OperandCount(TNode node, TTarget target);
 
     /// <summary>Gets an operand of an operator node.</summary>
     /// <param name="node">The operator node.</param>

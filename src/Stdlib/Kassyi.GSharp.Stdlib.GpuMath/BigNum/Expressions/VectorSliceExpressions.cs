@@ -1,40 +1,52 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count)
-    : IGpuBigIntVectorExpression, IDeviceCountedVector
+    : IGpuBigIntVectorExpression, IIntVectorOperator
 {
+    private readonly VectorShape _source = VectorShape.Of(source);
+
     public int Length => DeviceCounted.KnownLength(this);
 
-    public int Capacity => Math.Min(source.Capacity, count);
+    public int Capacity => Math.Min(_source.Capacity, count);
 
-    public int WordsPerElement => source.WordsPerElement;
-    public long BitsPerElement => source.BitsPerElement;
+    public int WordsPerElement { get; } = source.WordsPerElement;
+    public long BitsPerElement { get; } = source.BitsPerElement;
 
     public bool TryGetLength(out int length)
     {
-        var known = source.TryGetLength(out var sourceLength);
+        var known = _source.TryGetLength(out var sourceLength);
         length = known ? Math.Min(sourceLength, count) : 0;
         return known;
     }
 
-    public VectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
-        GpuBigUIntArrayView targetResult)
+    public int OperandCount => 1;
+
+    public object GetOperand(int index) => source;
+
+    // An empty window evaluates nothing
+    public bool EvaluatesOperands(in VectorRequest request) => EffectiveCount(request) > 0;
+
+    // The source evaluates the window into the caller's target
+    public VectorRequest OperandRequest(in VectorRequest request) =>
+        new(request.Offset, EffectiveCount(request), request.Target);
+
+    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
+        in VectorValue second) =>
+        EvaluatesOperands(request)
+            ? first
+            : VectorValue.Of(new VectorEvaluation(
+                VectorSlice.Empty(workspace, WordsPerElement, request.Target.Words), DeviceElementCount.Static(0)));
+
+    // Ensure we do not evaluate beyond the Take boundary; a device count below it is cut by the source's TakeFirst
+    private int EffectiveCount(in VectorRequest request) =>
+        Math.Min(request.EvalCount(Capacity), Capacity - request.Offset);
+
+    public void DisposeOwn()
     {
-        var evalCount = elementCount ?? (Capacity - elementOffset);
-
-        // Ensure we do not evaluate beyond the Take boundary; a device count below it is cut by the source's TakeFirst
-        var effectiveCount = Math.Min(evalCount, Capacity - elementOffset);
-
-        if (effectiveCount <= 0)
-        {
-            return new VectorEvaluation(
-                VectorSlice.Empty(workspace, WordsPerElement, targetResult), DeviceElementCount.Static(0));
-        }
-
-        return DeviceCounted.Evaluate(source, workspace, elementOffset, effectiveCount, targetResult);
+        // Holds nothing of its own
     }
 
-    public void Dispose() => source.Dispose();
+    public void Dispose() => VectorWalk.DisposeInputs(this);
 }
 
 internal static class VectorSlice
@@ -52,39 +64,49 @@ internal static class VectorSlice
 }
 
 internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count)
-    : IGpuBigIntVectorExpression, IDeviceCountedVector
+    : IGpuBigIntVectorExpression, IIntVectorOperator
 {
+    private readonly VectorShape _source = VectorShape.Of(source);
+
     // Skipping past the capacity skips everything; a device count below the skip gives 0 through SkipFirst
     private readonly int _skipCount = Math.Min(count, source.Capacity);
 
     public int Length => DeviceCounted.KnownLength(this);
 
-    public int Capacity => source.Capacity - _skipCount;
+    public int Capacity => _source.Capacity - _skipCount;
 
-    public int WordsPerElement => source.WordsPerElement;
-    public long BitsPerElement => source.BitsPerElement;
+    public int WordsPerElement { get; } = source.WordsPerElement;
+    public long BitsPerElement { get; } = source.BitsPerElement;
 
     public bool TryGetLength(out int length)
     {
-        var known = source.TryGetLength(out var sourceLength);
+        var known = _source.TryGetLength(out var sourceLength);
         length = known ? sourceLength - _skipCount : 0;
         return known;
     }
 
-    public VectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
-        GpuBigUIntArrayView targetResult)
+    public int OperandCount => 1;
+
+    public object GetOperand(int index) => source;
+
+    // An empty window evaluates nothing
+    public bool EvaluatesOperands(in VectorRequest request) => request.EvalCount(Capacity) > 0;
+
+    // Pass the requested element slice but shifted by the Skip count, into the caller's target
+    public VectorRequest OperandRequest(in VectorRequest request) =>
+        new(request.Offset + _skipCount, request.EvalCount(Capacity), request.Target);
+
+    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
+        in VectorValue second) =>
+        EvaluatesOperands(request)
+            ? first
+            : VectorValue.Of(new VectorEvaluation(
+                VectorSlice.Empty(workspace, WordsPerElement, request.Target.Words), DeviceElementCount.Static(0)));
+
+    public void DisposeOwn()
     {
-        var evalCount = elementCount ?? (Capacity - elementOffset);
-
-        if (evalCount <= 0)
-        {
-            return new VectorEvaluation(
-                VectorSlice.Empty(workspace, WordsPerElement, targetResult), DeviceElementCount.Static(0));
-        }
-
-        // Pass the requested element slice but shifted by the Skip count
-        return DeviceCounted.Evaluate(source, workspace, elementOffset + _skipCount, evalCount, targetResult);
+        // Holds nothing of its own
     }
 
-    public void Dispose() => source.Dispose();
+    public void Dispose() => VectorWalk.DisposeInputs(this);
 }

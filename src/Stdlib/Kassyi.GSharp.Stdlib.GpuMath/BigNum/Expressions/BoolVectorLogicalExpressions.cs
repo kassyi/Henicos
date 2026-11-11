@@ -3,25 +3,41 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal class VectorLogicalExpression(
     [TakesOwnership] IGpuBoolVectorExpression left,
     [TakesOwnership] IGpuBoolVectorExpression right,
-    bool isAnd) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
+    bool isAnd) : IGpuBoolVectorExpression, IBoolVectorOperator
 {
-    public int Length => left.Length;
-    public int Capacity => left.Capacity;
+    private readonly VectorShape _shape = VectorShape.Of(left);
+
+    public int Length => _shape.Length;
+    public int Capacity => _shape.Capacity;
+
+    // The capacity of the right input, for the length check before anything is evaluated
+    private readonly int _rightCapacity = right.Capacity;
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
 
-    // The flags of the capacity; both inputs have the same count, or one of them a device count (design J4)
-    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
+    public int OperandCount => 2;
+
+    public object GetOperand(int index) => index == 0 ? left : right;
+
+    // The lengths are checked before the inputs are evaluated, so that a rejected request evaluates nothing
+    public void Enter(in VectorRequest request)
     {
-        if (left.Capacity != right.Capacity)
+        if (Capacity != _rightCapacity)
         {
             throw new ArgumentException("Lengths must match");
         }
+    }
 
-        var leftResult = DeviceCounted.Evaluate(left, workspace);
-        var rightResult = DeviceCounted.Evaluate(right, workspace);
+    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
+        in VectorValue second) =>
+        VectorValue.Of(Apply(workspace, first.Bool, second.Bool));
+
+    // The flags of the capacity; both inputs have the same count, or one of them a device count
+    private BoolVectorEvaluation Apply(GpuWorkspace workspace, BoolVectorEvaluation leftResult,
+        BoolVectorEvaluation rightResult)
+    {
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
 
         var capacity = Capacity;
@@ -66,33 +82,50 @@ internal class VectorLogicalExpression(
         return new BoolVectorEvaluation(_finalValues, count);
     }
 
-    public void Dispose()
+    public void DisposeOwn()
     {
         if (_allocated)
         {
             _finalValues.Dispose();
             _allocated = false;
         }
+    }
 
-        left.Dispose();
-        right.Dispose();
+    public void Dispose()
+    {
+        try
+        {
+            DisposeOwn();
+        }
+        finally
+        {
+            VectorWalk.DisposeInputs(this);
+        }
     }
 }
 
 internal class VectorNotExpression([TakesOwnership] IGpuBoolVectorExpression source)
-    : IGpuBoolVectorExpression, IDeviceCountedBoolVector
+    : IGpuBoolVectorExpression, IBoolVectorOperator
 {
-    public int Length => source.Length;
-    public int Capacity => source.Capacity;
+    private readonly VectorShape _shape = VectorShape.Of(source);
+
+    public int Length => _shape.Length;
+    public int Capacity => _shape.Capacity;
     private GpuBigUIntArray _finalValues;
     private bool _allocated;
 
-    public bool TryGetLength(out int length) => source.TryGetLength(out length);
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
 
-    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
+    public int OperandCount => 1;
+
+    public object GetOperand(int index) => source;
+
+    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
+        in VectorValue second) =>
+        VectorValue.Of(Apply(workspace, first.Bool));
+
+    private BoolVectorEvaluation Apply(GpuWorkspace workspace, BoolVectorEvaluation result)
     {
-        var result = DeviceCounted.Evaluate(source, workspace);
-
         var capacity = Capacity;
         if (!_allocated)
         {
@@ -120,15 +153,25 @@ internal class VectorNotExpression([TakesOwnership] IGpuBoolVectorExpression sou
         return new BoolVectorEvaluation(_finalValues, result.Count);
     }
 
-    public void Dispose()
+    public void DisposeOwn()
     {
         if (_allocated)
         {
             _finalValues.Dispose();
             _allocated = false;
         }
+    }
 
-        source.Dispose();
+    public void Dispose()
+    {
+        try
+        {
+            DisposeOwn();
+        }
+        finally
+        {
+            VectorWalk.DisposeInputs(this);
+        }
     }
 }
 

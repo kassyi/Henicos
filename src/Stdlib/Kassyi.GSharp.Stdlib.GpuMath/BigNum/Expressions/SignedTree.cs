@@ -129,7 +129,8 @@ internal static class SignedTree
     private readonly struct Walker(GpuWorkspace workspace)
         : IExpressionWalker<IGpuBigIntExpression, SignedValue, GpuBigUInt?>
     {
-        public int OperandCount(IGpuBigIntExpression node) => node is ISignedOperator op ? op.OperandCount : 0;
+        public int OperandCount(IGpuBigIntExpression node, GpuBigUInt? target) =>
+            node is ISignedOperator op ? op.OperandCount : 0;
 
         public IGpuBigIntExpression GetOperand(IGpuBigIntExpression node, int index) =>
             ((ISignedOperator)node).GetOperand(index);

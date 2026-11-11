@@ -6,13 +6,13 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// </summary>
 internal sealed class FloatVectorWhereExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression source,
-    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
+    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigFloatVectorExpression, IFloatVectorOperator
 {
     public int Length => DeviceCounted.KnownLength(this);
 
-    public int Capacity => source.Capacity;
+    public int Capacity { get; } = source.Capacity;
 
-    public int WordsPerElement => source.WordsPerElement;
+    public int WordsPerElement { get; } = source.WordsPerElement;
 
     // The selected elements, the scan of the predicates, the count word and the block sums of the scan: owned here and
     // reused, so that an evaluation allocates nothing after the first
@@ -24,46 +24,53 @@ internal sealed class FloatVectorWhereExpression(
         return false;
     }
 
-    public FloatVectorEvaluation EvaluateCore(
-        GpuWorkspace workspace,
-        int elementOffset,
-        int? elementCount,
-        GpuBigFloatArrayView targetResult)
+    public int OperandCount => 2;
+
+    // The predicate first, as in VectorWhereExpression: a source that shares a sub-expression with it is
+    // evaluated last and keeps its values.
+    public object GetOperand(int index) => index == 0 ? predicate : source;
+
+    // Released in the order of the node: the source, then the predicate
+    public object GetInput(int index) => index == 0 ? source : predicate;
+
+    public void Enter(in VectorRequest request) =>
+        WhereDeviceState.ThrowIfCannotSelect(VectorResultCache.HasTarget(request.Target.FloatArray), Capacity,
+            predicate);
+
+    // An empty vector evaluates nothing
+    public bool EvaluatesOperands(in VectorRequest request) => Capacity != 0;
+
+    // The source and the predicate are read whole; the selection is cut to the window
+    public VectorRequest OperandRequest(in VectorRequest request) => VectorRequest.Whole;
+
+    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
+        in VectorValue second)
     {
-        var capacity = Capacity;
-        WhereDeviceState.ThrowIfCannotSelect(VectorResultCache.HasTarget(targetResult), capacity, predicate);
-        if (capacity == 0)
+        if (Capacity == 0)
         {
-            return new FloatVectorEvaluation(VectorResultCache.EmptyFloat(workspace, WordsPerElement),
-                DeviceElementCount.Static(0));
+            return VectorValue.Of(new FloatVectorEvaluation(VectorResultCache.EmptyFloat(workspace, WordsPerElement),
+                DeviceElementCount.Static(0)));
         }
 
-        // The predicate first, as in VectorWhereExpression: a source that shares a sub-expression with it is
-        // evaluated last and keeps its values.
-        var predicates = DeviceCounted.Evaluate(predicate, workspace);
-        var evaluatedSource = DeviceCounted.Evaluate(source, workspace);
+        var evaluatedSource = second.Float;
         var selected = _state.Select<FloatVectorResultKind, GpuBigFloatArrayView>(workspace, evaluatedSource.Storage,
-            evaluatedSource.Count, predicates, capacity, WordsPerElement, elementOffset, elementCount, out var count);
-        return new FloatVectorEvaluation(selected, count);
+            evaluatedSource.Count, first.Bool, Capacity, WordsPerElement, request.Offset, request.Count,
+            out var count);
+        return VectorValue.Of(new FloatVectorEvaluation(selected, count));
     }
 
+    public void DisposeOwn() => _state.Dispose();
+
+    // A release that throws does not skip the others
     public void Dispose()
     {
-        // A release that throws does not skip the others
         try
         {
-            _state.Dispose();
+            DisposeOwn();
         }
         finally
         {
-            try
-            {
-                source.Dispose();
-            }
-            finally
-            {
-                predicate.Dispose();
-            }
+            VectorWalk.DisposeInputs(this);
         }
     }
 }

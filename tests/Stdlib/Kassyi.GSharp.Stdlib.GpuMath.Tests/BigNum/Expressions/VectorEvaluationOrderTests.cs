@@ -11,7 +11,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 // - a sub-expression shared by both inputs of a node evaluated again when the second evaluation overwrote the first;
 // - Dispose reaching the inputs of a node in the order the node released them.
 // Every tree leaves the workspace with the buffers it had before the tree was built, whether its evaluation succeeded
-// or threw.
+// or threw. The trees are evaluated by recursion (they are shallower than the levels VectorWalk recurses through),
+// walked whole, and walked below their second level: the three traces are the same.
 
 /// <summary>Evaluation order of vector expression trees on the GPU.</summary>
 [Category(TestCategory.Stdlib)]
@@ -22,21 +23,43 @@ public sealed class VectorEvaluationOrderTests
     private const int MaxDepth = 5;
     private const int Elements = 6;
 
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/VectorWalk.cs Walker.Enter -> no check (the
+    // walked trees evaluate inputs before a length check throws)
+    // mutant: VectorWalk.cs Evaluate (recursion) -> without `op.Enter(request)`
+    // mutant: VectorWalk.cs Evaluate (recursion) -> `GetOperand(op.OperandCount - 1)` for the first input
+    // mutant: VectorWalk.cs Walker.OperandTarget -> the node's own request
+    // mutant: VectorWalk.cs DisposeOrExpand -> without `PushInputs` (leaves below the inputs are not disposed)
+    // mutant: VectorWhereExpression.cs GetOperand -> the source before the predicate
+    // mutant: VectorWhereExpression.cs GetInput -> the predicate released before the source
+    // mutant: VectorSliceExpressions.cs VectorTakeExpression.EvaluatesOperands -> `true` (an empty window evaluates
+    // the source)
+    // mutant: VectorOperandPair.cs KeepBoth -> never evaluates the left input again (a shared sub-expression)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task VectorEvaluation_RandomTrees_KeepsTheOrderOfLeavesAndScalars()
     {
-        var recursive = RunOnGpu();
+        var recursive = RunOnGpu(recursionLimit: null);
+        Assert.Equal(recursive, RunOnGpu(recursionLimit: 0));
+        Assert.Equal(recursive, RunOnGpu(recursionLimit: 2));
         return Verifier.Verify(recursive)
             .UseFastHashSnapshotName(nameof(VectorEvaluation_RandomTrees_KeepsTheOrderOfLeavesAndScalars));
     }
 
-    private static string RunOnGpu()
+    // The traces with the given number of levels evaluated by recursion (null: the default)
+    private static string RunOnGpu(int? recursionLimit)
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
-        return Traces(workspace);
+        VectorWalk.RecursionLimit = recursionLimit;
+        try
+        {
+            return Traces(workspace);
+        }
+        finally
+        {
+            VectorWalk.RecursionLimit = null;
+        }
     }
 
     private static string Traces(GpuWorkspace workspace)
@@ -279,94 +302,100 @@ public sealed class VectorEvaluationOrderTests
         public (IGpuBigIntVectorExpression Node, string Shape) Int(int depth, int capacity)
         {
             var choice = depth == 0 ? 0 : random.Next(11);
-            switch (choice)
+            return choice switch
             {
-                case 0:
-                    {
-                        var id = "i" + _ids++;
-                        var array = inputs.IntArrays[random.Next(inputs.IntArrays.Count)];
-                        IGpuBigIntVectorExpression leaf = new TracedIntLeaf(id, array, inputs.Trace);
-                        if (capacity == Elements)
-                        {
-                            return (leaf, id);
-                        }
+                0 => IntLeaf(capacity),
+                1 or 2 or 3 => IntScalarStep(choice, depth, capacity),
+                4 => IntDivided(depth, capacity),
+                5 or 6 => IntZip(choice == 5, depth, capacity),
+                7 when capacity < Elements => IntShared(depth, capacity),
+                7 or 8 => IntTake(depth, capacity),
+                9 when capacity < Elements => IntSkip(depth, capacity),
+                9 => IntTakeAbove(depth, capacity),
+                _ => IntWhere(depth, capacity)
+            };
+        }
 
-                        return random.Next(2) == 0
-                            ? (leaf.Take(capacity), $"Take{capacity}({id})")
-                            : (leaf.Skip(Elements - capacity), $"Skip{Elements - capacity}({id})");
-                    }
-
-                case 1:
-                case 2:
-                case 3:
-                    {
-                        var (operand, shape) = Int(depth - 1, capacity);
-                        var scalar = Scalar();
-                        IGpuBigIntVectorExpression node = choice switch
-                        {
-                            1 => new VectorAddScalarExpression(operand, scalar),
-                            2 => new VectorSubScalarExpression(operand, scalar),
-                            _ => new VectorMulScalarExpression(operand, scalar)
-                        };
-                        return (node, $"{"+-*"[choice - 1]}{scalar.Id}({shape})");
-                    }
-
-                case 4:
-                    {
-                        var (operand, shape) = Int(depth - 1, capacity);
-                        var divisor = (uint)random.Next(1, 4);
-                        return (operand.SelectDivideByUInt32(divisor), $"/{divisor}({shape})");
-                    }
-
-                case 5:
-                case 6:
-                    {
-                        var (left, leftShape) = Int(depth - 1, capacity);
-                        var (right, rightShape) = Int(depth - 1, OtherCapacity(capacity));
-                        return choice == 5
-                            ? (left.ZipAdd(right), $"zip+({leftShape}, {rightShape})")
-                            : (left.ZipSubtract(right), $"zip-({leftShape}, {rightShape})");
-                    }
-
-                case 7 when capacity < Elements:
-                    {
-                        // One sub-expression read by both inputs at different windows
-                        var skip = random.Next(1, Elements - capacity + 1);
-                        var (shared, shape) = Int(depth - 1, capacity + skip);
-                        return (shared.Skip(skip).ZipSubtract(shared.Take(capacity)),
-                            $"shared({shape}).Skip({skip}) zip- .Take({capacity})");
-                    }
-
-                case 7:
-                case 8:
-                    {
-                        // Take of an input as wide (a count at or above the capacity) or wider
-                        var wider = random.Next(capacity, Elements + 1);
-                        var (operand, shape) = Int(depth - 1, wider);
-                        var count = wider > capacity ? capacity : capacity + random.Next(2);
-                        return (operand.Take(count), $"Take{count}({shape})");
-                    }
-
-                case 9 when capacity < Elements:
-                    {
-                        var count = random.Next(1, Elements - capacity + 1);
-                        var (operand, shape) = Int(depth - 1, capacity + count);
-                        return (operand.Skip(count), $"Skip{count}({shape})");
-                    }
-
-                case 9:
-                    {
-                        var (operand, shape) = Int(depth - 1, capacity);
-                        return (operand.Take(capacity + 1), $"Take{capacity + 1}({shape})");
-                    }
-
-                default:
-                    {
-                        var (source, shape) = Int(depth - 1, capacity);
-                        var (predicate, predicateShape) = Bool(depth - 1, capacity);
-                        return (source.Where(predicate), $"Where({shape}, {predicateShape})");
-                    }
+        private (IGpuBigIntVectorExpression Node, string Shape) IntLeaf(int capacity)
+        {
+            var id = "i" + _ids++;
+            var array = inputs.IntArrays[random.Next(inputs.IntArrays.Count)];
+            IGpuBigIntVectorExpression leaf = new TracedIntLeaf(id, array, inputs.Trace);
+            if (capacity == Elements)
+            {
+                return (leaf, id);
             }
+
+            return random.Next(2) == 0
+                ? (leaf.Take(capacity), $"Take{capacity}({id})")
+                : (leaf.Skip(Elements - capacity), $"Skip{Elements - capacity}({id})");
+        }
+
+        private (IGpuBigIntVectorExpression Node, string Shape) IntScalarStep(int choice, int depth, int capacity)
+        {
+            var (operand, shape) = Int(depth - 1, capacity);
+            var scalar = Scalar();
+            IGpuBigIntVectorExpression node = choice switch
+            {
+                1 => new VectorAddScalarExpression(operand, scalar),
+                2 => new VectorSubScalarExpression(operand, scalar),
+                _ => new VectorMulScalarExpression(operand, scalar)
+            };
+            return (node, $"{"+-*"[choice - 1]}{scalar.Id}({shape})");
+        }
+
+        private (IGpuBigIntVectorExpression Node, string Shape) IntDivided(int depth, int capacity)
+        {
+            var (operand, shape) = Int(depth - 1, capacity);
+            var divisor = (uint)random.Next(1, 4);
+            return (operand.SelectDivideByUInt32(divisor), $"/{divisor}({shape})");
+        }
+
+        private (IGpuBigIntVectorExpression Node, string Shape) IntZip(bool add, int depth, int capacity)
+        {
+            var (left, leftShape) = Int(depth - 1, capacity);
+            var (right, rightShape) = Int(depth - 1, OtherCapacity(capacity));
+            return add
+                ? (left.ZipAdd(right), $"zip+({leftShape}, {rightShape})")
+                : (left.ZipSubtract(right), $"zip-({leftShape}, {rightShape})");
+        }
+
+        // One sub-expression read by both inputs at different windows
+        private (IGpuBigIntVectorExpression Node, string Shape) IntShared(int depth, int capacity)
+        {
+            var skip = random.Next(1, Elements - capacity + 1);
+            var (shared, shape) = Int(depth - 1, capacity + skip);
+            return (shared.Skip(skip).ZipSubtract(shared.Take(capacity)),
+                $"shared({shape}).Skip({skip}) zip- .Take({capacity})");
+        }
+
+        // Take of an input as wide (a count at or above the capacity) or wider
+        private (IGpuBigIntVectorExpression Node, string Shape) IntTake(int depth, int capacity)
+        {
+            var wider = random.Next(capacity, Elements + 1);
+            var (operand, shape) = Int(depth - 1, wider);
+            var count = wider > capacity ? capacity : capacity + random.Next(2);
+            return (operand.Take(count), $"Take{count}({shape})");
+        }
+
+        private (IGpuBigIntVectorExpression Node, string Shape) IntSkip(int depth, int capacity)
+        {
+            var count = random.Next(1, Elements - capacity + 1);
+            var (operand, shape) = Int(depth - 1, capacity + count);
+            return (operand.Skip(count), $"Skip{count}({shape})");
+        }
+
+        private (IGpuBigIntVectorExpression Node, string Shape) IntTakeAbove(int depth, int capacity)
+        {
+            var (operand, shape) = Int(depth - 1, capacity);
+            return (operand.Take(capacity + 1), $"Take{capacity + 1}({shape})");
+        }
+
+        private (IGpuBigIntVectorExpression Node, string Shape) IntWhere(int depth, int capacity)
+        {
+            var (source, shape) = Int(depth - 1, capacity);
+            var (predicate, predicateShape) = Bool(depth - 1, capacity);
+            return (source.Where(predicate), $"Where({shape}, {predicateShape})");
         }
 
         public (IGpuBoolVectorExpression Node, string Shape) Bool(int depth, int capacity)
@@ -411,73 +440,79 @@ public sealed class VectorEvaluationOrderTests
         public (IGpuBigFloatVectorExpression Node, string Shape) Float(int depth, int capacity)
         {
             var choice = depth == 0 ? 0 : random.Next(8);
-            switch (choice)
+            return choice switch
             {
-                case 0:
-                    {
-                        var id = "f" + _ids++;
-                        var array = inputs.FloatArrays[random.Next(inputs.FloatArrays.Count)];
-                        IGpuBigFloatVectorExpression leaf = new TracedFloatLeaf(id, array, inputs.Trace);
-                        if (capacity == Elements)
-                        {
-                            return (leaf, id);
-                        }
+                0 => FloatLeaf(capacity),
+                1 or 2 => FloatScalarStep(choice == 1, depth, capacity),
+                3 => FloatZip(depth, capacity),
+                4 => FloatTake(depth, capacity),
+                5 when capacity < Elements => FloatSkip(depth, capacity),
+                5 or 6 => FloatDivided(depth, capacity),
+                _ => FloatWhere(depth, capacity)
+            };
+        }
 
-                        return random.Next(2) == 0
-                            ? (leaf.Take(capacity), $"Take{capacity}({id})")
-                            : (leaf.Skip(Elements - capacity), $"Skip{Elements - capacity}({id})");
-                    }
-
-                case 1:
-                case 2:
-                    {
-                        var (operand, shape) = Float(depth - 1, capacity);
-                        var index = random.Next(inputs.FloatScalars.Count);
-                        var scalar = inputs.FloatScalars[index];
-                        return choice == 1
-                            ? (operand.SelectAdd(scalar), $"+c{index}({shape})")
-                            : (operand.SelectMultiply(scalar), $"*c{index}({shape})");
-                    }
-
-                case 3:
-                    {
-                        var (left, leftShape) = Float(depth - 1, capacity);
-                        var (right, rightShape) = Float(depth - 1, OtherCapacity(capacity));
-                        return (left.ZipSubtract(right), $"zip-({leftShape}, {rightShape})");
-                    }
-
-                case 4:
-                    {
-                        var wider = random.Next(capacity, Elements + 1);
-                        var (operand, shape) = Float(depth - 1, wider);
-                        var count = wider > capacity ? capacity : capacity + random.Next(2);
-                        return (operand.Take(count), $"Take{count}({shape})");
-                    }
-
-                case 5 when capacity < Elements:
-                    {
-                        var count = random.Next(1, Elements - capacity + 1);
-                        var (operand, shape) = Float(depth - 1, capacity + count);
-                        return (operand.Skip(count), $"Skip{count}({shape})");
-                    }
-
-                case 5:
-                case 6:
-                    {
-                        var (operand, shape) = Float(depth - 1, capacity);
-                        var divisor = (uint)random.Next(1, 4);
-                        return (operand.SelectDivideByUInt32(divisor), $"/{divisor}({shape})");
-                    }
-
-                default:
-                    {
-                        var (source, shape) = Float(depth - 1, capacity);
-                        var (compared, comparedShape) = Float(depth - 1, capacity);
-                        var index = random.Next(inputs.FloatScalars.Count);
-                        var predicate = compared.IsGreaterThan(inputs.FloatScalars[index]);
-                        return (source.Where(predicate), $"Where({shape}, GreaterThan({comparedShape}, c{index}))");
-                    }
+        private (IGpuBigFloatVectorExpression Node, string Shape) FloatLeaf(int capacity)
+        {
+            var id = "f" + _ids++;
+            var array = inputs.FloatArrays[random.Next(inputs.FloatArrays.Count)];
+            IGpuBigFloatVectorExpression leaf = new TracedFloatLeaf(id, array, inputs.Trace);
+            if (capacity == Elements)
+            {
+                return (leaf, id);
             }
+
+            return random.Next(2) == 0
+                ? (leaf.Take(capacity), $"Take{capacity}({id})")
+                : (leaf.Skip(Elements - capacity), $"Skip{Elements - capacity}({id})");
+        }
+
+        private (IGpuBigFloatVectorExpression Node, string Shape) FloatScalarStep(bool add, int depth, int capacity)
+        {
+            var (operand, shape) = Float(depth - 1, capacity);
+            var index = random.Next(inputs.FloatScalars.Count);
+            var scalar = inputs.FloatScalars[index];
+            return add
+                ? (operand.SelectAdd(scalar), $"+c{index}({shape})")
+                : (operand.SelectMultiply(scalar), $"*c{index}({shape})");
+        }
+
+        private (IGpuBigFloatVectorExpression Node, string Shape) FloatZip(int depth, int capacity)
+        {
+            var (left, leftShape) = Float(depth - 1, capacity);
+            var (right, rightShape) = Float(depth - 1, OtherCapacity(capacity));
+            return (left.ZipSubtract(right), $"zip-({leftShape}, {rightShape})");
+        }
+
+        private (IGpuBigFloatVectorExpression Node, string Shape) FloatTake(int depth, int capacity)
+        {
+            var wider = random.Next(capacity, Elements + 1);
+            var (operand, shape) = Float(depth - 1, wider);
+            var count = wider > capacity ? capacity : capacity + random.Next(2);
+            return (operand.Take(count), $"Take{count}({shape})");
+        }
+
+        private (IGpuBigFloatVectorExpression Node, string Shape) FloatSkip(int depth, int capacity)
+        {
+            var count = random.Next(1, Elements - capacity + 1);
+            var (operand, shape) = Float(depth - 1, capacity + count);
+            return (operand.Skip(count), $"Skip{count}({shape})");
+        }
+
+        private (IGpuBigFloatVectorExpression Node, string Shape) FloatDivided(int depth, int capacity)
+        {
+            var (operand, shape) = Float(depth - 1, capacity);
+            var divisor = (uint)random.Next(1, 4);
+            return (operand.SelectDivideByUInt32(divisor), $"/{divisor}({shape})");
+        }
+
+        private (IGpuBigFloatVectorExpression Node, string Shape) FloatWhere(int depth, int capacity)
+        {
+            var (source, shape) = Float(depth - 1, capacity);
+            var (compared, comparedShape) = Float(depth - 1, capacity);
+            var index = random.Next(inputs.FloatScalars.Count);
+            var predicate = compared.IsGreaterThan(inputs.FloatScalars[index]);
+            return (source.Where(predicate), $"Where({shape}, GreaterThan({comparedShape}, c{index}))");
         }
 
         // The capacity of a second input: the first one's, except in one case of twelve

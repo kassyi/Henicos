@@ -18,6 +18,8 @@ public sealed class VectorDeepChainTests
     private const int SmallStack = 256 * 1024;
 
     // e = e + s_k or e - s_k: every level is a scalar node over the level below
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Expressions/VectorWalk.cs Evaluate -> recursion at every
+    // level (`levels == 0` -> `levels == int.MinValue`; the test host ends with a stack overflow)
     [Theory]
     [InlineData(8)]
     [InlineData(24)]
@@ -47,6 +49,9 @@ public sealed class VectorDeepChainTests
             VectorChains.Zips(workspace, depth, rightDeep: false));
 
     // Take over Take over a Skip, evaluated into a target that every level passes down
+    // mutant: VectorWalk.cs Walker.OperandTarget -> the node's own request (the target and the window of the Take)
+    // mutant: VectorSliceExpressions.cs VectorSkipExpression.OperandRequest -> without `+ _skipCount`
+    // mutant: VectorSliceExpressions.cs VectorTakeExpression.Capacity -> `count` (not cut to the source's capacity)
     [Theory]
     [InlineData(8)]
     [InlineData(24)]
@@ -122,6 +127,8 @@ public sealed class VectorDeepChainTests
 
     // A zero divisor halfway down a chain of 20000 levels whose scalars are rented (s + s): the division throws, and
     // every buffer leased by the levels below it went back
+    // mutant: VectorBinaryScalarExpressions.cs Apply -> without `scalarResult.Dispose()`
+    // mutant: VectorWalk.cs DisposeOrExpand -> without `PushInputs` (the nodes below the inputs keep their buffers)
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void FailureHalfwayDownADeepChain_ThrowsAndReturnsEveryBuffer() =>

@@ -1,34 +1,43 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 internal abstract class VectorUnaryExpressionBase(
-    [TakesOwnership] IGpuBigIntVectorExpression vector) : IGpuBigIntVectorExpression, IDeviceCountedVector
+    [TakesOwnership] IGpuBigIntVectorExpression vector) : IGpuBigIntVectorExpression, IIntVectorOperator
 {
-    public int Length => vector.Length;
-    public int WordsPerElement => vector.WordsPerElement;
+    private readonly VectorShape _shape = VectorShape.Of(vector);
+
+    public int Length => _shape.Length;
+    public int WordsPerElement { get; } = vector.WordsPerElement;
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
 
-    public int Capacity => vector.Capacity;
+    public int Capacity => _shape.Capacity;
 
-    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them
-    public VectorEvaluation EvaluateCore(
-        GpuWorkspace workspace,
-        int elementOffset,
-        int? elementCount,
-        GpuBigUIntArrayView targetResult)
+    public int OperandCount => 1;
+
+    public object GetOperand(int index) => vector;
+
+    // The target is checked before the vector is evaluated, so that a rejected target evaluates nothing
+    public void Enter(in VectorRequest request)
     {
         ValidateBeforeEvaluate();
+        request.IntTarget(Capacity, WordsPerElement);
+    }
 
-        var evalCount = elementCount ?? (Capacity - elementOffset);
-        // The target is checked before the children run, so that a rejected target evaluates nothing
-        var targetValues = VectorResultCache.HasTarget(targetResult)
-            ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
-            : default;
+    // The window of the capacity; the elements are the first Count of them
+    public VectorRequest OperandRequest(in VectorRequest request) =>
+        VectorRequest.Window(request.Offset, request.EvalCount(Capacity));
 
-        var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
+    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
+        in VectorValue second) =>
+        VectorValue.Of(Apply(workspace, request.EvalCount(Capacity), request.IntTarget(Capacity, WordsPerElement),
+            first.Int));
+
+    private VectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigUIntArrayView targetValues,
+        VectorEvaluation vecResult)
+    {
         // A target that shares words with the input is written from the cache after the loop: the loop writes element i
         // before it reads element i + 1 (#864)
         var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, targetValues, vecResult.Storage);
@@ -54,16 +63,18 @@ internal abstract class VectorUnaryExpressionBase(
         GpuBigIntArrayView destination,
         int evalCount);
 
+    public void DisposeOwn() => _cache.Dispose();
+
+    // A cache release that throws (a failed capture refuses the clear) does not skip the input
     public void Dispose()
     {
-        // A cache release that throws (a failed capture refuses the clear) does not skip the children
         try
         {
-            _cache.Dispose();
+            DisposeOwn();
         }
         finally
         {
-            vector.Dispose();
+            VectorWalk.DisposeInputs(this);
         }
     }
 }
