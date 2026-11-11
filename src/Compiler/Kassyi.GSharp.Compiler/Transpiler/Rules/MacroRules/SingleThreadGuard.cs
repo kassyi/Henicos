@@ -12,8 +12,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 /// </remarks>
 internal static class SingleThreadGuard
 {
-    private const string ManagedContext = "global::Kassyi.GSharp.Core.ManagedGpuContext.";
-
     /// <summary>
     /// Writes the C++ condition <c>(threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0</c>.
     /// </summary>
@@ -28,8 +26,35 @@ internal static class SingleThreadGuard
     /// </summary>
     public static ExpressionSyntax CreateManagedCondition() => s_managedCondition;
 
-    private static readonly ExpressionSyntax s_managedCondition = SyntaxFactory.ParseExpression(
-        $"({ManagedContext}ThreadIdxX | {ManagedContext}ThreadIdxY | {ManagedContext}ThreadIdxZ | " +
-        $"{ManagedContext}BlockIdxX | {ManagedContext}BlockIdxY | {ManagedContext}BlockIdxZ) == 0"
-    );
+    private static readonly ExpressionSyntax s_managedCondition = BuildManagedCondition();
+
+    // (ManagedGpuContext.ThreadIdxX | ManagedGpuContext.ThreadIdxY | ManagedGpuContext.ThreadIdxZ |
+    //  ManagedGpuContext.BlockIdxX | ManagedGpuContext.BlockIdxY | ManagedGpuContext.BlockIdxZ) == 0
+    private static ExpressionSyntax BuildManagedCondition()
+    {
+        ReadOnlySpan<string> members =
+        [
+            ManagedNames.ThreadIdxXName,
+            ManagedNames.ThreadIdxYName,
+            ManagedNames.ThreadIdxZName,
+            ManagedNames.BlockIdxXName,
+            ManagedNames.BlockIdxYName,
+            ManagedNames.BlockIdxZName
+        ];
+        ExpressionSyntax mask = ManagedNames.CreateMemberAccess(members[0]);
+        for (var i = 1; i < members.Length; i++)
+        {
+            mask = SyntaxFactory.BinaryExpression(
+                SyntaxKind.BitwiseOrExpression,
+                mask,
+                ManagedNames.CreateMemberAccess(members[i])
+            );
+        }
+
+        return SyntaxFactory.BinaryExpression(
+            SyntaxKind.EqualsExpression,
+            SyntaxFactory.ParenthesizedExpression(mask),
+            SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0))
+        );
+    }
 }

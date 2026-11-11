@@ -29,6 +29,16 @@ public class EvaluationOrderAnalysisTests
     [InlineData("CapturedAlias", 1)]
     [InlineData("RefReturnAlias", 1)]
     [InlineData("MutatingStructGetterRead", 1)]
+    [InlineData("ReceiverMutatingGetterRead", 1)]
+    [InlineData("ReceiverMutatingIndexerRead", 1)]
+    [InlineData("ReceiverMutatingGetterCall", 1)]
+    [InlineData("ReceiverMemoryWritingGetterRead", 1)]
+    [InlineData("ImplicitThisMutatingGetterRead", 1)]
+    [InlineData("ImplicitThisReceiverGetterRead", 1)]
+    [InlineData("CompoundMemoryWritingGetter", 1)]
+    [InlineData("SetterReadingMemory", 1)]
+    [InlineData("InitializerSetterWritingMemory", 1)]
+    [InlineData("WithSetterWritingMemory", 1)]
     [InlineData("FieldThenWrite", 1)]
     public void LastSpilledOperand_InterferingOperands_IsTheLastOneThatInterferes(string method, int expected) =>
         Assert.Equal(expected, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
@@ -45,6 +55,8 @@ public class EvaluationOrderAnalysisTests
     [InlineData("ArrayLengthAndElement")]
     [InlineData("StructPureGetterAndConstant")]
     [InlineData("PureStructGetterRead")]
+    [InlineData("ReceiverPureGetterRead")]
+    [InlineData("ImplicitThisPureGetterRead")]
     public void LastSpilledOperand_IndependentOperands_IsNone(string method) =>
         Assert.Equal(-1, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 
@@ -176,6 +188,17 @@ public class EvaluationOrderAnalysisTests
 
         Assert.True(effects.Reads.Contains(pair));
         Assert.False(effects.Reads.Memory);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void EffectsOf_ComputedPropertyAsReceiver_CallsTheGetterOnItsStruct()
+    {
+        var (effects, s) = GetEffects("ReceiverMutatingGetterAlone", "s");
+
+        Assert.True(effects.Reads.Contains(s));
+        Assert.True(effects.Writes.Contains(s));
+        Assert.True(effects.Reads.Memory);
     }
 
     [Fact]
