@@ -495,6 +495,7 @@ methods:
         description: Stream creation flags.
 
   - name: cuStreamDestroy
+    entryPoint: cuStreamDestroy_v2
     returnType: CUresult
     summary: Destroys a stream.
     returnDescription: CudaSuccess on success; otherwise, an error code.
@@ -702,6 +703,7 @@ methods:
   # 8. CUDA Graph Management
   # ---------------------------------
   - name: cuStreamBeginCapture
+    entryPoint: cuStreamBeginCapture_v2
     returnType: CUresult
     summary: Begins graph capture on a stream.
     returnDescription: CudaSuccess on success; otherwise, an error code.
@@ -823,6 +825,7 @@ methods:
         description: Value to set.
 
   - name: cuDeviceTotalMem
+    entryPoint: cuDeviceTotalMem_v2
     returnType: CUresult
     summary: Returns the total amount of memory on the device.
     returnDescription: CudaSuccess on success; otherwise, an error code.
@@ -928,6 +931,7 @@ methods:
   # 11. Page-locked / Host Pinned Memory
   # ---------------------------------
   - name: cuMemAllocHost
+    entryPoint: cuMemAllocHost_v2
     returnType: CUresult
     summary: Allocates page-locked host memory.
     returnDescription: CudaSuccess on success; otherwise, an error code.
@@ -964,6 +968,7 @@ methods:
         description: Allocation flags.
 
   - name: cuMemHostRegister
+    entryPoint: cuMemHostRegister_v2
     returnType: CUresult
     summary: Registers an existing host memory range for use with CUDA.
     returnDescription: CudaSuccess on success; otherwise, an error code.
@@ -1090,6 +1095,7 @@ methods:
   # 14. Texture & Surface Object APIs
   # ---------------------------------
   - name: cuArrayCreate
+    entryPoint: cuArrayCreate_v2
     returnType: CUresult
     summary: Creates a 1D or 2D CUDA array.
     returnDescription: CudaSuccess on success; otherwise, an error code.
