@@ -41,6 +41,8 @@ public sealed class ReduceCommand : IFuzzCommand
 {
     private static readonly UTF8Encoding s_utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
+    private static readonly string s_defaultWorkDir = Path.Combine("tmp", "differential-fuzz");
+
     /// <summary>Gets the singleton command instance.</summary>
     public static ReduceCommand Instance { get; } = new();
 
@@ -67,6 +69,21 @@ public sealed class ReduceCommand : IFuzzCommand
         return Execute(options!);
     }
 
+    private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateTable(
+        new("--source", FuzzOptionTable.Value(FuzzOptionSetters.ParseSourcePath)),
+        new("--fuzz-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseFuzzSeed)),
+        new("--kernel", FuzzOptionTable.Value(FuzzOptionSetters.ParseKernelName)),
+        new("--input-seed", FuzzOptionTable.Value(FuzzOptionTable.ParseInputSeed)),
+        new("--profile", FuzzOptionTable.Value(FuzzOptionSetters.ParseProfileCode)),
+        new("--work-dir", FuzzOptionTable.Value(FuzzOptionSetters.ParseWorkDir)),
+        new("--repo-root", FuzzOptionTable.Value(FuzzOptionSetters.ParseRepoRoot)),
+        new("--test-cmd", FuzzOptionTable.Value(FuzzOptionSetters.ParseTestCmd)),
+        new("--out", FuzzOptionTable.Value(FuzzOptionSetters.ParseOutPath)),
+        new("--failing-paths", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailingPaths)),
+        new("--failure-kind", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailureKind)),
+        new("--column", FuzzOptionTable.Value(FuzzOptionSetters.ParseColumn)),
+        new("--no-gpu-lock", FuzzOptionTable.Flag(static v => v.NoGpuLock = true)));
+
     /// <summary>Parses command-line arguments into a <see cref="ReduceCommandOptions"/> record.</summary>
     public static bool TryParseOptions(
         ReadOnlySpan<string> args,
@@ -75,180 +92,33 @@ public sealed class ReduceCommand : IFuzzCommand
         out string? error)
     {
         options = null;
-        showHelp = false;
-        error = null;
+        var values = new FuzzOptionValues { WorkDir = s_defaultWorkDir };
 
-        string? sourcePath = null;
-        ulong fuzzSeed = 1UL;
-        string? kernelName = null;
-        int inputSeed = 0;
-        string profile = "C";
-        string workDir = Path.Combine("tmp", "differential-fuzz");
-        string? repoRoot = null;
-        string? testCmd = null;
-        string? outPath = null;
-        string failingPaths = "Native,Cuda";
-        string failureKind = "CellMismatch";
-        string column = "hash";
-        bool noGpuLock = false;
-
-        for (int i = 0; i < args.Length; i++)
+        if (!FuzzOptionTable.TryParse(args, s_options, values, out showHelp, out error) || showHelp)
         {
-            string arg = args[i];
-            switch (arg)
-            {
-                case "--help" or "-h":
-                    showHelp = true;
-                    return true;
-
-                case "--source":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--source requires a file path.";
-                        return false;
-                    }
-
-                    sourcePath = args[++i];
-                    break;
-
-                case "--fuzz-seed":
-                    if (i + 1 >= args.Length || !FuzzRandom.TryParseSeed(args[++i], out fuzzSeed))
-                    {
-                        error = "--fuzz-seed requires a 64-bit integer.";
-                        return false;
-                    }
-
-                    break;
-
-                case "--kernel":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--kernel requires a method name.";
-                        return false;
-                    }
-
-                    kernelName = args[++i];
-                    break;
-
-                case "--input-seed":
-                    if (i + 1 >= args.Length || !int.TryParse(args[++i], NumberStyles.Integer, CultureInfo.InvariantCulture, out inputSeed))
-                    {
-                        error = "--input-seed requires an integer.";
-                        return false;
-                    }
-
-                    break;
-
-                case "--profile":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--profile requires M|C|G.";
-                        return false;
-                    }
-
-                    profile = KnownIssueFilter.NormalizeProfile(args[++i]);
-                    break;
-
-                case "--work-dir":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--work-dir requires a directory path.";
-                        return false;
-                    }
-
-                    workDir = args[++i];
-                    break;
-
-                case "--repo-root":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--repo-root requires a directory path.";
-                        return false;
-                    }
-
-                    repoRoot = args[++i];
-                    break;
-
-                case "--test-cmd":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--test-cmd requires a command string.";
-                        return false;
-                    }
-
-                    testCmd = args[++i];
-                    break;
-
-                case "--out":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--out requires a file path.";
-                        return false;
-                    }
-
-                    outPath = args[++i];
-                    break;
-
-                case "--failing-paths":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--failing-paths requires a value.";
-                        return false;
-                    }
-
-                    failingPaths = args[++i];
-                    break;
-
-                case "--failure-kind":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--failure-kind requires a value.";
-                        return false;
-                    }
-
-                    failureKind = args[++i];
-                    break;
-
-                case "--column":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--column requires a column name.";
-                        return false;
-                    }
-
-                    column = args[++i];
-                    break;
-
-                case "--no-gpu-lock":
-                    noGpuLock = true;
-                    break;
-
-                default:
-                    error = $"Unknown option '{arg}'.";
-                    return false;
-            }
+            return showHelp;
         }
 
-        if (!string.IsNullOrWhiteSpace(sourcePath) && !File.Exists(sourcePath))
+        if (!string.IsNullOrWhiteSpace(values.SourcePath) && !File.Exists(values.SourcePath))
         {
-            error = $"Source file not found: {sourcePath}";
+            error = $"Source file not found: {values.SourcePath}";
             return false;
         }
 
         options = new ReduceCommandOptions(
-            sourcePath,
-            fuzzSeed,
-            kernelName,
-            inputSeed,
-            profile,
-            workDir,
-            repoRoot,
-            testCmd,
-            outPath,
-            failingPaths,
-            failureKind,
-            column,
-            noGpuLock);
+            values.SourcePath,
+            values.FuzzSeed,
+            values.KernelName,
+            values.InputSeed ?? 0,
+            values.ProfileCode,
+            values.WorkDir ?? s_defaultWorkDir,
+            values.RepoRoot,
+            values.TestCmd,
+            values.OutPath,
+            values.FailingPaths,
+            values.FailureKind,
+            values.Column,
+            values.NoGpuLock);
         return true;
     }
 
@@ -295,83 +165,108 @@ public sealed class ReduceCommand : IFuzzCommand
     /// <summary>Executes the <c>reduce</c> subcommand using the parsed <paramref name="options"/>.</summary>
     public static int Execute(ReduceCommandOptions options)
     {
-        string initialSource;
-        if (!string.IsNullOrWhiteSpace(options.SourcePath))
-        {
-            initialSource = File.ReadAllText(options.SourcePath, s_utf8NoBom);
-            if (!string.IsNullOrWhiteSpace(options.KernelName))
-            {
-                initialSource = IsolateSingleKernelCompilationUnit(initialSource, options.KernelName);
-            }
-        }
-        else
-        {
-            var gen = new ScalarFuzzGenerator(new FuzzOptions
-            {
-                FuzzSeed = options.FuzzSeed,
-                InputSeed = options.InputSeed,
-                BatchSize = 64,
-                Profile = options.Profile,
-            });
-            var batch = gen.GenerateBatch();
-            string target = options.KernelName ?? batch.Kernels[0].KernelName;
-            initialSource = IsolateSingleKernelCompilationUnit(batch.KernelsSource, target);
-        }
-
+        string initialSource = ResolveInitialSource(options);
         var expectedSignature = FuzzFailureSignature.Create(options.FailingPaths, options.FailureKind, options.Column);
-        string reducedSource;
         int origStmts = FuzzReducer.CountKernelExecutableStatements(initialSource);
-        int iterations;
 
-        if (!string.IsNullOrWhiteSpace(options.TestCmd))
-        {
-            string tempFile = Path.Combine(Path.GetTempPath(), $"fuzz_reduce_{Guid.NewGuid():N}.cu.cs");
-            try
-            {
-                var res = FuzzReducer.Reduce(initialSource, candidate =>
-                {
-                    File.WriteAllText(tempFile, candidate, s_utf8NoBom);
-                    string cmd = SubstitutePlaceholder(options.TestCmd, "{source}", tempFile);
-                    return FuzzWorkspaceReducer.RunExternalShellPredicate(cmd);
-                });
-                reducedSource = res.ReducedSource;
-                iterations = res.Iterations;
-            }
-            finally
-            {
-                if (File.Exists(tempFile))
-                {
-                    File.Delete(tempFile);
-                }
-            }
-        }
-        else
-        {
-            (reducedSource, iterations) = FuzzWorkspaceReducer.ReduceWorkspaceWithSpeculativeBatches(
-                initialSource,
-                options.FuzzSeed,
-                options.InputSeed,
-                options.Profile,
-                options.WorkDir,
-                options.RepoRoot,
-                expectedSignature,
-                options.NoGpuLock);
-        }
-
-        if (!string.IsNullOrWhiteSpace(options.OutPath))
-        {
-            string? dir = Path.GetDirectoryName(Path.GetFullPath(options.OutPath));
-            if (!string.IsNullOrWhiteSpace(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
-
-            File.WriteAllText(options.OutPath, reducedSource, s_utf8NoBom);
-        }
+        var (reducedSource, iterations) = ExecuteReduction(initialSource, options, expectedSignature);
+        WriteOutputFileIfRequested(options.OutPath, reducedSource);
 
         var fp = FuzzDeduplicator.ComputeFingerprint(reducedSource, options.FailingPaths, options.FailureKind);
         int finalStmts = FuzzReducer.CountKernelExecutableStatements(reducedSource);
+        PrintReductionResult(fp, origStmts, finalStmts, iterations, expectedSignature.Column, options.OutPath);
+        return 0;
+    }
 
+    private static string ResolveInitialSource(ReduceCommandOptions options)
+    {
+        if (!string.IsNullOrWhiteSpace(options.SourcePath))
+        {
+            string source = File.ReadAllText(options.SourcePath, s_utf8NoBom);
+            return !string.IsNullOrWhiteSpace(options.KernelName)
+                ? IsolateSingleKernelCompilationUnit(source, options.KernelName)
+                : source;
+        }
+
+        var gen = new ScalarFuzzGenerator(new FuzzOptions
+        {
+            FuzzSeed = options.FuzzSeed,
+            InputSeed = options.InputSeed,
+            BatchSize = 64,
+            Profile = options.Profile,
+        });
+        var batch = gen.GenerateBatch();
+        string target = options.KernelName ?? batch.Kernels[0].KernelName;
+        return IsolateSingleKernelCompilationUnit(batch.KernelsSource, target);
+    }
+
+    private static (string ReducedSource, int Iterations) ExecuteReduction(
+        string initialSource,
+        ReduceCommandOptions options,
+        FuzzFailureSignature expectedSignature)
+    {
+        if (!string.IsNullOrWhiteSpace(options.TestCmd))
+        {
+            return ReduceWithTestCommand(initialSource, options.TestCmd);
+        }
+
+        return FuzzWorkspaceReducer.ReduceWorkspaceWithSpeculativeBatches(
+            initialSource,
+            options.FuzzSeed,
+            options.InputSeed,
+            options.Profile,
+            options.WorkDir,
+            options.RepoRoot,
+            expectedSignature,
+            options.NoGpuLock);
+    }
+
+    private static (string ReducedSource, int Iterations) ReduceWithTestCommand(string initialSource, string testCmd)
+    {
+        string tempFile = Path.Combine(Path.GetTempPath(), $"fuzz_reduce_{Guid.NewGuid():N}.cu.cs");
+        try
+        {
+            var res = FuzzReducer.Reduce(initialSource, candidate =>
+            {
+                File.WriteAllText(tempFile, candidate, s_utf8NoBom);
+                string cmd = SubstitutePlaceholder(testCmd, "{source}", tempFile);
+                return FuzzWorkspaceReducer.RunExternalShellPredicate(cmd);
+            });
+            return (res.ReducedSource, res.Iterations);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    private static void WriteOutputFileIfRequested(string? outPath, string reducedSource)
+    {
+        if (string.IsNullOrWhiteSpace(outPath))
+        {
+            return;
+        }
+
+        string? dir = Path.GetDirectoryName(Path.GetFullPath(outPath));
+        if (!string.IsNullOrWhiteSpace(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        File.WriteAllText(outPath, reducedSource, s_utf8NoBom);
+    }
+
+    private static void PrintReductionResult(
+        FuzzFingerprintResult fp,
+        int origStmts,
+        int finalStmts,
+        int iterations,
+        string column,
+        string? outPath)
+    {
         Console.Out.WriteLine(JsonSerializer.Serialize(new
         {
             status = "reduced",
@@ -381,10 +276,9 @@ public sealed class ReduceCommand : IFuzzCommand
             iterations,
             failingPaths = fp.FailingPathsMask,
             failureKind = fp.FailureKindTag,
-            column = expectedSignature.Column,
-            outPath = options.OutPath is not null ? Path.GetFullPath(options.OutPath) : null,
+            column,
+            outPath = outPath is not null ? Path.GetFullPath(outPath) : null,
         }));
-        return 0;
     }
 
     /// <summary>

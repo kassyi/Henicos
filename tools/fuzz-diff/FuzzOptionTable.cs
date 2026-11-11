@@ -3,8 +3,8 @@ using System.Globalization;
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// The values that the options of <c>fuzz-diff gen</c>, <c>run</c> and <c>compare</c> set, before each command turns
-/// them into its options record. A command's table sets only the members of its own options.
+/// The values that the options of the <c>fuzz-diff</c> commands set, before each command turns them into its options
+/// record. A command's table sets only the members of its own options.
 /// </summary>
 internal sealed class FuzzOptionValues
 {
@@ -48,7 +48,25 @@ internal sealed class FuzzOptionValues
 
     internal string ProfileCode { get; set; } = "C";
 
+    internal string? SourcePath { get; set; }
+
+    internal string? KernelName { get; set; }
+
+    internal string? TestCmd { get; set; }
+
+    internal string? OutPath { get; set; }
+
+    internal string FailingPaths { get; set; } = "Native,Cuda";
+
+    internal string FailureKind { get; set; } = "CellMismatch";
+
+    internal string Column { get; set; } = "hash";
+
+    internal string? FindingsDir { get; set; }
+
     internal string? CudaArch { get; set; }
+
+    internal bool Json { get; set; }
 }
 
 /// <summary>One option of a command: whether it takes a value, and the step that applies it.</summary>
@@ -57,8 +75,8 @@ internal sealed class FuzzOptionValues
 internal sealed record FuzzOptionSpec(bool TakesValue, Func<FuzzOptionValues, string, string?> Apply);
 
 /// <summary>
-/// The option table of <c>fuzz-diff run</c> and <c>fuzz-diff compare</c>: one row per option and one parse loop, so
-/// that an option shared by both commands has one parser.
+/// The option tables of the <c>fuzz-diff</c> commands: one row per option and one parse loop, so that an option shared
+/// by several commands has one parser.
 /// </summary>
 internal static class FuzzOptionTable
 {
@@ -108,6 +126,11 @@ internal static class FuzzOptionTable
 
         return table;
     }
+
+    /// <summary>Builds an option table with only the specified rows.</summary>
+    internal static Dictionary<string, FuzzOptionSpec> CreateTable(
+        params KeyValuePair<string, FuzzOptionSpec>[] rows) =>
+        CreateFrom([], rows);
 
     /// <summary>A row for an option without a value; a value written as <c>--name=value</c> is ignored.</summary>
     internal static FuzzOptionSpec Flag(Action<FuzzOptionValues> set) =>
@@ -177,7 +200,7 @@ internal static class FuzzOptionTable
         return equals >= 0 ? (arg[..equals], arg[(equals + 1)..]) : (arg, null);
     }
 
-    private static string? ParseBatches(FuzzOptionValues values, string value)
+    internal static string? ParseBatches(FuzzOptionValues values, string value)
     {
         if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int batches) || batches <= 0)
         {
@@ -188,7 +211,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseBatchSize(FuzzOptionValues values, string value)
+    internal static string? ParseBatchSize(FuzzOptionValues values, string value)
     {
         if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int size) ||
             size is < 1 or > MaxBatchSize)
@@ -200,7 +223,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseFuzzSeed(FuzzOptionValues values, string value)
+    internal static string? ParseFuzzSeed(FuzzOptionValues values, string value)
     {
         if (!FuzzRandom.TryParseSeed(value, out ulong seed))
         {
@@ -211,7 +234,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseInputSeed(FuzzOptionValues values, string value)
+    internal static string? ParseInputSeed(FuzzOptionValues values, string value)
     {
         if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int seed))
         {
@@ -222,7 +245,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseAllowIssue(FuzzOptionValues values, string value)
+    internal static string? ParseAllowIssue(FuzzOptionValues values, string value)
     {
         var digits = value.AsSpan().TrimStart('#');
         if (!int.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out int issue) || issue <= 0)
@@ -238,7 +261,7 @@ internal static class FuzzOptionTable
         return null;
     }
 
-    private static string? ParseSwarmFocus(FuzzOptionValues values, string value)
+    internal static string? ParseSwarmFocus(FuzzOptionValues values, string value)
     {
         if (value.Length == 0 || !FuzzSwarmConfig.TryParseFocus(value, out _))
         {

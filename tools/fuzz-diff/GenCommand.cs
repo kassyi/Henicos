@@ -44,11 +44,11 @@ public sealed class GenCommand : IFuzzCommand
 
     private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateFrom(
         FuzzOptionTable.GenerationRows,
-        new("--size", FuzzOptionTable.Value(ParseSize)),
-        new("--profile", FuzzOptionTable.Value(ParseProfile)),
-        new("--out-dir", FuzzOptionTable.Value(ParseOutDir)),
-        new("--repo-root", FuzzOptionTable.Value(ParseRepoRoot)),
-        new("--cuda-arch", FuzzOptionTable.Value(ParseCudaArch)));
+        new("--size", FuzzOptionTable.Value(FuzzOptionSetters.ParseSize)),
+        new("--profile", FuzzOptionTable.Value(FuzzOptionSetters.ParseProfileCode)),
+        new("--out-dir", FuzzOptionTable.Value(FuzzOptionSetters.ParseOutDir)),
+        new("--repo-root", FuzzOptionTable.Value(FuzzOptionSetters.ParseRepoRoot)),
+        new("--cuda-arch", FuzzOptionTable.Value(FuzzOptionSetters.ParseCudaArch)));
 
     /// <summary>Parses command-line arguments into a <see cref="GenCommandOptions"/> record.</summary>
     public static bool TryParseOptions(
@@ -94,42 +94,5 @@ public sealed class GenCommand : IFuzzCommand
                 CultureInfo.InvariantCulture,
                 $"fuzz-diff gen: wrote {batch.Kernels.Count} kernels (fuzz-seed={FuzzRandom.FormatSeed(options.FuzzOptions.FuzzSeed)}, profile={options.FuzzOptions.Profile}) to {Path.GetFullPath(options.OutDir)}"));
         return 0;
-    }
-
-    private static string? ParseSize(FuzzOptionValues values, string value)
-    {
-        if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int size) ||
-            size is < 1 or > 8)
-        {
-            return "--size requires an integer in [1, 8].";
-        }
-
-        values.Size = size;
-        return null;
-    }
-
-    private static string? ParseProfile(FuzzOptionValues values, string value)
-    {
-        values.ProfileCode = KnownIssueFilter.NormalizeProfile(value);
-        return null;
-    }
-
-    // The value is set before it is checked: an error stops the parse and the values are dropped.
-    private static string? ParseOutDir(FuzzOptionValues values, string value)
-    {
-        values.OutDir = value;
-        return value.Length == 0 ? "--out-dir requires a directory path." : null;
-    }
-
-    private static string? ParseRepoRoot(FuzzOptionValues values, string value)
-    {
-        values.RepoRoot = value;
-        return value.Length == 0 ? "--repo-root requires a directory path." : null;
-    }
-
-    private static string? ParseCudaArch(FuzzOptionValues values, string value)
-    {
-        values.CudaArch = value;
-        return null;
     }
 }
