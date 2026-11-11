@@ -336,44 +336,38 @@ internal static class FuzzSyntaxHelpers
 
         var visited = new HashSet<string>(StringComparer.Ordinal);
         return CheckStructRecursive(typeName, structs, visited);
+    }
 
-        static bool CheckStructRecursive(
-            string currentType,
-            IReadOnlyDictionary<string, StructDeclarationSyntax> structMap,
-            HashSet<string> seen)
+    private static bool CheckStructRecursive(
+        string currentType,
+        IReadOnlyDictionary<string, StructDeclarationSyntax> structMap,
+        HashSet<string> seen)
+    {
+        if (currentType is "FuzzWrapInt" or "FuzzStructL3")
         {
-            if (currentType is "FuzzWrapInt" or "FuzzStructL3")
+            return true;
+        }
+
+        if (!seen.Add(currentType) || !structMap.TryGetValue(currentType, out var decl))
+        {
+            return false;
+        }
+
+        foreach (var member in decl.Members)
+        {
+            if (member is ConversionOperatorDeclarationSyntax)
             {
                 return true;
             }
 
-            if (!seen.Add(currentType) || !structMap.TryGetValue(currentType, out var decl))
+            if (member is FieldDeclarationSyntax field &&
+                CheckStructRecursive(RenderNodeText(field.Declaration.Type), structMap, seen))
             {
-                return false;
+                return true;
             }
-
-            foreach (var member in decl.Members)
-            {
-                if (member is ConversionOperatorDeclarationSyntax)
-                {
-                    return true;
-                }
-            }
-
-            foreach (var member in decl.Members)
-            {
-                if (member is FieldDeclarationSyntax field)
-                {
-                    string fieldType = RenderNodeText(field.Declaration.Type);
-                    if (CheckStructRecursive(fieldType, structMap, seen))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
+
+        return false;
     }
 
     internal static bool IsStackAllocSpanDeclaration(LocalDeclarationStatementSyntax localDecl)
