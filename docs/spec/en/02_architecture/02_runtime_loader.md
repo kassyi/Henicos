@@ -31,7 +31,7 @@ The `LoadAotKernel` method is responsible for validating and loading the precomp
 
 ### 2.2.2 CPU AOT Kernel Loading (`CpuKernelLoader.LoadAotKernel`)
 
-When a kernel is compiled using the `CpuDialect` (Standard C++ fallback), it generates standard dynamic libraries (`.dll` or `.so`) rather than CUDA Fatbins.
+When a kernel is compiled using the `StandardCppDialect` (Standard C++ fallback), it generates standard dynamic libraries (`.dll` or `.so`) rather than CUDA Fatbins.
 The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 
 - It reads the compiled host library and performs the identical **64-byte Ed25519 Digital Signature Verification** via `AotSignatureValidator.ExtractAndVerify` against `GpuSecurityPolicy.EmbeddedKeys`.
