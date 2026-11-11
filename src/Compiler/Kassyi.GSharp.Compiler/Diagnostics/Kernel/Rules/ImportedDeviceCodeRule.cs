@@ -103,7 +103,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
             ({ } colliding, var imported, { } other))
         {
             context.ReportDiagnostic(GSharpDiagnostics.DeviceExportNameCollision, typeSyntax.GetLocation(),
-                FormatName(colliding), imported.AssemblyName, other, imported.Record.CppName);
+                FormatName(colliding), imported.AssemblyName, other, imported.Record.Names.CppName);
         }
     }
 
@@ -263,8 +263,8 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
 
                 foreach (var imported in DeviceExportTable.ForAssembly(assembly).Records)
                 {
-                    Add(byName, imported.Record.CppName, imported);
-                    foreach (var name in imported.Record.DefinedNames)
+                    Add(byName, imported.Record.Names.CppName, imported);
+                    foreach (var name in imported.Record.Names.DefinedNames)
                     {
                         Add(byName, name, imported);
                     }
@@ -312,7 +312,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
             // The managed form of the caller calls the function's managed state machine in its assembly; the state
             // machines of what that one reaches come with it (its assembly emits it only with them)
             if (needsManagedStateMachine &&
-                imported.Record is { Kind: DeviceExportRecord.FunctionKind, Suspends: true, ManagedStateMachine: false })
+                imported.Record is { Kind: DeviceExportRecord.FunctionKind, Traits: { Suspends: true, ManagedStateMachine: false } })
             {
                 return new Problem(GSharpDiagnostics.DeviceExportUnusable,
                 [
@@ -321,10 +321,10 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
                 ]);
             }
 
-            if (FindCollision(imported, others ?? Find(imported.Record.CppName)) is { } other)
+            if (FindCollision(imported, others ?? Find(imported.Record.Names.CppName)) is { } other)
             {
                 return new Problem(GSharpDiagnostics.DeviceExportNameCollision,
-                    [displayName, assemblyName, other, imported.Record.CppName]);
+                    [displayName, assemblyName, other, imported.Record.Names.CppName]);
             }
 
             return default;
@@ -403,7 +403,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
         }
 
         /// <summary>The assembly (or this compilation) that gives the record's C++ name to another declaration.</summary>
-        public string? FindCollision(ImportedDeviceRecord imported) => FindCollision(imported, Find(imported.Record.CppName));
+        public string? FindCollision(ImportedDeviceRecord imported) => FindCollision(imported, Find(imported.Record.Names.CppName));
 
         // The assembly (or this compilation) that gives the record's C++ name to another declaration, or null
         private string? FindCollision(ImportedDeviceRecord imported, ImportedDeviceRecord[] records)

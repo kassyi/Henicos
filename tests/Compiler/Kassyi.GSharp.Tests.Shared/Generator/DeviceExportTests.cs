@@ -303,11 +303,19 @@ public class DeviceExportTests
     {
         var cudaOnly = default(DeviceExportRecord) with
         {
-            Kind = DeviceExportRecord.StructKind, Id = "T:N.S", CppName = "__gsharp_ty_N__S", CppFullName = "",
-            FrameName = "", Effect = "Memory", CudaSignature = "", CudaBody = "/*CUDA_TEXT*/", CudaDispose = "",
-            CppSignature = "", CppBody = "", CppDispose = "", CppFailed = true, InternalError = ""
+            Kind = DeviceExportRecord.StructKind,
+            Id = "T:N.S",
+            Names = new DeviceExportRecord.ExportNames("__gsharp_ty_N__S", "", default, default, default),
+            Traits = new DeviceExportRecord.FunctionTraits("", default, false, false, false, false, default, "Memory", false, false),
+            Cuda = new DeviceExportRecord.DialectText(default, "", "/*CUDA_TEXT*/", "", default, Failed: false),
+            Cpp = new DeviceExportRecord.DialectText(default, "", "", "", default, Failed: true),
+            InternalError = ""
         };
-        var cppOnly = cudaOnly with { CudaBody = "", CudaFailed = true, CppBody = "/*CPP_TEXT*/", CppFailed = false };
+        var cppOnly = cudaOnly with
+        {
+            Cuda = cudaOnly.Cuda with { Body = "", Failed = true },
+            Cpp = cudaOnly.Cpp with { Body = "/*CPP_TEXT*/", Failed = false }
+        };
 
         var source = DeviceExportEmitter.Generate([], [cudaOnly, cppOnly], "0000000000000000");
 
@@ -323,15 +331,25 @@ public class DeviceExportTests
     {
         var cudaOnly = default(DeviceExportRecord) with
         {
-            Kind = DeviceExportRecord.StructKind, Id = "T:N.S", CppName = "__gsharp_ty_N__S", CppFullName = "",
-            FrameName = "", Effect = "Memory", CudaSignature = "", CudaBody = "/*CUDA_TEXT*/", CudaDispose = "",
-            CppSignature = "", CppBody = "", CppDispose = "", CppFailed = true, InternalError = "CUDA_ONLY_ERROR"
+            Kind = DeviceExportRecord.StructKind,
+            Id = "T:N.S",
+            Names = new DeviceExportRecord.ExportNames("__gsharp_ty_N__S", "", default, default, default),
+            Traits = new DeviceExportRecord.FunctionTraits("", default, false, false, false, false, default, "Memory", false, false),
+            Cuda = new DeviceExportRecord.DialectText(default, "", "/*CUDA_TEXT*/", "", default, Failed: false),
+            Cpp = new DeviceExportRecord.DialectText(default, "", "", "", default, Failed: true),
+            InternalError = "CUDA_ONLY_ERROR"
         };
         var cppOnly = cudaOnly with
         {
-            CudaBody = "", CudaFailed = true, CppBody = "/*CPP_TEXT*/", CppFailed = false, InternalError = ""
+            Cuda = cudaOnly.Cuda with { Body = "", Failed = true },
+            Cpp = cudaOnly.Cpp with { Body = "/*CPP_TEXT*/", Failed = false },
+            InternalError = ""
         };
-        var neither = cudaOnly with { CudaBody = "", CudaFailed = true, InternalError = "BOTH_ERROR" };
+        var neither = cudaOnly with
+        {
+            Cuda = cudaOnly.Cuda with { Body = "", Failed = true },
+            InternalError = "BOTH_ERROR"
+        };
 
         var merged = DeviceExportEmitter.Generate([], [cudaOnly, cppOnly], "0000000000000000");
         var stillFailed = DeviceExportEmitter.Generate([], [cudaOnly, neither], "0000000000000000");

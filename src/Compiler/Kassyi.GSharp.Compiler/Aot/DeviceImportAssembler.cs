@@ -109,8 +109,8 @@ internal static class DeviceImportAssembler
         for (var i = 0; i < records.Length; i++)
         {
             var record = records[i].Record;
-            Add(byName, record.CppName, i);
-            foreach (var name in record.DefinedNames)
+            Add(byName, record.Names.CppName, i);
+            foreach (var name in record.Names.DefinedNames)
             {
                 Add(byName, name, i);
             }
@@ -136,18 +136,18 @@ internal static class DeviceImportAssembler
         using var source = new SourceWriter();
         foreach (var record in functions)
         {
-            source.AppendLine(isCuda ? record.CudaSignature : record.CppSignature);
+            source.AppendLine((isCuda ? record.Cuda : record.Cpp).Signature);
         }
 
         var orderedStructs = OrderStructs(structs, isCuda);
         foreach (var record in orderedStructs)
         {
-            source.Append(isCuda ? record.CudaBody : record.CppBody);
+            source.Append((isCuda ? record.Cuda : record.Cpp).Body);
         }
 
         foreach (var record in orderedStructs)
         {
-            source.Append(isCuda ? record.CudaDispose : record.CppDispose);
+            source.Append((isCuda ? record.Cuda : record.Cpp).Dispose);
         }
 
         AppendFunctionBodies(source, functions, isCuda);
@@ -280,8 +280,8 @@ internal static class DeviceImportAssembler
         var byName = new Dictionary<string, int>(StringComparer.Ordinal);
         for (var i = 0; i < structs.Count; i++)
         {
-            byName[structs[i].CppName] = i;
-            foreach (var name in structs[i].DefinedNames)
+            byName[structs[i].Names.CppName] = i;
+            foreach (var name in structs[i].Names.DefinedNames)
             {
                 byName[name] = i;
             }
@@ -325,9 +325,9 @@ internal static class DeviceImportAssembler
         var byFrame = new Dictionary<string, int>(StringComparer.Ordinal);
         for (var i = 0; i < functions.Count; i++)
         {
-            if (functions[i].FrameName.Length > 0)
+            if (functions[i].Traits.FrameName.Length > 0)
             {
-                byFrame[functions[i].FrameName] = i;
+                byFrame[functions[i].Traits.FrameName] = i;
             }
         }
 
@@ -348,7 +348,7 @@ internal static class DeviceImportAssembler
             var record = functions[index];
             if (!isCuda)
             {
-                foreach (var dependency in record.FrameDependencies)
+                foreach (var dependency in record.Traits.FrameDependencies)
                 {
                     if (byFrame.TryGetValue(dependency, out var dependencyIndex))
                     {
@@ -357,7 +357,7 @@ internal static class DeviceImportAssembler
                 }
             }
 
-            source.AppendLine(isCuda ? record.CudaBody : record.CppBody);
+            source.AppendLine((isCuda ? record.Cuda : record.Cpp).Body);
         }
     }
 
@@ -367,14 +367,14 @@ internal static class DeviceImportAssembler
         var includes = new HashSet<string>(StringComparer.Ordinal);
         foreach (var record in structs)
         {
-            (isCuda ? record.CudaIncludes : record.CppIncludes)
+            (isCuda ? record.Cuda : record.Cpp).Includes
                 .AsStackEnumerable()
                 .AddTo(includes);
         }
 
         foreach (var record in functions)
         {
-            (isCuda ? record.CudaIncludes : record.CppIncludes)
+            (isCuda ? record.Cuda : record.Cpp).Includes
                 .AsStackEnumerable()
                 .AddTo(includes);
         }
@@ -409,16 +409,16 @@ internal static class DeviceImportAssembler
     private static void AddFullNames(ImmutableArray<(string Name, string FullName)>.Builder names,
         DeviceExportRecord record)
     {
-        if (record.CppFullName.Length > 0)
+        if (record.Names.CppFullName.Length > 0)
         {
-            names.Add((record.CppName, record.CppFullName));
+            names.Add((record.Names.CppName, record.Names.CppFullName));
         }
 
-        for (var i = 0; i < record.DefinedFullNames.Length && i < record.DefinedNames.Length; i++)
+        for (var i = 0; i < record.Names.DefinedFullNames.Length && i < record.Names.DefinedNames.Length; i++)
         {
-            if (record.DefinedFullNames[i].Length > 0)
+            if (record.Names.DefinedFullNames[i].Length > 0)
             {
-                names.Add((record.DefinedNames[i], record.DefinedFullNames[i]));
+                names.Add((record.Names.DefinedNames[i], record.Names.DefinedFullNames[i]));
             }
         }
     }
