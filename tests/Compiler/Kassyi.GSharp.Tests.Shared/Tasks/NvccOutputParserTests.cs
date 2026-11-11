@@ -16,7 +16,7 @@ public class NvccOutputParserTests
         NvccOutputParser.DetectRegisterSpill(output, error, out errorMessage);
 
     [Fact]
-    public void Test_DetectRegisterSpill_NoSpill()
+    public void DetectRegisterSpill_ZeroBytesSpill_ReturnsFalse()
     {
         var output = "some random output\ncompilation success";
         var error = "some ptxas info : 0 bytes spill";
@@ -28,7 +28,7 @@ public class NvccOutputParserTests
     }
 
     [Fact]
-    public void Test_DetectRegisterSpill_HasSpillInError()
+    public void DetectRegisterSpill_SpillInErrorStream_ReportsTheSpill()
     {
         var output = "";
         var error = "ptxas warning : 10 bytes spill\nFunction properties for _Z3foo";
@@ -41,7 +41,7 @@ public class NvccOutputParserTests
     }
 
     [Fact]
-    public void Test_DetectRegisterSpill_HasSpillInOutput()
+    public void DetectRegisterSpill_SpillInOutputStream_ReportsTheSpill()
     {
         var output = "Function properties for _Z3bar\nptxas info : 4 bytes spill";
         var error = "";
@@ -54,7 +54,7 @@ public class NvccOutputParserTests
     }
 
     [Fact]
-    public void Test_ExtractWarnings_EdgUnusedVariableAndLabel_ReturnsStructuredWarnings()
+    public void ExtractWarnings_EdgUnusedVariableAndLabel_ReturnsStructuredWarnings()
     {
         var output = """
             C:\temp\kernel.g.cu(102): warning #550-D: variable "dummy" was set but never used
@@ -74,7 +74,7 @@ public class NvccOutputParserTests
     }
 
     [Fact]
-    public void Test_DetectRegisterSpill_ScopedSuppression_OnlySuppressesMarkedFunction()
+    public void DetectRegisterSpill_ScopedSuppression_OnlySuppressesMarkedFunction()
     {
         var cuContent = """
             // gsharp:suppress GS0001
