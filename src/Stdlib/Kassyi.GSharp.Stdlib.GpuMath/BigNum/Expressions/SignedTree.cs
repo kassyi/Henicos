@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 // Walks of a signed expression tree with a stack on the heap instead of the call stack. An expression built in a loop
 // (e = x + e, or a left fold) is as deep as the loop along either operand; a walk that recursed once per level would
-// end the process with a stack overflow.
+// end the process with a stack overflow. The evaluation is the walk of ExpressionWalk, shared with the unsigned tree.
 internal static class SignedTree
 {
     // The node evaluated into the target, or into a rented buffer. Operands are evaluated before the node that uses
@@ -31,49 +31,9 @@ internal static class SignedTree
     // the kernels that write it, and the graph reads it after each launch)
     public static SignedValue EvaluateSigned(ISignedOperator root, GpuWorkspace workspace, GpuBigUInt? targetResult)
     {
-        var frames = new PooledStack<Frame>();
-        var values = new PooledStack<SignedValue>();
-        try
-        {
-            Push(ref frames, root, targetResult);
-            while (frames.Count > 0)
-            {
-                var frame = frames.Peek();
-                if (frame.Node is not ISignedOperator node)
-                {
-                    // A leaf, or a node implemented elsewhere, evaluates itself
-                    frames.Pop();
-                    values.Push(SignedValue.FromHost(frame.Node.Evaluate(workspace, frame.Target)));
-                    continue;
-                }
-
-                if (frame.Next < node.OperandCount)
-                {
-                    frames.Peek().Next = frame.Next + 1;
-                    var operandTarget = node.PassesTargetToOperand ? frame.Target : null;
-                    Push(ref frames, node.GetOperand(frame.Next), operandTarget);
-                    continue;
-                }
-
-                // The operands go to Apply, which releases them
-                frames.Pop();
-                var second = node.OperandCount == 2 ? values.Pop() : default;
-                var first = values.Pop();
-                values.Push(node.Apply(workspace, first, second, frame.Target));
-            }
-
-            return values.Pop();
-        }
-        catch (Exception failure)
-        {
-            ReleaseAll(ref values, failure);
-            throw;
-        }
-        finally
-        {
-            frames.Dispose();
-            values.Dispose();
-        }
+        var walker = new Walker(workspace);
+        return ExpressionWalk.Evaluate<Walker, IGpuBigIntExpression, SignedValue, GpuBigUInt?>(ref walker, root,
+            targetResult);
     }
 
     // Disposes every node below root that holds resources (a node implemented elsewhere, such as a vector reduction);
@@ -164,83 +124,34 @@ internal static class SignedTree
         }
     }
 
-    // A caller's target narrower than the node is rejected before any operand is evaluated; a node that passes its
-    // target on leaves the check to its operand
-    private static void Push(ref PooledStack<Frame> frames, IGpuBigIntExpression node, GpuBigUInt? target)
+    // The signed tree for ExpressionWalk: a caller's target narrower than a node is rejected before any operand is
+    // evaluated; a node that passes its target on (a negation) leaves the check to its operand
+    private readonly struct Walker(GpuWorkspace workspace)
+        : IExpressionWalker<IGpuBigIntExpression, SignedValue, GpuBigUInt?>
     {
-        if (node is ISignedOperator { PassesTargetToOperand: false })
-        {
-            SignedRoot.ThrowIfNarrower(target, node.NumWords);
-        }
+        public int OperandCount(IGpuBigIntExpression node) => node is ISignedOperator op ? op.OperandCount : 0;
 
-        frames.Push(new Frame(node, target));
-    }
+        public IGpuBigIntExpression GetOperand(IGpuBigIntExpression node, int index) =>
+            ((ISignedOperator)node).GetOperand(index);
 
-    // Releases the values evaluated before a failure. A release that throws does not stop the others; its exception is
-    // thrown together with the failure.
-    private static void ReleaseAll(ref PooledStack<SignedValue> values, Exception failure)
-    {
-        List<Exception>? errors = null;
-        while (values.Count > 0)
+        public GpuBigUInt? OperandTarget(IGpuBigIntExpression node, GpuBigUInt? target) =>
+            ((ISignedOperator)node).PassesTargetToOperand ? target : null;
+
+        public void Enter(IGpuBigIntExpression node, GpuBigUInt? target)
         {
-            try
+            if (node is ISignedOperator { PassesTargetToOperand: false })
             {
-                values.Pop().Dispose();
-            }
-            catch (Exception ex)
-            {
-                (errors ??= [failure]).Add(ex);
+                SignedRoot.ThrowIfNarrower(target, node.NumWords);
             }
         }
 
-        if (errors is not null)
-        {
-            throw new AggregateException(errors);
-        }
-    }
+        // A leaf, or a node implemented elsewhere, evaluates itself
+        public SignedValue EvaluateLeaf(IGpuBigIntExpression node, GpuBigUInt? target) =>
+            SignedValue.FromHost(node.Evaluate(workspace, target));
 
-    // A node to evaluate, the target it writes into, and the index of the next operand to evaluate
-    private struct Frame(IGpuBigIntExpression node, GpuBigUInt? target)
-    {
-        public readonly IGpuBigIntExpression Node = node;
-        public readonly GpuBigUInt? Target = target;
-        public int Next;
-    }
+        public SignedValue Apply(IGpuBigIntExpression node, SignedValue first, SignedValue second, GpuBigUInt? target) =>
+            ((ISignedOperator)node).Apply(workspace, first, second, target);
 
-    // A stack in an array rented from ArrayPool, grown by doubling
-    private struct PooledStack<T>()
-    {
-        private T[] _items = ArrayPool<T>.Shared.Rent(16);
-
-        public int Count { get; private set; }
-
-        public ref T Peek() => ref _items[Count - 1];
-
-        public void Push(T item)
-        {
-            if (Count == _items.Length)
-            {
-                var grown = ArrayPool<T>.Shared.Rent(_items.Length * 2);
-                Array.Copy(_items, grown, Count);
-                ArrayPool<T>.Shared.Return(_items, clearArray: true);
-                _items = grown;
-            }
-
-            _items[Count++] = item;
-        }
-
-        public T Pop()
-        {
-            var item = _items[--Count];
-            Array.Clear(_items, Count, 1); // T may hold references
-            return item;
-        }
-
-        public void Dispose()
-        {
-            ArrayPool<T>.Shared.Return(_items, clearArray: true);
-            _items = [];
-            Count = 0;
-        }
+        public void Release(SignedValue value) => value.Dispose();
     }
 }
