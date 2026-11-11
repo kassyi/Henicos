@@ -83,7 +83,8 @@ public class PrivateFieldTypeDiagnosticsTests
         Assert.Contains(
             "throw new global::System.NotSupportedException(\"HiddenTypeOuterKernel cannot be launched: the type " +
             "'Kassyi.GSharp.Tests.TestCases.Diagnostics.HiddenTypeHolder.Hidden' of field 'Inner._hidden' is not " +
-            "accessible from 'Kassyi.GSharp.Tests.TestCases.Diagnostics.PrivateFieldTypeInaccessibleKernels' (GSH0108).\")",
+            "accessible from 'Kassyi.GSharp.Tests.TestCases.Diagnostics.PrivateFieldTypeInaccessibleKernels' " +
+            "(GSH0108).\")",
             launchers,
             StringComparison.Ordinal);
     }

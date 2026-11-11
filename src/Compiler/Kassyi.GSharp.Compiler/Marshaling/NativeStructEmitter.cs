@@ -155,9 +155,9 @@ internal static class NativeStructEmitter
     // [WHY] The size check alone misses two fields that trade places, and when every field is private there is no
     // field of the struct to compare with. Each mirror field is compared, by Unsafe.ByteOffset from the start of a
     // default value, with the same field of the struct when the launcher can name it, otherwise with the host offset
-    // the compiler predicts (HostMirrorPlan), when the CLR does not decide the layout at run time. A fixed buffer and a pointer field
-    // have no ref that Unsafe.As takes and are left to the size check. The result is computed once, when the mirror is
-    // first used.
+    // the compiler predicts (HostMirrorPlan), when the CLR does not decide the layout at run time. A fixed buffer and a
+    // pointer field have no ref that Unsafe.As takes and are left to the size check. The result is computed once, when
+    // the mirror is first used.
     private static void WriteFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s, HostMirrorPlan plan)
     {
         const string Unsafe = HostTypeNames.Unsafe;

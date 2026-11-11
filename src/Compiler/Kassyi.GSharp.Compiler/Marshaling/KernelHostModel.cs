@@ -160,7 +160,8 @@ internal readonly record struct KernelHostModel
 
     // <kernel> cannot be launched: the type '<T>' of field '<path>' is not accessible from '<class>' (GSH0108).
     private static string FormatUnavailableReason(IMethodSymbol kernel, InaccessibleFieldType found) =>
-        $"{kernel.Name} cannot be launched: the type '{TypeLayoutCalculator.FormatTypeName(found.FieldType)}' of field " +
+        $"{kernel.Name} cannot be launched: the type '{TypeLayoutCalculator.FormatTypeName(found.FieldType)}' " +
+        "of field " +
         $"'{found.FieldPath}' is not accessible from '{TypeLayoutCalculator.FormatTypeName(kernel.ContainingType)}' " +
         $"({GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher.Id}).";
 

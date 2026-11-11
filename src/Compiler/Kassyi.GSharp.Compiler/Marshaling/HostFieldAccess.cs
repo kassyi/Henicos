@@ -27,6 +27,8 @@ internal static class HostFieldAccess
         !IsPointer(field.Type) &&
         CanName(field, launcherAssembly);
 
-    /// <summary>Whether <paramref name="type"/> is a pointer, which cannot be a type argument of <c>Unsafe.As</c>.</summary>
+    /// <summary>
+    /// Whether <paramref name="type"/> is a pointer, which cannot be a type argument of <c>Unsafe.As</c>.
+    /// </summary>
     internal static bool IsPointer(ITypeSymbol type) => type is IPointerTypeSymbol or IFunctionPointerTypeSymbol;
 }

@@ -247,7 +247,8 @@ internal static class WrapperEmitter
         return writer.ToString();
     }
 
-    // public static unsafe <return> Launch<Name>(<parameters>, <launch options>) { throw new NotSupportedException("<reason>"); }
+    // public static unsafe <return> Launch<Name>(<parameters>, <launch options>)
+    // { throw new NotSupportedException("<reason>"); }
     private static void WriteUnavailableLaunchMethod(SourceWriter writer, in KernelEmission kernel, string reason)
     {
         WriteLaunchMethodSignature(writer, kernel, isDevicePtr: false);
