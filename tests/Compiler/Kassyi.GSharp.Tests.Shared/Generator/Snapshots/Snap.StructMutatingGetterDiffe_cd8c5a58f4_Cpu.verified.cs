@@ -199,7 +199,11 @@ __gsharp_mb_N=__gsharp_add_i32(__gsharp_mb_N,1);
 return __gsharp_mb_N;
 }
 __device__ inline int __gsharp_mb_PeekNext() const {
-return __gsharp_add_i32(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e((*this)).__gsharp_mb_Next(),__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e((*this)).__gsharp_mb_Next());
+return ([&]() {
+auto __gsharp_seq_4 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e((*this)).__gsharp_mb_Next();
+auto __gsharp_seq_5 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e((*this)).__gsharp_mb_Next();
+return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
+}());
 }
 }
 ;
@@ -215,9 +219,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetPair_g1_bS
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e __gsharp_mb_Inner;
 __device__ inline int __gsharp_mb_PeekInner() const {
 return ([&]() {
-auto __gsharp_seq_4 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e(__gsharp_mb_Inner).__gsharp_mb_Next();
-auto __gsharp_seq_5 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e(__gsharp_mb_Inner).__gsharp_mb_Next();
-return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
+auto __gsharp_seq_6 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e(__gsharp_mb_Inner).__gsharp_mb_Next();
+auto __gsharp_seq_7 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetBox_g1_bSystem__Single_e(__gsharp_mb_Inner).__gsharp_mb_Next();
+return __gsharp_add_i32(__gsharp_seq_6,__gsharp_seq_7);
 }());
 }
 }

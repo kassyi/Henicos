@@ -95,27 +95,71 @@ Point p = new Point(0, 0); // record struct / Primary Constructor
 
 **Properties that use the `field` keyword** (`public int X { get; set => field = value * 2; }`) run their accessors as in C#: the device stores the backing field, under a name of its own, at the offset C# gives it, and calls the accessors as member functions, the ones C# implements (`get;`, `set;`, `init;`) included. A property initializer and an assignment in a constructor to a property without a setter write the backing field, as in C#; a compound assignment or increment of such a property in a constructor reads it through the getter and writes the backing field, as in C#. When the launcher converts such a struct member by member, it copies the stored value through the generated mirror struct without running the accessors. Reported as **GSH0003**: an operator macro whose target is such a property (the target writes through a reference, which would skip the setter).
 
-**Private fields** of a struct that a kernel takes or returns cross to the device and back like the others. When the launcher converts the struct member by member, it copies the fields that its generated code cannot name (private fields, and internal fields of another assembly) through the generated mirror struct, after the same size and offset checks. The type of every field must be accessible from the kernel's class, where the launcher is generated: a field of a private nested type is reported as **GSH0108**.
+**Private fields** of a struct that a kernel takes or returns cross to the device and back like the others. When the launcher converts the struct member by member, it copies the fields that its generated code cannot name (private fields, and internal fields of another assembly) through the generated mirror struct, which has the struct's layout kind, `Pack`, `Size` and, for `LayoutKind.Explicit`, its `[FieldOffset]` values; before the first copy the launcher checks the mirror's size and the offset of each of its fields against the struct. The type of every field must be accessible from the kernel's class, where the launcher is generated: a field of a private nested type is reported as **GSH0108**.
 
-### 2.2.4 P/Invoke and Layout Compatibility (`__Native_Struct`)
-G# generates structurally compatible C++ definitions for C# custom structs. To ensure exact binary layout compatibility during memory transfers (marshaling) and P/Invoke boundary crossings, the generator natively aligns with C#'s `[StructLayout]` configurations (e.g., Sequential or Explicit).
-* **Explicit Packing**: If a `Pack = X` property is defined on `[StructLayout]`, the transpiler translates this accurately into `#pragma pack(push, X)` and `#pragma pack(pop)` blocks surrounding the C++ struct.
-* **Alignment Guarantees**: The transpiler emits appropriate padding and layout attributes (`__Native_Struct` mapping to `#pragma pack` or `alignas`), guaranteeing that host memory arrays can be safely memcopied to device memory without alignment corruption.
+### 2.2.4 Struct Layout and Host-Device Transfer
 
-### 2.2.5 CUDA Vector Value Types & Lowering Rules
+For every user-defined `struct`, G# computes both the CLR host layout and the target dialect's C++ device layout from
+one ordered member list: instance fields, auto-property backing fields, `fixed` buffers, `[InlineArray(N)]` elements,
+hidden fields of captured primary-constructor parameters, and backing fields of field-like events (`event Action E;`).
 
-G# introduces sequentially laid-out vector value types (e.g., `Float2/3/4`, `Int2/3/4`, `UInt2/3/4`, `Double2/3/4`, `Long2/3/4`, `ULong2/3/4`) matching CUDA memory layouts to saturate memory bandwidth effectively (e.g., executing 128-bit vector loads). 
+* **`[StructLayout]` (`Sequential`, `Explicit`, `Auto`, `Pack`, `Size`)**: G# supports `LayoutKind.Sequential` (the C#
+  default for structs), `LayoutKind.Explicit` with `[FieldOffset]`, and `LayoutKind.Auto`, along with `Pack` and `Size`:
+  * **Packing (`Pack`)**: When `Pack > 0`, the transpiler wraps the C++ struct definition in `#pragma pack(push, Pack)`
+    and `#pragma pack(pop)`, capping field alignment on the device just as on the CLR.
+  * **Explicit Offsets (`[FieldOffset]`)**: In `LayoutKind.Explicit` structs, fields sharing an offset are emitted in an
+    anonymous C++ `union`, and byte gaps between fields are filled with explicit padding arrays. Partially overlapping
+    fields, offsets that are not multiples of a field's device alignment, union arms whose host and device layouts
+    differ, and non-array reference fields are rejected as **GSH0078**; fields whose types have no device representation
+    (such as `decimal` or `DateTime`) are reported as **GSH0079**.
+  * **Minimum Size (`Size`)**: `StructLayout.Size` sets a minimum byte size. On the device, trailing padding is emitted
+    and the total size is rounded up to the struct's alignment (`sizeof` is always a multiple of `alignof`), verified at
+    C++ compile time via `static_assert` on `sizeof`, `alignof`, and every field's `offsetof`.
+* **Structs from Referenced Assemblies**: Because `[StructLayout]` and `[FieldOffset]` are pseudo-custom attributes not
+  returned by Roslyn's `GetAttributes()` on metadata symbols, G# reads layout kind, `Pack`, `Size`, and field offsets
+  directly from the referenced assembly's ECMA-335 `TypeDef`, `ClassLayout`, and `FieldLayout` metadata tables.
+* **Identical (Block Copy) vs. Converted (`AotContexts` Shadow) Transfer**:
+  * **Identical (Block Copy)**: When the host layout is statically known (`Sequential` or `Explicit`, with no managed
+    array or reference fields), the total byte size and every member's offset and byte size match between host and
+    device, and all nested structs are also identical, G# classifies the struct as **identical**. No shadow struct or
+    field-by-field conversion is emitted: value arguments and struct arrays are transferred as a single memory block.
+  * **Run-Time Layout Guard**: For every block-copied struct (including nested identical structs), the generated
+    launcher verifies once per kernel at first launch that `Unsafe.SizeOf<T>()` and `Unsafe.ByteOffset` of each
+    accessible non-pointer field match the compiler's prediction, throwing `InvalidOperationException` via `LayoutGuard`
+    if the runtime CLR layout ever diverges.
+  * **Converted (Per-Field Copy)**: When host and device layouts differ—for example, due to vector alignment padding,
+    `StructLayout.Size` alignment rounding, `LayoutKind.Auto`, or array fields—G# emits a `LayoutKind.Explicit` native
+    shadow struct `{KernelClass}.AotContexts.{Name}` (with any trailing `Context` suffix stripped; name collisions
+    report **GSH0058**) together with `Marshal_` and `Unmarshal_` methods that copy members individually. Passing an
+    array of converted structs or returning a converted struct converts elements through a pooled `ArrayPool<byte>`
+    buffer and reports warning **GSH0080**.
 
-**Transpiler Lowering Rules**
-To maintain idiomatic C# coding standards, developers interact with these structs using uppercase properties (`.X`, `.Y`, `.Z`, `.W`). The Roslyn transpilation engine unconditionally lowers these member accesses to their CUDA C++ lowercase equivalents (`.x`, `.y`) during code generation. 
+### 2.2.5 Vector Value Types and Alignment
 
-**Nested Vector Alignment (CUDA ABI)**
-Nested vector types strictly respect CUDA ABI natural alignment requirements. For example, passing a C# struct with a nested `Float4` vector requires strict 16-byte alignment. The `CudaLayoutRules` enforces specific sizing and alignment based on the number of components:
+G# maps vector structs in `Kassyi.GSharp.Core` (`Float2/3/4`, `Int2/3/4`, `UInt2/3/4`, `Double2/3/4`, `Long2/3/4`,
+`ULong2/3/4`) and `System.Numerics` (`Vector2`, `Vector3`, `Vector4`) directly to native CUDA vector types (`float2`,
+`float4`, `double4`, and so on) to enable wide coalesced memory loads and stores.
 
-- **2-component and 4-component vectors** (e.g., `Float2`, `Float4`) align to their total size.
-- **3-component vectors**: `Float3`, `Int3`, and `UInt3` are 12 bytes in size with a 4-byte alignment constraint. `Double3`, `Long3`, and `ULong3` are 24 bytes in size with an 8-byte alignment constraint.
+**Field Access Lowering**
+In C#, vector components are accessed through uppercase fields (`.X`, `.Y`, `.Z`, `.W`). During transpilation, the
+dialect lowers these member accesses to CUDA C++ lowercase fields (`.x`, `.y`, `.z`, `.w`).
 
-G# automatically resolves memory layout discrepancies between the .NET CLR and NVIDIA CUDA ABI by generating `LayoutKind.Explicit` native shadow structs. These explicitly specify field offsets and pad unaligned preceding fields, preventing field offset divergence and device-side memory corruption.
+**Device vs. Host Alignment**
+Device byte sizes and alignments come from the target dialect's type table (`GSharpCuda.yml` on CUDA, `StandardCpp.yml`
+on CPU):
+
+* **2-component vectors** align to their total size: `Vector2`, `Float2`, `Int2`, and `UInt2` are 8 bytes with 8-byte
+  alignment on CUDA; `Double2`, `Long2`, and `ULong2` are 16 bytes with 16-byte alignment.
+* **3-component vectors** align to their element size: `Vector3`, `Float3`, `Int3`, and `UInt3` are 12 bytes with
+  4-byte alignment; `Double3`, `Long3`, and `ULong3` are 24 bytes with 8-byte alignment.
+* **4-component vectors** align to 16 bytes on CUDA: `Vector4`, `Float4`, `Int4`, and `UInt4` are 16 bytes with 16-byte
+  alignment; `Double4`, `Long4`, and `ULong4` are 32 bytes with 16-byte alignment.
+
+On the CLR host, these sequentially laid-out vector structs align to their scalar element size (4 bytes for 32-bit
+components, 8 bytes for 64-bit components). When a nested vector sits at the same offset on both sides (for instance, at
+offset 0 or after suitably sized fields), the enclosing struct remains **identical** and is block-copied. When CUDA
+alignment introduces padding that the CLR does not add (such as a `byte` followed by a `Float4`), G# classifies the
+struct as **converted** and copies its fields through `{KernelClass}.AotContexts.{Name}` at their exact device offsets.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
@@ -125,7 +169,7 @@ public static void VectorLoadStore(Float4* input, Float4* output)
     // Triggers a 128-bit coalesced memory load
     Float4 vec = input[ThreadIndex.X];
 
-    // C# uppercase properties are lowered to "vec.x", "vec.y" in emitted C++
+    // C# uppercase fields are lowered to "vec.x", "vec.y" in emitted C++
     vec.X += 1.0f;
     vec.Y *= 2.0f;
 
@@ -136,11 +180,24 @@ public static void VectorLoadStore(Float4* input, Float4* output)
 
 ### 2.2.6 Kernel Argument Contexts and Deep Struct Marshaling
 
-To combat "Argument Hell" (kernels with dozens of parameters), G# supports packing kernel arguments into context structures containing managed arrays (`T[]`).
+To avoid long kernel parameter lists, G# allows packing kernel arguments into context structs that hold 1D managed
+arrays (`T[]`) alongside scalars and nested structs.
 
-When a custom struct containing arrays is passed to a `Launch` wrapper, the G# generator applies **Deep Struct Marshaling** natively. It automatically creates zero-allocation `stackalloc` blocks on the host to pin and resolve all managed arrays into valid CUDA device pointers (`T*`) within a native shadow struct (`Aot_...`), without requiring developer boilerplate or intermediate classes.
+A struct containing array fields is always marshaled as a **converted** type through `{KernelClass}.AotContexts.{Name}`.
+In the host shadow struct, each array field is a 16-byte `GSharpArrayProxy` (holding data pointer, length, and flags);
+in the emitted C++ struct, it is a `GSharpArray<T>`. Host arrays are pinned with `GCHandle` (never `stackalloc`):
 
-For an in-depth explanation and code examples, see the [Deep Struct Marshaling and Argument Hell Elimination Guide](../04_guides/11_deep_struct_marshaling_guide.md).
+* **CUDA**: `AotContexts.Marshal_<Key>` tracks host arrays in `DeviceArrayRegions` so aliased fields share one device
+  buffer, allocates device memory with `cuMemAllocAsync`, and pins each host array via
+  `GCHandle.Alloc(..., GCHandleType.Pinned)` around `cuMemcpyHtoDAsync_v2` (and `cuMemcpyDtoHAsync_v2` in `Unmarshal_`).
+  All device regions are freed in the launcher's `finally` block via `DeviceArrayRegions.Free` (passing an array of
+  structs that contain array fields warns **GSH0081**).
+* **Native CPU**: `Marshal_<Key>` pins each non-null host array (or converted element shadow array) with
+  `GCHandle.Alloc(..., GCHandleType.Pinned)`, records the handle in a per-argument `List<IntPtr>`, passes the pinned
+  address in place, and frees every handle in the launcher's `finally` block.
+
+For a complete guide and runnable examples, see
+[4.11 Deep Struct Marshaling Guide](../04_guides/11_deep_struct_marshaling_guide.md).
 
 ## 2.3 Memory Model and Pointers
 

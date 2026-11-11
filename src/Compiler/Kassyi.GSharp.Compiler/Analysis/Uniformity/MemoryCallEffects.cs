@@ -10,11 +10,12 @@ internal static class MemoryCallEffects
     // What a call writes, after the barrier that a device function passes on every path. A device function with a
     // body leaves each memory as its own analysis finds it where it returns (written after its last barrier, or only
     // before one); any other call leaves what it may write written. A by-reference location is written whenever the
-    // callee writes its parameter; the other memory only when the call may write memory (DeviceFunctionEffects)
+    // callee writes its parameter; the element a struct member is called on when the member may write its receiver;
+    // the other memory only when the call may write memory (DeviceFunctionEffects)
     public static void Apply(MemoryValues values, MemoryReferences references, ImmutableArray<MemoryCallTarget> targets,
-        (CalleeVariance Summary, bool WritesMemory) effect, ThreadVariance[] current)
+        MemoryCallEffect effect, ThreadVariance[] current)
     {
-        var (summary, writesMemory) = effect;
+        var summary = effect.Summary;
         var analyzed = !summary.MemoryAtExit.IsDefault;
         if (analyzed && summary.BarrierOnEveryPath != ThreadVariance.Block)
         {
@@ -26,37 +27,48 @@ internal static class MemoryCallEffects
 
         foreach (var target in targets)
         {
-            switch (target)
-            {
-                case { Kind: MemoryCallTargetKind.ByReference, Operation: { } location }:
-                    Write(MemoryResolver.Resolve(values, references, location),
-                        analyzed ? AtExit(summary, target.Ordinal) : ThreadVariance.Block, current);
-                    break;
-                case { Kind: MemoryCallTargetKind.Receiver, Operation: { } receiver } when writesMemory:
-                    Write(MemoryResolver.ResolveReference(values, references, receiver), ThreadVariance.Block,
-                        current);
-                    break;
-                case { Kind: MemoryCallTargetKind.Argument, Operation: { } argument } when writesMemory:
-                    Write(MemoryResolver.ResolveReference(values, references, argument),
-                        analyzed ? AtExit(summary, target.Ordinal) : ThreadVariance.Block, current);
-                    break;
-                case { Kind: MemoryCallTargetKind.Field } when writesMemory:
-                    current[target.Memory] |= analyzed ? summary.FieldMemoryAtExit : ThreadVariance.Block;
-                    break;
-            }
+            ApplyTarget(values, references, target, effect, analyzed, current);
         }
     }
 
-    // The summary of the call's callee and whether the call may write memory
-    public static (CalleeVariance Summary, bool WritesMemory) GetEffect(IInvocationOperation invocation,
-        UniformityValueReader reader, Compilation compilation)
+    private static void ApplyTarget(MemoryValues values, MemoryReferences references, MemoryCallTarget target,
+        MemoryCallEffect effect, bool analyzed, ThreadVariance[] current)
+    {
+        var summary = effect.Summary;
+        switch (target)
+        {
+            case { Kind: MemoryCallTargetKind.ByReference, Operation: { } location }:
+                Write(MemoryResolver.Resolve(values, references, location),
+                    analyzed ? AtExit(summary, target.Ordinal) : ThreadVariance.Block, current);
+                break;
+            case { Kind: MemoryCallTargetKind.ReceiverLocation, Operation: { } element }
+                when effect.WritesReceiver || effect.WritesMemory:
+                Write(MemoryResolver.Resolve(values, references, element), ThreadVariance.Block, current);
+                break;
+            case { Kind: MemoryCallTargetKind.Receiver, Operation: { } receiver } when effect.WritesMemory:
+                Write(MemoryResolver.ResolveReference(values, references, receiver), ThreadVariance.Block, current);
+                break;
+            case { Kind: MemoryCallTargetKind.Argument, Operation: { } argument } when effect.WritesMemory:
+                Write(MemoryResolver.ResolveReference(values, references, argument),
+                    analyzed ? AtExit(summary, target.Ordinal) : ThreadVariance.Block, current);
+                break;
+            case { Kind: MemoryCallTargetKind.Field } when effect.WritesMemory:
+                current[target.Memory] |= analyzed ? summary.FieldMemoryAtExit : ThreadVariance.Block;
+                break;
+        }
+    }
+
+    // What the call may write: the summary of its callee, whether it may write memory, and whether a struct member may
+    // write its receiver (DeviceFunctionEffects: RefParameters covers a write through this)
+    public static MemoryCallEffect GetEffect(IInvocationOperation invocation, UniformityValueReader reader,
+        Compilation compilation)
     {
         var summary = reader.TryGetDeviceFunction(invocation.TargetMethod, out var callee, out var declaration)
             ? reader.GetCalleeSummary(callee, declaration, default)
             : default;
-        var writesMemory = DeviceFunctionEffects.Classify(invocation.TargetMethod, compilation) ==
-            DeviceFunctionEffect.Memory;
-        return (summary, writesMemory);
+        var classified = DeviceFunctionEffects.Classify(invocation.TargetMethod, compilation);
+        return new MemoryCallEffect(summary, classified == DeviceFunctionEffect.Memory,
+            classified != DeviceFunctionEffect.None);
     }
 
     /// <summary>Each of <paramref name="memories"/> written with <paramref name="written"/>.</summary>

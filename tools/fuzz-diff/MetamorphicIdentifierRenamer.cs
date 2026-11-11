@@ -71,9 +71,23 @@ internal static class MetamorphicIdentifierRenamer
             return root;
         }
 
+        var targetSymbols = CollectTargetSymbols(method, semanticModel);
+        if (targetSymbols.Count == 0)
+        {
+            return root;
+        }
+
         var rng = new FuzzRandom(seed ^ 0xA11CE001UL);
         var usedNames = MetamorphicTarget.CollectIdentifiers(root);
+        var symbolRenameMap = BuildSymbolRenameMap(rng, targetSymbols, usedNames);
 
+        var rewriter = new SemanticSymbolAlphaRenamer(semanticModel, symbolRenameMap);
+        var updatedMethod = (MethodDeclarationSyntax)rewriter.Visit(method)!;
+        return root.ReplaceNode(method, updatedMethod);
+    }
+
+    private static List<ISymbol> CollectTargetSymbols(MethodDeclarationSyntax method, SemanticModel semanticModel)
+    {
         var targetSymbols = new List<ISymbol>();
         var seenSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
 
@@ -88,53 +102,44 @@ internal static class MetamorphicIdentifierRenamer
             }
         }
 
-        foreach (var node in method.Body.DescendantNodes())
+        foreach (var node in method.Body!.DescendantNodes())
         {
-            switch (node)
-            {
-                case VariableDeclaratorSyntax v:
-                {
-                    if (!IsProtectedSpecialIdentifier(v.Identifier.ValueText) &&
-                        semanticModel.GetDeclaredSymbol(v) is ILocalSymbol localSym &&
-                        seenSymbols.Add(localSym))
-                    {
-                        targetSymbols.Add(localSym);
-                    }
-
-                    break;
-                }
-
-                case SingleVariableDesignationSyntax desig:
-                {
-                    if (!IsProtectedSpecialIdentifier(desig.Identifier.ValueText) &&
-                        semanticModel.GetDeclaredSymbol(desig) is ILocalSymbol localSym &&
-                        seenSymbols.Add(localSym))
-                    {
-                        targetSymbols.Add(localSym);
-                    }
-
-                    break;
-                }
-
-                case ForEachStatementSyntax fe:
-                {
-                    if (!IsProtectedSpecialIdentifier(fe.Identifier.ValueText) &&
-                        semanticModel.GetDeclaredSymbol(fe) is ILocalSymbol localSym &&
-                        seenSymbols.Add(localSym))
-                    {
-                        targetSymbols.Add(localSym);
-                    }
-
-                    break;
-                }
-            }
+            TryAddLocalSymbol(node, semanticModel, seenSymbols, targetSymbols);
         }
 
-        if (targetSymbols.Count == 0)
+        return targetSymbols;
+    }
+
+    private static void TryAddLocalSymbol(
+        SyntaxNode node,
+        SemanticModel semanticModel,
+        HashSet<ISymbol> seenSymbols,
+        List<ISymbol> targetSymbols)
+    {
+        string? name = node switch
         {
-            return root;
+            VariableDeclaratorSyntax v => v.Identifier.ValueText,
+            SingleVariableDesignationSyntax desig => desig.Identifier.ValueText,
+            ForEachStatementSyntax fe => fe.Identifier.ValueText,
+            _ => null,
+        };
+
+        if (name is null || IsProtectedSpecialIdentifier(name))
+        {
+            return;
         }
 
+        if (semanticModel.GetDeclaredSymbol(node) is ILocalSymbol localSym && seenSymbols.Add(localSym))
+        {
+            targetSymbols.Add(localSym);
+        }
+    }
+
+    private static Dictionary<ISymbol, string> BuildSymbolRenameMap(
+        FuzzRandom rng,
+        List<ISymbol> targetSymbols,
+        HashSet<string> usedNames)
+    {
         var poolOrder = new List<string>(CandidateIdentifiers);
         ShuffleList(rng, poolOrder);
         int poolCursor = 0;
@@ -157,9 +162,7 @@ internal static class MetamorphicIdentifierRenamer
             symbolRenameMap[sym] = chosenName;
         }
 
-        var rewriter = new SemanticSymbolAlphaRenamer(semanticModel, symbolRenameMap);
-        var updatedMethod = (MethodDeclarationSyntax)rewriter.Visit(method)!;
-        return root.ReplaceNode(method, updatedMethod);
+        return symbolRenameMap;
     }
 
     private static bool IsProtectedSpecialIdentifier(string name) =>

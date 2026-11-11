@@ -52,7 +52,7 @@ internal static class StructArrayHelperEmitter
     private static void WriteCopyArraysMember(SourceWriter writer, StructAbiMember member)
     {
         // GSH0078 reports the member; a fixed buffer holds only primitives
-        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
+        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
             member.Kind == StructAbiMemberKind.FixedBuffer ||
             !HoldsArrays(member.Type))
         {
@@ -188,7 +188,7 @@ internal static class StructArrayHelperEmitter
     private static void WriteHoldsArrayMember(SourceWriter writer, StructAbiMember member)
     {
         // GSH0078 reports the member; a fixed buffer holds only primitives
-        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
+        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
             member.Kind == StructAbiMemberKind.FixedBuffer ||
             !HoldsComparableArrays(member.Type))
         {

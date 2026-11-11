@@ -47,7 +47,7 @@ internal sealed class StructLayoutRule :
                 continue;
             }
 
-            if (ReportUnsupported(structType, typeSyntax, ref context) ||
+            if (ReportIfUnsupported(structType, typeSyntax, ref context) ||
                 ReportInaccessibleFieldType(structType, typeSyntax, ref context))
             {
                 continue;
@@ -81,7 +81,7 @@ internal sealed class StructLayoutRule :
         // (#704). A managed return type is GSH0004 (KernelSignatureRule).
         if (method.ReturnType.IsUnmanagedType &&
             TryGetUserStruct(method.ReturnType, out var returnStruct, out _) &&
-            !ReportUnsupported(returnStruct, node.ReturnType, ref context) &&
+            !ReportIfUnsupported(returnStruct, node.ReturnType, ref context) &&
             !ReportInaccessibleFieldType(returnStruct, node.ReturnType, ref context) &&
             TypeLayoutCalculator.GetStructLayout(returnStruct, context.Dialect).Transfer == TransferClass.Convert)
         {
@@ -94,7 +94,7 @@ internal sealed class StructLayoutRule :
         if (context.SemanticModel.GetTypeSymbol(node.Declaration.Type) is { } type &&
             TryGetUserStruct(type, out var structType, out _))
         {
-            ReportUnsupported(structType, node.Declaration.Type, ref context);
+            ReportIfUnsupported(structType, node.Declaration.Type, ref context);
         }
     }
 
@@ -112,8 +112,9 @@ internal sealed class StructLayoutRule :
                !StackLinqHelper.IsStackLinqType(structType);
     }
 
-    // GSH0079 when a member type has no device representation, GSH0078 for any other reason
-    private static bool ReportUnsupported(INamedTypeSymbol structType, SyntaxNode typeSyntax,
+    // GSH0079 when a member type has no device representation, GSH0078 for any other reason. Returns whether it
+    // reported.
+    private static bool ReportIfUnsupported(INamedTypeSymbol structType, SyntaxNode typeSyntax,
         ref ValidationContext context)
     {
         if (GpuCodeConstraints.ContainsMultidimensionalArray(structType))
