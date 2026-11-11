@@ -13,12 +13,13 @@ internal static class ManagedStateMachineEmitter
     public const string EditorBrowsableNever =
         "[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]";
 
-    // [WHY] An unsafe context or frame is a struct that holds managed references (arrays, the frames of its calls), and
-    // the state machine takes it by pointer, which C# warns about (CS8500). The pointer is sound: the launcher pins the
-    // contexts with fixed for the whole launch, and a frame is a field of its caller's pinned context, so the GC neither
-    // moves them nor loses the references they hold (the launchers suppress the same warning around fixed)
+    // [WHY] An unsafe context or frame is a struct that holds managed references (arrays, the frames of its calls),
+    // and the state machine takes it by pointer, which C# warns about (CS8500). The pointer is sound: the launcher
+    // pins the contexts with fixed for the whole launch, and a frame is a field of its caller's pinned context, so the
+    // GC neither moves them nor loses the references they hold (the launchers suppress the same warning around fixed)
     private const string PinnedContextWarningDisable =
-        "#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context";
+        "#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; " +
+        "a frame is a field of a pinned context";
 
     private const string PinnedContextWarningRestore = "#pragma warning restore CS8500";
 

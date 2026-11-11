@@ -268,8 +268,9 @@ internal sealed partial class ManagedExecutionRewriter(
             } frame)
         {
             var visited = base.VisitArgument(node);
+            var inKeyword = SyntaxFactory.Token(SyntaxKind.InKeyword).WithTrailingTrivia(SyntaxFactory.Space);
             return IsVariableToRefReadOnlyWithoutKeyword(node) && visited is ArgumentSyntax argument
-                ? argument.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.InKeyword).WithTrailingTrivia(SyntaxFactory.Space))
+                ? argument.WithRefKindKeyword(inKeyword)
                 : visited;
         }
 
@@ -281,12 +282,12 @@ internal sealed partial class ManagedExecutionRewriter(
             .WithTriviaFrom(node);
     }
 
-    // [WHY] A variable passed to a ref readonly parameter without a keyword is passed by reference, and C# warns that it
-    // should carry one (CS9192). The user's source already reports or suppresses that warning, so the copy writes the
-    // keyword (in), which passes the same reference without repeating it. A value that is not a variable keeps no
-    // keyword: C# passes a temporary for it, and in would not compile. The operation is looked up from the expression:
-    // an argument without a keyword has the span of its expression, and the lookup of a lowered node by span finds the
-    // innermost node
+    // [WHY] A variable passed to a ref readonly parameter without a keyword is passed by reference, and C# warns
+    // that it should carry one (CS9192). The user's source already reports or suppresses that warning, so the copy
+    // writes the keyword (in), which passes the same reference without repeating it. A value that is not a variable
+    // keeps no keyword: C# passes a temporary for it, and in would not compile. The operation is looked up from the
+    // expression: an argument without a keyword has the span of its expression, and the lookup of a lowered node by
+    // span finds the innermost node
     private bool IsVariableToRefReadOnlyWithoutKeyword(ArgumentSyntax node) =>
         node.RefKindKeyword.IsKind(SyntaxKind.None) &&
         semanticModel.GetSafeOperation(node.Expression) is
@@ -307,7 +308,8 @@ internal sealed partial class ManagedExecutionRewriter(
             : visited;
     }
 
-    private static SwitchExpressionSyntax AddUnmatchedArm(SwitchExpressionSyntax switchExpression, UnmatchedSwitchArm plan) =>
+    private static SwitchExpressionSyntax AddUnmatchedArm(SwitchExpressionSyntax switchExpression,
+        UnmatchedSwitchArm plan) =>
         switchExpression.WithArms(switchExpression.Arms.Add(CreateUnmatchedArm(plan)));
 
     // The exception C# throws when no arm matches (as the lowering
@@ -325,9 +327,10 @@ internal sealed partial class ManagedExecutionRewriter(
             : UnmatchedSwitchArm.SwitchExpression;
     }
 
-    // var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched)
-    // _ => throw new global::System.Runtime.CompilerServices.SwitchExpressionException()
+    // var __gsharp_unmatched => throw new <SwitchExpressionException>(__gsharp_unmatched)
+    // _ => throw new <SwitchExpressionException>()
     // _ => throw new global::System.InvalidOperationException()
+    // <SwitchExpressionException> is global::System.Runtime.CompilerServices.SwitchExpressionException
     private static SwitchExpressionArmSyntax CreateUnmatchedArm(UnmatchedSwitchArm plan)
     {
         var withValue = plan == UnmatchedSwitchArm.SwitchExpressionWithValue;
@@ -337,7 +340,9 @@ internal sealed partial class ManagedExecutionRewriter(
             )
             : SyntaxFactory.DiscardPattern();
         var arguments = withValue
-            ? SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(UnmatchedValueName)))
+            ? SyntaxFactory.SingletonSeparatedList(
+                SyntaxFactory.Argument(SyntaxFactory.IdentifierName(UnmatchedValueName))
+            )
             : default;
         var exceptionType = plan == UnmatchedSwitchArm.InvalidOperation
             ? "global::System.InvalidOperationException"
@@ -410,6 +415,8 @@ internal enum UnmatchedSwitchArm
     /// <summary><c>_ =&gt; throw new SwitchExpressionException()</c>, for an input that cannot be boxed.</summary>
     SwitchExpression,
 
-    /// <summary><c>_ =&gt; throw new InvalidOperationException()</c>, where the library has no SwitchExpressionException.</summary>
+    /// <summary>
+    /// <c>_ =&gt; throw new InvalidOperationException()</c>, where the library has no SwitchExpressionException.
+    /// </summary>
     InvalidOperation
 }
