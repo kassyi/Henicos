@@ -34,7 +34,8 @@ internal static class SpilledArguments
 
     /// <summary>
     /// Whether <paramref name="use"/>, inside the location of the by-reference argument at <paramref name="index"/>, is
-    /// in a part that is evaluated into a temporary before the call: an index or the array of an element.
+    /// in a part that is evaluated into a temporary before the call: an index, the array or pointer of an element, or the
+    /// pointer of <c>*p</c> and <c>p-&gt;F</c>.
     /// </summary>
     public static bool IsInSpilledLocationPart(ExpressionSyntax location, SyntaxNode use,
         SeparatedSyntaxList<ArgumentSyntax> arguments, int index, SemanticModel? model)
@@ -45,6 +46,10 @@ internal static class SpilledArguments
                 return IsInSpilledLocationPart(parenthesized.Expression, use, arguments, index, model);
             case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } member:
                 return IsInSpilledLocationPart(member.Expression, use, arguments, index, model);
+            case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.PointerMemberAccessExpression } pointerMember:
+                return !CanStayInPlace(pointerMember.Expression, arguments, index, model);
+            case PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } indirection:
+                return !CanStayInPlace(indirection.Operand, arguments, index, model);
             case ElementAccessExpressionSyntax elementAccess:
                 if (elementAccess.Expression.Span.Contains(use.Span))
                 {
@@ -64,35 +69,114 @@ internal static class SpilledArguments
     }
 
     /// <summary>
-    /// Whether the receiver of an element access in a by-reference argument is evaluated into a temporary: an array (a
-    /// reference) that cannot stay in place. A stack array, a span or a struct that holds the elements is itself a
-    /// location, and without a semantic model no receiver is.
+    /// Whether the receiver of an element access in a by-reference argument is evaluated into a temporary: an array or a
+    /// pointer (<see cref="IsValueReceiver"/>) that cannot stay in place. Without a semantic model no receiver is.
     /// </summary>
     public static bool IsSpilledReceiver(ExpressionSyntax receiver, SeparatedSyntaxList<ArgumentSyntax> arguments,
         int index, SemanticModel? model) =>
         model != null &&
-        model.GetTypeSymbol(receiver) is IArrayTypeSymbol &&
-        !StackArrayLocals.IsStackArrayReference(receiver, model) &&
+        IsValueReceiver(receiver, model) &&
         !CanStayInPlace(receiver, arguments, index, model);
 
     /// <summary>
-    /// Whether an argument is passed by reference: a ref, out or in argument, or an argument of an in / ref readonly
-    /// parameter that names a variable, which C# passes by reference too.
+    /// Whether the receiver of an element access is a value that selects the element: an array (a reference) or a
+    /// pointer, which C# evaluates once when it evaluates the argument. A stack array, a span, an inline array or a
+    /// fixed-size buffer holds the elements and is itself a location.
     /// </summary>
-    // (the operation of the expression is the argument's value only when no conversion sits between them; a field of a
-    // value is a value, which is copied. Parentheses have no operation of their own, so the variable inside them is
-    // looked up. A ref conditional is a variable that the cross-barrier rule reports (GSH0062); an element of a span is
-    // left out, as the span is not kept across a resume (#990))
+    public static bool IsValueReceiver(ExpressionSyntax receiver, SemanticModel model) =>
+        model.GetTypeSymbol(receiver) switch
+        {
+            IArrayTypeSymbol => !StackArrayLocals.IsStackArrayReference(receiver, model),
+            IPointerTypeSymbol => model.GetSymbol(receiver) is not IFieldSymbol { IsFixedSizeBuffer: true },
+            _ => false
+        };
+
+    /// <summary>
+    /// Whether an argument is passed by reference on the CPU paths (<see cref="ClassifyByReference"/>).
+    /// </summary>
     public static bool IsPassedByReference(ArgumentSyntax argument, SemanticModel? model) =>
-        !argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
-        (model?.GetSafeOperation(IteratorTypeResolver.UnwrapParentheses(argument.Expression)) is
-            (ILocalReferenceOperation or IParameterReferenceOperation or IArrayElementReferenceOperation
-            or IFieldReferenceOperation or IInlineArrayAccessOperation or IConditionalOperation
-            or { Kind: OperationKind.None }) and
-            {
-                Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
-            } operation &&
-         operation.IsVariable());
+        ClassifyByReference(argument, model) != ByReferencePassing.Value;
+
+    /// <summary>
+    /// How the CPU lowering passes an argument of a call that may suspend: by value; as a location that it selects once
+    /// before the call (a ref, out or in argument, or a variable given to an in / ref readonly parameter without the
+    /// keyword, which C# passes by reference too); or as a location that a call, a property or a ref conditional
+    /// selects, which every resume would select again (GSH0062).
+    /// </summary>
+    // [WHY] One answer for the lowering, the liveness of the cross-barrier rules and GSH0062, so that what the analyzer
+    // accepts is what the lowering keeps. A span element without the keyword stays a copy: the span is not kept across a
+    // resume (#990)
+    public static ByReferencePassing ClassifyByReference(ArgumentSyntax argument, SemanticModel? model)
+    {
+        var hasKeyword = !argument.RefKindKeyword.IsKind(SyntaxKind.None);
+        if (!hasKeyword && !IsVariableOfReadOnlyReference(argument, model))
+        {
+            return ByReferencePassing.Value;
+        }
+
+        if (model == null)
+        {
+            return ByReferencePassing.Location;
+        }
+
+        return RootOf(argument.Expression, model) switch
+        {
+            LocationRoot.SpanElement when !hasKeyword => ByReferencePassing.Value,
+            LocationRoot.Selected => ByReferencePassing.ReselectedLocation,
+            _ => ByReferencePassing.Location
+        };
+    }
+
+    // An argument of an in / ref readonly parameter that names a variable. The operation of the expression is the
+    // argument's value only when no conversion sits between them; a field of a value is a value, which is copied.
+    // Parentheses have no operation of their own, so the variable inside them is looked up.
+    private static bool IsVariableOfReadOnlyReference(ArgumentSyntax argument, SemanticModel? model) =>
+        model?.GetSafeOperation(IteratorTypeResolver.UnwrapParentheses(argument.Expression)) is
+        {
+            Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
+        } operation &&
+        operation.IsVariable();
+
+    private enum LocationRoot
+    {
+        Kept,
+        SpanElement,
+        Selected
+    }
+
+    // What the variable of a location hangs from. A local, a parameter, this, or an array or pointer value (evaluated
+    // once) is kept; a call, a property (an indexer included) or a ref conditional selects the variable and would be
+    // evaluated again on every resume (#927 is to keep the reference itself instead)
+    private static LocationRoot RootOf(ExpressionSyntax location, SemanticModel model) => location switch
+    {
+        ParenthesizedExpressionSyntax parenthesized => RootOf(parenthesized.Expression, model),
+        MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.PointerMemberAccessExpression } => LocationRoot.Kept,
+        MemberAccessExpressionSyntax member => model.GetSymbol(member) is IPropertySymbol
+            ? LocationRoot.Selected
+            : RootOf(member.Expression, model),
+        ElementAccessExpressionSyntax elementAccess => RootOfElement(elementAccess, model),
+        PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } => LocationRoot.Kept,
+        IdentifierNameSyntax identifier => model.GetSymbol(identifier) is IPropertySymbol
+            ? LocationRoot.Selected
+            : LocationRoot.Kept,
+        ThisExpressionSyntax or BaseExpressionSyntax or DeclarationExpressionSyntax => LocationRoot.Kept,
+        _ => LocationRoot.Selected
+    };
+
+    private static LocationRoot RootOfElement(ElementAccessExpressionSyntax elementAccess, SemanticModel model)
+    {
+        if (IsValueReceiver(elementAccess.Expression, model))
+        {
+            return LocationRoot.Kept;
+        }
+
+        return model.GetSymbol(elementAccess) switch
+        {
+            IPropertySymbol { ContainingType.IsRefLikeType: true } => LocationRoot.SpanElement,
+            IPropertySymbol => LocationRoot.Selected,
+            _ => RootOf(elementAccess.Expression, model)
+        };
+    }
 
     /// <summary>
     /// Whether <paramref name="expression"/> (a by-value argument, an index or the array of a by-reference argument at

@@ -45,7 +45,7 @@ public static partial class RefReturnMemberArgumentKernels
         AddAfterBarrier(ref local.F, 1);
         ReadInAfterBarrier(buffer[j], result);
         // GSH0062: a ref conditional selects its variable again on every resume, also without the in keyword and in
-        // parentheses
+        // parentheses (#927 is to keep the reference instead)
         bool first = j == 0;
         int v = 1;
         int w = 2;
@@ -56,6 +56,24 @@ public static partial class RefReturnMemberArgumentKernels
         RefReturnBuffer inline = default;
         ReadInAfterBarrier(inline[1], result);
         ReadInAfterBarrier((v), result);
+        // GSH0062: an element of the inline array that a call returns by reference, with and without the keyword
+        ReadInAfterBarrier(PickBuffer(ref inline)[0], result);
+        ReadInAfterBarrier(in PickBuffer(ref inline)[0], result);
+    }
+
+    [GpuDeviceFunction]
+    public static ref RefReturnBuffer PickBuffer(ref RefReturnBuffer buffer) => ref buffer;
+
+    // A pointer is evaluated once, so what it points to stays a variable the lowering keeps
+    [GpuKernel]
+    [SkipSnapshotConsistency("Sad Path")]
+    public static unsafe void PointerArgumentKernel(RefReturnCell* cells, int* values, int[] result)
+    {
+        ReadInAfterBarrier(*values, result);
+        ReadInAfterBarrier(values[1], result);
+        ReadInAfterBarrier(cells->F, result);
+        ReadInAfterBarrier((*cells).F, result);
+        AddAfterBarrier(ref *values, 1);
     }
 }
 

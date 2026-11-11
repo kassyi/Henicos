@@ -16,6 +16,7 @@ internal static class OperationExtensions
     // as an IFieldReferenceOperation
     public static bool IsVariable(this IOperation? operation) => operation switch
     {
+        null => false,
         ILocalReferenceOperation or IParameterReferenceOperation or IInstanceReferenceOperation
             or IArrayElementReferenceOperation => true,
         IFieldReferenceOperation field => field.Field.IsStatic ||
@@ -26,13 +27,22 @@ internal static class OperationExtensions
         IInvocationOperation invocation => invocation.TargetMethod.RefKind != RefKind.None,
         IConditionalOperation { IsRef: true } => true,
         IInlineArrayAccessOperation inlineArray => inlineArray.Instance.IsVariable(),
-        { Kind: OperationKind.None } => IsPointerVariable(operation.Syntax),
-        _ => false
+        IConversionOperation => false,
+        _ => IsPointerDereference(operation)
     };
 
-    // [WHY] Roslyn 4.8 represents *p, p[i] and an element of a fixed-size buffer as an operation of kind None. C#
-    // (§23.6.4, §23.6.6, §23.8.3) classifies each of them as a variable.
-    private static bool IsPointerVariable(SyntaxNode syntax) =>
-        syntax is ElementAccessExpressionSyntax or
-            PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression };
+    // [WHY] *p, p[i], the p of p->F and an element of a fixed-size buffer are variables in C# (23.6.4 to 23.6.6, 23.8.3),
+    // whatever operation the Roslyn that runs the generator represents them with (today one of kind None), so they are
+    // recognized by their syntax and the pointer type they read through
+    private static bool IsPointerDereference(IOperation operation) => operation.Syntax switch
+    {
+        PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.PointerIndirectionExpression } => true,
+        ElementAccessExpressionSyntax access =>
+            operation.SemanticModel?.GetTypeInfo(access.Expression).Type is IPointerTypeSymbol,
+        _ => operation.Parent is IFieldReferenceOperation
+             {
+                 Syntax: MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.PointerMemberAccessExpression }
+             } field &&
+             field.Instance == operation
+    };
 }
