@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Compiler.NativeApi;
 using Kassyi.GSharp.Tests.Shared.Helpers;
@@ -18,8 +19,9 @@ public class DiagnosticCatalogArchitectureTests
     // The catalog generator itself cites an example ID in its schema-error message.
     private const string CatalogGeneratorFile = "DiagnosticGenerator.cs";
 
-    // Every ID the catalog defines (diagnostics.json, generated into GSharpDiagnostics)
-    private static readonly string[] s_catalogIds = [.. GSharpDiagnostics.All.Select(static d => d.Id)];
+    // Every ID that diagnostics.json defines, obsolete ones included: GSharpDiagnostics.Reported leaves those out, and
+    // a literal that names an obsolete ID is still a literal ID
+    private static readonly string[] s_catalogIds = ReadCatalogIds();
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
@@ -120,6 +122,19 @@ public class DiagnosticCatalogArchitectureTests
                 IsDiagnosticDescriptorType(property.Type),
             _ => false,
         };
+
+    private static string[] ReadCatalogIds()
+    {
+        using var catalog = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(RepositoryPaths.CompilerProject, "Diagnostics", "diagnostics.json")));
+        return
+        [
+            .. catalog.RootElement
+                .EnumerateArray()
+                .Select(static entry => entry.GetProperty("id").GetString())
+                .OfType<string>()
+        ];
+    }
 
     private static IEnumerable<string> EnumerateSourceFiles()
     {
