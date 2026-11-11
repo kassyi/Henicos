@@ -101,7 +101,7 @@ Performs element-wise addition, subtraction, or multiplication across two vector
 
 Output `WordsPerElement` is `Math.Max(left.WordsPerElement, right.WordsPerElement) + 1` for `ZipAdd` and `ZipSubtract`, so the sum or difference never wraps, and `left.WordsPerElement + right.WordsPerElement` for `ZipMultiply`.
 
-Inputs of different lengths (capacities) throw `ArgumentException` (`"Vector lengths must match for Zip operations."`) at evaluation, before either input is evaluated, as every integer and floating-point Zip does (`ZipDivide` and `ZipModulo` included). Unlike `System.Linq`'s `Zip`, the longer input is not truncated. A Zip nested inside another expression checks its own inputs, so the exception names the Zip whose inputs differ.
+Inputs whose capacities differ throw `ArgumentException` (`"Vector lengths must match for Zip operations."`) at evaluation, before either input is evaluated, as every integer and floating-point Zip does (`ZipDivide` and `ZipModulo` included); unlike `System.Linq`'s `Zip`, the longer input is not truncated. A Zip nested inside another expression checks its own inputs, so the exception names the Zip whose inputs differ. After a `Where`, whose capacity is that of its input, the selected elements are paired with the first elements of the other input, as `System.Linq`'s `Zip` does.
 
 ```csharp
 public static IGpuBigIntVectorExpression ZipAdd(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
