@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <summary>
 /// Represents a contiguous array of arbitrary-precision signed integers stored in NVIDIA GPU global device memory.
 /// </summary>
-public readonly struct GpuBigIntArray : IDisposable
+public readonly struct GpuBigIntArray : IDisposable, IEquatable<GpuBigIntArray>
 {
     /// <summary>
     /// Gets the underlying contiguous array of absolute values.
@@ -102,6 +102,40 @@ public readonly struct GpuBigIntArray : IDisposable
     /// <returns>A borrowed <see cref="GpuBigIntArray"/>.</returns>
     internal GpuBigIntArray BorrowSlice(int elementOffset, int elementCount) =>
         Slice(elementOffset, elementCount).AsBorrowed();
+
+    /// <summary>
+    /// Indicates whether the current instance refers to the same magnitude and sign array buffers and shape as another
+    /// <see cref="GpuBigIntArray"/>.
+    /// </summary>
+    /// <param name="other">A <see cref="GpuBigIntArray"/> to compare with this instance.</param>
+    /// <returns>
+    /// <see langword="true"/> if both <see cref="Values"/> and <see cref="Signs"/> equal those of
+    /// <paramref name="other"/> (<see cref="GpuBigUIntArray.Equals(GpuBigUIntArray)"/>); otherwise,
+    /// <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// <see cref="Equals(GpuBigIntArray)"/> and <see cref="GetHashCode"/> compare buffer identity and array shape
+    /// rather than element values, and never read device memory; both also work on <see langword="default"/> or
+    /// disposed instances.
+    /// </remarks>
+    public bool Equals(GpuBigIntArray other) => Values.Equals(other.Values) && Signs.Equals(other.Signs);
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current instance.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current instance.</param>
+    /// <returns>
+    /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="GpuBigIntArray"/> and equals the current
+    /// instance; otherwise, <see langword="false"/>.
+    /// </returns>
+    public override bool Equals(object? obj) => obj is GpuBigIntArray other && Equals(other);
+
+    /// <summary>
+    /// Returns a hash code based on the magnitude and sign buffer identities and shapes, consistent with
+    /// <see cref="Equals(GpuBigIntArray)"/>.
+    /// </summary>
+    /// <returns>A 32-bit signed integer hash code.</returns>
+    public override int GetHashCode() => HashCode.Combine(Values, Signs);
 
     /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying buffers.

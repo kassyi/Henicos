@@ -5,9 +5,9 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class StructMarshalMethodEmitter
 {
     internal static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
-        ITranspilerDialect dialect)
+        ITranspilerDialect dialect, IAssemblySymbol launcherAssembly)
     {
-        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
         writer.Append("public static unsafe void ");
         writer.AppendMarshalMethodName(s);
         using (writer.Parentheses())
@@ -17,9 +17,11 @@ internal static class StructMarshalMethodEmitter
             writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}, ref " : " host, ref ");
             writer.AppendAotStructPath(s);
             // CUDA records one device region per host array (DeviceArrayRegions, #707); the CPU records GCHandles
+            writer.Append(" native, ");
             writer.Append(dialect.IsCuda
-                ? $" native, {StructMarshalingEmitter.DeviceArrayRegionsType}? {StructMarshalingEmitter.CudaArraysParameter}, global::System.IntPtr hStream = default"
-                : $" native, global::System.Collections.Generic.List<global::System.IntPtr>? {StructMarshalingEmitter.CpuArraysParameter}, global::System.IntPtr hStream = default");
+                ? $"{StructMarshalingEmitter.DeviceArrayRegionsType}? {StructMarshalingEmitter.CudaArraysParameter}"
+                : $"{HostTypeNames.PointerList}? {StructMarshalingEmitter.CpuArraysParameter}");
+            writer.Append($", {HostTypeNames.IntPtr} hStream = default");
         }
 
         writer.AppendLine();
@@ -60,8 +62,8 @@ internal static class StructMarshalMethodEmitter
     private static void WriteMarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
     {
         // GSH0078 reports the member; the shadow struct leaves it out
-        if (NativeStructEmitter.IsUnrepresentableReference(member) ||
-            StructBlockCopyEmitter.WriteBlockCopy(writer, member, toNative: true, dialect))
+        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
+            StructBlockCopyEmitter.TryWriteBlockCopy(writer, member, toNative: true, dialect))
         {
             return;
         }

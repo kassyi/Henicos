@@ -89,10 +89,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return true;
         }
 
-        return CompileCombined(sources);
+        return TryCompileCombined(sources);
     }
 
-    private bool CompileCombined(ITaskItem[] sources)
+    private bool TryCompileCombined(ITaskItem[] sources)
     {
         var outputName = Path.ChangeExtension(CombinedFatbinName, ".gfatbin") ?? $"{CombinedFatbinName}.gfatbin";
         var outputFatbinPath = Path.Combine(OutputDirectory, outputName);
@@ -121,7 +121,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return true;
         }
 
-        if (!BuildCombinedFatbin(sourcePaths, outputFatbinPath, commandFilePath, commandRecord))
+        if (!TryBuildCombinedFatbin(sourcePaths, outputFatbinPath, commandFilePath, commandRecord))
         {
             return false;
         }
@@ -131,7 +131,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     }
 
     // Writes the bundle that includes every source, compiles it, signs the fatbin and records the command.
-    private bool BuildCombinedFatbin(
+    private bool TryBuildCombinedFatbin(
         string[] sourcePaths,
         string outputFatbinPath,
         string commandFilePath,
@@ -151,14 +151,14 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return false;
         }
 
-        if (!NvccCommandRecord.Delete(Log, commandFilePath) ||
-            !CompileCombinedWithNvcc([bundleFilePath], outputFatbinPath, bundledPaths))
+        if (!NvccCommandRecord.TryDelete(Log, commandFilePath) ||
+            !TryCompileCombinedWithNvcc([bundleFilePath], outputFatbinPath, bundledPaths))
         {
             return false;
         }
 
-        return ArtifactHelper.ProcessArtifact(outputFatbinPath, Log) &&
-            NvccCommandRecord.Write(Log, commandFilePath, commandRecord);
+        return ArtifactHelper.TrySignArtifact(outputFatbinPath, Log) &&
+            NvccCommandRecord.TryWrite(Log, commandFilePath, commandRecord);
     }
 
     // One #include per source, except an earlier bundle of the same name. The included paths are added to bundledPaths.
@@ -319,13 +319,14 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return [CreateOutputItem(outputFatbinPath, commandFilePath)];
         }
 
-        if (!NvccCommandRecord.Delete(Log, commandFilePath) || !CompileWithNvcc(sourcePath, outputFatbinPath))
+        if (!NvccCommandRecord.TryDelete(Log, commandFilePath) ||
+            !TryCompileWithNvcc(sourcePath, outputFatbinPath))
         {
             return null;
         }
 
-        if (!ArtifactHelper.ProcessArtifact(outputFatbinPath, Log) ||
-            !NvccCommandRecord.Write(Log, commandFilePath, commandRecord))
+        if (!ArtifactHelper.TrySignArtifact(outputFatbinPath, Log) ||
+            !NvccCommandRecord.TryWrite(Log, commandFilePath, commandRecord))
         {
             return null;
         }
@@ -333,12 +334,12 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         return [CreateOutputItem(outputFatbinPath, commandFilePath)];
     }
 
-    private bool CompileWithNvcc(string sourcePath, string outputFatbinPath)
+    private bool TryCompileWithNvcc(string sourcePath, string outputFatbinPath)
     {
         var args = NvccInvoker.BuildArguments(_nvccOptions, [sourcePath], outputFatbinPath);
         Log.LogMessage(MessageImportance.Normal, $"Compiling CUDA source: {sourcePath}");
 
-        if (!RunNvcc([sourcePath], args))
+        if (!TryRunNvcc([sourcePath], args))
         {
             return false;
         }
@@ -352,17 +353,17 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         return false;
     }
 
-    private bool RunNvcc(IReadOnlyList<string> sourcePaths, string arguments) =>
-        NvccInvoker.Run(Log, ProcessRunner, NvccPath, _vcvarsEnv, sourcePaths, arguments, CancellationToken);
+    private bool TryRunNvcc(IReadOnlyList<string> sourcePaths, string arguments) =>
+        NvccInvoker.TryRun(Log, ProcessRunner, NvccPath, _vcvarsEnv, sourcePaths, arguments, CancellationToken);
 
-    private bool CompileCombinedWithNvcc(IReadOnlyList<string> sourcePaths, string outputFatbinPath,
+    private bool TryCompileCombinedWithNvcc(IReadOnlyList<string> sourcePaths, string outputFatbinPath,
         IReadOnlyList<string> originalSourcePaths)
     {
         var args = NvccInvoker.BuildArguments(_nvccOptions, sourcePaths, outputFatbinPath);
         Log.LogMessage(MessageImportance.Normal,
             $"Compiling {originalSourcePaths.Count} CUDA sources into combined fatbin: {outputFatbinPath}");
 
-        if (!RunNvcc(originalSourcePaths, args))
+        if (!TryRunNvcc(originalSourcePaths, args))
         {
             return false;
         }

@@ -82,7 +82,7 @@ public class IrEffectsTests
     public void Of_GetterThroughImplicitThis_WritesTheReceiver()
     {
         // Count + NextInt: the getter of NextInt changes Count through the implicit this, so the read of Count must
-        // come first (the syntax walk misses this write, #1606)
+        // come first
         var method = IrTestCases.Build("Ir/IrClassifierCases.cs", "IrClassifierCases.Counter", "get_ReadThenNext");
         var classified = IrClassifier.Classify(method, Compilation);
         var returned = Assert.IsType<IrReturn>(Assert.Single(classified.Body.Statements));

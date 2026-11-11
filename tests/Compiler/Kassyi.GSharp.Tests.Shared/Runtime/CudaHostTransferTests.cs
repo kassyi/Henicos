@@ -228,8 +228,7 @@ public class CudaHostTransferTests
         var idleBefore = PinnedStagingPool.IdleCount;
         var allocatedBefore = PinnedStagingPool.AllocatedCount;
 
-        // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, CUstreamCaptureMode.ThreadLocal));
         try
         {
             Assert.Throws<InvalidOperationException>(() =>
