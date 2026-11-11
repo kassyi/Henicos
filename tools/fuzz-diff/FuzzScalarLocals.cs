@@ -2,10 +2,56 @@ namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
 /// Declares the scalar locals every generated kernel starts with: one local per scalar kind, in a random order, each
-/// read from the thread's own input elements.
+/// read from the thread's own input elements, and the enums those locals use.
 /// </summary>
 internal static class FuzzScalarLocals
 {
+    // The enums of the generated kernels: name, underlying type, then the members as written in the declaration
+    private static readonly (string Name, string Underlying, string[] Members)[] s_enums =
+    [
+        (
+            "FuzzEnumByte",
+            "byte",
+            [
+                "Zero = 0", "One = 1", "Two = 2", "Bit = 0x10", "High = 0x80", "Mask = 0x55", "Alt = 0xAA",
+                "Edge = byte.MaxValue",
+            ]
+        ),
+        (
+            "FuzzEnumShort",
+            "short",
+            [
+                "Zero = 0", "One = 1", "Two = 2", "Bit = 0x0100", "High = -256", "Mask = 0x1234", "Alt = -1",
+                "Edge = short.MinValue",
+            ]
+        ),
+        (
+            "FuzzEnumInt",
+            "int",
+            [
+                "Zero = 0", "One = 1", "Two = 2", "Bit = 0x00010000", "High = -65536", "Mask = 0x13579BDF", "Alt = -1",
+                "Edge = int.MinValue",
+            ]
+        ),
+        (
+            "FuzzEnumULong",
+            "ulong",
+            [
+                "Zero = 0UL", "One = 1UL", "Two = 2UL", "Bit = 0x0000000100000000UL", "High = 0x8000000000000000UL",
+                "Mask = 0x5555555555555555UL", "Alt = 0xAAAAAAAAAAAAAAAAUL", "Edge = ulong.MaxValue",
+            ]
+        ),
+    ];
+
+    /// <summary>Appends the declarations of the enums that the enum locals use to <paramref name="writer"/>.</summary>
+    public static void AppendEnumDeclarations(SourceWriter writer)
+    {
+        foreach ((string name, string underlying, string[] members) in s_enums)
+        {
+            writer.AppendLine($"public enum {name} : {underlying} {{ {string.Join(", ", members)} }}");
+        }
+    }
+
     /// <summary>Adds the declarations of the scalar locals to <paramref name="state"/>.</summary>
     public static void Initialize(KernelGenerationState state)
     {

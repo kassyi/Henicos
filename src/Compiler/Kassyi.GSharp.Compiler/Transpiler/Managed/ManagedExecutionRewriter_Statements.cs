@@ -186,14 +186,14 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxKind.UIntKeyword,
             names.Count,
             SyntaxFactory.InvocationExpression(
-                ManagedGpuContextMember("GridStrideCount"),
+                ManagedNames.CreateMemberAccess("GridStrideCount"),
                 SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(countExpr)))
             )
         );
         var step = DeclareLocal(
             SyntaxKind.UIntKeyword,
             names.Step,
-            SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStep"))
+            SyntaxFactory.InvocationExpression(ManagedNames.CreateMemberAccess("GridStrideStep"))
         );
         return (count, step);
     }
@@ -219,7 +219,7 @@ internal sealed partial class ManagedExecutionRewriter
             DeclareVariable(
                 SyntaxKind.UIntKeyword,
                 names.UnsignedIndex,
-                SyntaxFactory.InvocationExpression(ManagedGpuContextMember("GridStrideStart"))
+                SyntaxFactory.InvocationExpression(ManagedNames.CreateMemberAccess("GridStrideStart"))
             ),
             SyntaxFactory.SeparatedList<ExpressionSyntax>(),
             SyntaxFactory.BinaryExpression(
@@ -237,10 +237,6 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.Block(statements)
         );
     }
-
-    // global::Kassyi.GSharp.Core.ManagedGpuContext.<name>
-    private static ExpressionSyntax ManagedGpuContextMember(string name) =>
-        SyntaxFactory.ParseExpression($"global::Kassyi.GSharp.Core.ManagedGpuContext.{name}");
 
     // <type> <name> = <value>
     private static VariableDeclarationSyntax DeclareVariable(SyntaxKind type, string name, ExpressionSyntax value) =>

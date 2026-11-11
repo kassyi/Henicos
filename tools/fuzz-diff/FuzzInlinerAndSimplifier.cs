@@ -222,6 +222,28 @@ public static class FuzzInlinerAndSimplifier
             return null;
         }
 
+        var (paramNames, paramTypes) = ExtractParameters(helper);
+        var invocations = CollectMatchingInvocations(root, helper, helperName, paramNames.Length);
+        if (invocations.Count == 0)
+        {
+            var removed = root.RemoveNode(helper, SyntaxRemoveOptions.KeepNoTrivia);
+            return removed is not null ? FuzzSyntaxHelpers.RenderFullNode(removed) : null;
+        }
+
+        var replacedRoot = ReplaceInvocationsWithTemplate(
+            root, invocations, returnExprTemplate, paramNames, paramTypes);
+        var helperInReplaced = FindDeviceFunctionByName(replacedRoot, helperName);
+        if (helperInReplaced is not null &&
+            !FuzzSyntaxHelpers.IsHelperReferencedOutsideItself(replacedRoot, helperInReplaced))
+        {
+            replacedRoot = replacedRoot.RemoveNode(helperInReplaced, SyntaxRemoveOptions.KeepNoTrivia) ?? replacedRoot;
+        }
+
+        return FuzzSyntaxHelpers.RenderFullNode(replacedRoot);
+    }
+
+    private static (string[] Names, string[] Types) ExtractParameters(MethodDeclarationSyntax helper)
+    {
         int paramCount = helper.ParameterList.Parameters.Count;
         var paramNames = new string[paramCount];
         var paramTypes = new string[paramCount];
@@ -232,6 +254,15 @@ public static class FuzzInlinerAndSimplifier
             paramTypes[i] = p.Type is not null ? FuzzSyntaxHelpers.RenderNodeText(p.Type) : "int";
         }
 
+        return (paramNames, paramTypes);
+    }
+
+    private static List<InvocationExpressionSyntax> CollectMatchingInvocations(
+        CompilationUnitSyntax root,
+        MethodDeclarationSyntax helper,
+        string helperName,
+        int paramCount)
+    {
         var invocations = new List<InvocationExpressionSyntax>();
         foreach (var node in root.DescendantNodes())
         {
@@ -244,13 +275,17 @@ public static class FuzzInlinerAndSimplifier
             }
         }
 
-        if (invocations.Count == 0)
-        {
-            var removed = root.RemoveNode(helper, SyntaxRemoveOptions.KeepNoTrivia);
-            return removed is not null ? FuzzSyntaxHelpers.RenderFullNode(removed) : null;
-        }
+        return invocations;
+    }
 
-        var replacedRoot = root.ReplaceNodes(invocations, (origInv, _) =>
+    private static CompilationUnitSyntax ReplaceInvocationsWithTemplate(
+        CompilationUnitSyntax root,
+        List<InvocationExpressionSyntax> invocations,
+        string returnExprTemplate,
+        string[] paramNames,
+        string[] paramTypes)
+    {
+        return root.ReplaceNodes(invocations, (origInv, _) =>
         {
             var argExprs = new string[origInv.ArgumentList.Arguments.Count];
             for (int i = 0; i < argExprs.Length; i++)
@@ -261,14 +296,6 @@ public static class FuzzInlinerAndSimplifier
             string substituted = SubstituteParameters(returnExprTemplate, paramNames, paramTypes, argExprs);
             return SyntaxFactory.ParseExpression($"({substituted})").WithTriviaFrom(origInv);
         });
-
-        var helperInReplaced = FindDeviceFunctionByName(replacedRoot, helperName);
-        if (helperInReplaced is not null && !FuzzSyntaxHelpers.IsHelperReferencedOutsideItself(replacedRoot, helperInReplaced))
-        {
-            replacedRoot = replacedRoot.RemoveNode(helperInReplaced, SyntaxRemoveOptions.KeepNoTrivia) ?? replacedRoot;
-        }
-
-        return FuzzSyntaxHelpers.RenderFullNode(replacedRoot);
     }
 
     private static MethodDeclarationSyntax? FindDeviceFunctionByName(CompilationUnitSyntax root, string helperName)
@@ -522,49 +549,12 @@ public static class FuzzInlinerAndSimplifier
                 continue;
             }
 
-            int readerIdx = FindSingleReaderStatementIndex(statements, i, varName);
-            if (readerIdx <= i)
+            if (!TryFindSingleReaderReference(statements, i, varName, out int readerIdx, out var readerRef))
             {
                 continue;
             }
 
-            var readerStmt = statements[readerIdx];
-            var readerRefs = new List<IdentifierNameSyntax>();
-            foreach (var node in readerStmt.DescendantNodes())
-            {
-                if (node is IdentifierNameSyntax id &&
-                    string.Equals(id.Identifier.ValueText, varName, StringComparison.Ordinal) &&
-                    !FuzzSyntaxHelpers.IsAssignedOrMutatedTarget(id))
-                {
-                    readerRefs.Add(id);
-                }
-            }
-
-            if (readerRefs.Count != 1)
-            {
-                continue;
-            }
-
-            string? declaredType = FuzzSyntaxHelpers.FindHoistedLocalType(statements, varName);
-            string rhsText = FuzzSyntaxHelpers.RenderNodeText(assign.Right);
-            string replacementExprText = declaredType is not null
-                ? $"(({declaredType})({rhsText}))"
-                : $"({rhsText})";
-            var newReaderStmt = readerStmt.ReplaceNode(
-                readerRefs[0],
-                SyntaxFactory.ParseExpression(replacementExprText).WithTriviaFrom(readerRefs[0]));
-
-            var newStmts = new List<StatementSyntax>(statements.Count - 1);
-            for (int k = 0; k < statements.Count; k++)
-            {
-                if (k != i)
-                {
-                    newStmts.Add(k == readerIdx ? newReaderStmt : statements[k]);
-                }
-            }
-
-            var newMethod = method.WithBody(method.Body.WithStatements(SyntaxFactory.List(newStmts)));
-            string candidate = FuzzSyntaxHelpers.RenderFullNode(root.ReplaceNode(method, newMethod));
+            string candidate = BuildCollapsedCandidate(root, method, i, readerIdx, readerRef, assign.Right, varName);
             if (isInteresting(candidate))
             {
                 updatedSource = candidate;
@@ -574,6 +564,75 @@ public static class FuzzInlinerAndSimplifier
 
         updatedSource = null;
         return false;
+    }
+
+    private static bool TryFindSingleReaderReference(
+        SyntaxList<StatementSyntax> statements,
+        int writerIdx,
+        string varName,
+        out int readerIdx,
+        [NotNullWhen(true)] out IdentifierNameSyntax? singleRef)
+    {
+        singleRef = null;
+        readerIdx = FindSingleReaderStatementIndex(statements, writerIdx, varName);
+        if (readerIdx <= writerIdx)
+        {
+            return false;
+        }
+
+        var readerStmt = statements[readerIdx];
+        var readerRefs = new List<IdentifierNameSyntax>();
+        foreach (var node in readerStmt.DescendantNodes())
+        {
+            if (node is IdentifierNameSyntax id &&
+                string.Equals(id.Identifier.ValueText, varName, StringComparison.Ordinal) &&
+                !FuzzSyntaxHelpers.IsAssignedOrMutatedTarget(id))
+            {
+                readerRefs.Add(id);
+            }
+        }
+
+        if (readerRefs.Count != 1)
+        {
+            return false;
+        }
+
+        singleRef = readerRefs[0];
+        return true;
+    }
+
+    private static string BuildCollapsedCandidate(
+        CompilationUnitSyntax root,
+        MethodDeclarationSyntax method,
+        int writerIdx,
+        int readerIdx,
+        IdentifierNameSyntax readerRef,
+        ExpressionSyntax rhs,
+        string varName)
+    {
+        var statements = method.Body!.Statements;
+        string? declaredType = FuzzSyntaxHelpers.FindHoistedLocalType(statements, varName);
+        string rhsText = FuzzSyntaxHelpers.RenderNodeText(rhs);
+        string replacementExprText = declaredType is not null
+            ? $"(({declaredType})({rhsText}))"
+            : $"({rhsText})";
+
+        var readerStmt = statements[readerIdx];
+        var newReaderStmt = readerStmt.ReplaceNode(
+            readerRef,
+            SyntaxFactory.ParseExpression(replacementExprText).WithTriviaFrom(readerRef));
+
+        var newStmts = new List<StatementSyntax>(statements.Count - 1);
+        for (int k = 0; k < statements.Count; k++)
+        {
+            if (k != writerIdx)
+            {
+                newStmts.Add(k == readerIdx ? newReaderStmt : statements[k]);
+            }
+        }
+
+        var newMethod = method.WithBody(method.Body!.WithStatements(SyntaxFactory.List(newStmts)));
+        return FuzzSyntaxHelpers.RenderFullNode(root.ReplaceNode(method, newMethod));
     }
 
     private static int FindSingleReaderStatementIndex(
