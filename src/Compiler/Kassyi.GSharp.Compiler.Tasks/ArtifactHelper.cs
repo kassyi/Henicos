@@ -14,7 +14,16 @@ public static class ArtifactHelper
     /// </summary>
     public const string InvalidSigningKeyErrorCode = "GS0003";
 
-    public static bool TryProcessArtifact(string outputFilePath, TaskLoggingHelper log)
+    /// <summary>
+    /// Signs the file at <paramref name="outputFilePath"/> in place: appends the Ed25519 signature made with the key in
+    /// <c>GSHARP_SIGNING_KEY</c>, or with the development key (after warning GS0002) when the variable is not set.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> when the file was signed; <see langword="false"/> after error GS0003 when
+    /// <c>GSHARP_SIGNING_KEY</c> holds no valid key, with the file left unchanged.
+    /// </returns>
+    /// <exception cref="IOException">The file cannot be read or written.</exception>
+    public static bool TrySignArtifact(string outputFilePath, TaskLoggingHelper log)
     {
         if (!TryResolveSigningKey(log, out var keySeed))
         {
@@ -32,7 +41,7 @@ public static class ArtifactHelper
     }
 
     /// <summary>
-    /// Returns the public key that <see cref="TryProcessArtifact"/> signs with (the key in
+    /// Returns the public key that <see cref="TrySignArtifact"/> signs with (the key in
     /// <c>GSHARP_SIGNING_KEY</c>, or the development key) as lowercase hex, or <c>invalid</c> when the variable
     /// holds no valid key. A build records it, so that changing the key signs the artifacts again.
     /// </summary>

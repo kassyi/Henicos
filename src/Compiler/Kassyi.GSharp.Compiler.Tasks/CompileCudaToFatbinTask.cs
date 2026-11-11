@@ -157,7 +157,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return false;
         }
 
-        return ArtifactHelper.TryProcessArtifact(outputFatbinPath, Log) &&
+        return ArtifactHelper.TrySignArtifact(outputFatbinPath, Log) &&
             NvccCommandRecord.TryWrite(Log, commandFilePath, commandRecord);
     }
 
@@ -325,7 +325,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return null;
         }
 
-        if (!ArtifactHelper.TryProcessArtifact(outputFatbinPath, Log) ||
+        if (!ArtifactHelper.TrySignArtifact(outputFatbinPath, Log) ||
             !NvccCommandRecord.TryWrite(Log, commandFilePath, commandRecord))
         {
             return null;
