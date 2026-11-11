@@ -6,6 +6,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     private static readonly BigInteger[] s_countValues = [6, 9, 12];
     private static readonly BigInteger[] s_zeroInTheMiddle = [1, 0, 3];
     private static readonly BigInteger[] s_noZero = [1, 2, 3];
+    private static readonly BigInteger[] s_shorter = [1, 2];
 
     // Each chain with its GPU expression, its System.Linq reference over the same elements (BigInteger has no square
     // root; the contract of SelectSqrt, InvalidOperationException for a negative element, stands in) and whether a
@@ -148,6 +149,15 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             static () => s_countValues.Zip(s_noZero.Select(static x => x / 3), static (a, b) => a + b).Count(),
             true
         ),
+
+        // A Zip of a shorter left input: System.Linq truncates to 2, GpuMath rejects inputs of different capacities
+        // (the contract of #646), so the reference is that ArgumentException
+        new(
+            "shorter.ZipAdd(values)",
+            static o => o.Shorter.ZipAdd(o.Values),
+            static () => throw new ArgumentException(VectorShape.ZipLengthsMessage),
+            true
+        ),
     ];
 
     public static TheoryData<CountCase> CountCases => [.. s_countCases];
@@ -188,6 +198,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // mutant: VectorTakeExpression.MayThrow => false (SelectDivide(0).Take(2) returns 2)
         // mutant: VectorBinaryScalarExpressionBase without the vector in _inputsMayThrow (SelectDivide(0).SelectAdd(3))
         // mutant: VectorBinaryVectorExpressionBase without the right input in _inputsMayThrow (ZipAdd(SelectDivide(0)))
+        // mutant: the Zip MayThrow without `Capacity != _rightCapacity` (shorter.ZipAdd(values) counts 2)
         Assert.Equal(expectedError?.GetType(), countError?.GetType());
         Assert.Equal(expectedError?.GetType(), evaluateError?.GetType());
         if (expectedError is null)
@@ -212,21 +223,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         // mutant: VectorEffects.MayThrow returning true for an array (leaf and every plain chain)
         // mutant: VectorDivByUInt32Expression.ElementMayThrow => true (SelectDivideByUInt32(2))
         // mutant: VectorModScalarExpression without `ElementMayThrow => true` (SelectModulo(3))
+        // mutant: the Zip MayThrow without `Capacity != _rightCapacity` (shorter.ZipAdd(values))
         Assert.Equal(chain.MayThrow, VectorEffects.MayThrow(expr));
-    }
-
-    [Fact]
-    [Category(TestCategory.Unit)]
-    [Scenario(TestScenario.Boundary)]
-    public void MayThrow_ZipOfDifferentLengths_IsTrue()
-    {
-        using var values = CreateArray(s_countValues);
-        using var shorter = CreateArray([1, 2]);
-        using var expr = values.AsVectorizedEnumerable().ZipAdd(shorter.AsVectorizedEnumerable());
-
-        // A Zip of different capacities throws when it is evaluated, so Count must evaluate it.
-        // mutant: the Zip MayThrow without `Capacity != _rightCapacity`
-        Assert.True(VectorEffects.MayThrow(expr));
     }
 
     [SkippableFact]
@@ -339,6 +337,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         IGpuBigIntVectorExpression OtherValues,
         IGpuBigIntVectorExpression ZeroInTheMiddle,
         IGpuBigIntVectorExpression NoZero,
+        IGpuBigIntVectorExpression Shorter,
         GpuBigInt Zero,
         GpuBigInt Three,
         GpuBigInt MinusOne);
@@ -349,6 +348,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         private readonly GpuBigIntArray _values;
         private readonly GpuBigIntArray _zeroInTheMiddle;
         private readonly GpuBigIntArray _noZero;
+        private readonly GpuBigIntArray _shorter;
         private readonly GpuBigInt _zero;
         private readonly GpuBigInt _three;
         private readonly GpuBigInt _minusOne;
@@ -358,6 +358,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             _values = tests.CreateArray(s_countValues);
             _zeroInTheMiddle = tests.CreateArray(s_zeroInTheMiddle);
             _noZero = tests.CreateArray(s_noZero);
+            _shorter = tests.CreateArray(s_shorter);
             _zero = tests.CreateScalar(0);
             _three = tests.CreateScalar(3);
             _minusOne = tests.CreateScalar(-1);
@@ -370,6 +371,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             _values.AsVectorizedEnumerable(),
             _zeroInTheMiddle.AsVectorizedEnumerable(),
             _noZero.AsVectorizedEnumerable(),
+            _shorter.AsVectorizedEnumerable(),
             _zero,
             _three,
             _minusOne);
@@ -379,6 +381,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
             _values.Dispose();
             _zeroInTheMiddle.Dispose();
             _noZero.Dispose();
+            _shorter.Dispose();
             _zero.Dispose();
             _three.Dispose();
             _minusOne.Dispose();

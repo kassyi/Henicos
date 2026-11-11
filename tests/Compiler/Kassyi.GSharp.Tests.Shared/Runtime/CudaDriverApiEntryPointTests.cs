@@ -1,3 +1,4 @@
+#nullable enable
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Compiler.NativeApi;
 using Kassyi.GSharp.Runtime.Interop;

@@ -367,6 +367,9 @@ internal readonly record struct StructHostSource(string AotStructPath, string Cu
 /// <param name="CppSource">The C++ source of the kernel.</param>
 /// <param name="ManagedCSharpSource">The managed fallback of the kernel.</param>
 /// <param name="InternalError">The exception that stopped the transpilation (GSH0048), or empty.</param>
+/// <param name="ErrorSites">
+/// The source locations of the run-time error sites of the kernel, which the class reports by site ID.
+/// </param>
 internal readonly record struct KernelEmission(
     KernelHostModel Host,
     string MemberKey,

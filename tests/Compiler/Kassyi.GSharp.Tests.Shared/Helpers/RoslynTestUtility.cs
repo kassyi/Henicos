@@ -99,6 +99,9 @@ public static class RoslynTestUtility
     /// <summary>Gets the base compilation references to be used for dynamically compiled tests or analyzers.</summary>
     public static IEnumerable<MetadataReference> BaseReferences => MegaCompilationCache.BaseCompilation.References;
 
+    /// <summary>Gets the compilation of every source file built into the test assembly, for tests that scan all of them.</summary>
+    public static Compilation SharedCompilation => MegaCompilationCache.Compilation;
+
     /// <summary>Retrieves the semantic model and method symbol for a given method in a dynamically resolved test kernel file.</summary>
     public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext<TTarget>(
         string methodName,

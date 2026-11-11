@@ -21,8 +21,7 @@ internal static class CudaHostLaunchEmitter
 
     private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr, bool isCheckedBuild)
     {
-        writer.AppendLine(
-            "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
+        using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.Description);
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, isDevicePtr);
         using (writer.Scope())
         {
@@ -65,8 +64,6 @@ internal static class CudaHostLaunchEmitter
 
             AutoResultEmitter.WriteReturn(writer, kernel.Host);
         }
-
-        writer.AppendLine("#pragma warning restore CS8500");
     }
 
     // The public Launch{Name}Ptr of an overloaded kernel: device pointers are typed GpuBuffer<T>, so C# selects the

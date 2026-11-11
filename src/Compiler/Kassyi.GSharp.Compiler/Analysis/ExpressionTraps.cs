@@ -57,7 +57,7 @@ internal static class ExpressionTraps
     private static bool IsStoredOrIntrinsic(IPropertySymbol property) =>
         !StructAbiMembers.HasAccessorFunctions(property) ||
         property.ContainingType.SpecialType == SpecialType.System_Array ||
-        (property.GetMethod is { } getter && DeviceFunctionEffects.IsPureIntrinsic(getter));
+        (property.GetMethod is { } getter && DeviceIntrinsicEffects.IsPureIntrinsic(getter));
 
     // x / y and x % y of an integer type: y == 0 raises DivideByZeroException, MinValue / -1 OverflowException
     private static bool MayDivideByZeroOrOverflow(IBinaryOperation binary)
@@ -78,7 +78,7 @@ internal static class ExpressionTraps
 
     // Math.Sqrt, MathF.Max, float.IsNaN ...: pure, and over floating-point values only, which raise nothing
     private static bool IsFloatingPointMath(IMethodSymbol method) =>
-        DeviceFunctionEffects.IsPureIntrinsic(method) &&
+        DeviceIntrinsicEffects.IsPureIntrinsic(method) &&
         (IsFloatingPoint(method.ReturnType) || method.ReturnType.SpecialType == SpecialType.System_Boolean) &&
         method.Parameters
             .AsStackEnumerable()

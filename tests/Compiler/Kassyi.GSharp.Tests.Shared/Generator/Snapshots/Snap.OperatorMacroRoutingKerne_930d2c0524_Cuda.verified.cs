@@ -184,7 +184,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteValue __gsharp_id_3_vx =
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteValue __gsharp_id_4_vy = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RouteValue(__gsharp_id_1_a);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteValue __gsharp_id_5_vz = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RouteValue(0);
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RouteOps__Add(&__gsharp_id_2_ctx,&__gsharp_id_5_vz,__gsharp_id_3_vx,__gsharp_id_4_vy);
-return __gsharp_id_5_vz.__gsharp_mb_Value;
+return __gsharp_mul_i32(__gsharp_id_5_vz.__gsharp_mb_Value,__gsharp_id_2_ctx.__gsharp_mb_Calls);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteCtx__
@@ -1528,7 +1528,8 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.RouteValue vx = new global::Kassyi.GSh
 global::Kassyi.GSharp.Tests.Shared.Syntax.RouteValue vy = new global::Kassyi.GSharp.Tests.Shared.Syntax.RouteValue(a);
 global::Kassyi.GSharp.Tests.Shared.Syntax.RouteValue vz = new global::Kassyi.GSharp.Tests.Shared.Syntax.RouteValue(0);
 global::Kassyi.GSharp.Tests.Shared.Syntax.RouteOps.Add(ref ctx, ref vz, vx, vy);
-return vz.Value;
+// 1 when the operator macro passed this ctx to RouteOps.Add; 0 fails the test
+return vz.Value * ctx.Calls;
 }
 
 }

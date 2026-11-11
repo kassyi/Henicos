@@ -137,6 +137,9 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         _ => default,
     };
 
+    // The operands in the order of the descriptor: the receiver first when the call has one (an instance or reduced
+    // extension call), then the arguments. A System.Array call is static, so it has no receiver, and its arrays must
+    // have rank 1
     private static bool TryBuildOperands(
         SpanMemberKind kind,
         InvocationExpressionSyntax node,
@@ -146,67 +149,28 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
     {
         count = 0;
         var descriptor = GetDescriptor(kind);
-        if (descriptor.OperandCount == 0)
-        {
-            return false;
-        }
-
         var arguments = node.ArgumentList.Arguments;
-        var hasReceiver = (!symbol.IsStatic || symbol.ReducedFrom != null) &&
-                          node.Expression is MemberAccessExpressionSyntax;
-        ExpressionSyntax? receiver = hasReceiver && node.Expression is MemberAccessExpressionSyntax access
+        var receiver = (!symbol.IsStatic || symbol.ReducedFrom != null) &&
+                       node.Expression is MemberAccessExpressionSyntax access
             ? access.Expression
             : null;
-
-        if (descriptor.IsSystemArray)
-        {
-            if (arguments.Count != descriptor.OperandCount)
-            {
-                return false;
-            }
-
-            operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true, RequiresRank1Array: true);
-            for (var i = 1; i < descriptor.OperandCount; i++)
-            {
-                var isSpan = i == descriptor.SecondarySpanIndex;
-                var valType = isSpan ? null : symbol.Parameters[i].Type;
-                operands[i] = new Operand(arguments[i].Expression, IsSpanOrArray: isSpan, ValueType: valType, RequiresRank1Array: isSpan);
-            }
-
-            count = descriptor.OperandCount;
-            return true;
-        }
-
-        if (hasReceiver)
-        {
-            if (arguments.Count != descriptor.OperandCount - 1)
-            {
-                return false;
-            }
-
-            operands[0] = new Operand(receiver, IsSpanOrArray: true);
-            for (var i = 1; i < descriptor.OperandCount; i++)
-            {
-                var isSpan = i == descriptor.SecondarySpanIndex;
-                var valType = isSpan ? null : symbol.Parameters[i - 1].Type;
-                operands[i] = new Operand(arguments[i - 1].Expression, IsSpanOrArray: isSpan, ValueType: valType);
-            }
-
-            count = descriptor.OperandCount;
-            return true;
-        }
-
-        if (arguments.Count != descriptor.OperandCount)
+        var offset = receiver is null ? 0 : 1;
+        if (descriptor.OperandCount == 0 || arguments.Count != descriptor.OperandCount - offset)
         {
             return false;
         }
 
-        operands[0] = new Operand(arguments[0].Expression, IsSpanOrArray: true);
+        var rank1 = descriptor.IsSystemArray;
+        operands[0] = new Operand(receiver ?? arguments[0].Expression, IsSpanOrArray: true, RequiresRank1Array: rank1);
         for (var i = 1; i < descriptor.OperandCount; i++)
         {
             var isSpan = i == descriptor.SecondarySpanIndex;
-            var valType = isSpan ? null : symbol.Parameters[i].Type;
-            operands[i] = new Operand(arguments[i].Expression, IsSpanOrArray: isSpan, ValueType: valType);
+            operands[i] = new Operand(
+                arguments[i - offset].Expression,
+                IsSpanOrArray: isSpan,
+                ValueType: isSpan ? null : symbol.Parameters[i - offset].Type,
+                RequiresRank1Array: rank1 && isSpan
+            );
         }
 
         count = descriptor.OperandCount;

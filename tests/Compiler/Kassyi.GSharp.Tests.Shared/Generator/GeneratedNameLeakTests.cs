@@ -30,7 +30,7 @@ public partial class GeneratedNameLeakTests
     [Scenario(TestScenario.SadPath)]
     public void GeneratedCode_TranspilerEmission_DoesNotLeakRawUserIdentifiers()
     {
-        var compilation = MegaCompilationCache.Compilation;
+        var compilation = RoslynTestUtility.SharedCompilation;
         var leaks = new List<string>();
         var transpiled = 0;
 
