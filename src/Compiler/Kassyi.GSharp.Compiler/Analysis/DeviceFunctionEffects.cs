@@ -46,14 +46,13 @@ internal enum DeviceFunctionEffect
 /// </remarks>
 internal static class DeviceFunctionEffects
 {
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, DeviceFunctionEffect>>
-        s_effects = new();
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, DeviceFunctionEffect> s_effects = new();
 
     /// <summary>What a call of <paramref name="method"/> may write.</summary>
     public static DeviceFunctionEffect Classify(IMethodSymbol method, Compilation compilation)
     {
         var definition = GetDefinition(method);
-        return GetCache(compilation).TryGetValue(definition, out var cached)
+        return s_effects.For(compilation).TryGetValue(definition, out var cached)
             ? cached
             : Classify(definition, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
     }
@@ -65,17 +64,13 @@ internal static class DeviceFunctionEffects
     public static bool WritesMemory(IMethodSymbol? method, Compilation compilation) =>
         method != null && Classify(method, compilation) == DeviceFunctionEffect.Memory;
 
-    private static ConcurrentDictionary<IMethodSymbol, DeviceFunctionEffect> GetCache(Compilation compilation) =>
-        s_effects.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, DeviceFunctionEffect>(SymbolEqualityComparer.Default));
-
     // The declaration of a constructed generic method, or the static method of a reduced extension call
     internal static IMethodSymbol GetDefinition(IMethodSymbol method) => (method.ReducedFrom ?? method).OriginalDefinition;
 
     internal static DeviceFunctionEffect Classify(IMethodSymbol definition, Compilation compilation,
         HashSet<IMethodSymbol> visiting)
     {
-        var cache = GetCache(compilation);
+        var cache = s_effects.For(compilation);
         if (cache.TryGetValue(definition, out var cached))
         {
             return cached;
