@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text.Json;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Compiler.Generators.Tests;
 
@@ -104,5 +105,44 @@ public class DiagnosticGeneratorTests
         var source = DiagnosticGenerator.GenerateSource([definition]);
 
         Assert.Contains("#error Invalid defaultSeverity 'Fatal' in diagnostics.json (ID: GSH9999).", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ObsoleteDiagnostic_IsDeclaredButLeftOutOfAll()
+    {
+        DiagnosticDefinition[] definitions =
+        [
+            new()
+            {
+                Name = "Reported",
+                Id = "GSH9998",
+                Title = "t",
+                MessageFormat = "m",
+                Category = "c",
+                DefaultSeverity = "Error",
+            },
+            new()
+            {
+                Name = "Retired",
+                Id = "GSH9999",
+                Title = "t",
+                MessageFormat = "m",
+                Category = "c",
+                DefaultSeverity = "Warning",
+                IsObsolete = true,
+            },
+        ];
+
+        var root = GeneratorRun.ParseWithoutErrors(DiagnosticGenerator.GenerateSource(definitions));
+
+        var fields = root.DescendantNodes().OfType<VariableDeclaratorSyntax>().ToList();
+        var retired = fields.Single(static f => f.Identifier.Text == "Retired");
+        var retiredAttributes = retired.Ancestors().OfType<FieldDeclarationSyntax>().First().AttributeLists.ToString();
+        Assert.Contains("Obsolete", retiredAttributes, StringComparison.Ordinal);
+        var all = fields.Single(static f => f.Identifier.Text == "All");
+        var listed = all.DescendantNodes().OfType<IdentifierNameSyntax>().Select(static n => n.Identifier.Text).ToList();
+        Assert.Contains("Reported", listed);
+        Assert.DoesNotContain("Retired", listed);
     }
 }

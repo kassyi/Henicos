@@ -104,12 +104,18 @@ public static partial class DiagnosticGenerator
             foreach (var diag in diagnostics)
             {
                 var name = EmitDiagnosticDescriptor(writer, diag, seenIds, seenNames);
-                descriptorNames.Add(name);
+
+                // An obsolete descriptor is never reported, so no analyzer lists it as supported; naming it in All
+                // would also make the generated file reference an [Obsolete] member (CS0618)
+                if (!diag.IsObsolete)
+                {
+                    descriptorNames.Add(name);
+                }
             }
 
             writer.Line(
-                "/// <summary>Gets an immutable array containing all diagnostic descriptors defined in " +
-                "diagnostics.json.</summary>");
+                "/// <summary>Gets the diagnostic descriptors of diagnostics.json that the compiler reports (every one " +
+                "that is not obsolete).</summary>");
             writer.Line(
                 "public static readonly ImmutableArray<DiagnosticDescriptor> All = " +
                 "ImmutableArray.Create<DiagnosticDescriptor>(");
