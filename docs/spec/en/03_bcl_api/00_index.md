@@ -22,10 +22,16 @@ Specialized C# attributes that govern compilation, entry point semantics, and JI
 
 - **[GpuKernelAttribute](attributes/GpuKernelAttribute.md)**: Marks the entry point for the G# transpilation process (`__global__`).
 - **[GpuDeviceFunctionAttribute](attributes/GpuDeviceFunctionAttribute.md)**: Marks a helper method intended for execution solely on the GPU (`__device__`).
-- **[ConstantAttribute](attributes/ConstantAttribute.md)**: Marks a kernel argument as an Ahead-Of-Time (AOT) preprocessor constant.
+- **[CudaImportAttribute](attributes/CudaImportAttribute.md)**: Imports an external CUDA kernel or device function defined in a separate CUDA module.
+- **[GpuConstexprAttribute](attributes/ConstantAttribute.md)**: Marks a kernel parameter as an Ahead-Of-Time (AOT) compile-time constant.
+- **[GpuReadOnlyAttribute](attributes/GpuReadOnlyAttribute.md)**: Marks a kernel parameter, field, or property with the `const` qualifier.
 - **[ParameterInteropAttributes](attributes/ParameterInteropAttributes.md)**: Optimizes PCIe memory transfers for array parameters (`InAttribute`, `OutAttribute`).
+- **[GpuResourceAttribute](attributes/GpuResourceAttribute.md)**: Marks a class or struct as a GPU resource managed via `IGpuResourceScope`.
 - **[TakesOwnershipAttribute](attributes/TakesOwnershipAttribute.md)**: Enforces ownership transfer of disposable GPU resources.
 - **[AdvancedMappingAttributes](attributes/AdvancedMappingAttributes.md)**: Internal attributes mapping C# constructs to native CUDA C++.
+- **[SkipSnapshotConsistencyAttribute](attributes/SkipSnapshotConsistencyAttribute.md)**: Excludes a kernel class or method from isolated snapshot consistency tests.
+- **`GpuDeviceExportAttribute`**: Exports device code for cross-assembly invocation (`GSH0088`).
+- **`GpuInlineAttribute` / `GpuNoInlineAttribute`**: Controls inlining of device functions (`__forceinline__` / `__noinline__`).
 
 ### 2. Execution Context Indices
 
@@ -73,7 +79,7 @@ Standard C# math functions are transpiled to their highly-optimized CUDA equival
 
 - **[Standard BCL Mappings](02_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
 - **[Diagnostics and Exceptions](01_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
-- **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0001`–`GSH0031`, `RS0030`).
+- **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0000`–`GSH0108`, `SLQ0001`, `RS0030`).
 
 ### 8. Utilities
 

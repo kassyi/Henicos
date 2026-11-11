@@ -14,6 +14,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 
 | ID | Severity | Title |
 | :--- | :--- | :--- |
+| [GSH0000](GSH0000.md) | Info | AOT Artifact Error |
 | [GSH0001](GSH0001.md) | Error | Object creation not supported in GPU kernels |
 | [GSH0002](GSH0002.md) | Error | String usage not supported in GPU kernels |
 | [GSH0003](GSH0003.md) | Error | Unsupported syntax in GPU kernel |
@@ -34,7 +35,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0018](GSH0018.md) | Error | GPU intrinsic called from host |
 | [GSH0019](GSH0019.md) | Error | Manual GetEnumerator calls are not supported |
 | [GSH0020](GSH0020.md) | Error | Missing IDisposable implementation |
-| [GSH0021](GSH0021.md) | Error | Undisposed GPU resource |
+| [GSH0021](GSH0021.md) | Warning | Undisposed GPU resource (Deprecated) |
 | [GSH0022](GSH0022.md) | Error | Undisposed GPU scope |
 | [GSH0023](GSH0023.md) | Error | Property getter side-effect |
 | [GSH0024](GSH0024.md) | Error | Cast operator side-effect |
@@ -43,7 +44,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0027](GSH0027.md) | Error | Disposing borrowed resource |
 | [GSH0028](GSH0028.md) | Error | Disposable resource in Default Interface Method |
 | [GSH0029](GSH0029.md) | Warning | Manual unmanaged allocation detected |
-| [GSH0030](GSH0030.md) | Error | SyncGrid requires a cooperative kernel |
+| [GSH0030](GSH0030.md) | Error | Gpu.SyncGrid requires [GpuKernel(Cooperative = true)] |
 | [GSH0031](GSH0031.md) | Error | Direct invocation of [GpuKernel] is prohibited |
 | [GSH0032](GSH0032.md) | Error | Unrolled loop bounds must be statically deterministic |
 | [GSH0033](GSH0033.md) | Warning | Unrolled loop may be silently ignored |
@@ -64,6 +65,12 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0049](GSH0049.md) | Error | [TakesOwnership] applied to non-IDisposable type |
 | [GSH0050](GSH0050.md) | Error | [TakesOwnership] is only allowed on constructor parameters |
 | [GSH0051](GSH0051.md) | Error | Cannot take ownership of a reference parameter |
+| [GSH0052](GSH0052.md) | Error | Native API definition is not valid YAML |
+| [GSH0053](GSH0053.md) | Error | Native API definition violates the schema |
+| [GSH0054](GSH0054.md) | Warning | Gpu.InlinePtx is not supported by the target dialect |
+| [GSH0055](GSH0055.md) | Error | Identifier containing '__' is reserved |
+| [GSH0056](GSH0056.md) | Error | GPU method name is a C++ keyword (Deprecated) |
+| [GSH0057](GSH0057.md) | Error | Malformed trusted key line |
 | [GSH0058](GSH0058.md) | Error | Two structs share one AotContexts name |
 | [GSH0059](GSH0059.md) | Error | Kernel overloads cannot be told apart by their launch wrappers |
 | [GSH0060](GSH0060.md) | Error | User-defined operators are not supported in GPU code |
@@ -77,12 +84,12 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0068](GSH0068.md) | Error | Disposable local is never disposed |
 | [GSH0069](GSH0069.md) | Error | SharedMemory element type must not be disposable |
 | [GSH0070](GSH0070.md) | Error | Iterator method must be a static [GpuDeviceFunction] returning IEnumerable<T> with a value-type element |
-| [GSH0071](GSH0071.md) | Error | Iterator value must be consumed directly by `foreach` or stored in a single-assignment local |
-| [GSH0072](GSH0072.md) | Error | Construct is not supported inside a GPU iterator or its consuming `foreach` |
-| [GSH0073](GSH0073.md) | Warning | Expanding an iterator at `foreach` copies the loop body more than 32 times |
+| [GSH0071](GSH0071.md) | Error | Iterator value must be consumed directly by foreach |
+| [GSH0072](GSH0072.md) | Error | Unsupported construct in or around an iterator |
+| [GSH0073](GSH0073.md) | Warning | Iterator expansion copies the foreach body too many times |
 | [GSH0074](GSH0074.md) | Error | CopyAsyncWaitGroup count must be a compile-time constant between 0 and 7 |
 | [GSH0075](GSH0075.md) | Error | Gpu.CopyAsync requires a SharedMemory<T> destination and a global memory source |
-| [GSH0076](GSH0076.md) | Error | Unsupported warp matrix (WMMA) type or operation |
+| [GSH0076](GSH0076.md) | Error | Unsupported warp matrix fragment or operation |
 | [GSH0077](GSH0077.md) | Warning | Dynamic SharedMemory<T> reached by only some threads or with a thread-dependent count |
 | [GSH0078](GSH0078.md) | Error | Struct cannot be laid out on the device |
 | [GSH0079](GSH0079.md) | Error | Struct field type has no device representation |
@@ -97,11 +104,13 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0095](GSH0095.md) | Error | Warp shuffle width must be 1, 2, 4, 8, 16 or 32 |
 | [GSH0099](GSH0099.md) | Warning | An AsParallel() aggregate runs sequentially in each thread |
 | [GSH0100](GSH0100.md) | Warning | Every block reduces the whole sequence of an AsParallel() aggregate |
+| [GSH0102](GSH0102.md) | Error | Method is too deeply nested or too complex to compile |
+| [GSH0103](GSH0103.md) | Error | Error site ID collision in device error channel |
 | [GSH0106](GSH0106.md) | Error | Kernel parameter name conflicts with a launch parameter |
 | [GSH0107](GSH0107.md) | Error | A method without [GpuDeviceFunction] is called from GPU code |
 | [GSH0108](GSH0108.md) | Error | Struct field type is not accessible to the generated launcher |
-| [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
-| [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
+| [SLQ0001](SLQ0001.md) | Error | StackLinq method chain is too deep |
+| [RS0030](RS0030.md) | Error | Banned API used (G# repository builds only) |
 
 ## See Also
 
