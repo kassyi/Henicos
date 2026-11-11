@@ -21,13 +21,19 @@ To leverage actual hardware acceleration:
     - **[NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)** 13.0 or newer: Required for `nvcc` to compile the transpiled `.cu` files into native CUDA Fatbins (`.fatbin`). Ensure `nvcc` is available in your system `PATH`.
     - **[C++ Host Compiler](https://visualstudio.microsoft.com/downloads/)**: **Visual Studio C++ Build Tools (MSVC `cl.exe`)** on Windows or `gcc`/`clang` on Linux, required as the host backend compiler for `nvcc`.
 
-## 2. CPU Mode ([CpuDialect](../02_architecture/01_aot_transpiler.md#123-dialect-based-code-generation) / Fallback)
+## 2. CPU Mode ([StandardCppDialect](../02_architecture/01_aot_transpiler.md#123-transpiler-dialect-architecture-two-tier-design) / Fallback)
 
 For local debugging, unit testing, and CI/CD pipelines without GPU hardware:
 
-- Requires only a standard **C++ Host Compiler** (currently only MSVC on Windows is supported). G# transpiles kernels to C++17 and compiles native shared libraries (`.dll`).
-- **No NVIDIA GPU, Driver, or CUDA Toolkit is required**. While execution speeds are significantly reduced, this allows seamless local debugging and CI/CD testing on GPU-less Windows machines.
-- See [Dialect Architecture](../02_architecture/01_aot_transpiler.md#123-dialect-based-code-generation) and [CPU Dialect Limitations](../01_language/05_limitations.md#52-dialect-syntax-support).
+- Requires a standard **C++ Host Compiler** (MSVC on Windows, or GCC/Clang on Linux via `GccClangToolchain`). G#
+  transpiles kernels to C++17 and compiles native shared libraries (`.dll` on Windows, `.so` on Linux). When the native
+  library of the kernels does not exist (for example, no C++ compiler built it), or when
+  `CpuKernelLoader.ForceManagedExecution` is set, G# runs the kernels as managed C# instead
+  (`CpuKernelLoader.ShouldUseManagedExecution`).
+- **No NVIDIA GPU, Driver, or CUDA Toolkit is required**. While execution speeds are reduced compared to hardware
+  execution, this allows seamless local debugging and CI/CD testing on GPU-less machines.
+- See [Dialect Architecture](../02_architecture/01_aot_transpiler.md#123-transpiler-dialect-architecture-two-tier-design)
+  and [CPU Dialect Limitations](../01_language/05_limitations.md#52-dialect-syntax-support).
 
 Once your environment is set up, proceed to [2. The Mental Model & Safety Net](02_mental_model.md) to understand how G# maps C# code to CUDA.
 
