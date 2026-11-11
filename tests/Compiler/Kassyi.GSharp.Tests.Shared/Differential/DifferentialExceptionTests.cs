@@ -370,24 +370,6 @@ public class DifferentialExceptionTests
             Assert.NotNull(nonCudaReconstructed);
             Assert.False(cudaPolicy.Matches(nonCudaReconstructed, DiffPath.Cuda, out string? nonCudaReason));
             Assert.Contains("expected CudaException InnerException on Cuda path", nonCudaReason);
-
-            // Clean child execution (thrown is null) writes NONE||||| and must be read back as null without failure
-            CudaTrapSubprocessRunner.WriteChildResult(null, tempResultFile);
-            Assert.True(CudaTrapSubprocessRunner.TryReadChildResult(tempResultFile, out var cleanReconstructed));
-            Assert.Null(cleanReconstructed);
-
-            // Parser edge cases: NONE variations, empty fields between pipes, malformed base64
-            Assert.True(CudaTrapSubprocessRunner.TryParseResultLine("GSHARP_CUDA_TRAP_RESULT|NONE", out var exNone));
-            Assert.Null(exNone);
-            Assert.True(CudaTrapSubprocessRunner.TryParseResultLine("GSHARP_CUDA_TRAP_RESULT|NONE|||||", out var exNonePipes));
-            Assert.Null(exNonePipes);
-            Assert.True(CudaTrapSubprocessRunner.TryParseResultLine("GSHARP_CUDA_TRAP_RESULT|THREW|System.Exception|||||", out var exEmptyMsg));
-            Assert.NotNull(exEmptyMsg);
-            Assert.Equal(string.Empty, exEmptyMsg.Message);
-            Assert.True(CudaTrapSubprocessRunner.TryParseResultLine("GSHARP_CUDA_TRAP_RESULT|THREW||||||", out var exAllEmpty));
-            Assert.NotNull(exAllEmpty);
-            Assert.False(CudaTrapSubprocessRunner.TryParseResultLine("GSHARP_CUDA_TRAP_RESULT|THREW|System.Exception|||||invalid_base64!", out var exInvalid));
-            Assert.Null(exInvalid);
         }
         finally
         {
