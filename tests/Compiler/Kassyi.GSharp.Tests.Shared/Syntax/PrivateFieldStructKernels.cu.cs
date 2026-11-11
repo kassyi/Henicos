@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Tests.DeviceLibrary;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -76,6 +78,33 @@ public unsafe struct PfHolder
     }
 }
 
+/// <summary>
+/// Explicit layout with every field private, the two ints declared in the opposite order of their offsets. Converted on
+/// CUDA, where Vector2 aligns to 8 (device size 24, host size 20); identical, and block-copied, on the CPU dialect.
+/// </summary>
+[StructLayout(LayoutKind.Explicit)]
+public struct PfExplicitSwapped
+{
+    [FieldOffset(4)] private int _a;
+    [FieldOffset(0)] private int _b;
+    [FieldOffset(8)] private System.Numerics.Vector2 _v;
+    [FieldOffset(16)] private int _c;
+
+    public PfExplicitSwapped(int a, int b, int c)
+    {
+        _a = a;
+        _b = b;
+        _v = default;
+        _c = c;
+    }
+
+    public readonly int A => _a;
+
+    public readonly int B => _b;
+
+    public readonly int C => _c;
+}
+
 public static partial class PrivateFieldStructKernels
 {
     [GpuKernel]
@@ -103,5 +132,30 @@ public static partial class PrivateFieldStructKernels
         items[1].Values[0] = items[0].Bias + items[1].Bias;
         items[0].Bias = items[0].Bias + 1;
         holder.Scale = -holder.Scale;
+    }
+
+    [GpuKernel]
+    public static void ReadExplicitSwappedKernel(PfExplicitSwapped value, int[] output)
+    {
+        if (ThreadIndex.X != 0)
+        {
+            return;
+        }
+
+        output[0] = value.A;
+        output[1] = value.B;
+        output[2] = value.C;
+    }
+
+    [GpuKernel]
+    public static void StepLibraryInternalFieldsKernel(ref LibInternalFieldHolder holder)
+    {
+        if (ThreadIndex.X != 0)
+        {
+            return;
+        }
+
+        // The internal fields cross to the device and back untouched; the device writes only the public array
+        holder.Data[0] = holder.Data[0] + 1;
     }
 }

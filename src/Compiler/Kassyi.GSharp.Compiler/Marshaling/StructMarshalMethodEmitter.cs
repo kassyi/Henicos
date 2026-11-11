@@ -17,9 +17,11 @@ internal static class StructMarshalMethodEmitter
             writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}, ref " : " host, ref ");
             writer.AppendAotStructPath(s);
             // CUDA records one device region per host array (DeviceArrayRegions, #707); the CPU records GCHandles
+            writer.Append(" native, ");
             writer.Append(dialect.IsCuda
-                ? $" native, {StructMarshalingEmitter.DeviceArrayRegionsType}? {StructMarshalingEmitter.CudaArraysParameter}, global::System.IntPtr hStream = default"
-                : $" native, global::System.Collections.Generic.List<global::System.IntPtr>? {StructMarshalingEmitter.CpuArraysParameter}, global::System.IntPtr hStream = default");
+                ? $"{StructMarshalingEmitter.DeviceArrayRegionsType}? {StructMarshalingEmitter.CudaArraysParameter}"
+                : $"{HostTypeNames.PointerList}? {StructMarshalingEmitter.CpuArraysParameter}");
+            writer.Append($", {HostTypeNames.IntPtr} hStream = default");
         }
 
         writer.AppendLine();

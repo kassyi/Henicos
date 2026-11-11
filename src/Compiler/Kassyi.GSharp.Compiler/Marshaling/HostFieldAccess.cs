@@ -16,4 +16,17 @@ internal static class HostFieldAccess
         field.DeclaredAccessibility == Accessibility.Public ||
         (field.DeclaredAccessibility is Accessibility.Internal or Accessibility.ProtectedOrInternal &&
          field.ContainingAssembly.IsEqualTo(launcherAssembly));
+
+    /// <summary>
+    /// Whether the launcher can check the offset of <paramref name="member"/> on the struct itself with
+    /// <c>Unsafe.ByteOffset</c>: an ordinary field that <see cref="CanName"/> accepts and whose type is not a pointer,
+    /// which cannot be a type argument of <c>Unsafe.As</c>.
+    /// </summary>
+    internal static bool CanCheckOffset(StructAbiMember member, IAssemblySymbol launcherAssembly) =>
+        member is { Kind: StructAbiMemberKind.Field, Symbol: IFieldSymbol field } &&
+        !IsPointer(field.Type) &&
+        CanName(field, launcherAssembly);
+
+    /// <summary>Whether <paramref name="type"/> is a pointer, which cannot be a type argument of <c>Unsafe.As</c>.</summary>
+    internal static bool IsPointer(ITypeSymbol type) => type is IPointerTypeSymbol or IFunctionPointerTypeSymbol;
 }

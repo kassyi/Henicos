@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Tests.DeviceLibrary;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -60,5 +61,38 @@ public class PrivateFieldStructTests : TranspilerTestBase
         Assert.Equal(8, holder.Items[0].Bias);
         Assert.Equal(11, holder.Items[1].Bias);
         Assert.Equal(0, firstItemValues[0]);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ReadExplicitSwappedKernel_PrivateFieldsOutOfOffsetOrder_ReadsEachFieldAtItsOffset()
+    {
+        var value = new PfExplicitSwapped(a: 1, b: 2, c: 3);
+        var output = new int[3];
+
+        PrivateFieldStructKernels.LaunchReadExplicitSwappedKernel(value, output, blockDimX: 1);
+
+        // _a sits at offset 4 and _b at 0, declared in that order: a sequential mirror would swap them on CUDA
+        // mutant: HostMirrorPlan.Create `structLayout.Kind switch { TypeLayoutKind.Explicit => "Explicit", ...}` ->
+        // "Sequential" with no [FieldOffset] -> FieldOffsetsMatch is false and the launch throws
+        Assert.Equal([1, 2, 3], output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void StepLibraryInternalFieldsKernel_InternalFieldsOfAnotherAssembly_RoundTripUnchanged()
+    {
+        int[] data = [41];
+        var holder = new LibInternalFieldHolder(data, hidden: 7, wide: 1L << 40);
+
+        PrivateFieldStructKernels.LaunchStepLibraryInternalFieldsKernel(ref holder, blockDimX: 1);
+
+        // The launcher cannot name the internal fields of the library and copies them through the host mirror
+        // mutant: StructUnmarshalMethodEmitter.WriteUnmarshalMember writes `;` for `host.<f> = native.<f>;` is not
+        // seen here (the values do not change); StructMarshalMethodEmitter.WriteMarshalMember `= default` writes 0 back
+        Assert.Equal(42, data[0]);
+        Assert.Same(data, holder.Data);
+        Assert.Equal(7, holder.HiddenValue);
+        Assert.Equal(1L << 40, holder.WideValue);
     }
 }

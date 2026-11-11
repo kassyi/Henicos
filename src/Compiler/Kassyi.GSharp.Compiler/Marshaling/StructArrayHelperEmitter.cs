@@ -134,7 +134,8 @@ internal static class StructArrayHelperEmitter
         using (writer.Parentheses())
         {
             writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}, object array" : " host, object array");
+            writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}" : " host");
+            writer.Append(", object array");
         }
 
         writer.AppendLine();
