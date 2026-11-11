@@ -22,7 +22,7 @@ internal static class ModuleKernelParameterTypes
     public static string? GetUnsupportedReason(string type)
     {
         var space = type.IndexOf(' ');
-        if (space > 0 && type[..space] is "ref" or "out" or "in" or "params" or "scoped")
+        if (space > 0 && type.AsSpan(0, space) is "ref" or "out" or "in" or "params" or "scoped")
         {
             return "'ref', 'out', 'in', 'scoped' and 'params' parameters are not supported; " +
                    "the launcher passes a copy and never writes the kernel's value back. " +

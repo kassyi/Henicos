@@ -48,45 +48,29 @@ public static class NativeSanitizerParser
                 end = value.Length;
             }
 
-            var name = TrimmedPart(value, start, end);
+            var name = value.AsSpan(start, end - start).Trim();
             start = end + 1;
             if (name.Length == 0)
             {
                 continue;
             }
 
-            if (string.Equals(name, "address", StringComparison.OrdinalIgnoreCase))
+            if (name.Equals("address".AsSpan(), StringComparison.OrdinalIgnoreCase))
             {
                 sanitizers |= NativeSanitizers.Address;
             }
-            else if (string.Equals(name, "undefined", StringComparison.OrdinalIgnoreCase))
+            else if (name.Equals("undefined".AsSpan(), StringComparison.OrdinalIgnoreCase))
             {
                 sanitizers |= NativeSanitizers.Undefined;
             }
             else
             {
                 sanitizers = NativeSanitizers.None;
-                invalidToken = name;
+                invalidToken = name.ToString();
                 return false;
             }
         }
 
         return true;
-    }
-
-    // <value>[start..end] without the white space at either end
-    private static string TrimmedPart(string value, int start, int end)
-    {
-        while (start < end && char.IsWhiteSpace(value[start]))
-        {
-            start++;
-        }
-
-        while (end > start && char.IsWhiteSpace(value[end - 1]))
-        {
-            end--;
-        }
-
-        return value[start..end];
     }
 }
