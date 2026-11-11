@@ -57,7 +57,7 @@ public class ForEachRewriterSpanTests
         var loop = rewritten.DescendantNodes().OfType<ForStatementSyntax>().Single();
         var movedStatement = Assert.IsType<BlockSyntax>(loop.Statement).Statements[1];
 
-        Assert.Equal(originalStatement.ToString(), movedStatement.ToString());
+        Assert.True(SyntaxFactory.AreEquivalent(originalStatement, movedStatement));
         Assert.Equal(originalStatement.GetLocation(), model.GetOriginalLocation(movedStatement));
     }
 

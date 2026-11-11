@@ -1,8 +1,8 @@
 using System.IO;
-using System.Linq;
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Tests.Shared.Helpers;
+using Kassyi.ZeroAlloc.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
@@ -36,14 +36,30 @@ public class MixedHoistDeclarationLoweringTests
         Assert.Null(loop.Declaration);
         Assert.Empty(loop.Initializers);
         var block = Assert.IsType<BlockSyntax>(loop.Parent);
-        Assert.Equal(
-            [
-                "__gsharp_ctx->a = 1;",
-                "int b = __gsharp_ctx->a + 1;"
-            ],
-            block.Statements
-                .TakeWhile(static s => s is not ForStatementSyntax)
-                .Select(static s => s.NormalizeWhitespace().ToString())
-                .ToArray());
+        Assert.True(block.Statements.Count >= 3);
+        var first = Assert.IsType<ExpressionStatementSyntax>(block.Statements[0]);
+        var assignment = Assert.IsType<AssignmentExpressionSyntax>(first.Expression);
+        Assert.Equal(SyntaxKind.SimpleAssignmentExpression, assignment.Kind());
+        var pointerMember = Assert.IsType<MemberAccessExpressionSyntax>(assignment.Left);
+        Assert.Equal(SyntaxKind.PointerMemberAccessExpression, pointerMember.Kind());
+        Assert.Equal("__gsharp_ctx", Assert.IsType<IdentifierNameSyntax>(pointerMember.Expression).Identifier.ValueText);
+        Assert.Equal("a", pointerMember.Name.Identifier.ValueText);
+        var firstValue = Assert.IsType<LiteralExpressionSyntax>(assignment.Right);
+        Assert.Equal(1, firstValue.Token.Value);
+
+        var second = Assert.IsType<LocalDeclarationStatementSyntax>(block.Statements[1]);
+        var declarator = Assert.Single(second.Declaration.Variables);
+        Assert.Equal("b", declarator.Identifier.ValueText);
+        Assert.NotNull(declarator.Initializer);
+        var binary = Assert.IsType<BinaryExpressionSyntax>(declarator.Initializer.Value);
+        Assert.Equal(SyntaxKind.AddExpression, binary.Kind());
+        var binaryLeft = Assert.IsType<MemberAccessExpressionSyntax>(binary.Left);
+        Assert.Equal(SyntaxKind.PointerMemberAccessExpression, binaryLeft.Kind());
+        Assert.Equal("__gsharp_ctx", Assert.IsType<IdentifierNameSyntax>(binaryLeft.Expression).Identifier.ValueText);
+        Assert.Equal("a", binaryLeft.Name.Identifier.ValueText);
+        var binaryRight = Assert.IsType<LiteralExpressionSyntax>(binary.Right);
+        Assert.Equal(1, binaryRight.Token.Value);
+
+        Assert.Same(loop, block.Statements[2]);
     }
 }

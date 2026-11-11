@@ -52,7 +52,7 @@ public class MutantSwitchRemoverTests
 
         var removed = MutantSwitchRemover.Remove(instrumented, model);
 
-        Assert.Equal(Normalize(original), Normalize(removed));
+        Assert.True(original.NormalizeWhitespace().IsEquivalentTo(removed.NormalizeWhitespace()));
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class MutantSwitchRemoverTests
 
         var removed = MutantSwitchRemover.Remove(instrumented, model);
 
-        Assert.Equal(Normalize(original), Normalize(removed));
+        Assert.True(original.NormalizeWhitespace().IsEquivalentTo(removed.NormalizeWhitespace()));
     }
 
     // The copy maps back to the user's tree (generator-invariants §2): the kept branch is the node Stryker left in place
@@ -85,7 +85,10 @@ public class MutantSwitchRemoverTests
                    ?? throw new InvalidOperationException("The return statement lost its expression.");
 
         Assert.Same(conditional.WhenFalse, model.GetOriginalNode(kept));
-        Assert.Equal("a + b", kept.ToString());
+        var binary = Assert.IsType<BinaryExpressionSyntax>(kept);
+        Assert.Equal(SyntaxKind.AddExpression, binary.Kind());
+        Assert.Equal("a", Assert.IsType<IdentifierNameSyntax>(binary.Left).Identifier.ValueText);
+        Assert.Equal("b", Assert.IsType<IdentifierNameSyntax>(binary.Right).Identifier.ValueText);
     }
 
     // Every node of the copy maps back to the user's tree (generator-invariants §2), every statement to a statement of
@@ -174,6 +177,4 @@ public class MutantSwitchRemoverTests
 
     private static MethodDeclarationSyntax GetMethod(MethodDeclarationSyntax[] methods, string name) =>
         methods.Single(m => m.Identifier.ValueText == name);
-
-    private static string Normalize(SyntaxNode node) => node.NormalizeWhitespace().ToFullString();
 }

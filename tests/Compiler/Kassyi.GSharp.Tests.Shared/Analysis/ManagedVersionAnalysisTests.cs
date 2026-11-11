@@ -234,11 +234,18 @@ public class ManagedVersionAnalysisTests
         var model = s_compilation.GetSemanticModel(declaration.SyntaxTree);
         var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
                 new ManagedAccessorSet(method, s_compilation))
-            .Visit(body)?.ToFullString();
+            .Visit(body);
 
         Assert.NotNull(rewritten);
-        Assert.Contains("global::ManagedVersionCases.Lookalike.InlinePtx(\"nop;\");", rewritten);
-        Assert.DoesNotContain("NotSupportedException", rewritten);
+        Assert.Empty(rewritten.DescendantNodes().OfType<ThrowStatementSyntax>());
+        var invocation = Assert.Single(rewritten.DescendantNodes().OfType<InvocationExpressionSyntax>());
+        var memberAccess = Assert.IsType<MemberAccessExpressionSyntax>(invocation.Expression);
+        Assert.Equal("InlinePtx", memberAccess.Name.Identifier.ValueText);
+        var targetAccess = Assert.IsType<QualifiedNameSyntax>(memberAccess.Expression);
+        Assert.Equal("Lookalike", targetAccess.Right.Identifier.ValueText);
+        var arg = Assert.Single(invocation.ArgumentList.Arguments);
+        var literal = Assert.IsType<LiteralExpressionSyntax>(arg.Expression);
+        Assert.Equal("nop;", literal.Token.ValueText);
     }
 
     [Fact]
@@ -253,13 +260,19 @@ public class ManagedVersionAnalysisTests
         var model = s_compilation.GetSemanticModel(declaration.SyntaxTree);
         var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
                 new ManagedAccessorSet(method, s_compilation))
-            .Visit(body)?.ToFullString();
+            .Visit(body);
 
         Assert.NotNull(rewritten);
-        Assert.Contains(
-            "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");",
-            rewritten);
-        Assert.DoesNotContain("InlinePtx(\"nop;\")", rewritten);
+        Assert.Empty(rewritten.DescendantNodes().OfType<InvocationExpressionSyntax>());
+        var throwStmt = Assert.Single(rewritten.DescendantNodes().OfType<ThrowStatementSyntax>());
+        var objectCreation = Assert.IsType<ObjectCreationExpressionSyntax>(throwStmt.Expression);
+        var typeName = Assert.IsAssignableFrom<QualifiedNameSyntax>(objectCreation.Type);
+        Assert.Equal("NotSupportedException", typeName.Right.Identifier.ValueText);
+        var arg = Assert.Single(objectCreation.ArgumentList?.Arguments ?? default);
+        var messageLiteral = Assert.IsType<LiteralExpressionSyntax>(arg.Expression);
+        Assert.Equal(
+            "Gpu.InlinePtx is not supported by the StandardCppDialect dialect",
+            messageLiteral.Token.ValueText);
     }
 
     [Fact]
