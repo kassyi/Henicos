@@ -643,7 +643,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             "",
             divergence.ConditionParameters,
             divergence.ExitOnlyParameters,
-            divergence.HasExitOnlyBarrier);
+            divergence.HasExitOnlyBarrier,
+            SuspensionAnalysis.ReachesArrivalBarrier(method, compilation));
     }
 
     // A struct that other assemblies can name, rendered for both dialects (StructTranspiler.IsExportedOnItsOwn), with

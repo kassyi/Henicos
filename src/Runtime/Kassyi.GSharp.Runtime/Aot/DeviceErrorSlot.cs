@@ -14,8 +14,9 @@ using Kassyi.GSharp.Runtime.Interop;
 /// When a device check fails, the failing warp elects a leader that atomically claims an error record and writes the
 /// error code, site ID, module ID and coordinates; the failing threads then exit and the kernel completes. A launch
 /// through a generated launcher records under its epoch (<see cref="LaunchErrorRecords"/>), and its launcher throws its
-/// own record. This class owns the record of the launches without an epoch (a launch captured into a CUDA graph, or
-/// every launch when the per-launch records could not be allocated), which they share.
+/// own record. This class owns the shared record: the launches captured into a CUDA graph record into it (every
+/// launch does when the per-launch records could not be allocated), and so does a launch whose own record another
+/// launch still holds, tagged with its epoch.
 /// </para>
 /// <para>
 /// A stream synchronization (<see cref="ThrowIfDeviceError"/>) consumes any record that no launcher is about to read,
@@ -31,7 +32,7 @@ public static unsafe class DeviceErrorSlot
     // Module ID cache indexed by 256-bit signature hash for ErrorSiteTable correlation
     private static readonly ConcurrentDictionary<AotSignatureValidator.Hash256, uint> s_moduleIds = new();
 
-    /// <summary>Gets the device pointer to the pinned error record of the launches without an epoch.</summary>
+    /// <summary>Gets the device pointer to the pinned shared error record (captured launches, among others).</summary>
     public static ulong DeviceErrorSlotPtr => s_deviceErrorSlotPtr;
 
     internal static uint GetOrAssignModuleId(AotSignatureValidator.Hash256 hash) =>
@@ -257,7 +258,7 @@ public static unsafe class DeviceErrorSlot
         }
     }
 
-    // The record of the launches without an epoch, for LaunchErrorRecords (a record that another launch held when the
+    // The shared record of the captured launches, for LaunchErrorRecords (a record that another launch held when the
     // error happened goes there, tagged with the epoch)
     internal static GSharpDeviceErrorSlot* SharedRecord => s_hostErrorSlot;
 

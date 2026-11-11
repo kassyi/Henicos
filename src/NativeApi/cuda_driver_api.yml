@@ -809,6 +809,18 @@ methods:
         type: IntPtr
         description: Function to query.
 
+  - name: cuFuncGetModule
+    returnType: CUresult
+    summary: Returns the module that a function belongs to.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hmod
+        type: out IntPtr
+        description: Returned module handle.
+      - name: hfunc
+        type: IntPtr
+        description: Function to retrieve the module of.
+
   - name: cuFuncSetAttribute
     returnType: CUresult
     summary: Sets information about a function.

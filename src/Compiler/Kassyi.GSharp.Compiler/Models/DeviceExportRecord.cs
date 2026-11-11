@@ -38,7 +38,8 @@ internal readonly record struct DeviceExportRecord(
     string InternalError,
     int DivergentConditionParameters = 0,
     int DivergentExitOnlyParameters = 0,
-    bool HasExitOnlyBarrier = false)
+    bool HasExitOnlyBarrier = false,
+    bool ReachesArrivalBarrier = false)
 {
     /// <summary>The kind of a device function record.</summary>
     public const string FunctionKind = "Function";
@@ -53,7 +54,7 @@ internal readonly record struct DeviceExportRecord(
     /// finds the records by those names. A change of <c>InternalNames.yml</c> or of a prelude changes
     /// <see cref="CurrentPreludeHash"/> by itself.
     /// </remarks>
-    public const int CurrentFormatVersion = 2;
+    public const int CurrentFormatVersion = 3;
 
     /// <summary>
     /// The hash that this G# writes into its records and requires of the records it imports

@@ -47,6 +47,13 @@ internal readonly record struct KernelHostModel
     /// <summary>Whether the kernel or any device function it calls reaches a warp shuffle or warp match (#1001).</summary>
     public bool ReachesWarpShuffle { get; init; }
 
+    /// <summary>
+    /// Whether the kernel may wait at a barrier that counts a fixed number of arrivals: a cooperative kernel (its grid
+    /// barrier, also the implicit one of an <c>AsParallel()</c> grid aggregate), or a kernel that reaches an mbarrier
+    /// or <c>Gpu.SyncGrid()</c>. A captured launch of such a kernel needs an abort word of its own (#1637).
+    /// </summary>
+    public bool WaitsForArrivals { get; init; }
+
     /// <summary>The <c>global::</c>-qualified name of the class that declares the kernel, for qualifying sibling members.</summary>
     public string ClassQualifiedName { get; init; }
 
@@ -137,6 +144,8 @@ internal readonly record struct KernelHostModel
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu, kernel.ContainingType),
             IsCooperative = kernel.IsCooperativeKernel(),
             ReachesWarpShuffle = model != null && SuspensionAnalysis.ReachesWarpShuffle(kernel, model.Compilation),
+            WaitsForArrivals = kernel.IsCooperativeKernel() ||
+                               (model != null && SuspensionAnalysis.ReachesArrivalBarrier(kernel, model.Compilation)),
             ClassQualifiedName = AotHostNames.GetHostClassQualifiedName(kernel.ContainingType),
             HasReservedLaunchParameterName = kernel.Parameters
                 .AsStackEnumerable()

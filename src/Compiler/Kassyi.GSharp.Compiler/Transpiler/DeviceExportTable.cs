@@ -315,7 +315,8 @@ internal sealed class DeviceExportTable
             GetString(named, nameof(DeviceExportRecord.InternalError)),
             GetInt(named, nameof(DeviceExportRecord.DivergentConditionParameters)),
             GetInt(named, nameof(DeviceExportRecord.DivergentExitOnlyParameters)),
-            GetBool(named, nameof(DeviceExportRecord.HasExitOnlyBarrier)));
+            GetBool(named, nameof(DeviceExportRecord.HasExitOnlyBarrier)),
+            GetBool(named, nameof(DeviceExportRecord.ReachesArrivalBarrier)));
 
         imported = new ImportedDeviceRecord(record, assemblyName, formatVersion, preludeHash);
         return record.CppName.Length > 0;

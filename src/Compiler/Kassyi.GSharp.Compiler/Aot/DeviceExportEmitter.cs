@@ -485,6 +485,7 @@ internal static class DeviceExportEmitter
             AppendIntProperty(writer, nameof(DeviceExportRecord.DivergentExitOnlyParameters),
                 record.DivergentExitOnlyParameters);
             AppendBoolProperty(writer, nameof(DeviceExportRecord.HasExitOnlyBarrier), record.HasExitOnlyBarrier);
+            AppendBoolProperty(writer, nameof(DeviceExportRecord.ReachesArrivalBarrier), record.ReachesArrivalBarrier);
         }
 
         writer.AppendLine("]");
