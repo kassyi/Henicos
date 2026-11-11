@@ -109,8 +109,8 @@ public class IrBuilderStatementTests
     [Scenario(TestScenario.HappyPath)]
     public void ImplicitNodes_AreSynthesizedAndExplicitOnesAreNot()
     {
-        var conversion = Assert.IsType<IrConversion>(IrTestCases.Result(IrTestCases.BuildCase("ImplicitNumeric")));
-        var cast = Assert.IsType<IrConversion>(IrTestCases.Result(IrTestCases.BuildCase("ExplicitNumeric")));
+        var conversion = Assert.IsType<IrConversion>(IrTestCases.CaseResult("ImplicitNumeric"));
+        var cast = Assert.IsType<IrConversion>(IrTestCases.CaseResult("ExplicitNumeric"));
 
         Assert.True(conversion.Source.Synthesized);
         Assert.Equal(conversion.Operand.Source.Span, conversion.Source.Span);
