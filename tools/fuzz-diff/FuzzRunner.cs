@@ -148,7 +148,7 @@ internal sealed class FuzzRunner(RunCommandOptions options)
         double batchSec = (nowMs - batchStartMs) / 1000.0;
         var rates = _totals.Rates(nowMs);
         var inv = CultureInfo.InvariantCulture;
-        string issueCounts = FormatSuspectedIssuesBatch();
+        string issueCounts = FormatSuspectedIssues("=");
         Console.Out.WriteLine(
             string.Create(inv, $"[fuzz-diff] Batch #{_totals.Batches} (seed={seedHex}, ") +
             string.Create(inv, $"profile={options.Profile.ToCode()}, size={options.Generation.BatchSize}) ") +
@@ -156,20 +156,6 @@ internal sealed class FuzzRunner(RunCommandOptions options)
             string.Create(inv, $"({rates.Overall} kernels/hr overall, {rates.PureEval} kernels/hr eval), ") +
             string.Create(inv, $"findings={_totals.Failures} ({issueCounts}") +
             string.Create(inv, $"hangs={_totals.Hangs}, other={_totals.OtherFindings})"));
-    }
-
-    private string FormatSuspectedIssuesBatch()
-    {
-        var nonZero = new List<string>();
-        foreach ((int issue, int count) in _totals.SuspectedIssues)
-        {
-            if (count > 0)
-            {
-                nonZero.Add(string.Create(CultureInfo.InvariantCulture, $"#{issue}={count}"));
-            }
-        }
-
-        return nonZero.Count > 0 ? string.Join(", ", nonZero) + ", " : string.Empty;
     }
 
     private void WriteSummary(List<KnownIssueEntry> activeKnownIssues, long elapsedMs)
@@ -207,7 +193,7 @@ internal sealed class FuzzRunner(RunCommandOptions options)
             OtherFindingsCount: _totals.OtherFindings);
         FuzzJson.WriteRecord(Path.Combine(options.Paths.WorkDir, "summary.json"), summary);
 
-        string summaryIssueText = FormatSuspectedIssuesSummary();
+        string summaryIssueText = FormatSuspectedIssues(" suspected: ");
         var inv = CultureInfo.InvariantCulture;
         Console.Out.WriteLine(
             string.Create(inv, $"[fuzz-diff] Completed {_totals.Batches} batches ({_totals.Kernels} kernels) ") +
@@ -217,18 +203,16 @@ internal sealed class FuzzRunner(RunCommandOptions options)
             string.Create(inv, $"other: {_totals.OtherFindings})."));
     }
 
-    private string FormatSuspectedIssuesSummary()
+    // "#<issue><separator><count>, " per known issue with a finding, in issue order; empty when there is none
+    private string FormatSuspectedIssues(string separator)
     {
-        var nonZero = new List<string>();
+        using var writer = new SourceWriter();
         foreach ((int issue, int count) in _totals.SuspectedIssues)
         {
-            if (count > 0)
-            {
-                nonZero.Add(string.Create(CultureInfo.InvariantCulture, $"#{issue} suspected: {count}"));
-            }
+            writer.Append($"#{issue}{separator}{count}, ");
         }
 
-        return nonZero.Count > 0 ? string.Join(", ", nonZero) + ", " : string.Empty;
+        return writer.ToString();
     }
 
     private static double RoundSeconds(long milliseconds) =>
