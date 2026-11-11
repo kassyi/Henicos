@@ -14,22 +14,22 @@ public class SmallConstantVarManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_VarOfSmallConstField_WrapsAtFieldType() =>
+    public void VarDeclaration_ManagedSmallConstField_WrapsAtFieldType() =>
         SmallConstantVarScenarios.Increment(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_VarOfSmallEnumMember_WrapsAtBaseType() =>
+    public void VarDeclaration_ManagedSmallEnumMember_WrapsAtBaseType() =>
         SmallConstantVarScenarios.EnumIncrement(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_VarOfSmallConstLocal_WrapsAtLocalType() =>
+    public void VarDeclaration_ManagedSmallConstLocal_WrapsAtLocalType() =>
         SmallConstantVarScenarios.LocalConst(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_NarrowConstantInSwitchMathConditionalAndArguments() =>
+    public void NarrowConstant_ManagedInSwitchMathConditionalAndArguments_WrapsAtNarrowType() =>
         SmallConstantVarScenarios.NarrowUses(s_runManaged);
 }
 #endif

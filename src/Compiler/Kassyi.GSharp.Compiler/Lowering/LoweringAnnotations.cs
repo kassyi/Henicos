@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir;
+
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
@@ -225,6 +227,29 @@ public static class LoweringAnnotations
         };
         return data == null ? null : new SyntaxAnnotation(SyncIntrinsicAnnotationKind, data);
     }
+
+    /// <summary>
+    /// The annotation of a call whose split the classify pass of the IR decided, as the lowering puts it on the
+    /// invocation; <see langword="null"/> for a call that does not split.
+    /// </summary>
+    /// <param name="split">The split of the call.</param>
+    /// <param name="returnsVoid">
+    /// Whether the callee returns no value (a suspending call that returns one is marked).
+    /// </param>
+    internal static SyntaxAnnotation? CreateSplitAnnotation(IrSplit split, bool returnsVoid) => split.Kind switch
+    {
+        IrSplitKind.None => null,
+        IrSplitKind.SuspendingCall => returnsVoid
+            ? new SyntaxAnnotation(SuspendingCallAnnotationKind)
+            : new SyntaxAnnotation(SuspendingCallAnnotationKind, ValueReturningCallAnnotationData),
+        IrSplitKind.BlockBarrier => CreateSyncIntrinsicAnnotation(
+            new SyncIntrinsicInfo(SyncIntrinsicKind.BlockBarrier, SyncScope.Block, true, false)),
+        IrSplitKind.GridBarrier => CreateSyncIntrinsicAnnotation(
+            new SyncIntrinsicInfo(SyncIntrinsicKind.GridBarrier, SyncScope.Grid, true, false)),
+        IrSplitKind.WarpShuffle => CreateSyncIntrinsicAnnotation(
+            new SyncIntrinsicInfo(SyncIntrinsicKind.WarpShuffle, SyncScope.Warp, true, true, split.Shuffle)),
+        _ => throw new ArgumentOutOfRangeException(nameof(split), split.Kind, "Unknown split kind.")
+    };
 
     /// <summary>Formats the <see cref="OriginalSpanAnnotationKind"/> payload for <paramref name="node"/>.</summary>
     public static string FormatOriginalSpanData(SyntaxNode node, int treeOrdinal = -1, int region = 0) =>

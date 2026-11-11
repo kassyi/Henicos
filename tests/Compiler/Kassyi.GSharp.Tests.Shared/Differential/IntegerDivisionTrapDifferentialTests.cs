@@ -416,34 +416,34 @@ public class IntegerDivisionTrapDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_Int32Divide_MatchesTheOracleOnEveryPath() =>
+    public void IntegerDivision_Int32_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_int32Divide);
 
     [SkippableFact]
-    public void Test_Int32Remainder_MatchesTheOracleOnEveryPath() =>
+    public void IntegerDivision_Int32Remainder_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_int32Remainder);
 
     [SkippableFact]
-    public void Test_UInt32Divide_MatchesTheOracleOnEveryPath() =>
+    public void IntegerDivision_UInt32_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_uint32Divide);
 
     [SkippableFact]
-    public void Test_UInt32Remainder_MatchesTheOracleOnEveryPath() =>
+    public void IntegerDivision_UInt32Remainder_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_uint32Remainder);
 
     [SkippableFact]
-    public void Test_Int64Divide_MatchesTheOracleOnEveryPath() =>
+    public void IntegerDivision_Int64_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_int64Divide);
 
     [SkippableFact]
-    public void Test_UInt64Divide_MatchesTheOracleOnEveryPath() =>
+    public void IntegerDivision_UInt64_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_uint64Divide);
 
     [SkippableFact]
-    public void Test_Int16CompoundDivide_MatchesTheOracleOnEveryPath() =>
+    public void IntegerDivision_Int16CompoundDivide_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_int16CompoundDivide);
 
     [SkippableFact]
-    public void Test_SByteCompoundRemainder_MatchesTheOracleOnEveryPath() =>
+    public void IntegerDivision_SByteCompoundRemainder_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_sbyteCompoundRemainder);
 }

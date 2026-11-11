@@ -7,4 +7,8 @@ internal sealed class IrExpressionStatement(IrExpression expression, IrSource so
 {
     /// <summary>The expression.</summary>
     public IrExpression Expression { get; } = expression;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrExpressionStatement Update(IrExpression expression) =>
+        expression == Expression ? this : new IrExpressionStatement(expression, Source);
 }

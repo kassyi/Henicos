@@ -40,10 +40,12 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         if (context.Query.SemanticModel.GetSymbol(node) is IMethodSymbol symbol)
         {
-            // C# removes the call of a partial method without an implementing declaration, arguments included; a call
-            // that is not a whole statement (the body of an expression-bodied lambda or local function, a for
-            // incrementor) leaves an expression that does nothing (#1424)
-            if ((symbol.ReducedFrom ?? symbol).IsPartialWithoutImplementation())
+            // C# removes the call of a partial method without an implementing declaration, or of a [Conditional]
+            // method whose symbols are not defined, arguments included; a call that is not a whole statement (the body
+            // of an expression-bodied lambda or local function, a for incrementor) leaves an expression that does
+            // nothing (#1424)
+            if (RemovedCalls.GetUserTree(node, context.Query.SemanticModel) is { } tree &&
+                RemovedCalls.IsRemoved(symbol, tree))
             {
                 context.Emitter.Writer.Append("((void)0)");
                 return;

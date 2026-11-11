@@ -36,7 +36,7 @@ public class LoopUnrollTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_LoopUnrollForKernel_Execution()
+    public void Unroll_ForLoop_AccumulatesExpectedSum()
     {
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollForKernel(data, blockDimX: 1);
@@ -45,7 +45,7 @@ public class LoopUnrollTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_LoopUnrollFactorKernel_Execution()
+    public void Unroll_ForLoopWithFactor_AccumulatesExpectedSum()
     {
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollFactorKernel(data, blockDimX: 1);
@@ -54,7 +54,7 @@ public class LoopUnrollTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_LoopUnrollWhileKernel_Execution()
+    public void Unroll_WhileLoop_AccumulatesExpectedSum()
     {
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollWhileKernel(data, blockDimX: 1);
@@ -63,7 +63,7 @@ public class LoopUnrollTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_LoopUnrollNestedKernel_Execution()
+    public void Unroll_NestedLoops_AccumulatesExpectedSum()
     {
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollNestedKernel(data, blockDimX: 1);
@@ -72,7 +72,7 @@ public class LoopUnrollTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_LoopUnrollSingleStatementKernel_Execution()
+    public void Unroll_SingleStatementLoop_AccumulatesExpectedSum()
     {
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollSingleStatementKernel(data, blockDimX: 1);
@@ -99,7 +99,7 @@ public class LoopUnrollTests : TranspilerTestBase
     [Theory]
     [MemberData(nameof(UnrollCaseNames))]
     [Category(TestCategory.Syntax)]
-    public async Task Test_LoopUnroll_SnapshotAndAudit(string methodName)
+    public async Task Unroll_CompilerDiagnosticsAndAst_MatchesExpectedAudit(string methodName)
     {
         var (_, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "LoopUnrollStatements.cs"));
         var methodDecl = tree.GetRoot().DescendantNodes()

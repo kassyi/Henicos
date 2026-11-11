@@ -100,12 +100,13 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         using var zero = new GpuBigUInt(_context, 2);
 
         // An integer has exponent 0.
-        // mutant: GpuBigUInt.cs:46 `exponent != 0` -> `exponent == 0`
+        // mutant: GpuBigUInt.cs:53 `exponent != 0` -> `exponent == 0`
         var exponentError = Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigUInt.Create(nonZero, 1, false));
         Assert.Equal("exponent", exponentError.ParamName);
 
         // An unsigned value cannot be negative, except zero (negative zero is zero).
-        // mutant: GpuBigUInt.cs:51 `&&` -> `||` (zero, isNegative: true) / `!magnitude.IsZero()` -> `magnitude.IsZero()`
+        // mutant: GpuBigUInt.cs:58 `&&` -> `||` (zero, isNegative: true) / `!magnitude.IsZero()`
+        //         -> `magnitude.IsZero()`
         var signError = Assert.Throws<ArgumentOutOfRangeException>(() => GpuBigUInt.Create(nonZero, 0, true));
         Assert.Equal("isNegative", signError.ParamName);
         Assert.Equal(zero.DevicePointer, GpuBigUInt.Create(zero, 0, true).DevicePointer);
@@ -118,13 +119,14 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     public void Constructor_RejectsInvalidArguments()
     {
         // A value has at least one word.
-        // mutant: GpuBigUInt.cs:114 `numWords <= 0` -> `numWords < 0` (0 words)
+        // mutant: GpuBigUInt.cs:124 `numWords <= 0` -> `numWords < 0` (0 words)
         Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigUInt(_context, 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBigUInt(_context, -1));
 
         // Host data must be given and must not be empty.
-        // mutant: GpuBigUInt.cs:132 `ArgumentNullException.ThrowIfNull(hostData)` removed (NullReferenceException instead)
-        // mutant: GpuBigUInt.cs:133 `hostData.Length == 0` -> `!=` / throw removed
+        // mutant: GpuBigUInt.cs:141 `ArgumentNullException.ThrowIfNull(hostData)` removed (NullReferenceException
+        //         instead)
+        // mutant: GpuBigUInt.cs:142 `hostData.Length == 0` -> `!=` / throw removed
         Assert.Throws<ArgumentNullException>(() => new GpuBigUInt(_context, (uint[])null));
         Assert.Throws<ArgumentException>(() => new GpuBigUInt(_context, Array.Empty<uint>()));
 
@@ -134,7 +136,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Equal(4, owned.NumWords);
 
         // An unsigned value is never negative.
-        // mutant: GpuBigUInt.cs:38 `CanBeNegative => false` -> `true`
+        // mutant: GpuBigUInt.cs:42 `CanBeNegative => false` -> `true`
         Assert.False(owned.IsNegative);
         Assert.False(owned.CanBeNegative);
     }
@@ -146,7 +148,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     {
         // SetIsNegative(true) sets bit 31 of the top word and keeps it set when it already is; false clears it.
         // The other bits of the top word and the lower words are unchanged.
-        // mutant: GpuBigUInt.cs:447 `word |= 0x80000000` -> `word ^= 0x80000000` (second call)
+        // mutant: GpuBigUInt.cs:528 `word |= 0x80000000` -> `word ^= 0x80000000` (second call)
         using var value = new GpuBigUInt(_context, [5u, 0x1234_5678u]);
         value.SetIsNegative(true);
         value.SetIsNegative(true);
@@ -164,7 +166,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     public void Square_RequiresTwiceTheLogicalWords()
     {
         // The square of an n-word value needs 2n words; one word less is rejected.
-        // mutant: GpuBigUInt.cs:465 `NumWords < logicalWords * 2` -> `NumWords <= logicalWords * 2`
+        // mutant: GpuBigUInt.cs:546 `NumWords < logicalWords * 2` -> `NumWords <= logicalWords * 2`
         using var tooSmall = new GpuBigUInt(_context, 3);
         Assert.Throws<InvalidOperationException>(() => tooSmall.Square(2));
 
@@ -193,11 +195,11 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         workspace.Dispose();
 
         // After Dispose, RentTemp throws for the workspace itself (not only through the memory manager).
-        // mutant: GpuWorkspace.cs:381 `ObjectDisposedException.ThrowIf(...)` removed (the manager throws for itself)
+        // mutant: GpuWorkspace.cs:492 `ObjectDisposedException.ThrowIf(...)` removed (the manager throws for itself)
         var rentError = Assert.Throws<ObjectDisposedException>(() => workspace.RentTemp(4));
         Assert.Equal(typeof(GpuWorkspace).FullName, rentError.ObjectName);
 
-        // mutant: DefaultGpuMemoryManager.cs:57 `ObjectDisposedException.ThrowIf(...)` removed
+        // mutant: DefaultGpuMemoryManager.cs:118 `ObjectDisposedException.ThrowIf(...)` removed
         Assert.Throws<ObjectDisposedException>(() => workspace.MemoryManager.AllocateTemp(4));
     }
 
@@ -230,7 +232,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         var element = array.GetElement(1);
 
         // Clear(offset, count) zeroes exactly words offset..offset+count-1 of the element.
-        // mutant: GpuBigUInt.cs:227 `offsetWords * 4` -> `offsetWords / 4`
+        // mutant: GpuBigUInt.cs:253 `offsetWords * 4` -> `offsetWords / 4`
         element.Clear(1, 2);
         Assert.Equal(new uint[] { 1u, 2u, 3u, 4u, 5u, 0u, 0u, 8u, 9u, 10u, 11u, 12u }, ReadArray(array));
 
@@ -252,7 +254,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         using var source = new GpuBigUInt(_context, [101u, 102u, 103u, 104u]);
 
         // A destination offset copies only the words that fit (2), and the next element is untouched.
-        // mutant: GpuBigUInt.cs:246 `NumWords - destOffsetWords` -> `NumWords + destOffsetWords`
+        // mutant: GpuBigUInt.cs:278 `NumWords - destOffsetWords` -> `NumWords + destOffsetWords`
         using (var array = CreateFilledArray())
         {
             array.GetElement(0).CopyFrom(source, destOffsetWords: 2);
@@ -260,7 +262,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         }
 
         // A source offset copies only the source words that remain (2).
-        // mutant: GpuBigUInt.cs:246 `source.NumWords - srcOffsetWords` -> `source.NumWords + srcOffsetWords`
+        // mutant: GpuBigUInt.cs:278 `source.NumWords - srcOffsetWords` -> `source.NumWords + srcOffsetWords`
         using (var array = CreateFilledArray())
         {
             array.GetElement(0).CopyFrom(source, srcOffsetWords: 2);
@@ -268,7 +270,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         }
 
         // An explicit count writes exactly that many words at the destination offset.
-        // mutant: GpuBigUInt.cs:252 `destOffsetWords * 4` -> `destOffsetWords / 4`
+        // mutant: GpuBigUInt.cs:286 `destOffsetWords * 4` -> `destOffsetWords / 4`
         using (var array = CreateFilledArray())
         {
             array.GetElement(0).CopyFrom(source, destOffsetWords: 1, numWords: 1);
@@ -282,8 +284,8 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     public void ClearWord_ClearsOnlyThatWord()
     {
         // ClearWord(i) zeroes word i of the element.
-        // mutant: GpuBigUInt.cs:343 `wordIndex * 4` -> `wordIndex / 4`
-        // mutant: GpuBigUInt.cs:344 copy removed
+        // mutant: GpuBigUInt.cs:398 `wordIndex * 4` -> `wordIndex / 4`
+        // mutant: GpuBigUInt.cs:399 copy removed
         using var array = CreateFilledArray();
         array.GetElement(1).ClearWord(1);
         Assert.Equal(new uint[] { 1u, 2u, 3u, 4u, 5u, 0u, 7u, 8u, 9u, 10u, 11u, 12u }, ReadArray(array));
@@ -354,14 +356,14 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     public void DevicePointer_DefaultAndOffset()
     {
         // A default handle or value has no device memory.
-        // mutant: GpuBigIntMemoryHandle.cs:62 `IsDefault ? IntPtr.Zero : ...` -> `!IsDefault ? ...`
-        // mutant: GpuBigUInt.cs:63 `Handle.IsDefault ? ...` -> `!Handle.IsDefault ? ...`
+        // mutant: GpuBigIntMemoryHandle.cs:120 `if (IsDefault)` -> `if (!IsDefault)`
+        // mutant: GpuBigUInt.cs:75 `Handle.IsDefault ? ...` -> `!Handle.IsDefault ? ...`
         Assert.Equal(IntPtr.Zero, default(GpuBigIntMemoryHandle).DevicePointer);
         Assert.Equal(IntPtr.Zero, default(GpuBigUInt).DevicePointer);
         Assert.Equal(0, default(GpuBigUInt).NumWords);
 
         // Element i of a 4-word array starts 16 * i bytes after the array.
-        // mutant: GpuBigIntMemoryHandle.cs:62 `WordOffset * 4` -> `WordOffset / 4`
+        // mutant: GpuBigIntMemoryHandle.cs:136 `WordOffset * 4` -> `WordOffset / 4`
         using var array = CreateFilledArray();
         var element = array.GetElement(1);
         Assert.Equal(array.DevicePointer + 16, element.Handle.DevicePointer);

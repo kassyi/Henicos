@@ -214,7 +214,7 @@ internal static class CallEffects
     }
 
     // A pure intrinsic whose parameters are all values without memory behind them (Math.Max, MathF.Sqrt ...)
-    private static bool IsScalarMath(IMethodSymbol method) =>
+    public static bool IsScalarMath(IMethodSymbol method) =>
         method.DeclaringSyntaxReferences.Length == 0 &&
         DeviceFunctionEffects.IsPureIntrinsic(method) &&
         method.Parameters

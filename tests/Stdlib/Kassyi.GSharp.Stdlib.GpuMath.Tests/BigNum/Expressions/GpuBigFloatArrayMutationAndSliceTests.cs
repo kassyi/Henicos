@@ -21,10 +21,10 @@ public class GpuBigFloatArrayMutationAndSliceTests : GpuBigFloatWorkspaceTestBas
     [Theory]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    // mutant: GpuBigFloatArray.cs:147 `elementOffset < 0` -> `<= 0`, `> Length` -> `>= Length`
+    // mutant: GpuBigUIntArrayView.cs:96 `elementOffset < 0` -> `<= 0`, `> Length` -> `>= Length`
     [InlineData(0, 4)]
     [InlineData(4, 0)]
-    // mutant: GpuBigFloatArray.cs:147 `elementCount < 0` -> `<= 0`
+    // mutant: GpuBigUIntArrayView.cs:96 `elementCount < 0` -> `<= 0`
     [InlineData(1, 0)]
     public void GpuBigFloatArray_Slice_InsideBounds_Succeeds(int offset, int count)
     {
@@ -41,10 +41,10 @@ public class GpuBigFloatArrayMutationAndSliceTests : GpuBigFloatWorkspaceTestBas
     [Theory]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    // mutant: GpuBigFloatArray.cs:147 `||` -> `&&` (either), L149 `throw` removed
+    // mutant: GpuBigUIntArrayView.cs:96 `||` -> `&&` (either), L98 `throw` removed
     [InlineData(-1, 1)]
     [InlineData(0, -1)]
-    // mutant: GpuBigFloatArray.cs:147 `elementOffset + elementCount` -> `elementOffset - elementCount`
+    // mutant: GpuBigUIntArrayView.cs:96 `Length - elementCount` -> `Length + elementCount`
     [InlineData(1, 4)]
     public void GpuBigFloatArray_Slice_OutsideBounds_Throws(int offset, int count)
     {

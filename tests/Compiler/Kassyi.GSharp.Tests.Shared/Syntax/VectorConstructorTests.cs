@@ -15,49 +15,51 @@ public class VectorConstructorTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Splat_SetsEveryComponent() => VectorConstructorScenarios.SplatSetsEveryComponent(s_runNative);
+    public void Splat_NativeScalarArgument_SetsEveryComponent() =>
+        VectorConstructorScenarios.SplatSetsEveryComponent(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Extend_AppendsComponents() => VectorConstructorScenarios.ExtendAppendsComponents(s_runNative);
+    public void Extend_NativeSmallerVector_AppendsComponents() =>
+        VectorConstructorScenarios.ExtendAppendsComponents(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TargetTypedSplat_SetsEveryComponent() =>
+    public void TargetTypedSplat_NativeImplicitTarget_SetsEveryComponent() =>
         VectorConstructorScenarios.TargetTypedSplatSetsEveryComponent(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Splat_EvaluatesItsArgumentOnce() =>
+    public void Splat_NativeSideEffectArgument_EvaluatesItsArgumentOnce() =>
         VectorConstructorScenarios.SplatEvaluatesItsArgumentOnce(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PositionalConstructors_KeepTheirMeaning() =>
+    public void PositionalConstructors_NativeComponentArguments_KeepTheirMeaning() =>
         VectorConstructorScenarios.PositionalConstructorsKeepTheirMeaning(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TargetTypedUserConstructor_RunsItsBody() =>
+    public void TargetTypedUserConstructor_NativeStructInstantiation_RunsItsBody() =>
         VectorConstructorScenarios.TargetTypedUserConstructorRunsItsBody(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_NamedArguments_ReachTheirParameters() =>
+    public void NamedArguments_NativeReorderedParameters_ReachTheirParameters() =>
         VectorConstructorScenarios.NamedArgumentsReachTheirParameters(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NamedArguments_AreEvaluatedInTheWrittenOrder() =>
+    public void NamedArguments_NativeSideEffects_AreEvaluatedInWrittenOrder() =>
         VectorConstructorScenarios.NamedArgumentsAreEvaluatedInTheWrittenOrder(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NamedSpanArguments_ReachTheirParameters() =>
+    public void NamedSpanArguments_NativeSpanParameters_ReachTheirParameters() =>
         VectorConstructorScenarios.NamedSpanArgumentsReachTheirParameters(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NamedCallArguments_AreEvaluatedInTheWrittenOrder() =>
+    public void NamedCallArguments_NativeSideEffects_AreEvaluatedInWrittenOrder() =>
         VectorConstructorScenarios.NamedCallArgumentsAreEvaluatedInTheWrittenOrder(s_runNative);
 }

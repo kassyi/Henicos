@@ -36,7 +36,7 @@ public class CudaStreamTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CudaStream_MultipleStreamsExecuteConcurrently()
+    public void CudaStream_MultipleStreams_ExecuteConcurrently()
     {
         using var ctx = new GpuKernelLoader.CudaContextScope();
 
@@ -62,7 +62,7 @@ public class CudaStreamTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CudaStream_UseAfterDispose_ThrowsObjectDisposedException()
+    public async Task CudaStream_UseAfterDispose_ThrowsObjectDisposedException()
     {
         using var ctx = new GpuKernelLoader.CudaContextScope();
 

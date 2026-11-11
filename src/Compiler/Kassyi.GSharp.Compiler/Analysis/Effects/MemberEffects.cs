@@ -95,7 +95,7 @@ internal static class MemberEffects
             AddPropertyRead(ref walker, property);
         }
 
-        if (!mutatesReceiver && !IsComputedUserProperty(property))
+        if (!mutatesReceiver && !IsUserAccessorProperty(property))
         {
             return;
         }
@@ -120,7 +120,7 @@ internal static class MemberEffects
 
         return expression is IdentifierNameSyntax or MemberAccessExpressionSyntax or ElementAccessExpressionSyntax &&
                model.GetSymbol(expression) is IPropertySymbol property &&
-               (IsComputedUserProperty(property) ||
+               (IsUserAccessorProperty(property) ||
                 property.IsIndexer && MayMutateValueTypeReceiver(property, model.Compilation));
     }
 
@@ -130,23 +130,23 @@ internal static class MemberEffects
         access.Expression is IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.StateMachine.Context };
 
     // A computed property (with accessor bodies) of a user struct that G# defines on the device
-    public static bool IsComputedUserProperty(IPropertySymbol property) =>
+    public static bool IsUserAccessorProperty(IPropertySymbol property) =>
         property.ContainingType is { } containingType &&
         GlobalCppNames.IsEmittedUserType(containingType) &&
-        StructAbiMembers.IsComputedProperty(property);
+        StructAbiMembers.HasAccessorFunctions(property);
 
     // ThreadIndex.X, BlockDim.Y ...: a value that no expression of the thread changes
-    private static bool IsIntrinsicProperty(IPropertySymbol property) =>
+    public static bool IsIntrinsicProperty(IPropertySymbol property) =>
         property.HasAttribute(KnownAttributes.CudaIntrinsic) ||
         property.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) == true;
 
     // A non-readonly getter of a non-readonly struct receives its receiver by reference and may mutate it (#992)
-    private static bool MayMutateValueTypeReceiver(IPropertySymbol property, Compilation compilation) =>
+    public static bool MayMutateValueTypeReceiver(IPropertySymbol property, Compilation compilation) =>
         !property.IsStatic &&
         property.ContainingType is { } type &&
         GlobalCppNames.IsEmittedUserType(type) &&
         !type.IsReadOnly &&
-        (StructAbiMembers.IsComputedProperty(property) || property.IsIndexer) &&
+        (StructAbiMembers.HasAccessorFunctions(property) || property.IsIndexer) &&
         property.GetMethod is { IsReadOnly: false } getter &&
         DeviceFunctionEffects.Classify(getter, compilation) != DeviceFunctionEffect.None;
 }

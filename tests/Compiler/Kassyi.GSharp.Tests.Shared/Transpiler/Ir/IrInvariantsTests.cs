@@ -107,7 +107,7 @@ public class IrInvariantsTests
         var call = (IrCall)IrTestCases.Result(method);
 
         AssertViolates("I8", WithResult(method, new IrCall(call.Method, null, ImmutableArray<IrArgument>.Empty,
-            call.Type, call.Category, default, call.Source)));
+            call.Classification, call.Type, call.Category, call.Source)));
     }
 
     [Fact]
@@ -120,8 +120,8 @@ public class IrInvariantsTests
             .Select(static argument => new IrArgument(argument.Parameter, argument.Value, argument.Kind, 0))
             .ToImmutableArray();
 
-        AssertViolates("I8", WithResult(method, new IrCall(call.Method, null, arguments, call.Type, call.Category,
-            default, call.Source)));
+        AssertViolates("I8", WithResult(method, new IrCall(call.Method, null, arguments, call.Classification,
+            call.Type, call.Category, call.Source)));
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public class IrInvariantsTests
         var call = (IrCall)IrTestCases.Result(method);
 
         AssertViolates("I16", WithResult(method, new IrCall(call.Method, call.Arguments[0].Value, call.Arguments,
-            call.Type, call.Category, default, call.Source)));
+            call.Classification, call.Type, call.Category, call.Source)));
     }
 
     [Fact]
@@ -286,8 +286,8 @@ public class IrInvariantsTests
         var array = (IrArrayCreation)call.Arguments[0].Value;
         var argument = new IrArgument(call.Arguments[0].Parameter, array.Elements[0], IrArgumentKind.ParamArray, 0);
 
-        AssertViolates("I22", WithResult(method, new IrCall(call.Method, null, [argument], call.Type, call.Category,
-            default, call.Source)));
+        AssertViolates("I22", WithResult(method, new IrCall(call.Method, null, [argument], call.Classification,
+            call.Type, call.Category, call.Source)));
     }
 
     [Fact]
@@ -315,7 +315,7 @@ public class IrInvariantsTests
         return new IrCall(call.Method, call.Receiver,
             call.Arguments.SetItem(index, new IrArgument(argument.Parameter, value, argument.Kind,
                 argument.EvaluationIndex)),
-            call.Type, call.Category, call.ConstantValue, call.Source);
+            call.Classification, call.Type, call.Category, call.Source);
     }
 
     // The method with the initializer of its local result replaced

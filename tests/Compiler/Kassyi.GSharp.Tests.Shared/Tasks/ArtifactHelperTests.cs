@@ -20,7 +20,7 @@ public class ArtifactHelperTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GetCleanKernelFileName()
+    public void GetCleanKernelFileName_ValidKernelExtensionsAndPaths_StripsExtensionsAndDirectory()
     {
         Assert.Equal("kernel", ArtifactHelper.GetCleanKernelFileName("kernel.cu"));
         Assert.Equal("kernel", ArtifactHelper.GetCleanKernelFileName("kernel.g.cu"));
@@ -33,7 +33,7 @@ public class ArtifactHelperTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Test_ProcessArtifact_WithDefaultKey_EmitsWarning(string? envValue)
+    public void ProcessArtifact_DefaultKeyNullOrWhitespace_EmitsWarningAndSigns(string? envValue)
     {
         using var ctx = new ArtifactTestContext(envValue);
 
@@ -50,7 +50,7 @@ public class ArtifactHelperTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ProcessArtifact_WithHexKey()
+    public void ProcessArtifact_ValidHexKey_SignsWithoutWarnings()
     {
         // 32-byte hex key = 64 characters
         var hexKey = new string('A', 64);
@@ -67,7 +67,7 @@ public class ArtifactHelperTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_ProcessArtifact_WithBase64Key()
+    public void ProcessArtifact_ValidBase64Key_SignsWithoutWarnings()
     {
         // 32-byte base64 key
         var base64Key = Convert.ToBase64String(new byte[32]);
@@ -88,7 +88,7 @@ public class ArtifactHelperTests
     [InlineData("000000000000000000000000000000000000000000000000000000000000000g")]
     [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!=")]
     [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")]
-    public void Test_ProcessArtifact_WithInvalidKey_ReportsGS0003AndLeavesFileUnchanged(string envValue)
+    public void ProcessArtifact_InvalidKeyFormatOrLength_ReportsGS0003AndLeavesFileUnchanged(string envValue)
     {
         using var ctx = new ArtifactTestContext(envValue);
 

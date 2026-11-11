@@ -31,7 +31,7 @@ public class DivergentDynamicSharedMemoryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentDynamicSharedMemory_ReportsGsh0077(string dialect)
+    public async Task DivergentDynamicSharedMemory_ThreadDependentCount_ReportsGsh0077(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(SadPath, dialect);
 
@@ -65,7 +65,7 @@ public class DivergentDynamicSharedMemoryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DivergentDynamicSharedMemory_IsAWarning(string dialect)
+    public async Task DivergentDynamicSharedMemory_DiagnosticSeverity_ReportsWarning(string dialect)
     {
         var (_, analyzer, _) =
             await KernelDiagnostics.GetDiagnosticsAsync(RoslynTestUtility.ReadTestCase(SadPath), dialect);
@@ -84,7 +84,7 @@ public class DivergentDynamicSharedMemoryDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_UniformDynamicSharedMemory_ReportsNothing(string dialect)
+    public async Task UniformDynamicSharedMemory_UniformCount_ReportsNothing(string dialect)
     {
         var diagnostics =
             await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UniformDynamicSharedMemory.cu.cs", dialect);

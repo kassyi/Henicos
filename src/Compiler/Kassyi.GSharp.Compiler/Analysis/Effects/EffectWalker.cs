@@ -98,6 +98,10 @@ internal struct EffectWalker(SemanticModel model)
             case RefExpressionSyntax reference:
                 AddRead(AddLocation(reference.Expression));
                 return;
+            // The field keyword reads the backing field, a field of this, as an implicit this field read does
+            case var keyword when FieldKeywordExpression.TryGetBackingField(keyword, model, out var backingField):
+                AddRead(LocationEffects.RootOfSymbol(ref this, backingField));
+                return;
             default:
                 AddChildren(expression);
                 return;
@@ -209,6 +213,8 @@ internal struct EffectWalker(SemanticModel model)
         ElementAccessExpressionSyntax element => LocationEffects.AddElement(ref this, element),
         PrefixUnaryExpressionSyntax indirection when indirection.IsKind(SyntaxKind.PointerIndirectionExpression) =>
             LocationEffects.AddIndirection(ref this, indirection),
+        _ when FieldKeywordExpression.TryGetBackingField(expression, model, out var backingField) =>
+            LocationEffects.RootOfSymbol(ref this, backingField),
         _ => LocationEffects.AddValue(ref this, expression)
     };
 }

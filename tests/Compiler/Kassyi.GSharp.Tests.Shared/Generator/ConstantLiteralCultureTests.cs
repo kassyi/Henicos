@@ -17,7 +17,7 @@ public class ConstantLiteralCultureTests
     [InlineData("Cuda", "sv-SE")]
     [InlineData("Cpu", "de-DE")]
     [InlineData("Cpu", "sv-SE")]
-    public void Test_GeneratedSources_DoNotDependOnCurrentCulture(string dialect, string cultureName)
+    public void GeneratedSources_CurrentCulture_DoNotDependOnCurrentCulture(string dialect, string cultureName)
     {
         var source = RoslynTestUtility.ReadTestCase("Transpiler/ConstantLiteralCultureSource.cu.cs");
 

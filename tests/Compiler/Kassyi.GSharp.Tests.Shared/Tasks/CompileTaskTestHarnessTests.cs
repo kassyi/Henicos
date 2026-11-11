@@ -14,7 +14,7 @@ public class CompileTaskTestHarnessTests
     }
 
     [Fact]
-    public void Test_MockBuildEngine_LogsCorrectly()
+    public void MockBuildEngine_LogsCorrectly()
     {
         var buildEngine = new MockBuildEngine();
         buildEngine.LogErrorEvent(new BuildErrorEventArgs("subcategory", "code", "file", 1, 1, 1, 1, "Test Error",
@@ -35,7 +35,7 @@ public class CompileTaskTestHarnessTests
     }
 
     [Fact]
-    public void Test_MockProcessRunner_RecordsInvocationsAndReturnsOutputs()
+    public void MockProcessRunner_RecordsInvocationsAndReturnsOutputs()
     {
         var runner = new MockProcessRunner("C:\\dummy");
         runner.NextExitCode = 42;
@@ -55,7 +55,7 @@ public class CompileTaskTestHarnessTests
     }
 
     [Fact]
-    public void Test_MockProcessRunner_OverrideVswhere()
+    public void MockProcessRunner_OverrideVswhere()
     {
         var runner = new MockProcessRunner("C:\\dummy");
         runner.OverrideVswhere = true;

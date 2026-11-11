@@ -594,78 +594,78 @@ public sealed class BclExceptionDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_NullableInt32ValueAccess_MatchesTheOracleOnEveryPath() =>
+    public void ValueAccess_NullableInt32_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_nullableInt32ValueAccess);
 
     [SkippableFact]
-    public void Test_NullableStructValueAccess_MatchesTheOracleOnEveryPath() =>
+    public void ValueAccess_NullableStruct_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_nullableStructValueAccess);
 
     [SkippableFact]
-    public void Test_MathClampInt32_MatchesTheOracleOnEveryPath() =>
+    public void MathClamp_Int32_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mathClampInt32);
 
     [SkippableFact]
-    public void Test_MathClampSingle_MatchesTheOracleOnEveryPath() =>
+    public void MathClamp_Single_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mathClampSingle);
 
     [SkippableFact]
-    public void Test_MathClampDouble_MatchesTheOracleOnEveryPath() =>
+    public void MathClamp_Double_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mathClampDouble);
 
     [SkippableFact]
-    public void Test_StackLinqFirstOnEmpty_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_FirstOnEmpty_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_firstOnEmpty);
 
     [SkippableFact]
-    public void Test_StackLinqLastOnEmpty_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_LastOnEmpty_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_lastOnEmpty);
 
     [SkippableFact]
-    public void Test_StackLinqSingleOnEmpty_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_SingleOnEmpty_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_singleOnEmpty);
 
     [SkippableFact]
-    public void Test_StackLinqSingleOnTwoElements_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_SingleOnTwoElements_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_singleOnTwoElements);
 
     [SkippableFact]
-    public void Test_StackLinqMinOnEmpty_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_MinOnEmpty_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_minOnEmpty);
 
     [SkippableFact]
-    public void Test_StackLinqMaxOnEmpty_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_MaxOnEmpty_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_maxOnEmpty);
 
     [SkippableFact]
-    public void Test_StackLinqAverageOnEmpty_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_AverageOnEmpty_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_averageOnEmpty);
 
     [SkippableFact]
-    public void Test_StackLinqAggregateOnEmpty_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_AggregateOnEmpty_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_aggregateOnEmpty);
 
     [SkippableFact]
-    public void Test_StackLinqElementAtNegative_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_ElementAtNegative_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_elementAtNegative);
 
     [SkippableFact]
-    public void Test_StackLinqElementAtPastEnd_MatchesTheOracleOnEveryPath() =>
+    public void StackLinq_ElementAtPastEnd_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_elementAtPastEnd);
 
     [SkippableFact]
-    public void Test_ElementAtOrDefaultNegativeIndexSideEffect_MatchesReference() =>
+    public void ElementAtOrDefault_NegativeIndexSideEffect_MatchesReference() =>
         DifferentialRunner.Run(s_elementAtOrDefaultNegativeIndexSideEffect);
 
     [SkippableFact]
-    public void Test_MemoryExtensionsSortLengthMismatch_MatchesTheOracleOnEveryPath() =>
+    public void MemoryExtensionsSort_LengthMismatch_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_sortLengthMismatch);
 
     [SkippableFact]
-    public void Test_MemoryExtensionsSortComparerTrap_MatchesTheOracleOnEveryPath() =>
+    public void MemoryExtensionsSort_ComparerTrap_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_sortComparerTrap);
 
     [SkippableFact]
-    public void Test_TrapNonContinuationGuard_MatchesTheOracleOnEveryPath() =>
+    public void TrapGuard_NonContinuation_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_trapNonContinuationGuard);
 }

@@ -97,7 +97,7 @@ internal static class OperatorEffects
     private static void AddAccessorCalls(ref EffectWalker walker, ExpressionSyntax target, bool callsGetter)
     {
         if (walker.Model.GetSymbol(target) is not IPropertySymbol property ||
-            !MemberEffects.IsComputedUserProperty(property))
+            !MemberEffects.IsUserAccessorProperty(property))
         {
             return;
         }

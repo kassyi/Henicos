@@ -88,7 +88,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs
     //   NttWorkspaceBuffers `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;` (the #606 allocation)
     //   input: numWords 100 and 200 (ThrowIfBlockCarriesTooSmall throws before the launch)
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:66
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:99
     //   `int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;` -> `int numBlocks = 1;`
     //   input: numWords 200 (the carry out of the second chunk is lost and the result differs from BigInteger.ModPow)
     [SkippableTheory]

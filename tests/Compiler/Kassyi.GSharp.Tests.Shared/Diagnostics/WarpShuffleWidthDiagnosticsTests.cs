@@ -14,7 +14,7 @@ public class WarpShuffleWidthDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ConstantWidthNotAPowerOfTwoUpTo32_ReportsGsh0095AtTheWidth(string dialect)
+    public async Task ConstantWidthNotAPowerOfTwoUpTo32_InvalidWidthArgument_ReportsGsh0095AtWidth(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/WarpShuffleWidthSadPath.cs", dialect);
 
@@ -33,7 +33,7 @@ public class WarpShuffleWidthDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ConstantWidth_MessageNamesTheShuffleAndTheWidth(string dialect)
+    public async Task ConstantWidth_DiagnosticMessage_NamesShuffleAndWidth(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/WarpShuffleWidthSadPath.cs", dialect);
 

@@ -18,4 +18,10 @@ internal sealed class IrCoalesce(IrExpression value, IrExpression whenNull, IrCo
 
     /// <summary>The conversion of a non-null first value to the result type.</summary>
     public IrConversionKind ValueConversion { get; } = valueConversion;
+
+    /// <summary>This node with the given children; this node itself when they are the same.</summary>
+    public IrCoalesce Update(IrExpression value, IrExpression whenNull) =>
+        value == Value && whenNull == WhenNull
+            ? this
+            : new IrCoalesce(value, whenNull, ValueConversion, Type, Category, Source);
 }

@@ -26,22 +26,22 @@ public class EvaluationOrderSplitManagedTests : IDisposable
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_AssignmentBeforeShuffle_ShuffleReadsTheAssignedValue() =>
+    public void AssignmentBeforeShuffle_ManagedExecution_ShuffleReadsAssignedValue() =>
         EvaluationOrderSplitTests.AssertAssignmentBeforeShuffle();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_LocalAssignmentBeforeShuffle_ShuffleReadsTheAssignedValue() =>
+    public void LocalAssignmentBeforeShuffle_ManagedExecution_ShuffleReadsAssignedValue() =>
         EvaluationOrderSplitTests.AssertLocalAssignmentBeforeShuffle();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_CallBeforeShuffle_ShuffleReadsWhatTheCallWrote() =>
+    public void CallBeforeShuffle_ManagedExecution_ShuffleReadsWhatTheCallWrote() =>
         EvaluationOrderSplitTests.AssertCallBeforeShuffle();
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_AssignmentBeforeSuspendingCall_CallReadsTheAssignedValue() =>
+    public void AssignmentBeforeSuspendingCall_ManagedExecution_CallReadsAssignedValue() =>
         EvaluationOrderSplitTests.AssertAssignmentBeforeSuspendingCall();
 }
 #endif

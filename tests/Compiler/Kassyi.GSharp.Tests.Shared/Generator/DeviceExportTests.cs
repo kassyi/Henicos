@@ -23,7 +23,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Library_RecordsEveryDeviceFunction(string dialect)
+    public void DeviceExport_LibraryCompilation_RecordsEveryDeviceFunction(string dialect)
     {
         var records = Run(dialect, out var result, out var output);
 
@@ -68,7 +68,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Library_RecordsNamesFlagsAndEffects(string dialect)
+    public void DeviceExport_LibraryCompilation_RecordsNamesFlagsAndEffects(string dialect)
     {
         var records = Run(dialect, out _, out _);
         ExportedRecord Find(string id) => records.Single(r => r.Id == id);
@@ -126,7 +126,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Library_RecordsStructsApartFromFunctions(string dialect)
+    public void DeviceExport_LibraryCompilation_RecordsStructsApartFromFunctions(string dialect)
     {
         var records = Run(dialect, out _, out _);
 
@@ -154,7 +154,7 @@ public class DeviceExportTests
     // a record carries it with the record layout, so text of another prelude, name encoding or layout is refused
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PreludeHash_CoversThePreludesTheInternalNamesAndTheFormat()
+    public void PreludeHash_CurrentPreludeDefinitions_CoversPreludesInternalNamesAndFormat()
     {
         var names = File.ReadAllText(RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler", "Resources",
             "InternalNames.yml"));
@@ -180,7 +180,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FunctionBody_KeepsTheStructsTheLibraryDoesNotRecord(string dialect)
+    public void FunctionBody_UnrecordedStructs_KeepsStructsNotRecordedByLibrary(string dialect)
     {
         var dot3 = RunStructs(dialect).Single(static r => r.Id == "M:DeviceExportStructsCase.LibVector.Dot3(Kassyi.GSharp.Core.Float3)");
 
@@ -203,7 +203,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructRecord_KeepsTheStructsOfItsFields(string dialect)
+    public void StructRecord_FieldDependencies_KeepsStructsOfItsFields(string dialect)
     {
         var particle = RunStructs(dialect).Single(static r => r.Id == "T:DeviceExportStructsCase.Particle");
 
@@ -220,7 +220,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Library_RecordsEveryStructItsTextNames(string dialect)
+    public void DeviceExport_ReferencedStructTypes_RecordsEveryStructItsTextNames(string dialect)
     {
         var structs = RunStructs(dialect);
         var library = Run(dialect, out _, out _);
@@ -244,7 +244,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructRecord_SortingConstructor_NeedsNoInclude(string dialect)
+    public void StructRecord_SortingConstructor_NeedsNoInclude(string dialect)
     {
         var sortedPair = RunStructs(dialect).Single(static r => r.Id == "T:DeviceExportStructsCase.SortedPair");
 
@@ -257,7 +257,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructRecord_KeepsTheStructsItsDisposeNames(string dialect)
+    public void StructRecord_DisposeDependencies_KeepsStructsItsDisposeNames(string dialect)
     {
         var lease = RunStructs(dialect).Single(static r => r.Id == "T:DeviceExportStructsCase.Lease3");
 
@@ -271,7 +271,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructRecord_FailsWithoutTheStructsItNames(string dialect)
+    public void StructRecord_MissingNamedStructs_FailsWithoutNamedStructs(string dialect)
     {
         var records = Run(dialect, out _, out _, s_structs);
 
@@ -286,7 +286,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructRecord_DoesNotFailWithTheFunction(string dialect)
+    public void StructRecord_FunctionEmission_DoesNotFailWithFunction(string dialect)
     {
         var records = Run(dialect, out _, out _, s_structs);
 
@@ -299,7 +299,7 @@ public class DeviceExportTests
     // Minor 1 (2nd review): two records of one struct, each failed in the other dialect, give one record with both texts
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Generate_TakesEachDialectFromARecordThatDidNotFailIt()
+    public void DeviceExport_DialectOutputs_TakesEachDialectFromRecordThatDidNotFailIt()
     {
         var cudaOnly = default(DeviceExportRecord) with
         {
@@ -319,7 +319,7 @@ public class DeviceExportTests
     // Nit 2 (3rd review): the merged record keeps the message of a record only while it keeps that record's failure
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Generate_KeepsTheMessageOfAFailureItKeeps()
+    public void DeviceExport_FailedExport_KeepsMessageOfFailureItKeeps()
     {
         var cudaOnly = default(DeviceExportRecord) with
         {
@@ -345,7 +345,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StructRecord_PrefersTheTextWithItsDispose(string dialect)
+    public void StructRecord_DisposalText_PrefersTextWithItsDispose(string dialect)
     {
         var guard = RunStructs(dialect).Single(static r => r.Id == "T:DeviceExportStructsCase.LibVector.Guard");
 
@@ -355,7 +355,7 @@ public class DeviceExportTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ExportTurnedOff_WritesNothing()
+    public void DeviceExport_ExportOptionDisabled_WritesNothing()
     {
         var compilation = CreateCompilation();
         var driver = CreateDriver("Cpu", new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" })
@@ -381,7 +381,7 @@ public class DeviceExportTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Library_RecordsAndEmitsManagedVersions(string dialect)
+    public void DeviceExport_ManagedCodeGeneration_RecordsAndEmitsManagedVersions(string dialect)
     {
         var records = Run(dialect, out var result, out var output, s_managedVersions);
 
@@ -422,7 +422,7 @@ public class DeviceExportTests
     // where they could not compile
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StateMachines_CompileInALibraryWithoutKernels()
+    public void StateMachines_LibraryWithoutKernels_CompilesWithoutKernels()
     {
         var compilation = CSharpCompilation.Create("StateMachineLibrary")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: false,

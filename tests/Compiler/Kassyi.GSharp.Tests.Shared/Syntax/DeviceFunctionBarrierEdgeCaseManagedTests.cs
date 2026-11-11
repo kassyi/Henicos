@@ -16,72 +16,73 @@ public class DeviceFunctionBarrierEdgeCaseManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SharedMemoryOfSuspendingCallee_DoesNotAliasCallerBuffer() =>
+    public void SharedMemoryOfSuspendingCallee_ManagedExecution_DoesNotAliasCallerBuffer() =>
         DeviceFunctionBarrierEdgeCaseScenarios.CallerAndSuspendingCalleeSharedMemory(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_SharedMemoryOfNonSuspendingCallee_DoesNotAliasCallerBuffer() =>
+    public void SharedMemoryOfNonSuspendingCallee_ManagedExecution_DoesNotAliasCallerBuffer() =>
         DeviceFunctionBarrierEdgeCaseScenarios.CallerAndPlainCalleeSharedMemory(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_SharedMemoryOfCallee_IsSharedAcrossCallSites() =>
+    public void SharedMemoryOfCallee_ManagedExecutionMultipleCallSites_IsSharedAcrossCallSites() =>
         DeviceFunctionBarrierEdgeCaseScenarios.SharedMemoryPerDeclaration(s_runManaged);
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(1)]
     [InlineData(0)]
-    public void Test_Managed_SuspendingCallOnRightOfAnd_RunsOnlyWhenLeftIsTrue(int enabled) =>
+    public void SuspendingCallOnRightOfAnd_ManagedExecutionConditionalBranch_RunsOnlyWhenLeftIsTrue(int enabled) =>
         DeviceFunctionBarrierEdgeCaseScenarios.ShortCircuitAnd(s_runManaged, enabled);
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(1)]
     [InlineData(0)]
-    public void Test_Managed_SuspendingCallInConditionalOperator_RunsOnlyOnSelectedBranch(int useShuffle) =>
+    public void SuspendingCallInConditionalOperator_ManagedExecutionSelectedBranch_RunsOnlyOnSelectedBranch(
+        int useShuffle) =>
         DeviceFunctionBarrierEdgeCaseScenarios.ConditionalOperator(s_runManaged, useShuffle);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(5)]
-    public void Test_Managed_SuspendingCallInWhileCondition_IsEvaluatedEveryIteration(int limit) =>
+    public void SuspendingCallInWhileCondition_ManagedExecutionLoop_IsEvaluatedEveryIteration(int limit) =>
         DeviceFunctionBarrierEdgeCaseScenarios.WhileCondition(s_runManaged, limit);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(5)]
-    public void Test_Managed_SuspendingCallInForIncrementor_IsEvaluatedEveryIteration(int limit) =>
+    public void SuspendingCallInForIncrementor_ManagedExecutionLoop_IsEvaluatedEveryIteration(int limit) =>
         DeviceFunctionBarrierEdgeCaseScenarios.ForIncrementor(s_runManaged, limit);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ExpressionBodiedSuspendingDeviceFunction_IsLowered() =>
+    public void ExpressionBodiedSuspendingDeviceFunction_ManagedExecution_LowersAndExecutes() =>
         DeviceFunctionBarrierEdgeCaseScenarios.ExpressionBodyShiftUp(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_ExpressionBodiedKernelCallingSuspendingFunction_IsLowered() =>
+    public void ExpressionBodiedKernelCallingSuspendingFunction_ManagedExecution_LowersAndExecutes() =>
         DeviceFunctionBarrierEdgeCaseScenarios.ExpressionBodiedKernel(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_RefParameterPassedToNestedSuspendingCallee_KeepsWritesAcrossResumes() =>
+    public void RefParameterPassedToNestedSuspendingCallee_ManagedExecutionNestedResumes_KeepsWritesAcrossResumes() =>
         DeviceFunctionBarrierEdgeCaseScenarios.RefParameterChain(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_RefElementArgumentWithSideEffect_IsEvaluatedOnceAcrossResumes() =>
+    public void RefElementArgumentWithSideEffect_ManagedExecutionResumes_IsEvaluatedOnceAcrossResumes() =>
         DeviceFunctionBarrierEdgeCaseScenarios.RefElementArgument(s_runManaged);
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(3)]
-    public void Test_Managed_OutArgumentDeclaredInLoop_IsWrittenEveryIteration(int rounds) =>
+    public void OutArgumentDeclaredInLoop_ManagedExecutionIterations_IsWrittenEveryIteration(int rounds) =>
         DeviceFunctionBarrierEdgeCaseScenarios.OutParameterInLoop(s_runManaged, rounds);
 
     private static void RunManaged(Action launch)

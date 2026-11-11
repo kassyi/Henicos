@@ -71,7 +71,7 @@ internal static class IrStatementBuilder
                 break;
             default:
                 statements.Add(new IrOpaqueStatement(statement.Syntax, statement, IrOpaqueReason.UnsupportedOperation,
-                    context.SourceOf(statement)));
+                    IrOpaqueSplit.Unclassified, context.SourceOf(statement)));
                 break;
         }
     }

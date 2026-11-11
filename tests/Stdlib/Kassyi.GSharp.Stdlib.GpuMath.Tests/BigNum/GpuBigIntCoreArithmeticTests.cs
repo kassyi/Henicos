@@ -364,7 +364,7 @@ public class GpuBigIntCoreArithmeticTests
         using var dividend = new GpuBigUInt(ctx, [12345u, 1u, 0u, 0u]);
         using var quotient = new GpuBigUInt(ctx, 4);
 
-        // mutant: KernelBasicMathHandler.cs:84-87 throw removed (the kernel divides by 0 without an error)
+        // mutant: KernelBasicMathHandler.cs:87-90 throw removed (the kernel divides by 0 without an error)
         Assert.Throws<DivideByZeroException>(() => GpuBigIntMath.DivideByUInt32(dividend, 0u, quotient));
     }
 }

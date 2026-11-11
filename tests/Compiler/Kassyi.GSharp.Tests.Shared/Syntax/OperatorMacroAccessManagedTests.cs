@@ -15,7 +15,7 @@ public class OperatorMacroAccessManagedTests : TranspilerTestBase
 {
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_PrivateTargets_AreCalled()
+    public void Expand_ManagedPrivateTargets_AreCalled()
     {
         var result = new int[3];
 
@@ -26,7 +26,7 @@ public class OperatorMacroAccessManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_PrivateTargets_FromADeviceFunction_AreCalled()
+    public void Expand_ManagedPrivateTargetsFromDeviceFunction_AreCalled()
     {
         var result = new int[2];
 

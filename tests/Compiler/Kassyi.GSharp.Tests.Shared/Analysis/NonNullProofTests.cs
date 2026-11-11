@@ -21,7 +21,7 @@ public class NonNullProofTests
     [InlineData("DeviceParameter")]
     [InlineData("DeviceStructField")]
     [InlineData("DeviceLocalCopy")]
-    public void Test_IsProvenNonNull_CheckedNonNullableArray_IsTrue(string method) =>
+    public void IsProvenNonNull_CheckedNonNullableArray_IsTrue(string method) =>
         Assert.True(IsProven(method));
 
     // A nullable or oblivious annotation, a write the method makes, a default value, an element, an extension method
@@ -38,7 +38,7 @@ public class NonNullProofTests
     [InlineData("DeviceReassignedLocal")]
     [InlineData("DeviceNewStruct")]
     [InlineData("ExtensionParameter")]
-    public void Test_IsProvenNonNull_ArrayThatMayBeNull_IsFalse(string method) =>
+    public void IsProvenNonNull_ArrayThatMayBeNull_IsFalse(string method) =>
         Assert.False(IsProven(method));
 
     // The launchers check the non-nullable array fields a struct argument reaches through struct fields, nothing else
@@ -47,7 +47,7 @@ public class NonNullProofTests
     [InlineData("Holder", "Inner.Data")]
     [InlineData("Buffers", "Data")]
     [InlineData("Oblivious", "")]
-    public void Test_GetNonNullableArrayFields_ListsTheCheckedFields(string type, string fields)
+    public void GetNonNullableArrayFields_ListsTheCheckedFields(string type, string fields)
     {
         var symbol = s_compilation.GetTypeByMetadataName($"NonNullProofCases.{type}") ??
                      throw new InvalidOperationException($"Type '{type}' not found.");
@@ -59,7 +59,7 @@ public class NonNullProofTests
     // The host model carries the paths the launchers check, as C# field names
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_KernelParameterShape_CarriesTheCheckedFieldPaths()
+    public void KernelParameterShape_CarriesTheCheckedFieldPaths()
     {
         var shape = Kassyi.GSharp.Compiler.Marshaling.KernelParameterShape.Classify(GetMethod("KernelStructField").Parameters[0]);
         Assert.Equal(["Inner.Data"], shape.NonNullableArrayFields.AsImmutableArray().ToArray());
@@ -71,7 +71,7 @@ public class NonNullProofTests
     [InlineData("DeviceParameter", true)]
     [InlineData("DeviceNullableParameter", false)]
     [InlineData("DeviceStructField", true)]
-    public void Test_NeedsBoundaryCheck_FollowsTheAnnotation(string method, bool expected)
+    public void NonNullProof_AnnotatedParameterNeedsCheck_FollowsAnnotation(string method, bool expected)
     {
         var parameter = GetMethod(method).Parameters[0];
         Assert.Equal(expected, NonNullProof.NeedsBoundaryCheck(parameter));
