@@ -71,7 +71,10 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 public static void EvaluateBigInt(GpuWorkspace workspace, int dynamicValue)
 {
-    using var gpuA = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, BigInteger.Abs(dynamicValue)), dynamicValue < 0);
+    using var gpuA = new GpuBigInt(
+        GpuBigUInt.FromBigInteger(workspace, BigInteger.Abs(dynamicValue)),
+        isNegative: dynamicValue < 0
+    );
     using var gpuB = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 42), isNegative: false);
 
     using var result = (gpuA * gpuB).Evaluate(workspace);
