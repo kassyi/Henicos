@@ -50,8 +50,6 @@ internal static class TypeConstants
         public const string RowMajor = "WmmaRowMajor";
         public const string ColumnMajor = "WmmaColumnMajor";
 
-        public const string MemoryLayout = "WmmaMemoryLayout";
-
         public const string Fill = "Fill";
         public const string Load = "Load";
         public const string Store = "Store";
