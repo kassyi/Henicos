@@ -281,10 +281,11 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             );
 
     // (the operation of the expression is the argument's value only when no conversion sits between them, and a value
-    // that is not a variable, a field of a value included, is copied into a temporary)
+    // that is not a variable, a field of a value included, is copied into a temporary. Parentheses have no operation of
+    // their own, so the variable inside them is looked up: (c ? ref a : ref b) is passed by reference too, #1585)
     private static bool IsPassedByReference(ArgumentSyntax argument, SemanticModel semanticModel) =>
         !argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
-        semanticModel.GetSafeOperation(argument.Expression) is
+        semanticModel.GetSafeOperation(IteratorTypeResolver.UnwrapParentheses(argument.Expression)) is
         {
             Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
         } operation &&

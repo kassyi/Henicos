@@ -80,12 +80,15 @@ internal static class SpilledArguments
     /// parameter that names a variable, which C# passes by reference too.
     /// </summary>
     // (the operation of the expression is the argument's value only when no conversion sits between them; a field of a
-    // value is a value, which is copied)
+    // value is a value, which is copied. Parentheses have no operation of their own, so the variable inside them is
+    // looked up. A ref conditional is a variable that the cross-barrier rule reports (GSH0062); an element of a span is
+    // left out, as the span is not kept across a resume (#990))
     public static bool IsPassedByReference(ArgumentSyntax argument, SemanticModel? model) =>
         !argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
-        (model?.GetSafeOperation(argument.Expression) is
+        (model?.GetSafeOperation(IteratorTypeResolver.UnwrapParentheses(argument.Expression)) is
             (ILocalReferenceOperation or IParameterReferenceOperation or IArrayElementReferenceOperation
-            or IFieldReferenceOperation) and
+            or IFieldReferenceOperation or IInlineArrayAccessOperation or IConditionalOperation
+            or { Kind: OperationKind.None }) and
             {
                 Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
             } operation &&

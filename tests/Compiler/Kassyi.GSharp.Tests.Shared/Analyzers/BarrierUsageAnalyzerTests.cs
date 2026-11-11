@@ -325,7 +325,8 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     }
 
     // A reference into the result of a call cannot be kept across a resume, also through a member access, parentheses or
-    // an in parameter without the keyword (#788 review); variables stay allowed
+    // an in parameter without the keyword (#788 review), nor a ref conditional, with or without the keyword and in
+    // parentheses (#1585); variables, an element of an inline array local included, stay allowed
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task RefReturnMemberArgument_SuspendingCall_ReportsGSH0062AtArgument()
@@ -336,7 +337,10 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             [
                 (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 38, 25, 38, 51),
                 (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 39, 25, 39, 53),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 41, 28, 41, 45)
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 41, 28, 41, 45),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 52, 28, 52, 49),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 53, 28, 53, 51),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 54, 25, 54, 50)
             ],
             actual);
     }

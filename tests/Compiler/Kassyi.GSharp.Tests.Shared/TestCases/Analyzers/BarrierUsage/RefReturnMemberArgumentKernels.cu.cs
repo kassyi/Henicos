@@ -44,5 +44,23 @@ public static partial class RefReturnMemberArgumentKernels
         AddAfterBarrier(ref cells[j].F, 1);
         AddAfterBarrier(ref local.F, 1);
         ReadInAfterBarrier(buffer[j], result);
+        // GSH0062: a ref conditional selects its variable again on every resume, also without the in keyword and in
+        // parentheses
+        bool first = j == 0;
+        int v = 1;
+        int w = 2;
+        ReadInAfterBarrier(first ? ref v : ref w, result);
+        ReadInAfterBarrier((first ? ref v : ref w), result);
+        AddAfterBarrier(ref first ? ref v : ref w, 1);
+        // An element of an inline array local and a parenthesized local stay variables
+        RefReturnBuffer inline = default;
+        ReadInAfterBarrier(inline[1], result);
+        ReadInAfterBarrier((v), result);
     }
+}
+
+[System.Runtime.CompilerServices.InlineArray(4)]
+public struct RefReturnBuffer
+{
+    private int _element;
 }
