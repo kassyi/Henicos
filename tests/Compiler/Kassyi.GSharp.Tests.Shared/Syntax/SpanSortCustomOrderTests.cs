@@ -15,7 +15,7 @@ public class SpanSortCustomOrderTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortComparerStruct_MatchesDotNet(int length, bool managed)
+    public void Sort_ComparerStruct_MatchesDotNetOrder(int length, bool managed)
     {
         var input = SortInputs.Int(length, SortPattern.Random, seed: 6258 + length);
         var data = (int[])input.Clone();
@@ -34,7 +34,7 @@ public class SpanSortCustomOrderTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortComparerStruct_ExtensionCall_SortsDescending(bool managed)
+    public void Sort_DescendingComparerStruct_SortsElementsDescending(bool managed)
     {
         int[] data = [1, 3, 2];
 
@@ -48,7 +48,7 @@ public class SpanSortCustomOrderTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortComparisonLambda_MatchesDotNet(int length, bool managed)
+    public void Sort_ComparisonLambda_MatchesDotNetOrder(int length, bool managed)
     {
         const int Mask = 5;
         var input = SortInputs.Int(length, SortPattern.Random, seed: 6259 + length);
@@ -68,7 +68,7 @@ public class SpanSortCustomOrderTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortComparisonMethodGroup_MatchesDotNet(int length, bool managed)
+    public void Sort_ComparisonMethodGroup_MatchesDotNetOrder(int length, bool managed)
     {
         var input = SortInputs.Int(length, SortPattern.Random, seed: 6260 + length);
         var data = (int[])input.Clone();
@@ -85,7 +85,7 @@ public class SpanSortCustomOrderTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SortNullComparer_UsesTheDefaultOrder(bool managed)
+    public void Sort_NullComparer_UsesDefaultOrder(bool managed)
     {
         var input = SortInputs.Int(100, SortPattern.FewDistinct, seed: 6261);
         var data = (int[])input.Clone();
@@ -101,7 +101,7 @@ public class SpanSortCustomOrderTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SortComparableStruct_MatchesDotNet(int length, bool managed)
+    public void Sort_ComparableStruct_MatchesDotNetOrder(int length, bool managed)
     {
         var random = new Random(6262 + length);
         var input = new SortRecord[length];
@@ -127,7 +127,7 @@ public class SpanSortCustomOrderTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SortComparable_DepthLimitInputWithEqualKeys_MatchesDotNet(int length, bool managed)
+    public void Sort_HeapSortKillerInputWithEqualKeys_MatchesDotNetOrder(int length, bool managed)
     {
         var values = SortInputs.HeapSortKiller(length);
         var input = new SortRecord[length];
@@ -157,7 +157,7 @@ public class SpanSortCustomOrderTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SortBogusComparer_ThrowsArgumentExceptionAsDotNet(int length, bool managed)
+    public void Sort_InconsistentComparer_ThrowsArgumentException(int length, bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
@@ -186,7 +186,7 @@ public class SpanSortCustomOrderTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SortComparison_ExceptionInComparison_ThrowsInvalidOperationException(bool managed)
+    public void Sort_ExceptionInComparisonCallback_ThrowsInvalidOperationException(bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");

@@ -86,7 +86,7 @@ public class StackLinqAllocationAndGuardTests
     }
 
     [Fact]
-    public void CopyTo_Boundary_ExactAndSmallerDestination()
+    public void CopyTo_ExactAndSmallerDestinations_WritesUpToCapacity()
     {
         int[] data = { 10, 20, 30, 40 };
 

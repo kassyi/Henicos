@@ -475,7 +475,7 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         var uints = CreateUIntArray(3, 9);
         var ints = CreateArray(3, 9);
 
-        // mutant: GpuBigNumberStackLinqExtensions.cs:136 ThrowIfNull removed
+        // mutant: GpuBigNumberStackLinqExtensions.cs:134 ThrowIfNull removed
         Assert.Throws<ArgumentNullException>(() =>
             uints.AsStackEnumerable().AsParallel().Aggregate((Func<GpuBigUInt, GpuBigUInt, GpuBigUInt>)null));
 
@@ -487,7 +487,7 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         Assert.Throws<ArgumentNullException>(() =>
             ints.AsStackEnumerable().AsParallel().Select(ToExpr).Aggregate(null));
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:646 ThrowIfNull removed
+        // mutant: GpuBigIntStackLinqExtensions.cs:630 ThrowIfNull removed
         Assert.Throws<ArgumentNullException>(() =>
             ConstructZipWithoutSelector(ints.AsStackEnumerable(), ints.AsStackEnumerable()));
 
@@ -510,13 +510,14 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         Assert.Equal(new BigInteger(10), ToBigInt(array.AsStackEnumerable().AsParallel().Select(ToExpr).Max().Evaluate(_context)));
         Assert.Equal(new BigInteger(-7), ToBigInt(array.AsStackEnumerable().AsParallel().Select(ToExpr).Min().Evaluate(_context)));
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:526 / 548 / 570 / 618 (sequential GpuBigInt Sum / Max / Min / Average)
+        // mutant: GpuBigIntStackLinqExtensions.cs:496 / 518 / 540 / 602 (sequential GpuBigInt
+        //         Sum / Max / Min / Average)
         Assert.Equal(new BigInteger(11), ToBigInt(array.AsStackEnumerable().Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(10), ToBigInt(array.AsStackEnumerable().Max().Evaluate(_context)));
         Assert.Equal(new BigInteger(-7), ToBigInt(array.AsStackEnumerable().Min().Evaluate(_context)));
         Assert.Equal(new BigInteger(2), ToBigInt(array.AsStackEnumerable().Average().Evaluate(_context)));
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:537 / 559 / 581 (sequential GpuBigIntExpr Sum / Max / Min)
+        // mutant: GpuBigIntStackLinqExtensions.cs:507 / 529 / 551 (sequential GpuBigIntExpr Sum / Max / Min)
         Assert.Equal(new BigInteger(11), ToBigInt(array.AsStackEnumerable().Select(ToExpr).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(10), ToBigInt(array.AsStackEnumerable().Select(ToExpr).Max().Evaluate(_context)));
         Assert.Equal(new BigInteger(-7), ToBigInt(array.AsStackEnumerable().Select(ToExpr).Min().Evaluate(_context)));
@@ -529,11 +530,11 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void Reductions_SequenceSizeBoundaries()
     {
-        // mutant: StackLinqReductionCore.cs:42 `throw` removed (Max of an empty sequence throws, as in System.Linq)
+        // mutant: StackLinqReductionCore.cs:72 `throw` removed (Max of an empty sequence throws, as in System.Linq)
         var emptyUInts = Array.Empty<GpuBigUInt>();
         Assert.Throws<InvalidOperationException>(() => emptyUInts.AsStackEnumerable().Max());
 
-        // mutant: StackLinqReductionCore.cs:46 one-element block removed
+        // mutant: StackLinqReductionCore.cs:76 one-element block removed
         var single = CreateUIntArray(7);
         using (var sum = single.AsStackEnumerable().Sum())
         {
@@ -541,21 +542,21 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         }
 
         // 1 + 2 + ... + 40 = 820.
-        // mutant: StackLinqReductionCore.cs:63 `count == capacity` -> `!=`, L65 `capacity * 2` -> `capacity / 2`,
-        // L67 Array.Copy removed
+        // mutant: StackLinqReductionCore.cs:93 `count == capacity` -> `!=`, L95 `capacity * 2` -> `capacity / 2`,
+        // L97 Array.Copy removed
         var forty = CreateUIntArray(Enumerable.Range(1, 40).Select(static i => (uint)i).ToArray());
         using (var sum = forty.AsStackEnumerable().Sum())
         {
             Assert.Equal(new BigInteger(820), sum.ToBigInteger());
         }
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:205 `throw` removed
+        // mutant: StackLinqReductionCore.cs:72 `throw` removed
         var emptyInts = Array.Empty<GpuBigInt>();
         Assert.Throws<InvalidOperationException>(() => emptyInts.AsStackEnumerable().AsParallel().Average());
 
         // 820 / 40 = 20.5, truncated to 20.
-        // mutant: GpuBigIntStackLinqExtensions.cs:218 `count == capacity` -> `!=`, L220 `capacity * 2` -> `/ 2`,
-        // L222 Array.Copy removed
+        // mutant: StackLinqReductionCore.cs:93 `count == capacity` -> `!=`, L95 `capacity * 2` -> `/ 2`,
+        // L97 Array.Copy removed
         var fortyInts = CreateArray(Enumerable.Range(1, 40).Select(static i => (long)i).ToArray());
         Assert.Equal(new BigInteger(20), ToBigInt(fortyInts.AsStackEnumerable().AsParallel().Average().Evaluate(_context)));
 
@@ -576,13 +577,13 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         var b = CreateArray(5, 4);
         var scalar = Create(5);
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:281 / 309 (parallel GpuBigInt), 295 / 323 (parallel GpuBigIntExpr)
+        // mutant: GpuBigIntStackLinqExtensions.cs:247 / 275 (parallel GpuBigInt), 261 / 289 (parallel GpuBigIntExpr)
         Assert.Equal(new BigInteger(7), ToBigInt(a.AsStackEnumerable().AsParallel().SelectDivide(scalar).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(5), ToBigInt(a.AsStackEnumerable().AsParallel().SelectModulo(scalar).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(7), ToBigInt(a.AsStackEnumerable().AsParallel().Select(ToExpr).SelectDivide(scalar).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(5), ToBigInt(a.AsStackEnumerable().AsParallel().Select(ToExpr).SelectModulo(scalar).Sum().Evaluate(_context)));
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:340 / 374 (parallel GpuBigInt), 357 / 391 (parallel GpuBigIntExpr)
+        // mutant: GpuBigIntStackLinqExtensions.cs:306 / 340 (parallel GpuBigInt), 323 / 357 (parallel GpuBigIntExpr)
         Assert.Equal(new BigInteger(8), ToBigInt(a.AsStackEnumerable().AsParallel().ZipDivide(b.AsStackEnumerable().AsParallel()).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(5), ToBigInt(a.AsStackEnumerable().AsParallel().ZipModulo(b.AsStackEnumerable().AsParallel()).Sum().Evaluate(_context)));
         Assert.Equal(
@@ -592,13 +593,15 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
             new BigInteger(5),
             ToBigInt(a.AsStackEnumerable().AsParallel().Select(ToExpr).ZipModulo(b.AsStackEnumerable().AsParallel().Select(ToExpr)).Sum().Evaluate(_context)));
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:405 / 433 (sequential GpuBigInt), 419 / 447 (sequential GpuBigIntExpr)
+        // mutant: GpuBigIntStackLinqExtensions.cs:371 / 399 (sequential GpuBigInt), 385 / 413 (sequential
+        //         GpuBigIntExpr)
         Assert.Equal(new BigInteger(7), ToBigInt(a.AsStackEnumerable().SelectDivide(scalar).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(5), ToBigInt(a.AsStackEnumerable().SelectModulo(scalar).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(7), ToBigInt(a.AsStackEnumerable().Select(ToExpr).SelectDivide(scalar).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(5), ToBigInt(a.AsStackEnumerable().Select(ToExpr).SelectModulo(scalar).Sum().Evaluate(_context)));
 
-        // mutant: GpuBigIntStackLinqExtensions.cs:464 / 498 (sequential GpuBigInt), 481 / 515 (sequential GpuBigIntExpr)
+        // mutant: GpuBigIntStackLinqExtensions.cs:430 / 464 (sequential GpuBigInt), 447 / 481 (sequential
+        //         GpuBigIntExpr)
         Assert.Equal(new BigInteger(8), ToBigInt(a.AsStackEnumerable().ZipDivide(b.AsStackEnumerable()).Sum().Evaluate(_context)));
         Assert.Equal(new BigInteger(5), ToBigInt(a.AsStackEnumerable().ZipModulo(b.AsStackEnumerable()).Sum().Evaluate(_context)));
         Assert.Equal(
@@ -618,7 +621,7 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
     {
         var values = CreateUIntArray(3, 9, 5);
 
-        // mutant: GpuBigNumberStackLinqExtensions.cs:143 / 148 `!=` -> `==` (the result buffer is freed and cleared)
+        // mutant: GpuBigNumberStackLinqExtensions.cs:558 / 563 `!=` -> `==` (the result buffer is freed and cleared)
         using var max = values.AsStackEnumerable()
             .AsParallel()
             .Aggregate(static (x, y) => x.CompareTo(y) >= 0 ? x : y);

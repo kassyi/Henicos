@@ -141,6 +141,7 @@ internal static class WrapperEmitter
         // stay valid
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader(enableNullable: false);
+        WriteDefinedSymbols(writer, header);
         // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
         writer.AppendLine("#nullable enable annotations");
         writer.AppendLine($"""
@@ -165,6 +166,16 @@ internal static class WrapperEmitter
         return writer.ToString();
     }
 
+    // #define <symbol> for each symbol that the user's files of the class define and the kept [Conditional] calls
+    // of the copied bodies need; before the first token of the file, as C# requires (CS1032)
+    private static void WriteDefinedSymbols(SourceWriter writer, in HostClassHeader header)
+    {
+        foreach (var symbol in header.DefinedSymbols)
+        {
+            writer.AppendLine($"#define {symbol}");
+        }
+    }
+
     /// <summary>Emits the wrapper source of one kernel class.</summary>
     /// <param name="model">The kernels of the class.</param>
     /// <param name="config">The generator options.</param>
@@ -173,6 +184,7 @@ internal static class WrapperEmitter
     {
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader(enableNullable: false);
+        WriteDefinedSymbols(writer, model.Class);
         // #nullable enable annotations = Preserves user type annotations without emitting warnings for unassigned generated fields
         writer.AppendLine("#nullable enable annotations");
         writer.AppendLine($"""

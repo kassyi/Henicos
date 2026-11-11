@@ -16,38 +16,38 @@ public class SuspendingCallArgumentTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OmittedOptionalArgumentsKernel_UsesDefaultValues() =>
+    public void SuspendingCall_OmittedOptionalArguments_UsesDefaultValues() =>
         AssertOmittedOptionalArguments();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NamedArgumentKernel_SkipsOptionalParameters() =>
+    public void SuspendingCall_NamedArguments_SkipsOptionalParameters() =>
         AssertNamedArgument();
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ReorderedNamedArgumentsKernel_MatchesArgumentsByName() =>
+    public void SuspendingCall_ReorderedNamedArguments_MatchesArgumentsByName() =>
         AssertReorderedNamedArguments();
 
 #if GSHARP_CPU
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_OmittedOptionalArgumentsKernel_UsesDefaultValues() =>
+    public void SuspendingCall_ManagedOmittedOptionalArguments_UsesDefaultValues() =>
         RunManaged(AssertOmittedOptionalArguments);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_NamedArgumentKernel_SkipsOptionalParameters() =>
+    public void SuspendingCall_ManagedNamedArguments_SkipsOptionalParameters() =>
         RunManaged(AssertNamedArgument);
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ReorderedNamedArgumentsKernel_MatchesArgumentsByName() =>
+    public void SuspendingCall_ManagedReorderedNamedArguments_MatchesArgumentsByName() =>
         RunManaged(AssertReorderedNamedArguments);
 
     private static void RunManaged(Action run)

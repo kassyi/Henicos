@@ -12,18 +12,18 @@ public class NativeApiIntrinsicsEmitterTests
 {
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public Task Test_PtxIntrinsics_EmitsCudaIntrinsicStubs()
+    public Task PtxIntrinsics_EmitsCudaIntrinsicStubs()
     {
         var source = EmitPtxIntrinsics();
 
         return Verifier.Verify(source, "cs")
             .UseDirectory("Snapshots")
-            .UseFileName("Snap.Test_PtxIntrinsics_EmitsCudaIntrinsicStubs");
+            .UseFileName("Snap.PtxIntrinsics_EmitsCudaIntrinsicStubs");
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PtxIntrinsics_AtomicAddInt_CarriesNativeNameAttribute()
+    public void PtxIntrinsics_AtomicAddInt_CarriesNativeNameAttribute()
     {
         var source = EmitPtxIntrinsics();
 
@@ -35,7 +35,7 @@ public class NativeApiIntrinsicsEmitterTests
     // The managed path runs the atomics through ManagedAtomics instead of throwing (#728)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_PtxIntrinsics_Atomics_ForwardToManagedAtomics()
+    public void PtxIntrinsics_Atomics_ForwardToManagedAtomics()
     {
         var source = EmitPtxIntrinsics().ReplaceLineEndings("\n");
 
@@ -58,7 +58,7 @@ public class NativeApiIntrinsicsEmitterTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ManagedKey_PassesEachArgumentWithTheModifierOfItsParameter()
+    public void ManagedKey_PassesEachArgumentWithTheModifierOfItsParameter()
     {
         var source = Emit(
             "namespace: A\nclassName: Gpu\nmethods:\n  - name: F\n    managed: Managed.F\n    returnType: int\n" +
@@ -74,18 +74,18 @@ public class NativeApiIntrinsicsEmitterTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public Task Test_DeviceHeapIntrinsics_EmitGpuUnsafe()
+    public Task DeviceHeapIntrinsics_EmitGpuUnsafe()
     {
         var source = Emit(ReadBuiltIn("device_heap_intrinsics.yml"));
 
         return Verifier.Verify(source, "cs")
             .UseDirectory("Snapshots")
-            .UseFileName("Snap.Test_DeviceHeapIntrinsics_EmitGpuUnsafe");
+            .UseFileName("Snap.DeviceHeapIntrinsics_EmitGpuUnsafe");
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceHeapIntrinsics_KeepTheSignaturesAndMappingOfGpuUnsafe()
+    public void DeviceHeapIntrinsics_KeepTheSignaturesAndMappingOfGpuUnsafe()
     {
         var source = Emit(ReadBuiltIn("device_heap_intrinsics.yml")).ReplaceLineEndings("\n");
 
@@ -105,7 +105,7 @@ public class NativeApiIntrinsicsEmitterTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_MergeByClass_JoinsTheBuiltInDefinitionsOfGpuIntoOne()
+    public void MergeByClass_JoinsTheBuiltInDefinitionsOfGpuIntoOne()
     {
         var ptx = Read(ReadBuiltIn("ptx_intrinsics.yml"));
         var heap = Read(ReadBuiltIn("device_heap_intrinsics.yml"));
@@ -122,7 +122,7 @@ public class NativeApiIntrinsicsEmitterTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_MergeByClass_KeepsClassesOfOtherNamespacesApart()
+    public void MergeByClass_KeepsClassesOfOtherNamespacesApart()
     {
         var first = Read("namespace: A\nclassName: Gpu\nmethods:\n  - name: F\n");
         var second = Read("namespace: B\nclassName: Gpu\nmethods:\n  - name: G\n");
@@ -134,18 +134,18 @@ public class NativeApiIntrinsicsEmitterTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public Task Test_GenericAndNestedDeclarations_EmitGenericMethodsAndNestedClasses()
+    public Task GenericAndNestedDeclarations_EmitGenericMethodsAndNestedClasses()
     {
         var source = EmitGenericIntrinsics();
 
         return Verifier.Verify(source, "cs")
             .UseDirectory("Snapshots")
-            .UseFileName("Snap.Test_GenericAndNestedDeclarations_EmitGenericMethodsAndNestedClasses");
+            .UseFileName("Snap.GenericAndNestedDeclarations_EmitGenericMethodsAndNestedClasses");
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GenericAndNestedDeclarations_CompileWithTheirSupportingTypes()
+    public void GenericAndNestedDeclarations_CompileWithTheirSupportingTypes()
     {
         var compilation = CreateGenericIntrinsicsCompilation();
 
@@ -156,7 +156,7 @@ public class NativeApiIntrinsicsEmitterTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TypeTemplate_ReplacesOnlyTheWholePlaceholderIdentifier()
+    public void TypeTemplate_ReplacesOnlyTheWholePlaceholderIdentifier()
     {
         var source = EmitGenericIntrinsics().ReplaceLineEndings("\n");
 

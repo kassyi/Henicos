@@ -25,7 +25,7 @@ public sealed class GridBarrierTests
 #if GSHARP_CUDA
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_PartOfEveryWarpAndThreadZeroFail_EveryBlockLeavesTheBarrier()
+    public void GridBarrier_PartOfEveryWarpAndThreadZeroFail_EveryBlockLeavesBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Every third thread fails, thread 0 of every block among them, so the arriving thread of each block is elected
@@ -41,7 +41,7 @@ public sealed class GridBarrierTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_WholeWarpsFail_EveryBlockLeavesTheBarrier()
+    public void GridBarrier_WholeWarpsFail_EveryBlockLeavesBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Threads 32 to 95 of every block, two whole warps, fail; in block 2 the first warp fails as well, thread 1 aside
@@ -69,7 +69,7 @@ public sealed class GridBarrierTests
     // instead of waiting for a hang that the driver would end only by resetting the GPU.
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_OneThreadFailsInOneBlock_NoBlockPassesTheBarrier()
+    public async Task GridBarrier_OneThreadFailsInOneBlock_NoBlockPassesBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         var keys = new int[Blocks * BlockSize];
@@ -87,7 +87,7 @@ public sealed class GridBarrierTests
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CooperativeLaunchWithoutBarrier_FailingThreadExits()
+    public void CooperativeLaunch_WithoutBarrier_FailingThreadExits()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         int[] keys = [0, GridBarrierKernels.FailKey, 1, 0];
@@ -102,7 +102,7 @@ public sealed class GridBarrierTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_LargestCooperativeGrid_ThousandBarrierRounds_AreExact()
+    public void GridBarrier_LargestCooperativeGrid_ExecutesThousandRoundsExactly()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         const int ThreadsPerBlock = 256;
@@ -139,7 +139,7 @@ public sealed class GridBarrierTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_WritesBeforeBarrier_AreVisibleToOtherBlocksAfterIt()
+    public void GridBarrier_WritesBeforeBarrier_VisibleToOtherBlocksAfterBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         const int ThreadsPerBlock = 64;
@@ -164,7 +164,7 @@ public sealed class GridBarrierTests
     // waiting (LaunchEpochTests in Tests.Cuda, which delays the barrier).
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_WholeBlockFailsBeforeGridBarrier_WaitersLeaveAndLaunchThrows()
+    public async Task GridBarrier_WholeBlockFailsBeforeGridBarrier_WaitersLeaveAndLaunchThrows()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Every thread of block 1 fails

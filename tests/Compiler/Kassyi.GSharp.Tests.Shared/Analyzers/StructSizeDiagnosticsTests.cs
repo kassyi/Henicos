@@ -24,7 +24,7 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
     [InlineData("ResultKernel", "GSH0064", "4104 bytes")]
     // SharedMemory<double>(5000) = 40000 bytes.
     [InlineData("DoubleSharedKernel", "GSH0013", "40000 bytes")]
-    public async Task Test_StructSizeDiagnostics_ReportsOverLimitCase(string methodName, string diagnosticId,
+    public async Task StructSizeDiagnostics_StructOverLimit_ReportsOverLimitCase(string methodName, string diagnosticId,
         string expectedSize)
     {
         var diagnostics = await GetDiagnosticsForMethodAsync(methodName);
@@ -47,7 +47,9 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
     [InlineData("DoubleAtLimitKernel", "GSH0013")]
     // SharedMemory<byte>(10000) = 10000 bytes (the old 4-byte guess computed 40000).
     [InlineData("ByteSharedKernel", "GSH0013")]
-    public async Task Test_StructSizeDiagnostics_DoesNotReportWithinLimitCase(string methodName, string diagnosticId)
+    public async Task StructSizeDiagnostics_StructWithinLimit_DoesNotReportWithinLimitCase(
+        string methodName,
+        string diagnosticId)
     {
         var diagnostics = await GetDiagnosticsForMethodAsync(methodName);
 

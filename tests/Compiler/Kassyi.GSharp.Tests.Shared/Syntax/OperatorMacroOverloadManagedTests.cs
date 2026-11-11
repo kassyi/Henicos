@@ -17,7 +17,7 @@ public class OperatorMacroOverloadManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_OverloadThatFits_IsCalledInEitherOrder()
+    public void Resolve_ManagedOverloadThatFits_IsCalledInEitherOrder()
     {
         var output = new uint[s_input.Length];
         var reversed = new uint[s_input.Length];
@@ -36,7 +36,7 @@ public class OperatorMacroOverloadManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_OverloadWithIdentityConversions_IsBetterThanUserDefinedConversions()
+    public void Resolve_ManagedOverloadWithIdentityConversions_IsBetterThanUserDefinedConversions()
     {
         uint[] left = [1u, 2u, 3u, 4u];
         uint[] right = [10u, 20u, 30u, 40u];
@@ -57,7 +57,7 @@ public class OperatorMacroOverloadManagedTests : TranspilerTestBase
     // the constant 3 alone would take
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_BetterConversionTarget_IsCalled()
+    public void Resolve_ManagedBetterConversionTarget_IsCalled()
     {
         var output = new uint[s_input.Length];
         var constant = new uint[s_input.Length];
@@ -74,7 +74,7 @@ public class OperatorMacroOverloadManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_Managed_ValueParameter_IsBetterThanIn()
+    public void Resolve_ManagedValueParameter_IsBetterThanIn()
     {
         uint[] left = [10u, 20u, 30u, 40u];
         uint[] right = [1u, 2u, 3u, 4u];
@@ -88,7 +88,7 @@ public class OperatorMacroOverloadManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Managed_OverloadWithContext_IsCalledWhenItIsBetter()
+    public void Resolve_ManagedOverloadWithContext_IsCalledWhenBetter()
     {
         uint[] left = [1u, 2u, 3u, 4u];
         uint[] right = [10u, 20u, 30u, 40u];

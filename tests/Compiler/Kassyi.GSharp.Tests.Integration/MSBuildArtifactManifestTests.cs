@@ -58,7 +58,7 @@ public class MSBuildArtifactManifestTests : IDisposable
     // old .g.cpp again, and IncrementalClean removes it and its DLL
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_DialectSwitch_CompilesOnlyTheListedSource_AndCleansTheOldOne()
+    public async Task Build_DialectSwitch_CompilesOnlyListedSourceAndCleansOldArtifacts()
     {
         var cppPath = WriteObjFile("X.g.cpp");
         WriteManifest("X.g.cpp");
@@ -82,7 +82,7 @@ public class MSBuildArtifactManifestTests : IDisposable
     // IncrementalClean must keep the sources and outputs of the current build
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_RepeatedBuild_KeepsTheListedSourceAndItsOutputs()
+    public async Task Build_RepeatedExecution_KeepsListedSourcesAndOutputs()
     {
         var cuPath = WriteObjFile("X.g.cu");
         var cppPath = WriteObjFile("Y.g.cpp");
@@ -102,7 +102,7 @@ public class MSBuildArtifactManifestTests : IDisposable
     // not compiled
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_UnlistedObjSource_IsNotCompiled()
+    public async Task Build_UnlistedObjSource_DoesNotCompileUnlistedSource()
     {
         WriteObjFile("X.g.cu");
         WriteObjFile("Stray.cu");
@@ -117,7 +117,7 @@ public class MSBuildArtifactManifestTests : IDisposable
     // An assembly without kernels gets an empty manifest: nothing is compiled
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_EmptyManifest_CompilesNothing()
+    public async Task Build_EmptyManifest_CompilesNothing()
     {
         WriteObjFile("X.g.cu");
         WriteObjFile("X.g.cpp");

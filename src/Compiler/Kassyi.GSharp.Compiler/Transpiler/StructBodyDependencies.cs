@@ -79,7 +79,7 @@ internal static class StructBodyDependencies
             case PropertyDeclarationSyntax property when !property.Modifiers.Any(SyntaxKind.StaticKeyword):
                 AddTypes(property.Initializer, model, types);
                 if (model.GetDeclaredSymbol(property) is { } propertySymbol &&
-                    StructAbiMembers.IsComputedProperty(propertySymbol))
+                    StructAbiMembers.HasAccessorFunctions(propertySymbol))
                 {
                     AddTypes(property.ExpressionBody, model, types);
                     foreach (var accessor in property.AccessorList?.Accessors ?? default)

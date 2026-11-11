@@ -276,6 +276,18 @@ internal sealed partial class ManagedExecutionRewriter(
             .WithTriviaFrom(node);
     }
 
+    // [WHY] The copied bodies keep only the active branch of each #if; its directives and the disabled text would be
+    // read again in the generated file, under its symbols (which define what a kept [Conditional] call needs,
+    // RemovedCalls.GetSymbolsToDefine) and without the #endif or #endregion of a block that ends at a brace the copy
+    // leaves out. Other directives (#pragma warning) stay as they were
+    public override SyntaxTrivia VisitTrivia(SyntaxTrivia trivia) =>
+        IsConditionalCompilationTrivia(trivia) ? default : base.VisitTrivia(trivia);
+
+    private static bool IsConditionalCompilationTrivia(SyntaxTrivia trivia) =>
+        trivia.Kind() is SyntaxKind.IfDirectiveTrivia or SyntaxKind.ElifDirectiveTrivia
+            or SyntaxKind.ElseDirectiveTrivia or SyntaxKind.EndIfDirectiveTrivia or SyntaxKind.RegionDirectiveTrivia
+            or SyntaxKind.EndRegionDirectiveTrivia or SyntaxKind.DisabledTextTrivia;
+
     public override SyntaxNode? VisitGenericName(GenericNameSyntax node) =>
         RouteOrQualify(node, base.VisitGenericName(node));
 
@@ -294,12 +306,14 @@ internal sealed partial class ManagedExecutionRewriter(
     public override SyntaxNode? VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node) =>
         VisitNestedCallable(node, base.VisitAnonymousMethodExpression);
 
+    // A lambda or local function whose expression body is a call that C# removes gets an empty body (#1540)
     private SyntaxNode? VisitNestedCallable<TNode>(TNode node, Func<TNode, SyntaxNode?> baseVisitor)
+        where TNode : SyntaxNode
     {
         _inLambdaOrLocalFuncCount++;
         try
         {
-            return baseVisitor(node);
+            return RemovedCallEraser.WithEmptyBodyIfRemoved(node, baseVisitor(node), semanticModel);
         }
         finally
         {

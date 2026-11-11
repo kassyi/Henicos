@@ -312,7 +312,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         // The values that the host wrappers need are read here, from this compilation, so that a result taken from the
         // cache never refers to an earlier one (#383)
-        var header = HostClassHeader.Create(methodSymbol.ContainingType);
+        var header = HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation);
         var host = KernelHostModel.Create(methodSymbol, StructMarshalingEmitter.RenderStructs(methodSymbol),
             context.SemanticModel);
 
@@ -493,7 +493,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             return new TranspiledDeviceMethodResult(
-                HostClassHeader.Create(methodSymbol.ContainingType),
+                HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
                 methodSymbol.Name,
                 cudaSignature,
                 cudaBody,
@@ -514,7 +514,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodSymbol.Name]);
             var errorSource = NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
             return new TranspiledDeviceMethodResult(
-                HostClassHeader.Create(methodSymbol.ContainingType),
+                HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
                 methodSymbol.Name,
                 "", errorSource, "", errorSource,
                 new EquatableArray<string>(), new EquatableArray<string>(), "");
@@ -524,7 +524,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var errorSource = $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";
 
             return new TranspiledDeviceMethodResult(
-                HostClassHeader.Create(methodSymbol.ContainingType),
+                HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
                 methodSymbol.Name,
                 "", errorSource, "", errorSource, new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
         }

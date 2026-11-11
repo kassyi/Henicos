@@ -19,7 +19,7 @@ public sealed class GridBarrierTimingTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SlowBlockAfterFailure_EveryBlockLeavesTheBarrier()
+    public void Launch_SlowBlockArrivingAfterFailure_AbortsAllBlocksLeavingResultUntouched()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         // Thread 5 of block 0 fails at once; block 3 spends about 40 ms (at the base clock) before the barrier. The

@@ -43,7 +43,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     [InlineData(1024)] // Boundary of PolyAlgorithmThreshold (uses ModPowNttHostController MegaKernel)
     [InlineData(2048)] // Crosses over to ModPowZeroSyncController
     [InlineData(4096)] // Crosses over to ModPowZeroSyncController
-    public void Test_ModPow_CrossOver_Verification(int bitLength)
+    public void ModPow_PolyAlgorithmCrossOver_MatchesBigIntegerReference(int bitLength)
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -88,7 +88,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs
     //   NttWorkspaceBuffers `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;` (the #606 allocation)
     //   input: numWords 100 and 200 (ThrowIfBlockCarriesTooSmall throws before the launch)
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:66
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:99
     //   `int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;` -> `int numBlocks = 1;`
     //   input: numWords 200 (the carry out of the second chunk is lost and the result differs from BigInteger.ModPow)
     [SkippableTheory]
@@ -97,7 +97,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     [InlineData(99)]
     [InlineData(100)]
     [InlineData(200)]
-    public void Test_ModPow_NttPath_CarryChunksOfLaunchBlock(int numWords)
+    public void ModPow_NttPathCarryChunksOfLaunchBlock_MatchesBigIntegerReference(int numWords)
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -138,7 +138,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ModPow_EdgeCases()
+    public void ModPow_ZeroOneAndExtrema_MatchesBigIntegerOrThrowsExpectedExceptions()
     {
         CudaCapability.EnsureGpuAvailable();
         

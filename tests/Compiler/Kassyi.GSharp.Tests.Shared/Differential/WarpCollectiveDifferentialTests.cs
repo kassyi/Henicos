@@ -320,41 +320,41 @@ public class WarpCollectiveDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_WarpIdentity_IsTheLinearThreadOfTheBlockOnEveryPath() =>
+    public void WarpCollective_WarpIdentity_IsTheLinearThreadOfTheBlockOnEveryPath() =>
         DifferentialRunner.Run(s_warpIdentity);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_WarpVotesAndReductions_MatchTheReferenceOnEveryPath() =>
+    public void WarpCollective_VotesAndReductions_MatchTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_warpVoteAndReduce);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ReductionInDeviceFunctionAndNamedBallotArguments_MatchTheReferenceOnEveryPath() =>
+    public void WarpCollective_ReductionInDeviceFnAndNamedBallot_MatchTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_voteInDeviceFunction);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideLoopBallot_MatchesTheReferenceOnEveryPath() =>
+    public void WarpCollective_GridStrideLoopBallot_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_gridStrideBallot);
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_BallotWithoutTheCallerInTheMask_ThrowsOnTheCpuPaths() =>
+    public void WarpCollective_BallotWithoutCallerInMask_ThrowsOnTheCpuPaths() =>
         DifferentialRunner.Run(s_ballotCallerOutsideMask);
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ReductionWithoutTheCallerInTheMask_ThrowsOnTheCpuPaths() =>
+    public void WarpCollective_ReductionWithoutCallerInMask_ThrowsOnTheCpuPaths() =>
         DifferentialRunner.Run(s_reduceCallerOutsideMask);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideLoopShuffleInDeviceFunction_MatchesTheReferenceOnEveryPath() =>
+    public void WarpCollective_GridStrideLoopShuffleInDeviceFn_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_gridStrideShuffleInDeviceFunction);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GridStrideLoopShuffleWithContext_MatchesTheReferenceOnEveryPath() =>
+    public void WarpCollective_GridStrideLoopShuffleWithContext_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_gridStrideShuffleWithContext);
 }

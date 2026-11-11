@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 public class GpuBigUIntGenericTests
 {
     [Fact]
-    public void Test_GpuBigUInt_Constants()
+    public void Constants_ZeroAndOne_VerifyLimbsAndFlags()
     {
         var zero = GpuBigUInt<LimbBuffer4>.Zero;
         Assert.True(zero.IsZero());
@@ -17,7 +17,7 @@ public class GpuBigUIntGenericTests
     }
 
     [Fact]
-    public void Test_GpuBigUInt_Addition()
+    public void Add_TwoLimbs_ComputesSumAndCarry()
     {
         var a = GpuBigUInt<LimbBuffer4>.One;
         var b = GpuBigUInt<LimbBuffer4>.One;
@@ -36,7 +36,7 @@ public class GpuBigUIntGenericTests
     }
 
     [Fact]
-    public void Test_GpuBigUInt_Subtraction()
+    public void Subtract_TwoLimbs_ComputesDifferenceAndBorrow()
     {
         var al = new LimbBuffer4(); al[0] = 5;
         var bl = new LimbBuffer4(); bl[0] = 3;
@@ -59,7 +59,7 @@ public class GpuBigUIntGenericTests
     }
 
     [Fact]
-    public void Test_GpuBigUInt_Comparison()
+    public void Compare_TwoLimbs_VerifiesComparisonOperators()
     {
         var al = new LimbBuffer4(); al[0] = 5;
         var bl = new LimbBuffer4(); bl[0] = 3;
@@ -79,7 +79,7 @@ public class GpuBigUIntGenericTests
     }
 
     [Fact]
-    public void Test_GpuBigUInt_ShiftLeft()
+    public void ShiftLeft_SingleAndMultiLimb_ProducesExpectedLimbs()
     {
         var al = new LimbBuffer4(); al[0] = 1;
         var a = new GpuBigUInt<LimbBuffer4>(al);
@@ -92,7 +92,7 @@ public class GpuBigUIntGenericTests
     }
 
     [Fact]
-    public void Test_GpuBigUInt_ShiftRight()
+    public void ShiftRight_SingleLimb_ProducesExpectedLimbsAndStickyBit()
     {
         var al = new LimbBuffer4(); al[0] = 0; al[1] = 1;
         var a = new GpuBigUInt<LimbBuffer4>(al);
@@ -103,7 +103,7 @@ public class GpuBigUIntGenericTests
     }
 
     [Fact]
-    public void Test_GpuBigUInt_SetMsb()
+    public void SetMsb_MultiLimb_SetsHighestBitOfTopLimb()
     {
         var a = new GpuBigUInt<LimbBuffer4>();
         var b = a.SetMsb();
@@ -111,7 +111,7 @@ public class GpuBigUIntGenericTests
     }
 
     [Fact]
-    public void Test_GpuBigUInt_IsOdd()
+    public void IsOdd_OddAndEvenOperands_ReturnsExpectedBoolean()
     {
         var al = new LimbBuffer4(); al[0] = 5;
         var bl = new LimbBuffer4(); bl[0] = 4;
@@ -123,7 +123,7 @@ public class GpuBigUIntGenericTests
     }
 
     [Fact]
-    public void Test_GpuBigUInt_CountLeadingZeros()
+    public void CountLeadingZeros_SingleBitSet_ReturnsExpectedLeadingZeroCount()
     {
         var al = new LimbBuffer4(); al[0] = 1;
         var a = new GpuBigUInt<LimbBuffer4>(al);

@@ -8,7 +8,7 @@ public class CopyAsyncTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CopyAsync_Int4Bytes_CopiesAndReversesViaSharedMemory()
+    public void CopyAsync_Int4Bytes_CopiesAndReversesViaSharedMemory()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         var input = new int[32];
@@ -28,7 +28,7 @@ public class CopyAsyncTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CopyAsync_Vector4_16Bytes_CopiesAndReadsNeighborViaSharedMemory()
+    public void CopyAsync_Vector416Bytes_CopiesAndReadsNeighborViaSharedMemory()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         var input = new Vector4[32];
@@ -48,7 +48,7 @@ public class CopyAsyncTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CopyAsync_TwoCommitGroups_WaitGroup1ThenWaitAll_CompletesEachHalf()
+    public void CopyAsync_TwoCommitGroupsWithStagedWait_CompletesEachHalf()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         var input = new int[32];

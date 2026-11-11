@@ -115,13 +115,13 @@ public class MacroNamedArgumentDifferentialTests
     };
 
     [SkippableFact]
-    public void Test_ForUnrollNamedArguments_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_forUnroll);
+    public void MacroNamedArguments_ForUnroll_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_forUnroll);
 
     [SkippableFact]
-    public void Test_GridStrideLoopNamedArguments_MatchesTheReferenceOnEveryPath() =>
+    public void MacroNamedArguments_GridStrideLoop_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_gridStrideLoop);
 
     [SkippableFact]
-    public void Test_ForUnrollNamedArgumentsWithBarrier_MatchesTheReferenceOnEveryPath() =>
+    public void MacroNamedArguments_ForUnrollWithBarrier_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_forUnrollWithBarrier);
 }

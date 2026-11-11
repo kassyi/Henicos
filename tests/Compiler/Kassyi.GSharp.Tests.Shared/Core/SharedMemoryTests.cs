@@ -11,7 +11,7 @@ public class SharedMemoryTests : TranspilerTestBase
     [InlineData(128)]
     [InlineData(255)]
     [InlineData(256)]
-    public void Test_SharedMemory_ReversesArrayCorrectly(int length)
+    public void SharedMemory_ReversingArray_ReversesArrayCorrectly(int length)
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         var input = new int[length];
@@ -38,7 +38,7 @@ public class SharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SharedMemory_RefIndexer_AtomicAddIncrementsAcrossThreads()
+    public void RefIndexer_AtomicAdd_IncrementsAcrossThreads()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         var output = new int[1];
@@ -51,7 +51,7 @@ public class SharedMemoryTests : TranspilerTestBase
 #if GSHARP_CPU
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_SharedMemory_MBarrier_CpuDialectThrowsNotSupportedException()
+    public void MBarrier_CpuDialectLaunch_ThrowsNotSupportedException()
     {
         var output = new int[32];
 
@@ -61,7 +61,7 @@ public class SharedMemoryTests : TranspilerTestBase
 #else
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SharedMemory_MBarrier_SynchronizesSharedMemoryWrites()
+    public void MBarrier_SharedMemoryWrites_SynchronizesSharedMemoryWrites()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         var output = new int[32];

@@ -4,7 +4,7 @@ public class MemoryAndFixedArraysTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_FixedBufferKernel()
+    public void Launch_FixedBufferKernel_ComputesExpectedValue()
     {
         uint[] dataArray = [5, 0];
         AdvancedMemoryKernels.LaunchFixedBufferKernel(dataArray);
@@ -14,7 +14,7 @@ public class MemoryAndFixedArraysTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_SharedMemoryStaticKernel()
+    public void Launch_SharedMemoryStaticKernel_PopulatesOutputsCorrectly()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
 

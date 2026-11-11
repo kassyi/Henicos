@@ -16,7 +16,7 @@ public class SyncSpellingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AliasBarrier_OrdersSharedMemoryAccesses()
+    public void SyncSpelling_AliasBarrier_OrdersSharedMemoryAccesses()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         SyncSpellingScenarios.AliasBarrier(s_runNative);
@@ -24,7 +24,7 @@ public class SyncSpellingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UsingStaticBarrier_OrdersSharedMemoryAccesses()
+    public void SyncSpelling_UsingStaticBarrier_OrdersSharedMemoryAccesses()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         SyncSpellingScenarios.UsingStaticBarrier(s_runNative);
@@ -32,17 +32,17 @@ public class SyncSpellingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_AliasShuffleDown_ReadsTheNextLane() =>
+    public void SyncSpelling_AliasShuffleDown_ReadsTheNextLane() =>
         SyncSpellingScenarios.AliasShuffle(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UsingStaticShuffleDown_ReadsTheNextLane() =>
+    public void SyncSpelling_UsingStaticShuffleDown_ReadsTheNextLane() =>
         SyncSpellingScenarios.UsingStaticShuffle(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UsingStaticAtomicAdd_MapsToTheNativeIntrinsic()
+    public void SyncSpelling_UsingStaticAtomicAdd_MapsToTheNativeIntrinsic()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         SyncSpellingScenarios.UsingStaticAtomic(s_runNative);
@@ -50,7 +50,7 @@ public class SyncSpellingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_QualifiedBarrier_OrdersSharedMemoryAccesses()
+    public void SyncSpelling_QualifiedBarrier_OrdersSharedMemoryAccesses()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         SyncSpellingScenarios.QualifiedBarrier(s_runNative);
@@ -58,26 +58,26 @@ public class SyncSpellingTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_UserMethodNamedSyncThreads_IsCalled() =>
+    public void SyncSpelling_UserMethodNamedSyncThreads_IsCalled() =>
         SyncSpellingScenarios.UserSyncThreads(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LookalikeGpuSyncThreads_IsCalled() =>
+    public void SyncSpelling_LookalikeGpuSyncThreads_IsCalled() =>
         SyncSpellingScenarios.LookalikeGpuSyncThreads(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UsingStaticThreadIndex_MapsByTheTypePattern() =>
+    public void SyncSpelling_UsingStaticThreadIndex_MapsByTheTypePattern() =>
         SyncSpellingScenarios.UsingStaticThreadIndex(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_UsingStaticFastExp_MapsByTheDialectSignature() =>
+    public void SyncSpelling_UsingStaticFastExp_MapsByTheDialectSignature() =>
         SyncSpellingScenarios.UsingStaticFastExp(s_runNative);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OwnPopCount_IsNotTheIntrinsic() =>
+    public void SyncSpelling_OwnPopCount_IsNotTheIntrinsic() =>
         SyncSpellingScenarios.OwnPopCount(s_runNative);
 }

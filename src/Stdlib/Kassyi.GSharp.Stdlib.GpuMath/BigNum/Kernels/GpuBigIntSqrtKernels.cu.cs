@@ -6,7 +6,7 @@ public static partial class GpuBigIntSqrtKernels
 {
     // Dummy kernel to force the generator to emit the DualNtt struct definition before we use it
     [GpuDeviceFunction]
-    private static void ForceEmitDualNtt_Sqrt(DualNtt args)
+    private static void ForceEmitDualNttForSqrt(DualNtt args)
     {
     }
 
