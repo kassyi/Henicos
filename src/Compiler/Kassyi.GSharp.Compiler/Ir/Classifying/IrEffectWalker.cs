@@ -202,9 +202,23 @@ internal sealed class IrEffectWalker(Compilation compilation)
         }
 
         WriteRoot(root);
-        if (assignment.Target is IrPropertyReference { Property: var property } &&
-            MemberEffects.IsUserAccessorProperty(property) &&
-            MayWriteMemory(property.SetMethod))
+        AddSetterCall(assignment.Target);
+    }
+
+    /// <summary>
+    /// Adds the call of the setter when <paramref name="target"/> is a computed property of a user struct: it may read
+    /// anything, and writes what <see cref="DeviceFunctionEffects"/> says.
+    /// </summary>
+    public void AddSetterCall(IrExpression target)
+    {
+        if (target is not IrPropertyReference { Property: var property } ||
+            !MemberEffects.IsUserAccessorProperty(property))
+        {
+            return;
+        }
+
+        ReadMemory();
+        if (MayWriteMemory(property.SetMethod))
         {
             WriteMemory();
         }
@@ -228,24 +242,15 @@ internal sealed class IrEffectWalker(Compilation compilation)
 
         if (target is IrPropertyReference { Property: var property } && MemberEffects.IsUserAccessorProperty(property))
         {
-            AddComputedPropertyUpdate(property, isIncrement: value == null);
+            AddComputedPropertyUpdate(property);
         }
     }
 
-    // The accessors an update of a computed property calls: the getter of an increment, and the setter
-    private void AddComputedPropertyUpdate(IPropertySymbol property, bool isIncrement)
+    // The accessors an update of a computed property calls: the getter, which may read anything, then the setter
+    private void AddComputedPropertyUpdate(IPropertySymbol property)
     {
-        if (isIncrement)
-        {
-            // An increment of a computed property calls its getter, which may read anything
-            ReadMemory();
-            if (MayWriteMemory(property.GetMethod))
-            {
-                WriteMemory();
-            }
-        }
-
-        if (MayWriteMemory(property.SetMethod))
+        ReadMemory();
+        if (MayWriteMemory(property.GetMethod) || MayWriteMemory(property.SetMethod))
         {
             WriteMemory();
         }
