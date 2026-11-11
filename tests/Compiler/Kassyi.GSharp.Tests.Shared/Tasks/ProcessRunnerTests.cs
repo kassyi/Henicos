@@ -19,7 +19,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public async Task Test_ProcessRunner_Echo_Success()
+    public async Task ProcessRunner_Echo_Success()
     {
         var runner = ProcessRunner.Default;
         var startInfo = ShellCommand.Echo("Hello World");
@@ -33,7 +33,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_ProcessRunner_FileNotFound_ThrowsException()
+    public async Task ProcessRunner_FileNotFound_ThrowsException()
     {
         var runner = ProcessRunner.Default;
         var startInfo = ShellCommand.Missing();
@@ -43,7 +43,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Category(TestCategory.Stress)]
-    public void Test_ProcessRunner_LargeOutput_NoDeadlock()
+    public void ProcessRunner_LargeOutput_NoDeadlock()
     {
         // Generate a large output to fill the buffer (usually 4KB on Windows).
         // If we read synchronously, this would deadlock.
@@ -59,7 +59,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ProcessRunner_Run_LargeStdoutAndStderr_DoesNotDeadlock()
+    public void ProcessRunner_Run_LargeStdoutAndStderr_DoesNotDeadlock()
     {
         // Both pipes exceed their buffers, so reading one stream after the other would block the child forever.
         var startInfo = ShellCommand.Spam(3000);
@@ -73,7 +73,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public async Task Test_ProcessRunner_Run_ProducesSameTextAsRunAsync()
+    public async Task ProcessRunner_Run_ProducesSameTextAsRunAsync()
     {
         var startInfo = ShellCommand.Echo("last line");
         var asyncStartInfo = ShellCommand.Echo("last line");
@@ -88,7 +88,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ProcessRunner_Run_CanceledWhileRunning_KillsProcess()
+    public void ProcessRunner_Run_CanceledWhileRunning_KillsProcess()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
         var startInfo = ShellCommand.Sleep(60);
@@ -102,7 +102,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ProcessRunner_Run_PreCanceledToken_DoesNotStartProcess()
+    public void ProcessRunner_Run_PreCanceledToken_DoesNotStartProcess()
     {
         using var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -114,7 +114,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ProcessRunner_Run_FileNotFound_ThrowsWin32Exception()
+    public void ProcessRunner_Run_FileNotFound_ThrowsWin32Exception()
     {
         var startInfo = ShellCommand.Missing();
 
@@ -123,7 +123,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ProcessRunner_Run_InParallelForEach_AllComplete()
+    public void ProcessRunner_Run_InParallelForEach_AllComplete()
     {
         // The shape used by the compile tasks: many synchronous runs inside Parallel.ForEach.
         var exitCodes = new int[24];
@@ -140,7 +140,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public async Task Test_ProcessRunner_CancellationRequested_BeforeStart()
+    public async Task ProcessRunner_CancellationRequested_BeforeStart()
     {
         var runner = new ProcessRunner();
         var startInfo = new ProcessStartInfo("dummy_executable_that_will_not_be_run.exe");
@@ -152,7 +152,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public async Task Test_ProcessRunner_ProcessStartFailed()
+    public async Task ProcessRunner_ProcessStartFailed()
     {
         var runner = new ProcessRunner();
         // Use a definitely non-existent executable to force Start() to fail
@@ -163,7 +163,7 @@ public class ProcessRunnerTests
 
     [Fact]
     [Category(TestCategory.Compiler)]
-    public async Task Test_ProcessRunner_Cancellation_KillsProcess()
+    public async Task ProcessRunner_Cancellation_KillsProcess()
     {
         var runner = new ProcessRunner();
 

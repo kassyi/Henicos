@@ -15,7 +15,7 @@ public class ToolchainTests
     }
 
     [Fact]
-    public void Test_MsvcToolchain_ExitCodeZeroWithC4068_LogsMsBuildWarning()
+    public void MsvcToolchain_ExitCodeZeroWithC4068_LogsMsBuildWarning()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");
@@ -27,7 +27,7 @@ public class ToolchainTests
     }
 
     [Fact]
-    public void Test_GccClangToolchain_ExitCodeZeroWithWarning_LogsMsBuildWarning()
+    public void GccClangToolchain_ExitCodeZeroWithWarning_LogsMsBuildWarning()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");

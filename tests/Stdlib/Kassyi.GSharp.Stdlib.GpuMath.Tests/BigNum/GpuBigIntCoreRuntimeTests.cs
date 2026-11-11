@@ -16,7 +16,7 @@ public class GpuBigIntCoreRuntimeTests
 
     [SkippableFact]
     [Category(TestCategory.Alignment)]
-    public void Test_MemoryPoolAllocation()
+    public void MemoryPool_MultiThreadedAllocation_ExecutesCorrectlyWithoutDataRace()
     {
         CudaCapability.EnsureGpuAvailable();
         // Stress test the internal pools (e.g. _carryBufferPool, _tempPool) to expose concurrency issues
@@ -59,7 +59,7 @@ public class GpuBigIntCoreRuntimeTests
 
     [SkippableFact]
     [Category(TestCategory.Runtime)]
-    public void Test_ExpressionKernelFusion()
+    public void KernelFusion_ChainedArithmeticExpression_MatchesBigIntegerReference()
     {
         CudaCapability.EnsureGpuAvailable();
         // Expose missing kernel fusion & temporary memory leaks in ExpressionEvaluator.
@@ -78,23 +78,30 @@ public class GpuBigIntCoreRuntimeTests
 
     [SkippableFact]
     [Category(TestCategory.Stress)]
-    public void Test_GpuBigInt_ConcurrentAccess_DataRaceSafety()
+    public void ConcurrentAccess_MultipleThreads_ExecutesWithoutDataRace()
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
         var engine = GpuExecutionEngine.GSharpAot;
         using var context = new GpuWorkspace(1024, engine);
 
-        var arrA = GenerateRandomArray(256, 42);
-        var arrB = GenerateRandomArray(256, 43);
+        const int OperandWords = 256;
+        const int SumWords = OperandWords + 1; // the sum of two 256-word values needs one more word
+        var arrA = GenerateRandomArray(OperandWords, 42);
+        var arrB = GenerateRandomArray(OperandWords, 43);
+        // Set the top bit of both operands so the carry reaches the extra word
+        arrA[OperandWords - 1] |= 0x80000000u;
+        arrB[OperandWords - 1] |= 0x80000000u;
+        var expectedHostResult = FromBigInteger(WordsToBigInteger(arrA) + WordsToBigInteger(arrB), SumWords);
+        Assert.Equal(1u, expectedHostResult[OperandWords]);
 
         using var gpuA = new GpuBigUInt(context, arrA);
         using var gpuB = new GpuBigUInt(context, arrB);
 
-        // Compute expected single-threaded baseline result
-        using var expectedGpu = new GpuBigUInt(context, 256);
-        expectedGpu.Value = gpuA + gpuB;
-        var expectedHostResult = expectedGpu.ToHostArray();
+        // Single-threaded baseline, checked against the BigInteger sum
+        using var baselineGpu = new GpuBigUInt(context, SumWords);
+        baselineGpu.Value = gpuA + gpuB;
+        Assert.Equal(expectedHostResult, baselineGpu.ToHostArray());
 
         // Execute 100 concurrent Add operations modifying different targets
         // but reading from the same gpuA / gpuB to ensure context/stream stability
@@ -107,11 +114,11 @@ public class GpuBigIntCoreRuntimeTests
                 // Ensure each worker thread has the CUDA context bound
                 using var threadScope = new GpuKernelLoader.CudaContextScope();
 
-                using var gpuResult = new GpuBigUInt(context, 256);
+                using var gpuResult = new GpuBigUInt(context, SumWords);
                 gpuResult.Value = gpuA + gpuB;
 
                 var hostResult = gpuResult.ToHostArray();
-                Assert.Equal(256, hostResult.Length);
+                Assert.Equal(SumWords, hostResult.Length);
                 Assert.Equal(expectedHostResult, hostResult);
             }
             catch (Exception ex)

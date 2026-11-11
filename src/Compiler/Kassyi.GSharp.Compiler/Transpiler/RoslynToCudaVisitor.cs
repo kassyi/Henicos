@@ -378,11 +378,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        // C# removes the call of a partial method without an implementing declaration, arguments included
-        if (node.Expression is InvocationExpressionSyntax invocation &&
-            (Context.Query.SemanticModel.GetSymbol(invocation) as IMethodSymbol).IsPartialWithoutImplementation())
+        // C# removes the call of a partial method without an implementing declaration, or of a [Conditional] method
+        // whose symbols are not defined, arguments included
+        if (RemovedCalls.IsRemovedCall(node.Expression, Context.Query.SemanticModel))
         {
-            Context.Emitter.Writer.AppendLine(";");
+            Context.Emitter.Writer.AppendLine(RemovedCallEraser.IsEmbedded(node) ? "{}" : ";");
             return;
         }
 

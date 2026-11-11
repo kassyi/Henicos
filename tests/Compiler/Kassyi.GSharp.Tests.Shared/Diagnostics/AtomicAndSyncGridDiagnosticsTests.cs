@@ -19,7 +19,7 @@ public class AtomicAndSyncGridDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public async Task Test_DirectVsIndirectSyncGridInNonCooperativeKernel_ReportsGsh0030(string dialect)
+    public async Task SyncGrid_NonCooperativeKernel_ReportsGsh0030(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(NonCooperativeSyncGridCase, dialect);
 
@@ -38,7 +38,7 @@ public class AtomicAndSyncGridDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public async Task Test_GpuAtomicVsInterlockedBarrierUniformity_ReportsGsh0083(string dialect)
+    public async Task BarrierUniformity_AtomicVsInterlocked_ReportsGsh0083(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(AtomicBarrierUniformityCase, dialect);
 
@@ -57,7 +57,7 @@ public class AtomicAndSyncGridDiagnosticsTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("StandardCpp")]
     [InlineData("Cuda")]
-    public void Test_InterlockedAdd64Cast_EmitsSignedResult(string dialect)
+    public void InterlockedAdd64Cast_GeneratorRun_EmitsSignedResult(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase(Atomic64AndSharedEmissionCase);
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, dialect);
@@ -73,7 +73,7 @@ public class AtomicAndSyncGridDiagnosticsTests
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_SharedMemoryDeclaration_HasNoInvalidInitializer()
+    public void SharedMemoryDeclaration_CudaGeneratorRun_HasNoInvalidInitializer()
     {
         var source = RoslynTestUtility.ReadTestCase(Atomic64AndSharedEmissionCase);
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cuda");

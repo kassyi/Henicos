@@ -78,14 +78,14 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GSharpFatbinExtension_Constant()
+    public void GSharpFatbinExtension_ConstantValue_MatchesExpectedExtension()
     {
         Assert.Equal(".gfatbin", FatbinParser.GSharpFatbinExtension);
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryParse_RealNvcc_DummyFatbin_HappyPath()
+    public void TryParse_DummyFatbinFromNvcc_ReturnsTrueAndExtractsItems()
     {
         bool success = FatbinParser.TryParse(RealNvcc_DummyFatbin, out FatbinImage? image);
 
@@ -110,7 +110,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryParse_RealNvcc_MultiFatbin_HappyPath()
+    public void TryParse_MultiArchFatbinFromNvcc_ReturnsTrueAndExtractsItems()
     {
         bool success = FatbinParser.TryParse(RealNvcc_MultiFatbin, out FatbinImage? image);
 
@@ -131,7 +131,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryParse_RealNvcc_IdentFatbin_HappyPath()
+    public void TryParse_IdentFatbinFromNvcc_ReturnsTrueAndExtractsItems()
     {
         bool success = FatbinParser.TryParse(RealNvcc_IdentFatbin, out FatbinImage? image);
 
@@ -143,7 +143,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Ed25519_Rfc8032_TestVector()
+    public void VerifySignature_Rfc8032TestVector_MatchesSpecification()
     {
         // RFC 8032 Section 7.1 Test Vector 1 (Empty message)
         byte[] secretKeySeed = Convert.FromHexString("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
@@ -162,7 +162,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryParse_WithGSharpSignature_Ed25519_HappyPath()
+    public void TryParse_SignedFatbinWithEd25519Signature_VerifiesSuccessfully()
     {
         // Generate a 32-byte secret key seed and corresponding Ed25519 signature
         byte[] secretKeySeed = new byte[32];
@@ -188,7 +188,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_VerifySignature_CorruptedPayload_Fails()
+    public void VerifySignature_CorruptedPayload_ReturnsFalse()
     {
         byte[] secretKeySeed = new byte[32];
         Array.Fill(secretKeySeed, (byte)0x42);
@@ -216,7 +216,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_VerifySignature_WrongPublicKey_Fails()
+    public void VerifySignature_WrongPublicKey_ReturnsFalse()
     {
         byte[] secretKeySeed = new byte[32];
         Array.Fill(secretKeySeed, (byte)0x42);
@@ -237,7 +237,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_VerifySignature_AuthorizedKeysWhitelist_HappyPath()
+    public void VerifySignature_AuthorizedKeysWhitelist_ReturnsTrue()
     {
         byte[] seed1 = new byte[32]; Array.Fill(seed1, (byte)0x11);
         byte[] seed2 = new byte[32]; Array.Fill(seed2, (byte)0x22);
@@ -264,7 +264,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GpuSecurityPolicy_EmbeddedKeys_NotEmpty()
+    public void GpuSecurityPolicy_EmbeddedKeys_IsNotEmpty()
     {
         ReadOnlySpan<byte> embedded = GpuSecurityPolicy.EmbeddedKeys;
         Assert.False(embedded.IsEmpty);
@@ -274,7 +274,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_GpuSecurityPolicy_DynamicKeyRegistration_And_VerifyImage()
+    public void GpuSecurityPolicy_DynamicKeyRegistration_VerifiesImage()
     {
         byte[] dynamicSeed = new byte[32];
         Array.Fill(dynamicSeed, (byte)0x77);
@@ -298,7 +298,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GpuSecurityPolicy_VerifyImage_UntrustedKey_Fails()
+    public void GpuSecurityPolicy_VerifyImageWithUntrustedKey_ReturnsFalse()
     {
         byte[] unknownSeed = new byte[32];
         Array.Fill(unknownSeed, (byte)0xEE);
@@ -321,7 +321,7 @@ public class FatbinParserTests
     [InlineData(9, 0, true)]   // Forward compatible (SM 9.0 can run sm_80 PTX)
     [InlineData(7, 5, false)]  // Older architecture cannot run sm_80 PTX
     [InlineData(6, 1, false)]  // Older architecture cannot run sm_80 PTX
-    public void Test_IsCompatibleWith_PtxForwardCompatibility(int deviceMajor, int deviceMinor, bool expected)
+    public void IsCompatibleWith_PtxForwardCompatibility_ReturnsTrue(int deviceMajor, int deviceMinor, bool expected)
     {
         bool success = FatbinParser.TryParse(RealNvcc_DummyFatbin, out FatbinImage? image);
         Assert.True(success);
@@ -333,7 +333,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IsCompatibleWith_CubinSameMajorNewerMinor()
+    public void IsCompatibleWith_CubinSameMajorNewerMinor_ReturnsFalse()
     {
         // Synthesize a CUBIN item (Type = 2) for sm_80
         byte[] cubinItem = CreateMockFatbin(type: FatbinItemInfo.TypeCubin, computeVersion: 80, major: 8, minor: 0);
@@ -350,7 +350,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TryParse_SadPath_InvalidMagic()
+    public void TryParse_InvalidMagicHeader_ReturnsFalse()
     {
         byte[] invalidMagic = (byte[])RealNvcc_DummyFatbin.Clone();
         invalidMagic[0] = 0x00;
@@ -369,7 +369,7 @@ public class FatbinParserTests
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(15)]
-    public void Test_TryParse_Boundary_TooShort(int length)
+    public void TryParse_PayloadShorterThanHeader_ReturnsFalse(int length)
     {
         byte[] shortArray = new byte[length];
         bool success = FatbinParser.TryParse(shortArray, out FatbinImage? image);
@@ -380,7 +380,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TryParse_Boundary_TrailingBytesNot64()
+    public void TryParse_TrailingBytesNotMultipleOf64_ReturnsFalse()
     {
         // 32 extra bytes instead of 64 bytes signature -> HasGSharpSignature should be false
         byte[] extraBytes = RealNvcc_DummyFatbin.Concat(new byte[32]).ToArray();
@@ -396,7 +396,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TryParse_SadPath_CorruptedPayloadSize()
+    public void TryParse_CorruptedPayloadSize_ReturnsFalse()
     {
         byte[] corrupted = (byte[])RealNvcc_DummyFatbin.Clone();
         // Corrupt Payload size (at offset 8) to be 1,000,000 bytes
@@ -410,7 +410,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TryParse_SadPath_CorruptedItemHeader()
+    public void TryParse_CorruptedItemHeader_ReturnsFalse()
     {
         byte[] corrupted = (byte[])RealNvcc_DummyFatbin.Clone();
         // Item header size at offset 16 + 4 = 20 set to 0
@@ -424,7 +424,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TryParse_Boundary_ItemSizeOverflow_ReturnsFalse()
+    public void TryParse_ItemSizeOverflow_ReturnsFalse()
     {
         byte[] corrupted = (byte[])RealNvcc_DummyFatbin.Clone();
         // Item data size at offset 16 + 8 = 24 set to ulong.MaxValue (wraps around when added to itemHeaderSize)
@@ -438,7 +438,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TryParse_Boundary_ObjectNameOffsetOverflow_DoesNotThrow()
+    public void TryParse_ObjectNameOffsetOverflow_DoesNotThrow()
     {
         byte[] corrupted = (byte[])RealNvcc_IdentFatbin.Clone();
         // name_off at offset 16 + 0x20 = 48, name_len at offset 16 + 0x24 = 52
@@ -456,7 +456,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryParse_ReadOnlyMemory_And_Span_Overloads()
+    public void TryParse_ReadOnlyMemoryAndSpanOverloads_ReturnConsistentResults()
     {
         ReadOnlyMemory<byte> memory = RealNvcc_DummyFatbin;
         ReadOnlySpan<byte> span = RealNvcc_DummyFatbin.AsSpan();
@@ -482,7 +482,12 @@ public class FatbinParserTests
     [InlineData(8, 6, 8, 6, true)]  // Default compute_86 PTX on its own architecture
     [InlineData(8, 6, 9, 0, true)]  // Default compute_86 PTX is JIT-compiled on Hopper
     [InlineData(8, 6, 12, 0, true)] // Default compute_86 PTX is JIT-compiled on Blackwell
-    public void Test_IsCompatibleWith_Ptx_ForwardCompatibility(ushort ptxMajor, ushort ptxMinor, int deviceMajor, int deviceMinor, bool expected)
+    public void IsCompatibleWith_PtxTarget_PermitsForwardCompatibility(
+        ushort ptxMajor,
+        ushort ptxMinor,
+        int deviceMajor,
+        int deviceMinor,
+        bool expected)
     {
         byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypePtx, (uint)(ptxMajor * 10 + ptxMinor), ptxMajor, ptxMinor);
         bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
@@ -501,7 +506,12 @@ public class FatbinParserTests
     [InlineData(8, 6, 9, 0, false)]  // Newer major (a cubin is not forward compatible across major versions)
     [InlineData(8, 6, 12, 0, false)] // Newer major
     [InlineData(8, 0, 7, 5, false)]  // Older major
-    public void Test_IsCompatibleWith_Cubin_SameMajorNewerMinor(ushort cubinMajor, ushort cubinMinor, int deviceMajor, int deviceMinor, bool expected)
+    public void IsCompatibleWith_CubinSameMajorNewerMinorVersion_RejectsIncompatible(
+        ushort cubinMajor,
+        ushort cubinMinor,
+        int deviceMajor,
+        int deviceMinor,
+        bool expected)
     {
         byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypeCubin, (uint)(cubinMajor * 10 + cubinMinor), cubinMajor, cubinMinor);
         bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
@@ -516,7 +526,7 @@ public class FatbinParserTests
     [InlineData(-1, 0)]
     [InlineData(8, -1)]
     [InlineData(-1, -1)]
-    public void Test_IsCompatibleWith_NegativeArchitecture_ReturnsFalse(int deviceMajor, int deviceMinor)
+    public void IsCompatibleWith_NegativeArchitecture_ReturnsFalse(int deviceMajor, int deviceMinor)
     {
         byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypePtx, 80, 8, 0);
         bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
@@ -528,7 +538,7 @@ public class FatbinParserTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_IsCompatibleWith_MultipleItems_MatchesAny()
+    public void IsCompatibleWith_MultipleFatbinItems_MatchesAnyCompatibleItem()
     {
         // FATBIN containing sm_86 CUBIN and sm_80 PTX
         byte[] fatbinBytes = CreateMockFatbin(
@@ -559,7 +569,7 @@ public class FatbinParserTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Kassyi.GSharp.Kernels_Kassyi_GSharp_Tests_Cuda.gfatbin")]
     [InlineData("Kassyi.GSharp.Kernels_Kassyi_GSharp_Stdlib_GpuMath.gfatbin")]
-    public void Test_BuiltFatbin_DefaultArchitectures_HoldSass86AndPtx86(string fileName)
+    public void BuiltFatbin_DefaultArchitectures_HoldsSass86AndPtx86(string fileName)
     {
         // The default GSharpTargetArchitectures keeps the sm_86 SASS and adds compute_86 PTX, so that GPUs newer than
         // the 8.x family JIT-compile the module instead of failing to load it.

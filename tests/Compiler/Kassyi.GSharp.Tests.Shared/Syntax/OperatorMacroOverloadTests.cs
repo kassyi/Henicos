@@ -15,7 +15,7 @@ public class OperatorMacroOverloadTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OverloadThatFitsComesSecond_IsCalled()
+    public void Resolve_OverloadThatFitsComesSecond_IsCalled()
     {
         var output = new uint[s_input.Length];
 
@@ -26,7 +26,7 @@ public class OperatorMacroOverloadTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OverloadThatFitsComesFirst_IsCalled()
+    public void Resolve_OverloadThatFitsComesFirst_IsCalled()
     {
         var output = new uint[s_input.Length];
 
@@ -37,7 +37,7 @@ public class OperatorMacroOverloadTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OverloadWithIdentityConversions_IsBetterThanUserDefinedConversions()
+    public void Resolve_OverloadWithIdentityConversions_IsBetterThanUserDefinedConversions()
     {
         uint[] left = [1u, 2u, 3u, 4u];
         uint[] right = [10u, 20u, 30u, 40u];
@@ -50,7 +50,7 @@ public class OperatorMacroOverloadTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OperatorInsideCastAndParentheses_CallsTheSameOverload()
+    public void Resolve_OperatorInsideCastAndParentheses_CallsSameOverload()
     {
         uint[] left = [1u, 2u, 3u, 4u];
         uint[] right = [10u, 20u, 30u, 40u];
@@ -63,7 +63,7 @@ public class OperatorMacroOverloadTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_BetterConversionTarget_IsCalled()
+    public void Resolve_BetterConversionTarget_IsCalled()
     {
         var output = new uint[s_input.Length];
 
@@ -74,7 +74,7 @@ public class OperatorMacroOverloadTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OverloadThatTakesOnlyAConstant_IsNotCalled()
+    public void Resolve_OverloadThatTakesOnlyConstant_IsNotCalled()
     {
         var output = new uint[s_input.Length];
 
@@ -85,7 +85,7 @@ public class OperatorMacroOverloadTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ValueParameter_IsBetterThanIn()
+    public void Resolve_ValueParameter_IsBetterThanIn()
     {
         uint[] left = [10u, 20u, 30u, 40u];
         uint[] right = [1u, 2u, 3u, 4u];
@@ -98,7 +98,7 @@ public class OperatorMacroOverloadTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OverloadWithContext_IsCalledWhenItIsBetter()
+    public void Resolve_OverloadWithContext_IsCalledWhenBetter()
     {
         uint[] left = [1u, 2u, 3u, 4u];
         uint[] right = [10u, 20u, 30u, 40u];

@@ -32,7 +32,7 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_Arithmetic_Add_Multiply_Divide()
+    public void Arithmetic_AddMultiplyDivide_ProducesExpectedResults()
     {
         var execContext = CreateExecContext();
         var arith = CSharpCpuBigFloatArithmetic.Instance;
@@ -63,7 +63,7 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
 
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
-    public void Test_Arithmetic_Reciprocal_Sqrt_Rsqrt()
+    public void Arithmetic_ReciprocalSqrtRsqrt_ProducesExpectedResults()
     {
         var execContext = CreateExecContext();
         var arith = CSharpCpuBigFloatArithmetic.Instance;
@@ -92,7 +92,7 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
 
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
-    public void Test_Arithmetic_Exp_Log_Pow()
+    public void Arithmetic_ExpLogPow_ProducesExpectedResults()
     {
         var execContext = CreateExecContext();
         var arith = CSharpCpuBigFloatArithmetic.Instance;
@@ -123,7 +123,7 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
 
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
-    public void Test_Arithmetic_Normalize_DivideByUInt32()
+    public void Arithmetic_NormalizeAndDivideByUInt32_ProducesExpectedResults()
     {
         var execContext = CreateExecContext();
         var arith = CSharpCpuBigFloatArithmetic.Instance;

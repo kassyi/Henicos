@@ -16,7 +16,7 @@ public class SpanCopyTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_P3_CopyToSameBuffer_HandlesOverlapLikeMemmove(
+    public void CopyTo_OverlappingSameBuffer_HandlesOverlapLikeMemmove(
         int srcOffset, int dstOffset, int count, bool managed)
     {
         var input = CreateSequential(20, start: 10);
@@ -39,7 +39,11 @@ public class SpanCopyTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_P3_CopyToStructSameBuffer_HandlesOverlap(int srcOffset, int dstOffset, int count, bool managed)
+    public void CopyTo_OverlappingStructBuffer_HandlesOverlapCorrectly(
+        int srcOffset,
+        int dstOffset,
+        int count,
+        bool managed)
     {
         var input = new SpanWritePair[10];
         for (var i = 0; i < input.Length; i++)
@@ -62,7 +66,7 @@ public class SpanCopyTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CopyToVariants_ReadOnlySpanArrayExtensionAndStackArray(bool managed)
+    public void CopyTo_VariousSpanSourcesAndDestinations_CopiesCorrectlyAcrossVariants(bool managed)
     {
         int[] src = [11, 22, 33, 44, 55, 66];
         var dst1 = CreateSequential(8, start: 90);
@@ -102,7 +106,7 @@ public class SpanCopyTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_P4_TryCopyTo_MatchesDotNetAndLeavesShortDestinationUntouched(
+    public void TryCopyTo_DestinationCapacitySufficientOrShort_MatchesDotNetAndLeavesShortDestinationUntouched(
         int srcOffset, int srcCount, int dstOffset, int dstCount, bool managed)
     {
         var src = CreateSequential(10, start: 10);
@@ -132,7 +136,7 @@ public class SpanCopyTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_P4_TryCopyToSameBuffer_HandlesOverlapAndShortDestination(
+    public void TryCopyTo_OverlappingSameBufferAndShortDestination_HandlesOverlapAndPreservesDestinationOnFailure(
         int srcOffset, int srcCount, int dstOffset, int dstCount, bool managed)
     {
         var actual = CreateSequential(12, start: 1);
@@ -154,7 +158,7 @@ public class SpanCopyTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_P4_CopyTo_DestinationTooShort_ThrowsArgumentExceptionAndPreservesDestination(bool managed)
+    public void CopyTo_DestinationTooShort_ThrowsArgumentExceptionAndPreservesDestination(bool managed)
     {
         Skip.If(IsCudaDialect,
             "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
@@ -171,7 +175,7 @@ public class SpanCopyTests : SpanKernelPathTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_P4_CopyTo_DestinationTooShort_CudaThrowsArgumentException()
+    public void CopyTo_DestinationTooShortInCuda_ThrowsArgumentExceptionWithoutInnerException()
     {
         Skip.IfNot(IsCudaDialect, "Checks the CUDA device error; the exception is checked on the CPU paths.");
 

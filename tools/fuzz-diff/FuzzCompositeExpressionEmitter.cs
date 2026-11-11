@@ -16,7 +16,13 @@ public static class FuzzCompositeExpressionEmitter
     /// </summary>
     public static void InitializeCompositeLocals(KernelGenerationState state)
     {
-        var rng = state.Rng;
+        InitializeNestedStructs(state);
+        InitializeNullableBagAndLocals(state);
+        InitializeStackallocSpans(state);
+    }
+
+    private static void InitializeNestedStructs(KernelGenerationState state)
+    {
         var i32 = state.FindLocal(FuzzScalarKind.Int32);
         var i16 = state.FindLocal(FuzzScalarKind.Int16);
         var u8 = state.FindLocal(FuzzScalarKind.Byte);
@@ -24,11 +30,12 @@ public static class FuzzCompositeExpressionEmitter
         var u32 = state.FindLocal(FuzzScalarKind.UInt32);
         var u16 = state.FindLocal(FuzzScalarKind.UInt16);
 
-        // 1. Nested structs up to depth 3 + user-defined conversion struct + Pack=1 / Pack=4 structs.
         state.Statements.Add($"FuzzWrapInt sWrap = {i32.Name};");
         state.StructLocals.Add(new StructLocalVariable("sWrap", "FuzzWrapInt", IsPacked1: false));
 
-        state.Statements.Add($"FuzzStructL1 sL1 = new FuzzStructL1 {{ A = inA[gid], B = {i16.Name}, Tag = {u8.Name} }};");
+        state.Statements.Add(
+            $"FuzzStructL1 sL1 = new FuzzStructL1 {{ A = inA[gid], " +
+            $"B = {i16.Name}, Tag = {u8.Name} }};");
         state.StructLocals.Add(new StructLocalVariable("sL1", "FuzzStructL1", IsPacked1: false));
 
         state.Statements.Add($"FuzzStructL2 sL2 = new FuzzStructL2 {{ Inner = sL1, C = {i64.Name}, D = {u32.Name} }};");
@@ -37,43 +44,62 @@ public static class FuzzCompositeExpressionEmitter
         state.Statements.Add($"FuzzStructL3 sL3 = new FuzzStructL3 {{ Mid = sL2, Wrap = sWrap, Flags = {u16.Name} }};");
         state.StructLocals.Add(new StructLocalVariable("sL3", "FuzzStructL3", IsPacked1: false));
 
-        state.Statements.Add($"FuzzPackedStruct1 sPack1 = new FuzzPackedStruct1 {{ Head = {u8.Name}, MisalignedInt = inB[gid], Tail = {i16.Name} }};");
+        state.Statements.Add(
+            $"FuzzPackedStruct1 sPack1 = new FuzzPackedStruct1 {{ " +
+            $"Head = {u8.Name}, MisalignedInt = inB[gid], Tail = {i16.Name} }};");
         state.StructLocals.Add(new StructLocalVariable("sPack1", "FuzzPackedStruct1", IsPacked1: true));
 
-        state.Statements.Add($"FuzzPackedStruct4 sPack4 = new FuzzPackedStruct4 {{ Low = {i16.Name}, AlignedInt = inC[gid], Wide = {i64.Name} }};");
+        state.Statements.Add(
+            $"FuzzPackedStruct4 sPack4 = new FuzzPackedStruct4 {{ " +
+            $"Low = {i16.Name}, AlignedInt = inC[gid], Wide = {i64.Name} }};");
         state.StructLocals.Add(new StructLocalVariable("sPack4", "FuzzPackedStruct4", IsPacked1: false));
+    }
 
-        // 2. Nullable<T> fields inside FuzzNullableBag (initialized without `: null` so #984 is not triggered on Native/Cuda).
+    private static void InitializeNullableBagAndLocals(KernelGenerationState state)
+    {
+        var i32 = state.FindLocal(FuzzScalarKind.Int32);
+        var i16 = state.FindLocal(FuzzScalarKind.Int16);
+        var i64 = state.FindLocal(FuzzScalarKind.Int64);
+        var i32Type = FuzzTypeInfo.Get(FuzzScalarKind.Int32);
+        var i64Type = FuzzTypeInfo.Get(FuzzScalarKind.Int64);
+
         state.Statements.Add($"FuzzNullableBag sNullBag = new FuzzNullableBag {{ OptShort0 = (short?){i16.Name} }};");
         state.Statements.Add("if ((inA[gid] & 1) == 0) { sNullBag.OptInt0 = (int?)inA[gid]; }");
         state.Statements.Add("if ((inB[gid] & 1) != 0) { sNullBag.OptInt1 = (int?)inB[gid]; }");
         state.Statements.Add("if ((inC[gid] & 1) == 0) { sNullBag.OptLong0 = (long?)sL2.C; }");
         state.StructLocals.Add(new StructLocalVariable("sNullBag", "FuzzNullableBag", IsPacked1: false));
 
-        state.NullableSlots.Add(new NullableTargetSlot("sNullBag.OptInt0", FuzzTypeInfo.Get(FuzzScalarKind.Int32), IsLocalVariable: false));
-        state.NullableSlots.Add(new NullableTargetSlot("sNullBag.OptInt1", FuzzTypeInfo.Get(FuzzScalarKind.Int32), IsLocalVariable: false));
-        state.NullableSlots.Add(new NullableTargetSlot("sNullBag.OptLong0", FuzzTypeInfo.Get(FuzzScalarKind.Int64), IsLocalVariable: false));
+        state.NullableSlots.Add(new NullableTargetSlot("sNullBag.OptInt0", i32Type, IsLocalVariable: false));
+        state.NullableSlots.Add(new NullableTargetSlot("sNullBag.OptInt1", i32Type, IsLocalVariable: false));
+        state.NullableSlots.Add(new NullableTargetSlot("sNullBag.OptLong0", i64Type, IsLocalVariable: false));
 
-        // When #984 is not avoided (Profile M or --allow-issue 984), also declare Nullable<T> local variables!
         if (!state.IssueFilter.AvoidNullableLocalVariables)
         {
             state.Statements.Add($"int? optLocal0 = ((inA[gid] & 2) == 0 ? (int?){i32.Name} : null);");
             state.Statements.Add($"long? optLocal1 = ((inB[gid] & 2) != 0 ? (long?){i64.Name} : null);");
-            state.NullableSlots.Add(new NullableTargetSlot("optLocal0", FuzzTypeInfo.Get(FuzzScalarKind.Int32), IsLocalVariable: true));
-            state.NullableSlots.Add(new NullableTargetSlot("optLocal1", FuzzTypeInfo.Get(FuzzScalarKind.Int64), IsLocalVariable: true));
+            state.NullableSlots.Add(new NullableTargetSlot("optLocal0", i32Type, IsLocalVariable: true));
+            state.NullableSlots.Add(new NullableTargetSlot("optLocal1", i64Type, IsLocalVariable: true));
         }
+    }
 
-        // 3. Fixed-size stackalloc Span<T> and ReadOnlySpan<T> (K in {4, 8}, masked indexing & (K - 1)).
-        int spanLen = rng.NextBool() ? 4 : 8;
+    private static void InitializeStackallocSpans(KernelGenerationState state)
+    {
+        var i32 = state.FindLocal(FuzzScalarKind.Int32);
+        var u32 = state.FindLocal(FuzzScalarKind.UInt32);
+        var i32Type = FuzzTypeInfo.Get(FuzzScalarKind.Int32);
+        int spanLen = state.Rng.NextBool() ? 4 : 8;
         int mask = spanLen - 1;
-        state.Statements.Add(
-            string.Create(
-                CultureInfo.InvariantCulture,
-                $"Span<int> sp0 = stackalloc int[{spanLen}] {{ inA[gid], inB[gid], inC[gid], {i32.Name}{(spanLen == 8 ? $", sL1.A, (int){u32.Name}, sPack4.AlignedInt, (int)sWrap" : string.Empty)} }};"));
+        string spanTail = spanLen == 8
+            ? $", sL1.A, (int){u32.Name}, sPack4.AlignedInt, (int)sWrap"
+            : string.Empty;
+        string spanInit = string.Create(
+            CultureInfo.InvariantCulture,
+            $"Span<int> sp0 = stackalloc int[{spanLen}] {{ inA[gid], inB[gid], inC[gid], {i32.Name}{spanTail} }};");
+        state.Statements.Add(spanInit);
         state.Statements.Add($"sp0[inC[gid] & {mask}] = (sp0[inA[gid] & {mask}] ^ {i32.Name});");
-        state.Statements.Add($"ReadOnlySpan<int> roSp0 = sp0;");
-        state.SpanLocals.Add(new SpanLocalVariable("sp0", FuzzTypeInfo.Get(FuzzScalarKind.Int32), spanLen, IsReadOnly: false));
-        state.SpanLocals.Add(new SpanLocalVariable("roSp0", FuzzTypeInfo.Get(FuzzScalarKind.Int32), spanLen, IsReadOnly: true));
+        state.Statements.Add("ReadOnlySpan<int> roSp0 = sp0;");
+        state.SpanLocals.Add(new SpanLocalVariable("sp0", i32Type, spanLen, IsReadOnly: false));
+        state.SpanLocals.Add(new SpanLocalVariable("roSp0", i32Type, spanLen, IsReadOnly: true));
     }
 
     /// <summary>Emits mandatory composite feature statements in every kernel so all composite constructs are exercised.</summary>
@@ -83,12 +109,32 @@ public static class FuzzCompositeExpressionEmitter
         var i64 = state.FindLocal(FuzzScalarKind.Int64);
         var (tupleA, tupleB) = state.PickDistinctPair(FuzzScalarKind.Int32, FuzzScalarKind.Int32);
 
-        // 1. Struct `with` expression + nested struct member mutation + readonly method/property + implicit/explicit conversion.
+        EmitStructMutations(state, i32.Name, i64.Name);
+
+        // 3. Nullable<T>: `??`, `??=` statement form, `??=` value-consuming form, and `.HasValue`.
+        EmitNullableStatement(state);
+
+        // 4. Span<T> / ReadOnlySpan<T>: masked indexing, `.Length`, `is null`, and `is not null`.
+        EmitSpanStatement(state);
+
+        // 5. Interfering tuple deconstruction
+        EmitTupleAssignment(state, tupleA.Name, tupleB.Name);
+
+        // 6. Ref ternary statement (`(cond ? ref a : ref b) += expr;`).
+        EmitRefTernaryStatement(state);
+
+        // 7. Switch expression assignment.
+        string swExpr = GenerateSwitchExpression(state, i32.Type, depth: 1, maxDepth: 2);
+        state.Statements.Add($"{i32.Name} = ({i32.Name} ^ {swExpr});");
+    }
+
+    private static void EmitStructMutations(KernelGenerationState state, string i32Name, string i64Name)
+    {
         if (!state.IssueFilter.AvoidPlainStructInstanceMethods)
         {
-            state.Statements.Add($"sL1 = sL1 with {{ A = (sL1.Combine({i32.Name}) ^ sL3.Wrap.MixWith(inC[gid])) }};");
+            state.Statements.Add($"sL1 = sL1 with {{ A = (sL1.Combine({i32Name}) ^ sL3.Wrap.MixWith(inC[gid])) }};");
             state.Statements.Add($"sL3.Mid.Inner.A = (sL1.CompA + (int)sWrap);");
-            state.Statements.Add($"sWrap = (sL3.Mid.Project({i32.Name}) + 17);");
+            state.Statements.Add($"sWrap = (sL3.Mid.Project({i32Name}) + 17);");
         }
         else
         {
@@ -97,52 +143,40 @@ public static class FuzzCompositeExpressionEmitter
             state.Statements.Add($"sWrap = ((int)sL3.Mid.Summary + 17);");
         }
 
-        state.Statements.Add($"{i64.Name} = ({i64.Name} ^ (long)sWrap ^ sL3.Total);");
+        state.Statements.Add($"{i64Name} = ({i64Name} ^ (long)sWrap ^ sL3.Total);");
 
         if (!state.IssueFilter.AvoidStructConversionDefault)
         {
             state.Statements.Add("FuzzWrapInt sWrapDef = default(FuzzWrapInt);");
-            state.Statements.Add($"{i32.Name} = ({i32.Name} ^ (int)sWrapDef);");
+            state.Statements.Add($"{i32Name} = ({i32Name} ^ (int)sWrapDef);");
         }
 
-        // 2. Pack = 1 and Pack = 4 value and compound assignment.
         if (!state.IssueFilter.AvoidPlainStructInstanceMethods)
         {
-            state.Statements.Add($"sPack1.MisalignedInt = (sPack1.ReadSum() ^ {i32.Name});");
+            state.Statements.Add($"sPack1.MisalignedInt = (sPack1.ReadSum() ^ {i32Name});");
         }
         else
         {
-            state.Statements.Add($"sPack1.MisalignedInt = (sPack1.PackedSum ^ {i32.Name});");
+            state.Statements.Add($"sPack1.MisalignedInt = (sPack1.PackedSum ^ {i32Name});");
         }
 
-        state.Statements.Add($"sPack1.MisalignedInt += {i32.Name};");
+        state.Statements.Add($"sPack1.MisalignedInt += {i32Name};");
+    }
 
-        // 3. Nullable<T>: `??`, `??=` statement form, `??=` value-consuming form, and `.HasValue`.
-        EmitNullableStatement(state);
-
-        // 4. Span<T> / ReadOnlySpan<T>: masked indexing, `.Length`, `is null`, and `is not null`.
-        EmitSpanStatement(state);
-
-        // 5. Interfering tuple deconstruction: `(a, b) = ((b += delta), (a ^ b));` (catches RHS evaluation order reversal).
+    private static void EmitTupleAssignment(KernelGenerationState state, string tupleAName, string tupleBName)
+    {
         int delta = state.Rng.NextRange(1, 13);
-        if (tupleA.Name != tupleB.Name)
+        if (tupleAName != tupleBName)
         {
             state.Statements.Add(
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"({tupleA.Name}, {tupleB.Name}) = (({tupleB.Name} += {delta}), ({tupleA.Name} ^ {tupleB.Name}));"));
+                    $"({tupleAName}, {tupleBName}) = (({tupleBName} += {delta}), ({tupleAName} ^ {tupleBName}));"));
             if (!state.IssueFilter.AvoidComplexTupleDeconstruction)
             {
                 EmitTupleDeconstructionStatement(state);
             }
         }
-
-        // 6. Ref ternary statement (`(cond ? ref a : ref b) += expr;`).
-        EmitRefTernaryStatement(state);
-
-        // 7. Switch expression assignment.
-        string swExpr = GenerateSwitchExpression(state, i32.Type, depth: 1, maxDepth: 2);
-        state.Statements.Add($"{i32.Name} = ({i32.Name} ^ {swExpr});");
     }
 
     /// <summary>Emits a <see cref="Nullable{T}"/> statement respecting <c>#998</c> and <c>#984</c> avoidance switches.</summary>

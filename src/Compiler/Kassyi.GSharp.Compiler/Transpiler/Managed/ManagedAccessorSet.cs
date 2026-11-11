@@ -52,11 +52,11 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
     public ExpressionSyntax SpellBackingField(IPropertySymbol property, ExpressionSyntax receiver)
     {
         var definition = property.OriginalDefinition;
-        var field = definition.ContainingType.GetMembers()
-            .AsStackEnumerable()
-            .OfType<IFieldSymbol>()
-            .FirstOrDefault(definition, static (f, p) => f.AssociatedSymbol.IsEqualTo(p))
-            ?? throw new InvalidOperationException($"The auto-property '{property.Name}' has no backing field.");
+        if (!StructAbiMembers.TryGetBackingField(definition, out var field))
+        {
+            throw new InvalidOperationException($"The auto-property '{property.Name}' has no backing field.");
+        }
+
         var invoke = SpellInvoke(definition, property.ContainingType, field.Name);
 
         // <invoke>(in <receiver>)

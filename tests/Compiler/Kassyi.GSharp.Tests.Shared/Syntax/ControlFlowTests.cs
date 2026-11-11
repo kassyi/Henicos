@@ -15,7 +15,7 @@ public class ControlFlowTests : TranspilerTestBase
     [InlineData(int.MinValue, 99)]
     [InlineData(int.MaxValue, 99)]
     [InlineData(int.MaxValue - 1, 99)]
-    public void Test_SwitchExpression_Transpilation(int inputVal, int expectedVal)
+    public void SwitchExpression_VariousInputs_SelectsTheMatchingArm(int inputVal, int expectedVal)
     {
         int[] input = [inputVal];
         int[] output = [0];
@@ -27,7 +27,7 @@ public class ControlFlowTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_RefSwitchExpression_Transpilation()
+    public void RefSwitchExpression_TwoThreads_AssignsSelectedTargets()
     {
         int[] a = [10, 20];
         int[] b = [100, 200];
@@ -47,12 +47,12 @@ public class ControlFlowTests : TranspilerTestBase
     [InlineData(42, 100, 42)]
     [InlineData(null, 100, 100)]
     [InlineData(0, 50, 0)]
-    public void Test_NullCoalescing_Transpilation(int? inputVal, int fallbackVal, int expectedVal)
+    public void NullCoalescing_NullableInputsAndFallbacks_ReturnsExpectedValues(
+        int? inputVal, int fallbackVal, int expectedVal)
     {
         int?[] nullableInputs = [inputVal];
         int[] fallbackValues = [fallbackVal];
         int[] results = [0];
-
         ControlFlowKernels.LaunchNullCoalescingKernel(nullableInputs, fallbackValues, results, blockDimX: 1);
 
         Assert.Equal(expectedVal, results[0]);
@@ -60,7 +60,7 @@ public class ControlFlowTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Test_NullCoalescingAssignment_SideEffect_Transpilation()
+    public void NullCoalescingAssignment_NullAndNonNullTargets_EvaluatesSideEffectOnce()
     {
         int?[] targetArray = [null, 10]; // target[0] is null (will be assigned), target[1] is 10 (will NOT be assigned)
         int[] sideEffectTracker = [0, 1]; // starting indices for side effect
@@ -85,7 +85,7 @@ public class ControlFlowTests : TranspilerTestBase
     [InlineData(5, 5, 7.5)]
     [InlineData(6, 5, 6.0)]
     [InlineData(4, 5, 7.5)]
-    public void Test_ConditionalExpression_Transpilation(int aVal, int bVal, double expectedResult)
+    public void ConditionalExpression_VaryingOperands_SelectsMatchingBranch(int aVal, int bVal, double expectedResult)
     {
         int[] a = [aVal];
         int[] b = [bVal];
@@ -102,7 +102,7 @@ public class ControlFlowTests : TranspilerTestBase
     [InlineData(10, 2, 5, 2)] // 10 > 2 and 2 <= 5 -> 2
     [InlineData(2, 5, 1, 3)] // 2 <= 5 and 2 > 1 -> 3
     [InlineData(2, 5, 3, 4)] // 2 <= 5 and 2 <= 3 -> 4
-    public void Test_NestedTernary_Transpilation(int x, int y, int z, int expectedResult)
+    public void NestedTernary_ThreeOperands_SelectsTheMatchingBranch(int x, int y, int z, int expectedResult)
     {
         int[] a = [x];
         int[] b = [y];
@@ -117,9 +117,9 @@ public class ControlFlowTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_PatternMatching_Transpilation()
+    public async Task Transpile_SwitchExpressionKernel_MatchesSnapshot()
     {
-        // Runtime semantics of this kernel are covered by Test_SwitchExpression_Transpilation (kernel launch),
+        // Runtime semantics covered by SwitchExpression_VariousInputs_SelectsTheMatchingArm (kernel launch),
         // since ThreadIndex is unavailable outside a GPU context.
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
             typeof(ControlFlowKernels), nameof(ControlFlowKernels.SwitchExpressionKernel), isDevice: false, dialect: CurrentDialect);
@@ -131,7 +131,7 @@ public class ControlFlowTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_RefConditionalExpression_Transpilation()
+    public async Task Transpile_RefConditionalExpression_MatchesSnapshotAndModifiesTargets()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ControlFlowTarget>(
             nameof(ControlFlowTarget.RefConditionalExpression), dialect: CurrentDialect);
@@ -153,7 +153,7 @@ public class ControlFlowTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
-    public async Task Test_DefaultLiteral_Transpilation()
+    public async Task Transpile_DefaultLiteral_MatchesSnapshotAndResetsItems()
     {
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ControlFlowTarget>(
             nameof(ControlFlowTarget.DefaultLiteral), dialect: CurrentDialect);

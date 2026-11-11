@@ -19,7 +19,7 @@ public class CompileTasksSanitizerTests
     [InlineData("clang++", "undefined", "-fsanitize=undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g")]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCppToNativeTask_GccClangToolchain_SanitizersEnabled_PassesSanitizerFlags(
+    public void CompileCppToNativeTask_GccClangToolchain_SanitizersEnabled_PassesSanitizerFlags(
         string compiler,
         string sanitizers,
         string expectedFlags)
@@ -43,7 +43,7 @@ public class CompileTasksSanitizerTests
     [InlineData(",")]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CompileCppToNativeTask_GccClangToolchain_SanitizersDisabled_OmitsSanitizerFlags(string sanitizers)
+    public void CompileCppToNativeTask_GccClangToolchain_SanitizersDisabled_OmitsSanitizerFlags(string sanitizers)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");
@@ -64,7 +64,7 @@ public class CompileTasksSanitizerTests
     [InlineData("ADDRESS")]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_CompileCppToNativeTask_MsvcToolchain_SanitizersEnabled_PassesAddressSanitizerFlags(string sanitizers)
+    public void CompileCppToNativeTask_MsvcToolchain_SanitizersEnabled_PassesAddressSanitizerFlags(string sanitizers)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");
@@ -85,7 +85,8 @@ public class CompileTasksSanitizerTests
     [InlineData(";")]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CompileCppToNativeTask_MsvcToolchain_SanitizersDisabledOrUnsupported_OmitsSanitizerFlags(string sanitizers)
+    public void CompileCppToNativeTask_MsvcToolchain_SanitizersDisabledOrUnsupported_OmitsSanitizerFlags(
+        string sanitizers)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");
@@ -104,7 +105,7 @@ public class CompileTasksSanitizerTests
     [InlineData("address,undefined", true)]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CompileCppToNativeTask_MsvcToolchain_UndefinedSanitizer_LogsWarningAndContinues(
+    public void CompileCppToNativeTask_MsvcToolchain_UndefinedSanitizer_LogsWarningAndContinues(
         string sanitizers,
         bool expectAddressFlag)
     {
@@ -138,7 +139,7 @@ public class CompileTasksSanitizerTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_CompileCppToNativeTask_MsvcToolchain_UndefinedSanitizerWithSeveralCompilations_LogsWarningOnce()
+    public void CompileCppToNativeTask_MsvcToolchain_UndefinedSanitizerWithSeveralCompilations_LogsWarningOnce()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel1.cpp", "// source 1");
@@ -168,7 +169,7 @@ public class CompileTasksSanitizerTests
     [InlineData("thread")]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_CompileCppToNativeTask_UnknownSanitizerName_LogsErrorAndFails(string invalidSanitizers)
+    public void CompileCppToNativeTask_UnknownSanitizerName_LogsErrorAndFails(string invalidSanitizers)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cpp", "// source");

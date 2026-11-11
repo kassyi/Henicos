@@ -23,7 +23,7 @@ public class StructLayoutPackTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryGetStructLayoutPack_AbsentPack_ReturnsFalse()
+    public void TryGetStructLayoutPack_AbsentPack_ReturnsFalse()
     {
         var (compilation, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "StructLayoutPackTestCase.cs"));
         var symbol = GetStructSymbol(compilation, tree, semanticModel, "StructWithoutPack");
@@ -37,7 +37,7 @@ public class StructLayoutPackTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TryGetStructLayoutPack_PackZero_ReturnsFalse()
+    public void TryGetStructLayoutPack_PackZero_ReturnsFalse()
     {
         var (compilation, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "StructLayoutPackTestCase.cs"));
         var symbol = GetStructSymbol(compilation, tree, semanticModel, "StructWithPackZero");
@@ -51,7 +51,7 @@ public class StructLayoutPackTests
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TryGetStructLayoutPack_PackFour_ReturnsTrueAndPackValue()
+    public void TryGetStructLayoutPack_PackFour_ReturnsTrueAndPackValue()
     {
         var (compilation, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "StructLayoutPackTestCase.cs"));
         var symbol = GetStructSymbol(compilation, tree, semanticModel, "StructWithPackFour");
@@ -69,7 +69,10 @@ public class StructLayoutPackTests
     [InlineData("StructWithoutPack", false, 0)]
     [InlineData("StructWithPackZero", false, 0)]
     [InlineData("StructWithPackFour", true, 4)]
-    public void Test_TryGetPack_StructFromMetadata_ReadsTheClassLayoutTable(string structName, bool expectedHasPack, int expectedPack)
+    public void TryGetPack_StructFromMetadata_ReadsClassLayoutTable(
+        string structName,
+        bool expectedHasPack,
+        int expectedPack)
     {
         var library = DeviceLibraryBuilder.Build(
             "StructLayoutPackLibrary",

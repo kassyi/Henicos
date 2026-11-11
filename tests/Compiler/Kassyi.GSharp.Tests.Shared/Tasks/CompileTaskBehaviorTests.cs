@@ -17,7 +17,7 @@ public class CompileTaskBehaviorTests
     [Theory]
     [InlineData(CompileTaskKind.Cuda, "kernel.cu", "nvcc", "-fatbin")]
     [InlineData(CompileTaskKind.Cpp, "kernel.cpp", "cl.exe", "/bigobj")]
-    public void Test_CompileTask_RealCompilation_CallsCompiler(
+    public void CompileTask_RealCompilation_CallsCompiler(
         CompileTaskKind kind,
         string sourceName,
         string expectedExe,
@@ -41,7 +41,7 @@ public class CompileTaskBehaviorTests
     [InlineData(CompileTaskKind.CudaCombined)]
     [InlineData(CompileTaskKind.Cpp)]
     [InlineData(CompileTaskKind.KernelTaskBase)]
-    public void Test_CompileTask_EmptySources_ReturnsTrue(CompileTaskKind kind)
+    public void CompileTask_EmptySources_ReturnsTrue(CompileTaskKind kind)
     {
         using var ctx = new CompileTaskTestContext();
         var task = ctx.CreateTask(kind, []);
@@ -53,7 +53,7 @@ public class CompileTaskBehaviorTests
     [Theory]
     [InlineData(CompileTaskKind.Cuda, "kernel.cu")]
     [InlineData(CompileTaskKind.Cpp, "kernel.cpp")]
-    public void Test_CompileTask_AlwaysRecompiles_And_IgnoresCache(CompileTaskKind kind, string sourceName)
+    public void CompileTask_AlwaysRecompiles_And_IgnoresCache(CompileTaskKind kind, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
         var sourcePath = ctx.CreateDummySource(sourceName, "// source");
@@ -81,7 +81,7 @@ public class CompileTaskBehaviorTests
     [InlineData(CompileTaskKind.Cuda, "kernel.cu", "Mock NVCC Error")]
     [InlineData(CompileTaskKind.Cpp, "kernel.cpp", "Mock CL Error")]
     [InlineData(CompileTaskKind.CudaCombined, "kernel.cu", "nvcc compilation failed with exit code 1")]
-    public void Test_CompileTask_ProcessFails_LogsErrorAndReturnsFalse(
+    public void CompileTask_ProcessFails_LogsErrorAndReturnsFalse(
         CompileTaskKind kind,
         string sourceName,
         string errorMessage)
@@ -101,7 +101,7 @@ public class CompileTaskBehaviorTests
     [Theory]
     [InlineData(CompileTaskKind.Cuda, "dummy.cu")]
     [InlineData(CompileTaskKind.Cpp, "dummy.cpp")]
-    public void Test_CompileTask_NoVswhere(CompileTaskKind kind, string sourceName)
+    public void CompileTask_NoVswhere(CompileTaskKind kind, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
@@ -117,7 +117,7 @@ public class CompileTaskBehaviorTests
     [Theory]
     [InlineData(CompileTaskKind.Cuda, "kernel1.cu", "nvcc")]
     [InlineData(CompileTaskKind.Cpp, "kernel1.cpp", "cl.exe")]
-    public void Test_CompileTask_RunProcess_ThrowsException(CompileTaskKind kind, string sourceName, string expectedExe)
+    public void CompileTask_RunProcess_ThrowsException(CompileTaskKind kind, string sourceName, string expectedExe)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource(sourceName, "dummy1");
@@ -133,7 +133,7 @@ public class CompileTaskBehaviorTests
     [InlineData(CompileTaskKind.Cuda, "kernel.cu")]
     [InlineData(CompileTaskKind.CudaCombined, "kernel.cu")]
     [InlineData(CompileTaskKind.Cpp, "kernel.cpp")]
-    public void Test_CompileTask_PropagatesCancellationToken_ToProcessRunner(CompileTaskKind kind, string sourceName)
+    public void CompileTask_PropagatesCancellationToken_ToProcessRunner(CompileTaskKind kind, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
@@ -150,7 +150,7 @@ public class CompileTaskBehaviorTests
     [InlineData(CompileTaskKind.Cuda, "kernel.cu")]
     [InlineData(CompileTaskKind.CudaCombined, "kernel.cu")]
     [InlineData(CompileTaskKind.Cpp, "kernel.cpp")]
-    public void Test_CompileTask_CancelBeforeExecute_ReturnsFalseAndLogsWarning(CompileTaskKind kind, string sourceName)
+    public void CompileTask_CancelBeforeExecute_ReturnsFalseAndLogsWarning(CompileTaskKind kind, string sourceName)
     {
         using var ctx = new CompileTaskTestContext();
         ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
@@ -171,7 +171,7 @@ public class CompileTaskBehaviorTests
     [InlineData(CompileTaskKind.Cuda, "kernel.cu")]
     [InlineData(CompileTaskKind.CudaCombined, "kernel.cu")]
     [InlineData(CompileTaskKind.Cpp, "kernel.cpp")]
-    public void Test_CompileTask_CancelDuringProcessRun_ReturnsFalseAndLogsWarning(
+    public void CompileTask_CancelDuringProcessRun_ReturnsFalseAndLogsWarning(
         CompileTaskKind kind,
         string sourceName)
     {

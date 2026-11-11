@@ -32,10 +32,10 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
 
         if ((node.IsKind(SyntaxKind.PostIncrementExpression) || node.IsKind(SyntaxKind.PostDecrementExpression)) &&
-            ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Operand, ref context))
+            PropertyAccessorCall.IsAccessorPropertyTarget(node.Operand, ref context))
         {
             // The getter, the step and the setter, in the C# order (#908)
-            ComputedPropertyAssignment.TranspileStep(node, node.Operand, ref context);
+            PropertyAccessorAssignment.TranspileStep(node, node.Operand, ref context);
             return;
         }
 

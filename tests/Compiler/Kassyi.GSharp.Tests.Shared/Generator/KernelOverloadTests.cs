@@ -22,7 +22,7 @@ public class KernelOverloadTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public void Test_OverloadedKernels_GenerateCompilableWrappers(string dialect)
+    public void OverloadedKernels_ValidOverloads_GeneratesCompilableWrappers(string dialect)
     {
         var (_, output, diagnostics) = RoslynTestUtility.RunGenerator(s_overloadedKernels, dialect);
 
@@ -32,7 +32,7 @@ public class KernelOverloadTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_OverloadedKernels_LoadDistinctEntryPoints()
+    public void OverloadedKernels_DistinctSignatures_LoadsDistinctEntryPoints()
     {
         var (_, output, _) = RoslynTestUtility.RunGenerator(s_overloadedKernels, "Cuda");
         var wrapper = output.SyntaxTrees.Single(t => t.FilePath.EndsWith("K.g.cs", StringComparison.Ordinal)).ToString();
@@ -47,7 +47,7 @@ public class KernelOverloadTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public async Task Test_IndistinguishableOverloads_ReportGsh0059(string dialect)
+    public async Task IndistinguishableOverloads_SameTypeSignatures_ReportsGSH0059(string dialect)
     {
         // The analyzer reports the later overload at its name; the generator reports nothing
         var diagnostics = await KernelDiagnostics.RunAsync(s_indistinguishableKernels, dialect);
@@ -64,7 +64,7 @@ public class KernelOverloadTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public async Task Test_OverloadsThatDifferOnlyByIn_ReportGsh0059ForLaunch(string dialect)
+    public async Task OverloadsDifferOnlyByIn_LaunchMethodCollision_ReportsGSH0059ForLaunch(string dialect)
     {
         // The later overload duplicates the managed Launch{Name}, which the message names
         var diagnostics = await KernelDiagnostics.RunAsync(s_inModifierKernels, dialect);

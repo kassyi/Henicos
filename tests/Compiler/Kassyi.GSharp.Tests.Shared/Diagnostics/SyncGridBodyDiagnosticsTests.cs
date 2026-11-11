@@ -16,7 +16,7 @@ public class SyncGridBodyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_UnsplittableDeclarationAfterReturn_ReportsGsh0003AtTheStatement(string dialect)
+    public async Task UnsplittableDeclarationAfterReturn_StatementOrder_ReportsGsh0003AtStatement(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/SyncGridBodySadPath.cs", dialect);
 
@@ -36,7 +36,7 @@ public class SyncGridBodyDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_GotoAcrossTheGaps_ReportsGsh0003AtTheGoto(string dialect)
+    public async Task GotoAcrossTheGaps_ControlFlowJump_ReportsGsh0003AtGoto(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/SyncGridBodySadPath.cs", dialect);
 

@@ -26,7 +26,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.HappyPath)]    public void Test_TrustedKeysGenerator_WithValidHexKey_GeneratesSource()
+    [Scenario(TestScenario.HappyPath)]    public void TrustedKeysGenerator_ValidHexKey_GeneratesSource()
     {
         const string TrustedKeysContent = """
             # Test comment
@@ -55,7 +55,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.HappyPath)]    public void Test_TrustedKeysGenerator_WithMultipleKeysAndComments_ParsesAll()
+    [Scenario(TestScenario.HappyPath)]    public void TrustedKeysGenerator_MultipleKeysAndComments_ParsesAllKeys()
     {
         const string TrustedKeysContent = """
             # Primary Key
@@ -87,7 +87,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.Boundary)]    public void Test_TrustedKeysGenerator_NoTrustedKeysFile_EmitsNothing()
+    [Scenario(TestScenario.Boundary)]    public void TrustedKeysGenerator_NoTrustedKeysFile_EmitsNothing()
     {
         var compilation = CSharpCompilation.Create("TestCompilation");
         var otherFile = new InMemoryAdditionalText("other_file.txt", "some content");
@@ -105,7 +105,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_InvalidBase64_ReportsGSH0057()
+    [Scenario(TestScenario.SadPath)]    public void TrustedKeysGenerator_InvalidBase64Key_ReportsGSH0057()
     {
         const string TrustedKeysContent = """
             # Valid comment
@@ -132,7 +132,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_Base64WrongLength_ReportsGSH0057()
+    [Scenario(TestScenario.SadPath)]    public void TrustedKeysGenerator_Base64KeyWrongLength_ReportsGSH0057()
     {
         const string TrustedKeysContent = "11111111111111111111111=";
 
@@ -152,7 +152,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_InvalidHex_ReportsGSH0057()
+    [Scenario(TestScenario.SadPath)]    public void TrustedKeysGenerator_InvalidHexKey_ReportsGSH0057()
     {
         const string TrustedKeysContent = """
             d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511
@@ -177,7 +177,8 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.Boundary)]    public void Test_TrustedKeysGenerator_MixedContentWithMalformedLine_EmitsDiagnosticAndValidKeys()
+    [Scenario(TestScenario.Boundary)]
+    public void TrustedKeysGenerator_MixedContentWithMalformedLine_EmitsDiagnosticAndValidKeys()
     {
         const string TrustedKeysContent = """
             # Primary Key
@@ -230,7 +231,7 @@ public class TrustedKeysGeneratorTests
     [InlineData(" , ")]
     [InlineData("	,	")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TrustedKeysGenerator_FingerprintSeparatedByComma_Accepted(string separator)
+    public void TrustedKeysGenerator_FingerprintSeparatedByComma_AcceptedWithoutDiagnostics(string separator)
     {
         var content = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a" + separator + "fnv1a64:5553fd74df";
 
@@ -239,7 +240,7 @@ public class TrustedKeysGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TrustedKeysGenerator_HexAndBase64FormsOfSameKey_ShareOneFingerprint()
+    public void TrustedKeysGenerator_HexAndBase64FormsOfSameKey_SharesOneFingerprint()
     {
         // RFC 8032 Section 7.1 Test Vector 1 in both encodings; the fingerprint is computed over normalized lowercase hex.
         const string Content = """
@@ -252,7 +253,7 @@ public class TrustedKeysGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TrustedKeysGenerator_UppercaseHexKey_UsesNormalizedLowercaseFingerprint()
+    public void TrustedKeysGenerator_UppercaseHexKey_UsesNormalizedLowercaseFingerprint()
     {
         const string Content = "D75A980182B10AB7D54BFED3C964073A0EE172F3DAA62325AF021A68F707511A,fnv1a64:5553fd74df";
 
@@ -261,7 +262,7 @@ public class TrustedKeysGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_WhitespaceInsteadOfComma_ReportsGSH0057()
+    public void TrustedKeysGenerator_WhitespaceSeparator_ReportsGSH0057()
     {
         // Whitespace is not a valid key/fingerprint separator.
         var diag = Assert.Single(RunDiagnostics(
@@ -272,7 +273,7 @@ public class TrustedKeysGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_MissingFingerprint_ReportsGSH0057()
+    public void TrustedKeysGenerator_MissingFingerprint_ReportsGSH0057()
     {
         var diag = Assert.Single(RunDiagnostics("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"));
 
@@ -282,7 +283,7 @@ public class TrustedKeysGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_MismatchedFingerprint_ReportsGSH0057WithoutExpectedValue()
+    public void TrustedKeysGenerator_MismatchedFingerprint_ReportsGSH0057WithoutExpectedValue()
     {
         // One hex character of the key differs from the fingerprinted key (typo).
         const string Content = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511b,fnv1a64:5553fd74df";
@@ -305,7 +306,7 @@ public class TrustedKeysGeneratorTests
     [InlineData("sha256:5553fd74df")]
     [InlineData("5553fd74df")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TrustedKeysGenerator_NonCanonicalFingerprintSuffix_ReportsGSH0057(string suffix)
+    public void TrustedKeysGenerator_NonCanonicalFingerprintSuffix_ReportsGSH0057(string suffix)
     {
         var content = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a," + suffix;
 
@@ -316,7 +317,7 @@ public class TrustedKeysGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_MalformedKeyWithFingerprint_ReportsKeyFormatReason()
+    public void TrustedKeysGenerator_MalformedKeyWithFingerprint_ReportsKeyFormatReason()
     {
         var diag = Assert.Single(RunDiagnostics("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511g,fnv1a64:5553fd74df"));
 
@@ -330,7 +331,7 @@ public class TrustedKeysGeneratorTests
     [InlineData("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c,fnv1a64:b7819df3c0")]
     [InlineData("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025,fnv1a64:07d9f356d7")]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_TrustedKeysGenerator_Rfc8032PublicKeys_Accepted(string line)
+    public void TrustedKeysGenerator_Rfc8032PublicKeys_AcceptedWithoutDiagnostics(string line)
     {
         Assert.Empty(RunDiagnostics(line));
     }
@@ -346,7 +347,7 @@ public class TrustedKeysGeneratorTests
     [InlineData("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a,fnv1a64:b2fcb037d2")]
     [InlineData("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa,fnv1a64:b3a3b437d3")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_SmallOrderKey_ReportsGSH0057(string line)
+    public void TrustedKeysGenerator_SmallOrderKey_ReportsGSH0057(string line)
     {
         var diag = Assert.Single(RunDiagnostics(line));
 
@@ -364,7 +365,7 @@ public class TrustedKeysGeneratorTests
     // 0xAB repeated: well-formed but not on the curve
     [InlineData("abababababababababababababababababababababababababababababababab,fnv1a64:544cc8e1f3")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_NotDecompressibleKey_ReportsGSH0057(string line)
+    public void TrustedKeysGenerator_NotDecompressibleKey_ReportsGSH0057(string line)
     {
         var diag = Assert.Single(RunDiagnostics(line));
 
@@ -374,7 +375,7 @@ public class TrustedKeysGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TrustedKeysGenerator_TypoInKey_ReportsFingerprintMismatchBeforePointValidation()
+    public void TrustedKeysGenerator_TypoInKey_ReportsFingerprintMismatchBeforePointValidation()
     {
         // A typo is the likely cause, so the fingerprint is checked before the curve point.
         var diag = Assert.Single(RunDiagnostics(

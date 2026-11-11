@@ -38,7 +38,11 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_EveryThreadSum_EveryThreadReceivesTheWholeSum(uint grid, uint block, int length, bool managed)
+    public void EveryThreadSum_BlockWideReduction_EveryThreadReceivesWholeSum(
+        uint grid,
+        uint block,
+        int length,
+        bool managed)
     {
         var data = Enumerable.Range(1, length).ToArray();
         var result = new int[grid * block];
@@ -62,7 +66,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EveryThreadSum_WrapsOnOverflow(bool managed)
+    public void EveryThreadSum_OverflowingSum_WrapsOnOverflow(bool managed)
     {
         int[] data = [int.MaxValue, int.MaxValue, 7];
         var result = new int[2 * 64];
@@ -78,7 +82,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GuardedSum_EachBlockReceivesTheWholeSum(bool managed)
+    public void GuardedSum_MultipleBlocks_EachBlockReceivesWholeSum(bool managed)
     {
         var data = Enumerable.Range(1, 1024).ToArray();
         var result = new int[4];
@@ -94,7 +98,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EarlyExitSum_RemainingThreadsReceiveTheWholeSum(bool managed)
+    public void EarlyExitSum_SubsetOfThreadsExiting_RemainingThreadsReceiveWholeSum(bool managed)
     {
         var data = Enumerable.Range(1, 300).ToArray();
         const int N = 70;
@@ -115,7 +119,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_EveryThreadSum3D_EveryThreadReceivesTheWholeSum(bool managed)
+    public void EveryThreadSum3D_ThreeDimensionalBlock_EveryThreadReceivesWholeSum(bool managed)
     {
         var data = Enumerable.Range(1, 1000).ToArray();
         var result = new int[4 * 64];
@@ -139,7 +143,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SegmentSum_EachBlockReceivesItsSegment(int m, bool managed)
+    public void SegmentSum_BlockSegmentData_EachBlockReceivesItsSegment(int m, bool managed)
     {
         const int Blocks = 8;
         const int Threads = 64;
@@ -162,7 +166,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_FilteredProjected_EveryThreadReceivesTheWholeSum(bool managed)
+    public void FilteredProjectedSum_PredicatedElements_EveryThreadReceivesWholeSum(bool managed)
     {
         var data = Enumerable.Range(1, 1000).ToArray();
         var result = new int[3 * 96];
@@ -179,7 +183,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_OtherIntegerSums_EveryThreadReceivesTheWrappedSum(bool managed)
+    public void OtherIntegerSums_VariousIntegerTypes_EveryThreadReceivesWrappedSum(bool managed)
     {
         long[] longs = [long.MaxValue, 5, -3, long.MinValue, 1L << 40];
         uint[] uints = [uint.MaxValue, 2, 7, 1u << 31];
@@ -207,7 +211,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_PerThreadForms_GiveTheCSharpValue(bool managed)
+    public void PerThreadForms_PerThreadInputs_MatchesCSharpReference(bool managed)
     {
         var data = Enumerable.Range(1, 1000).ToArray();
         var floats = Array.ConvertAll(data, static x => x / 64f);
@@ -255,7 +259,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_RepeatedSum_EveryCallGivesTheWholeSum(bool managed)
+    public void RepeatedSum_ConsecutiveReductions_EveryCallGivesWholeSum(bool managed)
     {
         var a = Enumerable.Range(1, 300).ToArray();
         var b = Enumerable.Range(-50, 77).ToArray();
@@ -281,7 +285,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LambdaReadsThreadIndex_EachThreadReceivesItsOwnSum(bool managed)
+    public void EveryThreadSum_LambdaReadingThreadIndex_EachThreadReceivesItsOwnSum(bool managed)
     {
         var data = Enumerable.Range(1, 100).ToArray();
         var result = new int[2 * 64 * 3];
@@ -304,7 +308,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DeviceFunctionSelector_EveryThreadReceivesTheWholeSum(bool managed)
+    public void EveryThreadSum_DeviceFunctionSelector_EveryThreadReceivesWholeSum(bool managed)
     {
         var data = Enumerable.Range(1, 300).ToArray();
         var result = new int[2 * 64];
@@ -321,7 +325,7 @@ public class ParallelAggregateTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_LocalFunctionLane_EachThreadReceivesItsOwnSum(bool managed)
+    public void EveryThreadSum_LocalFunctionUsingLaneIndex_EachThreadReceivesItsOwnSum(bool managed)
     {
         var data = Enumerable.Range(0, 64).ToArray();
         var result = new int[2 * 64 * 2];

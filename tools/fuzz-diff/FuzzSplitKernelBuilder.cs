@@ -144,11 +144,11 @@ internal sealed class FuzzSplitKernelBuilder(KernelGenerationState state, FuzzSp
         var target = Rng.Choose(state.Locals);
         if (target.Type.IsEnum || target.Type.Kind == FuzzScalarKind.Boolean || Rng.NextBool())
         {
-            ScalarFuzzGenerator.EmitAssignmentStatement(state, target);
+            FuzzScalarStatementEmitter.EmitAssignmentStatement(state, target);
         }
         else
         {
-            ScalarFuzzGenerator.EmitCompoundAssignmentStatement(state, target);
+            FuzzScalarStatementEmitter.EmitCompoundAssignmentStatement(state, target);
         }
     }
 

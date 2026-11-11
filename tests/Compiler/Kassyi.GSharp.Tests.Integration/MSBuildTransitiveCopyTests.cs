@@ -36,7 +36,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
     }
 
     [Fact]
-    public async Task Test_55_NativeAssets_ShouldFlowTransitivelyToConsumer()
+    public async Task Build_ConsumerReferencingProducer_CopiesNativeAssetsTransitivelyToConsumerOutput()
     {
         var producerDir = Path.Combine(_testRoot, "Producer");
         var consumerDir = Path.Combine(_testRoot, "Consumer");
@@ -115,7 +115,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
     }
 
     [Fact]
-    public async Task Test_55_MockCompilationFailure_ShouldFailBuild()
+    public async Task Build_MissingTaskAssembly_FailsBuildWithMsb4062()
     {
         var producerDir = Path.Combine(_testRoot, "ProducerFail");
         Directory.CreateDirectory(producerDir);

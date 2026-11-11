@@ -12,7 +12,7 @@ public class NullableStackArrayTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_StackArrayPassedToANonNullableParameter_IsRead()
+    public void Launch_StackArrayPassedToNonNullableParameter_ReadsValuesCorrectly()
     {
         var output = new int[1];
 
@@ -23,7 +23,7 @@ public class NullableStackArrayTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_StackArrayBesideAKernelParameter_IsRead()
+    public void Launch_StackArrayBesideKernelParameter_ReadsValuesCorrectly()
     {
         int[] input = [1, 2, 3];
         var output = new int[1];
@@ -35,7 +35,7 @@ public class NullableStackArrayTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_KernelParameterPassedToANonNullableParameter_IsRead()
+    public void Launch_KernelParameterPassedToNonNullableParameter_ReadsValuesCorrectly()
     {
         int[] input = [1, 2, 3];
         var output = new int[1];

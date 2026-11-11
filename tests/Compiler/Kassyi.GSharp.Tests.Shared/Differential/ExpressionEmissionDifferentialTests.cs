@@ -130,41 +130,41 @@ public sealed class ExpressionEmissionDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_SwitchArmsOfDifferentTypes_MatchTheOracleOnEveryPath() =>
+    public void SwitchExpression_ArmsOfDifferentTypes_MatchTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_switchArmConversion);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_FloatingSwitchExpression_MatchesTheOracleOnEveryPath() =>
+    public void SwitchExpression_FloatingPointInput_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_floatingSwitch);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullArmsAndNullableInput_MatchTheOracleOnEveryPath() =>
+    public void SwitchExpression_NullArmsAndNullableInput_MatchTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_nullableSwitch);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_NullForgivingAndArrayCoalesce_MatchTheOracleOnEveryPath() =>
+    public void ExpressionEmission_NullForgivingAndArrayCoalesce_MatchTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_nullForgivingAndArrayCoalesce);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void Test_ImplicitlyConvertedBraceArguments_MatchTheOracleOnEveryPath() =>
+    public void ExpressionEmission_ImplicitlyConvertedBraceArguments_MatchTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_implicitArgumentConversion);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_NestedMemberInitializer_MatchesTheOracleOnEveryPath() =>
+    public void MemberInitializer_NestedMembers_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_nestedMemberInitializer);
 }

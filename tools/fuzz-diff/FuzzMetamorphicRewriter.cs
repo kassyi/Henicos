@@ -145,6 +145,35 @@ public static class FuzzMetamorphicRewriter
         int variantIndex,
         ulong variantSeed)
     {
+        string? initialSource = BuildInitialSource(
+            className, baseDeviceFunctions, baseKernelName, baseKernelMethodSource, variantKernelName);
+        if (initialSource is null)
+        {
+            return (baseKernelMethodSource, []);
+        }
+
+        var pipeline = MetamorphicStagePipeline.Create(initialSource);
+        ApplyPipelineStages(pipeline, variantIndex, variantSeed, variantKernelName);
+
+        var currentRoot = pipeline.Root;
+        var finalMethod = MetamorphicTarget.FindKernel(currentRoot, variantKernelName);
+        string headerComment =
+            $"// fuzz-seed: {FuzzRandom.FormatSeed(variantSeed)}, metamorphic-of: {baseKernelName}\n";
+        string variantMethodSource = finalMethod is not null
+            ? headerComment + FuzzSyntaxHelpers.RenderNodeText(finalMethod)
+            : baseKernelMethodSource;
+
+        var extraHelpers = CollectExtraDeviceFunctions(currentRoot, baseDeviceFunctions);
+        return (variantMethodSource, extraHelpers);
+    }
+
+    private static string? BuildInitialSource(
+        string className,
+        IReadOnlyList<DeviceFunctionSpec> baseDeviceFunctions,
+        string baseKernelName,
+        string baseKernelMethodSource,
+        string variantKernelName)
+    {
         using var unitWriter = new SourceWriter();
         FuzzCaseEmitter.AppendKernelsFileHeader(unitWriter, "Kassyi.GSharp.Tests.Shared.Differential");
         ScalarFuzzGenerator.AppendEnumDeclarations(unitWriter);
@@ -162,13 +191,19 @@ public static class FuzzMetamorphicRewriter
         var origMethod = MetamorphicTarget.FindKernel(initialRoot, baseKernelName);
         if (origMethod is null)
         {
-            return (baseKernelMethodSource, []);
+            return null;
         }
 
         var renamedMethod = origMethod.WithIdentifier(SyntaxFactory.Identifier(variantKernelName));
-        string initialSource = FuzzSyntaxHelpers.RenderFullNode(initialRoot.ReplaceNode(origMethod, renamedMethod));
+        return FuzzSyntaxHelpers.RenderFullNode(initialRoot.ReplaceNode(origMethod, renamedMethod));
+    }
 
-        var pipeline = MetamorphicStagePipeline.Create(initialSource);
+    private static void ApplyPipelineStages(
+        MetamorphicStagePipeline pipeline,
+        int variantIndex,
+        ulong variantSeed,
+        string variantKernelName)
+    {
         string extractedHelperName = string.Create(CultureInfo.InvariantCulture, $"MetaHelper_{variantKernelName}");
 
         if ((variantIndex & 1) == 0)
@@ -191,13 +226,12 @@ public static class FuzzMetamorphicRewriter
             pipeline.Apply((r, m) => MetamorphicDeadCodeInserter.Apply(r, m, variantSeed ^ 0x66UL, variantKernelName));
             pipeline.Apply((r, m) => MetamorphicIdentifierRenamer.Apply(r, m, variantSeed ^ 0x77UL, variantKernelName));
         }
+    }
 
-        var currentRoot = pipeline.Root;
-        var finalMethod = MetamorphicTarget.FindKernel(currentRoot, variantKernelName);
-        string variantMethodSource = finalMethod is not null
-            ? $"// fuzz-seed: {FuzzRandom.FormatSeed(variantSeed)}, metamorphic-of: {baseKernelName}\n{FuzzSyntaxHelpers.RenderNodeText(finalMethod)}"
-            : baseKernelMethodSource;
-
+    private static List<string> CollectExtraDeviceFunctions(
+        CompilationUnitSyntax currentRoot,
+        IReadOnlyList<DeviceFunctionSpec> baseDeviceFunctions)
+    {
         var baseHelperNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var df in baseDeviceFunctions)
         {
@@ -213,6 +247,6 @@ public static class FuzzMetamorphicRewriter
             }
         }
 
-        return (variantMethodSource, extraHelpers);
+        return extraHelpers;
     }
 }
