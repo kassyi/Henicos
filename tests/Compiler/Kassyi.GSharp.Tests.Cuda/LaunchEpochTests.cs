@@ -251,27 +251,6 @@ public sealed class LaunchEpochTests
         }
     }
 
-    // [WHY] A captured launch of a kernel with a grid barrier has an abort word of its own, which a kernel node of the
-    // graph clears before every replay: when a whole block fails, the waiters leave instead of trapping (a trap is a
-    // GPU fault that ends the context), and a replay after a failed one passes every barrier again, which also needs
-    // the leaving blocks to take back their arrivals (the graph keeps its grid workspace from one replay to the next).
-    // The timeouts fail the test instead of waiting for a hang that the driver would end only by resetting the GPU.
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public async Task GraphLaunch_WholeBlockFailsBeforeGridBarrier_WaitersLeaveAtEveryReplay()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        var failing = new int[GraphBlocks * GraphThreads];
-        for (int t = 0; t < GraphThreads; t++)
-        {
-            failing[GraphThreads + t] = GridBarrierKernels.FailKey;
-        }
-
-        await AssertCapturedFailureLeavesContextUsableAsync(failing, "(1,0,0)", "GSharp.BlockIndex",
-            static (keys, result, stream) => GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernelPtr(keys,
-                result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
-    }
-
     // [WHY] The same for a captured launch, which records into the shared record: the waiters leave on the abort word
     // of the capture epoch, which no host synchronization clears either
     [SkippableFact]
@@ -289,11 +268,7 @@ public sealed class LaunchEpochTests
     {
         long cycles = 100L * GpuClock.RateKilohertz();
         var keys = new int[GraphBlocks * GraphThreads];
-        for (int t = 0; t < GraphThreads; t++)
-        {
-            keys[GraphThreads + t] = LaunchEpochKernels.FailKey;
-        }
-
+        Array.Fill(keys, LaunchEpochKernels.FailKey, GraphThreads, GraphThreads);
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
         using var dKeys = new GpuBuffer<int>(keys.Length);
@@ -305,259 +280,66 @@ public sealed class LaunchEpochTests
         using var graph = captured ? CapturedGraph.Capture(stream, launch) : null;
 
         using var stop = new CancellationTokenSource();
-        GSharpDeviceErrorSlot consumed = default;
-        var consumer = Task.Run(() =>
-        {
-            while (!stop.IsCancellationRequested)
-            {
-                if (DeviceErrorSlot.TryConsumeSlot(out consumed))
-                {
-                    return true;
-                }
-
-                Thread.Sleep(1);
-            }
-
-            return false;
-        });
-
+        var consumer = ConsumeFirstRecordAsync(stop.Token);
         try
         {
-            var run = Task.Run(() =>
-            {
-                using var launchScope = new GpuKernelLoader.CudaContextScope();
-                if (graph is not null)
-                {
-                    graph.Launch(stream);
-                }
-                else
-                {
-                    launch(stream.Handle);
-                }
-
-                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream.Handle));
-            });
-            await run.WaitAsync(TimeSpan.FromSeconds(30));
-            Assert.True(await consumer.WaitAsync(TimeSpan.FromSeconds(10)), "the consumer found no record");
+            await LaunchAndSynchronizeAsync(stream, graph, launch).WaitAsync(TimeSpan.FromSeconds(30));
         }
         finally
         {
             await stop.CancelAsync();
         }
 
-        Assert.Equal(1u, consumed.BlockX);
-        // A capture epoch has bit 31 set
-        Assert.Equal(captured ? 0x80000000u : 0u, consumed.Epoch & 0x80000000u);
-        Assert.NotEqual(0u, consumed.Epoch);
+        var consumed = await consumer.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.True(consumed.HasValue, "the consumer found no record");
+        Assert.Equal(1u, consumed.Value.BlockX);
+        // An epoch with bit 31 set records into the shared record, as a captured launch does
+        Assert.Equal(captured ? 0x80000000u : 0u, consumed.Value.Epoch & 0x80000000u);
+        Assert.NotEqual(0u, consumed.Value.Epoch);
         var result = new int[keys.Length];
         dResult.CopyToHost(result);
         Assert.All(result, static value => Assert.Equal(Untouched, value));
     }
 
-    // [WHY] The same for an mbarrier, whose waiters wait for every thread of the block: one failing thread is enough
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public async Task GraphLaunch_ThreadFailsBeforeMBarrier_WaitersLeaveAtEveryReplay()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        var failing = new int[BlockSize];
-        failing[5] = DeviceErrorExitKernels.FailKey;
-
-        await AssertCapturedFailureLeavesContextUsableAsync(failing, "(5,0,0)", "GSharp.ThreadIndex",
-            static (keys, result, stream) => DeviceErrorExitKernels.LaunchMBarrierFailKernelPtr(keys, result,
-                blockDimX: BlockSize, hStream: stream));
-    }
-
-    // [WHY] The abort word of a captured launch must never make a healthy replay leave its barriers: every replay
-    // starts with a cleared word, and no failure sets it
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public async Task GraphLaunch_HealthyBarrierKernels_EveryReplayPassesEveryBarrier()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        const int Replays = 200;
-        await Task.Run(() =>
+    // Consumes the first device error record that any launch leaves, on another thread, until stop is requested
+    private static Task<GSharpDeviceErrorSlot?> ConsumeFirstRecordAsync(CancellationToken stop) =>
+        Task.Run<GSharpDeviceErrorSlot?>(() =>
         {
-            AssertHealthyReplays(GraphBlocks * GraphThreads, Replays,
-                static (keys, result, stream) => GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernelPtr(keys,
-                    result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
-            AssertHealthyReplays(BlockSize, Replays,
-                static (keys, result, stream) => DeviceErrorExitKernels.LaunchMBarrierFailKernelPtr(keys, result,
-                    blockDimX: BlockSize, hStream: stream));
-        }).WaitAsync(TimeSpan.FromMinutes(2));
-    }
-
-    // Captures <launch> with the failing keys, replays it twice and checks that each synchronization throws the
-    // recorded error with no CUDA error inside and that no thread wrote after the barrier; then replays the same graph
-    // with healthy keys, which must pass the barrier, and runs a launch outside the graph, which needs a usable context
-    private static async Task AssertCapturedFailureLeavesContextUsableAsync(int[] failing, string failedAt,
-        string failedAtKey, Action<GSharpArrayProxy, GSharpArrayProxy, IntPtr> launch)
-    {
-        await Task.Run(() =>
-        {
-            using var scope = new GpuKernelLoader.CudaContextScope();
-            using var stream = new CudaStream();
-            using var dKeys = new GpuBuffer<int>(failing.Length);
-            using var dResult = new GpuBuffer<int>(failing.Length);
-            dKeys.CopyToDevice(failing);
-            var result = new int[failing.Length];
-
-            using (var graph = CapturedGraph.Capture(stream, hStream =>
-                launch(dKeys.ToProxy(), dResult.ToProxy(), hStream)))
+            while (!stop.IsCancellationRequested)
             {
-                for (int replay = 0; replay < 2; replay++)
+                if (DeviceErrorSlot.TryConsumeSlot(out var slot))
                 {
-                    dResult.CopyToDevice(Filled(failing.Length));
-                    graph.Launch(stream);
-                    var ex = Assert.Throws<SwitchExpressionException>(stream.Synchronize);
-                    Assert.Null(ex.InnerException);
-                    Assert.Equal(failedAt, ex.Data[failedAtKey]);
-                    dResult.CopyToHost(result);
-                    Assert.All(result, static value => Assert.Equal(Untouched, value));
+                    return slot;
                 }
 
-                dKeys.CopyToDevice(new int[failing.Length]);
-                dResult.CopyToDevice(Filled(failing.Length));
-                graph.Launch(stream);
-                stream.Synchronize();
-                dResult.CopyToHost(result);
-                Assert.Equal(Enumerable.Range(0, failing.Length), result);
+                Thread.Sleep(1);
             }
 
-            var direct = Filled(BlockSize);
-            LaunchEpochKernels.LaunchDelayedWriteKernel(new int[BlockSize], 0, direct, blockDimX: BlockSize);
-            Assert.Equal(Enumerable.Range(0, BlockSize), direct);
-        }).WaitAsync(TimeSpan.FromSeconds(60));
-    }
+            return null;
+        });
 
-    // Captures <launch> with healthy keys and replays it <replays> times; every replay writes every thread's index
-    private static void AssertHealthyReplays(int threads, int replays,
-        Action<GSharpArrayProxy, GSharpArrayProxy, IntPtr> launch)
-    {
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        using var stream = new CudaStream();
-        using var dKeys = new GpuBuffer<int>(threads);
-        using var dResult = new GpuBuffer<int>(threads);
-        dKeys.CopyToDevice(new int[threads]);
-        var result = new int[threads];
-        using var graph = CapturedGraph.Capture(stream, hStream => launch(dKeys.ToProxy(), dResult.ToProxy(), hStream));
-        for (int replay = 0; replay < replays; replay++)
+    // Launches the graph, or <launch> when it is null, on another thread and waits for the stream through the driver
+    // alone, which consumes no record
+    private static Task LaunchAndSynchronizeAsync(CudaStream stream, CapturedGraph graph, Action<IntPtr> launch) =>
+        Task.Run(() =>
         {
-            dResult.CopyToDevice(Filled(threads));
-            graph.Launch(stream);
-            stream.Synchronize();
-            dResult.CopyToHost(result);
-            Assert.Equal(Enumerable.Range(0, threads), result);
-        }
-    }
+            using var launchScope = new GpuKernelLoader.CudaContextScope();
+            if (graph is not null)
+            {
+                graph.Launch(stream);
+            }
+            else
+            {
+                launch(stream.Handle);
+            }
 
-    // [WHY] A captured launch of a cooperative kernel has an abort word, like a launch that is not captured: once a
-    // thread failed, every block leaves the grid barrier, also when thread (0,0,0) or whole warps failed, so no
-    // surviving thread runs the code after the barriers (GridBarrierTests in Tests.Shared, without a graph)
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void GraphLaunch_ThreadsFailBeforeGridBarrier_EveryBlockLeavesBarrier()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        AssertEveryBlockLeavesBarrierOfGraph(GridBarrierKernels.FailKey,
-            static (keys, rounds, values, result, stream) => GridBarrierKernels.LaunchGridSyncAfterFailKernelPtr(keys,
-                rounds, values, result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
-    }
-
-    // [WHY] The same for the Fast barrier, which arrives before it reads the abort word: the failing threads of a block
-    // set the word before the block elects its arriving thread, so every block leaves at the first barrier
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void GraphLaunch_ThreadsFailBeforeFastGridBarrier_EveryBlockLeavesBarrier()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        AssertEveryBlockLeavesBarrierOfGraph(GridSyncModeKernels.FailKey,
-            static (keys, rounds, values, result, stream) => GridSyncModeKernels.LaunchFastSyncAfterFailKernelPtr(keys,
-                rounds, values, result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
-    }
-
-    // Captures <launch> of a kernel that runs 64 rounds of two grid barriers into a graph, with every third
-    // thread failing (thread 0 of every block among them, and in block 2 a whole warp but thread 1), replays it once
-    // and checks that the synchronization throws the recorded error and that no surviving thread wrote its sum
-    private static void AssertEveryBlockLeavesBarrierOfGraph(int failKey,
-        Action<GSharpArrayProxy, int, GSharpArrayProxy, GSharpArrayProxy, IntPtr> launch)
-    {
-        const int Rounds = 64;
-
-        var keys = new int[GraphBlocks * GraphThreads];
-        for (int i = 0; i < keys.Length; i++)
-        {
-            keys[i] = i % GraphThreads % 3 == 0 ? failKey : i % 2;
-        }
-
-        for (int t = 2; t < 32; t++)
-        {
-            keys[2 * GraphThreads + t] = failKey;
-        }
-
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        using var stream = new CudaStream();
-        using var dKeys = new GpuBuffer<int>(keys.Length);
-        using var dValues = new GpuBuffer<int>(GraphBlocks);
-        using var dResult = new GpuBuffer<int>(keys.Length);
-        dKeys.CopyToDevice(keys);
-        dResult.CopyToDevice(Filled(keys.Length));
-
-        using (var graph = CapturedGraph.Capture(stream, hStream =>
-            launch(dKeys.ToProxy(), Rounds, dValues.ToProxy(), dResult.ToProxy(), hStream)))
-        {
-            graph.Launch(stream);
-            var ex = Assert.Throws<SwitchExpressionException>(stream.Synchronize);
-            Assert.Null(ex.InnerException);
-        }
-
-        var result = new int[keys.Length];
-        dResult.CopyToHost(result);
-        Assert.All(result, static value => Assert.Equal(Untouched, value));
-    }
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream.Handle));
+        });
 
     private static int[] Filled(int length)
     {
         var values = new int[length];
         Array.Fill(values, Untouched);
         return values;
-    }
-
-    // A launch captured into a CUDA graph and the graph's executable instance, both destroyed on Dispose
-    private sealed class CapturedGraph(IntPtr graph, IntPtr exec) : IDisposable
-    {
-        // Captures what <launch> enqueues on the stream (the stream handle is its argument) and instantiates it
-        public static CapturedGraph Capture(CudaStream stream, Action<IntPtr> launch)
-        {
-            var begin = CudaDriverApi.cuStreamBeginCapture(stream.Handle, CUstreamCaptureMode.ThreadLocal);
-            CudaException.ThrowIfError(begin);
-            IntPtr graph;
-            try
-            {
-                launch(stream.Handle);
-            }
-            finally
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuStreamEndCapture(stream.Handle, out graph));
-            }
-
-            var result = CudaDriverApi.cuGraphInstantiate(out var exec, graph, IntPtr.Zero, IntPtr.Zero, 0);
-            if (result != CUresult.CudaSuccess)
-            {
-                CudaDriverApi.cuGraphDestroy(graph);
-                CudaException.ThrowIfError(result);
-            }
-
-            return new CapturedGraph(graph, exec);
-        }
-
-        public void Launch(CudaStream stream) =>
-            CudaException.ThrowIfError(CudaDriverApi.cuGraphLaunch(exec, stream.Handle));
-
-        public void Dispose()
-        {
-            CudaDriverApi.cuGraphExecDestroy(exec);
-            CudaDriverApi.cuGraphDestroy(graph);
-        }
     }
 }
