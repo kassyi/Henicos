@@ -92,13 +92,17 @@ internal sealed class IrPrinter
                 WriteIf(@if);
                 break;
             case IrOpaqueStatement opaque:
-                _writer.Append(
-                    $"opaque:{IrPrintText.Reason(opaque.Reason)}: {IrPrintText.SyntaxKindName(opaque.Syntax)}");
-                EndLine();
+                WriteOpaque(opaque);
                 break;
             default:
                 throw new InvalidOperationException("The IR printer has no form for " + statement.GetType().Name + ".");
         }
+    }
+
+    private void WriteOpaque(IrOpaqueStatement opaque)
+    {
+        _writer.Append($"opaque:{IrPrintText.Reason(opaque.Reason)}: {IrPrintText.SyntaxKindName(opaque.Syntax)}");
+        EndLine();
     }
 
     private void WriteExpressionStatement(IrExpressionStatement statement)
