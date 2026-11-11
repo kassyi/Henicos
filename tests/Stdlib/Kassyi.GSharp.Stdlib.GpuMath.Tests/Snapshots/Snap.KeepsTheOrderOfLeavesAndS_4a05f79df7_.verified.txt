@@ -1,0 +1,643 @@
+﻿tree 0:
+  +s5=2(Skip1(Where(*s2=2(+s1=0(Take5(i0))), Not(NotEqual(Take5(i3), s4=0)))))
+  i3 0+5
+  s4=0
+  i0 0+5
+  s1=0
+  s2=2
+  s5=2
+  = into target: []
+  dispose:
+    i0 disposed
+    i3 disposed
+tree 1:
+  Not(Not(LessThanOrEqual(*s2=1(*s1=1(i0)), s3=2)))
+  i0 0+6
+  s1=1
+  s2=1
+  s3=2
+  = flags [1, 0, 1, 0, 0, 0]
+  dispose:
+    i0 disposed
+tree 2:
+  +c0(/1(Take7(/3(*c1(f0)))))
+  f0 0+6
+  = values [+0x290000000000000000000000000000000000000000 * 2^-160, -0x188000000000000000000000000000000000000000 * 2^-159, -0x1A8000000000000000000000000000000000000000 * 2^-159, -0x258000000000000000000000000000000000000000 * 2^-159, +0x4D0000000000000000000000000000000000000000 * 2^-160, -0x10000000000000000000000000000000000000000 * 2^-160]
+  dispose:
+    f0 disposed
+tree 3:
+  zip+(zip+(Where(Take7(/2(i0)), NotEqual(-s2=0(i1), Take7(i3))), /3(Take6(+s5=2(i4)))), -s8=1(-s7=2(i6)))
+  i1 0+6
+  s2=0
+  i3 0+6
+  i0 0+6
+  i4 0+6
+  s5=2
+  i6 0+6
+  s7=2
+  s8=1
+  = into target: [-36, -52, 42, -60, -21, 30]
+  dispose:
+    i0 disposed
+    i1 disposed
+    i3 disposed
+    i4 disposed
+    i6 disposed
+tree 4:
+  Not(NotEqual(*s1=1(i0), zip-(*s5=1(Where(i2, GreaterThanOrEqual(i3, s4=0))), Take7(Take6(i6)))))
+  i0 0+6
+  s1=1
+  i3 0+all
+  s4=0
+  i2 0+all
+  s5=1
+  i6 0+6
+  = flags [0, 0, 0, 0]
+  dispose:
+    i0 disposed
+    i2 disposed
+    i3 disposed
+    i6 disposed
+tree 5:
+  +c2(Skip2(Where(zip-(/2(Take2(f0)), /3(Skip4(f1))), GreaterThan(/3(*c2(Take2(f2))), c1))))
+  = values []
+  dispose:
+    f0 disposed
+    f1 disposed
+    f2 disposed
+tree 6:
+  *s5=1(Where(i0, Equal(/1(-s2=2(i1)), /3(zip-(i3, i4)))))
+  i1 0+6
+  s2=2
+  i3 0+6
+  i4 0+6
+  i0 0+all
+  s5=1
+  = into target: []
+  dispose:
+    i0 disposed
+    i1 disposed
+    i3 disposed
+    i4 disposed
+tree 7:
+  Or(Or(And(Not(GreaterThanOrEqual(i0, s1=1)), Not(LessThanOrEqual(i2, s3=2))), And(LessThan(i4, s5=0), Not(GreaterThanOrEqual(i6, s7=0)))), And(And(GreaterThan(Take6(i8), +s10=0(i9)), And(LessThan(i11, s12=0), GreaterThan(i13, s14=1))), LessThanOrEqual(Where(Take7(i15), LessThan(i16, s17=1)), s18=1)))
+  i0 0+all
+  s1=1
+  i2 0+all
+  s3=2
+  i4 0+all
+  s5=0
+  i6 0+all
+  s7=0
+  i8 0+6
+  i9 0+6
+  s10=0
+  i11 0+all
+  s12=0
+  i13 0+all
+  s14=1
+  i16 0+all
+  s17=1
+  i15 0+6
+  s18=1
+  = flags [1, 0, 1, 0]
+  dispose:
+    i0 disposed
+    i2 disposed
+    i4 disposed
+    i6 disposed
+    i8 disposed
+    i9 disposed
+    i11 disposed
+    i13 disposed
+    i15 disposed
+    i16 disposed
+tree 8:
+  Where(Take7(f0), GreaterThan(Where(/3(/1(/2(f1))), GreaterThan(/3(+c0(Where(f2, GreaterThan(f3, c2)))), c0)), c0))
+  f3 0+all
+  f2 0+all
+  f1 0+6
+  f0 0+6
+  = values []
+  dispose:
+    f0 disposed
+    f1 disposed
+    f2 disposed
+    f3 disposed
+tree 9:
+  -s4=0(*s3=0(+s2=1(/2(zip+(i0, i1)))))
+  i0 0+6
+  i1 0+6
+  s2=1
+  s3=0
+  s4=0
+  = into target: [24, 28, 136, -12, 28, 176]
+  dispose:
+    i0 disposed
+    i1 disposed
+tree 10:
+  GreaterThan(zip+(shared(zip-(zip-(i0, i1), Take7(i2))).Skip(4) zip- .Take(2), Where(shared(Take6(i3)).Skip(4) zip- .Take(2), Not(NotEqual(Take2(i4), s5=0)))), s6=0)
+  i0 4+2
+  i1 4+2
+  i2 4+2
+  i0 0+2
+  i1 0+2
+  i2 0+2
+  i0 4+2
+  i1 4+2
+  i2 4+2
+  i4 0+2
+  s5=0
+  i3 4+2
+  i3 0+2
+  s6=0
+  = flags []
+  dispose:
+    i0 disposed
+    i1 disposed
+    i2 disposed
+    i0 disposed
+    i1 disposed
+    i2 disposed
+    i3 disposed
+    i3 disposed
+    i4 disposed
+tree 11:
+  /1(Where(Where(Where(*c2(f0), GreaterThan(Where(f1, GreaterThan(f2, c1)), c0)), GreaterThan(zip-(Take7(f3), +c0(f4)), c0)), GreaterThan(Take7(+c0(*c1(f5))), c2)))
+  f5 0+6
+  f3 0+6
+  f4 0+6
+  f2 0+all
+  f1 0+all
+  f0 0+6
+  = values []
+  dispose:
+    f0 disposed
+    f1 disposed
+    f2 disposed
+    f3 disposed
+    f4 disposed
+    f5 disposed
+tree 12:
+  i0
+  i0 0+all
+  = values [3, 8, -44, -21, 28, 47]
+  dispose:
+    i0 disposed
+tree 13:
+  And(Or(And(LessThanOrEqual(zip-(Take1(i0), Skip5(i1)), s2=1), Or(LessThanOrEqual(Take5(i3), s4=2), LessThan(Skip1(i5), s6=0))), Or(LessThanOrEqual(zip+(Skip5(i7), Take1(i8)), s9=1), NotEqual(Skip2(Skip3(i10)), s11=1))), GreaterThan(+s16=0(Where(-s13=0(Take3(i12)), LessThan(Skip3(i14), s15=2))), s17=2))
+  ! ArgumentException: Lengths must match
+  dispose:
+    i0 disposed
+    i1 disposed
+    i3 disposed
+    i5 disposed
+    i7 disposed
+    i8 disposed
+    i10 disposed
+    i12 disposed
+    i14 disposed
+tree 14:
+  Take6(Where(/3(Take7(f0)), GreaterThan(f1, c2)))
+  f1 0+all
+  f0 0+6
+  = values [-0x0D5555555555555555555555555555555 * 2^-124, +0x08AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA * 2^-124, -0x080000000000000000000000000000000 * 2^-123]
+  dispose:
+    f0 disposed
+    f1 disposed
+tree 15:
+  Take7(+s6=1(*s5=1(Where(Where(i0, GreaterThan(i1, s2=0)), GreaterThanOrEqual(i3, s4=0)))))
+  i3 0+all
+  s4=0
+  i1 0+all
+  s2=0
+  i0 0+all
+  s5=1
+  s6=1
+  = into target: [-72, 126]
+  dispose:
+    i0 disposed
+    i1 disposed
+    i3 disposed
+tree 16:
+  LessThanOrEqual(Where(Take6(*s1=0(Take6(i0))), LessThanOrEqual(-s3=0(Take7(i2)), s4=0)), s5=2)
+  i2 0+6
+  s3=0
+  s4=0
+  i0 0+6
+  s1=0
+  s5=2
+  = flags [0, 0, 0]
+  dispose:
+    i0 disposed
+    i2 disposed
+tree 17:
+  zip-(/3(f0), f1)
+  f0 0+6
+  f1 0+6
+  = values [-0x082AAAAAAA * 2^-31, -0x680000000 * 2^-31, -0x0C55555555 * 2^-31, +0x0900000000 * 2^-31, -0x1855555556 * 2^-32, -0x082AAAAAAA * 2^-31]
+  dispose:
+    f0 disposed
+    f1 disposed
+tree 18:
+  zip-(zip+(Take4(Take4(-s1=2(Take5(i0)))), zip+(/3(*s3=1(Skip2(i2))), +s6=2(*s5=2(Take4(i4))))), +s12=2(-s11=1(zip-(Where(Take4(i7), GreaterThan(Skip2(i8), s9=1)), shared(i10).Skip(2) zip- .Take(4)))))
+  i0 0+4
+  s1=2
+  i2 2+4
+  s3=1
+  i4 0+4
+  s5=2
+  s6=2
+  i8 2+4
+  s9=1
+  i7 0+4
+  i10 2+4
+  i10 0+4
+  s11=1
+  s12=2
+  = values [-10]
+  dispose:
+    i0 disposed
+    i2 disposed
+    i4 disposed
+    i7 disposed
+    i8 disposed
+    i10 disposed
+    i10 disposed
+tree 19:
+  Not(And(Not(NotEqual(zip-(i0, i1), s2=2)), Or(And(GreaterThan(i3, s4=0), LessThanOrEqual(i5, s6=2)), LessThan(/1(i7), Where(i8, LessThan(i9, s10=1))))))
+  i0 0+6
+  i1 0+6
+  s2=2
+  i3 0+all
+  s4=0
+  i5 0+all
+  s6=2
+  i7 0+6
+  i9 0+all
+  s10=1
+  i8 0+all
+  = flags [1, 1, 1]
+  dispose:
+    i0 disposed
+    i1 disposed
+    i3 disposed
+    i5 disposed
+    i7 disposed
+    i8 disposed
+    i9 disposed
+tree 20:
+  +c1(+c0(+c2(*c1(Where(f0, GreaterThan(f1, c0))))))
+  f1 0+all
+  f0 0+all
+  = values [-0x3A * 2^0, +0x6B * 2^0]
+  dispose:
+    f0 disposed
+    f1 disposed
+tree 21:
+  Skip4(i0)
+  = window 1+0: []
+  dispose:
+    i0 disposed
+tree 22:
+  Or(Not(Not(Not(LessThan(i0, s1=2)))), GreaterThanOrEqual(-s6=2(zip+(zip+(i2, i3), *s5=2(i4))), Take7(*s9=1(-s8=1(i7)))))
+  i0 0+all
+  s1=2
+  i2 0+6
+  i3 0+6
+  i4 0+6
+  s5=2
+  s6=2
+  i7 0+6
+  s8=1
+  s9=1
+  = flags [1, 0, 0, 1, 0, 1]
+  dispose:
+    i0 disposed
+    i2 disposed
+    i3 disposed
+    i4 disposed
+    i7 disposed
+tree 23:
+  f0
+  f0 0+all
+  = values [+0x14 * 2^0, +0x27 * 2^0, +0x1F * 2^0, +0x24 * 2^0, -0x32 * 2^0, +0x0D * 2^0]
+  dispose:
+    f0 disposed
+tree 24:
+  *s2=1(/2(Take7(zip-(Take7(i0), Take7(i1)))))
+  i0 0+6
+  i1 0+6
+  s2=1
+  = values [0, 0, 0, 0, 0, 0]
+  dispose:
+    i0 disposed
+    i1 disposed
+tree 25:
+  Or(LessThanOrEqual(i0, Where(Take7(zip+(i1, i2)), LessThanOrEqual(+s4=1(i3), s5=0))), GreaterThan(Take7(+s7=1(Take6(i6))), s8=2))
+  i0 0+all
+  i3 0+6
+  s4=1
+  s5=0
+  i1 0+6
+  i2 0+6
+  i6 0+6
+  s7=1
+  s8=2
+  = flags [1, 1, 1, 1, 1, 1]
+  dispose:
+    i0 disposed
+    i1 disposed
+    i2 disposed
+    i3 disposed
+    i6 disposed
+tree 26:
+  Skip1(f0)
+  f0 1+5
+  = values [-0x28 * 2^0, -0x23 * 2^0, +0x2A * 2^0, +0x6 * 2^0, +0x17 * 2^0]
+  dispose:
+    f0 disposed
+tree 27:
+  +s2=2(Take7(Take6(Take6(zip-(i0, i1)))))
+  i0 0+6
+  i1 0+6
+  s2=2
+  = into target: [-8, -8, -8, -8, -8, -8]
+  dispose:
+    i0 disposed
+    i1 disposed
+tree 28:
+  And(Or(NotEqual(/2(+s1=2(i0)), s2=0), Not(And(GreaterThan(i3, s4=0), Equal(i5, s6=2)))), And(And(LessThan(zip-(i7, i8), s9=1), NotEqual(Take7(i10), s11=1)), Equal(Take6(zip+(i12, i13)), i14)))
+  i0 0+6
+  s1=2
+  s2=0
+  i3 0+all
+  s4=0
+  i5 0+all
+  s6=2
+  i7 0+6
+  i8 0+6
+  s9=1
+  i10 0+6
+  s11=1
+  i12 0+6
+  i13 0+6
+  i14 0+all
+  = flags [0, 0, 0, 0, 0, 0]
+  dispose:
+    i0 disposed
+    i3 disposed
+    i5 disposed
+    i7 disposed
+    i8 disposed
+    i10 disposed
+    i12 disposed
+    i13 disposed
+    i14 disposed
+tree 29:
+  /2(zip-(Take7(Take7(+c0(f0))), +c0(Take6(Take6(f1)))))
+  f0 0+6
+  f1 0+6
+  = values [+0x0800000000000000000000000000000000000000000000000 * 2^-189, -0x0F00000000000000000000000000000000000000000000000 * 2^-189, -0x0880000000000000000000000000000000000000000000000 * 2^-188, -0x0D40000000000000000000000000000000000000000000000 * 2^-187, +0x0D40000000000000000000000000000000000000000000000 * 2^-187, +0x0800000000000000000000000000000000000000000000000 * 2^-189]
+  dispose:
+    f0 disposed
+    f1 disposed
+tree 30:
+  Where(-s5=2(Take7(Where(Where(i0, LessThanOrEqual(i1, s2=2)), Equal(i3, s4=2)))), Or(LessThan(zip-(zip+(i6, i7), Take6(i8)), +s10=2(Take7(i9))), LessThan(/2(/1(i11)), +s13=1(Take4(i12)))))
+  i6 0+6
+  i7 0+6
+  i8 0+6
+  i9 0+6
+  s10=2
+  ! ArgumentException: Lengths must match
+  dispose:
+    i0 disposed
+    i1 disposed
+    i3 disposed
+    i6 disposed
+    i7 disposed
+    i8 disposed
+    i9 disposed
+    i11 disposed
+    i12 disposed
+tree 31:
+  LessThan(-s2=0(+s1=1(/3(Skip5(i0)))), s3=1)
+  i0 5+1
+  s1=1
+  s2=0
+  s3=1
+  = flags [0]
+  dispose:
+    i0 disposed
+tree 32:
+  Take7(/1(zip-(/3(f0), f1)))
+  f0 0+6
+  f1 0+6
+  = values [+0x0 * 2^0, +0x08000000000000000000000000000000000000000 * 2^-154, +0x0D555555558000000000000000000000000000000 * 2^-155, -0x0D555555560000000000000000000000000000000 * 2^-157, -0x09555555560000000000000000000000000000000 * 2^-156, -0x08555555558000000000000000000000000000000 * 2^-155]
+  dispose:
+    f0 disposed
+    f1 disposed
+tree 33:
+  Take6(i0)
+  i0 0+6
+  = values [-41, 21, 35, -6, -18, -20]
+  dispose:
+    i0 disposed
+tree 34:
+  And(LessThan(Where(zip-(+s1=0(Skip6(i0)), zip+(Take0(i2), Take0(i3))), Or(GreaterThanOrEqual(Skip6(i4), s5=0), Equal(Skip6(i6), s7=2))), Skip1(Skip3(Where(Skip2(i8), Equal(Skip2(i9), s10=1))))), Or(And(GreaterThanOrEqual(shared(Take3(i11)).Skip(3) zip- .Take(0), +s13=2(Take0(i12))), And(Equal(Take0(i14), s15=1), NotEqual(Take0(i16), s17=2))), Or(And(LessThan(Skip6(i18), s19=2), Equal(Skip6(i20), s21=1)), And(LessThanOrEqual(Take0(i22), s23=2), NotEqual(Skip6(i24), s25=1)))))
+  s13=2
+  s15=1
+  s17=2
+  s19=2
+  s21=1
+  s23=2
+  s25=1
+  = flags []
+  dispose:
+    i0 disposed
+    i2 disposed
+    i3 disposed
+    i4 disposed
+    i6 disposed
+    i8 disposed
+    i9 disposed
+    i11 disposed
+    i11 disposed
+    i12 disposed
+    i14 disposed
+    i16 disposed
+    i18 disposed
+    i20 disposed
+    i22 disposed
+    i24 disposed
+tree 35:
+  *c2(*c2(/1(+c0(Where(f0, GreaterThan(f1, c2))))))
+  f1 0+all
+  f0 0+all
+  = values [+0x0 * 2^-154]
+  dispose:
+    f0 disposed
+    f1 disposed
+tree 36:
+  Take6(+s3=2(zip+(/3(-s1=0(i0)), Take7(/2(i2)))))
+  i0 0+6
+  s1=0
+  i2 0+6
+  s3=2
+  = into target: [-2, 20, 24, 13, 32, 15]
+  dispose:
+    i0 disposed
+    i2 disposed
+tree 37:
+  Not(Not(And(Or(Equal(i0, s1=0), GreaterThan(Take3(i2), s3=2)), Equal(/2(i4), Skip4(Take5(i5))))))
+  ! ArgumentException: Lengths must match
+  dispose:
+    i0 disposed
+    i2 disposed
+    i4 disposed
+    i5 disposed
+tree 38:
+  +c0(/2(/1(f0)))
+  f0 0+6
+  = values [+0x440000000 * 2^-31, +0x0800000000 * 2^-31, -0x0800000000 * 2^-32, +0x0A80000000 * 2^-31, -0x580000000 * 2^-32, +0x0D40000000 * 2^-31]
+  dispose:
+    f0 disposed
+tree 39:
+  zip+(-s4=1(*s3=1(zip-(*s1=0(Take2(i0)), /1(Skip4(i2))))), -s6=0(shared(Skip2(i5)).Skip(2) zip- .Take(2)))
+  i0 0+2
+  s1=0
+  i2 4+2
+  s3=1
+  s4=1
+  i5 4+2
+  i5 2+2
+  s6=0
+  = window 0+2: [957, 1737]
+  dispose:
+    i0 disposed
+    i2 disposed
+    i5 disposed
+    i5 disposed
+tree 40:
+  Or(GreaterThan(zip-(zip-(Where(i0, Equal(i1, s2=0)), zip-(i3, i4)), Take4(Take4(i5))), zip+(*s8=2(-s7=1(i6)), +s10=1(Take6(i9)))), NotEqual(-s12=1(Take6(i11)), s13=2))
+  i1 0+all
+  s2=0
+  i0 0+all
+  i3 0+6
+  i4 0+6
+  i5 0+4
+  ! ArgumentException: Vector lengths must match for Zip operations.
+  dispose:
+    i0 disposed
+    i1 disposed
+    i3 disposed
+    i4 disposed
+    i5 disposed
+    i6 disposed
+    i9 disposed
+    i11 disposed
+tree 41:
+  f0
+  f0 0+all
+  = values [-0x1E * 2^0, +0x10 * 2^0, -0x0B * 2^0, +0x2 * 2^0, +0x14 * 2^0, +0x0B * 2^0]
+  dispose:
+    f0 disposed
+tree 42:
+  Where(*s1=2(Take1(i0)), LessThan(Take1(Take7(Take7(i2))), +s6=1(Where(Skip5(i3), Equal(Take1(i4), s5=0)))))
+  i2 0+1
+  i4 0+1
+  s5=0
+  i3 5+1
+  s6=1
+  i0 0+1
+  s1=2
+  = window 0+0: []
+  dispose:
+    i0 disposed
+    i2 disposed
+    i3 disposed
+    i4 disposed
+tree 43:
+  And(Or(Or(LessThan(-s1=0(i0), zip-(i2, Take2(i3))), LessThanOrEqual(Take6(i4), -s6=1(i5))), NotEqual(-s10=0(Where(i7, LessThanOrEqual(i8, s9=2))), /1(*s12=0(i11)))), Equal(zip+(Where(zip-(i13, i14), GreaterThan(i15, s16=2)), -s19=2(+s18=2(i17))), zip-(Take7(Take6(i20)), -s22=0(Take7(i21)))))
+  i0 0+6
+  s1=0
+  i2 0+6
+  i3 0+2
+  ! ArgumentException: Vector lengths must match for Zip operations.
+  dispose:
+    i0 disposed
+    i2 disposed
+    i3 disposed
+    i4 disposed
+    i5 disposed
+    i7 disposed
+    i8 disposed
+    i11 disposed
+    i13 disposed
+    i14 disposed
+    i15 disposed
+    i17 disposed
+    i20 disposed
+    i21 disposed
+tree 44:
+  /2(Take7(Take6(zip-(zip-(f0, f1), Where(f2, GreaterThan(f3, c0))))))
+  f0 0+6
+  f1 0+6
+  f3 0+all
+  f2 0+all
+  = values [-0x09E0000000000000000000000000000000000000000000000 * 2^-186]
+  dispose:
+    f0 disposed
+    f1 disposed
+    f2 disposed
+    f3 disposed
+tree 45:
+  +s2=0(*s1=1(/3(Take7(i0))))
+  i0 0+6
+  s1=1
+  s2=0
+  = into target: [35, -34, 53, 53, 2, -40]
+  dispose:
+    i0 disposed
+tree 46:
+  And(NotEqual(Take7(/2(zip+(i0, i1))), s2=0), And(And(Not(GreaterThan(i3, s4=0)), Not(LessThan(i5, s6=0))), NotEqual(-s9=0(zip-(i7, i8)), Take7(zip+(i10, i11)))))
+  i0 0+6
+  i1 0+6
+  s2=0
+  i3 0+all
+  s4=0
+  i5 0+all
+  s6=0
+  i7 0+6
+  i8 0+6
+  s9=0
+  i10 0+6
+  i11 0+6
+  = flags [0, 0, 0, 0, 0, 0]
+  dispose:
+    i0 disposed
+    i1 disposed
+    i3 disposed
+    i5 disposed
+    i7 disposed
+    i8 disposed
+    i10 disposed
+    i11 disposed
+tree 47:
+  Where(+c0(zip-(/3(zip-(Take4(f0), Skip2(f1))), Take1(f2))), GreaterThan(zip-(zip-(/2(Where(Skip2(f3), GreaterThan(Skip2(f4), c1))), zip-(Where(Take4(f5), GreaterThan(Take4(f6), c2)), +c2(Skip2(f7)))), Skip1(*c0(/3(Take5(f8))))), c2))
+  f4 2+4
+  f3 2+4
+  f6 0+4
+  f5 0+4
+  f7 2+4
+  ! NotSupportedException: Both vectors were filtered by different Where calls, so their lengths are known only on the device. Combine the predicates into one Where (p.And(q)).
+  dispose:
+    f0 disposed
+    f1 disposed
+    f2 disposed
+    f3 disposed
+    f4 disposed
+    f5 disposed
+    f6 disposed
+    f7 disposed
+    f8 disposed

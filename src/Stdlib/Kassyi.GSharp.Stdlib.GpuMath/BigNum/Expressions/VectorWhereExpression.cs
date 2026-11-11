@@ -7,14 +7,14 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// </summary>
 internal class VectorWhereExpression(
     [TakesOwnership] IGpuBigIntVectorExpression source,
-    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression, IDeviceCountedVector
+    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression, IIntVectorOperator
 {
     public int Length => DeviceCounted.KnownLength(this);
 
-    public int Capacity => source.Capacity;
+    public int Capacity { get; } = source.Capacity;
 
-    public int WordsPerElement => source.WordsPerElement;
-    public long BitsPerElement => source.BitsPerElement;
+    public int WordsPerElement { get; } = source.WordsPerElement;
+    public long BitsPerElement { get; } = source.BitsPerElement;
 
     // The selected elements, the scan of the predicates, the count word and the block sums of the scan: owned here and
     // reused, so that an evaluation allocates nothing after the first
@@ -26,46 +26,60 @@ internal class VectorWhereExpression(
         return false;
     }
 
-    public VectorEvaluation EvaluateCore(GpuWorkspace workspace, int elementOffset, int? elementCount,
-        GpuBigUIntArrayView targetResult)
+    public int OperandCount => 2;
+
+    // The predicate first: when the source and the predicate read one shared sub-expression at different offsets
+    // (e.Skip(1).Where(e.Take(3).IsGreaterThan(x))), the later evaluation overwrites that node's cache. The flags
+    // are in the predicate's own buffer, which a source evaluation leaves as it is (a bool vector is always read
+    // over its whole length, so evaluating a shared bool node again writes the same flags); the source evaluated
+    // second keeps its values.
+    public object GetOperand(int index) => index == 0 ? predicate : source;
+
+    // Released in the order of the node: the source, then the predicate
+    public object GetInput(int index) => index == 0 ? source : predicate;
+
+    public void Enter(in VectorRequest request) =>
+        WhereDeviceState.ThrowIfCannotSelect(VectorResultCache.HasTarget(request.Target.Words), Capacity, predicate);
+
+    // An empty vector evaluates nothing
+    public bool EvaluatesOperands(in VectorRequest request) => Capacity != 0;
+
+    // The source and the predicate are read whole; the selection is cut to the window
+    public VectorRequest OperandRequest(in VectorRequest request) => VectorRequest.Whole;
+
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second)
     {
-        var capacity = Capacity;
-        WhereDeviceState.ThrowIfCannotSelect(VectorResultCache.HasTarget(targetResult), capacity, predicate);
-        if (capacity == 0)
+        if (Capacity == 0)
         {
-            return new VectorEvaluation(VectorResultCache.EmptySigned(workspace, WordsPerElement),
-                DeviceElementCount.Static(0));
+            return VectorResult.Of(new VectorEvaluation(VectorResultCache.EmptySigned(workspace, WordsPerElement),
+                DeviceElementCount.Static(0)));
         }
 
-        // The predicate first: when the source and the predicate read one shared sub-expression at different offsets
-        // (e.Skip(1).Where(e.Take(3).IsGreaterThan(x))), the later evaluation overwrites that node's cache. The flags
-        // are in the predicate's own buffer, which a source evaluation leaves as it is (a bool vector is always read
-        // over its whole length, so evaluating a shared bool node again writes the same flags); the source evaluated
-        // second keeps its values.
-        var predicates = DeviceCounted.Evaluate(predicate, workspace);
-        var evaluatedSource = DeviceCounted.Evaluate(source, workspace);
+        var evaluatedSource = second.Int;
         var selected = _state.Select<IntVectorResultKind, GpuBigIntArrayView>(workspace, evaluatedSource.Storage,
-            evaluatedSource.Count, predicates, capacity, WordsPerElement, elementOffset, elementCount, out var count);
-        return new VectorEvaluation(selected, count);
+            evaluatedSource.Count, first.Bool, Capacity, WordsPerElement, request.Offset, request.Count,
+            out var count);
+        return VectorResult.Of(new VectorEvaluation(selected, count));
     }
 
-    public void Dispose()
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        // A release that throws does not skip the others
-        try
+        Enter(request);
+        if (!EvaluatesOperands(request))
         {
-            _state.Dispose();
+            return Apply(workspace, request, default, default);
         }
-        finally
-        {
-            try
-            {
-                source.Dispose();
-            }
-            finally
-            {
-                predicate.Dispose();
-            }
-        }
+
+        var operandRequest = OperandRequest(request);
+        var first = VectorWalk.EvaluateDirect(predicate, workspace, operandRequest, level);
+        var second = VectorWalk.EvaluateDirect(source, workspace, operandRequest, level);
+        return Apply(workspace, request, first, second);
     }
+
+    public void DisposeOwn() => _state.Dispose();
+
+    public void Dispose() => VectorWalk.Dispose(this);
 }

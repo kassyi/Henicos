@@ -3,133 +3,127 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal class VectorLogicalExpression(
     [TakesOwnership] IGpuBoolVectorExpression left,
     [TakesOwnership] IGpuBoolVectorExpression right,
-    bool isAnd) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
+    bool isAnd) : IGpuBoolVectorExpression, IBoolVectorOperator
 {
-    public int Length => left.Length;
-    public int Capacity => left.Capacity;
-    private GpuBigUIntArray _finalValues;
-    private bool _allocated;
+    private readonly VectorShape _shape = VectorShape.Of(left);
 
-    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+    // The capacity of the right input, for the length check before anything is evaluated
+    private readonly int _rightCapacity = right.Capacity;
 
-    // The flags of the capacity; both inputs have the same count, or one of them a device count (design J4)
-    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
+    // The flags, allocated at the first evaluation
+    private readonly VectorFlags _flags = new();
+
+    public int Length => _shape.Length;
+    public int Capacity => _shape.Capacity;
+
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
+
+    public int OperandCount => 2;
+
+    public object GetOperand(int index) => index == 0 ? left : right;
+
+    // The lengths are checked before the inputs are evaluated, so that a rejected request evaluates nothing
+    public void Enter(in VectorRequest request) =>
+        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, "Lengths must match");
+
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
+        VectorResult.Of(Apply(workspace, first.Bool, second.Bool));
+
+    // The flags of the capacity; both inputs have the same count, or one of them a device count
+    private BoolVectorEvaluation Apply(GpuWorkspace workspace, BoolVectorEvaluation leftResult,
+        BoolVectorEvaluation rightResult)
     {
-        if (left.Capacity != right.Capacity)
-        {
-            throw new ArgumentException("Lengths must match");
-        }
-
-        var leftResult = DeviceCounted.Evaluate(left, workspace);
-        var rightResult = DeviceCounted.Evaluate(right, workspace);
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
-
-        var capacity = Capacity;
-        if (!_allocated)
-        {
-            _finalValues = new GpuBigUIntArray(workspace, capacity, 1);
-            _allocated = true;
-        }
+        var flags = _flags.Get(workspace, Capacity);
 
         // And / Or of empty vectors launches nothing: a grid of 0 blocks is an invalid launch.
-        if (capacity == 0)
+        if (Capacity > 0)
         {
-            return new BoolVectorEvaluation(_finalValues, count);
+            Launch(workspace, leftResult.Flags, rightResult.Flags, flags);
         }
 
-        var gridDimX = (capacity + 255) / 256;
-        var blockDimX = 256;
+        return new BoolVectorEvaluation(flags, count);
+    }
 
+    private void Launch(GpuWorkspace workspace, GpuBigUIntArrayView leftFlags, GpuBigUIntArrayView rightFlags,
+        GpuBigUIntArray flags)
+    {
+        var gridDimX = (uint)((Capacity + 255) / 256);
         if (isAnd)
         {
-            GpuBigIntCmpKernels.LaunchVectorAndKernelPtr(
-                leftResult.Flags.ToProxy(),
-                rightResult.Flags.ToProxy(),
-                _finalValues.ToProxy(),
-                capacity,
-                (uint)gridDimX, 1, 1,
-                (uint)blockDimX, 1, 1,
-                0, workspace.Stream);
+            GpuBigIntCmpKernels.LaunchVectorAndKernelPtr(leftFlags.ToProxy(), rightFlags.ToProxy(), flags.ToProxy(),
+                Capacity, gridDimX, 1, 1, 256, 1, 1, 0, workspace.Stream);
         }
         else
         {
-            GpuBigIntCmpKernels.LaunchVectorOrKernelPtr(
-                leftResult.Flags.ToProxy(),
-                rightResult.Flags.ToProxy(),
-                _finalValues.ToProxy(),
-                capacity,
-                (uint)gridDimX, 1, 1,
-                (uint)blockDimX, 1, 1,
-                0, workspace.Stream);
+            GpuBigIntCmpKernels.LaunchVectorOrKernelPtr(leftFlags.ToProxy(), rightFlags.ToProxy(), flags.ToProxy(),
+                Capacity, gridDimX, 1, 1, 256, 1, 1, 0, workspace.Stream);
         }
-
-        return new BoolVectorEvaluation(_finalValues, count);
     }
 
-    public void Dispose()
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        if (_allocated)
-        {
-            _finalValues.Dispose();
-            _allocated = false;
-        }
+        Enter(request);
 
-        left.Dispose();
-        right.Dispose();
+        var first = VectorWalk.EvaluateDirect(left, workspace, VectorRequest.Whole, level);
+        var second = VectorWalk.EvaluateDirect(right, workspace, VectorRequest.Whole, level);
+        return Apply(workspace, request, first, second);
     }
+
+    public void DisposeOwn() => _flags.Dispose();
+
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 internal class VectorNotExpression([TakesOwnership] IGpuBoolVectorExpression source)
-    : IGpuBoolVectorExpression, IDeviceCountedBoolVector
+    : IGpuBoolVectorExpression, IBoolVectorOperator
 {
-    public int Length => source.Length;
-    public int Capacity => source.Capacity;
-    private GpuBigUIntArray _finalValues;
-    private bool _allocated;
+    private readonly VectorShape _shape = VectorShape.Of(source);
 
-    public bool TryGetLength(out int length) => source.TryGetLength(out length);
+    // The flags, allocated at the first evaluation
+    private readonly VectorFlags _flags = new();
 
-    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
+    public int Length => _shape.Length;
+    public int Capacity => _shape.Capacity;
+
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
+
+    public int OperandCount => 1;
+
+    public object GetOperand(int index) => source;
+
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
+        VectorResult.Of(Apply(workspace, first.Bool));
+
+    private BoolVectorEvaluation Apply(GpuWorkspace workspace, BoolVectorEvaluation result)
     {
-        var result = DeviceCounted.Evaluate(source, workspace);
-
-        var capacity = Capacity;
-        if (!_allocated)
-        {
-            _finalValues = new GpuBigUIntArray(workspace, capacity, 1);
-            _allocated = true;
-        }
+        var flags = _flags.Get(workspace, Capacity);
 
         // Not of empty vectors launches nothing: a grid of 0 blocks is an invalid launch.
-        if (capacity == 0)
+        if (Capacity > 0)
         {
-            return new BoolVectorEvaluation(_finalValues, result.Count);
+            GpuBigIntCmpKernels.LaunchVectorNotKernelPtr(result.Flags.ToProxy(), flags.ToProxy(), Capacity,
+                (uint)((Capacity + 255) / 256), 1, 1, 256, 1, 1, 0, workspace.Stream);
         }
 
-        var gridDimX = (capacity + 255) / 256;
-        var blockDimX = 256;
-
-        GpuBigIntCmpKernels.LaunchVectorNotKernelPtr(
-            result.Flags.ToProxy(),
-            _finalValues.ToProxy(),
-            capacity,
-            (uint)gridDimX, 1, 1,
-            (uint)blockDimX, 1, 1,
-            0, workspace.Stream);
-
-        return new BoolVectorEvaluation(_finalValues, result.Count);
+        return new BoolVectorEvaluation(flags, result.Count);
     }
 
-    public void Dispose()
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        if (_allocated)
-        {
-            _finalValues.Dispose();
-            _allocated = false;
-        }
-
-        source.Dispose();
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(source, workspace, VectorRequest.Whole, level),
+            default);
     }
+
+    public void DisposeOwn() => _flags.Dispose();
+
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 /// <summary>

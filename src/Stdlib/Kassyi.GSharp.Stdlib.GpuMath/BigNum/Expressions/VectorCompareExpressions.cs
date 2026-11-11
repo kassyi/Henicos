@@ -3,50 +3,47 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 internal class VectorCompareScalarExpression(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar,
-    VectorCompareOperator opType) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
+    VectorCompareOperator opType) : IGpuBoolVectorExpression, IBoolVectorOperator
 {
-    public int Length => vector.Length;
-    public int Capacity => vector.Capacity;
-    private GpuBigUIntArray _finalValues;
-    private bool _allocated;
+    private readonly VectorShape _shape = VectorShape.Of(vector);
 
-    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+    // The flags, allocated at the first evaluation
+    private readonly VectorFlags _flags = new();
+
+    public int Length => _shape.Length;
+    public int Capacity => _shape.Capacity;
+
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
+
+    public int OperandCount => 1;
+
+    public object GetOperand(int index) => vector;
+
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
+        VectorResult.Of(Apply(workspace, first.Int));
 
     // The flags of the capacity; the elements are the first Count of them, as for the input
-    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
+    private BoolVectorEvaluation Apply(GpuWorkspace workspace, VectorEvaluation vecResult)
     {
-        var vecResult = DeviceCounted.Evaluate(vector, workspace);
         var scalarResult = scalar.Evaluate(workspace);
         try
         {
-            var capacity = Capacity;
-            if (!_allocated)
-            {
-                _finalValues = new GpuBigUIntArray(workspace, capacity, 1);
-                _allocated = true;
-            }
+            var flags = _flags.Get(workspace, Capacity);
 
             // The scalar is read with its own word count and sign: it may be narrower or wider than the elements, and
             // it may be a view into a larger buffer whose following words are not 0.
             var ctx = new GpuBigIntCmpKernels.AotContexts.VectorCompare
             {
                 Left = VectorCompareLaunch.Operand(vecResult.Storage),
-                Right = new GpuBigIntCmpKernels.AotContexts.SignedCompareOperand
-                {
-                    Limbs = scalarResult.Value.ToProxy(),
-                    Signs = default,
-                    NumWords = scalarResult.Value.NumWords,
-                    Stride = 0,
-                    ScalarSign = scalarResult.IsNegative ? 1u : 0u
-                },
-                Result = _finalValues.ToProxy(),
+                Right = VectorCompareLaunch.Scalar(scalarResult),
+                Result = flags.ToProxy(),
                 OpType = (int)opType
             };
 
-            VectorCompareLaunch.Launch(workspace, ctx, capacity, vecResult.Storage.WordsPerElement,
+            VectorCompareLaunch.Launch(workspace, ctx, Capacity, vecResult.Storage.WordsPerElement,
                 scalarResult.Value.NumWords);
-
-            return new BoolVectorEvaluation(_finalValues, vecResult.Count);
+            return new BoolVectorEvaluation(flags, vecResult.Count);
         }
         finally
         {
@@ -55,81 +52,116 @@ internal class VectorCompareScalarExpression(
         }
     }
 
-    public void Dispose()
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        if (_allocated)
-        {
-            _finalValues.Dispose();
-            _allocated = false;
-        }
-
-        vector.Dispose();
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(vector, workspace, VectorRequest.Whole, level),
+            default);
     }
+
+    public void DisposeOwn() => _flags.Dispose();
+
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 internal class VectorCompareVectorExpression(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right,
-    VectorCompareOperator opType) : IGpuBoolVectorExpression, IDeviceCountedBoolVector
+    VectorCompareOperator opType) : IGpuBoolVectorExpression, IBoolVectorOperator
 {
-    public int Length => left.Length;
-    public int Capacity => left.Capacity;
-    private GpuBigUIntArray _finalValues;
-    private bool _allocated;
+    private readonly VectorShape _shape = VectorShape.Of(left);
+
+    // The capacity of the right input, for the length check before anything is evaluated
+    private readonly int _rightCapacity = right.Capacity;
+
+    // The flags, allocated at the first evaluation
+    private readonly VectorFlags _flags = new();
 
     // Evaluates the operands so that a shared sub-expression read at two offsets keeps both results
     private readonly VectorOperandPair _operands = new();
 
-    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+    public int Length => _shape.Length;
+    public int Capacity => _shape.Capacity;
 
-    public BoolVectorEvaluation EvaluateCore(GpuWorkspace workspace)
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
+
+    public int OperandCount => 2;
+
+    public object GetOperand(int index) => index == 0 ? left : right;
+
+    // The lengths are checked before the inputs are evaluated, so that a rejected request evaluates nothing
+    public void Enter(in VectorRequest request) =>
+        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, "Lengths must match");
+
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second)
     {
-        if (left.Capacity != right.Capacity)
-        {
-            throw new ArgumentException("Lengths must match");
-        }
+        var leftResult = first.Int;
+        var rightResult = second.Int;
+        _operands.KeepBoth(left, workspace, 0, null, ref leftResult, ref rightResult);
+        return VectorResult.Of(Apply(workspace, leftResult, rightResult));
+    }
 
-        _operands.Evaluate(left, right, workspace, 0, null, out var leftResult, out var rightResult);
+    private BoolVectorEvaluation Apply(GpuWorkspace workspace, VectorEvaluation leftResult,
+        VectorEvaluation rightResult)
+    {
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
-
-        var capacity = Capacity;
-        if (!_allocated)
-        {
-            _finalValues = new GpuBigUIntArray(workspace, capacity, 1);
-            _allocated = true;
-        }
+        var flags = _flags.Get(workspace, Capacity);
 
         // Each side is read with its own stride and word count (the two may differ).
         var ctx = new GpuBigIntCmpKernels.AotContexts.VectorCompare
         {
             Left = VectorCompareLaunch.Operand(leftResult.Storage),
             Right = VectorCompareLaunch.Operand(rightResult.Storage),
-            Result = _finalValues.ToProxy(),
+            Result = flags.ToProxy(),
             OpType = (int)opType
         };
 
-        VectorCompareLaunch.Launch(workspace, ctx, capacity, leftResult.Storage.WordsPerElement,
+        VectorCompareLaunch.Launch(workspace, ctx, Capacity, leftResult.Storage.WordsPerElement,
             rightResult.Storage.WordsPerElement);
-
-        return new BoolVectorEvaluation(_finalValues, count);
+        return new BoolVectorEvaluation(flags, count);
     }
 
-    public void Dispose()
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        if (_allocated)
-        {
-            _finalValues.Dispose();
-            _allocated = false;
-        }
+        Enter(request);
 
-        _operands.Dispose();
-        left.Dispose();
-        right.Dispose();
+        var first = VectorWalk.EvaluateDirect(left, workspace, VectorRequest.Whole, level);
+        var second = VectorWalk.EvaluateDirect(right, workspace, VectorRequest.Whole, level);
+        return Apply(workspace, request, first, second);
     }
+
+    public void DisposeOwn()
+    {
+        // A flag release that throws (a failed capture) does not skip the pair
+        try
+        {
+            _flags.Dispose();
+        }
+        finally
+        {
+            _operands.Dispose();
+        }
+    }
+
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 internal static class VectorCompareLaunch
 {
+    // A scalar side: its own word count and sign, read for every element (stride 0)
+    public static GpuBigIntCmpKernels.AotContexts.SignedCompareOperand Scalar(GpuBigInt scalar) => new()
+    {
+        Limbs = scalar.Value.ToProxy(),
+        Signs = default,
+        NumWords = scalar.Value.NumWords,
+        Stride = 0,
+        ScalarSign = scalar.IsNegative ? 1u : 0u
+    };
+
     public static GpuBigIntCmpKernels.AotContexts.SignedCompareOperand Operand(GpuBigIntArrayView vector) => new()
     {
         Limbs = vector.Values.ToProxy(),

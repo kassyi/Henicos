@@ -28,9 +28,14 @@ internal abstract class VectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression left,
     [TakesOwnership] IGpuBigIntVectorExpression right,
     long bitsPerElement,
-    bool checkConstructorLength = false) : IGpuBigIntVectorExpression, IDeviceCountedVector
+    bool checkConstructorLength = false) : IGpuBigIntVectorExpression, IIntVectorOperator
 {
-    public int Length => left.Length;
+    private readonly VectorShape _shape = VectorShape.Of(left);
+
+    // The capacity of the right input, for the length check of a Zip before anything is evaluated
+    private readonly int _rightCapacity = right.Capacity;
+
+    public int Length => _shape.Length;
     public long BitsPerElement { get; } = bitsPerElement;
     public int WordsPerElement { get; } = BigIntWidths.Words(bitsPerElement);
 
@@ -45,30 +50,43 @@ internal abstract class VectorBinaryVectorExpressionBase(
     /// <summary>Gets whether the kernel reports a zero divisor element (<see cref="ZeroDivisorCheck"/>).</summary>
     protected virtual bool ChecksZeroDivisor => false;
 
-    public int Capacity => left.Capacity;
+    public int Capacity => _shape.Capacity;
 
-    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them
-    public VectorEvaluation EvaluateCore(
-        GpuWorkspace workspace,
-        int elementOffset,
-        int? elementCount,
-        GpuBigUIntArrayView targetResult)
+    public int OperandCount => 2;
+
+    public object GetOperand(int index) => index == 0 ? left : right;
+
+    // The lengths and the target are checked before the inputs are evaluated, so that a rejected request evaluates
+    // nothing
+    public void Enter(in VectorRequest request)
     {
-        if (checkConstructorLength && left.Capacity != right.Capacity)
+        if (checkConstructorLength)
         {
-            throw new ArgumentException("Vector lengths must match for Zip operations.");
+            VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, "Vector lengths must match for Zip operations.");
         }
 
-        var evalCount = elementCount ?? (Capacity - elementOffset);
-        // The target is checked before the children run, so that a rejected target evaluates nothing
-        var targetValues = VectorResultCache.HasTarget(targetResult)
-            ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
-            : default;
+        request.IntTarget(Capacity, WordsPerElement);
+    }
 
-        _operands.Evaluate(left, right, workspace, elementOffset, evalCount, out var leftResult, out var rightResult);
+    // The window of the capacity; the elements are the first Count of them
+    public VectorRequest OperandRequest(in VectorRequest request) => request.WindowOf(Capacity);
 
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second)
+    {
+        var evalCount = request.EvalCount(Capacity);
+        var leftResult = first.Int;
+        var rightResult = second.Int;
+        _operands.KeepBoth(left, workspace, request.Offset, evalCount, ref leftResult, ref rightResult);
+        return VectorResult.Of(Apply(workspace, evalCount, request.IntTarget(Capacity, WordsPerElement), leftResult,
+            rightResult));
+    }
+
+    private VectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigUIntArrayView targetValues,
+        VectorEvaluation leftResult, VectorEvaluation rightResult)
+    {
         if (leftResult.Storage.Length != rightResult.Storage.Length)
         {
             throw new ArgumentException("Vector lengths must match for Zip operations.");
@@ -124,32 +142,32 @@ internal abstract class VectorBinaryVectorExpressionBase(
         VectorZipOperands operands,
         uint gridDimX);
 
-    public void Dispose()
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        Enter(request);
+
+        var operandRequest = OperandRequest(request);
+        var first = VectorWalk.EvaluateDirect(left, workspace, operandRequest, level);
+        var second = VectorWalk.EvaluateDirect(right, workspace, operandRequest, level);
+        return Apply(workspace, request, first, second);
+    }
+
+    public void DisposeOwn()
+    {
+        // A cache release that throws (a failed capture refuses the clear) does not skip the other one
         try
         {
-            try
-            {
-                _cache.Dispose();
-            }
-            finally
-            {
-                _operands.Dispose();
-            }
+            _cache.Dispose();
         }
         finally
         {
-            try
-            {
-                left.Dispose();
-            }
-            finally
-            {
-                right.Dispose();
-            }
+            _operands.Dispose();
         }
     }
+
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 internal sealed class VectorAddVectorExpression(

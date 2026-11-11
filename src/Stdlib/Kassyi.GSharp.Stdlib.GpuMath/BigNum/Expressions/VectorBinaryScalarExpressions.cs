@@ -19,9 +19,11 @@ internal readonly ref struct VectorScalarOperands
 internal abstract class VectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
     [TakesOwnership] IGpuBigIntExpression scalar,
-    long bitsPerElement) : IGpuBigIntVectorExpression, IDeviceCountedVector
+    long bitsPerElement) : IGpuBigIntVectorExpression, IIntVectorOperator
 {
-    public int Length => vector.Length;
+    private readonly VectorShape _shape = VectorShape.Of(vector);
+
+    public int Length => _shape.Length;
     public long BitsPerElement { get; } = bitsPerElement;
     public int WordsPerElement { get; } = BigIntWidths.Words(bitsPerElement);
 
@@ -30,24 +32,28 @@ internal abstract class VectorBinaryScalarExpressionBase(
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
-    public int Capacity => vector.Capacity;
+    public int Capacity => _shape.Capacity;
 
-    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them
-    public VectorEvaluation EvaluateCore(
-        GpuWorkspace workspace,
-        int elementOffset,
-        int? elementCount,
-        GpuBigUIntArrayView targetResult)
+    public int OperandCount => 1;
+
+    public object GetOperand(int index) => vector;
+
+    // The target is checked before the vector is evaluated, so that a rejected target evaluates nothing
+    public void Enter(in VectorRequest request) => request.IntTarget(Capacity, WordsPerElement);
+
+    // The window of the capacity; the elements are the first Count of them
+    public VectorRequest OperandRequest(in VectorRequest request) => request.WindowOf(Capacity);
+
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
+        VectorResult.Of(Apply(workspace, request.EvalCount(Capacity), request.IntTarget(Capacity, WordsPerElement),
+            first.Int));
+
+    private VectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigUIntArrayView targetValues,
+        VectorEvaluation vecResult)
     {
-        var evalCount = elementCount ?? (Capacity - elementOffset);
-        // The target is checked before the children run, so that a rejected target evaluates nothing
-        var targetValues = VectorResultCache.HasTarget(targetResult)
-            ? VectorResultCache.TargetValues(targetResult, evalCount, WordsPerElement)
-            : default;
-
-        var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
         var scalarResult = scalar.Evaluate(workspace);
         try
         {
@@ -123,18 +129,19 @@ internal abstract class VectorBinaryScalarExpressionBase(
         VectorScalarOperands operands,
         uint gridDimX);
 
-    public void Dispose()
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        // A cache release that throws (a failed capture refuses the clear) does not skip the children
-        try
-        {
-            _cache.Dispose();
-        }
-        finally
-        {
-            vector.Dispose();
-        }
+        Enter(request);
+
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(vector, workspace, OperandRequest(request), level),
+            default);
     }
+
+    public void DisposeOwn() => _cache.Dispose();
+
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 internal sealed class VectorMulScalarExpression(
