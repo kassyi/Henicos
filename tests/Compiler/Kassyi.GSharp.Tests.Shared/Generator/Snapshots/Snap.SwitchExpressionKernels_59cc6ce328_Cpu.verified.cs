@@ -971,7 +971,8 @@ output[tid] = input[tid] switch
 {
 0 => 10,
 1 => 20,
-var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched)} + global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.NoDiscardArm(input[tid]);
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
+} + global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.NoDiscardArm(input[tid]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

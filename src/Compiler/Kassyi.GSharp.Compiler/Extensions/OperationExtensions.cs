@@ -9,7 +9,8 @@ internal static class OperationExtensions
     /// Whether <paramref name="operation"/> is classified as a variable in C#: a local, a parameter, <c>this</c> of a
     /// struct, an array element, the result of a call or property that returns by reference, a ref conditional, a field
     /// of a variable (or a static field, or a field of a reference), an element of an inline array variable, or a
-    /// pointer indirection, pointer element or fixed-size buffer element.
+    /// pointer indirection, pointer element or fixed-size buffer element. A constant (a <c>const</c> local or field, an
+    /// enum member) is a value, not a variable.
     /// </summary>
     // [WHY] C# (§12.8.7 Member access) classifies E.F of a struct as a variable only when E is one: a field of a value
     // (MakeCell(j).F, (a = b).F, new S { }.F) is a value, and an in argument of it is a copy, while Roslyn represents both
@@ -17,6 +18,9 @@ internal static class OperationExtensions
     public static bool IsVariable(this IOperation? operation) => operation switch
     {
         null => false,
+        // [WHY] C# classifies a constant as a value (§12.2.1): ref readonly takes a temporary for it (CS9193), and in or
+        // ref of it does not compile (CS8156)
+        ILocalReferenceOperation { Local.IsConst: true } or IFieldReferenceOperation { Field.IsConst: true } => false,
         ILocalReferenceOperation or IParameterReferenceOperation or IInstanceReferenceOperation
             or IArrayElementReferenceOperation => true,
         IFieldReferenceOperation field => field.Field.IsStatic ||

@@ -308,9 +308,18 @@ internal sealed partial class ManagedExecutionRewriter(
             : visited;
     }
 
+    // <arms>, <unmatched arm>,
+    // The comma after the new arm keeps the closing brace on its own line: the body is written through
+    // NormalizeWhitespace, which breaks the line after an arm separator but not after the ) of the throw
     private static SwitchExpressionSyntax AddUnmatchedArm(SwitchExpressionSyntax switchExpression,
-        UnmatchedSwitchArm plan) =>
-        switchExpression.WithArms(switchExpression.Arms.Add(CreateUnmatchedArm(plan)));
+        UnmatchedSwitchArm plan)
+    {
+        var armsAndSeparators = switchExpression.Arms
+            .Add(CreateUnmatchedArm(plan))
+            .GetWithSeparators()
+            .Add(SyntaxFactory.Token(SyntaxKind.CommaToken));
+        return switchExpression.WithArms(SyntaxFactory.SeparatedList<SwitchExpressionArmSyntax>(armsAndSeparators));
+    }
 
     // The exception C# throws when no arm matches (as the lowering
     // of Roslyn does): SwitchExpressionException with the boxed input, without it when the input cannot be boxed (a ref

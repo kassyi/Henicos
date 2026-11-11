@@ -252,7 +252,8 @@ __gsharp_ctx.value = __gsharp_ctx.keys[__gsharp_ctx.tid] switch
 {
 0 => __gsharp_ctx.tid,
 1 => -__gsharp_ctx.tid,
-var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched)};
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
+};
 if (global::Kassyi.GSharp.Core.BlockIndex.X == __gsharp_ctx.slowBlock)
 {
 ulong start = global::Kassyi.GSharp.Core.Gpu.Clock64();
@@ -632,7 +633,8 @@ __gsharp_ctx.value = __gsharp_ctx.keys[__gsharp_ctx.tid] switch
 {
 0 => __gsharp_ctx.tid,
 1 => -__gsharp_ctx.tid,
-var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched)};
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
+};
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -1007,7 +1009,8 @@ __gsharp_ctx.value = __gsharp_ctx.keys[__gsharp_ctx.tid] switch
 {
 0 => __gsharp_ctx.tid,
 1 => -__gsharp_ctx.tid,
-var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched)};
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
+};
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;

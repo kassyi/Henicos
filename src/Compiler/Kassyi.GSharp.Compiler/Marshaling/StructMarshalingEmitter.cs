@@ -16,14 +16,11 @@ internal static class StructMarshalingEmitter
     {
         if (structs.Length > 0)
         {
-            writer.AppendLine(
-                "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
+            using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.Description);
             foreach (var s in structs)
             {
                 writer.Append(s.GetText(isCuda));
             }
-
-            writer.AppendLine("#pragma warning restore CS8500");
         }
     }
 

@@ -13,16 +13,6 @@ internal static class ManagedStateMachineEmitter
     public const string EditorBrowsableNever =
         "[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]";
 
-    // [WHY] An unsafe context or frame is a struct that holds managed references (arrays, the frames of its calls),
-    // and the state machine takes it by pointer, which C# warns about (CS8500). The pointer is sound: the launcher
-    // pins the contexts with fixed for the whole launch, and a frame is a field of its caller's pinned context, so the
-    // GC neither moves them nor loses the references they hold (the launchers suppress the same warning around fixed)
-    private const string PinnedContextWarningDisable =
-        "#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; " +
-        "a frame is a field of a pinned context";
-
-    private const string PinnedContextWarningRestore = "#pragma warning restore CS8500";
-
 #pragma warning disable RS0030 // Final emission of a node; the text is not parsed, compared, or edited afterwards
     // Generated code is left-aligned (transpiler-emission §3), so the normalized source has no indentation
     internal static string ToSource(SyntaxNode node) => node.NormalizeWhitespace(indentation: "").ToFullString();
@@ -223,24 +213,26 @@ internal static class ManagedStateMachineEmitter
         string accessibility,
         bool isUnsafe)
     {
-        writer.AppendLineIf(isUnsafe, PinnedContextWarningDisable);
-        writer.AppendLine(EditorBrowsableNever);
-        AppendDeviceStateMachineSignature(writer, frameName, stateMachineName, methodSymbol, copiedParameters,
-            accessibility, isUnsafe);
-        using (writer.Scope(" {"))
+        // An unsafe frame is taken by pointer (ManagedPointerWarning.PinnedContext)
+        using (writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe))
         {
-            foreach (var localInit in localInits)
+            writer.AppendLine(EditorBrowsableNever);
+            AppendDeviceStateMachineSignature(writer, frameName, stateMachineName, methodSymbol, copiedParameters,
+                accessibility, isUnsafe);
+            using (writer.Scope(" {"))
             {
-                AppendResumeLocal(writer, localInit);
-            }
+                foreach (var localInit in localInits)
+                {
+                    AppendResumeLocal(writer, localInit);
+                }
 
-            AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
-            writer.AppendLine(bodySource);
-            writer.AppendLine(
-                "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
+                AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
+                writer.AppendLine(bodySource);
+                writer.AppendLine(
+                    "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
+            }
         }
 
-        writer.AppendLineIf(isUnsafe, PinnedContextWarningRestore);
         writer.AppendLine();
     }
 
@@ -337,7 +329,9 @@ internal static class ManagedStateMachineEmitter
         string bodySource,
         bool isUnsafe = false)
     {
-        writer.AppendLineIf(isUnsafe, PinnedContextWarningDisable);
+        // An unsafe context is taken by pointer (ManagedPointerWarning.PinnedContext)
+        using var suppression =
+            writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe);
         writer.AppendLine(EditorBrowsableNever);
         EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters, isUnsafe);
         using (writer.Scope(" {"))
@@ -350,8 +344,6 @@ internal static class ManagedStateMachineEmitter
             AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
             writer.AppendLine(bodySource);
         }
-
-        writer.AppendLineIf(isUnsafe, PinnedContextWarningRestore);
     }
 
     // Out parameters become ref: a suspended call returns before it assigns them, and resumed calls must keep previous writes
