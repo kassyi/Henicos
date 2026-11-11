@@ -45,6 +45,26 @@ public class CSharpTypeNameWriterTests
         Assert.Equal(expected, writer.ToString());
     }
 
+    // A keyword name is spelled as C# source spells it, so the generated code that parses the name compiles
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("KeywordGeneric", "global::Names.@class<int>")]
+    [InlineData("KeywordArgument", "global::Names.@class<global::Names.@struct>")]
+    [InlineData("KeywordNamespace", "global::@event.Plain")]
+    public void AppendCsharpTypeName_KeywordName_EscapesTheKeyword(string field, string expected)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendCsharpTypeName(GetFieldType(field));
+
+        Assert.Equal(expected, writer.ToString());
+    }
+
+    // A namespace name is written as it is: callers use it as a metadata name, not as C# source
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void GetFullNamespaceName_KeywordNamespace_KeepsTheName() =>
+        Assert.Equal("event", GetFieldType("KeywordNamespace").ContainingNamespace.GetFullNamespaceName());
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void GetFullNamespaceName_NestedNamespaces_JoinsNamespaceSegments()
