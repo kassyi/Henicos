@@ -46,6 +46,12 @@ public sealed class DedupCommand : IFuzzCommand
         return Execute(options!);
     }
 
+    private static readonly Dictionary<string, FuzzOptionSpec> s_options = FuzzOptionTable.CreateTable(
+        new("--source", FuzzOptionTable.Value(FuzzOptionSetters.ParseSourcePath)),
+        new("--failing-paths", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailingPaths)),
+        new("--failure-kind", FuzzOptionTable.Value(FuzzOptionSetters.ParseFailureKind)),
+        new("--json", FuzzOptionTable.Flag(static v => v.Json = true)));
+
     /// <summary>Parses command-line arguments into a <see cref="DedupCommandOptions"/> record.</summary>
     public static bool TryParseOptions(
         ReadOnlySpan<string> args,
@@ -54,70 +60,24 @@ public sealed class DedupCommand : IFuzzCommand
         out string? error)
     {
         options = null;
-        showHelp = false;
-        error = null;
-
-        string? sourcePath = null;
-        string failingPaths = "Native,Cuda";
-        string failureKind = "CellMismatch";
-        bool json = false;
-
-        for (int i = 0; i < args.Length; i++)
+        var values = new FuzzOptionValues
         {
-            string arg = args[i];
-            switch (arg)
-            {
-                case "--help" or "-h":
-                    showHelp = true;
-                    return true;
+            FailingPaths = "Native,Cuda",
+            FailureKind = "CellMismatch",
+        };
 
-                case "--source":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--source requires a file path.";
-                        return false;
-                    }
-
-                    sourcePath = args[++i];
-                    break;
-
-                case "--failing-paths":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--failing-paths requires a value.";
-                        return false;
-                    }
-
-                    failingPaths = args[++i];
-                    break;
-
-                case "--failure-kind":
-                    if (i + 1 >= args.Length)
-                    {
-                        error = "--failure-kind requires a value.";
-                        return false;
-                    }
-
-                    failureKind = args[++i];
-                    break;
-
-                case "--json":
-                    json = true;
-                    break;
-
-                default:
-                    error = $"Unknown option '{arg}'.";
-                    return false;
-            }
+        if (!FuzzOptionTable.TryParse(args, s_options, values, out showHelp, out error) || showHelp)
+        {
+            return showHelp;
         }
 
-        if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+        if (string.IsNullOrWhiteSpace(values.SourcePath) || !File.Exists(values.SourcePath))
         {
             error = "--source requires an existing .cu.cs file.";
             return false;
         }
 
-        options = new DedupCommandOptions(sourcePath, failingPaths, failureKind, json);
+        options = new DedupCommandOptions(values.SourcePath, values.FailingPaths, values.FailureKind, values.Json);
         return true;
     }
 
