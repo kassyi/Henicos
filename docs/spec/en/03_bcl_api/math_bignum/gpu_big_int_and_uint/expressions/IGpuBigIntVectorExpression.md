@@ -19,7 +19,20 @@ Defines an expression AST node that evaluates to a contiguous array of GPU big i
 public interface IGpuBigIntVectorExpression : IDisposable
 ```
 
-The vector expressions of GpuMath (`Select*`, `Zip*`, `Where`, `Skip`, `Take`, the comparisons and their `And`, `Or`, `Not`, for integer and floating-point vectors alike) can be as deep as the loop that builds them (`v = v.SelectAdd(s)` repeated) on any thread. The first 16 levels are evaluated by recursion, the fastest form for an expression of ordinary depth; the levels below them are walked with explicit stacks instead of the call stack. The inputs of a node are evaluated before the node, in the order the node reads them (the predicate of a `Where` before its source), each over the window the node asks for, and a node checks a caller's target and the lengths of its inputs before any input is evaluated. `Dispose` reaches every node below the root in the same order without recursion; a node that throws does not stop the others. A node reads `Capacity`, `TryGetLength`, `WordsPerElement` and `BitsPerElement` of its inputs once, when it is built.
+The vector expressions of GpuMath (`Select*`, `Zip*`, `Where`, `Skip`, `Take`, the comparisons and their `And`, `Or`,
+`Not`, for integer and floating-point vectors alike) can be as deep as the loop that builds them
+(`v = v.SelectAdd(s)` repeated) on any thread. The first 16 levels are evaluated by recursion, the fastest form for an
+expression of ordinary depth; the levels below them are walked with explicit stacks instead of the call stack. The
+inputs of a node are evaluated before the node, in the order the node reads them (the predicate of a `Where` before its
+source), each over the window the node asks for, and a node checks a caller's target and the lengths of its inputs
+before any input is evaluated.
+
+- **Shape read at construction**: a node reads `Capacity`, `TryGetLength`, `WordsPerElement` and `BitsPerElement` of
+  its inputs once, when it is built. An implementation of the vector interfaces must not change its length once it is
+  the input of another expression.
+- **Dispose**: `Dispose` of an expression releases it and every expression below it, in the order of the inputs and
+  without recursion. A node that throws does not stop the others; one exception is rethrown as it is, several are
+  thrown together in an `AggregateException`.
 
 ## Properties
 

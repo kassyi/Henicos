@@ -20,36 +20,40 @@ internal static class LimitedStack
         }
 
         Exception? failure = null;
-        var thread = new Thread(() =>
-        {
-            GpuKernelLoader.ForceCpuFallback = cpuFallback;
-            GpuKernelLoader.CudaContextScope? scope = null;
-            try
-            {
-                if (!cpuFallback)
-                {
-                    scope = new GpuKernelLoader.CudaContextScope();
-                }
-
-                using var workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
-                body(workspace);
-            }
-            catch (Exception ex)
-            {
-                failure = ex;
-            }
-            finally
-            {
-                scope?.Dispose();
-                GpuKernelLoader.ForceCpuFallback = false;
-            }
-        }, stackSize);
+        var thread = new Thread(() => failure = RunCatching(cpuFallback, body), stackSize);
         thread.Start();
         thread.Join();
 
         if (failure is not null)
         {
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+        }
+    }
+
+    // The body with its own workspace, under the CPU fallback or in a CUDA context of its own; what it threw, or null
+    private static Exception? RunCatching(bool cpuFallback, Action<GpuWorkspace> body)
+    {
+        GpuKernelLoader.ForceCpuFallback = cpuFallback;
+        GpuKernelLoader.CudaContextScope? scope = null;
+        try
+        {
+            if (!cpuFallback)
+            {
+                scope = new GpuKernelLoader.CudaContextScope();
+            }
+
+            using var workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
+            body(workspace);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return ex;
+        }
+        finally
+        {
+            scope?.Dispose();
+            GpuKernelLoader.ForceCpuFallback = false;
         }
     }
 }

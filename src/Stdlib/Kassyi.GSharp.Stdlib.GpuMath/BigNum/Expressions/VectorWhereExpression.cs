@@ -47,12 +47,12 @@ internal class VectorWhereExpression(
     // The source and the predicate are read whole; the selection is cut to the window
     public VectorRequest OperandRequest(in VectorRequest request) => VectorRequest.Whole;
 
-    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
-        in VectorValue second)
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second)
     {
         if (Capacity == 0)
         {
-            return VectorValue.Of(new VectorEvaluation(VectorResultCache.EmptySigned(workspace, WordsPerElement),
+            return VectorResult.Of(new VectorEvaluation(VectorResultCache.EmptySigned(workspace, WordsPerElement),
                 DeviceElementCount.Static(0)));
         }
 
@@ -60,21 +60,10 @@ internal class VectorWhereExpression(
         var selected = _state.Select<IntVectorResultKind, GpuBigIntArrayView>(workspace, evaluatedSource.Storage,
             evaluatedSource.Count, first.Bool, Capacity, WordsPerElement, request.Offset, request.Count,
             out var count);
-        return VectorValue.Of(new VectorEvaluation(selected, count));
+        return VectorResult.Of(new VectorEvaluation(selected, count));
     }
 
     public void DisposeOwn() => _state.Dispose();
 
-    // A release that throws does not skip the others
-    public void Dispose()
-    {
-        try
-        {
-            DisposeOwn();
-        }
-        finally
-        {
-            VectorWalk.DisposeInputs(this);
-        }
-    }
+    public void Dispose() => VectorWalk.Dispose(this);
 }

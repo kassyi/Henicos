@@ -1,32 +1,32 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
-/// The result of a vector node as plain data: <see cref="VectorEvaluation"/>, <see cref="FloatVectorEvaluation"/> or
-/// <see cref="BoolVectorEvaluation"/>, whichever the node produces.
+/// A <see cref="VectorResult"/> as plain data, for the stacks of the walked levels of <see cref="VectorWalk"/>, where a
+/// <see langword="ref struct"/> cannot wait. Converting back gives the same result.
 /// </summary>
-/// <param name="storage">The arrays of the result.</param>
-/// <param name="count">The number of elements of the result.</param>
-/// <param name="lease">Whether the arrays still hold the result.</param>
-internal readonly struct VectorValue(VectorStorage storage, DeviceElementCount count, VectorLease lease = default)
+internal readonly struct VectorValue
 {
-    /// <summary>Gets the result of an integer node.</summary>
-    public VectorEvaluation Int => new(storage.IntArray, count, lease);
+    private readonly StoredView _first;
+    private readonly StoredView _second;
+    private readonly StoredView _third;
+    private readonly DeviceElementCount _count;
+    private readonly VectorLease _lease;
 
-    /// <summary>Gets the result of a floating-point node.</summary>
-    public FloatVectorEvaluation Float => new(storage.FloatArray, count, lease);
+    private VectorValue(StoredView first, StoredView second, StoredView third, DeviceElementCount count,
+        VectorLease lease)
+    {
+        _first = first;
+        _second = second;
+        _third = third;
+        _count = count;
+        _lease = lease;
+    }
 
-    /// <summary>Gets the result of a flag node.</summary>
-    public BoolVectorEvaluation Bool => new(storage.Words, count);
+    /// <summary>Gets the result again.</summary>
+    public VectorResult Result => new(_first.View, _second.View, _third.View, _count, _lease);
 
-    /// <summary>Stores the result of an integer node.</summary>
-    public static VectorValue Of(VectorEvaluation evaluation) =>
-        new(VectorStorage.Of(evaluation.Storage), evaluation.Count, evaluation.Lease);
-
-    /// <summary>Stores the result of a floating-point node.</summary>
-    public static VectorValue Of(FloatVectorEvaluation evaluation) =>
-        new(VectorStorage.Of(evaluation.Storage), evaluation.Count, evaluation.Lease);
-
-    /// <summary>Stores the result of a flag node.</summary>
-    public static VectorValue Of(BoolVectorEvaluation evaluation) =>
-        new(VectorStorage.Of(evaluation.Flags), evaluation.Count);
+    /// <summary>Stores a result.</summary>
+    public static VectorValue Of(VectorResult result) =>
+        new(StoredView.Of(result.First), StoredView.Of(result.Second), StoredView.Of(result.Third), result.Count,
+            result.Lease);
 }

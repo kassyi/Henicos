@@ -44,12 +44,11 @@ internal abstract class VectorBinaryScalarExpressionBase(
     public void Enter(in VectorRequest request) => request.IntTarget(Capacity, WordsPerElement);
 
     // The window of the capacity; the elements are the first Count of them
-    public VectorRequest OperandRequest(in VectorRequest request) =>
-        VectorRequest.Window(request.Offset, request.EvalCount(Capacity));
+    public VectorRequest OperandRequest(in VectorRequest request) => request.WindowOf(Capacity);
 
-    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
-        in VectorValue second) =>
-        VectorValue.Of(Apply(workspace, request.EvalCount(Capacity), request.IntTarget(Capacity, WordsPerElement),
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
+        VectorResult.Of(Apply(workspace, request.EvalCount(Capacity), request.IntTarget(Capacity, WordsPerElement),
             first.Int));
 
     private VectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigUIntArrayView targetValues,
@@ -132,18 +131,7 @@ internal abstract class VectorBinaryScalarExpressionBase(
 
     public void DisposeOwn() => _cache.Dispose();
 
-    // A cache release that throws (a failed capture refuses the clear) does not skip the input
-    public void Dispose()
-    {
-        try
-        {
-            DisposeOwn();
-        }
-        finally
-        {
-            VectorWalk.DisposeInputs(this);
-        }
-    }
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 internal sealed class VectorMulScalarExpression(

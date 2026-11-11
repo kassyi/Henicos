@@ -18,7 +18,7 @@ internal interface IVectorOperator
     /// <returns>The input.</returns>
     object GetOperand(int index);
 
-    /// <summary>Gets a vector input in the order <see cref="VectorWalk.DisposeInputs"/> releases the inputs.</summary>
+    /// <summary>Gets a vector input in the order <see cref="VectorWalk.Dispose"/> releases the inputs.</summary>
     /// <param name="index">0 for the first input released, 1 for the second.</param>
     /// <returns>The input.</returns>
     object GetInput(int index) => GetOperand(index);
@@ -51,11 +51,11 @@ internal interface IVectorOperator
     /// <param name="first">The result of the first input; the default value when the inputs were not evaluated.</param>
     /// <param name="second">The result of the second input; the default value for a node with one input.</param>
     /// <returns>The result of the node.</returns>
-    VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first, in VectorValue second);
+    VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second);
 
     /// <summary>
-    /// Releases what the node itself holds (its result buffers); <see cref="VectorWalk.DisposeInputs"/> releases its
-    /// inputs.
+    /// Releases what the node itself holds (its result buffers); <see cref="VectorWalk.Dispose"/> releases its inputs.
     /// </summary>
     void DisposeOwn();
 }

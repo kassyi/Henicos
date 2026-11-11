@@ -62,26 +62,25 @@ internal abstract class VectorBinaryVectorExpressionBase(
     // nothing
     public void Enter(in VectorRequest request)
     {
-        if (checkConstructorLength && Capacity != _rightCapacity)
+        if (checkConstructorLength)
         {
-            throw new ArgumentException("Vector lengths must match for Zip operations.");
+            VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, "Vector lengths must match for Zip operations.");
         }
 
         request.IntTarget(Capacity, WordsPerElement);
     }
 
     // The window of the capacity; the elements are the first Count of them
-    public VectorRequest OperandRequest(in VectorRequest request) =>
-        VectorRequest.Window(request.Offset, request.EvalCount(Capacity));
+    public VectorRequest OperandRequest(in VectorRequest request) => request.WindowOf(Capacity);
 
-    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
-        in VectorValue second)
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second)
     {
         var evalCount = request.EvalCount(Capacity);
         var leftResult = first.Int;
         var rightResult = second.Int;
         _operands.KeepBoth(left, workspace, request.Offset, evalCount, ref leftResult, ref rightResult);
-        return VectorValue.Of(Apply(workspace, evalCount, request.IntTarget(Capacity, WordsPerElement), leftResult,
+        return VectorResult.Of(Apply(workspace, evalCount, request.IntTarget(Capacity, WordsPerElement), leftResult,
             rightResult));
     }
 
@@ -156,17 +155,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
         }
     }
 
-    public void Dispose()
-    {
-        try
-        {
-            DisposeOwn();
-        }
-        finally
-        {
-            VectorWalk.DisposeInputs(this);
-        }
-    }
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 internal sealed class VectorAddVectorExpression(

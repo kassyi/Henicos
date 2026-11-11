@@ -128,7 +128,7 @@ public sealed class VectorDeepChainTests
     // A zero divisor halfway down a chain of 20000 levels whose scalars are rented (s + s): the division throws, and
     // every buffer leased by the levels below it went back
     // mutant: VectorBinaryScalarExpressions.cs Apply -> without `scalarResult.Dispose()`
-    // mutant: VectorWalk.cs DisposeOrExpand -> without `PushInputs` (the nodes below the inputs keep their buffers)
+    // mutant: ExpressionDisposal.cs Dispose -> without pushing the inputs (the nodes below the root keep their buffers)
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void FailureHalfwayDownADeepChain_ThrowsAndReturnsEveryBuffer() =>
@@ -240,20 +240,19 @@ internal static class VectorChains
 
             // Count evaluates the vector from a scalar node; it owns the vector from here on
             count = e.Count();
-            using var counted = count.Value.Node.Evaluate(workspace);
-            Assert.Equal(3, ToBigInteger(counted));
+            AssertCount(workspace, count.Value, 3);
         }
         finally
         {
-            if (count is { } owner)
-            {
-                owner.Dispose();
-            }
-            else
-            {
-                e.Dispose();
-            }
+            // The count owns the vector once it is built
+            (count is { } owner ? owner : (IDisposable)e).Dispose();
         }
+    }
+
+    private static void AssertCount(GpuWorkspace workspace, GpuBigIntExpr count, int expected)
+    {
+        using var counted = count.Node.Evaluate(workspace);
+        Assert.Equal(expected, ToBigInteger(counted));
     }
 
     public static void HalvedSums(GpuWorkspace workspace, int depth)
@@ -316,21 +315,9 @@ internal static class VectorChains
             {
                 // Mostly true flags, so that both And and Or keep changing the result
                 var j = k % 7 == 0 ? k % 4 : 4;
-                var c = arrays[j].AsVectorizedEnumerable().IsGreaterThan(zero);
                 var useAnd = k % 3 != 0;
-                if (rightDeep)
-                {
-                    b = useAnd ? c.And(b) : c.Or(b);
-                }
-                else
-                {
-                    b = useAnd ? b.And(c) : b.Or(c);
-                }
-                for (var i = 0; i < expected.Length; i++)
-                {
-                    var flag = masks[j][i] > 0;
-                    expected[i] = useAnd ? expected[i] && flag : expected[i] || flag;
-                }
+                b = Combine(b, arrays[j].AsVectorizedEnumerable().IsGreaterThan(zero), useAnd, rightDeep);
+                Combine(expected, masks[j], useAnd);
             }
 
             Assert.Equal(4, b.Capacity);
@@ -340,6 +327,28 @@ internal static class VectorChains
         {
             b.Dispose();
             DisposeAll(arrays);
+        }
+    }
+
+    // b And c or b Or c, with b on the left (left-deep) or on the right (right-deep)
+    private static IGpuBoolVectorExpression Combine(IGpuBoolVectorExpression b, IGpuBoolVectorExpression c, bool useAnd,
+        bool rightDeep)
+    {
+        if (rightDeep)
+        {
+            return useAnd ? c.And(b) : c.Or(b);
+        }
+
+        return useAnd ? b.And(c) : b.Or(c);
+    }
+
+    // The oracle of Combine
+    private static void Combine(bool[] expected, BigInteger[] mask, bool useAnd)
+    {
+        for (var i = 0; i < expected.Length; i++)
+        {
+            var flag = mask[i] > 0;
+            expected[i] = useAnd ? expected[i] && flag : expected[i] || flag;
         }
     }
 

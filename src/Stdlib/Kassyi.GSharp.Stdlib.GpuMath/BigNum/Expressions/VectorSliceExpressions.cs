@@ -30,11 +30,11 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
     public VectorRequest OperandRequest(in VectorRequest request) =>
         new(request.Offset, EffectiveCount(request), request.Target);
 
-    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
-        in VectorValue second) =>
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
         EvaluatesOperands(request)
             ? first
-            : VectorValue.Of(new VectorEvaluation(
+            : VectorResult.Of(new VectorEvaluation(
                 VectorSlice.Empty(workspace, WordsPerElement, request.Target.Words), DeviceElementCount.Static(0)));
 
     // Ensure we do not evaluate beyond the Take boundary; a device count below it is cut by the source's TakeFirst
@@ -46,7 +46,7 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
         // Holds nothing of its own
     }
 
-    public void Dispose() => VectorWalk.DisposeInputs(this);
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 internal static class VectorSlice
@@ -96,11 +96,11 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
     public VectorRequest OperandRequest(in VectorRequest request) =>
         new(request.Offset + _skipCount, request.EvalCount(Capacity), request.Target);
 
-    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
-        in VectorValue second) =>
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
         EvaluatesOperands(request)
             ? first
-            : VectorValue.Of(new VectorEvaluation(
+            : VectorResult.Of(new VectorEvaluation(
                 VectorSlice.Empty(workspace, WordsPerElement, request.Target.Words), DeviceElementCount.Static(0)));
 
     public void DisposeOwn()
@@ -108,5 +108,5 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
         // Holds nothing of its own
     }
 
-    public void Dispose() => VectorWalk.DisposeInputs(this);
+    public void Dispose() => VectorWalk.Dispose(this);
 }

@@ -37,61 +37,10 @@ internal static class SignedTree
     }
 
     // Disposes every node below root that holds resources (a node implemented elsewhere, such as a vector reduction);
-    // the operator nodes of this file hold none. A node that throws does not stop the others; the exceptions are thrown
-    // together at the end.
-    public static void Dispose(ISignedOperator root)
-    {
-        var pending = new PooledStack<IGpuBigIntExpression>();
-        List<Exception>? errors = null;
-        try
-        {
-            pending.Push(root);
-            while (pending.Count > 0)
-            {
-                var node = pending.Pop();
-                DisposeOrExpand(node, ref pending, ref errors);
-            }
-        }
-        finally
-        {
-            pending.Dispose();
-        }
-
-        if (errors is not null)
-        {
-            if (errors.Count == 1)
-            {
-                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(errors[0]).Throw();
-            }
-
-            throw new AggregateException(errors);
-        }
-    }
-
-    // An operator node pushes its operands (right to left, so that the left operand is disposed first, as a recursive
-    // walk did); any other node is disposed, and an exception it throws is collected instead of stopping the walk
-    private static void DisposeOrExpand(IGpuBigIntExpression node, ref PooledStack<IGpuBigIntExpression> pending,
-        ref List<Exception>? errors)
-    {
-        if (node is ISignedOperator op)
-        {
-            for (var i = op.OperandCount - 1; i >= 0; i--)
-            {
-                pending.Push(op.GetOperand(i));
-            }
-
-            return;
-        }
-
-        try
-        {
-            (node as IDisposable)?.Dispose();
-        }
-        catch (Exception ex)
-        {
-            (errors ??= []).Add(ex);
-        }
-    }
+    // the operator nodes of this file hold none. A node that throws does not stop the others; one exception is
+    // rethrown as it is, several together in an AggregateException.
+    public static void Dispose(ISignedOperator root) =>
+        ExpressionDisposal.Dispose<Disposer, IGpuBigIntExpression>(root, default);
 
     // An operand of a host sign plan with its host sign (a device sign, which such a plan does not depend on, as +)
     public static GpuBigInt WithHostSign(SignedValue value) =>
@@ -122,6 +71,24 @@ internal static class SignedTree
         {
             pending.Dispose();
         }
+    }
+
+    // The signed tree for ExpressionDisposal: an operator node holds nothing and has its operands, the left one
+    // disposed first; any other node is disposed whole
+    private readonly struct Disposer : IDisposalTree<IGpuBigIntExpression>
+    {
+        public void Release(IGpuBigIntExpression node)
+        {
+            if (node is not ISignedOperator)
+            {
+                (node as IDisposable)?.Dispose();
+            }
+        }
+
+        public int InputCount(IGpuBigIntExpression node) => node is ISignedOperator op ? op.OperandCount : 0;
+
+        public IGpuBigIntExpression GetInput(IGpuBigIntExpression node, int index) =>
+            ((ISignedOperator)node).GetOperand(index);
     }
 
     // The signed tree for ExpressionWalk: a caller's target narrower than a node is rejected before any operand is

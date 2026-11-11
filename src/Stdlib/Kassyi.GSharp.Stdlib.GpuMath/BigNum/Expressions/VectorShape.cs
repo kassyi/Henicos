@@ -39,6 +39,19 @@ internal readonly struct VectorShape
     public static VectorShape Of(IGpuBoolVectorExpression vector) =>
         new(vector.Capacity, vector.TryGetLength(out var length), length);
 
+    /// <summary>
+    /// Throws when the two inputs of an element-wise node have different capacities; called before either is evaluated,
+    /// so that a rejected node evaluates nothing.
+    /// </summary>
+    /// <exception cref="ArgumentException">The capacities differ.</exception>
+    public static void ThrowIfLengthsDiffer(int leftCapacity, int rightCapacity, string message)
+    {
+        if (leftCapacity != rightCapacity)
+        {
+            throw new ArgumentException(message);
+        }
+    }
+
     /// <summary>The shape after a <c>Where</c>: the same capacity; the number is known only on the device.</summary>
     public VectorShape Filtered() => new(Capacity, false, 0);
 

@@ -22,8 +22,11 @@ internal readonly struct VectorRequest(int offset, int? count, VectorStorage tar
     /// <summary>The whole vector, without a target.</summary>
     public static VectorRequest Whole => default;
 
-    /// <summary>A window without a target.</summary>
-    public static VectorRequest Window(int offset, int? count) => new(offset, count, default);
+    /// <summary>
+    /// The window of this request over a node with <paramref name="capacity"/> elements, without the target: what an
+    /// element-wise node asks of its inputs.
+    /// </summary>
+    public VectorRequest WindowOf(int capacity) => new(Offset, EvalCount(capacity), default);
 
     /// <summary>Gets the number of elements to evaluate of a node with <paramref name="capacity"/> elements.</summary>
     public int EvalCount(int capacity) => Count ?? (capacity - Offset);

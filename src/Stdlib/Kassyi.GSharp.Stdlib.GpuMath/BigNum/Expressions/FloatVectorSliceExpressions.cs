@@ -31,11 +31,11 @@ internal sealed class FloatVectorSkipExpression(
     public VectorRequest OperandRequest(in VectorRequest request) =>
         new(_effectiveSkip + request.Offset, request.EvalCount(Capacity), request.Target);
 
-    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
-        in VectorValue second) =>
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
         EvaluatesOperands(request)
             ? first
-            : VectorValue.Of(new FloatVectorEvaluation(
+            : VectorResult.Of(new FloatVectorEvaluation(
                 FloatVectorSlice.Empty(workspace, WordsPerElement, request.Target.FloatArray),
                 DeviceElementCount.Static(0)));
 
@@ -44,7 +44,7 @@ internal sealed class FloatVectorSkipExpression(
         // Holds nothing of its own
     }
 
-    public void Dispose() => VectorWalk.DisposeInputs(this);
+    public void Dispose() => VectorWalk.Dispose(this);
 }
 
 internal static class FloatVectorSlice
@@ -91,11 +91,11 @@ internal sealed class FloatVectorTakeExpression(
     public VectorRequest OperandRequest(in VectorRequest request) =>
         new(request.Offset, EffectiveCount(request), request.Target);
 
-    public VectorValue Apply(GpuWorkspace workspace, in VectorRequest request, in VectorValue first,
-        in VectorValue second) =>
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
         EvaluatesOperands(request)
             ? first
-            : VectorValue.Of(new FloatVectorEvaluation(
+            : VectorResult.Of(new FloatVectorEvaluation(
                 FloatVectorSlice.Empty(workspace, WordsPerElement, request.Target.FloatArray),
                 DeviceElementCount.Static(0)));
 
@@ -107,5 +107,5 @@ internal sealed class FloatVectorTakeExpression(
         // Holds nothing of its own
     }
 
-    public void Dispose() => VectorWalk.DisposeInputs(this);
+    public void Dispose() => VectorWalk.Dispose(this);
 }
