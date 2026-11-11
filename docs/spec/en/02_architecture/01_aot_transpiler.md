@@ -252,7 +252,8 @@ MyKernels.LaunchProcessPtr(ctx);
 
 When the transpiler is configured to use the `StandardCppDialect` (Standard C++), the generator automatically invokes
 `WriteCpuLauncher`. This process emits a standard `extern "C"` C++ wrapper function named
-`__gsharp_launch_<Namespace>__<Type>__<Kernel>` (e.g., `__gsharp_launch_MyApp__MyKernels__KernelName`). The wrapper
+`__gsharp_launch_<Namespace>__<Type>__<Kernel>` (e.g., `__gsharp_launch_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics`
+for the kernel of [the comprehensive example](03_comprehensive_example.md)). The wrapper
 runs the blocks of the grid in an OpenMP `parallel for` and, inside each block, runs its threads in turn (in rounds of
 a state machine when the kernel has barriers or warp operations). This enables the generated native binary to be
 directly invoked from C# via P/Invoke on CPU-only machines without modifying the host C# API signature.
