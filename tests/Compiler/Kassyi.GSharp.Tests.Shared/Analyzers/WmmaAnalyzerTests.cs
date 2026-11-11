@@ -119,7 +119,14 @@ public class WmmaAnalyzerTests : TranspilerTestBase
         var runResult = driver.GetRunResult();
         Assert.DoesNotContain(runResult.Diagnostics, static d => d.Severity >= DiagnosticSeverity.Warning);
 
-        var generated = string.Join("\n", runResult.GeneratedTrees.Select(static t => t.GetText().ToString()));
-        Assert.Matches(new Regex($@"(?m)^struct __gsharp_ty_\w*__{structName}\r?$"), generated);
+        // The definition line of the struct: struct __gsharp_ty_<namespace>__<name>
+        var lines = runResult.GeneratedTrees
+            .SelectMany(static t => t.GetText().Lines)
+            .Select(static line => line.ToString());
+        Assert.Contains(
+            lines,
+            line => line.StartsWith("struct __gsharp_ty_", StringComparison.Ordinal) &&
+                line.EndsWith("__" + structName, StringComparison.Ordinal)
+        );
     }
 }
