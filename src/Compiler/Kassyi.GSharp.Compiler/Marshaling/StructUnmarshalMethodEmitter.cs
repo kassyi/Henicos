@@ -5,9 +5,9 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class StructUnmarshalMethodEmitter
 {
     internal static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
-        ITranspilerDialect dialect)
+        ITranspilerDialect dialect, IAssemblySymbol launcherAssembly)
     {
-        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout);
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
         writer.Append("public static unsafe void ");
         writer.AppendUnmarshalMethodName(s);
         using (writer.Parentheses())

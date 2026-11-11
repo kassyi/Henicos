@@ -45,7 +45,8 @@ public class IrCoverageTests(ITestOutputHelper output)
         if (expected != actual)
         {
             // The table of this run, to compare with the expected one and copy over it when the change is intended
-            var receivedPath = RepositoryPaths.Combine("tmp", "IrOpaqueCoverage.received.txt");
+            var receivedPath = RepositoryPaths.Combine("tmp",
+                $"IrOpaqueCoverage.{typeof(IrCoverageTests).Assembly.GetName().Name}.received.txt");
             Directory.CreateDirectory(Path.GetDirectoryName(receivedPath) ?? ".");
             File.WriteAllText(receivedPath, actual);
             output.WriteLine("Received table: " + receivedPath);
