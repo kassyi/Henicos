@@ -662,7 +662,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             ManagedVersion: hasManagedVersion,
             DivergentConditionParameters: divergence.ConditionParameters,
             DivergentExitOnlyParameters: divergence.ExitOnlyParameters,
-            HasExitOnlyBarrier: divergence.HasExitOnlyBarrier);
+            HasExitOnlyBarrier: divergence.HasExitOnlyBarrier,
+            ReachesArrivalBarrier: SuspensionAnalysis.ReachesArrivalBarrier(method, compilation));
 
         return new DeviceExportRecord(
             DeviceExportRecord.FunctionKind,

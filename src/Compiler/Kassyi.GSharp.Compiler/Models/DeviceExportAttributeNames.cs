@@ -58,6 +58,7 @@ internal static class DeviceExportAttributeNames
         public const string DivergentConditionParameters = "DivergentConditionParameters";
         public const string DivergentExitOnlyParameters = "DivergentExitOnlyParameters";
         public const string HasExitOnlyBarrier = "HasExitOnlyBarrier";
+        public const string ReachesArrivalBarrier = "ReachesArrivalBarrier";
     }
 
     /// <summary>The names of one dialect's <see cref="DeviceExportRecord.DialectText"/>.</summary>

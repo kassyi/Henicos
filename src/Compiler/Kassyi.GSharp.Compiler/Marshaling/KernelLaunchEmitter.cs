@@ -78,10 +78,17 @@ internal static class KernelLaunchEmitter
         writer.AppendLineIf(kernel.GridScratchSlotBytes > 0, $"{IntPtrType} {DeviceGridScratch} = {IntPtrType}.Zero;");
 
         // [WHY] Taken before anything is allocated: it throws the unconsumed error of an earlier launch whose record
-        // this launch reuses
-        writer.AppendLine(
-            $"uint {LaunchEpoch} = {LaunchErrorRecordsType}.NextLaunchEpoch(" +
-            $"hStream, {(readsOwnRecord ? "true" : "false")});");
+        // this launch reuses. A kernel that waits at a barrier counting a fixed number of arrivals passes its function,
+        // so that a launch captured into a CUDA graph gets an abort word that a node of the graph clears before every
+        // replay
+        writer.Append($"uint {LaunchEpoch} = {LaunchErrorRecordsType}.NextLaunchEpoch");
+        using (writer.Parentheses())
+        {
+            writer.Append($"hStream, {(readsOwnRecord ? "true" : "false")}");
+            writer.AppendIf(kernel.WaitsForArrivals, $", {FunctionHandle}");
+        }
+
+        writer.AppendLine(";");
     }
 
     /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>

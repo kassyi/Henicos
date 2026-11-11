@@ -482,6 +482,7 @@ internal static class DeviceExportEmitter
             AppendIntProperty(writer, AttributeNames.Traits.DivergentExitOnlyParameters,
                 traits.DivergentExitOnlyParameters);
             AppendBoolProperty(writer, AttributeNames.Traits.HasExitOnlyBarrier, traits.HasExitOnlyBarrier);
+            AppendBoolProperty(writer, AttributeNames.Traits.ReachesArrivalBarrier, traits.ReachesArrivalBarrier);
         }
 
         writer.AppendLine("]");

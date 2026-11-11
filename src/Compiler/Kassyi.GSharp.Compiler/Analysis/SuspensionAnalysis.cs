@@ -18,15 +18,23 @@ internal static class SuspensionAnalysis
 {
     // [WHY] Only the queried function is cached: a depth-first walk that stops at an already visited function would
     // record a wrong 'false' for the functions inside a cycle.
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_suspending = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_suspending = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_blockBarrier = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_blockBarrier = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_gridBarrier = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_gridBarrier = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_warpShuffle = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_warpShuffle = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_activeMask = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_activeMask = new();
+
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>>
+        s_arrivalBarrier = new();
 
     // Which barriers a query looks for
     private enum BarrierSet
@@ -44,7 +52,10 @@ internal static class SuspensionAnalysis
         WarpShuffle,
 
         // Warp.ActiveMask()
-        ActiveMask
+        ActiveMask,
+
+        // Gpu.SyncGrid() and the mbarrier intrinsics, which wait for a fixed number of arrivals
+        Arrival
     }
 
     /// <summary>Whether <paramref name="method"/> is a device function that reaches a phase barrier.</summary>
@@ -140,6 +151,32 @@ internal static class SuspensionAnalysis
     }
 
     /// <summary>
+    /// Whether <paramref name="method"/> (a kernel or a device function) reaches a barrier that waits for a fixed
+    /// number of arrivals (<c>Gpu.SyncGrid()</c>, an mbarrier), directly or through device functions it calls.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] A thread that failed and exited never arrives, so the waiters of such a barrier leave on the abort word of
+    /// their launch; a launch captured into a CUDA graph gets a word only when its kernel reaches one
+    /// (<c>LaunchErrorRecords.NextLaunchEpoch</c>). Any mbarrier intrinsic counts: a kernel that initializes or arrives
+    /// at one waits at it too.
+    /// </remarks>
+    public static bool ReachesArrivalBarrier(IMethodSymbol method, Compilation compilation)
+    {
+        var definition = method.OriginalDefinition;
+        if (!TryGetMethodBody(definition, compilation, out _))
+        {
+            return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
+                   imported.Record.Traits.ReachesArrivalBarrier;
+        }
+
+        var cache = s_arrivalBarrier.GetValue(compilation,
+            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
+        return cache.GetOrAdd(definition,
+            m => ReachesBarrier(m, BarrierSet.Arrival, compilation,
+                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
+    }
+
+    /// <summary>
     /// Whether <paramref name="method"/> (a kernel or a device function) reaches <c>Warp.ActiveMask()</c>, directly or
     /// through device functions it calls.
     /// </summary>
@@ -223,6 +260,7 @@ internal static class SuspensionAnalysis
                        BarrierSet.Splitting or BarrierSet.WarpShuffle or BarrierSet.ActiveMask =>
                            imported.Record.Traits.Suspends,
                        BarrierSet.Block => imported.Record.Traits.ReachesBlockBarrier,
+                       BarrierSet.Arrival => imported.Record.Traits.ReachesArrivalBarrier,
                        _ => false
                    };
         }
@@ -261,6 +299,7 @@ internal static class SuspensionAnalysis
             BarrierSet.Grid => intrinsic.Kind == SyncIntrinsicKind.GridBarrier,
             BarrierSet.WarpShuffle => intrinsic.Kind == SyncIntrinsicKind.WarpShuffle,
             BarrierSet.ActiveMask => intrinsic.Shuffle == WarpShuffleKind.ActiveMask,
+            BarrierSet.Arrival => intrinsic.Kind is SyncIntrinsicKind.GridBarrier or SyncIntrinsicKind.AsyncBarrier,
             _ => intrinsic.SplitsStateMachine
         };
 

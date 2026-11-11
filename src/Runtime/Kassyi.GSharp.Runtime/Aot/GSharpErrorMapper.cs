@@ -71,8 +71,10 @@ public struct GSharpDeviceErrorSlot
     public uint Code;
 
     /// <summary>
-    /// The epoch of the launch that recorded the error (<see cref="LaunchErrorRecords.NextLaunchEpoch"/>), or 0 for a
-    /// launch without one, such as a launch captured into a CUDA graph.
+    /// The epoch of the launch that recorded the error
+    /// (<see cref="LaunchErrorRecords.NextLaunchEpoch(IntPtr, bool, IntPtr)"/>; bit 31 set for a launch captured into a
+    /// CUDA graph), or 0 for a captured launch of a kernel that waits at no barrier counting a fixed number of
+    /// arrivals.
     /// </summary>
     public uint Epoch;
 
