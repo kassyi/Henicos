@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Compiler.Transpiler.Dialects;
+using Kassyi.ZeroAlloc.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -48,10 +49,21 @@ public class DialectTests
             var tree = compilation.SyntaxTrees.Single();
             var model = compilation.GetSemanticModel(tree);
 
-            var invocations = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().ToList();
-            var gpuCall = invocations.First(i => i.ToString() == "Gpu.InlinePtx(\"nop;\")");
-            var unqualifiedCall = invocations.First(i => i.ToString() == "InlinePtx(\"nop;\")");
-            var userCall = invocations.First(i => i.ToString() == "Lookalike.InlinePtx(\"nop;\")");
+            var invocations = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().ToArray();
+            var gpuCall = invocations.AsStackEnumerable().First(static i =>
+                i.Expression is MemberAccessExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax { Identifier.ValueText: "Gpu" },
+                    Name.Identifier.ValueText: "InlinePtx"
+                });
+            var unqualifiedCall = invocations.AsStackEnumerable().First(static i =>
+                i.Expression is IdentifierNameSyntax { Identifier.ValueText: "InlinePtx" });
+            var userCall = invocations.AsStackEnumerable().First(static i =>
+                i.Expression is MemberAccessExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax { Identifier.ValueText: "Lookalike" },
+                    Name.Identifier.ValueText: "InlinePtx"
+                });
 
             // Symbol-only check (dialect-agnostic)
             Assert.True(DialectCallSupport.IsInlinePtxCall(gpuCall, model));

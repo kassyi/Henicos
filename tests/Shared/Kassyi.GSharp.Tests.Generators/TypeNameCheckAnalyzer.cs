@@ -183,7 +183,19 @@ public class TypeNameCheckAnalyzer : DiagnosticAnalyzer
 
             var shortName = invocation.Arguments[1].Value.ConstantValue is { HasValue: true, Value: string value }
                 ? value
-                : invocation.Arguments[1].Syntax.ToString();
+                : invocation.Arguments[1].Value switch
+                {
+                    IFieldReferenceOperation field => field.Field.Name,
+                    ILocalReferenceOperation local => local.Local.Name,
+                    IPropertyReferenceOperation prop => prop.Property.Name,
+                    _ => invocation.Arguments[1].Syntax switch
+                    {
+                        IdentifierNameSyntax id => id.Identifier.ValueText,
+                        MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText,
+                        LiteralExpressionSyntax lit => lit.Token.ValueText,
+                        _ => string.Empty
+                    }
+                };
             ReportUnlessChecked(context, invocation.Syntax, shortName);
         }
 
@@ -213,7 +225,7 @@ public class TypeNameCheckAnalyzer : DiagnosticAnalyzer
         {
             if (!ChecksNamespace(EnclosingMember(node)))
             {
-                context.ReportDiagnostic(Diagnostic.Create(NameOnlyTypeCheck, node.GetLocation(), node.ToString(), name));
+                context.ReportDiagnostic(Diagnostic.Create(NameOnlyTypeCheck, node.GetLocation(), node, name));
             }
         }
     }

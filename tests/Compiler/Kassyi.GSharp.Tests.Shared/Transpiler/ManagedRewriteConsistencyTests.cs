@@ -1,5 +1,7 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Extensions;
+using Kassyi.ZeroAlloc.Linq;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
@@ -26,7 +28,7 @@ public class ManagedRewriteConsistencyTests
     [Fact]
     public void Rewrite_FunctionWithoutManagedVersion_RewritesToItsQualifiedBody()
     {
-        var compilation = MegaCompilationCache.Compilation;
+        var compilation = RoslynTestUtility.SharedCompilation;
         var checkedBodies = 0;
         var versions = 0;
         var violations = new List<string>();
@@ -38,14 +40,15 @@ public class ManagedRewriteConsistencyTests
                 continue;
             }
 
-            var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
+            var rewrittenNode = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
                     new ManagedAccessorSet(method, compilation))
-                .Visit(body)?.ToFullString();
-            var qualified = ManagedNameQualifier.Qualify(body, model).ToFullString();
+                .Visit(body);
+            var qualifiedNode = ManagedNameQualifier.Qualify(body, model);
+            var isEquivalent = SyntaxFactory.AreEquivalent(rewrittenNode, qualifiedNode);
             if (ManagedVersionAnalysis.Needs(method, compilation))
             {
                 versions++;
-                if (rewritten == qualified)
+                if (isEquivalent)
                 {
                     violations.Add($"{method}: needs a managed version, but the rewriter changes nothing");
                 }
@@ -59,7 +62,7 @@ public class ManagedRewriteConsistencyTests
             }
 
             checkedBodies++;
-            if (rewritten != qualified)
+            if (!isEquivalent)
             {
                 violations.Add($"{method}: the rewriter changes a body that ManagedRewriteClassifier does not classify");
             }
@@ -76,7 +79,7 @@ public class ManagedRewriteConsistencyTests
     [Fact]
     public void Rewrite_SemanticRewriteCandidates_IsExpandedOperatorMacro()
     {
-        var compilation = MegaCompilationCache.Compilation;
+        var compilation = RoslynTestUtility.SharedCompilation;
         var macros = 0;
         var sequentialSums = 0;
         foreach (var (_, declaration, model) in EnumerateDeviceFunctions(compilation))
@@ -156,28 +159,38 @@ public class ManagedRewriteConsistencyTests
                 new ManagedAccessorSet(method, compilation))
             .Visit(body);
         Assert.NotNull(visited);
-        var rewritten = visited.ToFullString();
+
+        var invocations = visited.DescendantNodes().OfType<InvocationExpressionSyntax>().ToArray();
 
         // All 11 float/double StackEnumerable Sum calls (f0..f5, d0..d4) become SumSequential
-        Assert.Equal(11, CountOccurrences(rewritten, ".SumSequential"));
-        Assert.Contains("StackLinqExtensions.SumSequential<global::Kassyi.ZeroAlloc.Linq.ArrayEnumerator<float>>(", rewritten);
+        var sumSeqCount = invocations.AsStackEnumerable().Count(static inv => IsSumSequential(inv));
+        Assert.Equal(11, sumSeqCount);
+
+        var hasGenericSumSeq = invocations.AsStackEnumerable().Any(static inv =>
+            GetSimpleName(inv.Expression) is GenericNameSyntax
+            {
+                Identifier.ValueText: "SumSequential"
+            } generic && generic.TypeArgumentList.Arguments.Count == 1);
+        Assert.True(hasGenericSumSeq);
 
         // Only the 2 int Sum calls (i0, i1) and 1 ParallelStackEnumerable Sum call (fp) remain .Sum(
-        Assert.Equal(3, CountOccurrences(rewritten, "StackLinqExtensions.Sum("));
+        var sumCount = invocations.AsStackEnumerable().Count(static inv => IsSum(inv));
+        Assert.Equal(3, sumCount);
     }
 
-    private static int CountOccurrences(string text, string pattern)
+    private static bool IsSumSequential(InvocationExpressionSyntax inv) =>
+        GetSimpleName(inv.Expression)?.Identifier.ValueText == "SumSequential";
+
+    private static bool IsSum(InvocationExpressionSyntax inv) =>
+        GetSimpleName(inv.Expression)?.Identifier.ValueText == "Sum";
+
+    private static SimpleNameSyntax? GetSimpleName(ExpressionSyntax expr) => expr switch
     {
-        var count = 0;
-        var index = 0;
-        while ((index = text.IndexOf(pattern, index, StringComparison.Ordinal)) >= 0)
-        {
-            count++;
-            index += pattern.Length;
-        }
-
-        return count;
-    }
+        MemberAccessExpressionSyntax ma => ma.Name,
+        QualifiedNameSyntax qn => qn.Right,
+        SimpleNameSyntax sn => sn,
+        _ => null,
+    };
 
     private static IEnumerable<(IMethodSymbol Method, MethodDeclarationSyntax Declaration, SemanticModel Model)>
         EnumerateDeviceFunctions(Compilation compilation)
