@@ -5,14 +5,17 @@ internal abstract class VectorUnaryExpressionBase(
 {
     private readonly VectorShape _shape = VectorShape.Of(vector);
 
-    private readonly bool _inputMayThrow = VectorEffects.MayThrow(vector);
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(vector);
 
     public int Length => _shape.Length;
     public int WordsPerElement { get; } = vector.WordsPerElement;
 
-    public bool MayThrow => _inputMayThrow || ElementMayThrow;
+    public bool MayThrow => _inputsMayThrow || ElementMayThrow;
 
-    /// <summary>Gets whether the operation can throw for an element (a negative square root, a zero divisor).</summary>
+    /// <summary>
+    /// Gets whether the operation itself can throw for an element (a zero divisor, a negative square root, a value the
+    /// host arithmetic cannot compute).
+    /// </summary>
     protected abstract bool ElementMayThrow { get; }
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept

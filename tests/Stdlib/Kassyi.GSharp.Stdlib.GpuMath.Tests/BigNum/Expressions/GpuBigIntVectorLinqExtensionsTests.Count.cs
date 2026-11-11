@@ -7,48 +7,166 @@ public partial class GpuBigIntVectorLinqExtensionsTests
     private static readonly BigInteger[] s_zeroInTheMiddle = [1, 0, 3];
     private static readonly BigInteger[] s_noZero = [1, 2, 3];
 
-    public static TheoryData<string> CountChains =>
+    // Each chain with its GPU expression, its System.Linq reference over the same elements (BigInteger has no square
+    // root; the contract of SelectSqrt, InvalidOperationException for a negative element, stands in) and whether a
+    // node of it can throw
+    private static readonly CountCase[] s_countCases =
     [
-        "SelectDivide(0)",
-        "SelectModulo(0)",
-        "SelectDivideByUInt32(0)",
-        "SelectDivide(0).Take(2)",
-        "SelectDivide(0).Skip(3)",
-        "SelectDivide(0).Take(0)",
-        "SelectDivide(0).SelectAdd(3)",
-        "ZipAdd(SelectDivide(0))",
-        "ZipDivide(zero in the middle)",
-        "ZipModulo(zero in the middle)",
-        "SelectMultiply(-1).SelectSqrt()",
-        "SelectSqrt()",
-        "SelectDivide(3)",
-        "SelectDivideByUInt32(2)",
-        "ZipDivide(no zero)",
-        "SelectAdd(3).SelectMultiply(3)",
+        new("leaf", static o => o.Values, static () => s_countValues.Length, false),
+        new(
+            "SelectAdd(3).SelectSubtract(3).SelectMultiply(3)",
+            static o => o.Values.SelectAdd(o.Three).SelectSubtract(o.Three).SelectMultiply(o.Three),
+            static () => s_countValues.Select(static x => (x + 3 - 3) * 3).Count(),
+            false
+        ),
+        new(
+            "Take(2).Skip(1)",
+            static o => o.Values.Take(2).Skip(1),
+            static () => s_countValues.Take(2).Skip(1).Count(),
+            false
+        ),
+        new(
+            "ZipAdd(no zero).ZipMultiply(no zero)",
+            static o => o.Values.ZipAdd(o.NoZero).ZipMultiply(o.NoZero),
+            static () => s_countValues
+                .Zip(s_noZero, static (a, b) => a + b)
+                .Zip(s_noZero, static (a, b) => a * b)
+                .Count(),
+            false
+        ),
+        new(
+            "SelectDivideByUInt32(2)",
+            static o => o.Values.SelectDivideByUInt32(2),
+            static () => s_countValues.Select(static x => x / 2u).Count(),
+            false
+        ),
+        new(
+            "SelectDivide(0)",
+            static o => o.Values.SelectDivide(o.Zero),
+            static () => s_countValues.Select(static x => x / 0).Count(),
+            true
+        ),
+        new(
+            "SelectModulo(0)",
+            static o => o.Values.SelectModulo(o.Zero),
+            static () => s_countValues.Select(static x => x % 0).Count(),
+            true
+        ),
+        new(
+            "SelectDivideByUInt32(0)",
+            static o => o.Values.SelectDivideByUInt32(0),
+            static () => s_countValues.Select(static x => x / 0u).Count(),
+            true
+        ),
+        new(
+            "SelectDivide(0).Take(2)",
+            static o => o.Values.SelectDivide(o.Zero).Take(2),
+            static () => s_countValues.Select(static x => x / 0).Take(2).Count(),
+            true
+        ),
+        new(
+            "SelectDivide(0).Skip(3)",
+            static o => o.Values.SelectDivide(o.Zero).Skip(3),
+            static () => s_countValues.Select(static x => x / 0).Skip(3).Count(),
+            true
+        ),
+        new(
+            "SelectDivide(0).Take(0)",
+            static o => o.Values.SelectDivide(o.Zero).Take(0),
+            static () => s_countValues.Select(static x => x / 0).Take(0).Count(),
+            true
+        ),
+        new(
+            "SelectDivide(0).SelectAdd(3)",
+            static o => o.Values.SelectDivide(o.Zero).SelectAdd(o.Three),
+            static () => s_countValues.Select(static x => x / 0).Select(static x => x + 3).Count(),
+            true
+        ),
+        new(
+            "ZipAdd(SelectDivide(0))",
+            static o => o.Values.ZipAdd(o.OtherValues.SelectDivide(o.Zero)),
+            static () => s_countValues.Zip(s_countValues.Select(static x => x / 0), static (a, b) => a + b).Count(),
+            true
+        ),
+        new(
+            "ZipDivide(zero in the middle)",
+            static o => o.Values.ZipDivide(o.ZeroInTheMiddle),
+            static () => s_countValues.Zip(s_zeroInTheMiddle, static (a, b) => a / b).Count(),
+            true
+        ),
+        new(
+            "ZipModulo(zero in the middle)",
+            static o => o.Values.ZipModulo(o.ZeroInTheMiddle),
+            static () => s_countValues.Zip(s_zeroInTheMiddle, static (a, b) => a % b).Count(),
+            true
+        ),
+        new(
+            "SelectMultiply(-1).SelectSqrt()",
+            static o => o.Values.SelectMultiply(o.MinusOne).SelectSqrt(),
+            static () => s_countValues.Select(static x => -x).Select(SqrtContract).Count(),
+            true
+        ),
+        new(
+            "SelectSqrt()",
+            static o => o.Values.SelectSqrt(),
+            static () => s_countValues.Select(SqrtContract).Count(),
+            true
+        ),
+        new(
+            "SelectDivide(3)",
+            static o => o.Values.SelectDivide(o.Three),
+            static () => s_countValues.Select(static x => x / 3).Count(),
+            true
+        ),
+        new(
+            "SelectModulo(3)",
+            static o => o.Values.SelectModulo(o.Three),
+            static () => s_countValues.Select(static x => x % 3).Count(),
+            true
+        ),
+        new(
+            "ZipDivide(no zero)",
+            static o => o.Values.ZipDivide(o.NoZero),
+            static () => s_countValues.Zip(s_noZero, static (a, b) => a / b).Count(),
+            true
+        ),
+        new(
+            "SelectDivide(3).Take(1)",
+            static o => o.Values.SelectDivide(o.Three).Take(1),
+            static () => s_countValues.Select(static x => x / 3).Take(1).Count(),
+            true
+        ),
+        new(
+            "SelectDivide(3).SelectAdd(3)",
+            static o => o.Values.SelectDivide(o.Three).SelectAdd(o.Three),
+            static () => s_countValues.Select(static x => x / 3 + 3).Count(),
+            true
+        ),
+        new(
+            "ZipAdd(no zero.SelectDivide(3))",
+            static o => o.Values.ZipAdd(o.NoZero.SelectDivide(o.Three)),
+            static () => s_countValues.Zip(s_noZero.Select(static x => x / 3), static (a, b) => a + b).Count(),
+            true
+        ),
     ];
+
+    public static TheoryData<CountCase> CountCases => [.. s_countCases];
 
     [Theory]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    [MemberData(nameof(CountChains))]
-    public void Count_Chain_AgreesWithSystemLinqAndEvaluate(string chain)
+    [MemberData(nameof(CountCases))]
+    public void Count_Chain_AgreesWithSystemLinqAndEvaluate(CountCase chain)
     {
-        using var values = CreateArray(s_countValues);
-        using var zeroInTheMiddle = CreateArray(s_zeroInTheMiddle);
-        using var noZero = CreateArray(s_noZero);
-        using var zero = CreateScalar(0);
-        using var three = CreateScalar(3);
-        using var minusOne = CreateScalar(-1);
-        var operands = new CountOperands(values, zeroInTheMiddle, noZero, zero, three, minusOne);
-        IGpuBigIntVectorExpression Build() => BuildCountChain(chain, operands);
+        using var operands = CountOperandArrays.Create(this);
 
         var expectedCount = 0;
-        var expectedError = Record.Exception(() => expectedCount = CountReference(chain));
+        var expectedError = Record.Exception(() => expectedCount = chain.Reference());
 
         var count = -1;
         var countError = Record.Exception(() =>
         {
-            using var countExpr = Build().Count();
+            using var countExpr = chain.Build(operands.Operands()).Count();
             using var result = countExpr.Evaluate(_context);
             count = (int)ToBigInt(result);
         });
@@ -56,18 +174,18 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         var length = -1;
         var evaluateError = Record.Exception(() =>
         {
-            using var expr = Build();
+            using var expr = chain.Build(operands.Operands());
             length = expr.Evaluate(_context).Length;
         });
 
         // Count throws what System.Linq throws, and what Evaluate of the same chain throws: the result of a chain does
         // not depend on the operator that ends it.
-        // mutant: VectorCountExpression.Evaluate without the evaluation of a MayThrow vector (every throwing row)
-        // mutant: VectorBinaryScalarExpressionBase.MayThrow without `Divides` (SelectDivide(0) returns 3)
+        // mutant: VectorCountExpression.Evaluate without DeviceCounted.EvaluateIfMayThrow (every throwing row)
+        // mutant: VectorBinaryScalarExpressionBase.MayThrow without `ElementMayThrow` (SelectDivide(0) returns 3)
         // mutant: VectorSqrtExpression.ElementMayThrow => false (SelectMultiply(-1).SelectSqrt() returns 3)
         // mutant: VectorDivByUInt32Expression.ElementMayThrow => false (SelectDivideByUInt32(0) returns 3)
-        // mutant: the Zip MayThrow without ChecksZeroDivisor (ZipDivide(zero in the middle) returns 3)
-        // mutant: VectorTakeExpression.MayThrow = false (SelectDivide(0).Take(2) returns 2)
+        // mutant: the Zip ElementMayThrow without ChecksZeroDivisor (ZipDivide(zero in the middle) returns 3)
+        // mutant: VectorTakeExpression.MayThrow => false (SelectDivide(0).Take(2) returns 2)
         // mutant: VectorBinaryScalarExpressionBase without the vector in _inputsMayThrow (SelectDivide(0).SelectAdd(3))
         // mutant: VectorBinaryVectorExpressionBase without the right input in _inputsMayThrow (ZipAdd(SelectDivide(0)))
         Assert.Equal(expectedError?.GetType(), countError?.GetType());
@@ -80,123 +198,78 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         }
     }
 
-    private readonly record struct CountOperands(
-        GpuBigIntArray Values,
-        GpuBigIntArray ZeroInTheMiddle,
-        GpuBigIntArray NoZero,
-        GpuBigInt Zero,
-        GpuBigInt Three,
-        GpuBigInt MinusOne);
-
-    private static IGpuBigIntVectorExpression BuildCountChain(string chain, CountOperands o)
-    {
-        var v = o.Values.AsVectorizedEnumerable();
-        return chain switch
-        {
-            "SelectDivide(0)" => v.SelectDivide(o.Zero),
-            "SelectModulo(0)" => v.SelectModulo(o.Zero),
-            "SelectDivideByUInt32(0)" => v.SelectDivideByUInt32(0),
-            "SelectDivide(0).Take(2)" => v.SelectDivide(o.Zero).Take(2),
-            "SelectDivide(0).Skip(3)" => v.SelectDivide(o.Zero).Skip(3),
-            "SelectDivide(0).Take(0)" => v.SelectDivide(o.Zero).Take(0),
-            "SelectDivide(0).SelectAdd(3)" => v.SelectDivide(o.Zero).SelectAdd(o.Three),
-            "ZipAdd(SelectDivide(0))" => v.ZipAdd(o.Values.AsVectorizedEnumerable().SelectDivide(o.Zero)),
-            "ZipDivide(zero in the middle)" => v.ZipDivide(o.ZeroInTheMiddle.AsVectorizedEnumerable()),
-            "ZipModulo(zero in the middle)" => v.ZipModulo(o.ZeroInTheMiddle.AsVectorizedEnumerable()),
-            "SelectMultiply(-1).SelectSqrt()" => v.SelectMultiply(o.MinusOne).SelectSqrt(),
-            "SelectSqrt()" => v.SelectSqrt(),
-            "SelectDivide(3)" => v.SelectDivide(o.Three),
-            "SelectDivideByUInt32(2)" => v.SelectDivideByUInt32(2),
-            "ZipDivide(no zero)" => v.ZipDivide(o.NoZero.AsVectorizedEnumerable()),
-            "SelectAdd(3).SelectMultiply(3)" => v.SelectAdd(o.Three).SelectMultiply(o.Three),
-            _ => throw new ArgumentOutOfRangeException(nameof(chain), chain, null)
-        };
-    }
-
-    // System.Linq over the same elements: Count runs the projection of every element it counts. BigInteger has no
-    // square root; the contract of SelectSqrt (InvalidOperationException for a negative element) stands in.
-    private static int CountReference(string chain)
-    {
-        var v = s_countValues;
-        return chain switch
-        {
-            "SelectDivide(0)" => v.Select(static x => x / 0).Count(),
-            "SelectModulo(0)" => v.Select(static x => x % 0).Count(),
-            "SelectDivideByUInt32(0)" => v.Select(static x => x / 0u).Count(),
-            "SelectDivide(0).Take(2)" => v.Select(static x => x / 0).Take(2).Count(),
-            "SelectDivide(0).Skip(3)" => v.Select(static x => x / 0).Skip(3).Count(),
-            "SelectDivide(0).Take(0)" => v.Select(static x => x / 0).Take(0).Count(),
-            "SelectDivide(0).SelectAdd(3)" => v.Select(static x => x / 0).Select(static x => x + 3).Count(),
-            "ZipAdd(SelectDivide(0))" => v.Zip(v.Select(static x => x / 0), static (a, b) => a + b).Count(),
-            "ZipDivide(zero in the middle)" => v.Zip(s_zeroInTheMiddle, static (a, b) => a / b).Count(),
-            "ZipModulo(zero in the middle)" => v.Zip(s_zeroInTheMiddle, static (a, b) => a % b).Count(),
-            "SelectMultiply(-1).SelectSqrt()" => v.Select(static x => -x).Select(SqrtContract).Count(),
-            "SelectSqrt()" => v.Select(SqrtContract).Count(),
-            "SelectDivide(3)" => v.Select(static x => x / 3).Count(),
-            "SelectDivideByUInt32(2)" => v.Select(static x => x / 2u).Count(),
-            "ZipDivide(no zero)" => v.Zip(s_noZero, static (a, b) => a / b).Count(),
-            "SelectAdd(3).SelectMultiply(3)" => v.Select(static x => (x + 3) * 3).Count(),
-            _ => throw new ArgumentOutOfRangeException(nameof(chain), chain, null)
-        };
-    }
-
-    public static TheoryData<string, bool> MayThrowChains => new()
-    {
-        { "leaf", false },
-        { "SelectAdd(3).SelectSubtract(3).SelectMultiply(3)", false },
-        { "Take(2).Skip(1)", false },
-        { "ZipAdd(same length).ZipMultiply(same length)", false },
-        { "SelectDivideByUInt32(2)", false },
-        { "SelectDivide(3)", true },
-        { "SelectModulo(3)", true },
-        { "SelectSqrt()", true },
-        { "SelectDivideByUInt32(0)", true },
-        { "ZipDivide(same length)", true },
-        { "ZipAdd(other length)", true },
-        { "SelectDivide(3).Take(1)", true },
-        { "SelectDivide(3).SelectAdd(3)", true },
-        { "ZipAdd(SelectDivide(3))", true },
-    };
-
     [Theory]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    [MemberData(nameof(MayThrowChains))]
-    public void MayThrow_Chain_IsDecidedPerNode(string chain, bool expected)
+    [MemberData(nameof(CountCases))]
+    public void MayThrow_Chain_IsDecidedPerNode(CountCase chain)
     {
-        using var values = CreateArray(s_countValues);
-        using var other = CreateArray(s_noZero);
-        using var shorter = CreateArray([1, 2]);
-        using var three = CreateScalar(3);
-        var v = values.AsVectorizedEnumerable();
-        using var expr = chain switch
-        {
-            "leaf" => v,
-            "SelectAdd(3).SelectSubtract(3).SelectMultiply(3)" => v.SelectAdd(three).SelectSubtract(three)
-                .SelectMultiply(three),
-            "Take(2).Skip(1)" => v.Take(2).Skip(1),
-            "ZipAdd(same length).ZipMultiply(same length)" => v.ZipAdd(other.AsVectorizedEnumerable())
-                .ZipMultiply(other.AsVectorizedEnumerable()),
-            "SelectDivideByUInt32(2)" => v.SelectDivideByUInt32(2),
-            "SelectDivide(3)" => v.SelectDivide(three),
-            "SelectModulo(3)" => v.SelectModulo(three),
-            "SelectSqrt()" => v.SelectSqrt(),
-            "SelectDivideByUInt32(0)" => v.SelectDivideByUInt32(0),
-            "ZipDivide(same length)" => v.ZipDivide(other.AsVectorizedEnumerable()),
-            "ZipAdd(other length)" => v.ZipAdd(shorter.AsVectorizedEnumerable()),
-            "SelectDivide(3).Take(1)" => v.SelectDivide(three).Take(1),
-            "SelectDivide(3).SelectAdd(3)" => v.SelectDivide(three).SelectAdd(three),
-            "ZipAdd(SelectDivide(3))" => v.ZipAdd(other.AsVectorizedEnumerable().SelectDivide(three)),
-            _ => throw new ArgumentOutOfRangeException(nameof(chain), chain, null)
-        };
+        using var operands = CountOperandArrays.Create(this);
+        using var expr = chain.Build(operands.Operands());
 
         // Count answers from the length only for a chain of plain operations (no evaluation, no synchronization); a
         // chain with an operation that can throw is evaluated, whatever its values. The decision reads no value.
         // mutant: VectorEffects.MayThrow returning true for an array (leaf and every plain chain)
         // mutant: VectorDivByUInt32Expression.ElementMayThrow => true (SelectDivideByUInt32(2))
-        // mutant: the Zip MayThrow without `Capacity != _rightCapacity` (ZipAdd(other length))
-        // mutant: VectorModScalarExpression without `Divides => true` (SelectModulo(3))
-        Assert.Equal(expected, VectorEffects.MayThrow(expr));
+        // mutant: VectorModScalarExpression without `ElementMayThrow => true` (SelectModulo(3))
+        Assert.Equal(chain.MayThrow, VectorEffects.MayThrow(expr));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void MayThrow_ZipOfDifferentLengths_IsTrue()
+    {
+        using var values = CreateArray(s_countValues);
+        using var shorter = CreateArray([1, 2]);
+        using var expr = values.AsVectorizedEnumerable().ZipAdd(shorter.AsVectorizedEnumerable());
+
+        // A Zip of different capacities throws when it is evaluated, so Count must evaluate it.
+        // mutant: the Zip MayThrow without `Capacity != _rightCapacity`
+        Assert.True(VectorEffects.MayThrow(expr));
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void CountInAGraph_ChainWithoutThrowingOperation_IsCaptured()
+    {
+        using var values = CreateArray(s_countValues);
+        using var three = CreateScalar(3);
+        var count = values.AsVectorizedEnumerable().SelectAdd(three).Count();
+
+        // A chain that cannot throw is not evaluated: its host length is written inside the graph, as before.
+        // mutant: DeviceCounted.EvaluateIfMayThrow refusing every capture (NotSupportedException)
+        using var graph = count.CompileToGraph(_context);
+        graph.Execute();
+
+        Assert.Equal(new BigInteger(s_countValues.Length), graph.Result.Value.ToBigInteger());
+    }
+
+    public static TheoryData<string> ThrowingChainsInAGraph => ["SelectDivide(3)", "SelectSqrt()"];
+
+    [SkippableTheory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    [MemberData(nameof(ThrowingChainsInAGraph))]
+    public void CountInAGraph_ChainThatCanThrow_IsRefusedBeforeAnyWork(string chain)
+    {
+        using var values = CreateArray(s_countValues);
+        using var three = CreateScalar(3);
+        var vector = values.AsVectorizedEnumerable();
+        var count = (chain == "SelectDivide(3)" ? vector.SelectDivide(three) : vector.SelectSqrt()).Count();
+
+        // The checks of the chain read the device, which a capture cannot record: one NotSupportedException before any
+        // work (the square root would otherwise invalidate the capture with a raw CUDA error), and the workspace still
+        // counts the same chain without a graph.
+        // mutant: DeviceCounted.EvaluateIfMayThrow without ThrowIfCapturingChecks (SelectSqrt(): AggregateException
+        // with CudaErrorStreamCaptureUnsupported; SelectDivide(3): the NotSupportedException of the scalar zero test)
+        var error = Assert.Throws<NotSupportedException>(() => count.CompileToGraph(_context));
+        Assert.StartsWith("The check of a division, a square root or the lengths of a counted vector", error.Message);
+
+        using var again = values.AsVectorizedEnumerable().SelectSqrt().Count();
+        using var result = again.Evaluate(_context);
+        Assert.Equal(new BigInteger(s_countValues.Length), ToBigInt(result));
     }
 
     [Fact]
@@ -212,8 +285,8 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
         // Flags of 0 and 3 elements are rejected by And as Evaluate rejects them, even though the result would have no
         // element: Any and All answer without a kernel only when the evaluation cannot throw.
-        // mutant: BoolVectorQuantifier.Evaluate without the evaluation of a MayThrow source (false / true, no error)
-        // mutant: VectorLogicalExpression.MayThrow without `left.Capacity != right.Capacity` (the same)
+        // mutant: BoolVectorQuantifier.EvaluateEmpty without DeviceCounted.EvaluateIfMayThrow (false / true, no error)
+        // mutant: VectorLogicalExpression.MayThrow without `Capacity != _rightCapacity` (the same)
         using (var flags = Mismatched())
         {
             Assert.Throws<ArgumentException>(() => flags.Evaluate(_context));
@@ -235,7 +308,7 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
         // A division of no element divides nothing (System.Linq runs no projection), so the evaluation that Any and
         // All now run for a chain that can throw gives false / true; the empty vector launches no kernel.
-        // mutant: BoolVectorQuantifier.Evaluate evaluating a MayThrow source without returning for no capacity
+        // mutant: BoolVectorQuantifier.Evaluate evaluating a MayThrow source of no capacity as a non-empty one
         // (CudaException: a grid of 0 blocks)
         using var any = empty.AsVectorizedEnumerable().SelectDivide(zero).IsLessThan(zero).Any();
         Assert.Equal(Array.Empty<BigInteger>().Select(static x => x / 0 < 0).Any(), any.Evaluate(_context));
@@ -248,4 +321,67 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
     private static BigInteger SqrtContract(BigInteger x) =>
         x.Sign < 0 ? throw new InvalidOperationException("Cannot compute square root of a negative integer.") : x;
+
+    /// <summary>A counted chain: its name, its GPU expression, its System.Linq count and whether it can throw.</summary>
+    public sealed record CountCase(
+        string Name,
+        Func<CountOperands, IGpuBigIntVectorExpression> Build,
+        Func<int> Reference,
+        bool MayThrow)
+    {
+        /// <inheritdoc />
+        public override string ToString() => Name;
+    }
+
+    /// <summary>The inputs of a counted chain, as fresh expressions over the arrays of one test.</summary>
+    public sealed record CountOperands(
+        IGpuBigIntVectorExpression Values,
+        IGpuBigIntVectorExpression OtherValues,
+        IGpuBigIntVectorExpression ZeroInTheMiddle,
+        IGpuBigIntVectorExpression NoZero,
+        GpuBigInt Zero,
+        GpuBigInt Three,
+        GpuBigInt MinusOne);
+
+    // The arrays and scalars of one test; Operands() gives fresh leaves over them for each chain
+    private sealed class CountOperandArrays : IDisposable
+    {
+        private readonly GpuBigIntArray _values;
+        private readonly GpuBigIntArray _zeroInTheMiddle;
+        private readonly GpuBigIntArray _noZero;
+        private readonly GpuBigInt _zero;
+        private readonly GpuBigInt _three;
+        private readonly GpuBigInt _minusOne;
+
+        private CountOperandArrays(GpuBigIntVectorLinqExtensionsTests tests)
+        {
+            _values = tests.CreateArray(s_countValues);
+            _zeroInTheMiddle = tests.CreateArray(s_zeroInTheMiddle);
+            _noZero = tests.CreateArray(s_noZero);
+            _zero = tests.CreateScalar(0);
+            _three = tests.CreateScalar(3);
+            _minusOne = tests.CreateScalar(-1);
+        }
+
+        public static CountOperandArrays Create(GpuBigIntVectorLinqExtensionsTests tests) => new(tests);
+
+        public CountOperands Operands() => new(
+            _values.AsVectorizedEnumerable(),
+            _values.AsVectorizedEnumerable(),
+            _zeroInTheMiddle.AsVectorizedEnumerable(),
+            _noZero.AsVectorizedEnumerable(),
+            _zero,
+            _three,
+            _minusOne);
+
+        public void Dispose()
+        {
+            _values.Dispose();
+            _zeroInTheMiddle.Dispose();
+            _noZero.Dispose();
+            _zero.Dispose();
+            _three.Dispose();
+            _minusOne.Dispose();
+        }
+    }
 }

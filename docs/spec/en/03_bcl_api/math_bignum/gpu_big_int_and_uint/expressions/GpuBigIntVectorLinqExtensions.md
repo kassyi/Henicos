@@ -317,6 +317,7 @@ public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source);
 - Evaluation reads two words back from the device: the sign and the number of reduced elements.
 - A difference of equal magnitudes (`ZipSubtract`, `SelectSubtract`) has the sign `+`, as `BigInteger` has no negative zero.
 - An empty vector behaves as in `System.Linq`: `Max` and `Min` throw `InvalidOperationException` ("Sequence contains no elements") on evaluation without evaluating the vector or launching anything, so a destination is not touched, `Sum` is +0 (a destination is cleared), and `Count` is 0.
+- `Count` follows `System.Linq`, which runs the projection of every element it counts: when the chain contains an operation that can throw (a division or modulo, `SelectSqrt`, `SelectDivideByUInt32(0)`, inputs of different lengths), the evaluation of `Count` evaluates the counted elements first and throws as `Evaluate` does (`DivideByZeroException`, `InvalidOperationException`, `ArgumentException`). A chain without such an operation is not evaluated: its length is written from the host, also under the CPU fallback and inside a CUDA graph. A chain that must be evaluated throws `NotSupportedException` inside a CUDA graph capture, before any work, so that the capture stays valid; count it without a graph.
 
 ## Element-Wise Comparisons (IsEqualTo, IsNotEqualTo, IsGreaterThan, IsGreaterThanOrEqualTo, IsLessThan, IsLessThanOrEqualTo)
 

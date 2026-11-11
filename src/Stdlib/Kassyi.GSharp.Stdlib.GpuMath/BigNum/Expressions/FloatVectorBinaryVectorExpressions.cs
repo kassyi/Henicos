@@ -38,9 +38,14 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
 
     public int Length => _shape.Length;
 
-    // Inputs of different lengths are rejected; a division throws for a zero divisor, an
-    // operation on the host (Pow) for an element it cannot compute
-    public bool MayThrow => _inputsMayThrow || ChecksZeroDivisor || RunsOnHost || Capacity != _rightCapacity;
+    // Inputs of different lengths are rejected
+    public bool MayThrow => _inputsMayThrow || ElementMayThrow || Capacity != _rightCapacity;
+
+    /// <summary>
+    /// Gets whether the operation itself can throw for an element (a zero divisor, a negative square root, a value the
+    /// host arithmetic cannot compute).
+    /// </summary>
+    protected virtual bool ElementMayThrow => ChecksZeroDivisor || RunsOnHost;
     public int WordsPerElement { get; } = wordsPerElement;
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept

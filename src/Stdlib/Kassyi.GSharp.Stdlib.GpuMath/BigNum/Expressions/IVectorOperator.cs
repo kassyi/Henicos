@@ -25,7 +25,7 @@ internal interface IVectorOperator
 
     /// <summary>
     /// Gets whether evaluating the node can throw, by its own operation (a division, a square root, inputs of different
-    /// lengths) or through an input (<see cref="VectorEffects.MayThrow(object)"/>); fixed when the node is built.
+    /// lengths) or through an input (<see cref="VectorEffects"/>); fixed when the node is built.
     /// </summary>
     bool MayThrow { get; }
 
