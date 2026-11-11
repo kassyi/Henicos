@@ -18,9 +18,11 @@ internal sealed class IrInvariants
     private readonly IrMethod _method;
     private readonly SyntaxTree[] _trees;
     private readonly ImmutableArray<string>.Builder _violations = ImmutableArray.CreateBuilder<string>();
-    private readonly Dictionary<ISymbol, List<IrVariable>> _variablesBySymbol = new(SymbolEqualityComparer.Default);
+    private readonly Dictionary<ISymbol, ImmutableArray<IrVariable>.Builder> _variablesBySymbol =
+        new(SymbolEqualityComparer.Default);
     private readonly HashSet<IrVariable> _declaredByReference = [];
-    private readonly List<ImmutableArray<IrVariable>> _scopes = [];
+    private readonly ImmutableArray<ImmutableArray<IrVariable>>.Builder _scopes =
+        ImmutableArray.CreateBuilder<ImmutableArray<IrVariable>>();
 
     private IrInvariants(IrMethod method, Compilation compilation)
     {
@@ -261,7 +263,7 @@ internal sealed class IrInvariants
     {
         if (!_variablesBySymbol.TryGetValue(symbol, out var instances))
         {
-            instances = [];
+            instances = ImmutableArray.CreateBuilder<IrVariable>();
             _variablesBySymbol.Add(symbol, instances);
         }
 

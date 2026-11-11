@@ -21,6 +21,8 @@ public enum NativeSanitizers
 /// </summary>
 public static class NativeSanitizerParser
 {
+    private static readonly char[] s_separators = [';', ','];
+
     /// <summary>
     /// Parses a semicolon- or comma-separated list of sanitizer names (<c>address</c>, <c>undefined</c>).
     /// </summary>
@@ -38,9 +40,16 @@ public static class NativeSanitizerParser
             return true;
         }
 
-        foreach (var part in value.Split([';', ','], StringSplitOptions.RemoveEmptyEntries))
+        for (var start = 0; start <= value.Length;)
         {
-            var name = part.Trim();
+            var end = value.IndexOfAny(s_separators, start);
+            if (end < 0)
+            {
+                end = value.Length;
+            }
+
+            var name = TrimmedPart(value, start, end);
+            start = end + 1;
             if (name.Length == 0)
             {
                 continue;
@@ -63,5 +72,21 @@ public static class NativeSanitizerParser
         }
 
         return true;
+    }
+
+    // <value>[start..end] without the white space at either end
+    private static string TrimmedPart(string value, int start, int end)
+    {
+        while (start < end && char.IsWhiteSpace(value[start]))
+        {
+            start++;
+        }
+
+        while (end > start && char.IsWhiteSpace(value[end - 1]))
+        {
+            end--;
+        }
+
+        return value[start..end];
     }
 }

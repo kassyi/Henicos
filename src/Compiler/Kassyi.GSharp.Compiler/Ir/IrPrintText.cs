@@ -52,9 +52,20 @@ internal static class IrPrintText
     /// <summary>The first line of the text of a syntax node.</summary>
     public static string FirstLine(SyntaxNode syntax)
     {
-        var text = syntax.ToString();
-        var end = text.IndexOfAny(['\r', '\n']);
-        return end < 0 ? text : text[..end];
+        // The text includes the trivia; the node's own text (without trivia) starts at its span
+        var text = syntax.GetText();
+        var start = syntax.Span.Start - syntax.FullSpan.Start;
+        var end = start + syntax.Span.Length;
+        for (var i = start; i < end; i++)
+        {
+            if (text[i] is '\r' or '\n')
+            {
+                end = i;
+                break;
+            }
+        }
+
+        return text.ToString(TextSpan.FromBounds(start, end));
     }
 
     /// <summary>The name of an opaque reason.</summary>

@@ -403,7 +403,7 @@ internal readonly record struct KernelClassModel(
         var emissions = ImmutableArray.CreateBuilder<KernelEmission>(kernels.Count);
         var structs = ImmutableArray.CreateBuilder<StructHostSource>();
         var structIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var rawClassSites = new List<ErrorSiteEntry>();
+        var rawClassSites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
         for (var i = 0; i < kernels.Count; i++)
         {
             var kernel = kernels[i];

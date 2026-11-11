@@ -930,7 +930,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var symbolSites = ImmutableArray.CreateBuilder<GSharpNameEncoding.SymbolErrorSiteRecord>();
-        var rawSites = new List<ErrorSiteEntry>();
+        var rawSites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
         foreach (var method in kernelMethods)
         {
             if (!method.ErrorSites.IsDefaultOrEmpty)

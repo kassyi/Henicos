@@ -406,12 +406,15 @@ internal static class NativeApiYamlReader
         };
 
         ValidateIdentifier(mapping, "name", parameter.Name);
-        if (bindingKind == NativeApiBindingKind.Module &&
-            ModuleKernelParameterTypes.GetUnsupportedReason(parameter.Type.Trim()) is { } reason)
+        if (bindingKind == NativeApiBindingKind.Module)
         {
-            throw Schema(LineOf(mapping, "type"),
-                $"Parameter '{parameter.Name}' of kernel method '{methodName}' has type '{parameter.Type.Trim()}', " +
-                $"which a module launcher cannot pass: {reason}");
+            var type = parameter.Type.AsSpan().Trim().ToString();
+            if (ModuleKernelParameterTypes.GetUnsupportedReason(type) is { } reason)
+            {
+                throw Schema(LineOf(mapping, "type"),
+                    $"Parameter '{parameter.Name}' of kernel method '{methodName}' has type '{type}', " +
+                    $"which a module launcher cannot pass: {reason}");
+            }
         }
 
         return parameter;

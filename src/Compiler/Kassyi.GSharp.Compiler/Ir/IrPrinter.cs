@@ -157,7 +157,28 @@ internal sealed class IrPrinter
     {
         using var writer = new SourceWriter();
         new IrPrinter(writer, _options, this).WriteStatement(statement);
-        return writer.ToString().Replace("\r", "").Replace('\n', ' ').TrimEnd();
+        return JoinLines(writer.ToString());
+    }
+
+    // The lines of <text> joined by spaces (a '\r' dropped, a '\n' a space), without trailing white space
+    private static string JoinLines(string text)
+    {
+        var buffer = new char[text.Length];
+        var length = 0;
+        foreach (var character in text)
+        {
+            if (character != '\r')
+            {
+                buffer[length++] = character == '\n' ? ' ' : character;
+            }
+        }
+
+        while (length > 0 && char.IsWhiteSpace(buffer[length - 1]))
+        {
+            length--;
+        }
+
+        return new string(buffer, 0, length);
     }
 
     /// <summary>Writes a variable: its name, with the region of an inlined copy, or a temporary by its
