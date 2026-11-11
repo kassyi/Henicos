@@ -39,8 +39,8 @@ public class BclIntrinsicMappedMembersDiagnosticsTests
     [InlineData("Cuda", "UsingStaticMethodGroupKernel", "(used as a method group)", 56, 36, 56, 44)]
     [InlineData("Cuda", "NuintOverloadKernel", "(nint and nuint are not supported)", 65, 21, 65, 43)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Gsh0003_UnmappedMemberOrMethodGroup_ReportsOneAtTheCall(string dialect, string kernel, string reason,
-        int startLine, int startColumn, int endLine, int endColumn)
+    public async Task Gsh0003_UnmappedMemberOrMethodGroup_ReportsOneAtTheCall(string dialect, string kernel,
+        string reason, int startLine, int startColumn, int endLine, int endColumn)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
