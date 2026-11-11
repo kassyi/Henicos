@@ -152,6 +152,7 @@ public IntPtr WorkspacePointer { get; }
 | [CreateScope()](#createscope) | Creates a nested GPU resource scope. Not currently supported on the root workspace. |
 | [Dispose()](#dispose) | Releases all device memory resources, tracked buffers, and workspace handles held by this workspace. |
 | [Dispose(Boolean)](#disposeboolean) | Releases unmanaged and, optionally, managed resources. |
+| [ThrowIfDeviceErrors()](#throwifdeviceerrors) | Waits for the work queued on this workspace and throws the errors its kernels reported since the previous read of the workspace stream. |
 | [Track(IDisposable)](#trackidisposable) | Registers a disposable resource to be tracked and collectively disposed by this workspace. |
 
 ## ActivateContext()
@@ -213,6 +214,25 @@ protected virtual void Dispose(bool disposing);
 
 `disposing` _Boolean_<br>
 `true` to release both managed and unmanaged resources; `false` to release only unmanaged resources.
+
+## ThrowIfDeviceErrors()
+
+Waits for the work queued on this workspace and throws the errors that its kernels reported since the previous read of the workspace stream. Kernels report their errors without a synchronization; GpuMath throws them at the next read of the workspace stream (a copy to the host, a comparison, a bit length). Call this method to check at a point of your choice, for example after a sequence of operations whose results stay on the device. In CPU fallback mode the operations throw at the call, and this method does nothing.
+
+```csharp
+public void ThrowIfDeviceErrors();
+```
+
+#### Exceptions
+
+`OverflowException`<br>
+A result did not fit in the buffer the caller chose, or an unsigned result was below zero (a domain error).
+
+`InvalidOperationException`<br>
+An on-device correction did not converge, or the workspace stream is capturing a CUDA graph, which cannot wait.
+
+`AggregateException`<br>
+Both a domain error and a correction failure were reported.
 
 ## Remarks
 

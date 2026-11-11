@@ -13,7 +13,7 @@ description: "Marks a class or struct as a GPU resource whose lifecycle must be 
 **Namespace:** `Kassyi.GSharp.Core`  
 **Assembly:** `Kassyi.GSharp.Core.dll`
 
-Marks a class or struct as a GPU resource whose lifecycle must be managed via `IGpuResourceScope`. This attribute is used by static code analysis to enforce proper disposal.
+Marks a class or struct as a GPU resource whose lifecycle is managed via `IGpuResourceScope` or deterministic disposal contracts. To participate in static disposal analysis, types marked with this attribute must implement `System.IDisposable`.
 
 ```csharp
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
@@ -48,7 +48,7 @@ public sealed class CustomDeviceBuffer : IDisposable
 
 ## Remarks
 
-Types annotated with `[GpuResource]` are tracked by the G# Zero-Leak Roslyn Analyzer to ensure that every allocated instance is either disposed explicitly (`using`), tracked by an [`IGpuResourceScope`](../memory/IGpuResourceScope.md), or transferred via [`[TakesOwnership]`](TakesOwnershipAttribute.md).
+Types implementing `IDisposable` (including those annotated with `[GpuResource]`) are tracked by the G# Zero-Leak Roslyn Analyzers to ensure that every allocated instance is either disposed explicitly (`using`), tracked by an [`IGpuResourceScope`](../memory/IGpuResourceScope.md), or transferred via [`[TakesOwnership]`](TakesOwnershipAttribute.md). Note that static lifecycle analyzers verify `System.IDisposable` conformance directly.
 
 ## See also
 

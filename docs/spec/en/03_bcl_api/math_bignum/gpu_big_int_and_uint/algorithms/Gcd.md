@@ -1,5 +1,5 @@
 ---
-title: "GpuBigInt.Gcd Method (G#)"
+title: "GpuBigIntMath.Gcd Method (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
@@ -19,7 +19,7 @@ Calculates the Greatest Common Divisor (GCD) of two arbitrary-precision integers
 
 | Name | Description |
 | --- | --- |
-| [Gcd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#gcd-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes the greatest common divisor of two absolute values. |
+| [Gcd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)](#gcdgpubiguintview-gpubiguintview-gpubiguintview) | Computes the greatest common divisor of two absolute values. |
 
 ## Gcd(GpuBigUIntView, GpuBigUIntView, GpuBigUIntView)
 
@@ -31,13 +31,13 @@ public static void Gcd(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView 
 
 #### Parameters
 
-`leftOperand` _GpuUIntBigInteger_<br>
+`leftOperand` _[GpuBigUIntView](../GpuBigUIntView.md)_<br>
 The first absolute value.
 
-`rightOperand` _GpuUIntBigInteger_<br>
+`rightOperand` _GpuBigUIntView_<br>
 The second absolute value.
 
-`resultBuffer` _GpuUIntBigInteger_<br>
+`resultBuffer` _GpuBigUIntView_<br>
 The pre-allocated buffer where the resulting greatest common divisor will be written.
 
 #### Returns
@@ -85,5 +85,3 @@ This method implements Lehmer's GCD algorithm. It relies heavily on 64-bit multi
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
 - [GpuBigInt and GpuBigUInt Operators (G#)](../Operators.md)
-
-W

@@ -34,6 +34,7 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 | [ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftleftgpuworkspace-gpubiguint-int32-gpubiguint) | Launches `GpuBigIntKernels.ShiftLeftKernel` with decomposed word and bit offsets. |
 | [ShiftRight(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftrightgpuworkspace-gpubiguint-int32-gpubiguint) | Launches `GpuBigIntKernels.ShiftRightKernel` with decomposed word and bit offsets. |
 | [Square(GpuWorkspace, IntPtr, Int32)](#squaregpuworkspace-intptr-int32) | Computes in-place squaring by delegating to `GpuBigIntMath.Mul`. |
+| [DivideByUInt32(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#dividebyuint32gpuworkspace-gpubiguint-uint32-gpubiguint) | Divides a big integer by a 32-bit unsigned scalar, writes the quotient and returns the remainder. |
 | [IsZero(GpuWorkspace, GpuBigUInt)](#iszerogpuworkspace-gpubiguint) | Evaluates `GpuBigIntCmpKernels.IsZeroKernel` and returns `true` if all words are zero. |
 | [IsOne(GpuWorkspace, GpuBigUInt)](#isonegpuworkspace-gpubiguint) | Evaluates `GpuBigIntCmpKernels.IsOneKernel` and returns `true` if the operand equals `1`. |
 | [GetBitLength(GpuWorkspace, GpuBigUInt)](#getbitlengthgpuworkspace-gpubiguint) | Evaluates `GpuBigIntCmpKernels.GetBitLengthKernel` and returns the significant bit length. |
@@ -234,7 +235,7 @@ Thrown when the kernel launch fails.
 Launches `GpuBigIntKernels.BitwiseNotKernel` across a 1D grid computed via `KernelGraphHandler.CalculateGridDim`.
 
 ```csharp
-public void BitwiseNot(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer);
+public void BitwiseNot(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt resultBuffer);
 ```
 
 #### Parameters
@@ -242,11 +243,11 @@ public void BitwiseNot(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigU
 `workspace` _GpuWorkspace_<br>
 The GPU workspace managing the active CUDA stream.
 
-`targetOperand` _GpuBigUInt_<br>
+`leftOperand` _GpuBigUInt_<br>
 The source unsigned big integer operand to invert.
 
 `resultBuffer` _GpuBigUInt_<br>
-The destination buffer receiving `~targetOperand`.
+The destination buffer receiving `~leftOperand`.
 
 #### Exceptions
 
@@ -258,7 +259,7 @@ Thrown when the kernel launch fails.
 Launches `GpuBigIntKernels.ShiftLeftKernel` with decomposed word offset (`shiftBits / 32`) and intra-word bit offset (`shiftBits % 32`).
 
 ```csharp
-public void ShiftLeft(GpuWorkspace workspace, GpuBigUInt targetOperand, int shiftBits, GpuBigUInt resultBuffer);
+public void ShiftLeft(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer);
 ```
 
 #### Parameters
@@ -266,14 +267,14 @@ public void ShiftLeft(GpuWorkspace workspace, GpuBigUInt targetOperand, int shif
 `workspace` _GpuWorkspace_<br>
 The GPU workspace managing temporary buffers and the active CUDA stream.
 
-`targetOperand` _GpuBigUInt_<br>
-The source unsigned big integer operand. If `targetOperand` and `resultBuffer` alias the same device pointer, `targetOperand` is first copied to a temporary buffer.
+`leftOperand` _GpuBigUInt_<br>
+The source unsigned big integer operand. If `leftOperand` and `resultBuffer` alias the same device pointer, `leftOperand` is first copied to a temporary buffer.
 
 `shiftBits` _Int32_<br>
 The number of bits to shift left.
 
 `resultBuffer` _GpuBigUInt_<br>
-The destination buffer receiving `targetOperand << shiftBits`.
+The destination buffer receiving `leftOperand << shiftBits`.
 
 #### Exceptions
 
@@ -285,7 +286,7 @@ Thrown when the kernel launch or temporary copy fails.
 Launches `GpuBigIntKernels.ShiftRightKernel` with decomposed word offset (`shiftBits / 32`) and intra-word bit offset (`shiftBits % 32`).
 
 ```csharp
-public void ShiftRight(GpuWorkspace workspace, GpuBigUInt targetOperand, int shiftBits, GpuBigUInt resultBuffer);
+public void ShiftRight(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer);
 ```
 
 #### Parameters
@@ -293,26 +294,53 @@ public void ShiftRight(GpuWorkspace workspace, GpuBigUInt targetOperand, int shi
 `workspace` _GpuWorkspace_<br>
 The GPU workspace managing temporary buffers and the active CUDA stream.
 
-`targetOperand` _GpuBigUInt_<br>
-The source unsigned big integer operand. If `targetOperand` and `resultBuffer` alias the same device pointer, `targetOperand` is first copied to a temporary buffer.
+`leftOperand` _GpuBigUInt_<br>
+The source unsigned big integer operand. If `leftOperand` and `resultBuffer` alias the same device pointer, `leftOperand` is first copied to a temporary buffer.
 
 `shiftBits` _Int32_<br>
 The number of bits to shift right.
 
 `resultBuffer` _GpuBigUInt_<br>
-The destination buffer receiving `targetOperand >> shiftBits`.
+The destination buffer receiving `leftOperand >> shiftBits`.
 
 #### Exceptions
 
 `CudaException`<br>
 Thrown when the kernel launch or temporary copy fails.
 
-## Square(GpuWorkspace, IntPtr, Int32)
+## DivideByUInt32(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)
 
-Computes in-place squaring of a multi-word buffer by wrapping `dataPtr` in a temporary `GpuBigUInt` view and delegating to `GpuBigIntMath.Mul`.
+Divides an arbitrary-precision unsigned integer by a 32-bit unsigned scalar, writes the quotient to `quotientBuffer`, and returns the remainder (`dividend % divisor`). Throws `DivideByZeroException` when `divisor` is 0.
 
 ```csharp
-public void Square(GpuWorkspace workspace, IntPtr dataPtr, int numWords);
+public uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor, GpuBigUInt quotientBuffer);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
+
+`dividend` _GpuBigUInt_<br>
+The dividend.
+
+`divisor` _UInt32_<br>
+The 32-bit unsigned scalar divisor.
+
+`quotientBuffer` _GpuBigUInt_<br>
+The destination buffer of the quotient.
+
+#### Returns
+
+_UInt32_<br>
+The remainder.
+
+## Square(GpuWorkspace, IntPtr, Int32)
+
+Squares the `logicalWords` words at `devicePointer`: copies them to a temporary `GpuBigUInt`, multiplies it by itself with `GpuBigIntMath.Mul`, and copies the `2 * logicalWords`-word product back to `devicePointer`, which must hold that many words. Returns `true`.
+
+```csharp
+public bool Square(GpuWorkspace workspace, IntPtr devicePointer, int logicalWords);
 ```
 
 #### Parameters
@@ -320,11 +348,16 @@ public void Square(GpuWorkspace workspace, IntPtr dataPtr, int numWords);
 `workspace` _GpuWorkspace_<br>
 The GPU workspace managing temporary buffers and the active CUDA stream.
 
-`dataPtr` _IntPtr_<br>
-The device pointer to the buffer to square in place.
+`devicePointer` _IntPtr_<br>
+The device pointer to the operand; it receives the product.
 
-`numWords` _Int32_<br>
-The word capacity of the operand buffer.
+`logicalWords` _Int32_<br>
+The word count of the operand.
+
+#### Returns
+
+_Boolean_<br>
+`true`.
 
 #### Exceptions
 
@@ -333,10 +366,10 @@ Thrown when kernel execution or memory copying fails.
 
 ## IsZero(GpuWorkspace, GpuBigUInt)
 
-Evaluates `GpuBigIntCmpKernels.IsZeroKernel` and returns `true` if all words in `targetOperand` are zero.
+Evaluates `GpuBigIntCmpKernels.IsZeroKernel` and returns `true` if all words in `leftOperand` are zero.
 
 ```csharp
-public bool IsZero(GpuWorkspace workspace, GpuBigUInt targetOperand);
+public bool IsZero(GpuWorkspace workspace, GpuBigUInt leftOperand);
 ```
 
 #### Parameters
@@ -344,13 +377,13 @@ public bool IsZero(GpuWorkspace workspace, GpuBigUInt targetOperand);
 `workspace` _GpuWorkspace_<br>
 The GPU workspace managing temporary device scalars and the active CUDA stream.
 
-`targetOperand` _GpuBigUInt_<br>
+`leftOperand` _GpuBigUInt_<br>
 The unsigned big integer operand to test.
 
 #### Returns
 
 _Boolean_<br>
-`true` if all words in `targetOperand` are `0`; otherwise, `false`.
+`true` if all words in `leftOperand` are `0`; otherwise, `false`.
 
 #### Exceptions
 
@@ -359,10 +392,10 @@ Thrown when the kernel launch or device scalar readback fails.
 
 ## IsOne(GpuWorkspace, GpuBigUInt)
 
-Evaluates `GpuBigIntCmpKernels.IsOneKernel` and returns `true` if `targetOperand` equals `1`.
+Evaluates `GpuBigIntCmpKernels.IsOneKernel` and returns `true` if `leftOperand` equals `1`.
 
 ```csharp
-public bool IsOne(GpuWorkspace workspace, GpuBigUInt targetOperand);
+public bool IsOne(GpuWorkspace workspace, GpuBigUInt leftOperand);
 ```
 
 #### Parameters
@@ -370,7 +403,7 @@ public bool IsOne(GpuWorkspace workspace, GpuBigUInt targetOperand);
 `workspace` _GpuWorkspace_<br>
 The GPU workspace managing temporary device scalars and the active CUDA stream.
 
-`targetOperand` _GpuBigUInt_<br>
+`leftOperand` _GpuBigUInt_<br>
 The unsigned big integer operand to test.
 
 #### Returns
@@ -388,7 +421,7 @@ Thrown when the kernel launch or device scalar readback fails.
 Evaluates `GpuBigIntCmpKernels.GetBitLengthKernel` and returns the position of the most significant set bit (`0` when the value is zero).
 
 ```csharp
-public int GetBitLength(GpuWorkspace workspace, GpuBigUInt targetOperand);
+public int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand);
 ```
 
 #### Parameters
@@ -396,13 +429,13 @@ public int GetBitLength(GpuWorkspace workspace, GpuBigUInt targetOperand);
 `workspace` _GpuWorkspace_<br>
 The GPU workspace managing temporary device scalars and the active CUDA stream.
 
-`targetOperand` _GpuBigUInt_<br>
+`leftOperand` _GpuBigUInt_<br>
 The unsigned big integer operand to inspect.
 
 #### Returns
 
 _Int32_<br>
-The minimum number of bits required to represent `targetOperand`, or `0` if `targetOperand` is zero.
+The minimum number of bits required to represent `leftOperand`, or `0` if `leftOperand` is zero.
 
 #### Exceptions
 

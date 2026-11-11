@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Models;
+using AttributeNames = Kassyi.GSharp.Compiler.Models.DeviceExportAttributeNames;
 
 namespace Kassyi.GSharp.Compiler.Aot;
 
@@ -268,6 +269,22 @@ internal static class DeviceExportEmitter
         }
 
         var cppName = GlobalCppNames.GetTypeName(type);
+        var names = CreateStructNames(type, compilation, cppName);
+        return new DeviceExportRecord(
+            DeviceExportRecord.StructKind,
+            type.GetDocumentationCommentId() ?? cppName,
+            names,
+            BuildStructDialectText(cppName, names.DefinedNames, cuda),
+            BuildStructDialectText(cppName, names.DefinedNames, cpp),
+            DeviceExportRecord.FunctionTraits.None,
+            internalError);
+    }
+
+    // The names of a struct and of the functions defined with it: the emitted constructors, conversions and operators
+    // true and false
+    private static DeviceExportRecord.ExportNames CreateStructNames(INamedTypeSymbol type, Compilation compilation,
+        string cppName)
+    {
         var definedFunctions = ImmutableArray.CreateBuilder<string>();
         var definedFunctionIds = ImmutableArray.CreateBuilder<string>();
         var definedFunctionFullNames = ImmutableArray.CreateBuilder<string>();
@@ -296,43 +313,29 @@ internal static class DeviceExportEmitter
             }
         }
 
-        var definedNames = definedFunctions.ToImmutable().AsEquatableArray();
-        return new DeviceExportRecord(
-            DeviceExportRecord.StructKind,
-            type.GetDocumentationCommentId() ?? cppName,
-            cppName,
-            GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
-            definedNames,
-            definedFunctionIds.ToImmutable().AsEquatableArray(),
-            definedFunctionFullNames
+        return new DeviceExportRecord.ExportNames(
+            CppName: cppName,
+            CppFullName: GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
+            DefinedNames: definedFunctions.ToImmutable().AsEquatableArray(),
+            DefinedIds: definedFunctionIds.ToImmutable().AsEquatableArray(),
+            DefinedFullNames: definedFunctionFullNames
                 .AsStackEnumerable()
                 .Any(static n => n.Length > 0)
                 ? definedFunctionFullNames.ToImmutable().AsEquatableArray()
-                : default,
-            CollectReferences(OwnNames(cppName, definedNames, cuda.KeptNames), cuda.Definition, cuda.Dispose),
-            CollectReferences(OwnNames(cppName, definedNames, cpp.KeptNames), cpp.Definition, cpp.Dispose),
-            "",
-            default,
-            Suspends: false,
-            ReachesBlockBarrier: false,
-            IsParallelDependent: false,
-            ReachesDynamicSharedMemory: false,
-            default,
-            "Memory",
-            "",
-            cuda.Definition,
-            cuda.Dispose,
-            "",
-            cpp.Definition,
-            cpp.Dispose,
-            cuda.Includes,
-            cpp.Includes,
-            cuda.Failed || cuda.Definition.Length == 0,
-            cpp.Failed || cpp.Definition.Length == 0,
-            ManagedStateMachine: false,
-            ManagedVersion: false,
-            internalError);
+                : default);
     }
+
+    private static DeviceExportRecord.DialectText BuildStructDialectText(
+        string cppName,
+        EquatableArray<string> definedNames,
+        StructDialectText text) =>
+        new(
+            CollectReferences(OwnNames(cppName, definedNames, text.KeptNames), text.Definition, text.Dispose),
+            Signature: "",
+            Body: text.Definition,
+            Dispose: text.Dispose,
+            text.Includes,
+            Failed: text.Failed || text.Definition.Length == 0);
 
     /// <summary>The names that a text defines itself: its own name, the names it defines, the structs it keeps.</summary>
     public static EquatableArray<string> OwnNames(string cppName, EquatableArray<string> definedNames,
@@ -374,7 +377,7 @@ internal static class DeviceExportEmitter
         var structsByName = new SortedDictionary<string, DeviceExportRecord>(StringComparer.Ordinal);
         foreach (var record in structs)
         {
-            structsByName[record.CppName] = structsByName.TryGetValue(record.CppName, out var existing)
+            structsByName[record.Names.CppName] = structsByName.TryGetValue(record.Names.CppName, out var existing)
                 ? Merge(existing, record)
                 : record;
         }
@@ -399,36 +402,28 @@ internal static class DeviceExportEmitter
     private static DeviceExportRecord Merge(DeviceExportRecord existing, DeviceExportRecord candidate)
     {
         var merged = existing;
-        if (ShouldPrefer(candidate.CudaFailed, candidate.CudaDispose, existing.CudaFailed, existing.CudaDispose))
+        if (ShouldPrefer(candidate.Cuda.Failed, candidate.Cuda.Dispose, existing.Cuda.Failed, existing.Cuda.Dispose))
         {
-            merged = merged with
-            {
-                CudaBody = candidate.CudaBody, CudaDispose = candidate.CudaDispose, CudaFailed = false,
-                CudaReferences = candidate.CudaReferences, CudaIncludes = candidate.CudaIncludes
-            };
+            merged = merged with { Cuda = candidate.Cuda with { Failed = false } };
         }
 
-        if (ShouldPrefer(candidate.CppFailed, candidate.CppDispose, existing.CppFailed, existing.CppDispose))
+        if (ShouldPrefer(candidate.Cpp.Failed, candidate.Cpp.Dispose, existing.Cpp.Failed, existing.Cpp.Dispose))
         {
-            merged = merged with
-            {
-                CppBody = candidate.CppBody, CppDispose = candidate.CppDispose, CppFailed = false,
-                CppReferences = candidate.CppReferences, CppIncludes = candidate.CppIncludes
-            };
+            merged = merged with { Cpp = candidate.Cpp with { Failed = false } };
         }
 
         // The message of a record whose failure the merged record keeps
         var internalError = "";
-        if (merged.CudaFailed)
+        if (merged.Cuda.Failed)
         {
-            internalError = existing.CudaFailed && existing.InternalError.Length > 0 ? existing.InternalError
-                : candidate.CudaFailed ? candidate.InternalError : "";
+            internalError = existing.Cuda.Failed && existing.InternalError.Length > 0 ? existing.InternalError
+                : candidate.Cuda.Failed ? candidate.InternalError : "";
         }
 
-        if (internalError.Length == 0 && merged.CppFailed)
+        if (internalError.Length == 0 && merged.Cpp.Failed)
         {
-            internalError = existing.CppFailed && existing.InternalError.Length > 0 ? existing.InternalError
-                : candidate.CppFailed ? candidate.InternalError : "";
+            internalError = existing.Cpp.Failed && existing.InternalError.Length > 0 ? existing.InternalError
+                : candidate.Cpp.Failed ? candidate.InternalError : "";
         }
 
         return merged with { InternalError = internalError };
@@ -450,41 +445,43 @@ internal static class DeviceExportEmitter
             AppendString(writer, record.Kind);
             writer.Append(", ");
             AppendString(writer, record.Id);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.CppName), record.CppName);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.CppFullName), record.CppFullName);
-            AppendArrayProperty(writer, nameof(DeviceExportRecord.DefinedNames), record.DefinedNames);
-            AppendArrayProperty(writer, nameof(DeviceExportRecord.DefinedIds), record.DefinedIds);
-            AppendArrayProperty(writer, nameof(DeviceExportRecord.DefinedFullNames), record.DefinedFullNames);
-            AppendArrayProperty(writer, nameof(DeviceExportRecord.CudaReferences), record.CudaReferences);
-            AppendArrayProperty(writer, nameof(DeviceExportRecord.CppReferences), record.CppReferences);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.FrameName), record.FrameName);
-            AppendArrayProperty(writer, nameof(DeviceExportRecord.FrameDependencies), record.FrameDependencies);
-            AppendBoolProperty(writer, nameof(DeviceExportRecord.Suspends), record.Suspends);
-            AppendBoolProperty(writer, nameof(DeviceExportRecord.ReachesBlockBarrier), record.ReachesBlockBarrier);
-            AppendBoolProperty(writer, nameof(DeviceExportRecord.IsParallelDependent), record.IsParallelDependent);
-            AppendBoolProperty(writer, nameof(DeviceExportRecord.ReachesDynamicSharedMemory),
-                record.ReachesDynamicSharedMemory);
-            AppendArrayProperty(writer, nameof(DeviceExportRecord.DynamicSharedMemorySites),
-                record.DynamicSharedMemorySites);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.Effect), record.Effect);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.CudaSignature), record.CudaSignature);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.CudaBody), record.CudaBody);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.CudaDispose), record.CudaDispose);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.CppSignature), record.CppSignature);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.CppBody), record.CppBody);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.CppDispose), record.CppDispose);
-            AppendArrayProperty(writer, nameof(DeviceExportRecord.CudaIncludes), record.CudaIncludes);
-            AppendArrayProperty(writer, nameof(DeviceExportRecord.CppIncludes), record.CppIncludes);
-            AppendBoolProperty(writer, nameof(DeviceExportRecord.CudaFailed), record.CudaFailed);
-            AppendBoolProperty(writer, nameof(DeviceExportRecord.CppFailed), record.CppFailed);
-            AppendBoolProperty(writer, nameof(DeviceExportRecord.ManagedStateMachine), record.ManagedStateMachine);
-            AppendBoolProperty(writer, nameof(DeviceExportRecord.ManagedVersion), record.ManagedVersion);
-            AppendStringProperty(writer, nameof(DeviceExportRecord.InternalError), record.InternalError);
-            AppendIntProperty(writer, nameof(DeviceExportRecord.DivergentConditionParameters),
-                record.DivergentConditionParameters);
-            AppendIntProperty(writer, nameof(DeviceExportRecord.DivergentExitOnlyParameters),
-                record.DivergentExitOnlyParameters);
-            AppendBoolProperty(writer, nameof(DeviceExportRecord.HasExitOnlyBarrier), record.HasExitOnlyBarrier);
+            var names = record.Names;
+            var traits = record.Traits;
+            AppendStringProperty(writer, AttributeNames.Names.CppName, names.CppName);
+            AppendStringProperty(writer, AttributeNames.Names.CppFullName, names.CppFullName);
+            AppendArrayProperty(writer, AttributeNames.Names.DefinedNames, names.DefinedNames);
+            AppendArrayProperty(writer, AttributeNames.Names.DefinedIds, names.DefinedIds);
+            AppendArrayProperty(writer, AttributeNames.Names.DefinedFullNames, names.DefinedFullNames);
+            AppendArrayProperty(writer, AttributeNames.Cuda.References, record.Cuda.References);
+            AppendArrayProperty(writer, AttributeNames.Cpp.References, record.Cpp.References);
+            AppendStringProperty(writer, AttributeNames.Traits.FrameName, traits.FrameName);
+            AppendArrayProperty(writer, AttributeNames.Traits.FrameDependencies, traits.FrameDependencies);
+            AppendBoolProperty(writer, AttributeNames.Traits.Suspends, traits.Suspends);
+            AppendBoolProperty(writer, AttributeNames.Traits.ReachesBlockBarrier, traits.ReachesBlockBarrier);
+            AppendBoolProperty(writer, AttributeNames.Traits.IsParallelDependent, traits.IsParallelDependent);
+            AppendBoolProperty(writer, AttributeNames.Traits.ReachesDynamicSharedMemory,
+                traits.ReachesDynamicSharedMemory);
+            AppendArrayProperty(writer, AttributeNames.Traits.DynamicSharedMemorySites,
+                traits.DynamicSharedMemorySites);
+            AppendStringProperty(writer, AttributeNames.Traits.Effect, traits.Effect);
+            AppendStringProperty(writer, AttributeNames.Cuda.Signature, record.Cuda.Signature);
+            AppendStringProperty(writer, AttributeNames.Cuda.Body, record.Cuda.Body);
+            AppendStringProperty(writer, AttributeNames.Cuda.Dispose, record.Cuda.Dispose);
+            AppendStringProperty(writer, AttributeNames.Cpp.Signature, record.Cpp.Signature);
+            AppendStringProperty(writer, AttributeNames.Cpp.Body, record.Cpp.Body);
+            AppendStringProperty(writer, AttributeNames.Cpp.Dispose, record.Cpp.Dispose);
+            AppendArrayProperty(writer, AttributeNames.Cuda.Includes, record.Cuda.Includes);
+            AppendArrayProperty(writer, AttributeNames.Cpp.Includes, record.Cpp.Includes);
+            AppendBoolProperty(writer, AttributeNames.Cuda.Failed, record.Cuda.Failed);
+            AppendBoolProperty(writer, AttributeNames.Cpp.Failed, record.Cpp.Failed);
+            AppendBoolProperty(writer, AttributeNames.Traits.ManagedStateMachine, traits.ManagedStateMachine);
+            AppendBoolProperty(writer, AttributeNames.Traits.ManagedVersion, traits.ManagedVersion);
+            AppendStringProperty(writer, AttributeNames.InternalError, record.InternalError);
+            AppendIntProperty(writer, AttributeNames.Traits.DivergentConditionParameters,
+                traits.DivergentConditionParameters);
+            AppendIntProperty(writer, AttributeNames.Traits.DivergentExitOnlyParameters,
+                traits.DivergentExitOnlyParameters);
+            AppendBoolProperty(writer, AttributeNames.Traits.HasExitOnlyBarrier, traits.HasExitOnlyBarrier);
         }
 
         writer.AppendLine("]");

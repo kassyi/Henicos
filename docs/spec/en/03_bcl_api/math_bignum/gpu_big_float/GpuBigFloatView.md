@@ -40,3 +40,10 @@ The rules of [`GpuBigUIntView`](../gpu_big_int_and_uint/GpuBigUIntView.md) apply
 | `ToOwned()` | Copies the value into a new `GpuBigFloat`. |
 | `IsZero()` | Whether the significand is zero. |
 | `CompareTo(scoped GpuBigFloatView other)` | Compares the values on the GPU. |
+| `ToString()` | Returns the exponent, the sign and the significand view, for debugging; it does not read device memory. |
+
+## Operators
+
+| Name | Description |
+| --- | --- |
+| `implicit operator GpuBigFloatView(GpuBigFloat)` | Converts an owned `GpuBigFloat` to a view of its buffer without copying. |

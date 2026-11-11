@@ -24,6 +24,13 @@ public static class StreamCompactionOrchestrator
 | Name | Description |
 | --- | --- |
 | [ExecuteExclusiveScan(GpuWorkspace, IntPtr, IntPtr, Int32)](#executeexclusivescangpuworkspace-intptr-intptr-int32) | Executes an exclusive prefix sum (Blelloch Scan) across an array of elements, handling multi-block partitioning recursively. |
+| [CompactArray(GpuWorkspace, StreamCompactionRequest)](#compactarraygpuworkspace-streamcompactionrequest) | Zero-fills a destination buffer and scatters the selected elements to the positions of a precomputed exclusive scan. |
+
+## Nested Types
+
+| Name | Description |
+| --- | --- |
+| `StreamCompactionRequest` | `readonly record struct (IntPtr OutputPtr, IntPtr InputPtr, IntPtr PredicatesPtr, IntPtr ScanIndicesPtr, int ElementCount, int WordsPerElement)`: the device pointers and sizes of a `CompactArray` call. |
 
 ## ExecuteExclusiveScan(GpuWorkspace, IntPtr, IntPtr, Int32)
 
@@ -50,6 +57,22 @@ The GPU device pointer holding the input elements.
 
 `elementCount` _Int32_<br>
 The number of elements to scan.
+
+## CompactArray(GpuWorkspace, StreamCompactionRequest)
+
+Zero-fills the `ElementCount * WordsPerElement` words at `OutputPtr` and scatters each element of `InputPtr` whose predicate is set to the position given by the exclusive scan at `ScanIndicesPtr`. Does nothing when `ElementCount` or `WordsPerElement` is not positive.
+
+```csharp
+public static void CompactArray(GpuWorkspace workspace, StreamCompactionRequest request);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace memory context.
+
+`request` _StreamCompactionRequest_<br>
+The buffers and sizes of the compaction.
 
 ## Remarks
 

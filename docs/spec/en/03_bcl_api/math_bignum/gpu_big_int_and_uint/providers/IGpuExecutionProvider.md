@@ -64,6 +64,7 @@ public interface IGpuGraphProvider
 | [ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftleftgpuworkspace-gpubiguint-int32-gpubiguint) | Shifts an arbitrary-precision integer left by the specified bit count on the GPU. |
 | [ShiftRight(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftrightgpuworkspace-gpubiguint-int32-gpubiguint) | Shifts an arbitrary-precision integer right by the specified bit count on the GPU. |
 | [Square(GpuWorkspace, IntPtr, Int32)](#squaregpuworkspace-intptr-int32) | Computes the square of a large integer in-place on the GPU. |
+| [DivideByUInt32(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#dividebyuint32gpuworkspace-gpubiguint-uint32-gpubiguint) | Divides a big integer by a 32-bit unsigned scalar, writes the quotient and returns the remainder. |
 | [Sub(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#subgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Subtracts the right operand from the left operand on the GPU. |
 | [Sub(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#subgpuworkspace-gpubiguint-uint32-gpubiguint) | Subtracts a 32-bit unsigned integer scalar from an arbitrary-precision integer on the GPU. |
 
@@ -558,6 +559,33 @@ The number of bit positions to shift right.
 
 `resultBuffer` _GpuBigUInt_<br>
 The destination buffer.
+
+## DivideByUInt32(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)
+
+Divides an arbitrary-precision unsigned integer by a 32-bit unsigned scalar, writes the quotient to `quotientBuffer`, and returns the remainder (`dividend % divisor`). Throws `DivideByZeroException` when `divisor` is 0.
+
+```csharp
+uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor, GpuBigUInt quotientBuffer);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
+
+`dividend` _GpuBigUInt_<br>
+The dividend.
+
+`divisor` _UInt32_<br>
+The 32-bit unsigned scalar divisor.
+
+`quotientBuffer` _GpuBigUInt_<br>
+The destination buffer of the quotient.
+
+#### Returns
+
+_UInt32_<br>
+The remainder.
 
 ## Square(GpuWorkspace, IntPtr, Int32)
 

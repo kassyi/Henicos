@@ -520,7 +520,7 @@ StatusFlag = 1
 };
 __gsharp_ctx->mag = global::DebugReduc.ComprehensiveSpecKernel.ComputeMagnitude(__gsharp_ctx->p);
 __gsharp_ctx->mag = (float)global::System.Math.Abs(__gsharp_ctx->mag);
-// 5. Automatic Loop Unrolling via Constant (for)
+// 5. Loop Statement (for)
 for (__gsharp_ctx->i = 0; __gsharp_ctx->i < __gsharp_ctx->unrollFactor; __gsharp_ctx->i++)
 {
 if (__gsharp_ctx->i == 1)

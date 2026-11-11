@@ -21,11 +21,11 @@ These methods are mapped directly to PTX (Parallel Thread Execution) instruction
 | .NET Method | Supported Types | CUDA/PTX Mapping | Description |
 | :--- | :--- | :--- | :--- |
 | `PopCount(value)` | `uint`, `ulong`, `nuint` | `__popc`, `__popcll` | Counts the number of set bits (1s) in the integer. |
-| `LeadingZeroCount(value)` | `uint`, `ulong`, `nuint` | `__clz`, `__clzll` | Counts the number of leading zero bits. |
-| `TrailingZeroCount(value)` | `uint`, `ulong`, `nuint` | (Emulated via `__clz`) | Counts the number of trailing zero bits. |
-| `Log2(value)` | `uint`, `ulong`, `nuint` | (Emulated via `__clz`) | Returns the integer base-2 logarithm of the specified value. |
-| `RotateLeft(value, offset)` | `uint`, `ulong`, `nuint` | (Emulated PTX macro) | Rotates the bits of the integer left. |
-| `RotateRight(value, offset)` | `uint`, `ulong`, `nuint` | (Emulated PTX macro) | Rotates the bits of the integer right. |
+| `LeadingZeroCount(value)` | `uint`, `ulong`, `nuint` | `__gsharp_lzc_32`, `__gsharp_lzc_64` | Counts the number of leading zero bits. |
+| `TrailingZeroCount(value)` | `uint`, `ulong`, `nuint` | `__gsharp_tzc_32`, `__gsharp_tzc_64` | Counts the number of trailing zero bits. |
+| `Log2(value)` | `uint`, `ulong`, `nuint` | `__gsharp_log2_32`, `__gsharp_log2_64` | Returns the integer base-2 logarithm of the specified value. |
+| `RotateLeft(value, offset)` | `uint`, `ulong`, `nuint` | `__gsharp_rotl32`, `__gsharp_rotl64` | Rotates the bits of the integer left. |
+| `RotateRight(value, offset)` | `uint`, `ulong`, `nuint` | `__gsharp_rotr32`, `__gsharp_rotr64` | Rotates the bits of the integer right. |
 
 #### Example
 
@@ -49,9 +49,9 @@ Standard .NET Interlocked operations are safely mapped to CUDA atomic instructio
 
 | .NET Method | Supported Types | CUDA/PTX Mapping |
 | :--- | :--- | :--- |
-| `Add(ref location, value)` | `int`, `long` | `atomicAdd` |
-| `Exchange(ref location, value)` | `int`, `uint`, `long`, `ulong` | `atomicExch` |
-| `CompareExchange(ref location, value, comparand)` | `int`, `uint`, `long`, `ulong` | `atomicCAS` (Compare And Swap) |
+| `Add(ref location, value)` | `int`, `long` | `__gsharp_atomicAdd` |
+| `Exchange(ref location, value)` | `int`, `uint`, `ulong` (`atomicExch`); `long` (`__gsharp_atomicExch`) | `atomicExch`, `__gsharp_atomicExch` |
+| `CompareExchange(ref location, value, comparand)` | `int`, `uint`, `long`, `ulong` | `__gsharp_atomicCAS` (Compare And Swap) |
 
 The results are the C# results on every path: `Add` returns the new value and wraps on overflow
 (`Interlocked.Add(ref x, 1)` with `x == int.MaxValue` returns `int.MinValue`), and the `long` overloads return a signed
@@ -146,14 +146,27 @@ In addition to `MemoryExtensions.Sort`, G# maps the following slice, view, and i
 
 All other members and overloads of `Span<T>`, `ReadOnlySpan<T>`, `MemoryExtensions`, and `System.Array`—including search and comparison helpers (`IndexOf`, `Contains`, `SequenceEqual`, `StartsWith`, `EndsWith`, `BinarySearch`), `Replace` overloads, `ToArray`, `AsSpan` overloads taking `Index` or `Range`, `GetPinnableReference`, non-generic or range/comparer `Array.Sort` overloads, and uninvoked method groups—are rejected at compile time with `GSH0003`.
 
+---
+
+## 10.6 `System.Nullable<T>`
+
+G# supports value-type nullability inside GPU device code without heap allocations. The compiler lowers `Nullable<T>` structs and their query/access methods directly into C++ structs and conditional expressions while preserving C# evaluation order and side-effect guarantees.
+
+| Member / Overload | Supported Types | Behavior & Lowering |
+| :--- | :--- | :--- |
+| `Nullable<T>.HasValue` | Any value type `T` | Evaluates to `true` if a value is present; mapped to the `.HasValue` field. |
+| `Nullable<T>.Value` | Any value type `T` | Retrieves the underlying value; mapped to the `.Value` field. |
+| `Nullable<T>.GetValueOrDefault()` | Any value type `T` | Evaluates to `(opt.HasValue ? opt.Value : default(T))`. |
+| `Nullable<T>.GetValueOrDefault(T fallback)` | Any value type `T` | Evaluates to `(opt.HasValue ? opt.Value : fallback)`. |
+
+When evaluating the receiver or the fallback argument involves potential side effects or expressions that cannot safely be repeated or skipped, the transpiler emits sequenced evaluation using temporary variables to strictly uphold C#'s evaluation order.
+
 ## See also
-
-
 
 ### Architecture
 
 - [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
-- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../02_architecture/01_aot_transpiler.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler`)](../02_architecture/01_aot_transpiler.md)
 
 ### BCL API > Attributes
 

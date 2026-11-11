@@ -20,44 +20,52 @@ This document details the internal compiler implementation, data layout, and mat
 
 Arbitrary-precision GPU floating-point operations require predictable memory access, zero dynamic heap allocations, and zero dynamic dispatch. The module defines two primary floating-point value types:
 
-1. **`GpuBigUFloat<TSize>`**: Unsigned arbitrary-precision floating-point number.
-2. **`GpuBigFloat<TSize>`**: Signed arbitrary-precision floating-point number wrapping `GpuBigUFloat<TSize>`.
+1. **`GpuBigUFloat`**: Unsigned arbitrary-precision floating-point number.
+2. **`GpuBigFloat`**: Signed arbitrary-precision floating-point number wrapping `GpuBigUFloat`.
 
 ### 2.1.1 Structural Layout & Memory Safety
 
-To guarantee static determinism and seamless mapping to CUDA C++ registers and shared memory, all types enforce sequential layout (`[StructLayout(LayoutKind.Sequential)]`):
+The floating-point types are small host-side structs with sequential layout (`[StructLayout(LayoutKind.Sequential)]`).
+The digits are not in the struct: the significand is a `GpuBigUInt`, a handle to limbs in GPU device memory.
 
 ```csharp
 // Execution Context: Host (CPU)
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
+// A handle to an unsigned big integer whose limbs are in GPU device memory
 [StructLayout(LayoutKind.Sequential)]
-public struct GpuBigUInt<TSize> where TSize : unmanaged
+public readonly partial struct GpuBigUInt
 {
-    public TSize Limbs;
-}
-
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-
-[StructLayout(LayoutKind.Sequential)]
-public struct GpuBigUFloat<TSize> where TSize : unmanaged
-{
-    public GpuBigUInt<TSize> Significand;
-    public int Exponent;
+    public GpuWorkspace Workspace { get; }
+    public GpuBigIntMemoryHandle Handle { get; }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct GpuBigFloat<TSize> where TSize : unmanaged
+public readonly struct GpuBigUFloat
 {
-    public GpuBigUFloat<TSize> UFloat;
-    public bool IsNegative;
+    public GpuBigUInt Significand { get; }
+    public int Exponent { get; }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct GpuBigFloat
+{
+    public GpuBigUFloat UFloat { get; }
+    public bool IsNegative { get; }
 }
 ```
 
-- **`Significand` (Mantissa)**: Fixed-size unsigned big integer representing the significant digits.
+- **`Significand` (Mantissa)**: A `GpuBigUInt` holding the significant digits. Its limbs are in GPU device memory
+  allocated from the pool of its `GpuWorkspace` (`GpuWorkspace.MemoryManager`); the length is chosen per value, not
+  fixed by the type.
 - **`Exponent`**: 32-bit signed integer representing the binary power ($2^{\text{Exponent}}$).
 - **`IsNegative`**: Boolean flag indicating numerical sign (`true` for negative, `false` for non-negative).
-- **Zero-Allocation Guarantee**: Instances are stack- or register-allocated value types. No reference allocations, interfaces, or virtual calls are permitted on GPU device code.
+- **Memory Ownership**: The structs themselves allocate nothing on the managed heap, but the significand owns a device
+  buffer. `GpuBigUInt`, `GpuBigUFloat` and `GpuBigFloat` implement `IDisposable` (through `IGpuBigNumber<TSelf>`), and
+  `Dispose()` returns the buffer to the workspace pool.
+- **Fixed-Size Integers**: `GpuBigUInt<TSize>` is a different type: a value type whose limbs are an inline array
+  (`TSize`, such as `LimbBuffer4`) in the struct itself, with no device allocation. It backs the fixed-width integers
+  of [§2.7.1](#271-concrete-fixed-size-wrappers) (`GpuUInt128`, `GpuUInt256`, `GpuUInt512`).
 
 ---
 
@@ -141,12 +149,13 @@ To provide an intuitive, zero-allocation developer experience natively in C#, th
 
 ### 2.7.1 Concrete Fixed-Size Wrappers
 
-Instead of requiring users to specify generic size parameters (e.g., `GpuBigFloat<LimbBuffer4>`) and define `global using` aliases, the module provides ready-to-use concrete wrapper types for common precisions:
+Instead of requiring users to specify generic size parameters (e.g., `GpuBigUInt<LimbBuffer4>`) and define
+`global using` aliases, the module provides ready-to-use concrete wrapper types for common precisions:
 
-- **Floating-Point**: `GpuFloat128`, `GpuFloat256`, `GpuFloat512`
-- **Integer (Significand)**: `GpuUInt128`, `GpuUInt256`, `GpuUInt512`
+- **Fixed-Width Integers**: `GpuUInt128`, `GpuUInt256`, `GpuUInt512`
 
-These structs act as ultra-thin, zero-overhead wrappers around the generic `GpuBigFloat<TSize>` and `GpuBigUInt<TSize>` types. They provide implicit conversions and operator overloads for seamless arithmetic.
+These structs act as ultra-thin, zero-overhead wrappers around `GpuBigUInt<LimbBuffer4>`, `GpuBigUInt<LimbBuffer8>`, and
+`GpuBigUInt<LimbBuffer16>`. They provide implicit conversions and operator overloads for seamless arithmetic.
 
 ### 2.7.2 Zero-Allocation Collection Expressions
 
@@ -154,15 +163,17 @@ Traditional C# arrays (`new uint[] { 1, 2 }`) allocate memory on the managed hea
 
 ```csharp
 // Execution Context: Host (CPU)
-// Seamlessly initializes a 128-bit GPU float from an array-like syntax.
+// Seamlessly initializes a 128-bit GPU big integer from an array-like syntax.
 // The C# compiler optimizes this into a stack/register allocated sequence.
 GpuUInt128 significand = [0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000];
-var myFloat = new GpuFloat128(significand, exponent: 10, isNegative: false);
 ```
 
 This is achieved internally via:
 1. **`[InlineArray]`**: Defining zero-allocation, fixed-size backing buffers (`LimbBuffer4`, `LimbBuffer8`, `LimbBuffer16`).
-2. **`[CollectionBuilder]`**: Intercepting the `[ ... ]` syntax and safely copying a `ReadOnlySpan<uint>` into the inline arrays without ever triggering a heap allocation or relying on boxed `IEnumerable<T>` interfaces.
+2. **`[CollectionBuilder]`**: Decorating the fixed-width integer structs
+   (`[CollectionBuilder(typeof(GpuUInt128), nameof(GpuUInt128.Create))]`) to intercept the `[ ... ]` syntax and safely
+   copy a `ReadOnlySpan<uint>` into the inline limb arrays without ever triggering a heap allocation or relying on boxed
+   `IEnumerable<T>` interfaces.
 
 ---
 

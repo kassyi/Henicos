@@ -18,8 +18,10 @@ Represents a fixed-width 512-bit unsigned integer stored in value-type memory on
 ```csharp
 [CollectionBuilder(typeof(GpuUInt512), nameof(Create))]
 [GenerateGpuNumberOperators]
-public partial struct GpuUInt512 : IEquatable<GpuUInt512>, IComparable<GpuUInt512>
+public partial struct GpuUInt512 : IGpuNumber<GpuUInt512>
 ```
+
+Implements: [`IGpuNumber<GpuUInt512>`](00_index.md#numeric-interfaces), `IGpuBigNumberBase`, `IEquatable<GpuUInt512>`, `IComparable<GpuUInt512>`
 
 ## Constructors
 
@@ -68,6 +70,29 @@ The underlying 512-bit fixed-size unsigned big integer storage.
 public GpuBigUInt<LimbBuffer16> Value;
 ```
 
+## Properties
+
+| Name | Description |
+| --- | --- |
+| [CanBeNegative](#canbenegative) | Always `false`: `GpuUInt512` is an unsigned type. |
+| [IsNegative](#isnegative) | Always `false`. |
+
+## CanBeNegative
+
+Always `false`: `GpuUInt512` is an unsigned type.
+
+```csharp
+public readonly bool CanBeNegative { get; }
+```
+
+## IsNegative
+
+Always `false`.
+
+```csharp
+public readonly bool IsNegative { get; }
+```
+
 ## Methods
 
 | Name | Description |
@@ -77,7 +102,9 @@ public GpuBigUInt<LimbBuffer16> Value;
 | [Equals(GpuUInt512)](#equalsgpuuint512) | Indicates whether the current instance is equal to another `GpuUInt512` instance. |
 | [Equals(object?)](#equalsobject) | Determines whether the specified object is equal to the current instance. |
 | [GetEnumerator()](#getenumerator) | Returns a dummy enumerator to enable C# collection expression support. |
+| [GetBitLength()](#getbitlength) | Returns the bit length of the value, or 0 for zero. |
 | [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
+| [IsZero()](#iszero) | Determines whether the value is zero. |
 
 ## CompareTo(GpuUInt512)
 
@@ -164,6 +191,14 @@ public DummyUIntEnumerator GetEnumerator();
 _DummyUIntEnumerator_<br>
 A default instance of `DummyUIntEnumerator`.
 
+## GetBitLength()
+
+Returns the bit length of the value, or 0 for zero.
+
+```csharp
+public readonly int GetBitLength();
+```
+
 ## GetHashCode()
 
 Returns the hash code for this instance.
@@ -176,6 +211,14 @@ public readonly override int GetHashCode();
 
 _int_<br>
 A 32-bit signed integer hash code.
+
+## IsZero()
+
+Determines whether the value is zero.
+
+```csharp
+public readonly bool IsZero();
+```
 
 ## Operators
 

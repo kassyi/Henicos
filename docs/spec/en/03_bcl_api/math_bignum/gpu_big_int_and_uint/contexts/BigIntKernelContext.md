@@ -147,8 +147,8 @@ public struct NewtonRaphsonContext
     public DimensionContext Dimensions;
     public Ntt Ntt;
     public WorkspaceStateContext Workspace;
-    public long[] CarryBuffer;
-    public uint[] CorrectionStatus;
+    public long[]? CarryBuffer;
+    public uint[]? CorrectionStatus;
 }
 ```
 
