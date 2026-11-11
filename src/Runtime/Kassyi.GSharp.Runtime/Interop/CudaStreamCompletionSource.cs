@@ -227,7 +227,7 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
     /// <param name="timeout">The longest time to wait for an in-flight tick to leave the driver.</param>
     internal static void AbandonContext(IntPtr context, TimeSpan timeout)
     {
-        var spinner = new SpinWait();
+        SpinWait spinner = default;
         var start = Stopwatch.GetTimestamp();
         while (TryTakeArmed(context, out var source, out var version))
         {
