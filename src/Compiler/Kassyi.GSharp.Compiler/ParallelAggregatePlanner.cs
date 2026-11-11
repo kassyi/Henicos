@@ -1,41 +1,5 @@
 namespace Kassyi.GSharp.Compiler;
 
-/// <summary>How the CUDA dialect evaluates one <c>AsParallel()</c> aggregate. The CPU dialects run it in each thread.</summary>
-internal enum ParallelAggregateStrategy
-{
-    /// <summary>Each thread sums the whole sequence on its own.</summary>
-    PerThread,
-
-    /// <summary>The threads of a block share the elements and combine their partial sums (every block sums all of it).</summary>
-    Block,
-
-    /// <summary>The threads of the grid share the elements and combine through a grid sync (cooperative kernels).</summary>
-    Grid
-}
-
-/// <summary>Why an aggregate runs in each thread (the reason of Warning A, GSH0099).</summary>
-internal enum ParallelAggregateFallback
-{
-    None,
-    OutsideKernelBody,
-    InsideLambda,
-    DivergentCall,
-    EarlyExit,
-    ThreadPrivateSource,
-    OrderDependentStage,
-    SideEffect,
-    ThreadVariantInput,
-    UnsupportedElementType,
-    UnfusedChain,
-    Unresolved
-}
-
-/// <summary>The strategy of one aggregate, why it fell back to each thread, and whether its inputs are one in the grid.</summary>
-internal readonly record struct ParallelAggregatePlan(
-    ParallelAggregateStrategy Strategy,
-    ParallelAggregateFallback Fallback,
-    bool IsGridUniform);
-
 /// <summary>
 /// Decides how the terminal call of a fused <c>AsParallel()</c> chain is evaluated (#624). The meaning is the one of C#:
 /// every calling thread receives the sum of the whole sequence. The threads may share the work only when they all reach
