@@ -712,7 +712,7 @@ methods:
         type: IntPtr
         description: Stream in which to initiate capture.
       - name: mode
-        type: int
+        type: CUstreamCaptureMode
         description: Stream capture mode.
 
   - name: cuStreamIsCapturing

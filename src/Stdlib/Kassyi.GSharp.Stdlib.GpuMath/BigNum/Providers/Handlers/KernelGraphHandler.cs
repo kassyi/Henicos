@@ -15,9 +15,9 @@ public sealed class KernelGraphHandler : IGpuGraphProvider
     public void BeginCapture(IntPtr stream)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        // CU_STREAM_CAPTURE_MODE_RELAXED = 2: an expression evaluated under capture allocates its intermediates with
-        // cuMemAlloc, which the stricter modes reject during a capture.
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream, 2));
+        // Relaxed: an expression evaluated under capture allocates with cuMemAlloc when the pool misses, which the
+        // stricter modes reject during a capture.
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream, CUstreamCaptureMode.Relaxed));
     }
 
     /// <inheritdoc/>

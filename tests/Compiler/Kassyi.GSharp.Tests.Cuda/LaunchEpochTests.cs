@@ -390,8 +390,7 @@ public sealed class LaunchEpochTests
         // Captures what <launch> enqueues on the stream (the stream handle is its argument) and instantiates it
         public static CapturedGraph Capture(CudaStream stream, Action<IntPtr> launch)
         {
-            // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, 1));
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream.Handle, CUstreamCaptureMode.ThreadLocal));
             IntPtr graph;
             try
             {

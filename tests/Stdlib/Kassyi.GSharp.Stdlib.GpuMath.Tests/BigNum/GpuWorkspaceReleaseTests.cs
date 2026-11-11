@@ -23,9 +23,6 @@ public sealed class GpuWorkspaceReleaseTests : IDisposable
 
     private const long ToleranceBytes = 64L * 1024 * 1024;
 
-    // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL, as KernelGraphHandler uses.
-    private const int ThreadLocalCaptureMode = 1;
-
     private readonly GpuKernelLoader.CudaContextScope _scope;
 
     public GpuWorkspaceReleaseTests()
@@ -74,7 +71,7 @@ public sealed class GpuWorkspaceReleaseTests : IDisposable
             {
             }
 
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(workspace.Stream, ThreadLocalCaptureMode));
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(workspace.Stream, CUstreamCaptureMode.Relaxed));
         });
     }
 
