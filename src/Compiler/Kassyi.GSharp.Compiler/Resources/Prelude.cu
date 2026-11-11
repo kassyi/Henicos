@@ -230,7 +230,13 @@ __device__ __host__ constexpr unsigned int __gsharp_builtin_message_id(const cha
             (void)held;
 #endif
         }
+#ifndef __GSHARP_TRAP_EXITS
+        // The other threads of the warp wait for the leader's record before their trap aborts the launch. [WHY] Not
+        // when threads exit: an exiting thread stops only itself, as in __gsharp_null_read_trap, and the barrier is
+        // the only call left in this function, so without it ptxas saves no return address here (a module with a
+        // recursive device function compiles every function that is not inlined with the call ABI)
         __syncwarp(active);
+#endif
     }
     __gsharp_exit_thread();
 }
