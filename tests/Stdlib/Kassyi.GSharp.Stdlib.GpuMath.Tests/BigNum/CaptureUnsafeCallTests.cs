@@ -23,10 +23,10 @@ public sealed class CaptureUnsafeCallTests
     public void AllocationMissingThePool_DuringThreadLocalCapture_ThrowsCaptureUnsupported()
     {
         CudaCapability.EnsureGpuAvailable();
-        if (!IsolatedTestProcess.IsChild(nameof(AllocationMissingThePool_DuringThreadLocalCapture_ThrowsCaptureUnsupported)))
+        const string Name = nameof(AllocationMissingThePool_DuringThreadLocalCapture_ThrowsCaptureUnsupported);
+        if (!IsolatedTestProcess.IsChild(Name))
         {
-            IsolatedTestProcess.Run(typeof(CaptureUnsafeCallTests),
-                nameof(AllocationMissingThePool_DuringThreadLocalCapture_ThrowsCaptureUnsupported));
+            IsolatedTestProcess.Run(typeof(CaptureUnsafeCallTests), Name);
             return;
         }
 
@@ -38,10 +38,10 @@ public sealed class CaptureUnsafeCallTests
     public void AllocationMissingThePool_DuringGlobalCapture_ThrowsCaptureUnsupported()
     {
         CudaCapability.EnsureGpuAvailable();
-        if (!IsolatedTestProcess.IsChild(nameof(AllocationMissingThePool_DuringGlobalCapture_ThrowsCaptureUnsupported)))
+        const string Name = nameof(AllocationMissingThePool_DuringGlobalCapture_ThrowsCaptureUnsupported);
+        if (!IsolatedTestProcess.IsChild(Name))
         {
-            IsolatedTestProcess.Run(typeof(CaptureUnsafeCallTests),
-                nameof(AllocationMissingThePool_DuringGlobalCapture_ThrowsCaptureUnsupported));
+            IsolatedTestProcess.Run(typeof(CaptureUnsafeCallTests), Name);
             return;
         }
 
