@@ -48,9 +48,18 @@ public static class ManagedGpuContext
 | Name | Description |
 | --- | --- |
 | [InitializeGrid(int)](#initializegridint) | Initializes or resets the shared memory arrays for the entire grid execution. |
+| `InitializeGrid(int, uint)` | Initializes grid execution with static shared memory byte size. |
+| `InitializeGrid(int, uint, bool)` | Initializes grid execution with static shared memory size and phase execution policy. |
+| `EndGrid()` | Concludes grid execution, resetting shared memory regions and thread allocations. |
 | [AllocateSharedMemory\<T\>(ulong, int)](#allocatesharedmemorytulong-int) | Returns the shared memory of a `SharedMemory<T>` declaration in the current block. |
+| `AllocateDynamicSharedMemory<T>(ulong, int, string)` | Allocates dynamic shared memory at a specific declaration site. |
+| `FindDynamicSharedMemory<T>(ulong)` | Finds previously allocated dynamic shared memory for a declaration site. |
 | [SetThreadContext(in GpuThreadContext)](#setthreadcontextin-gputhreadcontext) | Sets the thread coordinates for the current cooperative scheduler step. |
 | [ClearThreadContext()](#clearthreadcontext) | Clears the thread context when execution is completed. |
+| `ResetWarpExchange()` | Resets the warp shuffle and rendezvous buffers. |
+| `MarkWarpLaneExited(int)` | Marks a specific thread lane as exited from warp execution. |
+| `WarpCanRun(int, int)` | Checks whether a warp thread lane can execute in the given round. |
+| `WarpStall(int)` | Returns an exception indicating an unresolved warp deadlock or stall. |
 
 ## InitializeGrid(int)
 
@@ -157,7 +166,7 @@ finally
 
 ## Remarks
 
-`ManagedGpuContext` underpins G#'s Bulk Synchronous Parallel (BSP) CPU fallback scheduler. When `IsActive` is `true` on the current thread, device intrinsics such as [`ThreadIndex`](ThreadIndex.md), [`BlockIndex`](BlockIndex.md), [`SharedMemory<T>`](../memory/SharedMemory.md), and [`Gpu.SyncThreads`](../gpu_class/SyncThreads.md) operate against thread-local emulated state instead of throwing `GpuOnlyException`.
+`ManagedGpuContext` underpins G#'s Bulk Synchronous Parallel (BSP) CPU fallback scheduler. When `IsActive` is `true` on the current thread, device intrinsics such as [`ThreadIndex`](ThreadIndex.md), [`BlockIndex`](BlockIndex.md), [`SharedMemory<T>`](../memory/SharedMemory.md), and [`Gpu.SyncThreads`](../gpu_class/SyncThreads.md) operate against thread-local emulated state instead of throwing `GpuOnlyException`. The class provides supporting APIs for grid lifecycle (`InitializeGrid`, `EndGrid`), dynamic/static shared memory management (`AllocateSharedMemory`, `AllocateDynamicSharedMemory`, `FindDynamicSharedMemory`), and warp execution synchronization (`ResetWarpExchange`, `MarkWarpLaneExited`, `WarpCanRun`, `WarpStall`).
 
 ## See also
 

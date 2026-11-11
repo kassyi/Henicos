@@ -56,14 +56,14 @@ public class Example
 
 ## Remarks
 
-Helps the NVIDIA CUDA compiler (`nvcc`/`NVRTC`) optimize register allocation and place constant values into read-only constant memory caches.
+Helps the NVIDIA CUDA compiler (`nvcc`) optimize register allocation and place constant values into read-only constant memory caches.
 
-### Comparison with [Constant]
+### Comparison with [GpuConstexpr]
 
-While both attributes optimize constant values, their underlying mechanics differ fundamentally. **If you think of this in C# terms:**
+While both attributes optimize constant values, their underlying mechanics differ:
 
-- **`[GpuReadOnly]` is like an `in` parameter or `readonly` field:** The variable physically exists in memory and is passed as a real argument, but the compiler ensures it cannot be modified, allowing it to be placed in a fast, read-only memory cache.
-- **[[Constant]](ConstantAttribute.md) is like a `const` literal:** The variable completely disappears at compile-time. The compiler takes the raw value (e.g., `10`) and hardcodes it directly into the instructions everywhere it was used.
+- **`[GpuReadOnly]` is like an `in` parameter or `readonly` field:** The parameter physically exists in memory and is passed as an argument, but the compiler qualifies it with `const`, allowing it to be placed in a fast, read-only constant cache.
+- **[[GpuConstexpr]](ConstantAttribute.md) indicates compile-time specialization:** It marks a kernel parameter as a compile-time constant (e.g., for loop unrolling or specialization bounds). Unlike `[GpuReadOnly]`, `[GpuConstexpr]` communicates compile-time constant intent to the transpiler.
 
 #### [GpuReadOnly]
 
@@ -81,21 +81,14 @@ public static unsafe void ProcessData(float* data, [GpuReadOnly] float scaleFact
 __global__ void ProcessData(float* data, const float scaleFactor)
 ```
 
-#### [[Constant]](ConstantAttribute.md)
+#### [[GpuConstexpr]](ConstantAttribute.md)
 
-Acts as a strict Ahead-Of-Time (AOT) preprocessor directive. The transpiler completely removes the parameter from the generated C++ signature and injects a `#define` macro. It is mandatory when a physical variable cannot exist (e.g., compile-time loop unroll bounds).
+Marks a kernel parameter as an Ahead-Of-Time compile-time constant. It is used when kernel parameters provide bounds for loop unrolling or specialized evaluation.
 
-**C# Source (called with `iterations = 10` on the CPU):**
+**C# Source:**
 
 ```csharp
-public static unsafe void MultiplyKernel(int* data, [Constant] int iterations)
-```
-
-**Emitted CUDA C++:**
-
-```cpp
-#define iterations 10
-__global__ void MultiplyKernel(int* data)
+public static unsafe void MultiplyKernel(int* data, [GpuConstexpr(10)] int iterations)
 ```
 
 ## See also
@@ -103,7 +96,7 @@ __global__ void MultiplyKernel(int* data)
 ### BCL API > Attributes
 
 - [Attributes](00_index.md)
-- [ConstantAttribute](ConstantAttribute.md)
+- [GpuConstexprAttribute](ConstantAttribute.md)
 - [GpuKernelAttribute](GpuKernelAttribute.md)
 
 ### BCL API > Gpu Class
