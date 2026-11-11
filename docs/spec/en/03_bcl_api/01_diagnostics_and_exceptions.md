@@ -151,6 +151,13 @@ catch (GpuOnlyException ex)
 }
 ```
 
+The class has two static helpers for the bodies of GPU-only members:
+
+| Member | Description |
+| :--- | :--- |
+| `static void Throw()` | Throws a new `GpuOnlyException`. Use it as the body of a `void` member. |
+| `static T Throw<T>()` | Throws a new `GpuOnlyException`; the return type lets it stand where an expression of type `T` is expected (`public static int Lane => GpuOnlyException.Throw<int>();`). It never returns. |
+
 ### CudaException
 
 - **Namespace:** `Kassyi.GSharp.Runtime.Interop`
