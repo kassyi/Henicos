@@ -101,8 +101,8 @@ case 1: return __gsharp_neg_i32(__gsharp_id_3_tid);
 }
 __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 1171422392u);
 }());
-unsigned long long __gsharp_id_5_start = clock64();
-while((long long)(clock64()-__gsharp_id_5_start)<__gsharp_id_1_cycles)
+unsigned long long __gsharp_id_5_start = __gsharp_clock64();
+while((long long)(__gsharp_clock64()-__gsharp_id_5_start)<__gsharp_id_1_cycles)
 {
 }
 __gsharp_id_2_result[__gsharp_id_3_tid]=__gsharp_id_4_value;
@@ -308,8 +308,8 @@ case 1: return __gsharp_neg_i32(__gsharp_id_3_tid);
 }
 __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 1441869600u);
 }());
-unsigned long long __gsharp_id_5_start = clock64();
-while((long long)(clock64()-__gsharp_id_5_start)<__gsharp_id_1_cycles)
+unsigned long long __gsharp_id_5_start = __gsharp_clock64();
+while((long long)(__gsharp_clock64()-__gsharp_id_5_start)<__gsharp_id_1_cycles)
 {
 }
 __gsharp_grid_sync();

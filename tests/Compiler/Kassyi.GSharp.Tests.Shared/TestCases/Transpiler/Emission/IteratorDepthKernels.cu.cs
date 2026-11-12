@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.TestCases.Emission;
 
 // L1 enumerates L2, ..., L16 enumerates L17: a foreach over L(k) expands 18 - k iterators inside each other
-[SkipSnapshotConsistency("Expansion depth checked by EmissionShapeTests")]
+[SkipSnapshotConsistency("Input of the IR coverage tests; Syntax/IteratorDepthKernels.cu.cs has the snapshot")]
 public static partial class IteratorDepthKernels
 {
     [GpuDeviceFunction]

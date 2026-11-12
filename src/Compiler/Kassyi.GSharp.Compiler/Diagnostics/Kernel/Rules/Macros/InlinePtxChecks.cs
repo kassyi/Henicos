@@ -3,14 +3,17 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.Macros;
 /// <summary>Checks <c>Gpu.InlinePtx</c>: the dialect supports inline PTX, and the text is a constant string.</summary>
 internal static class InlinePtxChecks
 {
+    private const string InlinePtxName = "Gpu.InlinePtx";
+
     /// <summary>Reports a dialect without inline PTX and a PTX text that is not a constant string.</summary>
     public static void CheckInlinePtx(InvocationExpressionSyntax invocation, ref ValidationContext context)
     {
         if (!DialectCallSupport.SupportsInlinePtx(context.Dialect))
         {
             context.ReportDiagnostic(
-                GSharpDiagnostics.InlinePtxNotSupportedByDialect,
+                GSharpDiagnostics.IntrinsicNotImplementedByDialect,
                 invocation,
+                InlinePtxName,
                 context.Dialect.Name);
         }
 

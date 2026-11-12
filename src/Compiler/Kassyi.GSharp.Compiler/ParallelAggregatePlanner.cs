@@ -16,13 +16,13 @@ internal static class ParallelAggregatePlanner
     /// <summary>The plan of the terminal call <paramref name="terminal"/> of a fused <c>AsParallel()</c> chain.</summary>
     public static ParallelAggregatePlan Plan(InvocationExpressionSyntax terminal, SemanticModel model)
     {
-        if (model.GetOriginalNode(terminal) is not InvocationExpressionSyntax original ||
+        if (!model.TryGetOriginalNode(terminal, out var node, out var originalModel) ||
+            node is not InvocationExpressionSyntax original ||
             !model.Compilation.ContainsSyntaxTree(original.SyntaxTree))
         {
             return PerThread(ParallelAggregateFallback.Unresolved);
         }
 
-        var originalModel = model.Compilation.GetCachedSemanticModel(original.SyntaxTree);
         if (originalModel.GetSymbol(original) is not IMethodSymbol symbol ||
             !StackLinqChainExtractor.TryExtract(original, originalModel, symbol, out var chain))
         {

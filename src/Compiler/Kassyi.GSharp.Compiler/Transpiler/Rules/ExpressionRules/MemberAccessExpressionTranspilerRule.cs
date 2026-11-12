@@ -18,6 +18,11 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
+        if (ConstantStringLength.TryAppend(node, symbol, ref context))
+        {
+            return;
+        }
+
         if (symbol is IPropertySymbol spanProperty && TryTranspileSpanProperty(node, spanProperty, ref context))
         {
             return;

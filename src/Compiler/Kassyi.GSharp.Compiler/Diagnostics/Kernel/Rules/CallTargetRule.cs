@@ -2,8 +2,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
 /// Reports a call in GPU code, or a method group it names, whose target is a method of another assembly that the
-/// project's dialect does not implement (GSH0109), from the decision the transpiler fails the call by
-/// (<see cref="CallTargetClassifier"/>).
+/// project's dialect does not implement (GSH0109), and a call of an intrinsic that the project's dialect declares it
+/// does not implement (GSH0054, a warning: the transpiler writes a runtime failure), from the decision the transpiler
+/// writes the call by (<see cref="CallTargetClassifier"/>).
 /// </summary>
 /// <remarks>
 /// [WHY] The analyzer runs the transpiler for the CUDA dialect only (<see cref="TranspilerFailureCheck"/>), whose
@@ -20,7 +21,10 @@ internal sealed class CallTargetRule :
     public static readonly CallTargetRule Instance = new();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode);
+        ImmutableArray.Create(
+            GSharpDiagnostics.UnmappedMethodCalledFromGpuCode,
+            GSharpDiagnostics.IntrinsicNotImplementedByDialect
+        );
 
     private CallTargetRule()
     {
@@ -30,7 +34,7 @@ internal sealed class CallTargetRule :
     {
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called)
         {
-            Report(node, called, ref context);
+            Report(node, called, ref context, reportsUnsupportedIntrinsic: true);
         }
     }
 
@@ -39,7 +43,7 @@ internal sealed class CallTargetRule :
     {
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called && CallTargetClassifier.IsMethodGroup(node))
         {
-            Report(node, called, ref context);
+            Report(node, called, ref context, reportsUnsupportedIntrinsic: false);
         }
     }
 
@@ -53,16 +57,19 @@ internal sealed class CallTargetRule :
 
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called && CallTargetClassifier.IsMethodGroup(node))
         {
-            Report(node, called, ref context);
+            Report(node, called, ref context, reportsUnsupportedIntrinsic: false);
         }
     }
 
-    // [WHY] Only the failures that depend on the dialect; a call in the arguments of a call that C# removes is never
-    // emitted
-    private static void Report(SyntaxNode node, IMethodSymbol called, ref ValidationContext context)
+    // [WHY] Only the plans that depend on the dialect; a call in the arguments of a call that C# removes is never
+    // emitted. Only a call of an intrinsic the dialect does not implement becomes a runtime failure
+    private static void Report(SyntaxNode node, IMethodSymbol called, ref ValidationContext context,
+        bool reportsUnsupportedIntrinsic)
     {
         var plan = CallTargetClassifier.Classify(called, node, context.SemanticModel, context.Dialect);
-        if (plan.Kind != CallTargetKind.Unmapped || RemovedCalls.IsInRemovedCall(node, context.SemanticModel))
+        var reported = plan.Kind == CallTargetKind.Unmapped ||
+                       (reportsUnsupportedIntrinsic && plan.Kind == CallTargetKind.UnsupportedIntrinsic);
+        if (!reported || RemovedCalls.IsInRemovedCall(node, context.SemanticModel))
         {
             return;
         }

@@ -12,6 +12,9 @@ public static partial class DefaultedKernels
 private static readonly Lazy<byte[]> s_fatbin___native_defaulted_fatbin = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "./native/defaulted.fatbin")));
 public static void Scale(float[] data, float factor = 2.0f)
 {
+if (data is null){
+throw new global::System.ArgumentNullException(nameof(data));
+}
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_defaulted_fatbin.Value, "Scale");
 using var d_data = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(data.Length);

@@ -11,7 +11,7 @@ public static partial class Gpu
 /// <param name="val">The 32-bit unsigned integer whose bits are to be reversed.</param>
 /// <returns>The bit-reversed 32-bit unsigned integer.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__brev")]
-public static uint BitReverse(uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint BitReverse(uint val) => Kassyi.GSharp.Core.ManagedBitIntrinsics.BitReverse(val);
 /// <summary>Atomically adds a value to the target address and returns the old value.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to add.</param>
@@ -54,14 +54,14 @@ public static uint AtomicSub(ref uint address, uint val) => Kassyi.GSharp.Core.M
 /// <param name="carry">The carry-in value (0 or 1), updated with the carry-out result.</param>
 /// <returns>The 32-bit addition result.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_add_cc")]
-public static uint AddWithCarry(uint a, uint b, ref ulong carry) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint AddWithCarry(uint a, uint b, ref ulong carry) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.AddWithCarry(a, b, ref carry);
 /// <summary>Subtracts two unsigned 32-bit integers with borrow-in and borrow-out propagation.</summary>
 /// <param name="a">The minuend operand.</param>
 /// <param name="b">The subtrahend operand.</param>
 /// <param name="borrow">The borrow-in value (0 or 1), updated with the borrow-out result.</param>
 /// <returns>The 32-bit subtraction result.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_sub_cc")]
-public static uint SubWithBorrow(uint a, uint b, ref long borrow) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint SubWithBorrow(uint a, uint b, ref long borrow) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.SubWithBorrow(a, b, ref borrow);
 /// <summary>Atomically computes bitwise OR on the target unsigned integer address.</summary>
 /// <param name="address">The reference to the memory location to modify.</param>
 /// <param name="val">The value to OR.</param>
@@ -91,100 +91,100 @@ public static ulong AtomicMax(ref ulong address, ulong val) => Kassyi.GSharp.Cor
 /// <param name="b">The second 32-bit unsigned multiplicand.</param>
 /// <returns>The 64-bit product of a and b.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mul_wide")]
-public static ulong MultiplyWide(uint a, uint b) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong MultiplyWide(uint a, uint b) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.MultiplyWide(a, b);
 /// <summary>Computes the high 64 bits of the product of two 64-bit unsigned integers (__umul64hi).</summary>
 /// <param name="a">The first 64-bit unsigned multiplicand.</param>
 /// <param name="b">The second 64-bit unsigned multiplicand.</param>
 /// <returns>The most significant 64 bits of the 128-bit product.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__umul64hi")]
-public static ulong MultiplyHigh(ulong a, ulong b) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong MultiplyHigh(ulong a, ulong b) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.MultiplyHigh(a, b);
 /// <summary>Concatenates hi and lo, shifts left by shift, and extracts the most significant 32 bits.</summary>
 /// <param name="lo">The least significant 32 bits.</param>
 /// <param name="hi">The most significant 32 bits.</param>
 /// <param name="shift">The shift amount in bits (0-31).</param>
 /// <returns>The most significant 32 bits of the shifted 64-bit pair.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__funnelshift_l")]
-public static uint FunnelShiftLeft(uint lo, uint hi, uint shift) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint FunnelShiftLeft(uint lo, uint hi, uint shift) => Kassyi.GSharp.Core.ManagedBitIntrinsics.FunnelShiftLeft(lo, hi, shift);
 /// <summary>Concatenates hi and lo, shifts right by shift, and extracts the least significant 32 bits.</summary>
 /// <param name="lo">The least significant 32 bits.</param>
 /// <param name="hi">The most significant 32 bits.</param>
 /// <param name="shift">The shift amount in bits (0-31).</param>
 /// <returns>The least significant 32 bits of the shifted 64-bit pair.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__funnelshift_r")]
-public static uint FunnelShiftRight(uint lo, uint hi, uint shift) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint FunnelShiftRight(uint lo, uint hi, uint shift) => Kassyi.GSharp.Core.ManagedBitIntrinsics.FunnelShiftRight(lo, hi, shift);
 /// <summary>Counts the number of set bits (population count) in a 32-bit unsigned integer.</summary>
 /// <param name="val">The unsigned 32-bit integer.</param>
 /// <returns>The number of set bits.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__popc")]
-public static uint PopCount(uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint PopCount(uint val) => Kassyi.GSharp.Core.ManagedBitIntrinsics.PopCount(val);
 /// <summary>Counts the number of set bits (population count) in a 64-bit unsigned integer.</summary>
 /// <param name="val">The unsigned 64-bit integer.</param>
 /// <returns>The number of set bits.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__popcll")]
-public static uint PopCount(ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint PopCount(ulong val) => Kassyi.GSharp.Core.ManagedBitIntrinsics.PopCount(val);
 /// <summary>Returns the number of consecutive zero bits starting from the most significant bit of a 32-bit integer.</summary>
 /// <param name="val">The 32-bit integer to inspect.</param>
 /// <returns>The count of leading zero bits.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__clz")]
-public static uint CountLeadingZeros(uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint CountLeadingZeros(uint val) => Kassyi.GSharp.Core.ManagedBitIntrinsics.CountLeadingZeros(val);
 /// <summary>Returns the number of consecutive zero bits starting from the most significant bit of a 64-bit integer.</summary>
 /// <param name="val">The 64-bit integer to inspect.</param>
 /// <returns>The count of leading zero bits.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__clzll")]
-public static uint CountLeadingZeros(ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint CountLeadingZeros(ulong val) => Kassyi.GSharp.Core.ManagedBitIntrinsics.CountLeadingZeros(val);
 /// <summary>Reverses the bit order of a 64-bit unsigned integer using the __brevll hardware instruction.</summary>
 /// <param name="val">The 64-bit unsigned integer whose bits are to be reversed.</param>
 /// <returns>The bit-reversed 64-bit unsigned integer.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__brevll")]
-public static ulong BitReverse(ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong BitReverse(ulong val) => Kassyi.GSharp.Core.ManagedBitIntrinsics.BitReverse(val);
 /// <summary>Returns selected bytes from two 32-bit unsigned integers according to a selector mask.</summary>
 /// <param name="x">First source value.</param>
 /// <param name="y">Second source value.</param>
 /// <param name="selector">Byte selector mask.</param>
 /// <returns>The permuted 32-bit result.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__byte_perm")]
-public static uint BytePermute(uint x, uint y, uint selector) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint BytePermute(uint x, uint y, uint selector) => Kassyi.GSharp.Core.ManagedBitIntrinsics.BytePermute(x, y, selector);
 /// <summary>Computes the high 32 bits of the product of two 32-bit signed integers.</summary>
 /// <param name="a">The first 32-bit signed multiplicand.</param>
 /// <param name="b">The second 32-bit signed multiplicand.</param>
 /// <returns>The most significant 32 bits of the 64-bit product.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__mulhi")]
-public static int MultiplyHigh(int a, int b) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int MultiplyHigh(int a, int b) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.MultiplyHigh(a, b);
 /// <summary>Computes the high 64 bits of the product of two 64-bit signed integers.</summary>
 /// <param name="a">The first 64-bit signed multiplicand.</param>
 /// <param name="b">The second 64-bit signed multiplicand.</param>
 /// <returns>The most significant 64 bits of the 128-bit product.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__mul64hi")]
-public static long MultiplyHigh(long a, long b) => Kassyi.GSharp.Core.GpuOnlyException.Throw<long>();
-/// <summary>Computes the absolute difference of two signed integers.</summary>
+public static long MultiplyHigh(long a, long b) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.MultiplyHigh(a, b);
+/// <summary>Computes the absolute difference of two signed integers (PTX sad.s32).</summary>
+/// <param name="a">The first operand.</param>
+/// <param name="b">The second operand.</param>
+/// <returns>The absolute difference |a - b| in 32 bits; a difference above int.MaxValue keeps its 32 bits and reads as negative (int.MinValue and int.MaxValue give -1).</returns>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_abs_diff")]
+public static int AbsDiff(int a, int b) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.AbsDiff(a, b);
+/// <summary>Computes the absolute difference of two unsigned integers (PTX sad.u32).</summary>
 /// <param name="a">The first operand.</param>
 /// <param name="b">The second operand.</param>
 /// <returns>The absolute difference |a - b|.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__sad")]
-public static int AbsDiff(int a, int b) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
-/// <summary>Computes the absolute difference of two unsigned integers.</summary>
-/// <param name="a">The first operand.</param>
-/// <param name="b">The second operand.</param>
-/// <returns>The absolute difference |a - b|.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__usad")]
-public static uint AbsDiff(uint a, uint b) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_abs_diff")]
+public static uint AbsDiff(uint a, uint b) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.AbsDiff(a, b);
 /// <summary>Ensures memory writes are visible across all threads on device.</summary>
 [Kassyi.GSharp.Core.CudaIntrinsic("__threadfence")]
-public static void ThreadFence() => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void ThreadFence() => Kassyi.GSharp.Core.ManagedIntrinsics.ThreadFence();
 /// <summary>Ensures memory writes are visible to all threads in the same block.</summary>
 [Kassyi.GSharp.Core.CudaIntrinsic("__threadfence_block")]
-public static void ThreadFenceBlock() => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void ThreadFenceBlock() => Kassyi.GSharp.Core.ManagedIntrinsics.ThreadFence();
 /// <summary>Ensures memory writes are visible across device and host.</summary>
 [Kassyi.GSharp.Core.CudaIntrinsic("__threadfence_system")]
-public static void ThreadFenceSystem() => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Returns the value of a per-multiprocessor cycle counter (32-bit).</summary>
-/// <returns>The cycle counter value.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("clock")]
-public static uint Clock() => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
-/// <summary>Returns the value of a per-multiprocessor cycle counter (64-bit).</summary>
-/// <returns>The 64-bit cycle counter value.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("clock64")]
-public static ulong Clock64() => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static void ThreadFenceSystem() => Kassyi.GSharp.Core.ManagedIntrinsics.ThreadFence();
+/// <summary>Returns the value of a per-multiprocessor cycle counter (32-bit, %clock), which wraps.</summary>
+/// <returns>The cycle counter value. The CPU paths count nanoseconds of the monotonic clock instead of cycles and return the low 32 bits.</returns>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_clock")]
+public static uint Clock() => Kassyi.GSharp.Core.ManagedIntrinsics.Clock();
+/// <summary>Returns the value of a per-multiprocessor cycle counter (64-bit, %clock64).</summary>
+/// <returns>The 64-bit cycle counter value. The CPU paths count nanoseconds of the monotonic clock instead of cycles.</returns>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_clock64")]
+public static ulong Clock64() => Kassyi.GSharp.Core.ManagedIntrinsics.Clock64();
 /// <summary>Atomically exchanges the value at address with val.</summary>
 /// <param name="address">The memory location to modify.</param>
 /// <param name="val">The value to write.</param>
@@ -302,14 +302,14 @@ public static ulong AtomicXor(ref ulong address, ulong val) => Kassyi.GSharp.Cor
 /// <param name="len">The bit field length (0 to 32).</param>
 /// <returns>The extracted bit field.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_bfe")]
-public static uint BitFieldExtract(uint a, int pos, int len) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint BitFieldExtract(uint a, int pos, int len) => Kassyi.GSharp.Core.ManagedBitIntrinsics.BitFieldExtract(a, pos, len);
 /// <summary>Extracts a bit field from a 64-bit unsigned integer using the PTX bfe instruction.</summary>
 /// <param name="a">The source 64-bit unsigned integer.</param>
 /// <param name="pos">The starting bit position (0 to 63).</param>
 /// <param name="len">The bit field length (0 to 64).</param>
 /// <returns>The extracted bit field.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_bfe64")]
-public static ulong BitFieldExtract(ulong a, int pos, int len) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong BitFieldExtract(ulong a, int pos, int len) => Kassyi.GSharp.Core.ManagedBitIntrinsics.BitFieldExtract(a, pos, len);
 /// <summary>Inserts a bit field into a 32-bit unsigned integer using the PTX bfi instruction.</summary>
 /// <param name="a">The insert value.</param>
 /// <param name="b">The base target value.</param>
@@ -317,7 +317,7 @@ public static ulong BitFieldExtract(ulong a, int pos, int len) => Kassyi.GSharp.
 /// <param name="len">The bit field length (0 to 32).</param>
 /// <returns>The result after bit field insertion.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_bfi")]
-public static uint BitFieldInsert(uint a, uint b, int pos, int len) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint BitFieldInsert(uint a, uint b, int pos, int len) => Kassyi.GSharp.Core.ManagedBitIntrinsics.BitFieldInsert(a, b, pos, len);
 /// <summary>Inserts a bit field into a 64-bit unsigned integer using the PTX bfi instruction.</summary>
 /// <param name="a">The insert value.</param>
 /// <param name="b">The base target value.</param>
@@ -325,7 +325,7 @@ public static uint BitFieldInsert(uint a, uint b, int pos, int len) => Kassyi.GS
 /// <param name="len">The bit field length (0 to 64).</param>
 /// <returns>The result after bit field insertion.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_bfi64")]
-public static ulong BitFieldInsert(ulong a, ulong b, int pos, int len) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong BitFieldInsert(ulong a, ulong b, int pos, int len) => Kassyi.GSharp.Core.ManagedBitIntrinsics.BitFieldInsert(a, b, pos, len);
 /// <summary>Computes an arbitrary 3-input bitwise logic operation defined by an 8-bit lookup table (LUT) using the PTX lop3 instruction.</summary>
 /// <param name="a">The first 32-bit input.</param>
 /// <param name="b">The second 32-bit input.</param>
@@ -333,43 +333,43 @@ public static ulong BitFieldInsert(ulong a, ulong b, int pos, int len) => Kassyi
 /// <param name="immLut">The 8-bit immediate truth table lookup.</param>
 /// <returns>The result of the 3-input logic function.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_lop3")]
-public static uint Lop3(uint a, uint b, uint c, byte immLut) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint Lop3(uint a, uint b, uint c, byte immLut) => Kassyi.GSharp.Core.ManagedBitIntrinsics.Lop3(a, b, c, immLut);
 /// <summary>Returns the number of consecutive zero bits starting from the least significant bit of a 32-bit integer.</summary>
 /// <param name="val">The 32-bit integer to inspect.</param>
 /// <returns>The count of trailing zero bits.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_tzc_32")]
-public static uint CountTrailingZeros(uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint CountTrailingZeros(uint val) => Kassyi.GSharp.Core.ManagedBitIntrinsics.CountTrailingZeros(val);
 /// <summary>Returns the number of consecutive zero bits starting from the least significant bit of a 64-bit integer.</summary>
 /// <param name="val">The 64-bit integer to inspect.</param>
 /// <returns>The count of trailing zero bits.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_tzc_64")]
-public static uint CountTrailingZeros(ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint CountTrailingZeros(ulong val) => Kassyi.GSharp.Core.ManagedBitIntrinsics.CountTrailingZeros(val);
 /// <summary>Reverses the bit order of a 64-bit unsigned integer using the __brevll hardware instruction.</summary>
 /// <param name="val">The 64-bit unsigned integer whose bits are to be reversed.</param>
 /// <returns>The bit-reversed 64-bit unsigned integer.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__brevll")]
-public static ulong BitReverse64(ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong BitReverse64(ulong val) => Kassyi.GSharp.Core.ManagedBitIntrinsics.BitReverse(val);
 /// <summary>Computes the 4-way 8-bit integer dot product with 32-bit accumulation using the __dp4a hardware intrinsic.</summary>
 /// <param name="a">The first vector of 4 packed 8-bit integers.</param>
 /// <param name="b">The second vector of 4 packed 8-bit integers.</param>
 /// <param name="c">The 32-bit accumulator.</param>
 /// <returns>The dot product result accumulated with c.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__dp4a")]
-public static int DotProduct4(int a, int b, int c) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int DotProduct4(int a, int b, int c) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.DotProduct4(a, b, c);
 /// <summary>Computes the 4-way 8-bit integer dot product with 32-bit accumulation using the __dp4a hardware intrinsic.</summary>
 /// <param name="a">The first vector of 4 packed 8-bit integers.</param>
 /// <param name="b">The second vector of 4 packed 8-bit integers.</param>
 /// <param name="c">The 32-bit accumulator.</param>
 /// <returns>The dot product result accumulated with c.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__dp4a")]
-public static uint DotProduct4(uint a, uint b, uint c) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint DotProduct4(uint a, uint b, uint c) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.DotProduct4(a, b, c);
 /// <summary>Computes the SIMD sum of absolute differences of 4 packed unsigned bytes and accumulates with c (PTX vabsdiff4).</summary>
 /// <param name="a">The first 32-bit operand with 4 packed bytes.</param>
 /// <param name="b">The second 32-bit operand with 4 packed bytes.</param>
 /// <param name="c">The accumulator.</param>
 /// <returns>The sum of byte differences accumulated with c.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_vabsdiff4")]
-public static uint Sad4(uint a, uint b, uint c) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint Sad4(uint a, uint b, uint c) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.Sad4(a, b, c);
 /// <summary>Performs a broadcast-and-compare operation across threads in a warp, returning a mask of threads holding the same value.</summary>
 /// <param name="mask">The 32-bit participating lane mask.</param>
 /// <param name="value">The value to compare.</param>
@@ -451,7 +451,7 @@ public static uint MatchAllSync(uint mask, double value, ref int pred) => Kassyi
 /// <summary>Suspends the calling thread for approximately the specified duration in nanoseconds.</summary>
 /// <param name="duration">The duration to sleep in nanoseconds.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__nanosleep")]
-public static void NanoSleep(uint duration) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void NanoSleep(uint duration) => Kassyi.GSharp.Core.ManagedIntrinsics.NanoSleep(duration);
 /// <summary>Causes executing threads to wait until all warp threads specified in mask have executed the instruction.</summary>
 /// <param name="mask">The 32-bit mask of participating threads.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__syncwarp")]
@@ -482,14 +482,14 @@ public static void ReductionAdd(ref float address, float val) => Kassyi.GSharp.C
 /// <param name="c">The 64-bit unsigned addend.</param>
 /// <returns>The 64-bit result of (a * b) + c.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mad_wide")]
-public static ulong MultiplyAddWide(uint a, uint b, ulong c) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong MultiplyAddWide(uint a, uint b, ulong c) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.MultiplyAddWide(a, b, c);
 /// <summary>Computes (a * b) + c with full 64-bit signed precision without intermediate overflow.</summary>
 /// <param name="a">The first 32-bit signed multiplicand.</param>
 /// <param name="b">The second 32-bit signed multiplicand.</param>
 /// <param name="c">The 64-bit signed addend.</param>
 /// <returns>The 64-bit result of (a * b) + c.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mad_wide_s")]
-public static long MultiplyAddWide(int a, int b, long c) => Kassyi.GSharp.Core.GpuOnlyException.Throw<long>();
+public static long MultiplyAddWide(int a, int b, long c) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.MultiplyAddWide(a, b, c);
 /// <summary>Computes (a * b) + c + carry-in with carry-out propagation.</summary>
 /// <param name="a">The first 32-bit unsigned multiplicand.</param>
 /// <param name="b">The second 32-bit unsigned multiplicand.</param>
@@ -497,7 +497,7 @@ public static long MultiplyAddWide(int a, int b, long c) => Kassyi.GSharp.Core.G
 /// <param name="carry">The carry-in value (0 or 1), updated with the carry-out result.</param>
 /// <returns>The 64-bit result.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_madc_cc")]
-public static ulong MultiplyAddWideWithCarry(uint a, uint b, ulong c, ref ulong carry) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong MultiplyAddWideWithCarry(uint a, uint b, ulong c, ref ulong carry) => Kassyi.GSharp.Core.ManagedIntegerIntrinsics.MultiplyAddWideWithCarry(a, b, c, ref carry);
 /// <summary>Returns the lane ID of the calling thread within its warp (0-31).</summary>
 /// <returns>The lane index within the current warp, the linear thread index in the block (x fastest) modulo 32, as the %laneid register of the GPU.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_lane_id")]
@@ -507,221 +507,221 @@ public static int LaneId() => Kassyi.GSharp.Core.ManagedGpuContext.LaneId();
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_warp_id")]
 public static int WarpId() => Kassyi.GSharp.Core.ManagedGpuContext.WarpId();
 /// <summary>Returns the streaming multiprocessor ID on which the calling thread is executing (%smid).</summary>
-/// <returns>The streaming multiprocessor ID.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__smid")]
-public static int SmId() => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+/// <returns>The streaming multiprocessor ID, which may change while the thread runs. The CPU paths run a launch as one multiprocessor and return 0.</returns>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_smid")]
+public static int SmId() => Kassyi.GSharp.Core.ManagedGpuContext.SmId();
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static byte LoadCachedGlobal(ref byte address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<byte>();
+public static byte LoadCachedGlobal(ref byte address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static sbyte LoadCachedGlobal(ref sbyte address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<sbyte>();
+public static sbyte LoadCachedGlobal(ref sbyte address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static short LoadCachedGlobal(ref short address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<short>();
+public static short LoadCachedGlobal(ref short address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static ushort LoadCachedGlobal(ref ushort address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ushort>();
+public static ushort LoadCachedGlobal(ref ushort address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static int LoadCachedGlobal(ref int address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<int>();
+public static int LoadCachedGlobal(ref int address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static uint LoadCachedGlobal(ref uint address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();
+public static uint LoadCachedGlobal(ref uint address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static long LoadCachedGlobal(ref long address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<long>();
+public static long LoadCachedGlobal(ref long address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static ulong LoadCachedGlobal(ref ulong address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<ulong>();
+public static ulong LoadCachedGlobal(ref ulong address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static float LoadCachedGlobal(ref float address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<float>();
+public static float LoadCachedGlobal(ref float address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).</summary>
 /// <param name="address">Reference to the global memory location to load from.</param>
 /// <returns>The loaded value.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__ldcg")]
-public static double LoadCachedGlobal(ref double address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<double>();
+public static double LoadCachedGlobal(ref double address) => Kassyi.GSharp.Core.ManagedIntrinsics.LoadCachedGlobal(ref address);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref byte address, byte val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref byte address, byte val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref sbyte address, sbyte val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref sbyte address, sbyte val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref short address, short val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref short address, short val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref ushort address, ushort val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref ushort address, ushort val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref int address, int val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref int address, int val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref uint address, uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref uint address, uint val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref long address, long val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref long address, long val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref ulong address, ulong val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref ulong address, ulong val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref float address, float val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref float address, float val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Stores data to global memory caching in L2 only (PTX st.cg).</summary>
 /// <param name="address">Reference to the global memory location to store into.</param>
 /// <param name="val">The value to store.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__stcg")]
-public static void StoreCachedGlobal(ref double address, double val) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void StoreCachedGlobal(ref double address, double val) => Kassyi.GSharp.Core.ManagedIntrinsics.StoreCachedGlobal(ref address, val);
 /// <summary>Prefetches data at the specified address into the L2 cache (PTX prefetch.global.L2).</summary>
 /// <param name="address">The memory address to prefetch into L2.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__prefetch")]
-public static void Prefetch(IntPtr address) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_prefetch_l2")]
+public static void Prefetch(IntPtr address) => Kassyi.GSharp.Core.ManagedIntrinsics.Prefetch(address);
 /// <summary>Prefetches uniform data at the specified address into the L1 cache (PTX prefetchu.L1).</summary>
 /// <param name="address">The uniform memory address to prefetch into L1.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__prefetchu")]
-public static void PrefetchUniform(IntPtr address) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_prefetch_uniform")]
+public static void PrefetchUniform(IntPtr address) => Kassyi.GSharp.Core.ManagedIntrinsics.Prefetch(address);
 /// <summary>Eviction policy hint for the L2 cache line containing address (PTX applypriority).</summary>
 /// <param name="address">Memory address within the target cache line.</param>
 /// <param name="bytes">Number of bytes to apply the priority to.</param>
 /// <param name="priority">The cache eviction priority (0.0 to 1.0).</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__applypriority")]
-public static void ApplyPriorityL2(IntPtr address, uint bytes, float priority) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_apply_priority_l2")]
+public static void ApplyPriorityL2(IntPtr address, uint bytes, float priority) => Kassyi.GSharp.Core.ManagedIntrinsics.ApplyPriorityL2(address, bytes, priority);
 /// <summary>Converts a generic pointer referencing shared memory to a shared state space address (PTX cvta.to.shared).</summary>
 /// <param name="address">The reference in shared memory.</param>
 /// <returns>The shared space pointer.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared", UnsupportedDialects = new[] {"Cpu"})]
 public static IntPtr ConvertToSharedMemory(ref byte address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<IntPtr>();
 /// <summary>Converts a generic pointer referencing shared memory to a shared state space address (PTX cvta.to.shared).</summary>
 /// <param name="address">The reference in shared memory.</param>
 /// <returns>The shared space pointer.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared", UnsupportedDialects = new[] {"Cpu"})]
 public static IntPtr ConvertToSharedMemory(ref int address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<IntPtr>();
 /// <summary>Converts a generic pointer referencing shared memory to a shared state space address (PTX cvta.to.shared).</summary>
 /// <param name="address">The reference in shared memory.</param>
 /// <returns>The shared space pointer.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared", UnsupportedDialects = new[] {"Cpu"})]
 public static IntPtr ConvertToSharedMemory(ref uint address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<IntPtr>();
 /// <summary>Converts a generic pointer referencing shared memory to a shared state space address (PTX cvta.to.shared).</summary>
 /// <param name="address">The reference in shared memory.</param>
 /// <returns>The shared space pointer.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared", UnsupportedDialects = new[] {"Cpu"})]
 public static IntPtr ConvertToSharedMemory(ref long address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<IntPtr>();
 /// <summary>Converts a generic pointer referencing shared memory to a shared state space address (PTX cvta.to.shared).</summary>
 /// <param name="address">The reference in shared memory.</param>
 /// <returns>The shared space pointer.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared", UnsupportedDialects = new[] {"Cpu"})]
 public static IntPtr ConvertToSharedMemory(ref ulong address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<IntPtr>();
 /// <summary>Converts a generic pointer referencing shared memory to a shared state space address (PTX cvta.to.shared).</summary>
 /// <param name="address">The reference in shared memory.</param>
 /// <returns>The shared space pointer.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared", UnsupportedDialects = new[] {"Cpu"})]
 public static IntPtr ConvertToSharedMemory(ref float address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<IntPtr>();
 /// <summary>Converts a generic pointer referencing shared memory to a shared state space address (PTX cvta.to.shared).</summary>
 /// <param name="address">The reference in shared memory.</param>
 /// <returns>The shared space pointer.</returns>
-[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared", UnsupportedDialects = new[] {"Cpu"})]
 public static IntPtr ConvertToSharedMemory(ref double address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<IntPtr>();
 /// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
 /// <param name="sharedDst">The destination element in shared memory.</param>
 /// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
-public static void CopyAsync(ref int sharedDst, ref readonly int globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsync(ref int sharedDst, ref readonly int globalSrc) => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsync(ref sharedDst, in globalSrc);
 /// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
 /// <param name="sharedDst">The destination element in shared memory.</param>
 /// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
-public static void CopyAsync(ref uint sharedDst, ref readonly uint globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsync(ref uint sharedDst, ref readonly uint globalSrc) => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsync(ref sharedDst, in globalSrc);
 /// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
 /// <param name="sharedDst">The destination element in shared memory.</param>
 /// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
-public static void CopyAsync(ref float sharedDst, ref readonly float globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsync(ref float sharedDst, ref readonly float globalSrc) => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsync(ref sharedDst, in globalSrc);
 /// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
 /// <param name="sharedDst">The destination element in shared memory.</param>
 /// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
-public static void CopyAsync(ref long sharedDst, ref readonly long globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsync(ref long sharedDst, ref readonly long globalSrc) => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsync(ref sharedDst, in globalSrc);
 /// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
 /// <param name="sharedDst">The destination element in shared memory.</param>
 /// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
-public static void CopyAsync(ref ulong sharedDst, ref readonly ulong globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsync(ref ulong sharedDst, ref readonly ulong globalSrc) => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsync(ref sharedDst, in globalSrc);
 /// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
 /// <param name="sharedDst">The destination element in shared memory.</param>
 /// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
-public static void CopyAsync(ref double sharedDst, ref readonly double globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsync(ref double sharedDst, ref readonly double globalSrc) => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsync(ref sharedDst, in globalSrc);
 /// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
 /// <param name="sharedDst">The destination element in shared memory.</param>
 /// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
-public static void CopyAsync(ref System.Numerics.Vector2 sharedDst, ref readonly System.Numerics.Vector2 globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsync(ref System.Numerics.Vector2 sharedDst, ref readonly System.Numerics.Vector2 globalSrc) => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsync(ref sharedDst, in globalSrc);
 /// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
 /// <param name="sharedDst">The destination element in shared memory.</param>
 /// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
-public static void CopyAsync(ref System.Numerics.Vector4 sharedDst, ref readonly System.Numerics.Vector4 globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsync(ref System.Numerics.Vector4 sharedDst, ref readonly System.Numerics.Vector4 globalSrc) => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsync(ref sharedDst, in globalSrc);
 /// <summary>Batches all prior uncommitted CopyAsync operations issued by the calling thread into a new commit group (PTX cp.async.commit_group).</summary>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async_commit_group")]
-public static void CopyAsyncCommitGroup() => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsyncCommitGroup() => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsyncCommitGroup();
 /// <summary>Waits until at most pendingGroups committed CopyAsync groups of the calling thread remain pending (PTX cp.async.wait_group; 0 waits for all committed groups of the calling thread). Call SyncThreads after waiting if other threads read the copied shared memory.</summary>
 /// <param name="pendingGroups">Maximum number of committed groups of the calling thread allowed to remain pending (must be a compile-time constant in 0..7).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async_wait_group")]
-public static void CopyAsyncWaitGroup(int pendingGroups) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsyncWaitGroup(int pendingGroups) => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsyncWaitGroup(pendingGroups);
 /// <summary>Waits until all prior CopyAsync operations issued by the calling thread have completed (PTX cp.async.wait_all). Call SyncThreads after waiting if other threads read the copied shared memory.</summary>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async_wait_all")]
-public static void CopyAsyncWaitAll() => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsyncWaitAll() => Kassyi.GSharp.Core.ManagedIntrinsics.CopyAsyncWaitAll();
 /// <summary>Initializes an asynchronous barrier object in shared memory (PTX mbarrier.init).</summary>
 /// <param name="barrier">The 64-bit mbarrier object in shared memory.</param>
 /// <param name="expectedCount">The number of threads expected to arrive at the barrier.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mbarrier_init")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mbarrier_init", UnsupportedDialects = new[] {"Cpu"})]
 public static void MBarrierInit(ref ulong barrier, uint expectedCount) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
 /// <summary>Signals arrival of the calling thread at the mbarrier object (PTX mbarrier.arrive).</summary>
 /// <param name="barrier">The 64-bit mbarrier object.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mbarrier_arrive")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mbarrier_arrive", UnsupportedDialects = new[] {"Cpu"})]
 public static void MBarrierArrive(ref ulong barrier) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
 /// <summary>Blocks the calling thread until the barrier completes the specified phase (PTX mbarrier.test_wait).</summary>
 /// <param name="barrier">The 64-bit mbarrier object.</param>
 /// <param name="phase">The phase parity to wait for.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mbarrier_wait")]
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mbarrier_wait", UnsupportedDialects = new[] {"Cpu"})]
 public static void MBarrierWait(ref ulong barrier, uint phase) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
 // ReSharper restore UnusedMember.Global
 #pragma warning restore IDE0051

@@ -43,10 +43,8 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             return;
         }
 
-        // An integer constant is written as its value: C# folds a constant shift with the masked count (3 << 33 is 6),
-        // which C++ leaves undefined (#722)
         var operation = GetOperation(node, ref context);
-        if (IntegerSemanticsEmitter.TryAppendConstant(operation, node, ref context))
+        if (TryAppendConstant(operation, node, ref context))
         {
             return;
         }
@@ -125,6 +123,27 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         context.Visitor.Visit(node.Left);
         AppendOperator(node, node.Right, ref context);
         context.Visitor.Visit(node.Right);
+    }
+
+    // An integer constant is written as its value: C# folds a constant shift with the masked count (3 << 33 is 6),
+    // which C++ leaves undefined (#722). A comparison of constant strings (nameof(T) == "T") is the bool C# folds it
+    // to: a string has no device form
+    private static bool TryAppendConstant(IBinaryOperation? operation, BinaryExpressionSyntax node,
+        ref TranspileContext context)
+    {
+        if (IntegerSemanticsEmitter.TryAppendConstant(operation, node, ref context))
+        {
+            return true;
+        }
+
+        if (operation is not { ConstantValue: { HasValue: true, Value: bool value }, Type: { } type } ||
+            !GpuCodeConstraints.IsString(operation.LeftOperand.Type))
+        {
+            return false;
+        }
+
+        ConstantAtUse.Append(node, type, value, ref context);
+        return true;
     }
 
     // The bound operation. It must come from a node of the same kind: a lowered node is mapped back to the user's source

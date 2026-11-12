@@ -156,7 +156,7 @@ internal static class NativeIntrinsicEmitter
             NativeApiDocumentation.EmitDocumentation(writer, m);
 
             var nativeName = m.NativeName ?? m.Name;
-            writer.Line($"[Kassyi.GSharp.Core.CudaIntrinsic(\"{nativeName}\")]");
+            AppendIntrinsicAttribute(writer, nativeName, m.UnsupportedDialects);
 
             writer.Append("public static ");
             writer.AppendIf(m.IsUnsafe, "unsafe ");
@@ -193,6 +193,28 @@ internal static class NativeIntrinsicEmitter
 
             writer.Line();
         }
+    }
+
+    // [Kassyi.GSharp.Core.CudaIntrinsic("<native name>")]
+    // [Kassyi.GSharp.Core.CudaIntrinsic("<native name>", UnsupportedDialects = new[] {"<dialect>", ...})]
+    private static void AppendIntrinsicAttribute(SourceWriter writer, string nativeName,
+        ImmutableArray<string> unsupportedDialects)
+    {
+        writer.Append($"[Kassyi.GSharp.Core.CudaIntrinsic(\"{nativeName}\"");
+        if (!unsupportedDialects.IsEmpty)
+        {
+            writer.Append(", UnsupportedDialects = new[] ");
+            using (writer.Braces())
+            {
+                for (var i = 0; i < unsupportedDialects.Length; i++)
+                {
+                    writer.AppendIf(i > 0, ", ");
+                    writer.Append($"\"{unsupportedDialects[i]}\"");
+                }
+            }
+        }
+
+        writer.AppendLine(")]");
     }
 
     //  => Kassyi.GSharp.Core.<managed member>(<ref|in|out> <parameter>, ...);

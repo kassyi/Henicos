@@ -12,7 +12,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
     public static readonly GpuMacroArgumentRule Instance = new();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
-        GSharpDiagnostics.InlinePtxNotSupportedByDialect,
+        GSharpDiagnostics.IntrinsicNotImplementedByDialect,
         GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral,
         GSharpDiagnostics.MacroArgumentMustBeConstant,
         GSharpDiagnostics.MacroLambdaRequiresParameter,

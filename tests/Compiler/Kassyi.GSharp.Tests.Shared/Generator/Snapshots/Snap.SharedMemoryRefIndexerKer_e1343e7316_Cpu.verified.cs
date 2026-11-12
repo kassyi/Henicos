@@ -366,7 +366,7 @@ __gsharp_ctx->__gsharp_id_2_bar={ (unsigned long long*)__gsharp_allocate_smem_st
 __gsharp_ctx->__gsharp_id_3_data={ (int*)__gsharp_allocate_smem_static(0xdd78a5a1ffca4b9full, (32) * sizeof(int), alignof(int)) };
 if(__gsharp_ctx->__gsharp_id_1_tid==0)
 {
-__gsharp_mbarrier_init(&__gsharp_ctx->__gsharp_id_2_bar[0],32);
+__gsharp_unsupported(""Gpu.MBarrierInit is not implemented by the StandardCppDialect dialect"");
 }
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -376,8 +376,8 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 __gsharp_ctx->__gsharp_id_3_data[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_tid,3);
-__gsharp_mbarrier_arrive(&__gsharp_ctx->__gsharp_id_2_bar[0]);
-__gsharp_mbarrier_wait(&__gsharp_ctx->__gsharp_id_2_bar[0],0);
+__gsharp_unsupported(""Gpu.MBarrierArrive is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Gpu.MBarrierWait is not implemented by the StandardCppDialect dialect"");
 __gsharp_ctx->__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_3_data[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1))%32];
 __gsharp_state=-1;
 return;

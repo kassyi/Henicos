@@ -134,15 +134,12 @@ internal static class StackArrayClassifier
     // The type that the value is converted to, looked up on the node of the user's source for a lowered node
     private static ITypeSymbol? ConvertedType(SyntaxNode node, SemanticModel model)
     {
-        if (model.GetOriginalNode(node) is not { } original ||
+        if (!model.TryGetOriginalNode(node, out var original, out var originalModel) ||
             !model.Compilation.ContainsSyntaxTree(original.SyntaxTree))
         {
             return null;
         }
 
-        var originalModel = original.SyntaxTree == model.SyntaxTree
-            ? model
-            : model.Compilation.GetCachedSemanticModel(original.SyntaxTree);
         var info = originalModel.GetTypeInfo(original);
         return info.ConvertedType ?? info.Type;
     }
