@@ -25,7 +25,9 @@ namespace Kassyi.GSharp.Naming;
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
 ///   <item><description><c>GSharpModuleContext_{module}</c>: the generated C# class that loads the fatbin of an
 /// assembly, with the module name escaped as a segment is (<see cref="TryDecodeModuleName"/>); it decodes to
-/// <c>GSharpModuleContext(module)</c>.</description></item>
+/// <c>GSharpModuleContext(module)</c>. <c>__gsharp_module_{module}</c>, the field that holds the fatbin of a module
+/// a launcher loads by name, escapes the module name the same way and decodes to
+/// <c>__gsharp_module(module)</c>.</description></item>
 /// </list>
 /// GSH0055 rejects <c>__</c> in user identifiers, so a C# name never starts with a digit-and-underscore ordinal and
 /// decoding is unambiguous.
@@ -43,6 +45,9 @@ internal static class GSharpNameEncoding
 
     /// <summary>The prefix of the generated C# class that loads the fatbin module of one assembly.</summary>
     public const string ModuleContextPrefix = "GSharpModuleContext_";
+
+    /// <summary>The prefix of the generated C# field that holds the fatbin of a module a launcher loads by name.</summary>
+    public const string ModuleFieldPrefix = "__gsharp_module_";
 
     private static readonly string[] s_renamedPrefixes = ["__gsharp_", ModuleContextPrefix];
 
@@ -680,7 +685,8 @@ internal static class GSharpNameEncoding
             return true;
         }
 
-        if (TryDecodeModuleIdentifier(identifier, ModuleContextPrefix, "GSharpModuleContext", ref csharpName))
+        if (TryDecodeModuleIdentifier(identifier, ModuleContextPrefix, "GSharpModuleContext", ref csharpName) ||
+            TryDecodeModuleIdentifier(identifier, ModuleFieldPrefix, "__gsharp_module", ref csharpName))
         {
             return true;
         }
@@ -830,7 +836,7 @@ internal static class GSharpNameEncoding
 
     /// <summary>
     /// Recovers a module name from its escaped form, the part of a module context class name
-    /// (<see cref="ModuleContextPrefix"/>) after the prefix.
+    /// (<see cref="ModuleContextPrefix"/>) or a module field name (<see cref="ModuleFieldPrefix"/>) after the prefix.
     /// </summary>
     /// <returns><see langword="false"/> if <paramref name="escaped"/> is not exactly one escaped name.</returns>
     public static bool TryDecodeModuleName(string escaped, out string moduleName) =>

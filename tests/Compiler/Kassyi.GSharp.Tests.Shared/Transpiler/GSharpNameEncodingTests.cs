@@ -100,8 +100,8 @@ public class GSharpNameEncodingTests
         Assert.Contains("Symbol file hash '0123456789abcdef' does not match source hash 'fedcba9876543210'.", ex.Message);
     }
 
-    // The module context class names the module escaped injectively, and the demangle tool turns it back into the
-    // module name, for every character an assembly name may hold
+    // The module context class and the module field name the module escaped injectively, and the demangle tool turns
+    // them back into the module name, for every character an assembly or module name may hold
     [Theory]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
@@ -118,20 +118,25 @@ public class GSharpNameEncodingTests
     {
         var contextName = GSharpNameEncoding.GetModuleContextName(moduleName);
 
+        var fieldName = GSharpNameEncoding.ModuleFieldPrefix + GSharpNameEncoding.EscapeName(moduleName);
+
         Assert.True(SyntaxFacts.IsValidIdentifier(contextName), contextName);
         Assert.True(GSharpNameEncoding.TryDecode(contextName, out var decodedContext));
         Assert.Equal($"GSharpModuleContext({moduleName})", decodedContext);
+        Assert.True(SyntaxFacts.IsValidIdentifier(fieldName), fieldName);
+        Assert.True(GSharpNameEncoding.TryDecode(fieldName, out var decodedField));
+        Assert.Equal($"__gsharp_module({moduleName})", decodedField);
     }
 
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void DecodeText_ModuleContext_ReplacesItWithTheModuleName()
+    public void DecodeText_ModuleContextAndModuleField_ReplacesThemWithTheModuleName()
     {
         const string Log = "CS0103: GSharpModuleContext_Henicos_x00002eBenchmarks.GetOrLoadModule(); " +
-            "MyGSharpModuleContext_a stays";
-        const string Expected =
-            "CS0103: GSharpModuleContext(Henicos.Benchmarks).GetOrLoadModule(); MyGSharpModuleContext_a stays";
+            "__gsharp_module__x00002e_x00002fk_x00002efatbin.Value; MyGSharpModuleContext_a stays";
+        const string Expected = "CS0103: GSharpModuleContext(Henicos.Benchmarks).GetOrLoadModule(); " +
+            "__gsharp_module(./k.fatbin).Value; MyGSharpModuleContext_a stays";
 
         Assert.Equal(Expected, GSharpNameEncoding.DecodeText(Log));
         Assert.Equal(Expected, GSharpNameEncoding.DecodeText(Log, new Dictionary<string, string>()));
