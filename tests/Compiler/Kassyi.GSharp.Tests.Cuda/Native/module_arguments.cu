@@ -38,3 +38,32 @@ extern "C" __global__ void Scale(float* data, int n, float factor)
         data[i] = data[i] * factor + (float)i;
     }
 }
+
+// seen[0] = the address received for data, so a test can tell a null pointer from a device buffer. Never reads data.
+extern "C" __global__ void RecordAddress(float* data, unsigned long long* seen)
+{
+    seen[0] = (unsigned long long)data;
+}
+
+// The 'ref' total becomes total * 3 + seed, the 'out' result becomes its value at the launch (default) + seed + 7, and
+// the 'in' seed is overwritten on the device, which must not reach the caller.
+extern "C" __global__ void UpdateByReference(int* total, int* seed, int* result)
+{
+    int s = *seed;
+    *total = *total * 3 + s;
+    *result = *result + s + 7;
+    *seed = -1;
+}
+
+// x[r * cols + c] += r - c for a row-major rows x cols matrix: the result differs between rows and columns, so a
+// transposed or column-major copy shows in it.
+extern "C" __global__ void ShiftMatrix(float* x, int rows, int cols)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < rows * cols)
+    {
+        int r = i / cols;
+        int c = i % cols;
+        x[i] += (float)(r - c);
+    }
+}
