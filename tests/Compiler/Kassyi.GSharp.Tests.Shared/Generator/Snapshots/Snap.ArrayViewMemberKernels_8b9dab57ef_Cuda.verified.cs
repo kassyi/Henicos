@@ -306,9 +306,9 @@ finally
 #pragma warning restore CS8500
 public const string SegmentSliceKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ArrayViewMemberKernels__SegmentSliceKernel(GSharpArray<int> __gsharp_id_0_seg, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_1_r, 0, 1907498986u)=__gsharp_id_0_seg.Slice(1)[0];
-__gsharp_array_at(__gsharp_id_1_r, 1, 683210088u)=__gsharp_id_0_seg.Slice(1,2)[1];
-__gsharp_array_at(__gsharp_id_1_r, 2, 447193258u)=__gsharp_id_0_seg.Slice(2).length;
+__gsharp_array_at(__gsharp_id_1_r, 0, 1907498986u)=__gsharp_id_0_seg.template CheckedSlice<GSharpErrorCode::InvalidOperation>(1)[0];
+__gsharp_array_at(__gsharp_id_1_r, 1, 683210088u)=__gsharp_id_0_seg.template CheckedSlice<GSharpErrorCode::InvalidOperation>(1,2)[1];
+__gsharp_array_at(__gsharp_id_1_r, 2, 447193258u)=__gsharp_id_0_seg.template CheckedSlice<GSharpErrorCode::InvalidOperation>(2).length;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SegmentSliceKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ArrayViewMemberKernels__SegmentSliceKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -472,7 +472,7 @@ finally
 #pragma warning restore CS8500
 public const string ImmutableSliceKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ArrayViewMemberKernels__ImmutableSliceKernel(GSharpArray<int> __gsharp_id_0_imm, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_1_r, 0, 61531206u)=__gsharp_array_at(__gsharp_id_0_imm.Slice(1,2), 1, 1555053147u);
+__gsharp_array_at(__gsharp_id_1_r, 0, 61531206u)=__gsharp_array_at(__gsharp_id_0_imm.template CheckedSlice<GSharpErrorCode::NullReference>(1,2), 1, 1555053147u);
 __gsharp_array_at(__gsharp_id_1_r, 1, 1307013692u)=__gsharp_id_0_imm.AsSpan(1,2)[0];
 }
 ";
@@ -785,8 +785,8 @@ finally
 #pragma warning restore CS8500
 public const string ImmutableCopyToKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ArrayViewMemberKernels__ImmutableCopyToKernel(GSharpArray<int> __gsharp_id_0_imm, GSharpArray<int> __gsharp_id_1_toSpan, GSharpArray<int> __gsharp_id_2_toArray, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_id_0_imm.CopyTo(__gsharp_id_1_toSpan.AsSpan());
-__gsharp_id_0_imm.CopyTo(__gsharp_id_2_toArray);
+__gsharp_id_0_imm.template CheckedCopyTo<GSharpErrorCode::NullReference, GSharpErrorCode::None>(__gsharp_id_1_toSpan.AsSpan());
+__gsharp_id_0_imm.template CheckedCopyTo<GSharpErrorCode::NullReference, GSharpErrorCode::ArgumentNull>(__gsharp_id_2_toArray);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ImmutableCopyToKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ArrayViewMemberKernels__ImmutableCopyToKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -990,8 +990,8 @@ finally
 #pragma warning restore CS8500
 public const string SegmentCopyToKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ArrayViewMemberKernels__SegmentCopyToKernel(GSharpArray<int> __gsharp_id_0_seg, GSharpArray<int> __gsharp_id_1_toArray, GSharpArray<int> __gsharp_id_2_toSegment, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_id_0_seg.CopyTo(__gsharp_id_1_toArray);
-__gsharp_id_0_seg.CopyTo(__gsharp_id_2_toSegment);
+__gsharp_id_0_seg.template CheckedCopyTo<GSharpErrorCode::InvalidOperation, GSharpErrorCode::ArgumentNull>(__gsharp_id_1_toArray);
+__gsharp_id_0_seg.template CheckedCopyTo<GSharpErrorCode::InvalidOperation, GSharpErrorCode::InvalidOperation>(__gsharp_id_2_toSegment);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SegmentCopyToKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ArrayViewMemberKernels__SegmentCopyToKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
