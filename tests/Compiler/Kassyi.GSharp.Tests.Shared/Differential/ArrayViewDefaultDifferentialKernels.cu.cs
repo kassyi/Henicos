@@ -36,7 +36,10 @@ public static partial class ArrayViewDefaultDifferentialKernels
 
         dst[0] = 1;
         ArraySegment<int> t = mode[1] == 0 ? s.Slice(1, 1) : s.Slice(1);
-        dst[1] = 100 + t.Count * 10 + t[0];
+        // The native path runs on after the failed Slice (#1714 (the native CPU path keeps running a thread after a
+        // failed C# check)) and does not check the index yet (#718 (array and span bounds are not checked as in C#)),
+        // so t[0] of the empty view it returns would read address 0 and end the test host
+        dst[1] = 100 + t.Count * 10 + (t.Count > 0 ? t[0] : 0);
     }
 
     [GpuKernel]
@@ -101,6 +104,7 @@ public static partial class ArrayViewDefaultDifferentialKernels
     public static void NullableImmutableKernel(ImmutableArray<int>? s, int[] dst)
     {
         dst[0] = 1;
-        dst[1] = s.HasValue ? 10 : 2;
+        // s.Value.Length reads the length of the view, not a member function of a user struct
+        dst[1] = s.HasValue ? 10 + s.Value.Length : 2;
     }
 }

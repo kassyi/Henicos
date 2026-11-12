@@ -1190,7 +1190,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_id_1_dst[0]=1;
-__gsharp_id_1_dst[1]=(__gsharp_id_0_s.HasValue?10:2);
+__gsharp_id_1_dst[1]=(__gsharp_id_0_s.HasValue?__gsharp_add_i32(10,__gsharp_id_0_s.Value.length):2);
 __gsharp_state=-1;
 return;
 }
@@ -1286,7 +1286,8 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 dst[0] = 1;
-dst[1] = s.HasValue ? 10 : 2;
+// s.Value.Length reads the length of the view, not a member function of a user struct
+dst[1] = s.HasValue ? 10 + s.Value.Length : 2;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

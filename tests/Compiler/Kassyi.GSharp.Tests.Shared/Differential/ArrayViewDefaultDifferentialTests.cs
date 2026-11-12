@@ -211,6 +211,19 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         Assert.Equal([1, 100], dst);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Launch_ImmutableArrayArgument_ReadsTheLengthOfTheValue(bool forceManaged)
+    {
+        var dst = new int[2];
+
+        Run(forceManaged, () => LaunchNullableImmutableKernel(ImmutableArray.Create(1, 2, 3), dst));
+
+        Assert.Equal([1, 13], dst);
+    }
+
     // An empty optional view is passed as null, as an empty optional array is, on every path (#860 (Array arguments
     // treat null as empty without a marker) decides whether that stays); the launchers no longer throw
     [SkippableTheory]
