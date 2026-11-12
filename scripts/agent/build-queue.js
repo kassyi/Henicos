@@ -128,6 +128,7 @@ function parseArgs(argv) {
     port: Number(process.env.GSHARP_BUILD_QUEUE_PORT) || DefaultPort,
     commandFromEnv: false,
     shell: '',
+    stateDir: '',
     cancelId: 0,
     command: command.join(' '),
     // Several words after `--` are argv that the calling shell has already split: re-quote them for the shell that
@@ -169,6 +170,9 @@ function parseArgs(argv) {
         break;
       case '--port': // for the self-test
         options.port = parsePositive('--port', own[++i], false);
+        break;
+      case '--state-dir': // serve: a scheduler started through WMI does not inherit GSHARP_BUILD_QUEUE_STATE_DIR
+        options.stateDir = own[++i] || '';
         break;
       case '--command-from-env': // set by the GPU wrapper, which cannot quote the command for the shell
         options.commandFromEnv = true;
@@ -483,7 +487,7 @@ function serve(options) {
 
   // The running jobs with a started command, so that a restarted scheduler still counts the ones whose client is gone
   // (nobody re-registers them). Jobs whose client lives re-register themselves.
-  const jobsPath = path.join(resolveStateDirectory(), `jobs-${options.port}.json`);
+  const jobsPath = path.join(options.stateDir || resolveStateDirectory(), `jobs-${options.port}.json`);
   const persist = () => {
     const records = scheduler.running
       .filter((job) => job.commandPid > 0)
@@ -513,7 +517,8 @@ function serve(options) {
       scheduler.adopt(job);
       log(`restored #${job.id} weight ${job.weight} (client gone, command ${job.commandPid}): ${job.command}`);
     }
-    persist();
+    // No persist here: the records of live clients stay in the file until they re-register (the next persist), so
+    // that a crash in between does not lose them.
   };
 
   const release = (job, why) => {
@@ -611,9 +616,14 @@ function serve(options) {
           if (message.type === 'adopt') {
             // The same client lost only its connection: the slot the scheduler kept for it is this job. Adopt first,
             // so that removing the kept job hands no slot to a waiting job.
-            const kept = scheduler.running.filter((other) => other.socket === null && other.pid === job.pid);
+            // The old connection may not have closed yet (its close can arrive after this adopt): match by client pid
+            // whatever the socket state, and mark the old job so that its later close does nothing.
+            const kept = scheduler.running.filter((other) => other !== job && other.pid === job.pid);
             scheduler.adopt(job);
-            kept.forEach((other) => release(other, `re-registered as #${job.id}`));
+            kept.forEach((other) => {
+              other.cancelled = true;
+              release(other, `re-registered as #${job.id}`);
+            });
             persist();
             log(`adopt #${job.id} weight ${job.weight} pid ${job.pid} command ${job.commandPid}: ${job.command}`);
             send(socket, { type: 'adopted', id: job.id });
@@ -694,8 +704,15 @@ function serve(options) {
 // ---------------------------------------------------------------------------------------------------------------------
 // Client
 
-const TestCommandPattern =
-  /\bdotnet(\.exe)?"?\s+test\b|\bjust\s+(test[\w-]*|coverage-diff|mutate|long-checks)\b|\b(test-stability|test-memory|test-sanitized|long-checks|mutate|coverage-diff)\.js\b/;
+// just options and variable assignments may stand between just and the recipe: just -f justfile test, just a=b test
+const TestCommandPattern = new RegExp(
+  [
+    String.raw`\bdotnet(\.exe)?"?\s+(test|vstest|stryker)\b`,
+    String.raw`\bdotnet-stryker\b`,
+    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|long-checks)(\s|$)`,
+    String.raw`\b(test-stability|test-memory|test-sanitized|long-checks|mutate|coverage-diff)\.js\b`,
+  ].join('|'),
+);
 
 function defaultWeight(command) {
   return TestCommandPattern.test(command) ? 2 : 1;
@@ -747,8 +764,12 @@ function startScheduler(options) {
       prefix(`could not rotate ${logPath}: ${error.message}`);
     }
   }
-  const logFd = fs.openSync(logPath, 'a');
   const args = [__filename, 'serve', '--port', String(options.port), '--slots', String(options.slots)];
+  args.push('--state-dir', stateDirectory);
+  if (process.platform === 'win32' && startThroughWmi(args, stateDirectory, logPath)) {
+    return;
+  }
+  const logFd = fs.openSync(logPath, 'a');
   const child = spawn(process.execPath, args, {
     cwd: stateDirectory,
     detached: true,
@@ -757,6 +778,32 @@ function startScheduler(options) {
   });
   child.unref();
   fs.closeSync(logFd);
+}
+
+/**
+ * Windows: starts the scheduler through WMI (Win32_Process.Create), so that it does not belong to the caller's job
+ * object. Antigravity runs each command in a job object and ends every process in it when the command ends, which
+ * would stop a scheduler started as a plain child. Returns false when WMI fails; the caller then spawns it directly.
+ */
+function startThroughWmi(args, stateDirectory, logPath) {
+  const quote = (text) => `"${text}"`;
+  const serve = [quote(process.execPath), ...args.map((arg) => (/\s/.test(arg) ? quote(arg) : arg))].join(' ');
+  const commandLine = `cmd.exe /d /s /c "${serve} >> ${quote(logPath)} 2>&1"`;
+  const script =
+    '$s = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ ShowWindow = [uint16]0 }; ' +
+    '$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ ' +
+    'CommandLine = $env:GSHARP_BUILD_QUEUE_WMI_COMMAND; CurrentDirectory = $env:GSHARP_BUILD_QUEUE_WMI_DIRECTORY; ' +
+    'ProcessStartupInformation = $s }; exit $r.ReturnValue';
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
+    windowsHide: true,
+    timeout: 30000,
+    env: { ...process.env, GSHARP_BUILD_QUEUE_WMI_COMMAND: commandLine, GSHARP_BUILD_QUEUE_WMI_DIRECTORY: stateDirectory },
+  });
+  if (result.error || result.status !== 0) {
+    prefix(`could not start the scheduler through WMI (${result.error ? result.error.message : `status ${result.status}`}); starting it as a child`);
+    return false;
+  }
+  return true;
 }
 
 /** Connects to the scheduler; resolves to the socket, or null when no scheduler listens. */
@@ -898,9 +945,13 @@ function runShell(command, shell, env, onChild) {
         // dies.
         detached: process.platform !== 'win32',
       });
+      let replaced = false;
       child.on('error', (error) => {
         if (error.code === 'ENOENT' && name === 'pwsh') {
-          start('powershell'); // Windows PowerShell when PowerShell 7 is not installed
+          // Windows PowerShell when PowerShell 7 is not installed. The failed child still emits 'close'; that close
+          // must not end the run while the replacement runs.
+          replaced = true;
+          start('powershell');
           return;
         }
         prefix(`could not start the command with ${file}: ${error.message}`);
@@ -909,7 +960,11 @@ function runShell(command, shell, env, onChild) {
       if (child.pid !== undefined) {
         onChild(child);
       }
-      child.on('close', (code) => resolve(code === null ? 1 : code));
+      child.on('close', (code) => {
+        if (!replaced) {
+          resolve(code === null ? 1 : code);
+        }
+      });
     };
     start(shell);
   });
@@ -998,6 +1053,10 @@ async function run(options) {
     return;
   }
   if (options.gpu && !inGpuLock) {
+    if (/fuzz-diff|fuzz-differential|long-checks/.test(options.command)) {
+      // They take the GPU lock themselves for their GPU steps; holding it here would make them wait for ever
+      usageError('fuzz-diff and long-checks take the GPU lock themselves: queue them without --gpu.');
+    }
     runUnderGpuLock(options, weight);
     return;
   }

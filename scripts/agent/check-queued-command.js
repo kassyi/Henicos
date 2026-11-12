@@ -7,8 +7,10 @@
 // format tells the two apart. A command that may run produces no output: an Antigravity "allow" would skip the
 // user's permission prompt.
 //
-// The command is split into segments at &&, ||, ;, |, & and line breaks outside quotes, after joining continued lines
-// ( or ` at the end of a line); comments, heredoc bodies and PowerShell here-strings are skipped, since their text is
+// The command is read in the dialect of the tool that runs it: bash for the Claude Code Bash tool, PowerShell for its
+// PowerShell tool and for Antigravity (` escapes in double quotes, \ does not; '' in single quotes), cmd inside cmd /c.
+// It is split into segments at &&, ||, ;, |, & and line breaks outside quotes, after joining continued lines
+// (\ or ` at the end of a line); comments, heredoc bodies and PowerShell here-strings are skipped, since their text is
 // data, and the bodies of command substitutions $( ... ) are checked as commands. A segment is denied when its
 // program, after environment assignments, launch prefixes (time, env, nohup, timeout, sudo, xargs, exec, !, the
 // PowerShell call operator, Invoke-Expression) and shell keywords (if, then, do, else, a PowerShell { body }), and
@@ -83,7 +85,8 @@ function splitSegments(command) {
     const next = command[i + 1];
     if (quote !== '') {
       current += ch;
-      if (quote === '"' && (ch === '\\' || ch === '`') && next !== undefined) {
+      // Inside double quotes bash escapes with \ and PowerShell with `; cmd has no escape ("C:\dir\" ends there)
+      if (quote === '"' && ch === escapeCharacter() && next !== undefined) {
         current += next;
         i += 2;
         continue;
@@ -159,7 +162,23 @@ function splitSegments(command) {
 
 /** The words of a segment, quotes kept. */
 function words(segment) {
-  return segment.match(/"(?:[^"\\]|\\.)*"|'[^']*'|\S+/g) || [];
+  const pattern =
+    dialect === 'bash'
+      ? /"(?:[^"\\]|\\.)*"|'[^']*'|\S+/g
+      : dialect === 'pwsh'
+        ? /"(?:[^"`]|`.)*"|'(?:[^']|'')*'|\S+/g
+        : /"[^"]*"|\S+/g;
+  return segment.match(pattern) || [];
+}
+
+/**
+ * The shell dialect the command is written in: 'bash' (Claude Code Bash tool), 'pwsh' (Claude Code PowerShell tool,
+ * Antigravity) or 'cmd'. It decides the escape character in double quotes and how quoted words end.
+ */
+let dialect = 'bash';
+
+function escapeCharacter() {
+  return dialect === 'bash' ? '\\' : dialect === 'pwsh' ? '`' : '';
 }
 
 /** Removes the quotes around a word. */
@@ -203,6 +222,16 @@ function dropPrefixes(list) {
     }
     const head = rest[0];
     const name = programName(head);
+    // PowerShell assignment: $out = dotnet test, $x=dotnet build, $env:X = ...
+    const assignment = /^\$[\w:.]+\s*[+]?=(.*)$/.exec(head);
+    if (assignment !== null) {
+      rest = assignment[1] === '' ? rest.slice(1) : [assignment[1], ...rest.slice(1)];
+      continue;
+    }
+    if (/^\$[\w:.]+$/.test(head) && /^[+]?=$/.test(rest[1] || '')) {
+      rest = rest.slice(2);
+      continue;
+    }
     if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(head) || LaunchPrefixes.includes(name)) {
       rest = rest.slice(1);
     } else if (['env', 'xargs', 'sudo', 'nice', 'stdbuf', 'ionice'].includes(name)) {
@@ -251,6 +280,8 @@ function justRecipe(list) {
       i++;
     } else if (arg === '--set') {
       i += 2;
+    } else if (/^\w[\w-]*=/.test(arg)) {
+      continue; // a variable assignment before the recipe: just profile=cpu fuzz-diff
     } else if (!arg.startsWith('-')) {
       return arg;
     }
@@ -295,6 +326,10 @@ function segmentReason(segment) {
   if (list.length === 0) {
     return null;
   }
+  // A group or subexpression after an assignment: $out = (dotnet test), $r = @(dotnet test)
+  if (/^[@$]?\(+./.test(list[0])) {
+    list[0] = list[0].replace(/^[@$]?\(+/, '');
+  }
   // A PowerShell body after the condition: if (...) { dotnet test }, foreach (...) { ... }
   const brace = list.findIndex((word, index) => index > 0 && (word === '{' || word.endsWith('{')));
   if (brace > 0 && !/^["']/.test(list[brace])) {
@@ -312,7 +347,9 @@ function segmentReason(segment) {
   }
   const shellIndex = shellCommandIndex(name, list);
   if (shellIndex > 0) {
-    return nestedReason(list.slice(shellIndex).map(unquote).join(' '));
+    const inner = list.slice(shellIndex).map(unquote).join(' ');
+    const reasons = check(inner, name === 'cmd' ? 'cmd' : /^(pwsh|powershell)$/.test(name) ? 'pwsh' : 'bash');
+    return reasons.length > 0 ? reasons[0] : null;
   }
   // The closer of a group or subshell may stick to the last word: (dotnet build)
   const args = list.slice(1).map((word) => unquote(word).replace(/[)}]+$/, ''));
@@ -380,15 +417,23 @@ function isExempt(segment) {
   return name === 'node' && /(^|[\\/])build-queue\.js$/.test(unquote(list[1] || ''));
 }
 
-/** The bodies of the command substitutions $( ... ) outside single quotes. */
-function substitutions(command) {
+/**
+ * The bodies of the command substitutions of one segment (comments, heredocs and here-strings already removed): $( ... )
+ * outside single quotes, also inside double quotes, and PowerShell's @( ... ) outside quotes.
+ */
+function substitutions(segment) {
   const bodies = [];
-  let single = false;
-  for (let i = 0; i < command.length; i++) {
-    const ch = command[i];
-    if (ch === "'") {
-      single = !single;
-    } else if (!single && ch === '$' && command[i + 1] === '(') {
+  let quote = '';
+  for (let i = 0; i < segment.length; i++) {
+    const ch = segment[i];
+    if (quote === '"' && ch === escapeCharacter()) {
+      i++;
+    } else if (ch === "'" && quote !== '"') {
+      quote = quote === "'" ? '' : "'";
+    } else if (ch === '"' && quote !== "'") {
+      quote = quote === '"' ? '' : '"';
+    } else if (quote !== "'" && segment[i + 1] === '(' && (ch === '$' || (ch === '@' && quote === '' && dialect === 'pwsh'))) {
+      const command = segment;
       let depth = 1;
       let j = i + 2;
       while (j < command.length && depth > 0) {
@@ -406,26 +451,31 @@ function substitutions(command) {
   return bodies;
 }
 
-/** The reasons the command needs the queue (empty when it may run as it is). */
-function check(command) {
-  const reasons = [];
-  for (const body of substitutions(command)) {
-    for (const reason of check(body)) {
-      if (!reasons.includes(reason)) {
+/**
+ * The reasons the command needs the queue (empty when it may run as it is). `kind` is the shell dialect ('bash',
+ * 'pwsh', 'cmd'); nested commands keep the dialect of their caller unless a shell wrapper names another.
+ */
+function check(command, kind = dialect) {
+  const saved = dialect;
+  dialect = kind;
+  try {
+    const reasons = [];
+    const add = (reason) => {
+      if (reason !== null && !reasons.includes(reason)) {
         reasons.push(reason);
       }
+    };
+    for (const segment of splitSegments(command)) {
+      // A substitution runs even inside an exempt command: git commit -m "$(dotnet test)"
+      substitutions(segment).forEach((body) => check(body).forEach(add));
+      if (!isExempt(segment)) {
+        add(segmentReason(segment));
+      }
     }
+    return reasons;
+  } finally {
+    dialect = saved;
   }
-  for (const segment of splitSegments(command)) {
-    if (isExempt(segment)) {
-      continue;
-    }
-    const reason = segmentReason(segment);
-    if (reason !== null && !reasons.includes(reason)) {
-      reasons.push(reason);
-    }
-  }
-  return reasons;
 }
 
 function denialText(reasons) {
@@ -447,6 +497,7 @@ function runHook() {
   process.stdin.on('end', () => {
     let command = '';
     let antigravity = false;
+    let kind = 'bash';
     try {
       const payload = JSON.parse(input);
       // Antigravity: {"toolCall": {"name": "run_command", "args": {"CommandLine": ...}}}
@@ -455,11 +506,13 @@ function runHook() {
       command = antigravity
         ? String((payload.toolCall.args && payload.toolCall.args.CommandLine) || '')
         : String((payload.tool_input && payload.tool_input.command) || '');
+      // Antigravity runs run_command in PowerShell; Claude Code names its tool
+      kind = antigravity || payload.tool_name === 'PowerShell' ? 'pwsh' : 'bash';
     } catch (error) {
       process.stderr.write(`check-queued-command --hook: invalid hook input: ${error.message}\n`);
       process.exit(1);
     }
-    const reasons = check(command);
+    const reasons = check(command, kind);
     if (reasons.length > 0 && antigravity) {
       process.stdout.write(JSON.stringify({ decision: 'deny', reason: denialText(reasons) }));
     } else if (reasons.length > 0) {
@@ -590,14 +643,44 @@ function selfTest() {
   for (const command of allowed) {
     assert.deepStrictEqual(check(command), [], `should allow: ${command}`);
   }
+  // PowerShell (Claude Code PowerShell tool, Antigravity): ` escapes in double quotes, \ does not
+  const deniedPowerShell = [
+    'Set-Location "tmp\\"; dotnet test',
+    'Remove-Item -Recurse -Force "obj\\"; dotnet build',
+    'Write-Output "it\'s starting"; Write-Output "$(dotnet test)"',
+    '$out = dotnet test',
+    '$x=dotnet build',
+    '$res = just test',
+    '@(dotnet test)',
+    '$r = @(dotnet test)',
+    '$o = (dotnet test)',
+    '$env:CI = "true"; dotnet test',
+    'git commit -m "$(dotnet test)"',
+  ];
+  const allowedPowerShell = [
+    'Test-Path "src\\Compiler\\"; Write-Output "fix; dotnet test"',
+    "gh pr comment 1 --body @'\nIt's fine. Run $(dotnet test) later.\n'@",
+    'git status # see $(dotnet test)',
+    'if ($true) { Write-Output "a `" { dotnet test `"" }',
+    "Write-Output 'it''s $(dotnet test)'",
+    '$x = 1; Get-ChildItem',
+  ];
+  for (const command of deniedPowerShell) {
+    assert.notDeepStrictEqual(check(command, 'pwsh'), [], `should deny in PowerShell: ${command}`);
+  }
+  for (const command of allowedPowerShell) {
+    assert.deepStrictEqual(check(command, 'pwsh'), [], `should allow in PowerShell: ${command}`);
+  }
+  assert.notDeepStrictEqual(check('echo "x\\"; dotnet test', 'cmd'), [], 'cmd: "x\\" ends the quote');
+  assert.notDeepStrictEqual(check('just profile=cpu fuzz-diff'), [], 'just variable before the recipe');
   process.stdout.write('check-queued-command self-test passed\n');
 }
 
 const args = process.argv.slice(2);
 if (args[0] === '--hook') {
   runHook();
-} else if (args[0] === '--text' && args.length === 2) {
-  const reasons = check(args[1]);
+} else if (args[0] === '--text' && (args.length === 2 || (args.length === 4 && args[2] === '--dialect'))) {
+  const reasons = check(args[1], args.length === 4 ? args[3] : 'bash');
   process.stdout.write(reasons.length === 0 ? 'allowed\n' : `${denialText(reasons)}\n`);
   process.exit(reasons.length === 0 ? 0 : 1);
 } else if (args[0] === '--self-test') {
