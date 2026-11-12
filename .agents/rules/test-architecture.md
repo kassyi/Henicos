@@ -230,6 +230,8 @@ cases. Cases 1 to 5 are for strings, where the string itself is what is checked:
 5. C++ text, which has no syntax tree (generated C++, the prelude, C++ fragments in the compiler), for a rule that neither a snapshot nor the lowered C# tree can check; `Regex` is allowed here.
 6. A syntax tree turned into text for a Verify snapshot (`.verified.cs`), where the snapshot file is what is compared.
 7. Reflection where the CLR itself is the oracle (comparing a layout the compiler predicts with the runtime layout).
+8. Test tooling that parses source files outside its own compilation (a test generator that reads kernel files from disk).
+9. Reflection to call an assembly that the test compiled at run time, which the test project cannot reference.
 
 For case 5, first consider a snapshot or the lowered C# tree before the C++ is written. Check the C++ text only when the
 rule (uniqueness, agreement with a registered set, the absence of a form) cannot be expressed by a snapshot.
