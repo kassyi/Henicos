@@ -5031,7 +5031,7 @@ __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundary
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel(int __gsharp_id_0_inScalar, int* __gsharp_id_1_refA, int* __gsharp_id_2_refB, float* __gsharp_id_3_refF, int* __gsharp_id_4_outSum, int* __restrict__ __gsharp_id_5_pValid, int* __restrict__ __gsharp_id_6_pNull, int __gsharp_id_7_constFactor, GSharpArray<const int> __gsharp_id_8_roTable, GSharpArray<int> __gsharp_id_9_probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel(int __gsharp_id_0_inScalar, int* __gsharp_id_1_refA, int* __gsharp_id_2_refB, float* __gsharp_id_3_refF, int* __gsharp_id_4_outSum, int* __gsharp_id_5_pValid, int* __gsharp_id_6_pNull, int __gsharp_id_7_constFactor, GSharpArray<const int> __gsharp_id_8_roTable, GSharpArray<int> __gsharp_id_9_probe, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
@@ -5074,7 +5074,7 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, int __gsharp_id_0_inScalar, int* __gsharp_id_1_refA, int* __gsharp_id_2_refB, float* __gsharp_id_3_refF, int* __gsharp_id_4_outSum, int* __restrict__ __gsharp_id_5_pValid, int* __restrict__ __gsharp_id_6_pNull, int __gsharp_id_7_constFactor, GSharpArray<const int> __gsharp_id_8_roTable, GSharpArray<int> __gsharp_id_9_probe)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, int __gsharp_id_0_inScalar, int* __gsharp_id_1_refA, int* __gsharp_id_2_refB, float* __gsharp_id_3_refF, int* __gsharp_id_4_outSum, int* __gsharp_id_5_pValid, int* __gsharp_id_6_pNull, int __gsharp_id_7_constFactor, GSharpArray<const int> __gsharp_id_8_roTable, GSharpArray<int> __gsharp_id_9_probe)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;

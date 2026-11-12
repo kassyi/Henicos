@@ -2257,7 +2257,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PointerIndirectionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerIndirectionKernel(int* __restrict__ __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
+public const string PointerIndirectionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerIndirectionKernel(int* __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int* __gsharp_id_4_p = __gsharp_id_0_g+(__gsharp_mul_i32(__gsharp_id_3_tid,2));
@@ -2450,7 +2450,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PointerElementKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerElementKernel(int* __restrict__ __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
+public const string PointerElementKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerElementKernel(int* __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int* __gsharp_id_4_p = __gsharp_id_0_g+(__gsharp_mul_i32(__gsharp_id_3_tid,2));
@@ -2656,7 +2656,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__A
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__AliasPair,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Differential.AliasPair.First: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__AliasPair,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Differential.AliasPair.Second: offset"");
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerMemberKernel(int* __restrict__ __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerMemberKernel(int* __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__AliasPair* __gsharp_id_4_cell = (__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__AliasPair*)(__gsharp_id_0_g+(__gsharp_mul_i32(__gsharp_id_3_tid,2)));
@@ -2862,7 +2862,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__A
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__AliasPair,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Differential.AliasPair.First: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__AliasPair,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Differential.AliasPair.Second: offset"");
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__DereferencedMemberKernel(int* __restrict__ __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__DereferencedMemberKernel(int* __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__AliasPair* __gsharp_id_4_cell = (__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__AliasPair*)(__gsharp_id_0_g+(__gsharp_mul_i32(__gsharp_id_3_tid,2)));
@@ -3055,7 +3055,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PointerMovedByLaterArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerMovedByLaterArgumentKernel(int* __restrict__ __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
+public const string PointerMovedByLaterArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerMovedByLaterArgumentKernel(int* __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int* __gsharp_id_4_start = __gsharp_id_0_g+(__gsharp_mul_i32(__gsharp_id_3_tid,2));
@@ -3254,7 +3254,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PointerMovedByLaterKeywordArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerMovedByLaterKeywordArgumentKernel(int* __restrict__ __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
+public const string PointerMovedByLaterKeywordArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__InArgumentAliasDifferentialKernels__PointerMovedByLaterKeywordArgumentKernel(int* __gsharp_id_0_g, GSharpArray<int> __gsharp_id_1_xs, GSharpArray<int> __gsharp_id_2_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int* __gsharp_id_4_start = __gsharp_id_0_g+(__gsharp_mul_i32(__gsharp_id_3_tid,2));
