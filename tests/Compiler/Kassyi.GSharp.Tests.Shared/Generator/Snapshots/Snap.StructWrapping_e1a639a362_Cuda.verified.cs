@@ -12,27 +12,27 @@ private static readonly Lazy<byte[]> s_fatbin_my_fatbin = new(() => System.IO.Fi
 public static partial void LaunchMyKernel(float[] a, float[] b, float scalarValue, uint gridDimX, uint blockDimX)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "TestInvoker.LaunchMyKernel");
-using var scope = new GpuKernelLoader.CudaContextScope();
-var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_my_fatbin.Value, "MyKernel");
-using var d_a = new GpuBuffer<float>(a.Length);
+using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_my_fatbin.Value, "MyKernel");
+using var d_a = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(a.Length);
 d_a.CopyToDevice(a);
-using var d_b = new GpuBuffer<float>(b.Length);
+using var d_b = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(b.Length);
 unsafe
 {
 var p_a = d_a.DevicePointer;
 var p_b = d_b.DevicePointer;
 var p_scalarValue = scalarValue;
 var kernelParams = stackalloc void*[3];
-kernelParams[0] = &p_a;
-kernelParams[1] = &p_b;
-kernelParams[2] = &p_scalarValue;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_a);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_b);
+kernelParams[2] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<float>(ref p_scalarValue);
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 kernel,
 gridDimX, 1, 1,
 blockDimX, 1, 1,
-0, IntPtr.Zero, kernelParams, IntPtr.Zero));
+0, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));
 }
-CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuCtxSynchronize());
 d_b.CopyToHost(b);
 }
 }
