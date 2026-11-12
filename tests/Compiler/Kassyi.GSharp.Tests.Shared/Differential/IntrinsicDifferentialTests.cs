@@ -217,7 +217,7 @@ public class IntrinsicDifferentialTests
     // selectors with high bits (0x89AB) are checked against CUDA itself
     // mutant: src/Core/Kassyi.GSharp.Core/ManagedIntegerIntrinsics.cs AbsDiff(int, int)
     // -> `checked((int)Math.Abs((long)a - b))`
-    // input: a = 0x80000000, b = 0x7FFFFFFF (int.MinValue - int.MaxValue)
+    // input: a = 0x80000000, b = 0x10000 (int.MinValue - 65536, past the int range)
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]

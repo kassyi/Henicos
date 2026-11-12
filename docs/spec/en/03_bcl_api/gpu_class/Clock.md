@@ -55,7 +55,7 @@ The 64-bit counter (PTX `%clock64` on CUDA).
 | Managed CPU path | `Stopwatch.GetTimestamp()`, converted | Nanoseconds |
 
 The contract is the same on every path: within one thread, a later reading of `Clock64()` is never below an earlier
-one, and a later reading of `Clock()` is ahead of an earlier one by less than 2^31 for any interval shorter than that.
+one (on CUDA, while the thread stays on its multiprocessor, which a running block leaves only when it is preempted), and a later reading of `Clock()` is ahead of an earlier one by less than 2^31 for any interval shorter than that.
 The values themselves are not reproducible from run to run on any path, and the CPU unit is not cycles: use the clock
 to measure or to wait a while, not to compute a result. Readings of different multiprocessors on CUDA are not
 synchronized with each other.

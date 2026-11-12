@@ -239,8 +239,9 @@ public class IntrinsicBitDifferentialTests
     public void Bits32Intrinsics_BoundaryOperands_MatchTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_bits32);
 
-    // The 64-bit forms, also with positions and lengths past 63, which the GPU does not take modulo 256 (measured over
-    // every pos and len from -70 to 600 on the GPU: modulo 256 for 32 bits, unsigned values for 64 bits).
+    // The 64-bit forms, also with positions and lengths past 63, which the device code does not take modulo 256 (measured
+    // over every pos and len from -70 to 600 on the GPU: modulo 256 for 32 bits, unsigned values for 64 bits, because
+    // ptxas lowers the 64-bit forms to shifts without the modulo).
     // mutant: src/Core/Kassyi.GSharp.Core/ManagedBitIntrinsics.cs ExtractField `start >= bits` -> `start > bits`
     // input: pos = 64 (a shift by 64 is a shift by 0 in C#)
     [SkippableFact]
