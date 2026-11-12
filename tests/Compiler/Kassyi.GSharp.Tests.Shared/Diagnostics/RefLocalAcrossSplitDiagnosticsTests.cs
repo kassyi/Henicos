@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 
@@ -104,14 +103,21 @@ public class RefLocalAcrossSplitDiagnosticsTests
     public async Task RefLocal_ThrowingStateMachine_ComesWithAnErrorAtEachHeldLocal(string testCase)
     {
         var run = await RunAsync(testCase, "Cpu");
-        var generated = GeneratedSource(run);
 
         // No build may succeed with a state machine that only throws: each one belongs to a method whose held ref
         // locals are GSH0039 (analyzer) or GSH0003 (generator)
-        var throwingMethods = Regex.Matches(
-                generated,
-                "NotSupportedException\\(\"(?<method>\\w+) cannot run on the CPU: the ref local '(?<local>\\w+)'")
-            .Select(static m => m.Groups["method"].Value)
+        const string HeldRefLocalMessage = " cannot run on the CPU: the ref local '";
+        var throwingMethods = GeneratedTrees(run)
+            .SelectMany(static tree => tree.GetRoot().DescendantNodes().OfType<ObjectCreationExpressionSyntax>())
+            .Where(static creation => creation.Type is QualifiedNameSyntax
+            {
+                Right.Identifier.ValueText: nameof(NotSupportedException)
+            })
+            .Select(static creation => creation.ArgumentList?.Arguments.FirstOrDefault()?.Expression)
+            .OfType<LiteralExpressionSyntax>()
+            .Select(static literal => literal.Token.ValueText)
+            .Where(static message => message.Contains(HeldRefLocalMessage, StringComparison.Ordinal))
+            .Select(static message => message[..message.IndexOf(HeldRefLocalMessage, StringComparison.Ordinal)])
             .ToList();
         Assert.NotEmpty(throwingMethods);
         var errorLines = run.Analyzer.Concat(run.Generator)
@@ -180,10 +186,9 @@ public class RefLocalAcrossSplitDiagnosticsTests
         return await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
     }
 
+    private static IEnumerable<SyntaxTree> GeneratedTrees(KernelDiagnosticsRun run) =>
+        run.Output.SyntaxTrees.Where(tree => !run.Input.SyntaxTrees.Contains(tree));
+
     private static string GeneratedSource(KernelDiagnosticsRun run) =>
-        string.Join(
-            "\n",
-            run.Output.SyntaxTrees
-                .Where(tree => !run.Input.SyntaxTrees.Contains(tree))
-                .Select(static tree => tree.ToString()));
+        string.Join("\n", GeneratedTrees(run).Select(static tree => tree.ToString()));
 }

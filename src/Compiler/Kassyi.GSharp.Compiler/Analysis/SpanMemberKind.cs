@@ -33,7 +33,7 @@ internal enum SpanMemberKind
     /// <summary><c>Span&lt;T&gt;.Slice(int, int)</c> or <c>ReadOnlySpan&lt;T&gt;.Slice(int, int)</c>.</summary>
     Slice2,
 
-    /// <summary><c>MemoryExtensions.AsSpan&lt;T&gt;(T[])</c>.</summary>
+    /// <summary><c>MemoryExtensions.AsSpan&lt;T&gt;(T[])</c> or <c>ImmutableArray&lt;T&gt;.AsSpan()</c>.</summary>
     AsSpan0,
 
     /// <summary><c>MemoryExtensions.AsSpan&lt;T&gt;(T[], int)</c>.</summary>

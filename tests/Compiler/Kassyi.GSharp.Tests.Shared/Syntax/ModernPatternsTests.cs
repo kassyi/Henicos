@@ -146,13 +146,13 @@ public class ModernPatternsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Transpile_UnsafeNullRef_EmitsValidSourceAndEvaluatesExpectedValue()
+    public void Transpile_UnsafeNullRef_FailsOnTheDeviceAndEvaluatesOnTheHost()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.UnsafeNullRef), isDevice: false, dialect: CurrentDialect);
 
-        Assert.Empty(diagnostics);
-        Assert.False(string.IsNullOrEmpty(cudaSource));
+        // No dialect defines Unsafe.IsNullRef; its bare name would not build
+        diagnostics.AssertFails(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode, "'Unsafe.IsNullRef(");
 
         int[] output = [42];
         ModernPatternsTarget.UnsafeNullRef(output);

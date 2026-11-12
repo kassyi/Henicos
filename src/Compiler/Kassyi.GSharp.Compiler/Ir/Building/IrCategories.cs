@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Ir.Building;
 /// </summary>
 /// <remarks>
 /// Whether an expression is a variable is C#'s classification, read through <see
-/// cref="OperationExtensions.IsVariable(IOperation?)"/>
+/// cref="Kassyi.GSharp.Compiler.Extensions.OperationExtensions.IsVariable(IOperation)"/>
 /// so that the IR and the analyses share one rule.
 /// </remarks>
 internal static class IrCategories

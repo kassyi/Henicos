@@ -19,6 +19,9 @@ public static partial class GpuBigIntSqrtKernels
         var dims = core.Dimensions;
         var ops = core.Operands;
         var iterScratch = core.Workspace.Iteration;
+        uint[] xSquared = Gpu.NotNull(iterScratch.XSquared);
+        uint[] axSquared = Gpu.NotNull(iterScratch.AxSquared);
+        uint[] nextXUnshifted = Gpu.NotNull(iterScratch.NextXUnshifted);
         var n = dims.NumberOfWords;
 
         // The carry chunk of every product is one block of threads: ExecuteResolveNttCarriesBlocked gives each thread
@@ -30,11 +33,11 @@ public static partial class GpuBigIntSqrtKernels
         for (int i = 0; i < dims.Iterations; i++)
         {
             // 1. xSquared = resultBuffer * resultBuffer
-            GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.ResultBuffer, ops.ResultBuffer, iterScratch.XSquared,
+            GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.ResultBuffer, ops.ResultBuffer, xSquared,
                 n + dims.MarginWords, n + dims.MarginWords, 2 * n + 2 * dims.MarginWords, chunkSize);
 
             // 2. axSquared = targetOperand * xSquared
-            GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.TargetOperand, iterScratch.XSquared, iterScratch.AxSquared, n,
+            GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.TargetOperand, xSquared, axSquared, n,
                 2 * n + 2 * dims.MarginWords, 3 * n + 2 * dims.MarginWords, chunkSize);
 
             // 3. diff = constant3 - axSquared
@@ -45,13 +48,13 @@ public static partial class GpuBigIntSqrtKernels
                     Operands = new OperandContext { CarryBuffer = core.CarryBuffer },
                     NumberOfWords = 3 * n + 2 * dims.MarginWords
                 };
-                GpuBigIntKernels.ExecuteSub(ref subCtx, iterScratch.Diff, ops.Constant3,
-                    iterScratch.AxSquared);
+                GpuBigIntKernels.ExecuteSub(ref subCtx, iterScratch.Diff, Gpu.NotNull(ops.Constant3),
+                    axSquared);
             });
             Gpu.SyncGrid();
 
             // 4. nextXUnshifted = resultBuffer * diff
-            GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.ResultBuffer, iterScratch.Diff, iterScratch.NextXUnshifted,
+            GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.ResultBuffer, iterScratch.Diff, nextXUnshifted,
                 n + dims.MarginWords, 3 * n + 2 * dims.MarginWords,
                 4 * n + 3 * dims.MarginWords, chunkSize);
 
@@ -66,8 +69,8 @@ public static partial class GpuBigIntSqrtKernels
             {
                 var srcIdx = idx + wordShift;
                 // Ensure we don't read out of bounds. The nextXUnshifted buffer size is 4n+3m
-                var w0 = (srcIdx < srcMaxWords) ? iterScratch.NextXUnshifted[srcIdx] : 0u;
-                var w1 = (srcIdx + 1 < srcMaxWords) ? iterScratch.NextXUnshifted[srcIdx + 1] : 0u;
+                var w0 = (srcIdx < srcMaxWords) ? nextXUnshifted[srcIdx] : 0u;
+                var w1 = (srcIdx + 1 < srcMaxWords) ? nextXUnshifted[srcIdx + 1] : 0u;
 
                 var shiftedValue = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
                 ops.ResultBuffer[idx] = shiftedValue;
@@ -82,12 +85,12 @@ public static partial class GpuBigIntSqrtKernels
         var squareWords = 2 * xWords;
         var slackWords = 3 * n + 2 * dims.MarginWords;
         var axWords = 2 * n + dims.MarginWords;
-        GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.ResultBuffer, ops.ResultBuffer, iterScratch.XSquared,
+        GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.ResultBuffer, ops.ResultBuffer, xSquared,
             xWords, xWords, squareWords, chunkSize);
-        GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.TargetOperand, iterScratch.XSquared,
-            iterScratch.AxSquared, n, squareWords, slackWords, chunkSize);
+        GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.TargetOperand, xSquared,
+            axSquared, n, squareWords, slackWords, chunkSize);
         GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer,
-            iterScratch.NextXUnshifted, n, xWords, axWords, chunkSize);
+            nextXUnshifted, n, xWords, axWords, chunkSize);
 
         // s = 2^(2B) - a * x^2, with 2^(2B) (bit 0 of word 2 * xWords) written into Diff first.
         Gpu.GridStrideLoop(slackWords, idx =>
@@ -95,11 +98,11 @@ public static partial class GpuBigIntSqrtKernels
             iterScratch.Diff[idx] = idx == squareWords ? 1u : 0u;
         });
         Gpu.SyncGrid();
-        GpuBigIntKernels.DeviceAddSubAlignedParallel(iterScratch.Diff, slackWords, iterScratch.AxSquared, slackWords,
+        GpuBigIntKernels.DeviceAddSubAlignedParallel(iterScratch.Diff, slackWords, axSquared, slackWords,
             iterScratch.Diff, slackWords, 0, 0, -1, true);
 
-        var delta = CorrectInverseSqrtSlack(iterScratch.Diff, iterScratch.NextXUnshifted, ops.TargetOperand,
-            iterScratch.NextXShifted, slackWords, axWords, n, 1000, core.CorrectionStatus,
+        var delta = CorrectInverseSqrtSlack(iterScratch.Diff, nextXUnshifted, ops.TargetOperand,
+            Gpu.NotNull(iterScratch.NextXShifted), slackWords, axWords, n, 1000, Gpu.NotNull(core.CorrectionStatus),
             GpuBigIntDivRemKernels.InverseSqrtCorrectionFailed);
         Gpu.SingleThread(() => GpuBigIntDivRemKernels.AddSmallSigned(ops.ResultBuffer, xWords, delta));
     }

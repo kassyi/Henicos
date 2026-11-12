@@ -85,11 +85,13 @@ internal static class IrMemberEffects
         AddArgumentValues(walker, reference.Arguments);
         if (property.IsIndexer)
         {
-            AddIndexerGetter(walker, property, mutatesReceiver);
+            // An indexer reads memory, and writes it when its getter may change the receiver and writes memory
+            walker.AddUserCode(mutatesReceiver ? property.GetMethod : null);
         }
-        else
+        else if (MemberEffects.IsUserAccessorProperty(property))
         {
-            AddComputedGetter(walker, property);
+            // The getter of a computed property of a struct may read anything, and writes what DeviceFunctionEffects says
+            walker.AddUserCode(property.GetMethod);
         }
     }
 
@@ -153,31 +155,6 @@ internal static class IrMemberEffects
         if (!MemberEffects.IsIntrinsicProperty(property))
         {
             walker.ReadMemory();
-        }
-    }
-
-    // An indexer reads memory, and writes it when its getter may change the receiver and writes memory
-    private static void AddIndexerGetter(IrEffectWalker walker, IPropertySymbol indexer, bool mutatesReceiver)
-    {
-        walker.ReadMemory();
-        if (mutatesReceiver && walker.MayWriteMemory(indexer.GetMethod))
-        {
-            walker.WriteMemory();
-        }
-    }
-
-    // The getter of a computed property of a struct may read anything, and writes what DeviceFunctionEffects says
-    private static void AddComputedGetter(IrEffectWalker walker, IPropertySymbol property)
-    {
-        if (!MemberEffects.IsUserAccessorProperty(property))
-        {
-            return;
-        }
-
-        walker.ReadMemory();
-        if (walker.MayWriteMemory(property.GetMethod))
-        {
-            walker.WriteMemory();
         }
     }
 
@@ -253,8 +230,9 @@ internal static class IrMemberEffects
         !property.Property.IsStatic && !IsThis(receiver) && receiver.Type.IsValueType &&
         (!property.Property.IsIndexer || receiver.Type is { IsRefLikeType: false } and not IPointerTypeSymbol);
 
-    // Whether expression names storage rather than computing a temporary value
-    private static bool IsVariable(IrExpression expression) => expression switch
+    /// <summary>Whether <paramref name="expression"/> names storage rather than computing a temporary
+    /// value.</summary>
+    public static bool IsVariable(IrExpression expression) => expression switch
     {
         IrVariableReference or IrElementReference => true,
         IrFieldReference { Receiver: null } => true,

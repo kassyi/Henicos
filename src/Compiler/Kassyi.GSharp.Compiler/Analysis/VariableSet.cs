@@ -32,6 +32,20 @@ internal struct VariableSet
         }
     }
 
+    /// <summary>Adds the variables of the location <paramref name="root"/>; memory if it is memory.</summary>
+    public void AddRoot(in EffectRoot root)
+    {
+        foreach (var variable in root.Variables)
+        {
+            Add(variable);
+        }
+
+        Memory |= root.IsMemory;
+    }
+
+    /// <summary>Adds <see cref="Memory"/> and <see cref="AllLocals"/>: what an unknown expression may touch.</summary>
+    public void AddUnknown() => Memory = AllLocals = true;
+
     /// <summary>The variables of this set and of <paramref name="other"/>, in a set of its own.</summary>
     public readonly VariableSet Union(in VariableSet other)
     {

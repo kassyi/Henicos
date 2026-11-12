@@ -398,12 +398,7 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                 declarator = declarator.WithSpilledTypeSpanFrom(spilledSource, compilation);
             }
 
-            return SyntaxFactory.LocalDeclarationStatement(
-                SyntaxFactory.VariableDeclaration(
-                    SyntaxFactory.IdentifierName("var"),
-                    SyntaxFactory.SingletonSeparatedList(declarator)
-                )
-            ).NormalizeWhitespace();
+            return LoweringSyntax.DeclareLocal(declarator).NormalizeWhitespace();
         }
     }
 }

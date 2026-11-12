@@ -81,8 +81,9 @@ public class IrBuilderCategoryTests
     }
 
     /// <summary>
-    /// Every location the builder makes is a variable by <see cref="OperationExtensions.IsVariable"/>, the one rule the
-    /// analyses use: for each argument of a by-reference parameter in the cases, the category matches the operation.
+    /// Every location the builder makes is a variable by
+    /// <see cref="Kassyi.GSharp.Compiler.Extensions.OperationExtensions.IsVariable"/>, the one rule the analyses use:
+    /// for each argument of a by-reference parameter in the cases, the category matches the operation.
     /// </summary>
     [Theory]
     [Scenario(TestScenario.Boundary)]
@@ -110,7 +111,7 @@ public class IrBuilderCategoryTests
             .Select(node => model.GetOperation(node))
             .OfType<IArgumentOperation>()
             .First();
-        var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase(method)));
+        var call = Assert.IsType<IrCall>(IrTestCases.CaseResult(method));
 
         Assert.Equal(isVariable, argument.Value.IsVariable());
         Assert.Equal(isVariable,

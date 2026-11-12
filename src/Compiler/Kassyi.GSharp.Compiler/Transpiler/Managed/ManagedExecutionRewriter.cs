@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>The managed body that <see cref="ManagedExecutionRewriter"/> rewrites.</summary>
@@ -22,6 +24,10 @@ internal enum ManagedBodyKind
 /// The stubs through which the body calls an operator macro target it cannot name, and reaches the backing field of an
 /// auto-property that an operator macro passes by reference.
 /// </param>
+/// <param name="isUnsafe">
+/// Whether the context is an unsafe struct reached through a pointer rather than a class, so its members are read
+/// with <c>-&gt;</c>.
+/// </param>
 internal sealed partial class ManagedExecutionRewriter(
     SemanticModel semanticModel,
     ManagedBodyKind bodyKind,
@@ -40,6 +46,9 @@ internal sealed partial class ManagedExecutionRewriter(
 
     // The number of the next loop variable that a Gpu.ForUnroll becomes; found on the first visit, which is the body
     private int _nextUnrollId = -1;
+
+    // The number of the next hidden variable that a using (<variable>) statement declares
+    private int _nextUsingResourceId;
 
     public override SyntaxNode? Visit(SyntaxNode? node)
     {
@@ -267,7 +276,11 @@ internal sealed partial class ManagedExecutionRewriter(
                 Identifier.ValueText: GSharpInternalNames.StateMachine.Context
             } frame)
         {
-            return base.VisitArgument(node);
+            var visited = base.VisitArgument(node);
+            var inKeyword = SyntaxFactory.Token(SyntaxKind.InKeyword).WithTrailingTrivia(SyntaxFactory.Space);
+            return IsVariableToRefReadOnlyWithoutKeyword(node) && visited is ArgumentSyntax argument
+                ? argument.WithRefKindKeyword(inKeyword)
+                : visited;
         }
 
         ExpressionSyntax target = _isUnsafe
@@ -277,6 +290,93 @@ internal sealed partial class ManagedExecutionRewriter(
             .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword).WithTrailingTrivia(SyntaxFactory.Space))
             .WithTriviaFrom(node);
     }
+
+    // [WHY] A variable passed to a ref readonly parameter without a keyword is passed by reference, and C# warns
+    // that it should carry one (CS9192). The user's source already reports or suppresses that warning, so the copy
+    // writes the keyword (in), which passes the same reference without repeating it. A value that is not a variable
+    // keeps no keyword: C# passes a temporary for it, and in would not compile. The operation is looked up from the
+    // expression: an argument without a keyword has the span of its expression, and the lookup of a lowered node by
+    // span finds the innermost node
+    private bool IsVariableToRefReadOnlyWithoutKeyword(ArgumentSyntax node) =>
+        node.RefKindKeyword.IsKind(SyntaxKind.None) &&
+        semanticModel.GetSafeOperation(node.Expression) is
+        {
+            Parent: IArgumentOperation { Parameter.RefKind: RefKind.RefReadOnlyParameter }
+        } value &&
+        value.IsVariable();
+
+    // [WHY] C# ends a switch expression that is not exhaustive with an arm of its own that throws, and warns about it
+    // (CS8509). The user's source already reports or suppresses that warning, so the copy writes the arm out, which
+    // throws the same exception without repeating it
+    public override SyntaxNode? VisitSwitchExpression(SwitchExpressionSyntax node)
+    {
+        var visited = base.VisitSwitchExpression(node);
+        return visited is SwitchExpressionSyntax rewritten &&
+               semanticModel.GetSafeOperation(node) is ISwitchExpressionOperation { IsExhaustive: false } operation
+            ? AddUnmatchedArm(rewritten, PlanUnmatchedArm(operation.Value.Type, semanticModel.Compilation))
+            : visited;
+    }
+
+    // <arms>, <unmatched arm>,
+    // The comma after the new arm keeps the closing brace on its own line: the body is written through
+    // NormalizeWhitespace, which breaks the line after an arm separator but not after the ) of the throw
+    private static SwitchExpressionSyntax AddUnmatchedArm(SwitchExpressionSyntax switchExpression,
+        UnmatchedSwitchArm plan)
+    {
+        var armsAndSeparators = switchExpression.Arms
+            .Add(CreateUnmatchedArm(plan))
+            .GetWithSeparators()
+            .Add(SyntaxFactory.Token(SyntaxKind.CommaToken));
+        return switchExpression.WithArms(SyntaxFactory.SeparatedList<SwitchExpressionArmSyntax>(armsAndSeparators));
+    }
+
+    // The exception C# throws when no arm matches (as the lowering
+    // of Roslyn does): SwitchExpressionException with the boxed input, without it when the input cannot be boxed (a ref
+    // struct, a pointer), and InvalidOperationException where the library has no SwitchExpressionException
+    internal static UnmatchedSwitchArm PlanUnmatchedArm(ITypeSymbol? inputType, Compilation compilation)
+    {
+        if (compilation.GetTypeByMetadataName(SwitchExpressionExceptionMetadataName) is null)
+        {
+            return UnmatchedSwitchArm.InvalidOperation;
+        }
+
+        return inputType is { IsRefLikeType: false } and not (IPointerTypeSymbol or IFunctionPointerTypeSymbol)
+            ? UnmatchedSwitchArm.SwitchExpressionWithValue
+            : UnmatchedSwitchArm.SwitchExpression;
+    }
+
+    // var __gsharp_unmatched => throw new <SwitchExpressionException>(__gsharp_unmatched)
+    // _ => throw new <SwitchExpressionException>()
+    // _ => throw new global::System.InvalidOperationException()
+    // <SwitchExpressionException> is global::System.Runtime.CompilerServices.SwitchExpressionException
+    private static SwitchExpressionArmSyntax CreateUnmatchedArm(UnmatchedSwitchArm plan)
+    {
+        var withValue = plan == UnmatchedSwitchArm.SwitchExpressionWithValue;
+        var pattern = withValue
+            ? (PatternSyntax)SyntaxFactory.VarPattern(
+                SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(UnmatchedValueName))
+            )
+            : SyntaxFactory.DiscardPattern();
+        var arguments = withValue
+            ? SyntaxFactory.SingletonSeparatedList(
+                SyntaxFactory.Argument(SyntaxFactory.IdentifierName(UnmatchedValueName))
+            )
+            : default;
+        var exceptionType = plan == UnmatchedSwitchArm.InvalidOperation
+            ? "global::System.InvalidOperationException"
+            : "global::" + SwitchExpressionExceptionMetadataName;
+        var exception = SyntaxFactory.ObjectCreationExpression(
+            SyntaxFactory.ParseTypeName(exceptionType),
+            SyntaxFactory.ArgumentList(arguments),
+            null
+        );
+        return SyntaxFactory.SwitchExpressionArm(pattern, SyntaxFactory.ThrowExpression(exception));
+    }
+
+    private const string UnmatchedValueName = "__gsharp_unmatched";
+
+    private const string SwitchExpressionExceptionMetadataName =
+        "System.Runtime.CompilerServices.SwitchExpressionException";
 
     // [WHY] The copied bodies keep only the active branch of each #if; its directives and the disabled text would be
     // read again in the generated file, under its symbols (which define what a kept [Conditional] call needs,
@@ -322,4 +422,19 @@ internal sealed partial class ManagedExecutionRewriter(
             _inLambdaOrLocalFuncCount--;
         }
     }
+}
+
+/// <summary>The arm that the managed copy adds to a switch expression that is not exhaustive.</summary>
+internal enum UnmatchedSwitchArm
+{
+    /// <summary><c>var v =&gt; throw new SwitchExpressionException(v)</c>.</summary>
+    SwitchExpressionWithValue,
+
+    /// <summary><c>_ =&gt; throw new SwitchExpressionException()</c>, for an input that cannot be boxed.</summary>
+    SwitchExpression,
+
+    /// <summary>
+    /// <c>_ =&gt; throw new InvalidOperationException()</c>, where the library has no SwitchExpressionException.
+    /// </summary>
+    InvalidOperation
 }

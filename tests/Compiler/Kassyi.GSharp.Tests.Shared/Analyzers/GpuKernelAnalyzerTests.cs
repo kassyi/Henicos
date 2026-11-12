@@ -10,9 +10,9 @@ public class GpuKernelAnalyzerTests
     [InlineData("GSH-02", "Analyzers/GpuKernel/LinqQuery_InGpuKernel.cu.cs", "GSH0008")]
     [InlineData("GSH-03", "Analyzers/GpuKernel/ImplicitVar_WithoutSuffix_InGpuKernel.cu.cs", "GSH0009")]
     [InlineData("GSH-19", "Analyzers/ManualEnumeratorSadPath.cs", "GSH0019")]
-    [InlineData("SYN-49", "Analyzers/UnsupportedInterlockedOverload.cs", "GSH0003")]
-    [InlineData("SYN-68", "Analyzers/UnsupportedMathMethod.cs", "GSH0003")]
-    [InlineData("SYN-155", "Analyzers/UnsupportedBitOperationsMethod.cs", "GSH0003")]
+    [InlineData("SYN-49", "Analyzers/UnsupportedInterlockedOverload.cs", "GSH0109")]
+    [InlineData("SYN-68", "Analyzers/UnsupportedMathMethod.cs", "GSH0109")]
+    [InlineData("SYN-155", "Analyzers/UnsupportedBitOperationsMethod.cs", "GSH0109")]
     [InlineData("GSH-36", "Analyzers/KernelClassMustBePartial_SadPath.cs", "GSH0036")]
     public async Task GpuKernelAnalyzer_KernelWithErrorConstruct_ReportsTheGivenDiagnostic(
         string featureId,
@@ -136,14 +136,14 @@ public class GpuKernelAnalyzerTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void SupportedDiagnostics_DefinedDiagnosticDescriptors_CoversAllDefinedDiagnostics()
+    public void SupportedDiagnostics_ReportedDescriptors_CoversEveryReportedDiagnostic()
     {
         var supportedIds = s_analyzer.SupportedDiagnostics
             .Select(static d => d.Id)
             .ToHashSet(StringComparer.Ordinal);
 
-        Assert.NotEmpty(GSharpDiagnostics.All);
-        foreach (var descriptor in GSharpDiagnostics.All)
+        Assert.NotEmpty(GSharpDiagnostics.Reported);
+        foreach (var descriptor in GSharpDiagnostics.Reported)
         {
             Assert.Contains(descriptor.Id, supportedIds);
         }
