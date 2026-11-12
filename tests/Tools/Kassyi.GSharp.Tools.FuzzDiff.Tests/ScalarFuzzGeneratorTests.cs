@@ -317,7 +317,8 @@ public class ScalarFuzzGeneratorTests
             negatedConstDivByDefault += CountNegatedConstantDivisions(root);
         }
 
-        // All active known-issue switches (#1079, #998, #984, #645, #1101, #1102, #1103) must exclude their avoided AST shapes across 100 seeds.
+        // All active known-issue switches (#1079, #998, #984, #645, #1101, #1102, #1103) must exclude their avoided AST
+        // shapes across 100 seeds.
         // mutant: KnownIssueFilter.AvoidNarrowIncDecValue: change `_avoidedIssues.Contains(Issue1079NarrowIncDecValue)` to `false`
         // input: Profile = "G", AllowedIssues = [], seed = 0UL .. 99UL
         Assert.Equal(0, narrowIncDecValueAvoided);

@@ -6,8 +6,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// <summary>
 /// Differential kernels for integer shapes that the MSVC global optimizer (<c>/Og</c>, part of <c>/O2</c>) miscompiles
 /// on the native path (#1078): a wrapping negation used as a dividend, a <c>short</c> widened both through
-/// <c>uint</c> and directly to <c>ulong</c>, and a wrapping <c>short</c> increment whose value then picks a
-/// <c>ref</c> target.
+/// <c>uint</c> and directly to <c>ulong</c>, and a wrapping <c>short</c> increment or <c>sbyte</c> compound
+/// subtraction whose value then picks a <c>ref</c> target.
 /// </summary>
 public static partial class NativeOptimizerDifferentialKernels
 {
@@ -31,6 +31,15 @@ public static partial class NativeOptimizerDifferentialKernels
     public static readonly string[] ShortIncrementPicksRefTargetColumns =
     [
         "(short)(s+1)",
+        "x",
+        "y",
+        "hash(src)",
+    ];
+
+    /// <summary>The columns of <see cref="SByteSubtractPicksRefTargetKernel"/>.</summary>
+    public static readonly string[] SByteSubtractPicksRefTargetColumns =
+    [
+        "(sbyte)(v-127)",
         "x",
         "y",
         "hash(src)",
@@ -123,6 +132,55 @@ public static partial class NativeOptimizerDifferentialKernels
 
         int baseIdx = t * 4;
         dst[baseIdx + 0] = s;
+        dst[baseIdx + 1] = x;
+        dst[baseIdx + 2] = y;
+        dst[baseIdx + 3] = (int)h;
+    }
+
+    /// <summary>
+    /// Subtracts 127 from an <c>sbyte</c> in a compound assignment (wrapping below <see cref="sbyte.MinValue"/>) and
+    /// compares the result with itself xor -127 to pick which local a <c>ref</c> conditional writes. MSVC <c>/Og</c>
+    /// compares the value before the conversion back to <c>sbyte</c>: the same dropped narrowing as
+    /// <see cref="ShortIncrementPicksRefTargetKernel"/>, with another type, a subtraction and another comparison. The
+    /// same comparison in an <c>if</c> that assigns one of the locals is compiled correctly. The hash of the input
+    /// (fourth column) keeps the kernel out of line from its launcher, as in
+    /// <see cref="ShortIncrementPicksRefTargetKernel"/>; moved into a device function, it no longer does, and neither
+    /// kernel shows the miscompile.
+    /// </summary>
+    [GpuKernel]
+    public static void SByteSubtractPicksRefTargetKernel(int[] src, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        sbyte v = (sbyte)src[t];
+        v -= (sbyte)127;
+        int x = 10;
+        int y = 20;
+        ((sbyte)(v ^ (sbyte)(-127)) < v ? ref x : ref y) = 0;
+
+        uint h = (uint)src[t];
+        for (int round = 0; round < 4; round++)
+        {
+            h = (h ^ (h >> 16)) * 0x7FEB352Du;
+            h = (h ^ (h >> 15)) * 0x846CA68Bu;
+            h = (h ^ (h >> 13)) * 0x9E3779B1u;
+            h = (h ^ (h >> 11)) * 0x85EBCA6Bu;
+            h = (h ^ (h >> 7)) * 0xC2B2AE35u;
+            h = (h ^ (h >> 5)) * 0x27D4EB2Fu;
+            h = (h ^ (h >> 9)) * 0x165667B1u;
+            h = (h ^ (h >> 3)) * 0xD3A2646Du;
+            h = (h ^ (h >> 12)) * 0xFD7046C5u;
+            h = (h ^ (h >> 14)) * 0xB55A4F09u;
+            h = (h ^ (h >> 6)) * 0x2545F491u;
+            h = (h ^ (h >> 10)) * 0x9E3779B9u;
+        }
+
+        int baseIdx = t * 4;
+        dst[baseIdx + 0] = v;
         dst[baseIdx + 1] = x;
         dst[baseIdx + 2] = y;
         dst[baseIdx + 3] = (int)h;

@@ -265,6 +265,9 @@ public sealed class MsvcToolchain : INativeToolchain
     // detected.
     private const string OptimizationFlags = "/Oi /Ot /Oy /Ob2 /GF /Gy";
 
+    // The flags of every native kernel build besides the optimization and the sanitizers (see BuildClArguments).
+    private const string CommonFlags = "/LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj";
+
     // Logged once per task run by CompileCppToNativeTask when 'undefined' is requested with this toolchain.
     internal const string UndefinedSanitizerUnsupportedWarning =
         "GSharpNativeSanitizers specifies 'undefined', which is not supported by MSVC (no UndefinedBehaviorSanitizer). Continuing with AddressSanitizer only when 'address' is specified, ignoring 'undefined'.";
@@ -295,7 +298,8 @@ public sealed class MsvcToolchain : INativeToolchain
             ? $" /fsanitize=address /Zi /Fd:\"{vcPdbPath}\""
             : "";
 
-        return $"{OptimizationFlags} /LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj{sanitizerFlags} \"{sourcePath}\" /Fo:\"{objPath}\" /Fe:\"{outputPath}\"";
+        return $"{OptimizationFlags} {CommonFlags}{sanitizerFlags} \"{sourcePath}\" /Fo:\"{objPath}\" " +
+            $"/Fe:\"{outputPath}\"";
     }
 
     private static string ToVcvarsArchitecture(string arch) => arch switch
