@@ -127,9 +127,9 @@ internal static class CSharpTypeNameWriter
     }
 
     /// <summary>
-    /// Returns the type that <see cref="AppendCsharpTypeName"/> writes as a syntax node, for a declaration that a rewriter
-    /// builds into generated C#: fully qualified, so that no name of the user's scope (a type named <c>var</c> among them)
-    /// changes what it binds to.
+    /// Returns the type that <see cref="AppendCsharpTypeName"/> writes as a syntax node, for a declaration that a
+    /// rewriter builds into generated C#: fully qualified, so that no name of the user's scope (a type named
+    /// <c>var</c> among them) changes what it binds to.
     /// </summary>
     public static TypeSyntax ToCsharpTypeSyntax(this ITypeSymbol type)
     {

@@ -303,7 +303,8 @@ internal sealed partial class ManagedExecutionRewriter
 
         var name = GSharpInternalNames.Using.ResourcePrefix + _nextUsingResourceId++;
         var type = semanticModel.GetTypeSymbol(node.Expression ?? variable) ??
-            throw new InvalidOperationException($"The resource of 'using ({variable.Identifier.ValueText})' has no type.");
+            throw new InvalidOperationException(
+                $"The resource of 'using ({variable.Identifier.ValueText})' has no type.");
         var declaration = DeclareVariable(type.ToCsharpTypeSyntax(), name, variable.WithoutTrivia());
         return visited
             .WithExpression(null)
