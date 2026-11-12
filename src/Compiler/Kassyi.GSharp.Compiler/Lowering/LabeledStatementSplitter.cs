@@ -14,13 +14,8 @@ internal static class LabeledStatementSplitter
     /// <summary>Splits every labeled statement of <paramref name="body"/> whose statement holds a split point.</summary>
     public static BlockSyntax Split(BlockSyntax body) => (BlockSyntax)new Rewriter().Visit(body);
 
-    private static bool ContainsSplitPoint(SyntaxNode node) =>
-        node.DescendantNodesAndSelf()
-            .AsStackEnumerable()
-            .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv));
-
     private static bool NeedsSplit(StatementSyntax statement) =>
-        statement is LabeledStatementSyntax labeled && ContainsSplitPoint(labeled.Statement);
+        statement is LabeledStatementSyntax labeled && BarrierHelper.ContainsPhaseBarrier(labeled.Statement);
 
     // L1: L2: <stmt>  ->  L1: ; L2: ; <stmt>
     private static SyntaxList<StatementSyntax> SplitList(SyntaxList<StatementSyntax> statements)

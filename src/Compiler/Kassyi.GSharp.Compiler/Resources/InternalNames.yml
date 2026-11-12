@@ -280,6 +280,9 @@ Prelude:
     ArrayRef: { Value: __gsharp_array_ref, Prelude: ErrorChannel.hpp }
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
+    # The array of a Gpu.NotNull call: a null array fails with NullReferenceException, also a null optional kernel
+    # argument, which reads as an empty array but is null
+    ArrayNotNull: { Value: __gsharp_array_not_null, Prelude: ErrorChannel.hpp }
     # A by-value struct argument of a device function: the non-nullable array fields it reaches, checked at the call
     StructRef: { Value: __gsharp_struct_ref, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }

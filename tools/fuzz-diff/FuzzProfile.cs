@@ -43,14 +43,26 @@ internal static class FuzzProfileCodes
     /// </summary>
     internal static bool TryParseStrict(string raw, out FuzzProfile profile)
     {
-        FuzzProfile? parsed = raw.Trim().ToLowerInvariant() switch
-        {
-            "m" or "managed" => FuzzProfile.Managed,
-            "c" or "cpu" or "native" => FuzzProfile.Cpu,
-            "g" or "all" or "cuda" or "gpu" => FuzzProfile.All,
-            _ => null,
-        };
+        ReadOnlySpan<char> text = raw.AsSpan().Trim();
+        FuzzProfile? parsed =
+            IsAnyOf(text, "m", "managed") ? FuzzProfile.Managed
+            : IsAnyOf(text, "c", "cpu", "native") ? FuzzProfile.Cpu
+            : IsAnyOf(text, "g", "all", "cuda", "gpu") ? FuzzProfile.All
+            : null;
         profile = parsed ?? FuzzProfile.Cpu;
         return parsed is not null;
+    }
+
+    private static bool IsAnyOf(ReadOnlySpan<char> text, params ReadOnlySpan<string> names)
+    {
+        foreach (string name in names)
+        {
+            if (text.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

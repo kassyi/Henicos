@@ -656,6 +656,24 @@ public static partial class BoundsAndMemoryDifferentialKernels
 
         dst[t] = holder.Data[t % holder.Data.Length] + holder.Offset;
     }
+
+    /// <summary>
+    /// <c>Gpu.NotNull</c> passes an array through and throws <see cref="NullReferenceException"/> at the call for a
+    /// null one; the reads of the local after it carry no check of their own.
+    /// </summary>
+    [GpuKernel]
+    public static void GpuNotNullKernel(int[] src, int[] flags, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        DiffNullArrayHolder nullHolder = default;
+        int[] input = Gpu.NotNull(flags[0] == 0 ? src : nullHolder.Data);
+        dst[t] = input[t] + input.Length;
+    }
 }
 
 /// <summary>A struct argument with a non-nullable array field, which the launchers check (#1409).</summary>

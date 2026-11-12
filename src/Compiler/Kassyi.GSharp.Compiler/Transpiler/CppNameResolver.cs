@@ -288,9 +288,12 @@ internal static class CppNameResolver
         return result;
     }
 
-    // The name a declaration introduces (parameter, local, pattern variable, foreach variable, local function, label,
-    // catch variable); default for any other node
-    private static SyntaxToken GetDeclaredIdentifier(SyntaxNode node) =>
+    /// <summary>
+    /// The name that <paramref name="node"/> declares when it is a declaration that receives a function-scope ordinal
+    /// (parameter, local, pattern variable, foreach variable, local function, label, catch variable); default for any
+    /// other node.
+    /// </summary>
+    internal static SyntaxToken GetDeclaredIdentifier(SyntaxNode node) =>
         node switch
         {
             ParameterSyntax p => p.Identifier,

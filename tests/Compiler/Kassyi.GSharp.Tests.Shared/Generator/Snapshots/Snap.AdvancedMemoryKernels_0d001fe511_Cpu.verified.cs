@@ -141,6 +141,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__AdvancedMemoryKernels__FixedBufferKernel(uint[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__AdvancedMemoryKernels__FixedBufferKernel* __gsharp_ctx) {
 {
@@ -159,6 +160,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_FixedBufferKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
@@ -392,6 +394,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__AdvancedMemoryKernels__PointerIncrementKernel(uint[] src, uint[] dest, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__AdvancedMemoryKernels__PointerIncrementKernel* __gsharp_ctx) {
 {
@@ -415,6 +418,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_PointerIncrementKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy src, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dest);
@@ -655,6 +659,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__AdvancedMemoryKernels__PointerDecrementKernel(uint[] src, uint[] dest, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__AdvancedMemoryKernels__PointerDecrementKernel* __gsharp_ctx) {
 {
@@ -678,6 +683,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_PointerDecrementKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy src, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dest);
@@ -918,6 +924,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__AdvancedMemoryKernels__PointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] dest, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__AdvancedMemoryKernels__PointerComplexAssignmentKernel* __gsharp_ctx) {
 {
@@ -941,6 +948,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_PointerComplexAssignmentKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy idx, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy val, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dest);

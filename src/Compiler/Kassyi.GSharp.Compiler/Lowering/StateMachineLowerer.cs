@@ -205,7 +205,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
                         SyntaxFactory.SeparatedList<ArgumentSyntax>([arguments[0], arguments[1], arguments[2]])
                     )
                 )
-            ).WithAdditionalAnnotations(stmt.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+            ).WithOriginalSpanFrom(stmt)
         );
     }
 

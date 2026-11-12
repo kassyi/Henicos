@@ -103,7 +103,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, IB
         }
 
         CaptureChecks.ThrowIfCapturing(workspace, "The result header of a vector Sum, Max or Min",
-            "Evaluate them directly; Count can be captured.");
+            "Evaluate them directly; Count of a chain without a division or a square root can be captured.");
 
         if (_passes.Count == 0 && EmptyIsError)
         {
@@ -373,13 +373,15 @@ internal class VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression
 {
     public int NumWords => 1;
 
-    // A length known on the host needs no evaluation and is written with a host copy, which also works under the CPU
-    // fallback; a device count (after Where) evaluates the vector and lets a kernel write the count, so that no host
-    // synchronization is needed and a CUDA graph counts again on every launch
+    // A length known on the host is written with a host copy, which also works under the CPU fallback and in a CUDA
+    // graph for a chain that cannot throw; the vector is evaluated first only when it can, since System.Linq runs
+    // every projection it counts. A device count (after Where) evaluates the vector and lets a kernel write the count,
+    // so that no host synchronization is needed and a CUDA graph counts again on every launch
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
         if (vector.TryGetLength(out var length))
         {
+            DeviceCounted.EvaluateIfMayThrow(vector, workspace);
             return WriteHostCount(workspace, targetResult, length);
         }
 

@@ -141,6 +141,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeMag(float* a, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeMag* __gsharp_ctx, ref float __gsharp_auto_result) {
 {
@@ -161,6 +162,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_ComputeMag(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::System.Single* a, global::System.Single* __gsharp_auto_result);
@@ -384,6 +386,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeInt(int* a, int b, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__AutoAllocateReturnTest__ComputeInt* __gsharp_ctx, ref int __gsharp_auto_result) {
 {
@@ -403,6 +406,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_ComputeInt(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::System.Int32* a, global::System.Int32 b, global::System.Int32* __gsharp_auto_result);

@@ -36,7 +36,7 @@ public class IrBuilderArgumentTests
     [Scenario(TestScenario.HappyPath)]
     public void NamedArgumentsOutOfOrder_KeepTheOrderWritten()
     {
-        var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase("NamedOutOfOrder")));
+        var call = Assert.IsType<IrCall>(IrTestCases.CaseResult("NamedOutOfOrder"));
 
         Assert.Equal(["a", "b", "c"], call.Arguments.Select(static argument => argument.Parameter.Name));
         Assert.Equal([1, 2, 0], call.Arguments.Select(static argument => argument.EvaluationIndex));
@@ -49,7 +49,7 @@ public class IrBuilderArgumentTests
     [Scenario(TestScenario.HappyPath)]
     public void DefaultValues_AreSynthesizedConstantsAtTheCall()
     {
-        var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase("Defaults")));
+        var call = Assert.IsType<IrCall>(IrTestCases.CaseResult("Defaults"));
 
         Assert.Equal("Ir.Offset(a: a, b: default 4, c: default 5)", IrPrinter.Print(call));
         foreach (var argument in call.Arguments.Skip(1))
@@ -66,7 +66,7 @@ public class IrBuilderArgumentTests
     [InlineData("ParamsEmpty", "Ir.Sum(values: params new int[0])")]
     public void ParamsArguments_AreOneArray(string method, string expected)
     {
-        var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase(method)));
+        var call = Assert.IsType<IrCall>(IrTestCases.CaseResult(method));
 
         Assert.Equal(expected, IrPrinter.Print(call));
         var argument = Assert.Single(call.Arguments);
@@ -78,7 +78,7 @@ public class IrBuilderArgumentTests
     [Scenario(TestScenario.HappyPath)]
     public void ExtensionMethod_IsStaticWithTheReceiverFirst()
     {
-        var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase("Extension")));
+        var call = Assert.IsType<IrCall>(IrTestCases.CaseResult("Extension"));
 
         Assert.Equal("Extensions.Twice(x: a)", IrPrinter.Print(call));
         Assert.Null(call.Receiver);

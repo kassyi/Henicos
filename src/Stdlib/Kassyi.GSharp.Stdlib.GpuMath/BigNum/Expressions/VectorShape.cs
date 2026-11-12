@@ -39,6 +39,17 @@ internal readonly struct VectorShape
     public static VectorShape Of(IGpuBoolVectorExpression vector) =>
         new(vector.Capacity, vector.TryGetLength(out var length), length);
 
+    /// <summary>The message of a Zip whose inputs have different lengths.</summary>
+    public const string ZipLengthsMessage = "Vector lengths must match for Zip operations.";
+
+    /// <summary>
+    /// Throws when the evaluated inputs of a Zip have different lengths: <see cref="ThrowIfLengthsDiffer"/> compared
+    /// their capacities, but an input implemented outside GpuMath may return another length than it reports.
+    /// </summary>
+    /// <exception cref="ArgumentException">The lengths differ.</exception>
+    public static void ThrowIfEvaluatedLengthsDiffer(int leftLength, int rightLength) =>
+        ThrowIfLengthsDiffer(leftLength, rightLength, ZipLengthsMessage);
+
     /// <summary>
     /// Throws when the two inputs of an element-wise node have different capacities; called before either is evaluated,
     /// so that a rejected node evaluates nothing.

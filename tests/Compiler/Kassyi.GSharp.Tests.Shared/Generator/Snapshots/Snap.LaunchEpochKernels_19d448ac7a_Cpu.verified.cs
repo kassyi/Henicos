@@ -168,7 +168,8 @@ int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.B
 int value = keys[tid] switch
 {
 0 => tid,
-1 => -tid
+1 => -tid,
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
 };
 ulong start = global::Kassyi.GSharp.Core.Gpu.Clock64();
 while ((long)(global::Kassyi.GSharp.Core.Gpu.Clock64() - start) < cycles)
@@ -508,7 +509,8 @@ __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSha
 __gsharp_ctx.value = __gsharp_ctx.keys[__gsharp_ctx.tid] switch
 {
 0 => __gsharp_ctx.tid,
-1 => -__gsharp_ctx.tid
+1 => -__gsharp_ctx.tid,
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
 };
 __gsharp_ctx.start = global::Kassyi.GSharp.Core.Gpu.Clock64();
 while ((long)(global::Kassyi.GSharp.Core.Gpu.Clock64() - __gsharp_ctx.start) < __gsharp_ctx.cycles)
@@ -806,7 +808,8 @@ int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.B
 int key = tid == failingThread ? global::Kassyi.GSharp.Tests.Cuda.LaunchEpochKernels.FailKey : 0;
 result[tid] = key switch
 {
-0 => tid
+0 => tid,
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
 };
 __gsharp_ctx.__gsharp_state = -1;
 return;

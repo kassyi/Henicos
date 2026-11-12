@@ -367,6 +367,9 @@ internal readonly record struct StructHostSource(string AotStructPath, string Cu
 /// <param name="CppSource">The C++ source of the kernel.</param>
 /// <param name="ManagedCSharpSource">The managed fallback of the kernel.</param>
 /// <param name="InternalError">The exception that stopped the transpilation (GSH0048), or empty.</param>
+/// <param name="ErrorSites">
+/// The source locations of the run-time error sites of the kernel, which the class reports by site ID.
+/// </param>
 internal readonly record struct KernelEmission(
     KernelHostModel Host,
     string MemberKey,
@@ -403,7 +406,7 @@ internal readonly record struct KernelClassModel(
         var emissions = ImmutableArray.CreateBuilder<KernelEmission>(kernels.Count);
         var structs = ImmutableArray.CreateBuilder<StructHostSource>();
         var structIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var rawClassSites = new List<ErrorSiteEntry>();
+        var rawClassSites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
         for (var i = 0; i < kernels.Count; i++)
         {
             var kernel = kernels[i];

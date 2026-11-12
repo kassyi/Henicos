@@ -34,7 +34,18 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     // The capacity of the right input, for the length check of a Zip before anything is evaluated
     private readonly int _rightCapacity = right.Capacity;
 
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(left) || VectorEffects.MayThrow(right);
+
     public int Length => _shape.Length;
+
+    // Inputs of different lengths are rejected
+    public bool MayThrow => _inputsMayThrow || ElementMayThrow || Capacity != _rightCapacity;
+
+    /// <summary>
+    /// Gets whether the operation itself can throw for an element (a zero divisor, a negative square root, a value the
+    /// host arithmetic cannot compute).
+    /// </summary>
+    protected virtual bool ElementMayThrow => ChecksZeroDivisor || RunsOnHost;
     public int WordsPerElement { get; } = wordsPerElement;
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
@@ -60,7 +71,7 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     // nothing
     public void Enter(in VectorRequest request)
     {
-        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, "Vector lengths must match for Zip operations.");
+        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, VectorShape.ZipLengthsMessage);
         request.FloatTarget(Capacity, WordsPerElement);
     }
 
@@ -81,10 +92,7 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     private FloatVectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigFloatArrayView target,
         FloatVectorEvaluation leftResult, FloatVectorEvaluation rightResult)
     {
-        if (leftResult.Storage.Length != rightResult.Storage.Length)
-        {
-            throw new ArgumentException("Vector lengths must match for Zip operations.");
-        }
+        VectorShape.ThrowIfEvaluatedLengthsDiffer(leftResult.Storage.Length, rightResult.Storage.Length);
 
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
         // A target that shares words with an input is written from the cache after the launch (#864)
