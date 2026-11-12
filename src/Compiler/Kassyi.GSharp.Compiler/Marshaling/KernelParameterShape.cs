@@ -173,7 +173,8 @@ internal readonly record struct KernelParameterShape
     public string ValueExpression => IsNullableValue ? $"{Identifier}.GetValueOrDefault()" : Identifier;
 
     /// <summary>
-    /// The element count, 0 for a <c>null</c> array and for a default <c>ImmutableArray</c>, whose <c>Length</c> throws.
+    /// The element count, 0 for a <c>null</c> array and for a default <c>ImmutableArray</c>, whose <c>Length</c>
+    /// throws.
     /// </summary>
     public string LengthExpression => Container switch
     {

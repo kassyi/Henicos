@@ -87,8 +87,8 @@ public class OptionalArrayTests : TranspilerTestBase
         Assert.Equal([10f, 20f], y.AsSpan().ToArray());
     }
 
-    // A default Memory<T> passed as Memory<T>? has a value, as in C#: the matrix of ArrayArgumentNullEmptyDifferentialTests
-    // reads it, since its elements are out of range here
+    // A default Memory<T> passed as Memory<T>? has a value, as in C#: the matrix of
+    // ArrayArgumentNullEmptyDifferentialTests reads it, since its elements are out of range here
     [Scenario(TestScenario.HappyPath)]
     [Fact]
     public void OptionalMemory_NullAndValues_ComputesExpectedValues()

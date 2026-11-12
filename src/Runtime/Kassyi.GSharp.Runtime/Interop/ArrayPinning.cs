@@ -37,12 +37,16 @@ public static class ArrayPinning
     /// <typeparam name="T">The element type.</typeparam>
     public static bool IsNull<T>(T[]? array) => array is null;
 
-    /// <summary>Whether <paramref name="span"/> is over no array (<c>default</c>, which C# compares equal to null).</summary>
+    /// <summary>
+    /// Whether <paramref name="span"/> is over no array (<c>default</c>, which C# compares equal to null).
+    /// </summary>
     /// <param name="span">The span.</param>
     /// <typeparam name="T">The element type.</typeparam>
     public static bool IsNull<T>(Span<T> span) => Unsafe.IsNullRef(ref MemoryMarshal.GetReference(span));
 
-    /// <summary>Whether <paramref name="span"/> is over no array (<c>default</c>, which C# compares equal to null).</summary>
+    /// <summary>
+    /// Whether <paramref name="span"/> is over no array (<c>default</c>, which C# compares equal to null).
+    /// </summary>
     /// <param name="span">The span.</param>
     /// <typeparam name="T">The element type.</typeparam>
     public static bool IsNull<T>(ReadOnlySpan<T> span) => Unsafe.IsNullRef(ref MemoryMarshal.GetReference(span));

@@ -169,7 +169,8 @@ internal static class HostLauncherTranspiler
         for (var i = 0; i < structArguments.Length; i++)
         {
             var parameter = kernel.Parameters[i];
-            // A Nullable<array-like> (Memory<T>?) is a generic struct, which the runtime marshaller cannot pass by value
+            // A Nullable<array-like> (Memory<T>?) is a generic struct, which the runtime marshaller cannot pass by
+            // value
             var shape = KernelParameterShape.Classify(parameter);
             if (shape.IsCpuValueStruct || shape is { IsArray: true, IsNullableValue: true })
             {

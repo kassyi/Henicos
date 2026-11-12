@@ -24,7 +24,8 @@ public class GpuConstantArgumentTests
 
         var inputTrees = run.Input.SyntaxTrees.ToHashSet();
         var generated = string.Concat(run.Output.SyntaxTrees.Where(tree => !inputTrees.Contains(tree)));
-        // The element writes go through the null check of the kernel's array parameter: __gsharp_array_at(<array>, <i>, <site>u)
+        // The element writes go through the null check of the kernel's array parameter:
+        // __gsharp_array_at(<array>, <i>, <site>u)
         Assert.Matches(@", 0, \d+u\)=GpuConstantMacroNames;", generated);
         Assert.Matches(@", 1, \d+u\)=FOO_MACRO;", generated);
         Assert.Matches(@", 2, \d+u\)=WIDTH_MACRO;", generated);

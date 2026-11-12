@@ -12,8 +12,8 @@ internal enum LauncherLocal
     Proxy,
 
     /// <summary>
-    /// The stackalloc'd <c>System_Nullable&lt;GSharpArray&lt;T&gt;&gt;</c> of a nullable array-like parameter that holds
-    /// its <see cref="Proxy"/>, <c>__gsharp_nullable_{ordinal}</c>.
+    /// The stackalloc'd <c>System_Nullable&lt;GSharpArray&lt;T&gt;&gt;</c> of a nullable array-like parameter that
+    /// holds its <see cref="Proxy"/>, <c>__gsharp_nullable_{ordinal}</c>.
     /// </summary>
     NullableProxy,
 
