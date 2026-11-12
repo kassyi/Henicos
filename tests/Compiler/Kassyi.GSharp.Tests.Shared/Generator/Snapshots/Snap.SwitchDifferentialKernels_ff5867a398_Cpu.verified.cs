@@ -4385,7 +4385,7 @@ _ => 7L
 __gsharp_ctx.uniformZero = __gsharp_ctx.a[0] & 0;
 __gsharp_ctx.fRes = 0;
 {
-var __gsharp_switch_temp_0 = (long)__gsharp_ctx.uniformZero;
+long __gsharp_switch_temp_0 = (long)__gsharp_ctx.uniformZero;
 if (__gsharp_switch_temp_0 == 0L)
 goto case 1;
 if (__gsharp_switch_temp_0 == long.MinValue)
@@ -4495,7 +4495,7 @@ case 9:
 __gsharp_ctx.iRes = 0;
 __gsharp_ctx.FlatBase = 40;
 {
-var __gsharp_switch_temp_1 = __gsharp_ctx.uniformZero;
+int __gsharp_switch_temp_1 = __gsharp_ctx.uniformZero;
 if (__gsharp_switch_temp_1 == 0)
 goto case 10;
 if (__gsharp_switch_temp_1 == 1)

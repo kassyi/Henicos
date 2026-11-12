@@ -197,8 +197,9 @@ internal static class CpuHostLaunchEmitter
         AutoResultEmitter.WriteReturn(writer, kernel);
     }
 
-    // <shadow> __gsharp_native_<ord> = default; var __gsharp_allocated_ptrs_<ord> = new List<IntPtr>();                  (converted struct)
-    // byte[]? __gsharp_shadow_<ord> = null; var __gsharp_allocated_ptrs_<ord> = ...; int __gsharp_size_<ord> = checked(...); (converted array)
+    // Converted struct: <shadow> __gsharp_native_<ord> = default; List<IntPtr> __gsharp_allocated_ptrs_<ord> = new();
+    // Converted array: byte[]? __gsharp_shadow_<ord> = null; List<IntPtr> __gsharp_allocated_ptrs_<ord> = new();
+    //   int __gsharp_size_<ord> = checked(...);
     // byte[]? __gsharp_shared_shadow_<ord> = null;                         (a converted T[] that an earlier holder may share)
     // Returns whether it wrote the declarations of a converted parameter. The size is computed before the try block,
     // when nothing is allocated.
@@ -316,7 +317,7 @@ internal static class CpuHostLaunchEmitter
         }
     }
 
-    // foreach (var __gsharp_handle in __gsharp_allocated_ptrs_<ord>) GCHandle.FromIntPtr(__gsharp_handle).Free();
+    // foreach (IntPtr __gsharp_handle in __gsharp_allocated_ptrs_<ord>) GCHandle.FromIntPtr(__gsharp_handle).Free();
     // if (__gsharp_shadow_<ord> != null) ArrayPool<byte>.Shared.Return(__gsharp_shadow_<ord>);                        (converted array)
     // A shared shadow goes back to the pool from its owner only: ... && __gsharp_shared_shadow_<ord> == null
     private static void WriteConvertedRelease(SourceWriter writer, in ArraySharingPlan sharing, int index)

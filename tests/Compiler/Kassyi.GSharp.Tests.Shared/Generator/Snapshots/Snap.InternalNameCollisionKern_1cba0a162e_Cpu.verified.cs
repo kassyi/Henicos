@@ -1399,7 +1399,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xffffffffu, __gsharp_ctx._warpTemp_0, 1, 32, "InternalNameCollisionKernels.cs(84,23)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xffffffffu, __gsharp_ctx._warpTemp_0, 1, 32, "InternalNameCollisionKernels.cs(84,23)");
 int shifted = __gsharp_warp_temp_0;
 __gsharp_ctx.data[__gsharp_ctx.tid] = __gsharp_ctx._warpTemp_0 * 1000 + shifted;
 __gsharp_ctx.__gsharp_state = -1;

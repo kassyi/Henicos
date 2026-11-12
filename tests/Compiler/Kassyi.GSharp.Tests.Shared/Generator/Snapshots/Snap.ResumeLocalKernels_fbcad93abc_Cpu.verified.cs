@@ -171,7 +171,7 @@ case 0:
 {
 {
 s = __gsharp_resume_storage_s;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
 __gsharp_resume_storage_s[__gsharp_resume_fill] = default;
 }
 
@@ -471,7 +471,7 @@ case 0:
 {
 {
 s = __gsharp_resume_storage_s;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
 __gsharp_resume_storage_s[__gsharp_resume_fill] = default;
 }
 
@@ -1107,7 +1107,7 @@ if (!(__gsharp_ctx.k < 3))
 goto case 5;
 {
 s = __gsharp_resume_storage_s;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 2; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 2; __gsharp_resume_fill++)
 __gsharp_resume_storage_s[__gsharp_resume_fill] = default;
 }
 
@@ -1412,7 +1412,7 @@ case 0:
 __gsharp_ctx.Size = 4;
 {
 s = __gsharp_resume_storage_s;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
 __gsharp_resume_storage_s[__gsharp_resume_fill] = default;
 }
 
@@ -1954,7 +1954,7 @@ case 0:
 {
 {
 p = __gsharp_resume_storage_p;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
 __gsharp_resume_storage_p[__gsharp_resume_fill] = default;
 }
 
@@ -2537,7 +2537,7 @@ case 1:
 {
 {
 s = __gsharp_resume_storage_s;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 2; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 2; __gsharp_resume_fill++)
 __gsharp_resume_storage_s[__gsharp_resume_fill] = default;
 }
 
@@ -2840,7 +2840,7 @@ case 0:
 __gsharp_ctx.acc = 1;
 {
 __gsharp_id_2_s = __gsharp_resume_storage___gsharp_id_2_s;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 2; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 2; __gsharp_resume_fill++)
 __gsharp_resume_storage___gsharp_id_2_s[__gsharp_resume_fill] = default;
 }
 
@@ -2855,7 +2855,7 @@ case 1:
 {
 {
 __gsharp_id_3_s = __gsharp_resume_storage___gsharp_id_3_s;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 3; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 3; __gsharp_resume_fill++)
 __gsharp_resume_storage___gsharp_id_3_s[__gsharp_resume_fill] = default;
 }
 
@@ -3140,7 +3140,7 @@ case 0:
 {
 {
 p = __gsharp_resume_storage_p;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
 __gsharp_resume_storage_p[__gsharp_resume_fill] = default;
 }
 
@@ -3425,7 +3425,7 @@ case 0:
 __gsharp_ctx.Half = 2;
 {
 s = __gsharp_resume_storage_s;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
 __gsharp_resume_storage_s[__gsharp_resume_fill] = default;
 }
 
@@ -3951,7 +3951,7 @@ case 0:
 {
 {
 p = __gsharp_resume_storage_p;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 0; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 0; __gsharp_resume_fill++)
 __gsharp_resume_storage_p[__gsharp_resume_fill] = default;
 }
 
@@ -4723,7 +4723,7 @@ case 0:
 {
 {
 s = __gsharp_resume_storage_s;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 0; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 0; __gsharp_resume_fill++)
 __gsharp_resume_storage_s[__gsharp_resume_fill] = default;
 }
 
@@ -5270,7 +5270,7 @@ case 0:
 __gsharp_ctx->tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 {
 p = __gsharp_resume_storage_p;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
 __gsharp_resume_storage_p[__gsharp_resume_fill] = default;
 }
 
@@ -5581,7 +5581,7 @@ case 0:
 __gsharp_ctx->tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 {
 p = __gsharp_resume_storage_p;
-for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < 1; __gsharp_resume_fill++)
+for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 1; __gsharp_resume_fill++)
 __gsharp_resume_storage_p[__gsharp_resume_fill] = default;
 }
 

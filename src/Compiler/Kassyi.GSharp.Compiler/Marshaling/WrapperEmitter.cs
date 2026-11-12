@@ -5,7 +5,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Generates host-side C# wrapper classes that load and invoke GPU kernels.</summary>
 internal static class WrapperEmitter
 {
-    private const string ArgumentNullException = "global::System.ArgumentNullException";
     private const string NegativeLengthMessage = "The array length must not be negative.";
     private const string EmptyArrayMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
 
@@ -453,7 +452,7 @@ internal static class WrapperEmitter
 
         using (writer.Scope())
         {
-            writer.AppendLine($"throw new {ArgumentNullException}({Literal(parameterName)});");
+            writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}({Literal(parameterName)});");
         }
     }
 
@@ -485,7 +484,8 @@ internal static class WrapperEmitter
                 using (writer.Scope())
                 {
                     var message = Literal($"{shape.Name}.{path} is null, but the field is not nullable.");
-                    writer.AppendLine($"throw new {ArgumentNullException}({Literal(shape.Name)}, {message});");
+                    writer.AppendLine(
+                        $"throw new {HostTypeNames.ArgumentNullException}({Literal(shape.Name)}, {message});");
                 }
             }
         }
@@ -505,7 +505,7 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             writer.AppendLine(
-                $"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", {Literal(parameterName)});");
+                $"throw new {HostTypeNames.ArgumentException}(\"{EmptyArrayMessage}\", {Literal(parameterName)});");
         }
     }
 
@@ -538,7 +538,7 @@ internal static class WrapperEmitter
 
             using (writer.Scope())
             {
-                writer.Append($"throw new global::System.ArgumentOutOfRangeException({Literal(shape.Name)}, ");
+                writer.Append($"throw new {HostTypeNames.ArgumentOutOfRangeException}({Literal(shape.Name)}, ");
                 writer.AppendLine($"{name}.Length, \"{NegativeLengthMessage}\");");
             }
 
@@ -566,7 +566,7 @@ internal static class WrapperEmitter
 
             using (writer.Scope())
             {
-                writer.AppendLine($"throw new {ArgumentNullException}({Literal(shape.Name)});");
+                writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}({Literal(shape.Name)});");
             }
 
             WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);

@@ -3146,7 +3146,7 @@ case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 {
-var __gsharp_switch_temp_0 = __gsharp_ctx.flag;
+int __gsharp_switch_temp_0 = __gsharp_ctx.flag;
 if (__gsharp_switch_temp_0 == 0)
 goto case 1;
 goto case 3;
@@ -3164,7 +3164,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.tid, 1, 32, "SwitchSectionLocalKernels.cs(259,31)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.tid, 1, 32, "SwitchSectionLocalKernels.cs(259,31)");
 __gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_warp_temp_0;
 __gsharp_ctx.x = 1;
 __gsharp_ctx.output[__gsharp_ctx.tid] += __gsharp_ctx.x;

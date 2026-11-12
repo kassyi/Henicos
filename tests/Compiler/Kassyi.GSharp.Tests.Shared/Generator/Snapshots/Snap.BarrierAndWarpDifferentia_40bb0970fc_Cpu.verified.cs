@@ -1253,7 +1253,7 @@ return;
 
 case 19:
 {
-var __gsharp_warp_temp_18 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 18, __gsharp_ctx.mask, __gsharp_ctx.scan, 16, 32, "BarrierAndWarpDifferentialKernels.cs(267,24)");
+int __gsharp_warp_temp_18 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 18, __gsharp_ctx.mask, __gsharp_ctx.scan, 16, 32, "BarrierAndWarpDifferentialKernels.cs(267,24)");
 int upScan16 = __gsharp_warp_temp_18;
 if (__gsharp_ctx.lane >= 16)
 {
@@ -1819,7 +1819,7 @@ return;
 
 case 10:
 {
-var __gsharp_warp_temp_9 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 9, __gsharp_ctx.mask, __gsharp_ctx.v, 0, 1, "BarrierAndWarpDifferentialKernels.cs(309,23)");
+int __gsharp_warp_temp_9 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 9, __gsharp_ctx.mask, __gsharp_ctx.v, 0, 1, "BarrierAndWarpDifferentialKernels.cs(309,23)");
 int down0W1 = __gsharp_warp_temp_9;
 if (__gsharp_ctx.tid < __gsharp_ctx.n)
 {
@@ -2375,7 +2375,7 @@ return;
 
 case 8:
 {
-var __gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 6, __gsharp_ctx.mask, __gsharp_ctx.fv, 2, 32, "BarrierAndWarpDifferentialKernels.cs(367,21)");
+float __gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 6, __gsharp_ctx.mask, __gsharp_ctx.fv, 2, 32, "BarrierAndWarpDifferentialKernels.cs(367,21)");
 float fUp = __gsharp_warp_temp_6;
 if (__gsharp_ctx.gid < __gsharp_ctx.n)
 {
@@ -2782,7 +2782,7 @@ return;
 
 case 3:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.fullMask, __gsharp_ctx.b, 16, 32, "BarrierAndWarpDifferentialKernels.cs(399,13)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.fullMask, __gsharp_ctx.b, 16, 32, "BarrierAndWarpDifferentialKernels.cs(399,13)");
 __gsharp_ctx.b = __gsharp_warp_temp_1;
 if (__gsharp_ctx.tid < __gsharp_ctx.n)
 {

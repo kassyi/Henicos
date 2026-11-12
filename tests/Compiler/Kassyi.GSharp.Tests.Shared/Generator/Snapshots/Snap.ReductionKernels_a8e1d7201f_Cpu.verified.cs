@@ -440,7 +440,7 @@ return;
 
 case 9:
 {
-var __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 7, 0xFFFFFFFF, __gsharp_ctx.val, 1, 32, "ReductionKernels.cs(47,20)");
+float __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 7, 0xFFFFFFFF, __gsharp_ctx.val, 1, 32, "ReductionKernels.cs(47,20)");
 __gsharp_ctx.val += __gsharp_warp_temp_7;
 if (__gsharp_ctx.tid == 0)
 {

@@ -136,7 +136,8 @@ internal static class StructBlockCopyEmitter
 
 
     /// <summary>
-    /// Emits <c>var handle = GCHandle.Alloc(&lt;pinned&gt;, Pinned); try { &lt;copy&gt; } finally { handle.Free(); }</c>,
+    /// Emits <c>GCHandle handle = GCHandle.Alloc(&lt;pinned&gt;, Pinned);
+    /// try { &lt;copy&gt; } finally { handle.Free(); }</c>,
     /// where the copy moves <c>size</c> bytes between the pinned host array and <paramref name="device"/>.
     /// </summary>
     /// <param name="writer">The writer of the generated <c>Marshal_</c> / <c>Unmarshal_</c> method.</param>

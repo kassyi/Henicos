@@ -31,7 +31,7 @@ internal static class AutoResultEmitter
     internal const string PinnedAutoResult = "p_" + Buffer;
 
     // uint __gsharp_total_threads; checked { ... }
-    // var __gsharp_auto_result = new <result>[__gsharp_total_threads];
+    // <result>[] __gsharp_auto_result = new <result>[__gsharp_total_threads];
     /// <summary>
     /// Emits the host array of the auto result, one element per thread of the launch, after the launch check
     /// (<see cref="LaunchLimitEmitter"/>) has rejected a zero dimension.
@@ -116,7 +116,7 @@ internal static class AutoResultEmitter
     }
 
     // if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero) {
-    //   var __gsharp_auto_result_shadow = ArrayPool<byte>.Shared.Rent(__gsharp_auto_result_size);
+    //   byte[] __gsharp_auto_result_shadow = ArrayPool<byte>.Shared.Rent(__gsharp_auto_result_size);
     //   try { fixed (byte* p = shadow) { <copy to host>; <synchronize> } <shadow span>; <Unmarshal_ loop> }
     //   finally { ArrayPool<byte>.Shared.Return(__gsharp_auto_result_shadow); }
     // }

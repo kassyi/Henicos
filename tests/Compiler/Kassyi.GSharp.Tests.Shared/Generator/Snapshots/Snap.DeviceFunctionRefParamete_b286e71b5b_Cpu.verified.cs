@@ -161,7 +161,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.value, 0, 32, "DeviceFunctionRefParameterBarrierKernels.cs(18,47)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.value, 0, 32, "DeviceFunctionRefParameterBarrierKernels.cs(18,47)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;

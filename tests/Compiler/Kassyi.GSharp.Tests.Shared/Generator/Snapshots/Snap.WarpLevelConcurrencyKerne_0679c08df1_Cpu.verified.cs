@@ -296,7 +296,7 @@ return;
 
 case 5:
 {
-var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(23,16)");
+int __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(23,16)");
 __gsharp_ctx.val += __gsharp_warp_temp_4;
 // First thread of each warp writes the result
 if (__gsharp_ctx.lane == 0)
@@ -766,7 +766,7 @@ return;
 
 case 7:
 {
-var __gsharp_warp_temp_8 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 6, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(46,15)");
+int __gsharp_warp_temp_8 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 6, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpLevelConcurrencyKernels.cs(46,15)");
 __gsharp_ctx.val = __gsharp_warp_temp_8;
 __gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.val;
 __gsharp_ctx.__gsharp_state = -1;

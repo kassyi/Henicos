@@ -5,7 +5,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits the CUDA host launch members of a kernel wrapper class and the per-assembly module context.</summary>
 internal static class CudaHostLaunchEmitter
 {
-    private const string ContextScopeType = HostTypeNames.GpuKernelLoader + ".CudaContextScope";
 
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName,
@@ -44,7 +43,7 @@ internal static class CudaHostLaunchEmitter
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr));
 
             writer.AppendLine(
-                $"using ({ContextScopeType} {GSharpInternalNames.Launcher.CudaContextScope} = new())");
+                $"using ({HostTypeNames.CudaContextScope} {GSharpInternalNames.Launcher.CudaContextScope} = new())");
             using (writer.Scope())
             {
                 WriteCudaKernelCompilationCall(writer, kernel);
@@ -217,7 +216,8 @@ internal static class CudaHostLaunchEmitter
             {
             byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
             if (fatbin is not null) return fatbin;
-            string baseDir = global::System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+            string baseDir = global::System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location)
+            ?? global::System.AppContext.BaseDirectory;
             string fatbinPath = global::System.IO.Path.Combine(baseDir, {{fatbinLiteral}});
             if (!global::System.IO.File.Exists(fatbinPath))
             {

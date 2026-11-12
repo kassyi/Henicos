@@ -19,7 +19,8 @@ public static byte[] GetFatbin()
 {
 byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
 if (fatbin is not null) return fatbin;
-string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location)
+?? global::System.AppContext.BaseDirectory;
 string fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
 {
@@ -118,7 +119,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, __gsharp_ctx.value, 1, 32, "SuspendingCallArgumentKernels.cs(17,24)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.SuspendingCallArgumentKernels.FullMask, __gsharp_ctx.value, 1, 32, "SuspendingCallArgumentKernels.cs(17,24)");
 int neighbor = __gsharp_warp_temp_0;
 int result = (__gsharp_ctx.value + neighbor) * (int)__gsharp_ctx.scale + (int)__gsharp_ctx.color;
 {

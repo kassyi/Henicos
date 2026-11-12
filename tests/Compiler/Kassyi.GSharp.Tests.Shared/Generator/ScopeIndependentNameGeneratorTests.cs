@@ -23,9 +23,10 @@ public class ScopeIndependentNameGeneratorTests
     [InlineData("Cuda", true)]
     public void KernelGenerator_NamespaceShadowsRuntimeNames_OutputCompiles(string dialect, bool isCheckedBuild)
     {
-        var (_, output, diagnostics) = RunKernelGenerator(dialect, isCheckedBuild, ShadowingSource);
+        var (driver, output, diagnostics) = RunKernelGenerator(dialect, isCheckedBuild, ShadowingSource);
 
         AssertNoErrors(diagnostics, output);
+        AssertNoScopeDependentNames(output, driver.GetRunResult().GeneratedTrees);
     }
 
     [Theory]
@@ -141,10 +142,10 @@ public class ScopeIndependentNameGeneratorTests
         Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
     }
 
-    // Every name of the generated trees that C# looks up in the enclosing scopes: a nameof call, and a type or
-    // namespace of a referenced assembly (the runtime, the BCL) written without global::. A var is left to the compile
-    // tests of the shadowing namespace: the managed bodies copy the var locals of the user's own code, which bind as
-    // they do there
+    // Every name of the generated trees that C# looks up in the enclosing scopes: a nameof call, a var that declares a
+    // local the compiler made (__gsharp_), and a type or namespace of a referenced assembly (the runtime, the BCL)
+    // written without global::. A var of the user's own locals, which the managed bodies copy, binds as it does in the
+    // user's source
     private static void AssertNoScopeDependentNames(Compilation output, ImmutableArray<SyntaxTree> generatedTrees)
     {
         var found = new List<string>();
@@ -171,6 +172,11 @@ public class ScopeIndependentNameGeneratorTests
             return "nameof";
         }
 
+        if (name is IdentifierNameSyntax { IsVar: true } && DeclaresGeneratedLocal(name.Parent))
+        {
+            return "var";
+        }
+
         // The right side of a qualified name, a declared namespace, and a using directive of the compilation unit,
         // which C# binds in the global namespace
         if (name.Parent is MemberAccessExpressionSyntax access && access.Name == name ||
@@ -194,6 +200,19 @@ public class ScopeIndependentNameGeneratorTests
             ? name.Identifier.ValueText
             : null;
     }
+
+    // A declaration whose type is the given var and that declares a __gsharp_ local
+    private static bool DeclaresGeneratedLocal(SyntaxNode? declaration) => declaration switch
+    {
+        VariableDeclarationSyntax variables => variables.Variables.Any(static v => IsGenerated(v.Identifier)),
+        ForEachStatementSyntax loop => IsGenerated(loop.Identifier),
+        DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax single } =>
+            IsGenerated(single.Identifier),
+        _ => false
+    };
+
+    private static bool IsGenerated(SyntaxToken identifier) =>
+        identifier.ValueText.StartsWith("__gsharp_", StringComparison.Ordinal);
 
     private static string GetText(ImmutableArray<SyntaxTree> trees) =>
         string.Concat(trees.Select(static tree => tree.GetText().ToString()));

@@ -158,6 +158,15 @@ namespace ShadowingScope
         public int Count;
     }
 
+    public struct Resource : IDisposable
+    {
+        public int Tag;
+
+        public void Dispose()
+        {
+        }
+    }
+
     public struct Pair
     {
         public int A;
@@ -225,6 +234,87 @@ namespace ShadowingScope
             {
                 data[ThreadIndex.X] += v;
             }
+        }
+
+        // A switch with a barrier in its sections: the flattened switch keeps the governing value in a temporary
+        [GpuKernel]
+        public static void SwitchKernel(int[] data, int mode)
+        {
+            switch (mode + data[0])
+            {
+                case 0:
+                    data[ThreadIndex.X] = 1;
+                    Gpu.SyncThreads();
+                    break;
+                default:
+                    data[ThreadIndex.X] = 2;
+                    Gpu.SyncThreads();
+                    break;
+            }
+        }
+
+        // A warp shuffle spills its arguments into temporaries
+        [GpuKernel]
+        public static void ShuffleKernel(int[] data)
+        {
+            int value = Warp.ShuffleDownSync(0xFFFFFFFFu, data[ThreadIndex.X] + 1, 1u);
+            data[ThreadIndex.X] = value;
+        }
+
+        // using (<variable>) copies the variable into a hidden resource local
+        [GpuKernel]
+        public static void UsingKernel(int[] data)
+        {
+            Resource resource = new Resource { Tag = data[0] };
+            using (resource)
+            {
+                data[ThreadIndex.X] = resource.Tag;
+            }
+        }
+
+        // A stackalloc that lives across a barrier is cleared again on resume
+        [GpuKernel]
+        public static unsafe void StackKernel(int[] data)
+        {
+            int* s = stackalloc int[4];
+            s[0] = data[ThreadIndex.X];
+            Gpu.SyncThreads();
+            data[ThreadIndex.X] = s[0];
+        }
+
+        // A foreach over an array and a condition that suspends: the source array and the left operand are kept in
+        // temporaries
+        [GpuKernel]
+        public static void LoopKernel(int[] data, int[] values)
+        {
+            int sum = 0;
+            foreach (int v in values)
+            {
+                Gpu.SyncThreads();
+                sum += v;
+            }
+
+            if (sum > 0 && Ready(data))
+            {
+                data[ThreadIndex.X] = sum;
+            }
+
+            int picked = Pick(data) ?? 0;
+            data[ThreadIndex.X] += picked;
+        }
+
+        [GpuDeviceFunction]
+        public static bool Ready(int[] data)
+        {
+            Gpu.SyncThreads();
+            return data[0] > 0;
+        }
+
+        [GpuDeviceFunction]
+        public static int? Pick(int[] data)
+        {
+            Gpu.SyncThreads();
+            return data[0] > 0 ? data[0] : null;
         }
 
         [GpuDeviceFunction]

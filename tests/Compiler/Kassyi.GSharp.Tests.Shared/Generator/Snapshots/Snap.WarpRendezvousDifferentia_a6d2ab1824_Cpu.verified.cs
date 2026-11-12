@@ -271,7 +271,7 @@ return false;
 
 case 3:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx.v, 16, 32, "WarpRendezvousDifferentialKernels.cs(20,20)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx.v, 16, 32, "WarpRendezvousDifferentialKernels.cs(20,20)");
 {
 __gsharp_result = __gsharp_ctx.v + __gsharp_warp_temp_1;
 __gsharp_ctx.__gsharp_state = 0;
@@ -379,7 +379,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, 1, 32, "WarpRendezvousDifferentialKernels.cs(33,56)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, 1, 32, "WarpRendezvousDifferentialKernels.cs(33,56)");
 {
 __gsharp_result = __gsharp_ctx.v + __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -422,7 +422,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 1, 32, "WarpRendezvousDifferentialKernels.cs(37,49)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 1, 32, "WarpRendezvousDifferentialKernels.cs(37,49)");
 {
 __gsharp_result = __gsharp_ctx.v + __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -1752,7 +1752,7 @@ return;
 
 case 4:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx.v, 1, 32, "WarpRendezvousDifferentialKernels.cs(82,22)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx.v, 1, 32, "WarpRendezvousDifferentialKernels.cs(82,22)");
 __gsharp_ctx.v = (__gsharp_ctx.v + __gsharp_warp_temp_1) & 0xFFFFF;
 goto case 5;
 }
@@ -2174,7 +2174,7 @@ return;
 
 case 5:
 {
-var __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 16, 32, "WarpRendezvousDifferentialKernels.cs(103,25)");
+int __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 16, 32, "WarpRendezvousDifferentialKernels.cs(103,25)");
 __gsharp_ctx.output[__gsharp_ctx.t] = __gsharp_ctx.v + __gsharp_warp_temp_2;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -2527,7 +2527,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_2 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_1, "WarpRendezvousDifferentialKernels.cs(113,23)");
+uint __gsharp_warp_temp_2 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_1, "WarpRendezvousDifferentialKernels.cs(113,23)");
 uint ballot = __gsharp_warp_temp_2;
 __gsharp_ctx.output[__gsharp_ctx.t * 2] = __gsharp_ctx.sum;
 __gsharp_ctx.output[__gsharp_ctx.t * 2 + 1] = (int)ballot;
@@ -2934,7 +2934,7 @@ return;
 
 case 4:
 {
-var __gsharp_warp_temp_5 = __gsharp_warp_reduce_add_read_sync(0, ref __gsharp_ctx, 3, 0xFFFFFFFFu, __gsharp_ctx.v, "WarpRendezvousDifferentialKernels.cs(132,29)");
+int __gsharp_warp_temp_5 = __gsharp_warp_reduce_add_read_sync(0, ref __gsharp_ctx, 3, 0xFFFFFFFFu, __gsharp_ctx.v, "WarpRendezvousDifferentialKernels.cs(132,29)");
 __gsharp_ctx.output[__gsharp_ctx.t * 4 + 3] = __gsharp_warp_temp_5;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -4043,7 +4043,7 @@ return;
 
 case 3:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx.v, 2, 32, "WarpRendezvousDifferentialKernels.cs(183,17)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 1, 0xFFFFFFFFu, __gsharp_ctx.v, 2, 32, "WarpRendezvousDifferentialKernels.cs(183,17)");
 __gsharp_ctx.v = __gsharp_warp_temp_1;
 goto case 4;
 }
@@ -4741,7 +4741,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1, 32, "WarpRendezvousDifferentialKernels.cs(214,21)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1, 32, "WarpRendezvousDifferentialKernels.cs(214,21)");
 __gsharp_ctx.output[__gsharp_ctx.t] = __gsharp_warp_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;

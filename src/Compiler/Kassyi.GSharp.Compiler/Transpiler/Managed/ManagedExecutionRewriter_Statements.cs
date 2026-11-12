@@ -251,7 +251,44 @@ internal sealed partial class ManagedExecutionRewriter
             )
         );
 
-    // using (<variable>) <body> becomes using (var __gsharp_using_resource_<n> = <variable>) <body>: the hidden
+    // The names of every local that G# declares start with it; a user name cannot (GSH0055)
+    private const string InternalNamePrefix = "__gsharp_";
+
+    // var __gsharp_<name> = <value>, a temporary that lowering declared, becomes <type> __gsharp_<name> = <value>: the
+    // body is emitted into the user's namespace, where a type named var would capture var
+    public override SyntaxNode? VisitVariableDeclaration(VariableDeclarationSyntax node)
+    {
+        var visited = base.VisitVariableDeclaration(node);
+        if (visited is not VariableDeclarationSyntax declaration || !node.Type.IsVar || node.Variables.Count != 1 ||
+            !node.Variables[0].Identifier.ValueText.StartsWith(InternalNamePrefix, StringComparison.Ordinal))
+        {
+            return visited;
+        }
+
+        return declaration.WithType(ResolveTemporaryType(node.Variables[0]).ToCsharpTypeSyntax()
+            .WithTriviaFrom(declaration.Type));
+    }
+
+    // The type of a temporary: a numeric literal's own type, otherwise as a hoisted temporary's type is resolved
+    private ITypeSymbol ResolveTemporaryType(VariableDeclaratorSyntax declarator) =>
+        declarator.Initializer?.Value is LiteralExpressionSyntax { Token.Value: { } value } &&
+        GetLiteralType(value) is { } literalType
+            ? semanticModel.Compilation.GetSpecialType(literalType)
+            : HoistedFieldTypeResolver.Resolve(declarator, semanticModel, declarator.Identifier.ValueText);
+
+    private static SpecialType? GetLiteralType(object value) => value switch
+    {
+        int => SpecialType.System_Int32,
+        uint => SpecialType.System_UInt32,
+        long => SpecialType.System_Int64,
+        ulong => SpecialType.System_UInt64,
+        float => SpecialType.System_Single,
+        double => SpecialType.System_Double,
+        bool => SpecialType.System_Boolean,
+        _ => null
+    };
+
+    // using (<variable>) <body> becomes using (<type> __gsharp_using_resource_<n> = <variable>) <body>: the hidden
     // variable of the C# specification written out, as the C++ output does (UsingTranspiler). C# disposes the copy
     // either way, and the declaration form keeps the copied body from raising CS0728 a second time, in the generated
     // file, for an assignment to the variable that the user's source already reports
@@ -265,7 +302,9 @@ internal sealed partial class ManagedExecutionRewriter
         }
 
         var name = GSharpInternalNames.Using.ResourcePrefix + _nextUsingResourceId++;
-        var declaration = DeclareVariable(SyntaxFactory.IdentifierName("var"), name, variable.WithoutTrivia());
+        var type = semanticModel.GetTypeSymbol(node.Expression ?? variable) ??
+            throw new InvalidOperationException($"The resource of 'using ({variable.Identifier.ValueText})' has no type.");
+        var declaration = DeclareVariable(type.ToCsharpTypeSyntax(), name, variable.WithoutTrivia());
         return visited
             .WithExpression(null)
             .WithDeclaration(declaration);

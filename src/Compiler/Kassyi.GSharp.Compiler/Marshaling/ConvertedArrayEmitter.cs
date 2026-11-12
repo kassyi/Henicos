@@ -90,7 +90,7 @@ internal static class ConvertedArrayEmitter
         throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not a converted array.");
 
     // The fully qualified element type of an array-like parameter
-    private static string GetElementTypeName(in KernelParameterShape shape) =>
+    internal static string GetElementTypeName(in KernelParameterShape shape) =>
         shape.ElementTypeName ??
         throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not an array-like type.");
 }

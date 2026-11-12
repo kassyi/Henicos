@@ -85,7 +85,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(91,43)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(91,43)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -287,7 +287,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, 32, "PartialWarpShuffleKernels.cs(15,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, 32, "PartialWarpShuffleKernels.cs(15,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -603,7 +603,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.laneMask, 32, "PartialWarpShuffleKernels.cs(23,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.laneMask, 32, "PartialWarpShuffleKernels.cs(23,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -923,7 +923,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.srcLane, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(31,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.srcLane, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(31,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -1239,7 +1239,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 1u, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(39,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 1u, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(39,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -1559,7 +1559,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.laneMask, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(47,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.laneMask, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(47,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -1879,7 +1879,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(55,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(55,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -2191,7 +2191,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 3, 8, "PartialWarpShuffleKernels.cs(64,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 3, 8, "PartialWarpShuffleKernels.cs(64,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -2503,7 +2503,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 3, 8, "PartialWarpShuffleKernels.cs(73,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 3, 8, "PartialWarpShuffleKernels.cs(73,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -2817,7 +2817,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(80,33)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(80,33)");
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -3471,7 +3471,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(97,68)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(97,68)");
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.Y * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -3785,7 +3785,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_match_any_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, "PartialWarpShuffleKernels.cs(104,33)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_match_any_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, "PartialWarpShuffleKernels.cs(104,33)");
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -4103,7 +4103,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_match_all_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, ref __gsharp_ctx.pred, "PartialWarpShuffleKernels.cs(112,33)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_match_all_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, ref __gsharp_ctx.pred, "PartialWarpShuffleKernels.cs(112,33)");
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;

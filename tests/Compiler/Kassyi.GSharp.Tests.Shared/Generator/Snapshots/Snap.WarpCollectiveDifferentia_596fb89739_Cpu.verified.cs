@@ -188,7 +188,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_reduce_add_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(118,59)");
+int __gsharp_warp_temp_1 = __gsharp_warp_reduce_add_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(118,59)");
 {
 __gsharp_result = __gsharp_warp_temp_1;
 __gsharp_ctx.__gsharp_state = 0;
@@ -252,7 +252,7 @@ return false;
 
 case 2:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1, 32, "WarpCollectiveDifferentialKernels.cs(167,28)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1, 32, "WarpCollectiveDifferentialKernels.cs(167,28)");
 int shuffled = __gsharp_warp_temp_1;
 __gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.__gsharp_unroll_0 / __gsharp_ctx.totalThreads] = shuffled;
 goto case 3;
@@ -1215,7 +1215,7 @@ return;
 
 case 22:
 {
-var __gsharp_warp_temp_24 = __gsharp_warp_reduce_min_read_sync(0, ref __gsharp_ctx, 19, __gsharp_ctx.halfMask, __gsharp_ctx.u, "WarpCollectiveDifferentialKernels.cs(113,26)");
+uint __gsharp_warp_temp_24 = __gsharp_warp_reduce_min_read_sync(0, ref __gsharp_ctx, 19, __gsharp_ctx.halfMask, __gsharp_ctx.u, "WarpCollectiveDifferentialKernels.cs(113,26)");
 __gsharp_ctx.output[__gsharp_ctx.o + 16] = __gsharp_warp_temp_24;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1572,7 +1572,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_2 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_1, "WarpCollectiveDifferentialKernels.cs(129,31)");
+uint __gsharp_warp_temp_2 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_1, "WarpCollectiveDifferentialKernels.cs(129,31)");
 __gsharp_ctx.output[__gsharp_ctx.gid * 2 + 1] = __gsharp_warp_temp_2;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1941,7 +1941,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(139,65)");
+uint __gsharp_warp_temp_1 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(139,65)");
 __gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.__gsharp_unroll_0 / __gsharp_ctx.totalThreads] = __gsharp_warp_temp_1;
 goto case 3;
 }
@@ -2278,7 +2278,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.__gsharp_arg_temp_0, true, "WarpCollectiveDifferentialKernels.cs(149,23)");
+uint __gsharp_warp_temp_1 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.__gsharp_arg_temp_0, true, "WarpCollectiveDifferentialKernels.cs(149,23)");
 __gsharp_ctx.output[__gsharp_ctx.gid] = __gsharp_warp_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -2596,7 +2596,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_reduce_min_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.gid, "WarpCollectiveDifferentialKernels.cs(158,23)");
+int __gsharp_warp_temp_1 = __gsharp_warp_reduce_min_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.gid, "WarpCollectiveDifferentialKernels.cs(158,23)");
 __gsharp_ctx.output[__gsharp_ctx.gid] = __gsharp_warp_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -3286,7 +3286,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1u, 32, "WarpCollectiveDifferentialKernels.cs(189,28)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1u, 32, "WarpCollectiveDifferentialKernels.cs(189,28)");
 int shuffled = __gsharp_warp_temp_1;
 __gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.round] = shuffled;
 __gsharp_ctx.round++;

@@ -6527,7 +6527,7 @@ Slot = tid,
 State = x
 };
 int mutGetterRead;
-using (var __gsharp_using_resource_0 = exprGuard)
+using (global::Kassyi.GSharp.Tests.Shared.Differential.DiffMutatingDisposeGuard __gsharp_using_resource_0 = exprGuard)
 {
 exprGuard.State = x + 100;
 mutGetterRead = exprGuard.State;
@@ -6849,7 +6849,7 @@ Log = r,
 Slot = tid,
 State = x
 };
-using (var __gsharp_using_resource_0 = exprGuard)
+using (global::Kassyi.GSharp.Tests.Shared.Differential.DiffMutatingDisposeGuard __gsharp_using_resource_0 = exprGuard)
 {
 exprGuard.State = x + 100;
 }

@@ -104,7 +104,7 @@ internal static class NativeStructEmitter
     // public unsafe struct __gsharp_host_mirror {
     // [[FieldOffset(<n>)]] public <type> <name>; ... [[FieldOffset(<n>)]] public fixed <element> <name>[<n>];
     // public static readonly bool FieldOffsetsMatch = CheckFieldOffsets();
-    // private static bool CheckFieldOffsets() { <S> s = default; ref var m = ref Unsafe.As<S, mirror>(ref s);
+    // private static bool CheckFieldOffsets() { <S> s = default; ref <mirror> m = ref Unsafe.As<S, <mirror>>(ref s);
     // return <offset of m.F> == <host offset of F> && <offset of s.G> == <offset of m.G> && ...; } }
     private static void WriteHostMirror(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
         IAssemblySymbol launcherAssembly)

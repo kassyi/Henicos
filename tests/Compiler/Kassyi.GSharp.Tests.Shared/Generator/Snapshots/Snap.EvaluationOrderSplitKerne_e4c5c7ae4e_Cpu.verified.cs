@@ -306,7 +306,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderSplitKernels.FullMask, __gsharp_ctx.__gsharp_arg_temp_1, 0, 32, "EvaluationOrderSplitKernels.cs(19,49)");
+int __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderSplitKernels.FullMask, __gsharp_ctx.__gsharp_arg_temp_1, 0, 32, "EvaluationOrderSplitKernels.cs(19,49)");
 __gsharp_ctx.result[__gsharp_ctx.lane] = __gsharp_ctx.__gsharp_arg_temp_0 + __gsharp_warp_temp_2;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -631,7 +631,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderSplitKernels.FullMask, __gsharp_ctx.x, 0, 32, "EvaluationOrderSplitKernels.cs(28,43)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderSplitKernels.FullMask, __gsharp_ctx.x, 0, 32, "EvaluationOrderSplitKernels.cs(28,43)");
 __gsharp_ctx.result[__gsharp_ctx.lane] = __gsharp_ctx.__gsharp_arg_temp_0 + __gsharp_warp_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -953,7 +953,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderSplitKernels.FullMask, __gsharp_ctx.__gsharp_arg_temp_1, 0, 32, "EvaluationOrderSplitKernels.cs(36,40)");
+int __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.EvaluationOrderSplitKernels.FullMask, __gsharp_ctx.__gsharp_arg_temp_1, 0, 32, "EvaluationOrderSplitKernels.cs(36,40)");
 __gsharp_ctx.result[__gsharp_ctx.lane] = __gsharp_ctx.__gsharp_arg_temp_0 + __gsharp_warp_temp_2;
 __gsharp_ctx.__gsharp_state = -1;
 return;

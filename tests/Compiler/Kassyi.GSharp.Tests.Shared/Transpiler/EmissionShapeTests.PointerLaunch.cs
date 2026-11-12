@@ -79,18 +79,22 @@ public partial class EmissionShapeTests
         {
             AssertCheckBeforeLaunch(launcher, launch,
                 $"if ({name}.Length < 0){{",
-                $"throw new global::System.ArgumentOutOfRangeException(\"{name}\", {name}.Length, \"The array length must not be negative.\");",
+                $"throw new global::System.ArgumentOutOfRangeException(\"{name}\", {name}.Length, " +
+                "\"The array length must not be negative.\");",
                 "}",
                 $"if ({name}.Data == global::System.IntPtr.Zero){{",
                 $"throw new global::System.ArgumentNullException(\"{name}\");",
                 "}",
                 $"if ({name}.Length == 0){{",
-                "throw new global::System.ArgumentException(\"Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.\", \"" + name + "\");");
+                "throw new global::System.ArgumentException(\"Kernel array arguments must not be empty. " +
+                "Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.\", \"" +
+                name + "\");");
         }
 
         AssertCheckBeforeLaunch(launcher, launch,
             "if (extra.Length < 0){",
-            "throw new global::System.ArgumentOutOfRangeException(\"extra\", extra.Length, \"The array length must not be negative.\");",
+            "throw new global::System.ArgumentOutOfRangeException(\"extra\", extra.Length, " +
+            "\"The array length must not be negative.\");",
             "}",
             "if (extra.Data == global::System.IntPtr.Zero || extra.Length == 0){",
             "extra = default;",

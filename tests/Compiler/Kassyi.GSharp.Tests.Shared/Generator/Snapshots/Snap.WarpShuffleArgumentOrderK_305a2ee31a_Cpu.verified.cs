@@ -207,7 +207,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.Half / 2, 32, "WarpShuffleArgumentOrderKernels.cs(64,16)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.Half / 2, 32, "WarpShuffleArgumentOrderKernels.cs(64,16)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -252,7 +252,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, 32, "WarpShuffleArgumentOrderKernels.cs(77,16)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, 32, "WarpShuffleArgumentOrderKernels.cs(77,16)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -535,7 +535,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1u, 32, "WarpShuffleArgumentOrderKernels.cs(17,17)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1u, 32, "WarpShuffleArgumentOrderKernels.cs(17,17)");
 int r = __gsharp_warp_temp_1;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = r;
 __gsharp_ctx.afterV[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
@@ -899,7 +899,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.__gsharp_arg_temp_2, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_arg_temp_3, __gsharp_ctx.__gsharp_arg_temp_1, "WarpShuffleArgumentOrderKernels.cs(28,17)");
+int __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.__gsharp_arg_temp_2, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_arg_temp_3, __gsharp_ctx.__gsharp_arg_temp_1, "WarpShuffleArgumentOrderKernels.cs(28,17)");
 int r = __gsharp_warp_temp_4;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = r;
 if (global::Kassyi.GSharp.Core.ThreadIndex.X == 0)
@@ -1226,7 +1226,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.Half / 2, 32, "WarpShuffleArgumentOrderKernels.cs(51,33)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.Half / 2, 32, "WarpShuffleArgumentOrderKernels.cs(51,33)");
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -2205,7 +2205,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 0, 32, "WarpShuffleArgumentOrderKernels.cs(87,16)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 0, 32, "WarpShuffleArgumentOrderKernels.cs(87,16)");
 if (!(__gsharp_warp_temp_1 < 3))
 goto case 4;
 __gsharp_ctx.n++;
@@ -2585,7 +2585,7 @@ return;
 
 case 2:
 {
-var __gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_2, 1, 32, "WarpShuffleArgumentOrderKernels.cs(104,37)");
+float __gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_2, 1, 32, "WarpShuffleArgumentOrderKernels.cs(104,37)");
 __gsharp_ctx.viaShuffle[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_3;
 __gsharp_ctx.__gsharp_state = -1;
 return;

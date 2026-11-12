@@ -563,7 +563,7 @@ return;
 
 case 5:
 {
-var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 4, 0xffffffff, __gsharp_ctx.val, 1, 32, "HoistedFieldTypeKernels.cs(36,16)");
+float __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 4, 0xffffffff, __gsharp_ctx.val, 1, 32, "HoistedFieldTypeKernels.cs(36,16)");
 __gsharp_ctx.val += __gsharp_warp_temp_4;
 if (__gsharp_ctx.lane == 0)
 {

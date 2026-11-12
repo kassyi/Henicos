@@ -78,7 +78,7 @@ internal static class ModuleKernelLaunchEmitter
         var launch = plan.Launch;
         WriteNullChecks(writer, plan.Arguments);
         WriteLaunchLimitCheck(writer, launcherName, launch);
-        writer.AppendLine($"using {HostTypeNames.GpuKernelLoader}.CudaContextScope scope = new();");
+        writer.AppendLine($"using {HostTypeNames.CudaContextScope} scope = new();");
         writer.Append($"{HostTypeNames.IntPtr} kernel = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(s_fatbin_");
         writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
         writer.Append(".Value, ");
@@ -137,7 +137,7 @@ internal static class ModuleKernelLaunchEmitter
 
             using (writer.Scope())
             {
-                writer.Append("throw new global::System.ArgumentNullException(");
+                writer.Append($"throw new {HostTypeNames.ArgumentNullException}(");
                 AppendStringLiteral(writer, argument.Name);
                 writer.AppendLine(");");
             }

@@ -554,7 +554,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, __gsharp_ctx.value, 1, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(92,16)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, __gsharp_ctx.value, 1, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(92,16)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -597,7 +597,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, __gsharp_ctx.value, 0, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(123,25)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, __gsharp_ctx.value, 0, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(123,25)");
 int broadcast = __gsharp_warp_temp_0;
 {
 __gsharp_result = broadcast;
@@ -641,7 +641,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, __gsharp_ctx.value, 1u, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(170,59)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, __gsharp_ctx.value, 1u, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(170,59)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -686,7 +686,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, __gsharp_ctx.value, 0, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(174,33)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.FullMask, __gsharp_ctx.value, 0, 32, "DeviceFunctionBarrierEdgeCaseKernels.cs(174,33)");
 __gsharp_ctx.output[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 {
 __gsharp_ctx.__gsharp_state = 0;

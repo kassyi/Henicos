@@ -296,7 +296,7 @@ return;
 
 case 5:
 {
-var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpShuffleKernels.cs(23,16)");
+int __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 4, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 32, "WarpShuffleKernels.cs(23,16)");
 __gsharp_ctx.val += __gsharp_warp_temp_4;
 if (__gsharp_ctx.lane == 0)
 {
@@ -680,7 +680,7 @@ return;
 
 case 3:
 {
-var __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, 32, 32, "WarpShuffleKernels.cs(46,33)");
+int __gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 2, __gsharp_ctx.mask, __gsharp_ctx.val, 32, 32, "WarpShuffleKernels.cs(46,33)");
 // Delta = 32: out-of-bound warp offset
 __gsharp_ctx.outputBoundary32[__gsharp_ctx.tid] = __gsharp_warp_temp_2;
 __gsharp_ctx.__gsharp_state = -1;
@@ -1076,7 +1076,7 @@ return;
 
 case 3:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 16, "WarpShuffleKernels.cs(66,19)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 16, "WarpShuffleKernels.cs(66,19)");
 __gsharp_ctx.val = __gsharp_warp_temp_1;
 goto case 4;
 }
@@ -1419,7 +1419,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.delta, __gsharp_ctx.width, "WarpShuffleKernels.cs(76,23)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.delta, __gsharp_ctx.width, "WarpShuffleKernels.cs(76,23)");
 __gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_warp_temp_1;
 __gsharp_ctx.__gsharp_state = -1;
 return;

@@ -188,7 +188,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.OutSpanParameterKernels.FullMask, 0, 0, 32, "OutSpanParameterKernels.cs(44,17)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, global::Kassyi.GSharp.Tests.Shared.Syntax.OutSpanParameterKernels.FullMask, 0, 0, 32, "OutSpanParameterKernels.cs(44,17)");
 int a = __gsharp_warp_temp_0 + global::Kassyi.GSharp.Tests.Shared.Syntax.OutSpanParameterKernels.FillAndReturn(__gsharp_ctx.buffer, out s);
 {
 __gsharp_result = a + s[0];

@@ -2441,7 +2441,7 @@ return;
 
 case 4:
 {
-var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFF_FFFFu, __gsharp_ctx.x, 0, 32, "LanguageConversionsAndMacrosDifferentialKernels.cs(350,25)");
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFF_FFFFu, __gsharp_ctx.x, 0, 32, "LanguageConversionsAndMacrosDifferentialKernels.cs(350,25)");
 // Unqualified ShuffleSync() from `using static Kassyi.GSharp.Core.Warp;`, LeadingZeroCount() from `using static System.Numerics.BitOperations;`, and Abs/Clamp from `using static System.Math;`
 int laneZeroX = __gsharp_warp_temp_1;
 int lzc = global::System.Numerics.BitOperations.LeadingZeroCount((uint)__gsharp_ctx.x | 1u);

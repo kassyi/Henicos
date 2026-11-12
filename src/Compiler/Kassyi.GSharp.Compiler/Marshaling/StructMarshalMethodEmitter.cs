@@ -209,7 +209,7 @@ internal static class StructMarshalMethodEmitter
         {
             const string Handles = StructMarshalingEmitter.CpuArraysParameter;
             writer.Append($"{HostTypeNames.PointerList} pinnedHandles = {Handles} ?? ");
-            writer.AppendLine($"throw new global::System.ArgumentNullException(\"{Handles}\");");
+            writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}(\"{Handles}\");");
             var pinned = host;
             if (KernelParameterShape.IsConverted(elementType, dialect))
             {
@@ -233,7 +233,8 @@ internal static class StructMarshalMethodEmitter
     }
 
     // The kernel wrote the pinned host array itself, so only a shadow array of converted elements is copied back:
-    // if (<host> != null && <native>.Data != IntPtr.Zero) { var shadow = (<element shadow>*)<native>.Data;
+    // if (<host> != null && <native>.Data != IntPtr.Zero)
+    // { <element shadow>* shadow = (<element shadow>*)<native>.Data;
     // for (...) Unmarshal_<element>(ref <host>[i], ref shadow[i], hStream); }
     // The shadow stays pinned until the launcher's finally block, after the unmarshaling.
 }
