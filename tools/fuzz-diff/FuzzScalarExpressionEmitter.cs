@@ -293,9 +293,7 @@ public static class FuzzScalarExpressionEmitter
         var promotedKind = context.PromotedKind;
         var promotedType = context.PromotedType;
         bool isModulo = state.Rng.NextBool();
-        string left = state.IssueFilter.AvoidMsvcNegatedConstantDivision
-            ? GenerateLeafExpression(state, promotedType)
-            : GenerateExpression(state, promotedType, depth + 1, maxDepth);
+        string left = GenerateExpression(state, promotedType, depth + 1, maxDepth);
         string right = GenerateLeafExpression(state, promotedType);
         string division = BuildGuardedDivisionOrModulo(
             promotedKind,
