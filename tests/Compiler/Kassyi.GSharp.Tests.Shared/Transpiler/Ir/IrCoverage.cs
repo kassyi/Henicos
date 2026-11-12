@@ -65,8 +65,9 @@ internal static class IrCoverage
     }
 
     // Counts the opaque nodes of one built method by reason, operation kind and syntax kind
-    private static void Tally(IrMethod method, ConcurrentDictionary<string, int> opaque) =>
-        IrNodeChildren.Visit(method.Body, node =>
+    private static void Tally(IrMethod method, ConcurrentDictionary<string, int> opaque)
+    {
+        foreach (var node in IrNodeChildren.DescendantsAndSelf(method.Body))
         {
             var key = node switch
             {
@@ -79,7 +80,8 @@ internal static class IrCoverage
             {
                 opaque.AddOrUpdate(key, 1, static (_, count) => count + 1);
             }
-        });
+        }
+    }
 
     /// <summary>I2: every node that is not synthesized has the span of a node of its tree.</summary>
     public static void AssertSpansAreNodes(IrMethod method, Compilation compilation) =>
@@ -87,23 +89,14 @@ internal static class IrCoverage
 
     private static List<string> FindSpansThatAreNotNodes(IrMethod method, Compilation compilation)
     {
-        var problems = new List<string>();
         var trees = compilation.SyntaxTrees.ToArray();
-        IrNodeChildren.Visit(method.Body, node =>
-        {
-            var source = node.Source;
-            if (source.Synthesized)
-            {
-                return;
-            }
-
-            var found = trees[source.TreeOrdinal].GetRoot().FindNode(source.Span, getInnermostNodeForTie: true);
-            if (found.Span != source.Span)
-            {
-                problems.Add($"I2 at {source.Start}..{source.Start + source.Length}: no node has the span");
-            }
-        });
-        return problems;
+        return IrNodeChildren.DescendantsAndSelf(method.Body)
+            .Select(static node => node.Source)
+            .Where(source => !source.Synthesized &&
+                             trees[source.TreeOrdinal].GetRoot()
+                                 .FindNode(source.Span, getInnermostNodeForTie: true).Span != source.Span)
+            .Select(static source => $"I2 at {source.Start}..{source.Start + source.Length}: no node has the span")
+            .ToList();
     }
 
     private static string Key(IrOpaqueReason reason, IOperation? operation, SyntaxNode syntax) =>

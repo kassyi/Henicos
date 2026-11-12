@@ -17,6 +17,15 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// </summary>
 internal static class IrSpillTrace
 {
+    // The names of the temporaries the lowering evaluates an operand into before a split
+    private static readonly string[] s_tempPrefixes =
+    [
+        GSharpInternalNames.Lowering.ArgumentTempPrefix,
+        GSharpInternalNames.Lowering.WarpTempPrefix,
+        GSharpInternalNames.Lowering.CallTempPrefix,
+        GSharpInternalNames.Lowering.ConditionTempPrefix
+    ];
+
     /// <summary>
     /// One token, with the span of the source it stands for (for a conditional, of its first inner token).
     /// </summary>
@@ -95,7 +104,7 @@ internal static class IrSpillTrace
             {
                 if (name.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix, StringComparison.Ordinal))
                 {
-                    tokens.Add(Leaf("spill", OriginalSpan(WithoutParentheses(initializer)), text));
+                    tokens.Add(Leaf("spill", OriginalSpan(IteratorTypeResolver.UnwrapParentheses(initializer)), text));
                 }
                 else
                 {
@@ -191,29 +200,10 @@ internal static class IrSpillTrace
     private static (string? Name, ExpressionSyntax? Initializer) TempDeclaration(StatementSyntax statement) =>
         statement is LocalDeclarationStatementSyntax
         {
-            Declaration.Variables: [{ Initializer.Value: var initializer } declarator]
-        } && declarator.Identifier.ValueText.StartsWith("__gsharp_", StringComparison.Ordinal) &&
-        (declarator.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix,
-             StringComparison.Ordinal) ||
-         declarator.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.WarpTempPrefix,
-             StringComparison.Ordinal) ||
-         declarator.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.CallTempPrefix,
-             StringComparison.Ordinal) ||
-         declarator.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.ConditionTempPrefix,
-             StringComparison.Ordinal))
-            ? (declarator.Identifier.ValueText, initializer)
+            Declaration.Variables: [{ Identifier.ValueText: var name, Initializer.Value: var initializer }]
+        } && s_tempPrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.Ordinal))
+            ? (name, initializer)
             : (null, null);
-
-    // The IR has no node for parentheses, which change nothing in C#
-    private static ExpressionSyntax WithoutParentheses(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression;
-    }
 
     private static bool HasOriginalSpan(SyntaxNode node) =>
         node.HasAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);

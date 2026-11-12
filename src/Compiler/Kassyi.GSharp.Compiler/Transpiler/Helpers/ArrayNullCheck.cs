@@ -22,22 +22,27 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// </remarks>
 internal static class ArrayNullCheck
 {
-    /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
-    public const string MessagePrefix = "G#: a null array is read at ";
-
     /// <summary>The text of the error of a registered site, whose place the error site table holds.</summary>
     public const string SiteMessage = "G#: a null array is read";
+
+    /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
+    public const string MessagePrefix = SiteMessage + PlaceSeparator;
 
     // The trap kind of the site ID, which tells the site apart from another trap at the same place
     private const string TrapKind = "ArrayNull";
 
-    /// <summary>The text of a null passed where a device function parameter is not nullable, followed by the place.</summary>
-    public const string ArgumentMessagePrefix = "G#: a null array is passed where it is not nullable at ";
-
     /// <summary>The text of the error of a registered site of a null passed where the parameter is not nullable.</summary>
     public const string ArgumentSiteMessage = "G#: a null array is passed where it is not nullable";
 
+    /// <summary>
+    /// The text of a null passed where a device function parameter is not nullable, followed by the place.
+    /// </summary>
+    public const string ArgumentMessagePrefix = ArgumentSiteMessage + PlaceSeparator;
+
     private const string ArgumentTrapKind = "ArrayNullArgument";
+
+    // Between the text of an error and the place it names, in a method without an error site table
+    private const string PlaceSeparator = " at ";
 
     private static readonly PerCompilationSymbolCache<IParameterSymbol, bool> s_written = new();
 
@@ -202,13 +207,18 @@ internal static class ArrayNullCheck
     }
 
     /// <summary>Writes <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>.</summary>
-    public static void AppendCheck(ExpressionSyntax receiver, NullCheckSite site, ref TranspileContext context)
+    public static void AppendCheck(ExpressionSyntax receiver, NullCheckSite site, ref TranspileContext context) =>
+        AppendHelperCall(GSharpInternalNames.Prelude.ArrayRef, receiver, site, ref context);
+
+    /// <summary>Writes <c>&lt;helper&gt;(&lt;array&gt;, &lt;site&gt;)</c>: a Prelude check of one array.</summary>
+    internal static void AppendHelperCall(string helper, ExpressionSyntax array, NullCheckSite site,
+        ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        writer.Append(GSharpInternalNames.Prelude.ArrayRef);
+        writer.Append(helper);
         using (writer.Parentheses())
         {
-            context.Visitor.Visit(receiver);
+            context.Visitor.Visit(array);
             writer.Append(", ");
             AppendSite(writer, site);
         }
@@ -225,16 +235,34 @@ internal static class ArrayNullCheck
     /// <see cref="PlanSite(ExpressionSyntax, ref TranspileContext)"/> with the place already formatted: the place that
     /// lowering recorded for the source of a <c>foreach</c>.
     /// </summary>
-    public static NullCheckSite PlanSite(ExpressionSyntax receiver, string place, ref TranspileContext context)
+    public static NullCheckSite PlanSite(ExpressionSyntax receiver, string place, ref TranspileContext context) =>
+        PlanSite(receiver, place, SiteMessage, TrapKind, ref context);
+
+    /// <summary>
+    /// A site of the kernel's error site table for <paramref name="node"/> with <paramref name="message"/>, or, in a
+    /// method without a table, the message followed by the place of the node (<paramref name="place"/>, formatted here
+    /// when it is <see langword="null"/>).
+    /// </summary>
+    internal static NullCheckSite PlanSite(ExpressionSyntax node, string? place, string message, string trapKind,
+        ref TranspileContext context) =>
+        PlanSite(node, place, message, trapKind, context.Query.SemanticModel, context.Emitter.ErrorSites,
+            context.Emitter.CurrentMemberName);
+
+    /// <summary>
+    /// <see cref="PlanSite(ExpressionSyntax, string, string, string, ref TranspileContext)"/> with the parts of the
+    /// context it reads: the model, the error site table of the method (<see langword="null"/> in a device function) and
+    /// the name of the method being emitted.
+    /// </summary>
+    internal static NullCheckSite PlanSite(ExpressionSyntax node, string? place, string message, string trapKind,
+        SemanticModel model, ErrorSiteTable? table, string? currentMemberName)
     {
-        if (context.Emitter.ErrorSites is not { } table)
+        if (table is null)
         {
-            return new NullCheckSite(0u, MessagePrefix + place);
+            return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(model, node)));
         }
 
-        var model = context.Query.SemanticModel;
-        var memberName = GetSourceMemberName(receiver, model) ?? context.Emitter.CurrentMemberName ?? "";
-        return new NullCheckSite(table.Register(receiver, model, memberName, SiteMessage, TrapKind), "");
+        var memberName = GetSourceMemberName(node, model) ?? currentMemberName ?? "";
+        return new NullCheckSite(table.Register(node, model, memberName, message, trapKind), "");
     }
 
     // The method that holds the receiver in the user's source, past lambdas and local functions.
@@ -318,17 +346,8 @@ internal static class ArrayNullCheck
     }
 
     // The place of a null passed where the parameter is not nullable
-    private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context)
-    {
-        var model = context.Query.SemanticModel;
-        if (context.Emitter.ErrorSites is not { } table)
-        {
-            return new NullCheckSite(0u, ArgumentMessagePrefix + SourcePlace.Format(model, argument));
-        }
-
-        var memberName = GetSourceMemberName(argument, model) ?? context.Emitter.CurrentMemberName ?? "";
-        return new NullCheckSite(table.Register(argument, model, memberName, ArgumentSiteMessage, ArgumentTrapKind), "");
-    }
+    private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context) =>
+        PlanSite(argument, null, ArgumentSiteMessage, ArgumentTrapKind, ref context);
 
     // <site>u for a registered site, "<message>" otherwise
     private static void AppendSite(SourceWriter writer, NullCheckSite site)

@@ -91,13 +91,10 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        // A method of the project with no device definition would be called by a name nothing defines (#891)
-        if (UnemittedMethodCall.GetReason(symbol, node, context.Query.SemanticModel, context.Emitter.Dialect) is
-            { } reason)
+        // A method with no device definition (of the project, #891, or one the dialect does not map) would be
+        // called by a name nothing defines
+        if (CallTargetEmitter.TryFailCall(node, symbol, ref context))
         {
-            context.Reporter.Fail(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode, node,
-                UnemittedMethodCall.GetDisplayName(symbol), reason);
-            context.Visitor.AppendUnsupportedPlaceholder(node);
             return;
         }
 
