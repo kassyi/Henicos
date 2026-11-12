@@ -1,6 +1,5 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Extensions;
-using Kassyi.ZeroAlloc.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -161,36 +160,42 @@ public class ManagedRewriteConsistencyTests
         Assert.NotNull(visited);
 
         var invocations = visited.DescendantNodes().OfType<InvocationExpressionSyntax>().ToArray();
+        var floatEnumerator = SyntaxFactory.ParseTypeName("global::Kassyi.ZeroAlloc.Linq.ArrayEnumerator<float>");
 
         // All 11 float/double StackEnumerable Sum calls (f0..f5, d0..d4) become SumSequential
-        var sumSeqCount = invocations.AsStackEnumerable().Count(static inv => IsSumSequential(inv));
-        Assert.Equal(11, sumSeqCount);
+        Assert.Equal(11, invocations.Count(static i =>
+            Callee(i) is (not null, { Identifier.ValueText: "SumSequential" })));
+        Assert.Contains(invocations, i => Callee(i) is (var receiver, GenericNameSyntax
+        {
+            Identifier.ValueText: "SumSequential",
+            TypeArgumentList.Arguments: [var argument]
+        }) && IsStackLinqExtensions(receiver) && SyntaxFactory.AreEquivalent(argument, floatEnumerator));
 
-        var hasGenericSumSeq = invocations.AsStackEnumerable().Any(static inv =>
-            GetSimpleName(inv.Expression) is GenericNameSyntax
-            {
-                Identifier.ValueText: "SumSequential"
-            } generic && generic.TypeArgumentList.Arguments.Count == 1);
-        Assert.True(hasGenericSumSeq);
-
-        // Only the 2 int Sum calls (i0, i1) and 1 ParallelStackEnumerable Sum call (fp) remain .Sum(
-        var sumCount = invocations.AsStackEnumerable().Count(static inv => IsSum(inv));
-        Assert.Equal(3, sumCount);
+        // Only the 2 int Sum calls (i0, i1) and 1 ParallelStackEnumerable Sum call (fp) remain StackLinqExtensions.Sum(
+        Assert.Equal(3, invocations.Count(static i =>
+            Callee(i) is (var receiver, IdentifierNameSyntax { Identifier.ValueText: "Sum" }) &&
+            IsStackLinqExtensions(receiver)));
     }
 
-    private static bool IsSumSequential(InvocationExpressionSyntax inv) =>
-        GetSimpleName(inv.Expression)?.Identifier.ValueText == "SumSequential";
+    // <receiver>.<name>(...) as a member access or a qualified name; <name>(...) has no receiver
+    private static (ExpressionSyntax? Receiver, SimpleNameSyntax? Name) Callee(InvocationExpressionSyntax invocation) =>
+        invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax access => (access.Expression, access.Name),
+            QualifiedNameSyntax qualified => (qualified.Left, qualified.Right),
+            SimpleNameSyntax simple => (null, simple),
+            _ => (null, null)
+        };
 
-    private static bool IsSum(InvocationExpressionSyntax inv) =>
-        GetSimpleName(inv.Expression)?.Identifier.ValueText == "Sum";
-
-    private static SimpleNameSyntax? GetSimpleName(ExpressionSyntax expr) => expr switch
-    {
-        MemberAccessExpressionSyntax ma => ma.Name,
-        QualifiedNameSyntax qn => qn.Right,
-        SimpleNameSyntax sn => sn,
-        _ => null,
-    };
+    // StackLinqExtensions, with or without its namespace
+    private static bool IsStackLinqExtensions(ExpressionSyntax? receiver) =>
+        receiver switch
+        {
+            MemberAccessExpressionSyntax access => access.Name,
+            QualifiedNameSyntax qualified => qualified.Right,
+            SimpleNameSyntax simple => simple,
+            _ => null
+        } is { Identifier.ValueText: "StackLinqExtensions" };
 
     private static IEnumerable<(IMethodSymbol Method, MethodDeclarationSyntax Declaration, SemanticModel Model)>
         EnumerateDeviceFunctions(Compilation compilation)

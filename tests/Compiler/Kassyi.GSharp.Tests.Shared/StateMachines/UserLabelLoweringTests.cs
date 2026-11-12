@@ -25,7 +25,10 @@ public class UserLabelLoweringTests : StateMachineTestBase
             var case1 = lowered.LoweredBody.DescendantNodes().OfType<CaseSwitchLabelSyntax>()
                 .First(static c => c.Value is LiteralExpressionSyntax { Token.ValueText: "1" });
             var publish = lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                .First(static i => i.Expression is IdentifierNameSyntax { Identifier.ValueText: "__gsharp_warp_publish" });
+                .First(static i => i.Expression is IdentifierNameSyntax
+                {
+                    Identifier.ValueText: "__gsharp_warp_publish"
+                });
             var case2 = lowered.LoweredBody.DescendantNodes().OfType<CaseSwitchLabelSyntax>()
                 .First(static c => c.Value is LiteralExpressionSyntax { Token.ValueText: "2" });
             var temp = lowered.LoweredBody.DescendantNodes().OfType<VariableDeclaratorSyntax>()
@@ -54,8 +57,9 @@ public class UserLabelLoweringTests : StateMachineTestBase
 
             Assert.True(write.SpanStart < suspend.SpanStart && suspend.SpanStart < read.SpanStart);
             Assert.False(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                .Any(static i => i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SyncThreads" } ||
-                                 i.Expression is IdentifierNameSyntax { Identifier.ValueText: "SyncThreads" }));
+                .Any(static i => i.Expression is
+                    MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SyncThreads" } or
+                    IdentifierNameSyntax { Identifier.ValueText: "SyncThreads" }));
         });
 
     private static bool IsTargetElement(ExpressionSyntax left, string name) =>
@@ -108,7 +112,8 @@ public class UserLabelLoweringTests : StateMachineTestBase
         VerifyPipelineLowerFromTestCase("ChainedLabel.cs", inspect: static (lowered, _) =>
         {
             var gotos = lowered.LoweredBody.DescendantNodes().OfType<GotoStatementSyntax>();
-            Assert.False(gotos.Any(static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: "a" or "b" }));
+            Assert.False(gotos.Any(static g =>
+                g.Expression is IdentifierNameSyntax { Identifier.ValueText: "a" or "b" }));
             var labels = lowered.LoweredBody.DescendantNodes().OfType<LabeledStatementSyntax>();
             Assert.False(labels.Any(static l => l.Identifier.ValueText is "a" or "b"));
         });
@@ -142,11 +147,17 @@ public class UserLabelLoweringTests : StateMachineTestBase
                 .Any(static l => l.Identifier.ValueText == "done"));
 
             var goto1 = body.DescendantNodes().OfType<GotoStatementSyntax>()
-                .First(static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: "__gsharp_label_1_done" });
+                .First(static g => g.Expression is IdentifierNameSyntax
+                {
+                    Identifier.ValueText: "__gsharp_label_1_done"
+                });
             var label1 = body.DescendantNodes().OfType<LabeledStatementSyntax>()
                 .First(static l => l.Identifier.ValueText == "__gsharp_label_1_done");
             var goto2 = body.DescendantNodes().OfType<GotoStatementSyntax>()
-                .First(static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: "__gsharp_label_2_done" });
+                .First(static g => g.Expression is IdentifierNameSyntax
+                {
+                    Identifier.ValueText: "__gsharp_label_2_done"
+                });
             var label2 = body.DescendantNodes().OfType<LabeledStatementSyntax>()
                 .First(static l => l.Identifier.ValueText == "__gsharp_label_2_done");
 

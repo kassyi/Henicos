@@ -183,19 +183,7 @@ public class TypeNameCheckAnalyzer : DiagnosticAnalyzer
 
             var shortName = invocation.Arguments[1].Value.ConstantValue is { HasValue: true, Value: string value }
                 ? value
-                : invocation.Arguments[1].Value switch
-                {
-                    IFieldReferenceOperation field => field.Field.Name,
-                    ILocalReferenceOperation local => local.Local.Name,
-                    IPropertyReferenceOperation prop => prop.Property.Name,
-                    _ => invocation.Arguments[1].Syntax switch
-                    {
-                        IdentifierNameSyntax id => id.Identifier.ValueText,
-                        MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText,
-                        LiteralExpressionSyntax lit => lit.Token.ValueText,
-                        _ => string.Empty
-                    }
-                };
+                : ReferencedName(invocation.Arguments[1].Value);
             ReportUnlessChecked(context, invocation.Syntax, shortName);
         }
 
@@ -225,9 +213,27 @@ public class TypeNameCheckAnalyzer : DiagnosticAnalyzer
         {
             if (!ChecksNamespace(EnclosingMember(node)))
             {
-                context.ReportDiagnostic(Diagnostic.Create(NameOnlyTypeCheck, node.GetLocation(), node, name));
+                context.ReportDiagnostic(Diagnostic.Create(NameOnlyTypeCheck, node.GetLocation(), node.ToString(), name));
             }
         }
+    }
+
+    // The symbol a non-constant short name comes from: a field, property, local, parameter or method
+    private static string ReferencedName(IOperation operation)
+    {
+        while (operation is IConversionOperation conversion)
+        {
+            operation = conversion.Operand;
+        }
+
+        return operation switch
+        {
+            IMemberReferenceOperation member => member.Member.Name,
+            ILocalReferenceOperation local => local.Local.Name,
+            IParameterReferenceOperation parameter => parameter.Parameter.Name,
+            IInvocationOperation call => call.TargetMethod.Name,
+            _ => "?"
+        };
     }
 
     // ISymbol.Name read from a symbol that can be a type: ISymbol, ITypeSymbol, INamedTypeSymbol, ITypeParameterSymbol

@@ -2,9 +2,6 @@
 using System.Collections.Immutable;
 using System.Linq;
 using Kassyi.GSharp.Compiler;
-using Kassyi.ZeroAlloc.Linq;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
@@ -86,17 +83,9 @@ public class SyncGridBodyHelperTests
     {
         var statements = Flatten("NestedBody", withModel);
 
-        Assert.Equal(4, statements.Elements.Length);
-        string[] expectedValues = ["1", "2", "3", "4"];
-        for (int i = 0; i < 4; i++)
-        {
-            var stmt = Assert.IsAssignableFrom<ExpressionStatementSyntax>(statements.Elements[i].Node);
-            var assign = Assert.IsAssignableFrom<AssignmentExpressionSyntax>(stmt.Expression);
-            Assert.Equal(SyntaxKind.AddAssignmentExpression, assign.Kind());
-            Assert.Equal("x", Assert.IsAssignableFrom<IdentifierNameSyntax>(assign.Left).Identifier.ValueText);
-            var lit = Assert.IsAssignableFrom<LiteralExpressionSyntax>(assign.Right);
-            Assert.Equal(expectedValues[i], lit.Token.ValueText);
-        }
+        SyntaxAssert.Equivalent(
+            ["x += 1;", "x += 2;", "x += 3;", "x += 4;"],
+            statements.Elements.Select(static e => e.Node));
         Assert.Equal([0, 1, 1, 0], statements.Elements.Select(static e => e.BodyIndex).ToArray());
         Assert.Equal([-1, 0], statements.BodyParents.ToArray());
     }
@@ -110,11 +99,8 @@ public class SyncGridBodyHelperTests
     {
         var statements = Flatten("NestedExpressionBody", withModel);
 
-        var assign = Assert.IsAssignableFrom<AssignmentExpressionSyntax>(statements.Elements[1].Node);
-        Assert.Equal(SyntaxKind.AddAssignmentExpression, assign.Kind());
-        Assert.Equal("x", Assert.IsAssignableFrom<IdentifierNameSyntax>(assign.Left).Identifier.ValueText);
-        var lit = Assert.IsAssignableFrom<LiteralExpressionSyntax>(assign.Right);
-        Assert.Equal("2", lit.Token.ValueText);
+        var nested = Assert.IsAssignableFrom<ExpressionSyntax>(statements.Elements[1].Node);
+        SyntaxAssert.Equivalent("x += 2", nested);
         Assert.Equal(1, statements.Elements[1].BodyIndex);
     }
 
@@ -163,17 +149,7 @@ public class SyncGridBodyHelperTests
     {
         var statements = Flatten("ExpressionBodyIsBody", withModel);
 
-        Assert.Equal(2, statements.Elements.Length);
-        string[] expectedValues = ["1", "2"];
-        for (int i = 0; i < 2; i++)
-        {
-            var stmt = Assert.IsAssignableFrom<ExpressionStatementSyntax>(statements.Elements[i].Node);
-            var assign = Assert.IsAssignableFrom<AssignmentExpressionSyntax>(stmt.Expression);
-            Assert.Equal(SyntaxKind.AddAssignmentExpression, assign.Kind());
-            Assert.Equal("x", Assert.IsAssignableFrom<IdentifierNameSyntax>(assign.Left).Identifier.ValueText);
-            var lit = Assert.IsAssignableFrom<LiteralExpressionSyntax>(assign.Right);
-            Assert.Equal(expectedValues[i], lit.Token.ValueText);
-        }
+        SyntaxAssert.Equivalent(["x += 1;", "x += 2;"], statements.Elements.Select(static e => e.Node));
         Assert.Equal([-1, 0], statements.BodyParents.ToArray());
     }
 
@@ -242,10 +218,13 @@ public class SyncGridBodyHelperTests
 
     private static SemanticModel GetModel() => s_compilation.GetSemanticModel(s_compilation.SyntaxTrees.Single());
 
-    // The first statement of the method: with a model from the compilation's tree, without one from a fresh parse
+    // The first statement of the method: with a model from the compilation's tree, without one from a copy of the tree
+    // outside the compilation
     private static (StatementSyntax Statement, SemanticModel? Model) GetSyncGridStatement(string method, bool withModel)
     {
-        var tree = s_compilation.SyntaxTrees.Single();
+        var tree = withModel
+            ? s_compilation.SyntaxTrees.Single()
+            : s_compilation.SyntaxTrees.Single().WithFilePath("Detached.cs");
         var statement = tree.GetRoot()
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()

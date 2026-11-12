@@ -2,7 +2,6 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 using Kassyi.GSharp.Compiler.Dialects;
 using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.ZeroAlloc.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -51,15 +50,11 @@ public class StatementPreludeTests
         var tree = s_compilation.SyntaxTrees.Single();
         var model = s_compilation.GetSemanticModel(tree);
 
-        var statement = tree.GetRoot().DescendantNodes().OfType<ExpressionStatementSyntax>().ToArray()
-            .AsStackEnumerable()
-            .First(static s => s.Expression is InvocationExpressionSyntax inv &&
-                               inv.Expression switch
-                               {
-                                   IdentifierNameSyntax id => id.Identifier.ValueText == "TryGet",
-                                   MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText == "TryGet",
-                                   _ => false
-                               });
+        var statement = tree.GetRoot().DescendantNodes().OfType<ExpressionStatementSyntax>()
+            .First(static s => s.Expression is InvocationExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "TryGet" }
+            });
 
         using var visitor = RoslynToCudaVisitor.Rent(new StandardCppDialect(), model);
         using var writer = new SourceWriter();
