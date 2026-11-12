@@ -218,7 +218,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     }
 
     // ImmutableArray<T>.Length emits .length instead of undefined __gsharp_mb_Length() (#1070)
-    [Theory(Skip = "ImmutableArray<T>.Length emits undefined __gsharp_mb_Length() (#1070)")]
+    [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]

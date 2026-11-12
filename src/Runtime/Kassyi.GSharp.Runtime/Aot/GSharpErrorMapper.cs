@@ -39,7 +39,13 @@ public enum GSharpErrorCode
     /// Corresponds to <see cref="System.Runtime.CompilerServices.SwitchExpressionException"/>: no arm of a switch
     /// expression matched its input.
     /// </summary>
-    SwitchExpression = 10
+    SwitchExpression = 10,
+
+    /// <summary>
+    /// Corresponds to <see cref="ArgumentNullException"/>: a null destination array of <c>CopyTo</c> on an
+    /// <c>ArraySegment&lt;T&gt;</c> or <c>ImmutableArray&lt;T&gt;</c>.
+    /// </summary>
+    ArgumentNull = 11
 }
 
 /// <summary>
@@ -151,6 +157,18 @@ public static class GSharpErrorMapper
             "G#: the dynamic shared memory of a block (sharedMemBytes) could not be allocated";
         dict[ComputeBuiltinMessageId("G#: the static shared memory of a declaration could not be allocated")] =
             "G#: the static shared memory of a declaration could not be allocated";
+
+        // An ArraySegment<T> or ImmutableArray<T> without an array, and a null CopyTo destination
+        // (__gsharp_view_message of the CUDA prelude)
+        foreach (var message in (ReadOnlySpan<string>)
+                 [
+                     "The underlying array is null.",
+                     "Object reference not set to an instance of an object.",
+                     "Value cannot be null. (Parameter 'destinationArray')",
+                 ])
+        {
+            dict[ComputeBuiltinMessageId(message)] = message;
+        }
 
         return dict;
     }
@@ -334,6 +352,7 @@ public static class GSharpErrorMapper
             GSharpErrorCode.Overflow => "Arithmetic operation resulted in an overflow.",
             GSharpErrorCode.DataRace => "Shared memory data race detected.",
             GSharpErrorCode.SwitchExpression => "Non-exhaustive switch expression failed to match its input.",
+            GSharpErrorCode.ArgumentNull => "Value cannot be null.",
             _ => "A G# runtime error occurred."
         };
 
@@ -498,6 +517,7 @@ public static class GSharpErrorMapper
             GSharpErrorCode.DataRace => new InvalidOperationException(message, innerException),
             GSharpErrorCode.SwitchExpression =>
                 new System.Runtime.CompilerServices.SwitchExpressionException(message, innerException),
+            GSharpErrorCode.ArgumentNull => new ArgumentNullException(message, innerException),
             _ => new InvalidOperationException(message, innerException)
         };
 }
