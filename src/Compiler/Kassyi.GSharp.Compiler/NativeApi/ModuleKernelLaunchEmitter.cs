@@ -26,7 +26,7 @@ internal static class ModuleKernelLaunchEmitter
     public static void EmitModuleCacheField(SourceWriter writer, string moduleName)
     {
         writer.Append("private static readonly Lazy<byte[]> s_fatbin_");
-        AppendSanitizedIdentifier(writer, moduleName);
+        writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
         writer.Append(" = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, ");
         AppendStringLiteral(writer, moduleName);
         writer.AppendLine(")));");
@@ -79,7 +79,7 @@ internal static class ModuleKernelLaunchEmitter
         WriteLaunchLimitCheck(writer, launcherName, launch);
         writer.AppendLine($"using var scope = new {HostTypeNames.GpuKernelLoader}.CudaContextScope();");
         writer.Append($"var kernel = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(s_fatbin_");
-        AppendSanitizedIdentifier(writer, moduleName);
+        writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
         writer.Append(".Value, ");
         AppendStringLiteral(writer, entryPoint);
         writer.AppendLine(");");
@@ -199,14 +199,6 @@ internal static class ModuleKernelLaunchEmitter
         }
 
         writer.Append('"');
-    }
-
-    public static void AppendSanitizedIdentifier(SourceWriter writer, string name)
-    {
-        foreach (var c in name)
-        {
-            writer.Append(c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '_' ? c : '_');
-        }
     }
 
     // Array: using var d_<name> = new GpuBuffer<<element>>(<name>.Length); d_<name>.CopyToDevice(<elements of name>);

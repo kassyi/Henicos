@@ -34,7 +34,6 @@ internal static class AotArtifactWriter
             return;
         }
 
-        var safeAssemblyName = AotHostNames.ToSafeIdentifier(target.AssemblyName);
         var sourceHash = GSharpNameEncoding.ComputeSourceHash(bodySource);
         var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + bodySource;
         var dialectName = config.IsCuda ? "Cuda" : "Cpu";
@@ -43,7 +42,7 @@ internal static class AotArtifactWriter
             errorSites);
 
         var ext = config.IsCuda ? ".g.cu" : ".g.cpp";
-        var fileName = $"Kassyi.GSharp.Kernels_{safeAssemblyName}{ext}";
+        var fileName = AotModuleNames.GetArtifactFileStem(target.ModuleName) + ext;
         var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
         if (string.IsNullOrEmpty(safeIntermediateOutputPath))
         {

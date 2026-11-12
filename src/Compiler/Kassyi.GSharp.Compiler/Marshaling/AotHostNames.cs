@@ -2,8 +2,8 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
 /// The single source of the names that the generated host C# uses for the native shadow structs, their marshaling
-/// methods and the per-assembly module context. The side that declares a name and the side that refers to it both go
-/// through this module, so a change to a naming rule happens in one place.
+/// methods. The side that declares a name and the side that refers to it both go through this module, so a change to a
+/// naming rule happens in one place. The names of the module of an assembly are in <see cref="AotModuleNames"/>.
 /// </summary>
 internal static class AotHostNames
 {
@@ -27,9 +27,6 @@ internal static class AotHostNames
     /// in an array field at any depth.
     /// </summary>
     public const string HoldsArrayMethodPrefix = "HoldsArray_";
-
-    /// <summary>The prefix of the class that loads the fatbin module of one assembly.</summary>
-    public const string ModuleContextPrefix = "GSharpModuleContext_";
 
     private const string ContextSuffix = "Context";
 
@@ -185,31 +182,6 @@ internal static class AotHostNames
         using var writer = new SourceWriter();
         writer.AppendQualifiedUnmarshalMethodName(symbol, kernelClass);
         return writer.ToString();
-    }
-
-    /// <summary>The name of the module context class of an assembly.</summary>
-    public static string GetModuleContextName(string assemblyName) => ModuleContextPrefix + ToSafeIdentifier(assemblyName);
-
-    /// <summary>
-    /// Converts an assembly name or namespace into a safe C# identifier segment by replacing '.' with '_'.
-    /// </summary>
-    public static string ToSafeIdentifier(string name)
-    {
-        if (name.IndexOf('.') < 0)
-        {
-            return name;
-        }
-
-        var chars = name.ToCharArray();
-        for (var i = 0; i < chars.Length; i++)
-        {
-            if (chars[i] == '.')
-            {
-                chars[i] = '_';
-            }
-        }
-
-        return new string(chars);
     }
 
     private static ref readonly SourceWriter AppendAotContextsQualifier(in SourceWriter writer,

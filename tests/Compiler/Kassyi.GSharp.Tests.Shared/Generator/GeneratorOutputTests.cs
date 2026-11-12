@@ -79,25 +79,62 @@ public class GeneratorOutputTests
         Assert.True(first >= 0 && first < middle && middle < last, context);
     }
 
-    // Without an assembly name, the module context is named after UnknownAssembly, and the wrappers name the module
-    // context after the assembly symbol's name, as before the outputs were split
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void ModuleContext_MissingAssemblyName_KeepsBothNames()
+    // The module context class and the wrappers that name it take one module name: the assembly name, or
+    // UnknownAssembly without one. Its identifier keeps every character that C# allows in an identifier (letters of any
+    // script) and turns the others into '_', while the artifact files keep the assembly name with only '.' replaced, as
+    // the native build names them; the fatbin path is a C# string literal with '"' and '\' escaped
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("my-lib", "GSharpModuleContext_my_lib", "\"Kassyi.GSharp.Kernels_my-lib.gfatbin\"")]
+    [InlineData("My.Lib-2", "GSharpModuleContext_My_Lib_2", "\"Kassyi.GSharp.Kernels_My_Lib-2.gfatbin\"")]
+    [InlineData(null, "GSharpModuleContext_UnknownAssembly", "\"Kassyi.GSharp.Kernels_UnknownAssembly.gfatbin\"")]
+    [InlineData("\u65e5\u672c", "GSharpModuleContext_\u65e5\u672c", "\"Kassyi.GSharp.Kernels_\u65e5\u672c.gfatbin\"")]
+    [InlineData(
+        "\u00e9t\u00e9",
+        "GSharpModuleContext_\u00e9t\u00e9",
+        "\"Kassyi.GSharp.Kernels_\u00e9t\u00e9.gfatbin\""
+    )]
+    [InlineData("a{b}", "GSharpModuleContext_a_b_", "\"Kassyi.GSharp.Kernels_a{b}.gfatbin\"")]
+    [InlineData("a\"b", "GSharpModuleContext_a_b", "\"Kassyi.GSharp.Kernels_a\\\"b.gfatbin\"")]
+    public void ModuleContext_AssemblyNameNotAnIdentifier_WrappersNameTheGeneratedContext(
+        string? assemblyName,
+        string contextName,
+        string fatbinLiteral)
     {
-        var compilation = CSharpCompilation.Create(assemblyName: null)
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_TwoClasses.cu.cs"), "two.cs"));
-        var result = CreateDriver("Cuda").RunGenerators(compilation).GetRunResult().Results.Single();
-        Assert.Null(result.Exception);
+        var (result, errors) = RunAndCompile(assemblyName, "Cuda");
 
-        Assert.Contains(result.GeneratedSources,
-            static s => s.HintName == "GSharpModuleContext_UnknownAssembly.g.cs");
-        var wrapper = GetSource(result, "FirstKernels.g.cs");
+        Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
+        var context = GetSource(result, $"{contextName}.g.cs");
+        Assert.Contains($"public static class {contextName}", context, StringComparison.Ordinal);
+        Assert.Contains($"Combine(baseDir, {fatbinLiteral});", context, StringComparison.Ordinal);
         Assert.Contains(
-            $"global::Kassyi.GSharp.Generated.GSharpModuleContext_{compilation.Assembly.Name}.GetFatbin);",
-            wrapper,
+            $"global::Kassyi.GSharp.Generated.{contextName}.GetFatbin);",
+            GetSource(result, "FirstKernels.g.cs"),
+            StringComparison.Ordinal);
+    }
+
+    // The CPU wrappers load the native library that the artifact of the same module name is built into; the name is
+    // written into an interpolated string, with '"' and '\' escaped and braces doubled
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("my-lib", "Kassyi.GSharp.Kernels_my-lib")]
+    [InlineData(null, "Kassyi.GSharp.Kernels_UnknownAssembly")]
+    [InlineData("\u65e5\u672c", "Kassyi.GSharp.Kernels_\u65e5\u672c")]
+    [InlineData("a{b}", "Kassyi.GSharp.Kernels_a{{b}}")]
+    [InlineData("a\"b", "Kassyi.GSharp.Kernels_a\\\"b")]
+    public void NativeLibraryPath_AssemblyNameNotAnIdentifier_NamesTheArtifactLibrary(
+        string? assemblyName,
+        string artifactStem)
+    {
+        var (result, errors) = RunAndCompile(assemblyName, "Cpu");
+
+        Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
+        var dllLine = GetSource(result, "FirstKernels.g.cs")
+            .Split('\n')
+            .First(static line => line.Contains("Kassyi.GSharp.Kernels_", StringComparison.Ordinal));
+        Assert.Contains(
+            $"$\"{artifactStem}{{{GSharpInternalNames.Launcher.ArchSuffix}}}.dll\"",
+            dllLine,
             StringComparison.Ordinal);
     }
 
@@ -236,6 +273,24 @@ public class GeneratorOutputTests
             .Single(s => s.HintName.EndsWith(hintNameSuffix, StringComparison.Ordinal))
             .SourceText
             .ToString();
+
+    // Runs the generator on the two-class kernel file in an assembly of the given name and compiles its output
+    private static (GeneratorRunResult Result, List<string> Errors) RunAndCompile(string? assemblyName, string dialect)
+    {
+        var compilation = CSharpCompilation.Create(assemblyName)
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
+            .AddReferences(RoslynTestUtility.BaseReferences)
+            .AddSyntaxTrees(Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_TwoClasses.cu.cs"), "two.cs"));
+        var driver = CreateDriver(dialect).RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+
+        var errors = output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => d.ToString())
+            .ToList();
+        return (result, errors);
+    }
 
     private static SyntaxTree Parse(string source, string path) =>
         CSharpSyntaxTree.ParseText(source, s_parseOptions, path: path);
