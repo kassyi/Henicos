@@ -18,21 +18,21 @@ public class UserDefinedOperatorAnalyzerTests : TranspilerTestBase
 
         Assert.All(reported, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
 
+        // (enclosing method, operator token, expression it applies to)
         var expectedPairs = new[]
         {
-            ("BinaryKernel", "op_Addition"),
-            ("BinaryKernel", "op_Multiply"),
-            ("CompoundKernel", "op_Addition"),
-            ("UnaryKernel", "op_UnaryNegation"),
-            ("IncrementKernel", "op_Increment"),
-            ("AddInDevice", "op_Addition")
+            ("BinaryKernel", SyntaxKind.PlusToken, SyntaxKind.AddExpression),
+            ("BinaryKernel", SyntaxKind.AsteriskToken, SyntaxKind.MultiplyExpression),
+            ("CompoundKernel", SyntaxKind.PlusEqualsToken, SyntaxKind.AddAssignmentExpression),
+            ("UnaryKernel", SyntaxKind.MinusToken, SyntaxKind.UnaryMinusExpression),
+            ("IncrementKernel", SyntaxKind.PlusPlusToken, SyntaxKind.PostIncrementExpression),
+            ("AddInDevice", SyntaxKind.PlusToken, SyntaxKind.AddExpression)
         };
 
         var actualPairs = reported.Select(d =>
         {
-            var enclosingMethod = GetEnclosingMethodName(d);
-            var operatorName = GetOperatorName(d);
-            return (enclosingMethod, operatorName);
+            var operatorToken = GetReportedOperator(d);
+            return (GetEnclosingMethodName(d), operatorToken.Kind(), operatorToken.Parent?.Kind() ?? SyntaxKind.None);
         }).ToArray();
 
         Assert.Equal(expectedPairs.Order(), actualPairs.Order());
@@ -63,10 +63,13 @@ public class UserDefinedOperatorAnalyzerTests : TranspilerTestBase
         return string.Empty;
     }
 
-    private static string GetOperatorName(Diagnostic diagnostic)
+    // The operator token the diagnostic is reported on; its span must be the diagnostic's span.
+    private static SyntaxToken GetReportedOperator(Diagnostic diagnostic)
     {
-        var message = diagnostic.GetMessage();
-        var start = message.IndexOf('\'') + 1;
-        return message.Substring(start, message.IndexOf('\'', start) - start);
+        var tree = diagnostic.Location.SourceTree
+            ?? throw new InvalidOperationException($"{diagnostic.Id} has no source location.");
+        var token = tree.GetRoot().FindToken(diagnostic.Location.SourceSpan.Start);
+        Assert.Equal(diagnostic.Location.SourceSpan, token.Span);
+        return token;
     }
 }

@@ -292,11 +292,11 @@ public class DeviceImportTests
     [Scenario(TestScenario.Boundary)]
     public async Task DeviceImport_CompilationReference_ImportsAsMetadataReference(string dialect)
     {
+        var (_, exportTree, _) = RoslynTestUtility.GetTestCaseContext("Generators/DeviceExportLibrary.cs");
         var library = CSharpCompilation.Create("DeviceExportLibrary")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
             .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase("Generators/DeviceExportLibrary.cs"),
-                s_parseOptions, path: "library.cs"));
+            .AddSyntaxTrees(exportTree);
         CreateDriver("Cuda").RunGeneratorsAndUpdateCompilation(library, out var output, out _);
         var reference = output.ToMetadataReference();
         Assert.IsAssignableFrom<CompilationReference>(reference);

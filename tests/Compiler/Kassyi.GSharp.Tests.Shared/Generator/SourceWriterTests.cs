@@ -24,8 +24,7 @@ public class SourceWriterTests
             .Append(123)
             .AppendLine(";");
 
-        string result = writer.ToString().Replace("\r\n", "\n");
-        Assert.Equal("auto x = 123;\n", result);
+        Assert.Equal("auto x = 123;" + Environment.NewLine, writer.ToString());
     }
 
     [Fact]
@@ -44,8 +43,7 @@ public class SourceWriterTests
             .LineIf(false, "skip_line")
             .LineIf(true, "keep_line");
 
-        string result = writer.ToString().Replace("\r\n", "\n");
-        Assert.Equal("keep_this keep_newline\nkeep_line\n", result);
+        Assert.Equal($"keep_this keep_newline{Environment.NewLine}keep_line{Environment.NewLine}", writer.ToString());
     }
 
     [Fact]
@@ -78,8 +76,7 @@ public class SourceWriterTests
             .AppendLine()
             .Append("line2");
 
-        string result = writer.ToString().Replace("\r\n", "\n");
-        Assert.Equal("line1\nline2", result);
+        Assert.Equal($"line1{Environment.NewLine}line2", writer.ToString());
     }
 
     [Fact]
@@ -98,8 +95,7 @@ public class SourceWriterTests
             .Append(' ')
             .Append("{}");
 
-        string result = writer.ToString().Replace("\r\n", "\n");
-        Assert.Equal("// Header for Kernel\n__global__ void Kernel_42() {}", result);
+        Assert.Equal($"// Header for Kernel{Environment.NewLine}__global__ void Kernel_42() {{}}", writer.ToString());
     }
 
     [Fact]

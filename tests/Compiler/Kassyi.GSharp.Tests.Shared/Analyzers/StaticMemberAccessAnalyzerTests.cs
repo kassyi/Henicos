@@ -18,24 +18,24 @@ public class StaticMemberAccessAnalyzerTests : TranspilerTestBase
 
         Assert.All(reported, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
 
-        var expectedPairs = new[]
+        // (enclosing method, qualifier as written or null, member): each access is reported on the whole expression
+        var expected = new (string, string?, string)[]
         {
-            ("KernelWithStaticAccess", "Cfg.M"),
-            ("KernelWithStaticAccess", "Cfg.Mutable"),
-            ("KernelWithStaticAccess", "Cfg.Prop"),
-            ("KernelWithStaticAccess", "K.SameClassStaticField"),
-            ("KernelWithStaticAccess", "K.SameClassStaticProp"),
-            ("DeviceFuncWithStaticAccess", "Cfg.M")
+            ("KernelWithStaticAccess", "Cfg", "M"),
+            ("KernelWithStaticAccess", "Cfg", "Mutable"),
+            ("KernelWithStaticAccess", "Cfg", "Prop"),
+            ("KernelWithStaticAccess", null, "SameClassStaticField"),
+            ("KernelWithStaticAccess", null, "SameClassStaticProp"),
+            ("DeviceFuncWithStaticAccess", "Cfg", "M")
         };
 
-        var actualPairs = reported.Select(d =>
+        var actual = reported.Select(d =>
         {
-            var enclosingMethod = GetEnclosingMethodName(d);
-            var memberDisplay = GetMemberDisplay(d);
-            return (enclosingMethod, memberDisplay);
+            var (qualifier, member) = GetReportedAccess(d);
+            return (GetEnclosingMethodName(d), qualifier, member);
         }).ToArray();
 
-        Assert.Equal(expectedPairs.Order(), actualPairs.Order());
+        Assert.Equal(expected.Order(), actual.Order());
     }
 
     [Fact]
@@ -63,11 +63,19 @@ public class StaticMemberAccessAnalyzerTests : TranspilerTestBase
         return string.Empty;
     }
 
-    private static string GetMemberDisplay(Diagnostic diagnostic)
+    // The access the diagnostic is reported on: Cfg.M as (Cfg, M), a bare name N as (null, N).
+    private static (string? Qualifier, string Member) GetReportedAccess(Diagnostic diagnostic)
     {
-        var message = diagnostic.GetMessage();
-        var start = message.IndexOf('\'') + 1;
-        var end = message.IndexOf('\'', start);
-        return message.Substring(start, end - start);
+        var tree = diagnostic.Location.SourceTree
+            ?? throw new InvalidOperationException($"{diagnostic.Id} has no source location.");
+        var node = tree.GetRoot().FindNode(diagnostic.Location.SourceSpan);
+        Assert.Equal(diagnostic.Location.SourceSpan, node.Span);
+        return node switch
+        {
+            MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax qualifier } access =>
+                (qualifier.Identifier.ValueText, access.Name.Identifier.ValueText),
+            IdentifierNameSyntax name => (null, name.Identifier.ValueText),
+            _ => throw new InvalidOperationException($"{diagnostic.Id} is reported on a {node.Kind()} node.")
+        };
     }
 }

@@ -27,8 +27,12 @@ public static class LoopUnrollAudit
         Assert.Equal(expectedIds, actualIds);
 
         var expectedPragmas = expected.Where(h => h.Pragma is not null).ToArray();
-        var lines = cudaSource.Replace("\r", "").Split('\n').Select(l => l.Trim()).ToArray();
-        var pragmaIndexes = Enumerable.Range(0, lines.Length)
+        var lines = new List<string>();
+        foreach (var lineSpan in cudaSource.AsSpan().EnumerateLines())
+        {
+            lines.Add(lineSpan.Trim().ToString());
+        }
+        var pragmaIndexes = Enumerable.Range(0, lines.Count)
             .Where(i => lines[i].StartsWith("#pragma unroll", StringComparison.Ordinal))
             .ToArray();
 
@@ -38,7 +42,7 @@ public static class LoopUnrollAudit
         {
             int at = pragmaIndexes[n];
             Assert.Equal(expectedPragmas[n].Pragma, lines[at]);
-            Assert.True(at + 1 < lines.Length, "A pragma must be followed by a loop.");
+            Assert.True(at + 1 < lines.Count, "A pragma must be followed by a loop.");
             var loopKeyword = expectedPragmas[n].LoopKeyword;
             Assert.NotNull(loopKeyword);
             Assert.StartsWith(loopKeyword, lines[at + 1], StringComparison.Ordinal);

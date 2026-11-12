@@ -187,10 +187,12 @@ public class CudaDriverApiEntryPointTests
     // __CUDA_API_PTSZ(api) expand to api: "#define <name> <target>" with two identifiers starting with "cu".
     // Identity mappings (cuMemcpyAsync to itself) are not redirects.
     private static Dictionary<string, string> ReadHeaderRedirects(string header) =>
+#pragma warning disable RS0030 // cuda.h is an external C header read as text; its #define lines have no tree
         header.Split('\n')
             .Select(static line => line.Trim())
             .Where(static line => line.StartsWith("#define ", StringComparison.Ordinal))
             .Select(static line => line["#define ".Length..].Split(' ', StringSplitOptions.RemoveEmptyEntries))
+#pragma warning restore RS0030
             .Where(static parts => parts.Length == 2)
             .Select(static parts => (Name: parts[0], Target: StripPerThreadMacro(parts[1])))
             .Where(static m => m.Name.StartsWith("cu", StringComparison.Ordinal)
