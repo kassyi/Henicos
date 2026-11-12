@@ -18,8 +18,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     public const string DefaultTargetArchitectures = "compute_86,sm_86;compute_86,compute_86";
 
     /// <summary>
-    /// Gets or sets the target GPU architectures as <c>arch,code</c> pairs separated by <c>;</c>; each pair becomes
-    /// <c>-gencode arch=&lt;arch&gt;,code=&lt;code&gt;</c> (e.g. <c>compute_86,sm_86;compute_86,compute_86</c>).
+    /// Gets or sets the target GPU architectures separated by <c>;</c>. An <c>arch,code</c> pair becomes
+    /// <c>-gencode arch=&lt;arch&gt;,code=&lt;code&gt;</c> (e.g. <c>compute_86,sm_86;compute_86,compute_86</c>);
+    /// <c>sm_XY</c> alone means SASS for sm_XY and PTX for compute_XY, and <c>compute_XY</c> alone PTX for compute_XY,
+    /// as nvcc's <c>-arch</c> does. Any other entry fails the task with error GS0004.
     /// </summary>
     public string TargetArchitectures { get; set; } = DefaultTargetArchitectures;
 
@@ -225,6 +227,13 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
     protected override bool OnBeforeExecute()
     {
+        // Checked before anything that skips nvcc, so that a malformed entry fails every build, also without CUDA.
+        var architectures = NvccArchitectures.Parse(TargetArchitectures);
+        if (!NvccArchitectures.ReportInvalidEntries(Log, architectures))
+        {
+            return false;
+        }
+
         if (MockCompilation)
         {
             return true;
@@ -245,7 +254,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return true;
         }
 
-        _nvccOptions = NvccInvoker.BuildOptions(SplitSemicolon(TargetArchitectures), Toolchain.IsWindows);
+        _nvccOptions = NvccInvoker.BuildOptions(architectures.Gencodes, Toolchain.IsWindows);
         if (!Toolchain.IsWindows)
         {
             return true;
@@ -381,35 +390,5 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     {
         var trimmed = text.AsSpan().TrimEnd();
         return trimmed.Slice(trimmed.LastIndexOf('\n') + 1).Trim().ToString();
-    }
-
-    private static string[] SplitSemicolon(string value)
-    {
-        if (string.IsNullOrEmpty(value))
-        {
-            return [];
-        }
-
-        var list = new List<string>();
-        var span = value.AsSpan();
-        while (span.Length > 0)
-        {
-            var idx = span.IndexOf(';');
-            var segment = idx >= 0 ? span.Slice(0, idx) : span;
-            var trimmed = segment.Trim();
-            if (trimmed.Length > 0)
-            {
-                list.Add(trimmed.ToString());
-            }
-
-            if (idx < 0)
-            {
-                break;
-            }
-
-            span = span.Slice(idx + 1);
-        }
-
-        return [.. list];
     }
 }

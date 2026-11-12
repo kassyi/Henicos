@@ -40,11 +40,16 @@ internal static class BuildProcessRunner
     /// Runs <c>dotnet build &lt;projectFile&gt; -c Debug</c> in <paramref name="workingDirectory"/> with a binary log and
     /// without build servers, and returns its exit code and captured output.
     /// </summary>
+    /// <param name="environment">Environment variables set (or, with a <see langword="null"/> value, removed) for the
+    /// build only.</param>
     /// <exception cref="TimeoutException">
     /// The process did not exit in time; the whole process tree has been killed. The message holds the full output,
     /// the running dotnet / MSBuild / VBCSCompiler processes and the path of the binary log.
     /// </exception>
-    internal static async Task<BuildResult> RunBuildAsync(string workingDirectory, string projectFile)
+    internal static async Task<BuildResult> RunBuildAsync(
+        string workingDirectory,
+        string projectFile,
+        IReadOnlyDictionary<string, string?>? environment = null)
     {
         var binaryLogPath = GetBinaryLogPath(workingDirectory, projectFile);
         var startInfo = new ProcessStartInfo
@@ -66,6 +71,11 @@ internal static class BuildProcessRunner
                 $"-bl:{binaryLogPath}"
             }
         };
+        foreach (var (name, value) in environment ?? new Dictionary<string, string?>())
+        {
+            startInfo.Environment[name] = value;
+        }
+
         var commandLine = "dotnet " + string.Join(' ', startInfo.ArgumentList);
 
         var timeout = Timeout;
