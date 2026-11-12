@@ -399,7 +399,8 @@ internal static class CpuHostLaunchEmitter
         }
     }
 
-    // Nullable<GSharpArrayProxy> __gsharp_nullable_<ord> = <name>.HasValue ? <proxy> : null;   (Memory<T>? and the like)
+    // Nullable<GSharpArrayProxy> __gsharp_nullable_<ord> = <name>.HasValue ? <proxy> : null;   (Memory<T>? and the
+    // like)
     // [WHY] The native launcher takes System_Nullable<GSharpArray<T>> by address; HasValue is the C# value's own, so a
     // default Memory<T> passes as a null array that has a value
     private static void WriteNullableProxies(SourceWriter writer, in KernelHostModel kernel)
@@ -475,8 +476,8 @@ internal static class CpuHostLaunchEmitter
         }
     }
 
-    // new GSharpArrayProxy { Data = (IntPtr)__gsharp_p_<ord>, Length = <length> }
-    // new GSharpArrayProxy { Data = <null test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }   (converted)
+    // new GSharpArrayProxy { Data = (IntPtr)__gsharp_p_<ord>, Length = <length> } new GSharpArrayProxy { Data = <null
+    // test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }   (converted)
     // [WHY] The shadow of a null array is an empty rented array, whose pinned address is not null
     private static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape)
     {

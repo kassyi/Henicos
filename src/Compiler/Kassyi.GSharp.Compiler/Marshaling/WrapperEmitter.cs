@@ -394,8 +394,8 @@ internal static class WrapperEmitter
     }
 
     /// <summary>
-    /// Emits the checks of the array arguments of the <c>Launch{Kernel}</c> launcher. An array-like argument is passed as
-    /// a C# call passes it, a null, empty or default one included; only a null in a non-nullable array field of a
+    /// Emits the checks of the array arguments of the <c>Launch{Kernel}</c> launcher. An array-like argument is passed
+    /// as a C# call passes it, a null, empty or default one included; only a null in a non-nullable array field of a
     /// by-value struct argument is rejected.
     /// </summary>
     internal static void WriteArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel) =>
