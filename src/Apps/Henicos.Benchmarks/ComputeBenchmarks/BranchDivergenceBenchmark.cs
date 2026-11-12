@@ -59,7 +59,7 @@ public sealed class BranchDivergenceBenchmark(int count = 1_000_000) : IComputeB
     public void RunNativeCuda()
     {
         Array.Copy(_input, _dataNative, count);
-        NativeKernelInvoker.LaunchBranchDivergence(_dataNative, count, gridDimX: GridDim, blockDimX: BlockSize);
+        NativeBenchmarkKernels.LaunchBranchDivergence(_dataNative, count, gridDimX: GridDim, blockDimX: BlockSize);
     }
 
     public void Verify()
