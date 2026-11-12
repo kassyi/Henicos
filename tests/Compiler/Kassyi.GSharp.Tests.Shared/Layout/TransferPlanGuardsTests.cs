@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using Kassyi.GSharp.Compiler.Dialects;
+using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Layout;
 using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Tests.Infrastructure;
@@ -37,9 +38,10 @@ public class TransferPlanGuardsTests
                 }
 
                 var actual = TransferPlanGuards.Collect([.. plans], method.ContainingAssembly.Name);
+                var name = $"{method.ContainingType.GetFullyQualifiedCsharpName()}.{method.FormatSignature()}";
                 Assert.True(
                     expected == actual,
-                    $"{method.ContainingType?.Name}.{method.Name} ({dialect.GetType().Name}):{Environment.NewLine}" +
+                    $"{name} ({dialect.GetType().Name}):{Environment.NewLine}" +
                     $"expected {expected}{Environment.NewLine}actual   {actual}");
                 launches++;
                 guardCount += actual.Length;

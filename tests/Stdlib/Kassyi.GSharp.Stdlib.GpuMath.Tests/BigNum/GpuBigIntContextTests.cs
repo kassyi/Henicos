@@ -1,9 +1,3 @@
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
-using Kassyi.ZeroAlloc.Linq;
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -54,29 +48,19 @@ public class GpuBigIntContextTests
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange
+        const int TransformLength = 64;
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-        var provider = GSharpKernelProvider.Instance;
-        
-        // Populate cache by performing an NTT multiplication
-        using var a = new GpuBigUInt(context, new uint[] { 1, 2, 3 });
-        using var b = new GpuBigUInt(context, new uint[] { 4, 5, 6 });
-        using var c = new GpuBigUInt(context, new uint[6]);
-        provider.Mul(context, a, b, c);
+        var advancedMath = GSharpKernelProvider.Instance.KernelAdvancedMath;
 
-        var advancedMath = provider.KernelAdvancedMath;
-        Assert.NotNull(advancedMath);
-
-        var twiddleCache = GetTwiddleCache(advancedMath);
-        Assert.NotNull(twiddleCache);
-
-        Assert.True(twiddleCache.Count > 0, "Cache should be populated after multiplication.");
-        int cachedCountBefore = twiddleCache.Count;
+        // Populate the shared twiddle cache through the first workspace
+        var cached = advancedMath.GetOrCreateTwiddleFactors(context, TransformLength);
 
         // Act
         context.Dispose();
 
         // Assert - Shared provider caches must not be cleared on individual context disposal
-        Assert.Equal(cachedCountBefore, twiddleCache.Count);
+        using var next = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        Assert.Same(cached, advancedMath.GetOrCreateTwiddleFactors(next, TransformLength));
     }
 
     [SkippableFact]
@@ -320,7 +304,4 @@ public class GpuBigIntContextTests
             base.Dispose(disposing);
         }
     }
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_twiddleCache")]
-    private static extern ref ConcurrentDictionary<(long ContextId, int Length), Lazy<KernelAdvancedMathHandler.TwiddleCache>> GetTwiddleCache(KernelAdvancedMathHandler handler);
 }

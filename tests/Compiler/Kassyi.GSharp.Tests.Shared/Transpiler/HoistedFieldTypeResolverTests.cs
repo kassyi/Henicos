@@ -82,8 +82,9 @@ public class HoistedFieldTypeResolverTests
 
         var typeSymbol = HoistedFieldTypeResolver.Resolve(FindDeclarator(tree, "ok"), model, "K");
 
-        var expectedType = compilation.GetTypeByMetadataName("Wrapper`1")!
-            .Construct(compilation.GetSpecialType(SpecialType.System_Int32));
+        var wrapper = compilation.GetTypeByMetadataName("Wrapper`1")
+            ?? throw new InvalidOperationException("Wrapper`1");
+        var expectedType = wrapper.Construct(compilation.GetSpecialType(SpecialType.System_Int32));
         Assert.Equal(expectedType, typeSymbol, SymbolEqualityComparer.Default);
     }
 

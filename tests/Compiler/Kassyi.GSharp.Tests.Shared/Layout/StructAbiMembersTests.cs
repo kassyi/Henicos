@@ -39,7 +39,9 @@ public class StructAbiMembersTests
         var checkedFiles = new List<string>();
         var checkedStructs = 0;
         foreach (var relativePath in Directory.GetFiles(s_testCasesDirectory, "*.cs", SearchOption.AllDirectories)
-                     .Select(file => NormalizePath(Path.GetRelativePath(s_testCasesDirectory, file)))
+#pragma warning disable RS0030 // The file system gives OS path separators; the test case keys use '/' on every OS
+                     .Select(file => Path.GetRelativePath(s_testCasesDirectory, file).Replace(Path.DirectorySeparatorChar, '/'))
+#pragma warning restore RS0030
                      .Order(StringComparer.Ordinal))
         {
             var (compilation, tree, model) = RoslynTestUtility.GetTestCaseContext(relativePath);
@@ -279,29 +281,14 @@ public class StructAbiMembersTests
             members.Add(member);
         }
 
+        var name = structType.GetFullyQualifiedCsharpName();
         Assert.True(
             fieldCount == members.Count,
-            $"{GetMetadataFullName(structType)}: {fieldCount} emitted instance fields, {members.Count} members " +
+            $"{name}: {fieldCount} emitted instance fields, {members.Count} members " +
             $"({string.Join(", ", members.Select(static m => $"{m.Name}:{m.Kind}"))})");
         Assert.True(
             members.All(static m => m.Kind != StructAbiMemberKind.UnknownHiddenField),
-            $"{GetMetadataFullName(structType)} has a compiler-generated field that StructAbiMembers does not know");
-    }
-
-    private static string NormalizePath(string relativePath)
-    {
-        if (Path.DirectorySeparatorChar == '/')
-        {
-            return relativePath;
-        }
-
-        return string.Create(relativePath.Length, relativePath, static (span, src) =>
-        {
-            for (int i = 0; i < src.Length; i++)
-            {
-                span[i] = src[i] == '\\' ? '/' : src[i];
-            }
-        });
+            $"{name} has a compiler-generated field that StructAbiMembers does not know");
     }
 
     // The number of instance fields of each type in the metadata-only image of the compilation, by full metadata name

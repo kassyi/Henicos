@@ -22,12 +22,12 @@ public class StructTypeSubstitutionTests
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData("Plain", "float")]
-    [InlineData("Pointer", "float*")]
-    [InlineData("Array", "float[]")]
-    [InlineData("Nested", "Kassyi.GSharp.Tests.TestCases.StructTranspiler.Inner<float>")]
-    [InlineData("SecondArgument", "Kassyi.GSharp.Tests.TestCases.StructTranspiler.Pair<int, float>")]
-    public void SubstituteTypeParameters_MemberOfConstructedStruct_TakesTheTypeArgument(string field, string expected)
+    [InlineData("Plain")]
+    [InlineData("Pointer")]
+    [InlineData("Array")]
+    [InlineData("Nested")]
+    [InlineData("SecondArgument")]
+    public void SubstituteTypeParameters_MemberOfConstructedStruct_TakesTheTypeArgument(string field)
     {
         var closed = ParameterType("closed");
 
@@ -46,10 +46,16 @@ public class StructTypeSubstitutionTests
             "Plain" => single,
             "Pointer" => compilation.CreatePointerTypeSymbol(single),
             "Array" => compilation.CreateArrayTypeSymbol(single),
-            "Nested" => compilation.GetTypeByMetadataName("Kassyi.GSharp.Tests.TestCases.StructTranspiler.Inner`1")!.Construct(single),
-            "SecondArgument" => compilation.GetTypeByMetadataName("Kassyi.GSharp.Tests.TestCases.StructTranspiler.Pair`2")!.Construct(int32, single),
+            "Nested" => GetGenericType("Inner`1").Construct(single),
+            "SecondArgument" => GetGenericType("Pair`2").Construct(int32, single),
             _ => throw new ArgumentOutOfRangeException(nameof(field), field, null)
         };
+
+        INamedTypeSymbol GetGenericType(string metadataName)
+        {
+            var fullName = "Kassyi.GSharp.Tests.TestCases.StructTranspiler." + metadataName;
+            return compilation.GetTypeByMetadataName(fullName) ?? throw new InvalidOperationException(fullName);
+        }
     }
 
     [Theory]
@@ -84,8 +90,17 @@ public class StructTypeSubstitutionTests
         var pair = ParameterType("pair");
         var definition = pair.OriginalDefinition;
 
-        Assert.Equal(s_compilation.Value.GetSpecialType(SpecialType.System_Int32), SubstituteTypeParameters(FieldType(definition, "A"), pair), SymbolEqualityComparer.Default);
-        Assert.Equal(s_compilation.Value.GetSpecialType(SpecialType.System_Single), SubstituteTypeParameters(FieldType(definition, "B"), pair), SymbolEqualityComparer.Default);
+        var compilation = s_compilation.Value;
+        Assert.Equal(
+            compilation.GetSpecialType(SpecialType.System_Int32),
+            SubstituteTypeParameters(FieldType(definition, "A"), pair),
+            SymbolEqualityComparer.Default
+        );
+        Assert.Equal(
+            compilation.GetSpecialType(SpecialType.System_Single),
+            SubstituteTypeParameters(FieldType(definition, "B"), pair),
+            SymbolEqualityComparer.Default
+        );
     }
 
     [Fact]

@@ -377,8 +377,8 @@ public class DeviceExportTests
         var constantSymbols = new[] { namesSymbol, nestedNamesSymbol, traitsSymbol };
         var constants = constantSymbols
             .SelectMany(static t => t.GetMembers().OfType<IFieldSymbol>())
-            .Where(static f => f.HasConstantValue && f.ConstantValue is string)
-            .Select(static f => (string)f.ConstantValue!)
+            .Where(static f => f.IsConst)
+            .Select(static f => f.ConstantValue as string ?? throw new InvalidOperationException(f.Name))
             .Concat(GetDialectNames(DeviceExportAttributeNames.Cuda))
             .Concat(GetDialectNames(DeviceExportAttributeNames.Cpp))
             .Order(StringComparer.Ordinal)
@@ -517,7 +517,8 @@ public class DeviceExportTests
         Assert.DoesNotContain("unsafe", machines, StringComparison.Ordinal);
         Assert.DoesNotContain("WaitPrivate", machines, StringComparison.Ordinal);
         Assert.DoesNotContain("WaitClosed", machines, StringComparison.Ordinal);
-        Assert.True(machines.Contains("partial class LibSm\r\n{\r\npublic partial class Inner", StringComparison.Ordinal) || machines.Contains("partial class LibSm\n{\npublic partial class Inner", StringComparison.Ordinal));
+        var newLine = Environment.NewLine;
+        Assert.Contains($"partial class LibSm{newLine}{{{newLine}public partial class Inner", machines, StringComparison.Ordinal);
     }
 
     private static List<ExportedRecord> Run(string dialect, out GeneratorRunResult result, out Compilation output,
