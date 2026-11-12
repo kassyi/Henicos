@@ -10,6 +10,7 @@ using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
@@ -263,20 +264,22 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
     {
         try
         {
-            ManagedGpuContext.SetThreadContext(new GpuThreadContext(0, 0, 0, 0, 0, 0, 32, 1, 1, 1, 1, 1));
+            ManagedThreadContext.Set(new GpuThreadContext(0, 0, 0, 0, 0, 0, 32, 1, 1, 1, 1, 1));
             ManagedGpuContext.InitializeGrid(1);
             body();
         }
         finally
         {
-            ManagedGpuContext.ClearThreadContext();
+            ManagedThreadContext.Clear();
         }
     });
 
     private static void RunManaged(Action launch) => RunOnFreshThread(() =>
     {
-        CpuKernelLoader.ForceManagedExecution = true;
-        launch();
+        using (GpuExecution.Use(KernelExecution.Managed))
+        {
+            launch();
+        }
     });
 
     // The block buffer lives in thread-static state and is kept between launches. A fresh thread starts without one, so

@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -61,18 +62,12 @@ public class ContractsAndPtxTests : TranspilerTestBase
     {
         Skip.If(IsCudaDialect, "This test verifies CPU-dialect managed fallback error propagation.");
 
-        var previous = Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ForceManagedExecution;
-        Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             uint[] data = [0];
             var ex = Assert.Throws<NotSupportedException>(
                 () => ContractsAndPtxKernels.LaunchInlinePtxKernel(data));
             Assert.Contains("Gpu.InlinePtx", ex.Message);
-        }
-        finally
-        {
-            Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 

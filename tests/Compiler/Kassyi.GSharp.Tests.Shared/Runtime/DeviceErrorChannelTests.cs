@@ -7,6 +7,7 @@ using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
@@ -274,17 +275,12 @@ public sealed class DeviceErrorChannelTests
         int[] result = [0];
 
         // 1. Managed execution
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             Assert.Throws<InvalidOperationException>(() =>
                 DeviceErrorChannelKernels.LaunchStackLinqFirstNoMatchKernel(data, 100, result, blockDimX: 1));
             Assert.Throws<ArgumentOutOfRangeException>(() =>
                 DeviceErrorChannelKernels.LaunchStackLinqElementAtKernel(data, 99, result, blockDimX: 1));
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = false;
         }
 
         // 2. Native CPU execution
@@ -461,14 +457,9 @@ public sealed class DeviceErrorChannelTests
         int[] managed = new int[keys.Length];
         int[] native = new int[keys.Length];
 
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, managed, blockDimX: 2);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = false;
         }
 
         DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, native, blockDimX: 2);
@@ -485,15 +476,10 @@ public sealed class DeviceErrorChannelTests
         int[] keys = [1, 2];
         int[] result = new int[keys.Length];
 
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             Assert.Throws<SwitchExpressionException>(() =>
                 DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = false;
         }
 
         // The native build throws the exception C# defines, as the managed path does

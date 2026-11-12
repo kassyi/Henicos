@@ -58,6 +58,12 @@ internal readonly record struct KernelParameterShape
     /// <summary>A nullable value type such as <c>Memory&lt;float&gt;?</c>.</summary>
     public bool IsNullableValue { get; init; }
 
+    /// <summary>
+    /// A <c>ref struct</c> type such as <c>Span&lt;T&gt;</c>, which a lambda cannot capture (the C# execution of the
+    /// launcher passes a span through a pinned pointer).
+    /// </summary>
+    public bool IsRefLike { get; init; }
+
     /// <summary>A <c>[GpuConstexpr]</c> parameter.</summary>
     public bool IsConstexpr { get; init; }
 
@@ -210,6 +216,7 @@ internal readonly record struct KernelParameterShape
             IsNullableReference =
                 parameter.Type.IsReferenceType && parameter.NullableAnnotation == NullableAnnotation.Annotated,
             IsNullableValue = parameter.Type.IsNullableArrayLike(),
+            IsRefLike = parameter.Type.IsRefLikeType,
             IsConstexpr = parameter.IsConstexprParameter(),
             HasExplicitDefault = parameter.HasExplicitDefaultValue,
             DefaultValueLiteral = parameter.HasExplicitDefaultValue

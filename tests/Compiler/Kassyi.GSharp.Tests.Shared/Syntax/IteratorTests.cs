@@ -3,6 +3,7 @@ using Xunit;
 #if GSHARP_CPU
 using System;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime;
 #endif
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -297,9 +298,7 @@ public class IteratorTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void EnumerateManaged_AllIteratorKernels_MatchesNativeSemantics()
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             var rangeOut = new int[4];
             IteratorKernels.LaunchRangeKernel(rangeOut, 4, blockDimX: 4);
@@ -367,10 +366,6 @@ public class IteratorTests : TranspilerTestBase
             var seventeenOut = new int[4];
             IteratorDepthKernels.LaunchSeventeenLevelsKernel(seventeenOut, blockDimX: 4);
             Assert.Equal([17, 18, 19, 20], seventeenOut);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
         }
     }
 #endif

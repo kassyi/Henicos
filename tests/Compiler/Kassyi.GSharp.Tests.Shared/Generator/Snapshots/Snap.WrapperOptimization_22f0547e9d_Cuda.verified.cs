@@ -152,6 +152,19 @@ if (arrayVal.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(arrayVal));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperOptimizationKernels.ComplexSignatureKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::System.Int32 __gsharp_csharp_arg_0 = scalarRef;
+global::System.Single __gsharp_csharp_arg_1 = default;
+global::System.Int32[] __gsharp_csharp_arg_2 = arrayVal;
+global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct __gsharp_csharp_arg_3 = structRef;
+global::System.UInt32 __gsharp_csharp_arg_4 = constantVal;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.ComplexSignatureKernel(ref __gsharp_csharp_arg_0, out __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, ref __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
+scalarRef = __gsharp_csharp_arg_0;
+scalarOut = __gsharp_csharp_arg_1;
+structRef = __gsharp_csharp_arg_3;
+return;
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.__gsharp_hfunc_ComplexSignatureKernel.Resolve();
@@ -270,6 +283,10 @@ if (arrayVal.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(arrayVal));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperOptimizationKernels.ComplexSignatureKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WrapperOptimizationKernels.ComplexSignatureKernel", "LaunchComplexSignatureKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchComplexSignatureKernel");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.__gsharp_hfunc_ComplexSignatureKernel.Resolve();

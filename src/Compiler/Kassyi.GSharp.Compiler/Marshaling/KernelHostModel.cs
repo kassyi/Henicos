@@ -44,6 +44,9 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>Whether the kernel is a static method, which the C# execution can call without an object.</summary>
+    public bool IsStatic { get; init; }
+
     /// <summary>Whether the kernel or any device function it calls reaches a warp shuffle or warp match (#1001).</summary>
     public bool ReachesWarpShuffle { get; init; }
 
@@ -70,6 +73,14 @@ internal readonly record struct KernelHostModel
 
     /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
     public string MessageName { get; init; }
+
+    /// <summary>
+    /// The first construct that the kernel reaches and that cannot run one GPU thread at a time, with why
+    /// (<see cref="CSharpExecutionAnalysis.FindObstacle"/>), or <see langword="null"/>: the launcher's C# execution
+    /// then throws instead of running the kernel. Always <see langword="null"/> without a semantic model (the
+    /// analyzer).
+    /// </summary>
+    public string? CSharpExecutionObstacle { get; init; }
 
     /// <summary>
     /// The bytes of one slot of the grid scratch of the AsParallel() aggregates of the kernel (CUDA, cooperative kernels),
@@ -143,6 +154,7 @@ internal readonly record struct KernelHostModel
             CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda, kernel.ContainingType),
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu, kernel.ContainingType),
             IsCooperative = kernel.IsCooperativeKernel(),
+            IsStatic = kernel.IsStatic,
             ReachesWarpShuffle = model != null && SuspensionAnalysis.ReachesWarpShuffle(kernel, model.Compilation),
             WaitsForArrivals = kernel.IsCooperativeKernel() ||
                                (model != null && SuspensionAnalysis.ReachesArrivalBarrier(kernel, model.Compilation)),
@@ -151,6 +163,9 @@ internal readonly record struct KernelHostModel
                 .AsStackEnumerable()
                 .Any(static p => KernelHostNames.IsReservedLaunchParameterName(p.Name)),
             MessageName = KernelHostNames.GetMessageName(kernel),
+            CSharpExecutionObstacle = model != null
+                ? CSharpExecutionAnalysis.FindObstacle(kernel, model.Compilation)
+                : null,
             GridScratchSlotBytes = model != null && kernel.IsCooperativeKernel() &&
                                    kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) &&
                                    declaration.SyntaxTree == model.SyntaxTree

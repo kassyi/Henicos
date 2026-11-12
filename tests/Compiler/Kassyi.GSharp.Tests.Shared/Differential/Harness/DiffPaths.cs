@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Compiler.Marshaling;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -147,7 +148,7 @@ public static class DiffPaths
 
     /// <summary>Throws when a launch on this thread would not load <paramref name="dllPath"/>.</summary>
     /// <param name="dllPath">The native kernel library.</param>
-    /// <exception cref="DifferentialHarnessException">The library is missing, or managed execution is forced on this thread.</exception>
+    /// <exception cref="DifferentialHarnessException">The library is missing, or managed execution is selected for this flow.</exception>
     public static void EnsureNativeLibrary(string dllPath)
     {
         if (!CpuKernelLoader.ShouldUseManagedExecution(dllPath))
@@ -156,8 +157,8 @@ public static class DiffPaths
         }
 
         throw new DifferentialHarnessException(
-            CpuKernelLoader.ForceManagedExecution
-                ? $"managed execution is forced on this thread ({nameof(CpuKernelLoader)}.{nameof(CpuKernelLoader.ForceManagedExecution)}); the Native path would run managed"
+            GpuExecution.Current == KernelExecution.Managed
+                ? $"managed execution is selected for this flow ({nameof(GpuExecution)}.{nameof(GpuExecution.Use)}({nameof(KernelExecution)}.{nameof(KernelExecution.Managed)})); the Native path would run managed"
                 : $"native library not found: {dllPath}; the Native path would run managed"
         );
     }

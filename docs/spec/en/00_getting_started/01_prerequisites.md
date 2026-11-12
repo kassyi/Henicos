@@ -27,9 +27,9 @@ For local debugging, unit testing, and CI/CD pipelines without GPU hardware:
 
 - Requires a standard **C++ Host Compiler** (MSVC on Windows, or GCC/Clang on Linux via `GccClangToolchain`). G#
   transpiles kernels to C++17 and compiles native shared libraries (`.dll` on Windows, `.so` on Linux). When the native
-  library of the kernels does not exist (for example, no C++ compiler built it), or when
-  `CpuKernelLoader.ForceManagedExecution` is set, G# runs the kernels as managed C# instead
-  (`CpuKernelLoader.ShouldUseManagedExecution`).
+  library of the kernels does not exist (for example, no C++ compiler built it), or inside
+  `GpuExecution.Use(KernelExecution.Managed)`, G# runs the kernels as managed C# instead
+  (`CpuKernelLoader.ShouldUseManagedExecution`, [GpuExecution](../03_bcl_api/execution_context/GpuExecution.md)).
 - **No NVIDIA GPU, Driver, or CUDA Toolkit is required**. While execution speeds are reduced compared to hardware
   execution, this allows seamless local debugging and CI/CD testing on GPU-less machines.
 - See [Dialect Architecture](../02_architecture/01_aot_transpiler.md#123-transpiler-dialect-architecture-two-tier-design)

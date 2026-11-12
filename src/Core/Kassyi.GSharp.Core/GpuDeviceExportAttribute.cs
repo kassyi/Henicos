@@ -176,4 +176,10 @@ public sealed class GpuDeviceExportAttribute : Attribute
     /// (<c>Gpu.SyncGrid</c>, an mbarrier); a captured launch of a kernel that calls it then needs an abort word.
     /// </summary>
     public bool ReachesArrivalBarrier { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the device function reaches a <c>SharedMemory&lt;T&gt;</c> declaration, static or
+    /// dynamic; a kernel that calls it cannot run as C# one GPU thread at a time (<c>KernelExecution.CSharp</c>).
+    /// </summary>
+    public bool ReachesSharedMemory { get; set; }
 }

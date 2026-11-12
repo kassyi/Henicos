@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Syntax.HostWrapperCollision;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -63,9 +64,7 @@ public class HostWrapperNameCollisionTests : TranspilerTestBase
         };
         int pinned = 7;
 
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             var returned = HostWrapperNameCollisionKernels.LaunchExecuteCollisionKernel(
                 hModule: 1,
@@ -92,10 +91,6 @@ public class HostWrapperNameCollisionTests : TranspilerTestBase
             Assert.Equal(17, pinned);
             Assert.Equal([163, 168, 173, 178], args);
             Assert.Equal([164, 169, 174, 179], returned);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
     }
 }

@@ -34,6 +34,10 @@ public static void SyncThreads();
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
 Thrown when evaluated on the host CPU outside of a managed execution context.
 
+`InvalidOperationException`<br>
+Thrown in a kernel launched under [`KernelExecution.CSharp`](../execution_context/GpuExecution.md), which runs one GPU
+thread at a time.
+
 ## Examples
 
 ### Shared Memory Synchronization

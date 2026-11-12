@@ -6,6 +6,7 @@ using System.Threading;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
@@ -92,16 +93,14 @@ public class DeviceDynamicSharedMemoryManagedTests : TranspilerTestBase
         {
             try
             {
-                CpuKernelLoader.ForceManagedExecution = true;
-                launch();
+                using (GpuExecution.Use(KernelExecution.Managed))
+                {
+                    launch();
+                }
             }
             catch (Exception ex)
             {
                 failures.Enqueue(ex);
-            }
-            finally
-            {
-                CpuKernelLoader.ForceManagedExecution = false;
             }
         });
         thread.Start();

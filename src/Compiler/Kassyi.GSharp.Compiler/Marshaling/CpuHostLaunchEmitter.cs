@@ -33,6 +33,7 @@ internal static class CpuHostLaunchEmitter
             WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
+            CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));
             var sharing = ArraySharingPlan.ForCpu(kernel.Host);
             CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
             WriteDllPath(writer, moduleName);

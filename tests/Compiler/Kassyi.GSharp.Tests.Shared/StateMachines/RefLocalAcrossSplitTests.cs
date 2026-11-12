@@ -9,6 +9,7 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 
@@ -102,15 +103,9 @@ public class RefLocalAcrossSplitTests
         var method = kernels.GetMethod(run, BindingFlags.Public | BindingFlags.Static);
         Assert.NotNull(method);
 
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             method.Invoke(null, [r, (uint)ThreadCount]);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 

@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.DeviceLibrary;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -486,7 +487,7 @@ public sealed class MarshalingBoundaryDifferentialTests
             // smell-scan: ignore swallowed-exception -- #961 (A Nullable<T> whose host and device layouts differ is
             // copied with the host layout): the native CPU P/Invoke delegate cannot marshal System.Nullable<T>;
             // probe/rb/oc keep their initial values so KnownDivergences reports the mismatch
-            catch (MarshalDirectiveException) when (!CpuKernelLoader.ForceManagedExecution)
+            catch (MarshalDirectiveException) when (GpuExecution.Current != KernelExecution.Managed)
             {
             }
 #else

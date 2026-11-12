@@ -440,6 +440,12 @@ public static void WarmupFunctionPointerBlackScholesKernel() => global::Henicos.
 public static unsafe void LaunchBlackScholesKernel(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BlackScholesKernels.BlackScholesKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext __gsharp_csharp_arg_0 = ctx;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesKernel(__gsharp_csharp_arg_0));
+return;
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.__gsharp_hfunc_BlackScholesKernel.Resolve(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.s_errorSites);
@@ -481,6 +487,10 @@ __gsharp_device_arrays.Free(hStream);
 public static unsafe void LaunchBlackScholesKernelPtr(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.BlackScholes ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BlackScholesKernels.BlackScholesKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("BlackScholesKernels.BlackScholesKernel", "LaunchBlackScholesKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBlackScholesKernel");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.__gsharp_hfunc_BlackScholesKernel.Resolve(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.s_errorSites);
