@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.AtomicsDifferential)]
 public class AtomicsIntegerDifferentialTests
 {
-    private static readonly DifferentialCase s_integerSameStepAtomics =
+    internal static readonly DifferentialCase s_integerSameStepAtomics =
         new($"{nameof(AtomicsDifferentialKernels)}.{nameof(AtomicsDifferentialKernels.IntegerSameStepAtomicsKernel)}")
         {
             Shapes =
@@ -90,7 +90,7 @@ public class AtomicsIntegerDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_integerArbitraryAtomicsInt32 =
+    internal static readonly DifferentialCase s_integerArbitraryAtomicsInt32 =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsInt32Kernel)}")
@@ -169,7 +169,7 @@ public class AtomicsIntegerDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_integerArbitraryAtomicsUInt32 =
+    internal static readonly DifferentialCase s_integerArbitraryAtomicsUInt32 =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsUInt32Kernel)}")
@@ -241,7 +241,7 @@ public class AtomicsIntegerDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_integerArbitraryAtomicsUInt64 =
+    internal static readonly DifferentialCase s_integerArbitraryAtomicsUInt64 =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsUInt64Kernel)}")

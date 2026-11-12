@@ -34,7 +34,7 @@ public class AssignmentFormsDifferentialTests
             ? s_doubleBoundaries[rng.NextBelow(s_doubleBoundaries.Length)]
             : BitConverter.UInt64BitsToDouble(rng.NextUInt64());
 
-    private static readonly DifferentialCase s_floatRemainder = new(
+    internal static readonly DifferentialCase s_floatRemainder = new(
         $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.FloatRemainderKernel)}")
     {
         Shape = LaunchShape.ForRows(RemainderRows),
@@ -70,7 +70,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<double>("rd")),
     };
 
-    private static readonly DifferentialCase s_nullableConversion = new(
+    internal static readonly DifferentialCase s_nullableConversion = new(
         $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.NullableConversionKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows),
@@ -105,7 +105,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<int>("dst")),
     };
 
-    private static readonly DifferentialCase s_nullArray = new(
+    internal static readonly DifferentialCase s_nullArray = new(
         $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.NullArrayKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows),
@@ -134,7 +134,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_discard = new(
+    internal static readonly DifferentialCase s_discard = new(
         $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.DiscardKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows),
@@ -158,7 +158,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_computedProperty = new(
+    internal static readonly DifferentialCase s_computedProperty = new(
         $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.ComputedPropertyKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows),
@@ -190,7 +190,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<float>("rf")),
     };
 
-    private static readonly DifferentialCase s_deconstruction = new(
+    internal static readonly DifferentialCase s_deconstruction = new(
         $"{nameof(AssignmentFormsDifferentialKernels)}.{nameof(AssignmentFormsDifferentialKernels.DeconstructionShapesKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows),

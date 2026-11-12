@@ -18,7 +18,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.GlobalStateSequential)]
 public sealed class MarshalingDeepStructDifferentialTests
 {
-    private static readonly DifferentialCase s_deepStructAllArgModes = new(
+    internal static readonly DifferentialCase s_deepStructAllArgModes = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.DeepStructAllArgModesKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
@@ -68,7 +68,7 @@ public sealed class MarshalingDeepStructDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_deepStructSixContainers = new(
+    internal static readonly DifferentialCase s_deepStructSixContainers = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.DeepStructSixContainersKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
@@ -131,7 +131,7 @@ public sealed class MarshalingDeepStructDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_primaryCtorDeepStruct = new(
+    internal static readonly DifferentialCase s_primaryCtorDeepStruct = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.PrimaryCtorDeepStructKernel)))
     {
         Shape = LaunchShapes.SingleThread(),

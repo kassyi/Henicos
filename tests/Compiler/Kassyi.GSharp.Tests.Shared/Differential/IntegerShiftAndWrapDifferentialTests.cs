@@ -16,7 +16,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.IntegerTrapAndCheckedDifferential)]
 public class IntegerShiftAndWrapDifferentialTests
 {
-    private static readonly DifferentialCase s_shiftCountMaskBoundaryMatrix = new(
+    internal static readonly DifferentialCase s_shiftCountMaskBoundaryMatrix = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.ShiftCountMaskBoundaryMatrixKernel)))
     {
         Shape = LaunchShapes.PartialWarp(74, 37),
@@ -94,7 +94,7 @@ public class IntegerShiftAndWrapDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_uncheckedIntegerWrap = new(
+    internal static readonly DifferentialCase s_uncheckedIntegerWrap = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapKernel)))
     {
         Shape = LaunchShapes.PartialWarp(74, 37),

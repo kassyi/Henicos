@@ -12,7 +12,7 @@ public class StructBodyDependencyDifferentialTests
 
     private const string KernelName = nameof(StructBodyDependencyDifferentialKernels.StructCreatedOnlyInBodiesKernel);
 
-    private static readonly DifferentialCase s_createdOnlyInBodies = new(
+    internal static readonly DifferentialCase s_createdOnlyInBodies = new(
         $"{nameof(StructBodyDependencyDifferentialKernels)}.{KernelName}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),

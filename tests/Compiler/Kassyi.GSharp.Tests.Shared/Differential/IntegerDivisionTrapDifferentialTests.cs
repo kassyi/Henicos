@@ -18,7 +18,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.IntegerTrapAndCheckedDifferential)]
 public class IntegerDivisionTrapDifferentialTests
 {
-    private static readonly DifferentialCase s_int32Divide = new(
+    internal static readonly DifferentialCase s_int32Divide = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -69,7 +69,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_int32Remainder = new(
+    internal static readonly DifferentialCase s_int32Remainder = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -120,7 +120,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_uint32Divide = new(
+    internal static readonly DifferentialCase s_uint32Divide = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -166,7 +166,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_uint32Remainder = new(
+    internal static readonly DifferentialCase s_uint32Remainder = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -212,7 +212,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_int64Divide = new(
+    internal static readonly DifferentialCase s_int64Divide = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -267,7 +267,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_uint64Divide = new(
+    internal static readonly DifferentialCase s_uint64Divide = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -313,7 +313,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_int16CompoundDivide = new(
+    internal static readonly DifferentialCase s_int16CompoundDivide = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -364,7 +364,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_sbyteCompoundRemainder = new(
+    internal static readonly DifferentialCase s_sbyteCompoundRemainder = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),

@@ -29,7 +29,7 @@ public class WarpCollectiveDifferentialTests
         new LaunchShape(1, 1, 1, 8, 5, 1, 40),
     ];
 
-    private static readonly DifferentialCase s_warpIdentity =
+    internal static readonly DifferentialCase s_warpIdentity =
         new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.WarpIdentityKernel)}")
         {
             Shapes = s_identityShapes,
@@ -60,7 +60,7 @@ public class WarpCollectiveDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_warpVoteAndReduce =
+    internal static readonly DifferentialCase s_warpVoteAndReduce =
         new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.WarpVoteAndReduceKernel)}")
         {
             Shapes = s_voteShapes,
@@ -80,7 +80,7 @@ public class WarpCollectiveDifferentialTests
             Reference = static (b, s) => VoteReference(b.Get<int>("input"), b.Get<uint>("output"), s),
         };
 
-    private static readonly DifferentialCase s_voteInDeviceFunction =
+    internal static readonly DifferentialCase s_voteInDeviceFunction =
         new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.VoteInDeviceFunctionKernel)}")
         {
             Shapes = s_voteShapes,
@@ -121,7 +121,7 @@ public class WarpCollectiveDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_gridStrideBallot =
+    internal static readonly DifferentialCase s_gridStrideBallot =
         new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.GridStrideBallotKernel)}")
         {
             Shape = LaunchShape.ForRows(128, blockX: 64),
@@ -156,7 +156,7 @@ public class WarpCollectiveDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_ballotCallerOutsideMask =
+    internal static readonly DifferentialCase s_ballotCallerOutsideMask =
         new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.BallotCallerOutsideMaskKernel)}")
         {
             Shape = LaunchShape.ForRows(32, blockX: 32),
@@ -178,7 +178,7 @@ public class WarpCollectiveDifferentialTests
                 messageContains: "Warp.BallotSync"),
         };
 
-    private static readonly DifferentialCase s_reduceCallerOutsideMask =
+    internal static readonly DifferentialCase s_reduceCallerOutsideMask =
         new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.ReduceCallerOutsideMaskKernel)}")
         {
             Shape = LaunchShape.ForRows(40, blockX: 40),
@@ -199,7 +199,7 @@ public class WarpCollectiveDifferentialTests
                 messageContains: "Warp.ReduceMinSync"),
         };
 
-    private static readonly DifferentialCase s_gridStrideShuffleInDeviceFunction =
+    internal static readonly DifferentialCase s_gridStrideShuffleInDeviceFunction =
         new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.GridStrideShuffleInDeviceFunctionKernel)}")
         {
             Shape = LaunchShape.ForRows(128, blockX: 64),
@@ -217,7 +217,7 @@ public class WarpCollectiveDifferentialTests
                 GridStrideReference(b.Get<int>("input"), b.Get<int>("output"), static lane => lane + 1 < 32 ? 1 : 0),
         };
 
-    private static readonly DifferentialCase s_gridStrideShuffleWithContext =
+    internal static readonly DifferentialCase s_gridStrideShuffleWithContext =
         new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.GridStrideShuffleWithContextKernel)}")
         {
             Shape = LaunchShape.ForRows(96, blockX: 32),
