@@ -435,7 +435,6 @@ internal static class WrapperEmitter
                 writer.AppendLine($"{Literal(shape.Name)});");
             }
         }
-
     }
 
     private static void WriteErrorSiteTableField(SourceWriter writer, EquatableArray<ErrorSiteEntry> errorSites)

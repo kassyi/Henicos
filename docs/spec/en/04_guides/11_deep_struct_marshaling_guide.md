@@ -422,7 +422,10 @@ G# natively handles `null` array members:
 - The launch passes a struct argument as a C# call passes it, whatever the nullable annotation of its fields: a
   `null` in a non-nullable field (`float[]` in a `#nullable enable` context) reaches the kernel, which throws
   `NullReferenceException` where it reads the field, as C# does, and a kernel that does not read it runs normally. The
-  same holds for array arguments, so a field and an argument follow one rule.
+  same holds for array arguments, so a field and an argument follow one rule. Passing the struct by value to a device
+  function counts as a read: on the native and CUDA paths that call checks its non-nullable array fields and throws
+  there, even when the function does not read them (next item); the managed path and the C# scope throw only where a
+  field is read.
 - A device function parameter follows the same contract: when a call passes an array that may be `null` to a
   non-nullable array parameter (or a struct whose non-nullable array fields may be `null`), the call checks it once and
   throws `NullReferenceException` there, and the function reads the parameter without a check. A nullable parameter

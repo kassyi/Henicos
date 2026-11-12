@@ -225,13 +225,14 @@ public static partial class GpuBigIntDivRemKernels
         if (expSlice.StartWord == 0)
         {
             uint[] constant = Gpu.NotNull(core.Operands.Constant);
+            uint[] target = Gpu.NotNull(core.Operands.TargetOperand);
             uint oneModulo = OneModulo(constant, n);
             Gpu.GridStrideLoop(outWords, idx =>
             {
                 if (idx < 2 * n)
                 {
                     axSquared[idx] = idx == 0 ? oneModulo : 0u; // TempResult
-                    xSquared[idx] = idx < n ? core.Operands.TargetOperand[idx] : 0u; // TempBase
+                    xSquared[idx] = idx < n ? target[idx] : 0u; // TempBase
                 }
 
                 modulusExpanded[idx] = idx < n ? constant[idx] : 0u;

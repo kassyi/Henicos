@@ -10,13 +10,15 @@ public static partial class GpuBigIntVectorKernels
     public static void VectorAnyTrueKernel(VectorBoolReductionContext ctx)
     {
         int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
+        uint[] flags = Gpu.NotNull(ctx.Flags);
+        uint[] result = Gpu.NotNull(ctx.Result);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int stride = GridDimension.X * BlockDimension.X;
         for (; i < n; i += stride)
         {
-            if (ctx.Flags[i] != 0u)
+            if (flags[i] != 0u)
             {
-                Gpu.AtomicMax(ref ctx.Result[0], 1u);
+                Gpu.AtomicMax(ref result[0], 1u);
             }
         }
     }
@@ -29,13 +31,15 @@ public static partial class GpuBigIntVectorKernels
     public static void VectorAllTrueKernel(VectorBoolReductionContext ctx)
     {
         int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
+        uint[] flags = Gpu.NotNull(ctx.Flags);
+        uint[] result = Gpu.NotNull(ctx.Result);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int stride = GridDimension.X * BlockDimension.X;
         for (; i < n; i += stride)
         {
-            if (ctx.Flags[i] == 0u)
+            if (flags[i] == 0u)
             {
-                Gpu.AtomicExch(ref ctx.Result[0], 0u);
+                Gpu.AtomicExch(ref result[0], 0u);
             }
         }
     }
@@ -48,9 +52,10 @@ public static partial class GpuBigIntVectorKernels
     public static void WriteElementCountKernel(ElementCountWriteContext ctx)
     {
         int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
+        uint[] destination = Gpu.NotNull(ctx.Destination);
         for (int w = ThreadIndex.X; w < ctx.DestinationWords; w += BlockDimension.X)
         {
-            ctx.Destination[w] = w == 0 ? (uint)n : 0u;
+            destination[w] = w == 0 ? (uint)n : 0u;
         }
     }
 
@@ -63,11 +68,13 @@ public static partial class GpuBigIntVectorKernels
     public static void CopyCountedElementsKernel(CountedCopyContext ctx)
     {
         int words = GpuStreamCompactionKernels.ResolveCount(ctx.Count) * ctx.WordsPerElement;
+        uint[] destination = Gpu.NotNull(ctx.Destination);
+        uint[] source = Gpu.NotNull(ctx.Source);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int stride = GridDimension.X * BlockDimension.X;
         for (; i < words; i += stride)
         {
-            ctx.Destination[i] = ctx.Source[i];
+            destination[i] = source[i];
         }
     }
 }

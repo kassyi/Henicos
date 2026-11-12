@@ -310,6 +310,45 @@ public class NullArrayAndFieldDifferentialTests
                 s.Rows),
         });
 
+    // A struct argument of the kernel passed by value to a device function: the call checks the non-nullable field, so
+    // CUDA and the native build throw at the call (the place of the argument on CUDA), the managed path at the read in
+    // the callee, as C# does; the type is the same. The callee never reads the null field on CUDA
+    [SkippableFact]
+    public void NullValidation_NonNullableFieldPassedToAFunction_ThrowsAtTheCall() =>
+        DifferentialRunner.Run(new DifferentialCase(
+            KernelName(nameof(BoundsAndMemoryDifferentialKernels.NonNullableFieldToFunctionKernel)))
+        {
+            Shape = LaunchShapes.Linear(DefaultRows, 32),
+            Seeds = [0, 1],
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayArgument(691, 40) : null,
+            Inputs = static (rng, shape) => new DiffBuffers()
+                .InDeepScalar(
+                    "holder",
+                    new DiffNonNullableHolder
+                    {
+                        // Deliberately null in a non-nullable field for seed 1: the call checks it
+                        Data = rng.Seed == 1 ? null! : DiffValues.Int32(rng, 8),
+                        Offset = 3,
+                    },
+                    // The clone keeps the deliberate null of seed 1 in the non-nullable field
+                    static (src, scope) => new DiffNonNullableHolder
+                    {
+                        Data = scope.CloneArray(src.Data)!,
+                        Offset = src.Offset,
+                    })
+                .Out<int>("dst", shape.Rows, ["value"], OutputPolicy.Exact),
+            Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNonNullableFieldToFunctionKernel(
+                b.GetScalar<DiffNonNullableHolder>("holder"),
+                b.Get<int>("dst"),
+                s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX),
+            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NonNullableFieldToFunctionKernel(
+                b.GetScalar<DiffNonNullableHolder>("holder"),
+                b.Get<int>("dst"),
+                s.Rows),
+        });
+
     [SkippableFact]
     public void NullArray_AllThreadsEmptyFirstTrap_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_allThreadsEmptyFirstTrap);

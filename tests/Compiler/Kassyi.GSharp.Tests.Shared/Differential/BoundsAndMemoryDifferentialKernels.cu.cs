@@ -674,12 +674,35 @@ public static partial class BoundsAndMemoryDifferentialKernels
         int[] input = Gpu.NotNull(flags[0] == 0 ? src : nullHolder.Data);
         dst[t] = input[t] + input.Length;
     }
+
+    /// <summary>
+    /// Passes a struct argument with a non-nullable array field to a device function: the call checks the field and
+    /// throws <see cref="NullReferenceException"/> there for a null one (the function reads it without a check).
+    /// </summary>
+    [GpuKernel]
+    public static void NonNullableFieldToFunctionKernel(DiffNonNullableHolder holder, int[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = ReadNonNullableHolder(holder, t);
+    }
+
+    [GpuDeviceFunction]
+    public static int ReadNonNullableHolder(DiffNonNullableHolder holder, int t) =>
+        holder.Data[t % holder.Data.Length] + holder.Offset;
 }
 
-/// <summary>A struct argument with a non-nullable array field, which the launchers check (#1409).</summary>
+/// <summary>
+/// A struct argument with a non-nullable array field, which the launch passes as it is, a null one included, as a C#
+/// call does.
+/// </summary>
 public struct DiffNonNullableHolder
 {
-    /// <summary>The array the kernel reads; never null at a launch.</summary>
+    /// <summary>The array the kernel reads; null on purpose in some cases.</summary>
     public int[] Data;
 
     /// <summary>A value added to each element.</summary>
