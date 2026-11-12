@@ -31,7 +31,7 @@ internal static class AutoResultEmitter
     internal const string PinnedAutoResult = "p_" + Buffer;
 
     // uint __gsharp_total_threads; checked { ... }
-    // var __gsharp_auto_result = new <result>[__gsharp_total_threads];
+    // <result>[] __gsharp_auto_result = new <result>[__gsharp_total_threads];
     /// <summary>
     /// Emits the host array of the auto result, one element per thread of the launch, after the launch check
     /// (<see cref="LaunchLimitEmitter"/>) has rejected a zero dimension.
@@ -45,7 +45,7 @@ internal static class AutoResultEmitter
 
         writer.AppendLine(
             $"uint {TotalThreads}; checked {{ {TotalThreads} = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }}");
-        writer.AppendLine($"var {Buffer} = new {returnType}[{TotalThreads}];");
+        writer.AppendLine($"{returnType}[] {Buffer} = new {returnType}[{TotalThreads}];");
     }
 
     /// <summary>Emits <c>return __gsharp_auto_result;</c> for a value-returning kernel.</summary>
@@ -116,7 +116,7 @@ internal static class AutoResultEmitter
     }
 
     // if (__gsharp_auto_result_size > 0 && d___gsharp_auto_result != IntPtr.Zero) {
-    //   var __gsharp_auto_result_shadow = ArrayPool<byte>.Shared.Rent(__gsharp_auto_result_size);
+    //   byte[] __gsharp_auto_result_shadow = ArrayPool<byte>.Shared.Rent(__gsharp_auto_result_size);
     //   try { fixed (byte* p = shadow) { <copy to host>; <synchronize> } <shadow span>; <Unmarshal_ loop> }
     //   finally { ArrayPool<byte>.Shared.Return(__gsharp_auto_result_shadow); }
     // }
@@ -128,7 +128,7 @@ internal static class AutoResultEmitter
         writer.AppendLine($"if ({Size} > 0 && {DeviceAutoResult} != {IntPtrType}.Zero)");
         using (writer.Scope())
         {
-            writer.AppendLine($"var {Shadow} = {HostTypeNames.ArrayPoolShared}.Rent({Size});");
+            writer.AppendLine($"byte[] {Shadow} = {HostTypeNames.ArrayPoolShared}.Rent({Size});");
             writer.AppendLine("try");
             using (writer.Scope())
             {
@@ -246,13 +246,16 @@ internal static class AutoResultEmitter
         writer.AppendLineIf(kernel.IsCpuConvertedReturn,
             $"if ({Shadow} != null) {HostTypeNames.ArrayPoolShared}.Return({Shadow});");
 
-    // var __gsharp_auto_result_native = MemoryMarshal.Cast<byte, <element shadow>>(
+    // Span<<element shadow>> __gsharp_auto_result_native = MemoryMarshal.Cast<byte, <element shadow>>(
     //     __gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
     // The auto result array of a kernel that returns a converted struct, in the device layout (#704)
-    private static void WriteShadowSpan(SourceWriter writer, in ParameterTransfer transfer) =>
-        writer.AppendLine(
-            $"var {Native} = global::System.Runtime.InteropServices.MemoryMarshal" +
-            $".Cast<byte, {GetShadowPath(transfer)}>({Shadow}.AsSpan(0, {Size}));");
+    private static void WriteShadowSpan(SourceWriter writer, in ParameterTransfer transfer)
+    {
+        var shadowPath = GetShadowPath(transfer);
+        writer.Append($"{HostTypeNames.Span}<{shadowPath}> {Native} = ");
+        writer.Append($"global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, {shadowPath}>");
+        writer.AppendLine($"({Shadow}.AsSpan(0, {Size}));");
+    }
 
     // for (int __gsharp_auto_result_index = 0; ...; __gsharp_auto_result_index++)
     // { Unmarshal_<E>(ref __gsharp_auto_result[i], ref __gsharp_auto_result_native[i], hStream); }
