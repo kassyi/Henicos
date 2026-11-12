@@ -5,13 +5,16 @@ export DiffEngine_Disabled := "true"
 # tests/Directory.Build.props) leaves a mini dump in its TestResults directory
 blame_crash := "--blame-crash --blame-crash-dump-type mini"
 
+# The MSBuild node limit (-m:<n>) of a job that the build queue (scripts/agent/build-queue.js) granted; empty otherwise
+queue_msbuild_args := env_var_or_default("GSHARP_BUILD_QUEUE_MSBUILD_ARGS", "")
+
 # Run normal tests excluding heavy stress and benchmark tests and the tests that raise a real GPU fault (GpuTrap)
 test *args="":
-    dotnet test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
+    dotnet test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{queue_msbuild_args}} {{args}}
 
 # Run tests with code coverage collection
 test-coverage *args="":
-    dotnet test -s coverage.runsettings --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
+    dotnet test -s coverage.runsettings --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{queue_msbuild_args}} {{args}}
 
 # Run the tests with coverage and list the lines changed since base that no test executed
 coverage-diff base="main":
@@ -20,24 +23,24 @@ coverage-diff base="main":
 # Differential tests: C# oracle vs managed vs native CPU (no GPU)
 test-differential-cpu *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj \
-        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
+        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{queue_msbuild_args}} {{args}}
 
 # Build Tests.Cpu with native sanitizers (ASan/UBSan on Linux, ASan on Windows) and run Differential + Execution tests
 test-sanitized *args="":
     node scripts/human/test-sanitized.js {{args}}
 
-# Differential tests: C# oracle vs CUDA (agents: wrap in node scripts/agent/gpu-lock.js -- "...")
+# Differential tests: C# oracle vs CUDA (agents: node scripts/agent/build-queue.js run --gpu -- "...")
 test-differential-cuda *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
-        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
+        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{queue_msbuild_args}} {{args}}
 
 # Tests that raise a real GPU fault (a CUDA trap of a cooperative launch or an mbarrier wait), each in a child process,
 # one at a time pause_ms apart, plus the CUDA fault seeds of the differential tests that CUDA does not check (agents:
-# wrap in node scripts/agent/gpu-lock.js -- "...")
+# node scripts/agent/build-queue.js run --gpu -- "...")
 test-gpu-trap pause_ms="3000" *args="":
     dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         --filter "(Category=GpuTrap|Category=Differential)&Category!=Stress" \
-        -e GSHARP_CUDA_TRAP_TESTS=1 -e GSHARP_CUDA_TRAP_PAUSE_MS={{pause_ms}} {{blame_crash}} {{args}}
+        -e GSHARP_CUDA_TRAP_TESTS=1 -e GSHARP_CUDA_TRAP_PAUSE_MS={{pause_ms}} {{blame_crash}} {{queue_msbuild_args}} {{args}}
 
 # Run differential kernel fuzzer (profile: M|C|G or managed|cpu|all)
 fuzz-diff profile="cpu" minutes="5" *args="":
@@ -58,7 +61,7 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
 
 # Run the tests of one TestCategory (values: the TestCategory enum), e.g. `just test-category Stress`
 test-category category *args="":
-    dotnet test --filter "Category={{category}}" {{blame_crash}} {{args}}
+    dotnet test --filter "Category={{category}}" {{blame_crash}} {{queue_msbuild_args}} {{args}}
 
 # e.g. `just test-memory Kassyi.GSharp.Tests.Cpu -c Release --filter "Category!=GpuExecution"`; test-memory.js --help
 # One run of a test project: its memory peak, the tests that raised it, dotnet-counters and a gcdump at the end
