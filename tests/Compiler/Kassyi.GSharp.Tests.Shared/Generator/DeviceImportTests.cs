@@ -140,11 +140,12 @@ public class DeviceImportTests
     public void DeviceImport_MemoryWritingEffect_SequencesOnlyMemoryWritingCall(string dialect)
     {
         var (_, kernels) = Generate(dialect);
-        var lines = kernels.Split('\n');
 
         // The C++ lines (the CPU wrapper also holds the managed body)
-        var readAndClear = lines.Single(static l => l.Contains("__gsharp_fn_DeviceExportCase__LibMath__ReadAndClear(", StringComparison.Ordinal));
-        var takeOne = lines.Single(static l => l.Contains("__gsharp_fn_DeviceExportCase__LibMath__TakeOne(", StringComparison.Ordinal));
+        var readAndClear = Assert.Single(
+            LinesContaining(kernels, "__gsharp_fn_DeviceExportCase__LibMath__ReadAndClear(")
+        );
+        var takeOne = Assert.Single(LinesContaining(kernels, "__gsharp_fn_DeviceExportCase__LibMath__TakeOne("));
         Assert.Contains("__gsharp_seq_", readAndClear, StringComparison.Ordinal);
         Assert.DoesNotContain("__gsharp_seq_", takeOne, StringComparison.Ordinal);
     }
@@ -258,8 +259,7 @@ public class DeviceImportTests
     {
         var (_, kernels) = GenerateStructs(dialect);
 
-        var line = kernels.Split('\n')
-            .Single(static l => l.Contains("__gsharp_ctor_DeviceImportStructsCase__Recorder(", StringComparison.Ordinal));
+        var line = Assert.Single(LinesContaining(kernels, "__gsharp_ctor_DeviceImportStructsCase__Recorder("));
         Assert.Contains("__gsharp_seq_", line, StringComparison.Ordinal);
     }
 
@@ -436,6 +436,21 @@ public class DeviceImportTests
         var index = text.IndexOf(value, StringComparison.Ordinal);
         Assert.True(index >= 0, $"'{value}' is missing:\n{text}");
         return index;
+    }
+
+    // The lines of the generated text that contain the value
+    private static List<string> LinesContaining(string text, string value)
+    {
+        var lines = new List<string>();
+        foreach (var line in text.AsSpan().EnumerateLines())
+        {
+            if (line.Contains(value, StringComparison.Ordinal))
+            {
+                lines.Add(line.ToString());
+            }
+        }
+
+        return lines;
     }
 
     private static (string Device, string Kernels) GenerateStructs(string dialect) =>
