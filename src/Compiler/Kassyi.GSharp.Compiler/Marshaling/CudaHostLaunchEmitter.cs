@@ -108,8 +108,11 @@ internal static class CudaHostLaunchEmitter
                 if (p.BufferElementTypeName is not null)
                 {
                     // An array carries the buffer's length (#720); a ref / out parameter is the address alone
-                    writer.Append((PointerLaunchPlan.IsProxy(PointerLaunchPlan.Classify(p)), TakesNullBuffer(p)) switch
+                    var kind = PointerLaunchPlan.Classify(p);
+                    writer.Append((PointerLaunchPlan.IsProxy(kind), TakesNullBuffer(p)) switch
                     {
+                        // A GSharpArrayProxy? of a Memory<T>? has no value for a null buffer
+                        (true, true) when kind == PointerArgumentKind.NullableArray => "?.ToProxy()",
                         (true, true) => "?.ToProxy() ?? default",
                         (true, false) => ".ToProxy()",
                         (false, true) => "?.DevicePointer ?? global::System.IntPtr.Zero",

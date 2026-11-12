@@ -87,16 +87,14 @@ public class OptionalArrayTests : TranspilerTestBase
         Assert.Equal([10f, 20f], y.AsSpan().ToArray());
     }
 
+    // A default Memory<T> passed as Memory<T>? has a value, as in C#: the matrix of ArrayArgumentNullEmptyDifferentialTests
+    // reads it, since its elements are out of range here
     [Scenario(TestScenario.HappyPath)]
     [Fact]
-    public void OptionalMemory_NullDefaultAndValues_ComputesExpectedValues()
+    public void OptionalMemory_NullAndValues_ComputesExpectedValues()
     {
         float[] x = [1f, 2f];
         OptionalArrayKernels.LaunchOptionalMemoryKernel(x, null, blockDimX: 2);
-        Assert.Equal([1f, 2f], x);
-
-        x = [1f, 2f];
-        OptionalArrayKernels.LaunchOptionalMemoryKernel(x, default(Memory<float>), blockDimX: 2);
         Assert.Equal([1f, 2f], x);
 
         x = [1f, 2f];
@@ -128,15 +126,6 @@ public class OptionalArrayTests : TranspilerTestBase
         // Intentionally passing null where the parameter is not nullable, as C# lets a caller do
         Assert.Throws<NullReferenceException>(() =>
             Run(forceManaged, () => OptionalArrayKernels.LaunchIsNullBiasKernel(null!, [10f, 20f], blockDimX: 2)));
-    }
-
-    [Scenario(TestScenario.SadPath)]
-    [Fact]
-    public void MemoryAdd_EmptyInputArray_ThrowsArgumentException()
-    {
-        var ex = Assert.Throws<ArgumentException>(() =>
-            OptionalArrayKernels.LaunchMemoryAddKernel(Memory<float>.Empty, new float[] { 10f, 20f }, blockDimX: 2));
-        Assert.Equal("x", ex.ParamName);
     }
 
     // The Length of a null optional array throws, as in C#, on every path

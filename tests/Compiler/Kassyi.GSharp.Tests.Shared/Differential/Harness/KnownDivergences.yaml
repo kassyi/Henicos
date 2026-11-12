@@ -89,6 +89,9 @@
     - case: ArrayArgumentNullEmptyDifferentialKernels.ObliviousArrayKernel.Empty.Element
       paths: [Native, Cuda]
       columns: [$exception]
+    - case: ArrayArgumentNullEmptyDifferentialKernels.ImmutableKernel.Empty.Element
+      paths: [Native, Cuda]
+      columns: [$exception]
     - case: BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel
       paths: [Cuda]
       columns: [$exception]

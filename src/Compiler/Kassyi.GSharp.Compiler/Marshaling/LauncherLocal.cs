@@ -11,6 +11,12 @@ internal enum LauncherLocal
     /// <summary>The stackalloc'd <c>GSharpArrayProxy</c> pointer local of a parameter, <c>__gsharp_proxy_{ordinal}</c>.</summary>
     Proxy,
 
+    /// <summary>
+    /// The stackalloc'd <c>System_Nullable&lt;GSharpArray&lt;T&gt;&gt;</c> of a nullable array-like parameter that holds
+    /// its <see cref="Proxy"/>, <c>__gsharp_nullable_{ordinal}</c>.
+    /// </summary>
+    NullableProxy,
+
     /// <summary>The native shadow struct or span local of a parameter, <c>__gsharp_native_{ordinal}</c>.</summary>
     Native,
 

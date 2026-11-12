@@ -31,7 +31,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
     private static readonly (string Name, Func<int[]?> Create)[] s_arrayValues =
         [("Null", static () => null), ("Empty", static () => []), ("One", static () => [7])];
 
-    internal static readonly DifferentialCase[] s_cases = [.. CreateCases()];
+    internal static readonly DifferentialCase[] s_cases = [.. CreateCases(), .. CreateSpanLikeCases()];
 
     /// <summary>The names of <see cref="s_cases"/> without the class name and the <c>Kernel</c> suffix, short enough to read in a test list.</summary>
     public static TheoryData<string> CaseNames => [.. s_cases.Select(static c => ShortName(c.Name))];

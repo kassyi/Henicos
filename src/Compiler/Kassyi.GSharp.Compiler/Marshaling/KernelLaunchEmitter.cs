@@ -244,12 +244,13 @@ internal static class KernelLaunchEmitter
             if (shape.IsArray)
             {
                 var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
-                writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
+                var value = PointerLaunchPlan.GetProxyExpression(shape);
+                WriteProxyDeclaration(writer, shape);
                 // Data == 0 is a null array, which WritePointerArrayArgumentChecks has checked to be 0 long
-                writer.AppendLine($"{proxy}[0] = {shape.Identifier}.Data;");
-                writer.AppendLine($"((int*)({proxy} + 1))[0] = {shape.Identifier}.Length;");
+                writer.AppendLine($"{proxy}[0] = {value}.Data;");
+                writer.AppendLine($"((int*)({proxy} + 1))[0] = {value}.Length;");
                 WriteReservedWord(writer, proxy);
-                writer.AppendLine($"{KernelParams}[{paramIndex}] = {proxy};");
+                writer.AppendLine($"{KernelParams}[{paramIndex}] = {GetArgumentPointer(shape)};");
             }
             else
             {
@@ -339,7 +340,7 @@ internal static class KernelLaunchEmitter
         var element = ConvertedArrayEmitter.GetElementTypeName(shape);
         writer.AppendLine($"int {size} = checked({lenExpr} * sizeof({element}));");
 
-        writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
+        WriteProxyDeclaration(writer, shape);
         WriteArrayReference(writer, shape, proxy);
         writer.AppendLine($"((int*)({proxy} + 1))[0] = {lenExpr};");
         WriteReservedWord(writer, proxy);
@@ -351,8 +352,32 @@ internal static class KernelLaunchEmitter
             writer.AppendLine($"{proxy}[0] = {device};");
         }
 
-        writer.AppendLine($"{KernelParams}[{paramIndex}] = {proxy};");
+        writer.AppendLine($"{KernelParams}[{paramIndex}] = {GetArgumentPointer(shape)};");
     }
+
+    // IntPtr* __gsharp_proxy_<ord> = stackalloc IntPtr[2];                         (an array-like argument)
+    // IntPtr* __gsharp_nullable_<ord> = stackalloc IntPtr[3];                      (a Nullable<array-like>: Memory<T>?)
+    // __gsharp_nullable_<ord>[0] = <name>.HasValue ? 1 : 0; IntPtr* __gsharp_proxy_<ord> = __gsharp_nullable_<ord> + 1;
+    // [WHY] The device takes a Memory<T>? as System_Nullable<GSharpArray<T>>, HasValue in its first byte and the array at
+    // byte 8, as it takes every other Nullable<T>; the value of a default Memory<T> is a null array that has a value
+    private static void WriteProxyDeclaration(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
+        if (!shape.IsNullableValue)
+        {
+            writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
+            return;
+        }
+
+        var nullable = KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape);
+        writer.AppendLine($"{IntPtrType}* {nullable} = stackalloc {IntPtrType}[3];");
+        writer.AppendLine($"{nullable}[0] = ({IntPtrType})({shape.Identifier}.HasValue ? 1 : 0);");
+        writer.AppendLine($"{IntPtrType}* {proxy} = {nullable} + 1;");
+    }
+
+    // The address of the kernel argument: the proxy, or the Nullable that holds it (WriteProxyDeclaration)
+    private static string GetArgumentPointer(in KernelParameterShape shape) =>
+        KernelHostNames.GetLocal(shape.IsNullableValue ? LauncherLocal.NullableProxy : LauncherLocal.Proxy, shape);
 
     // __gsharp_proxy_<ord>[0] = <null test> ? IntPtr.Zero : (IntPtr)GSharpArrayProxy.EmptyArrayData;
     // [WHY] A null array (or a span-like value over none) is a null pointer, and an empty array a non-null one that is
@@ -503,7 +528,7 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"// Marshal array element by element: {shape.Identifier}");
         writer.AppendLine($"int {size} = checked({lenExpr} * sizeof({ConvertedArrayEmitter.GetElementShadowPath(shape, shape.Cuda)}));");
 
-        writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
+        WriteProxyDeclaration(writer, shape);
         WriteArrayReference(writer, shape, proxy);
         writer.AppendLine($"((int*)({proxy} + 1))[0] = {lenExpr};");
         WriteReservedWord(writer, proxy);
@@ -515,7 +540,7 @@ internal static class KernelLaunchEmitter
             writer.AppendLine($"{proxy}[0] = {device};");
         }
 
-        writer.AppendLine($"{KernelParams}[{paramIndex}] = {proxy};");
+        writer.AppendLine($"{KernelParams}[{paramIndex}] = {GetArgumentPointer(shape)};");
     }
 
     private static void WriteConvertedArrayAllocationAndCopyIn(SourceWriter writer, in KernelParameterShape shape,

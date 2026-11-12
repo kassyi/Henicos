@@ -12,7 +12,6 @@ Kernel:
     LaunchExportPrefix: __gsharp_launch_
     ContextPrefix: __gsharp_context_
     StateMachinePrefix: __gsharp_statemachine_
-    RawArgumentPrefix: __gsharp_raw_arg_
 
 StateMachine:
   Summary: Per-thread state machine context (CPU dialects).
@@ -237,6 +236,7 @@ Launcher:
     DelegateTypePrefix: __gsharp_delegate_
     DevicePointerPrefix: __gsharp_d_
     ProxyPrefix: __gsharp_proxy_
+    NullableProxyPrefix: __gsharp_nullable_
     NativePrefix: __gsharp_native_
     PinnedPrefix: __gsharp_p_
     PinnedTempPrefix: __gsharp_p_temp_
