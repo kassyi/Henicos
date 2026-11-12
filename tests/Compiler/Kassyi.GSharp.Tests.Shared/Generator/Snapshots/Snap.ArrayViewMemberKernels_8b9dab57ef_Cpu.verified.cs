@@ -311,9 +311,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_r[0]=__gsharp_id_0_seg.Slice(1)[0];
-__gsharp_id_1_r[1]=__gsharp_id_0_seg.Slice(1,2)[1];
-__gsharp_id_1_r[2]=__gsharp_id_0_seg.Slice(2).length;
+__gsharp_id_1_r[0]=__gsharp_id_0_seg.template CheckedSlice<GSharpErrorCode::InvalidOperation>(1)[0];
+__gsharp_id_1_r[1]=__gsharp_id_0_seg.template CheckedSlice<GSharpErrorCode::InvalidOperation>(1,2)[1];
+__gsharp_id_1_r[2]=__gsharp_id_0_seg.template CheckedSlice<GSharpErrorCode::InvalidOperation>(2).length;
 __gsharp_state=-1;
 return;
 }
@@ -565,7 +565,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_r[0]=__gsharp_id_0_imm.Slice(1,2)[1];
+__gsharp_id_1_r[0]=__gsharp_id_0_imm.template CheckedSlice<GSharpErrorCode::NullReference>(1,2)[1];
 __gsharp_id_1_r[1]=__gsharp_id_0_imm.AsSpan(1,2)[0];
 __gsharp_state=-1;
 return;
@@ -1067,8 +1067,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_imm.CopyTo(__gsharp_id_1_toSpan.AsSpan());
-__gsharp_id_0_imm.CopyTo(__gsharp_id_2_toArray);
+__gsharp_id_0_imm.template CheckedCopyTo<GSharpErrorCode::NullReference, GSharpErrorCode::None>(__gsharp_id_1_toSpan.AsSpan());
+__gsharp_id_0_imm.template CheckedCopyTo<GSharpErrorCode::NullReference, GSharpErrorCode::ArgumentNull>(__gsharp_id_2_toArray);
 __gsharp_state=-1;
 return;
 }
@@ -1330,8 +1330,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_0_seg.CopyTo(__gsharp_id_1_toArray);
-__gsharp_id_0_seg.CopyTo(__gsharp_id_2_toSegment);
+__gsharp_id_0_seg.template CheckedCopyTo<GSharpErrorCode::InvalidOperation, GSharpErrorCode::ArgumentNull>(__gsharp_id_1_toArray);
+__gsharp_id_0_seg.template CheckedCopyTo<GSharpErrorCode::InvalidOperation, GSharpErrorCode::InvalidOperation>(__gsharp_id_2_toSegment);
 __gsharp_state=-1;
 return;
 }
