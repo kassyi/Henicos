@@ -287,29 +287,72 @@ public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 
     /// <inheritdoc/>
     public void ShiftLeft(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits,
-        GpuBigUInt resultBuffer)
-    {
-        var wordShift = shiftBits / 32;
-        var bitShift = shiftBits % 32;
-        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
-
-        GpuBigIntKernels.LaunchShiftLeftKernelPtr(
-            leftOperand.ToProxy(), wordShift, bitShift, resultBuffer.ToProxy(), leftOperand.NumWords,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
-    }
+        GpuBigUInt resultBuffer) =>
+        Shift(workspace, leftOperand, shiftBits, resultBuffer, left: true);
 
 
     /// <inheritdoc/>
     public void ShiftRight(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits,
-        GpuBigUInt resultBuffer)
+        GpuBigUInt resultBuffer) =>
+        Shift(workspace, leftOperand, shiftBits, resultBuffer, left: false);
+
+    // The largest operand that a shift in place runs in one block (ShiftLeftInPlaceKernel / ShiftRightInPlaceKernel).
+    // Measured on an RTX 3070 Ti: the single block takes 6 us up to 8192 words and 13 us at 32768, a copy of the
+    // operand and the grid kernel about 18 us at any size up to 65536 words, where the single block needs 23 us.
+    internal const int InPlaceShiftMaxWords = 32768;
+
+    // A shift whose result overlaps the operand: the grid kernels read words that other threads (of other blocks)
+    // write, so the result in place goes through the single-block kernel that orders its reads, or through a copy
+    private static void Shift(GpuWorkspace workspace, GpuBigUInt operand, int shiftBits, GpuBigUInt resultBuffer,
+        bool left)
     {
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
-        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var numWords = operand.NumWords;
+        if (!DeviceRanges.Overlaps(resultBuffer.Handle, operand.Handle))
+        {
+            LaunchShift(workspace, operand, wordShift, bitShift, resultBuffer, left);
+            return;
+        }
 
-        GpuBigIntKernels.LaunchShiftRightKernelPtr(
-            leftOperand.ToProxy(), wordShift, bitShift, resultBuffer.ToProxy(), leftOperand.NumWords,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
+        if (resultBuffer.DevicePointer == operand.DevicePointer && numWords <= InPlaceShiftMaxWords)
+        {
+            var blockDim = BigIntWideOps.SingleBlockSize(numWords);
+            if (left)
+            {
+                GpuBigIntKernels.LaunchShiftLeftInPlaceKernelPtr(resultBuffer.ToProxy(), wordShift, bitShift, numWords,
+                    gridDimX: 1, blockDimX: blockDim, hStream: workspace.Stream);
+            }
+            else
+            {
+                GpuBigIntKernels.LaunchShiftRightInPlaceKernelPtr(resultBuffer.ToProxy(), wordShift, bitShift, numWords,
+                    gridDimX: 1, blockDimX: blockDim, hStream: workspace.Stream);
+            }
+
+            return;
+        }
+
+        using var copy = workspace.RentTemp(numWords);
+        workspace.Provider.CopyDeviceToDevice(copy.DevicePointer, operand.DevicePointer, numWords, workspace.Stream);
+        LaunchShift(workspace, copy, wordShift, bitShift, resultBuffer, left);
+    }
+
+    private static void LaunchShift(GpuWorkspace workspace, GpuBigUInt operand, int wordShift, int bitShift,
+        GpuBigUInt resultBuffer, bool left)
+    {
+        var dims = KernelGraphHandler.CalculateGridDim(operand.NumWords);
+        if (left)
+        {
+            GpuBigIntKernels.LaunchShiftLeftKernelPtr(
+                operand.ToProxy(), wordShift, bitShift, resultBuffer.ToProxy(), operand.NumWords,
+                gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
+        }
+        else
+        {
+            GpuBigIntKernels.LaunchShiftRightKernelPtr(
+                operand.ToProxy(), wordShift, bitShift, resultBuffer.ToProxy(), operand.NumWords,
+                gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
+        }
     }
 
 

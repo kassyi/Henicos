@@ -44,8 +44,8 @@ internal abstract class SignedBinaryExpression(
                 ? ResultBuffers.Head(targetResult.Value, NumWords)
                 : (rented = workspace.RentTemp(NumWords)).Value;
 
-            // The kernels take __restrict__ pointers: a target that overlaps an operand gets the result through a
-            // temporary
+            // Some kernels read words that other threads write: a target that overlaps an operand gets the result
+            // through a temporary
             staging = SignedRoot.StagingFor(workspace, targetResult, NumWords, first.Magnitude, second.Magnitude);
             var buffer = staging.Handle.IsDefault ? result : staging;
             if (plan.Chosen != ChosenOperand.None)

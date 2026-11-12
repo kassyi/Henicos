@@ -230,23 +230,7 @@ public static partial class GpuBigIntKernels
     {
         Gpu.GridStrideLoop(numWords, i =>
         {
-            var srcIdx0 = i - wordShift;
-            var srcIdx1 = srcIdx0 - 1;
-
-            var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords ? numWords - 1 : srcIdx0);
-            var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords ? numWords - 1 : srcIdx1);
-
-            var w0 = dA[safeIdx0];
-            var w1 = dA[safeIdx1];
-
-            var mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
-            var mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
-
-            w0 &= mask0;
-            w1 &= mask1;
-
-            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
-            dResult[i] = (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
+            dResult[i] = ShiftedLeftWord(dA, i, wordShift, bitShift, numWords);
         });
     }
 
@@ -255,24 +239,103 @@ public static partial class GpuBigIntKernels
     {
         Gpu.GridStrideLoop(numWords, i =>
         {
-            var srcIdx0 = i + wordShift;
-            var srcIdx1 = srcIdx0 + 1;
-
-            var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords ? numWords - 1 : srcIdx0);
-            var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords ? numWords - 1 : srcIdx1);
-
-            var w0 = dA[safeIdx0];
-            var w1 = dA[safeIdx1];
-
-            var mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
-            var mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
-
-            w0 &= mask0;
-            w1 &= mask1;
-
-            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
-            dResult[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
+            dResult[i] = ShiftedRightWord(dA, i, wordShift, bitShift, numWords);
         });
+    }
+
+    /// <summary>
+    /// <c>a = a &lt;&lt; (32 wordShift + bitShift)</c> in place. Launch one block whose size is a multiple of 32. The
+    /// passes run from the top words down: word <c>i</c> reads words <c>i - wordShift</c> and the one below, never a
+    /// word above it, and each pass reads all its words before the block writes them, so no thread reads a word that
+    /// was already shifted.
+    /// </summary>
+    [GpuKernel]
+    public static void ShiftLeftInPlaceKernel(uint[] dA, int wordShift, int bitShift, int numWords)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+        for (int top = numWords; top > 0; top -= bDim)
+        {
+            int i = top - bDim + tid;
+            uint word = i >= 0 ? ShiftedLeftWord(dA, i, wordShift, bitShift, numWords) : 0u;
+            Gpu.SyncThreads();
+            if (i >= 0)
+            {
+                dA[i] = word;
+            }
+        }
+    }
+
+    /// <summary>
+    /// <c>a = a &gt;&gt; (32 wordShift + bitShift)</c> in place. Launch one block whose size is a multiple of 32. The
+    /// passes run from the bottom words up: word <c>i</c> reads words <c>i + wordShift</c> and the one above, never a
+    /// word below it, and each pass reads all its words before the block writes them.
+    /// </summary>
+    [GpuKernel]
+    public static void ShiftRightInPlaceKernel(uint[] dA, int wordShift, int bitShift, int numWords)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+        for (int offset = 0; offset < numWords; offset += bDim)
+        {
+            int i = offset + tid;
+            uint word = i < numWords ? ShiftedRightWord(dA, i, wordShift, bitShift, numWords) : 0u;
+            Gpu.SyncThreads();
+            if (i < numWords)
+            {
+                dA[i] = word;
+            }
+        }
+    }
+
+    // Word i of a << (32 wordShift + bitShift): the bits of words i - wordShift and the one below; a word outside the
+    // array reads as zero
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint ShiftedLeftWord(uint[] dA, int i, int wordShift, int bitShift, int numWords)
+    {
+        var srcIdx0 = i - wordShift;
+        var srcIdx1 = srcIdx0 - 1;
+
+        var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords ? numWords - 1 : srcIdx0);
+        var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords ? numWords - 1 : srcIdx1);
+
+        var w0 = dA[safeIdx0];
+        var w1 = dA[safeIdx1];
+
+        var mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
+        var mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
+
+        w0 &= mask0;
+        w1 &= mask1;
+
+        var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+        return (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
+    }
+
+    // Word i of a >> (32 wordShift + bitShift): the bits of words i + wordShift and the one above; a word outside the
+    // array reads as zero
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint ShiftedRightWord(uint[] dA, int i, int wordShift, int bitShift, int numWords)
+    {
+        var srcIdx0 = i + wordShift;
+        var srcIdx1 = srcIdx0 + 1;
+
+        var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords ? numWords - 1 : srcIdx0);
+        var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords ? numWords - 1 : srcIdx1);
+
+        var w0 = dA[safeIdx0];
+        var w1 = dA[safeIdx1];
+
+        var mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
+        var mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
+
+        w0 &= mask0;
+        w1 &= mask1;
+
+        var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+        return (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
     }
 
     [GpuKernel]

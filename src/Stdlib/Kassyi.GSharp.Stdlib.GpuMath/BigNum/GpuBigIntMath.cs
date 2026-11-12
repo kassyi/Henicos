@@ -435,6 +435,8 @@ public static class GpuBigIntMath
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than <paramref
     /// name="leftOperand"/>; nothing is written. A buffer narrower than the shifted value is the checked form: a
     /// shifted-out bit is a domain error.</exception>
+    /// <remarks><paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself or overlap it; the result is
+    /// the one of a separate buffer.</remarks>
     public static void ShiftLeft(
         scoped GpuBigUIntView leftOperand,
         int shiftBits,
@@ -514,6 +516,8 @@ public static class GpuBigIntMath
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than the bits that remain (<c>32
     /// * leftOperand.NumWords - shiftBits</c>, at least one word), or <paramref name="shiftBits"/> is <see
     /// cref="int.MinValue"/>.</exception>
+    /// <remarks><paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself or overlap it; the result is
+    /// the one of a separate buffer.</remarks>
     public static void ShiftRight(
         scoped GpuBigUIntView leftOperand,
         int shiftBits,
@@ -577,7 +581,7 @@ public static class GpuBigIntMath
             }
 
             var blockDim = (uint)Math.Min(1024, Math.Max(32, (resultBuffer.NumWords + 31) / 32 * 32));
-            if (source.DevicePointer == resultBuffer.DevicePointer)
+            if (DeviceRanges.Overlaps(source.Handle, resultBuffer.Handle))
             {
                 using var tempCopy = workspace.RentTemp(source.NumWords);
                 workspace.Provider.CopyDeviceToDevice(tempCopy.DevicePointer, source.DevicePointer, source.NumWords, workspace.Stream);

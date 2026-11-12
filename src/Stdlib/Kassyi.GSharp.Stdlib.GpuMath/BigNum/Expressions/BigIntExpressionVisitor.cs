@@ -131,7 +131,7 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
     }
 
     // The root writes into the first numWords words of the target, unless the target overlaps one of the root's
-    // operands: the kernels take their pointers as __restrict__ and some read words that other threads write, so the
+    // operands: some kernels read words that other threads write, so the
     // root then computes into a temporary, which the caller copies into the target. Only the root can meet the target:
     // every other node writes a temporary, and the root reads only its own operands. A target narrower than the root
     // is rejected; the caller clears the words of a wider one above the result.

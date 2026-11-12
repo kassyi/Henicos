@@ -1,0 +1,285 @@
+#nullable enable
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
+
+namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
+
+/// <summary>
+/// The public statics of <see cref="GpuBigIntMath"/> called with the result buffer as one of the operands (#701): the
+/// result is the one of separate buffers, also when the launch has many blocks.
+/// </summary>
+/// <remarks>
+/// The expected values come from <see cref="BigInteger"/> on the values the test generated (fixed seeds, shown in the
+/// failure message). A kernel that reads words other threads write races only on the GPU, so a wrong result shows only
+/// there, and not on every run; the large cases make it near certain (a left shift by <c>32 * 4096 + 5</c> bits of
+/// 65536 words went wrong 10 times out of 10 without the overlap handling).
+/// </remarks>
+[Category(TestCategory.Stdlib)]
+[TestTarget(ExecutionTarget.GpuExecution)]
+public sealed class GpuBigIntMathInPlaceTests : IDisposable
+{
+    // 65536 words: 256 blocks of the grid kernels, 64 passes of a single-block kernel
+    private const int LargeWords = 65536;
+
+    // One pass of a 1024-thread single-block kernel
+    private const int SmallWords = 1000;
+
+    // The largest operand that a shift runs in place in one block; a larger one is copied first
+    private const int InPlaceMaxWords = KernelBasicMathHandler.InPlaceShiftMaxWords;
+
+    private readonly GpuKernelLoader.CudaContextScope _scope;
+    private readonly GpuWorkspace _workspace;
+
+    public GpuBigIntMathInPlaceTests()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        _scope = new GpuKernelLoader.CudaContextScope();
+        _workspace = new GpuWorkspace(4 * LargeWords, GpuExecutionEngine.GSharpAot);
+    }
+
+    public void Dispose()
+    {
+        _workspace.Dispose();
+        _scope.Dispose();
+    }
+
+    public enum Operation
+    {
+        ShiftLeft,
+        ShiftRight,
+        Add,
+        AddScalar,
+        Sub,
+        SubScalar,
+        MulScalar,
+        BitwiseAnd,
+        BitwiseOr,
+        BitwiseXor,
+        BitwiseNot,
+        DivideByUInt32
+    }
+
+    /// <summary>The operation, the word count, the shift in bits (shifts only) and which operand is the result.</summary>
+    public static TheoryData<Operation, int, int, bool> InPlaceCases()
+    {
+        var data = new TheoryData<Operation, int, int, bool>
+        {
+            // The shift of the issue: a word shift of 4096 crosses 16 blocks of 256 threads
+            { Operation.ShiftLeft, LargeWords, (32 * 4096) + 5, false },
+            { Operation.ShiftRight, LargeWords, (32 * 4096) + 5, false },
+
+            // A bit shift only: each word reads its neighbour, which the next thread writes
+            { Operation.ShiftLeft, LargeWords, 5, false },
+            { Operation.ShiftRight, LargeWords, 5, false },
+
+            // A whole-word shift (no bit part) and a shift of a few words
+            { Operation.ShiftLeft, LargeWords, 64, false },
+            { Operation.ShiftRight, LargeWords, 101, false },
+
+            // The largest operand shifted in place by one block (32 passes), and one word above it (a copy)
+            { Operation.ShiftLeft, InPlaceMaxWords, (32 * 4096) + 5, false },
+            { Operation.ShiftRight, InPlaceMaxWords, (32 * 4096) + 5, false },
+            { Operation.ShiftLeft, InPlaceMaxWords + 1, (32 * 4096) + 5, false },
+            { Operation.ShiftRight, InPlaceMaxWords + 1, (32 * 4096) + 5, false },
+
+            // Small values, one pass of a block
+            { Operation.ShiftLeft, SmallWords, 37, false },
+            { Operation.ShiftRight, SmallWords, 37, false },
+            { Operation.ShiftLeft, SmallWords, (32 * 300) + 7, false },
+            { Operation.ShiftRight, SmallWords, (32 * 300) + 7, false },
+            { Operation.ShiftLeft, 1, 3, false },
+            { Operation.ShiftRight, 1, 3, false },
+
+            // A shift by zero copies the value onto itself
+            { Operation.ShiftLeft, LargeWords, 0, false },
+            { Operation.ShiftRight, LargeWords, 0, false }
+        };
+
+        foreach (var operation in new[]
+                 {
+                     Operation.Add, Operation.Sub, Operation.BitwiseAnd, Operation.BitwiseOr, Operation.BitwiseXor
+                 })
+        {
+            foreach (var words in new[] { SmallWords, LargeWords })
+            {
+                data.Add(operation, words, 0, false);
+                data.Add(operation, words, 0, true);
+            }
+        }
+
+        foreach (var operation in new[]
+                 {
+                     Operation.AddScalar, Operation.SubScalar, Operation.MulScalar, Operation.BitwiseNot,
+                     Operation.DivideByUInt32
+                 })
+        {
+            data.Add(operation, SmallWords, 0, false);
+            data.Add(operation, LargeWords, 0, false);
+        }
+
+        return data;
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(InPlaceCases))]
+    public void Operation_ResultIsAnOperand_GivesTheSeparateBufferResult(Operation operation, int words, int shift,
+        bool resultIsRight)
+    {
+        // P1: the value in the result buffer equals the BigInteger result of the original operands, as with a separate
+        // result buffer.
+        // P2: the operand that is not the result keeps its value.
+        // mutant: KernelBasicMathHandler.ShiftLeft without the overlap branch (the existing grid kernel runs in place):
+        //         ShiftLeft LargeWords (32 * 4096 + 5) fails
+        // mutant: KernelBasicMathHandler.ShiftRight without the overlap branch: ShiftRight SmallWords 37 fails
+        var seed = 701 + ((int)operation * 1_000_003) + (words * 31) + shift + (resultIsRight ? 7 : 0);
+        var random = new Random(seed);
+        var (a0, b0) = Operands(operation, words, shift, random);
+        const uint Scalar = 0x9E3779B9u;
+
+        using var a = GpuBigUInt.FromBigInteger(_workspace, a0, words);
+        using var b = GpuBigUInt.FromBigInteger(_workspace, b0, words);
+        var result = resultIsRight ? b : a;
+
+        var expected = Run(operation, a, b, result, shift, Scalar, a0, b0, words);
+
+        var message = $"{operation} words {words} shift {shift} result is {(resultIsRight ? "right" : "left")}, " +
+                      $"seed {seed}";
+        Assert.True(expected == result.ToBigInteger(), $"result: {message}");
+        var (untouched, untouchedExpected) = resultIsRight ? (a, a0) : (b, b0);
+        Assert.True(untouchedExpected == untouched.ToBigInteger(), $"other operand changed: {message}");
+    }
+
+    public enum PartialOverlap
+    {
+        // ShiftLeft from words [0, n) into words [1, n + 1): the grid kernel through a copy
+        LeftIntoTheWordsAbove,
+
+        // ShiftRight from words [1, n + 1) into words [0, n): the grid kernel through a copy
+        RightIntoTheWordsBelow,
+
+        // ShiftLeft from words [1, n + 1) into the n + 1 words [0, n + 1): a wider result, ShiftAndResize
+        LeftIntoAWiderBufferBelow
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(PartialOverlap.LeftIntoTheWordsAbove, LargeWords, (32 * 4096) + 5)]
+    [InlineData(PartialOverlap.RightIntoTheWordsBelow, LargeWords, (32 * 4096) + 5)]
+    [InlineData(PartialOverlap.LeftIntoAWiderBufferBelow, 2048, 7)]
+    public void Shift_ResultPartlyOverlapsTheOperand_GivesTheSeparateBufferResult(PartialOverlap overlap, int words,
+        int shift)
+    {
+        // P1: the shifted value lands in the result words as from a separate operand, and the word of the buffer
+        // outside the result keeps its value.
+        // mutant: KernelBasicMathHandler.Shift `!DeviceRanges.Overlaps(...)` -> `resultBuffer.DevicePointer !=
+        //         operand.DevicePointer` (a partial overlap runs the grid kernel in place): the first two cases fail
+        // mutant: GpuBigIntMath.ShiftAndResizeCore `DeviceRanges.Overlaps(...)` -> `source.DevicePointer ==
+        //         resultBuffer.DevicePointer`: LeftIntoAWiderBufferBelow fails
+        var seed = 7010 + ((int)overlap * 97) + words;
+        var random = new Random(seed);
+        var wordBits = 32 * words;
+        var source0 = RandomValue(random, overlap == PartialOverlap.LeftIntoTheWordsAbove ? wordBits - shift : wordBits);
+        var other0 = RandomValue(random, 32);
+        var onTop = overlap != PartialOverlap.LeftIntoTheWordsAbove;
+        var buffer0 = onTop ? (source0 << 32) | other0 : (other0 << wordBits) | source0;
+
+        using var buffer = GpuBigUInt.FromBigInteger(_workspace, buffer0, words + 1);
+        GpuBigUIntView view = buffer;
+        BigInteger expected;
+        switch (overlap)
+        {
+            case PartialOverlap.LeftIntoTheWordsAbove:
+                GpuBigIntMath.ShiftLeft(view.Slice(0, words), shift, view.Slice(1, words));
+                expected = ((source0 << shift) << 32) | (buffer0 & uint.MaxValue);
+                break;
+            case PartialOverlap.RightIntoTheWordsBelow:
+                GpuBigIntMath.ShiftRight(view.Slice(1, words), shift, view.Slice(0, words));
+                expected = (source0 >> shift) | (source0 >> (wordBits - 32) << wordBits);
+                break;
+            default:
+                GpuBigIntMath.ShiftLeft(view.Slice(1, words), shift, view);
+                expected = source0 << shift;
+                break;
+        }
+
+        Assert.True(expected == buffer.ToBigInteger(), $"{overlap} words {words} shift {shift} seed {seed}");
+    }
+
+    // Runs the operation into result and returns the expected value
+    private static BigInteger Run(Operation operation, GpuBigUInt a, GpuBigUInt b, GpuBigUInt result, int shift,
+        uint scalar, BigInteger a0, BigInteger b0, int words)
+    {
+        var mask = (BigInteger.One << (32 * words)) - 1;
+        switch (operation)
+        {
+            case Operation.ShiftLeft:
+                GpuBigIntMath.ShiftLeft(a, shift, result);
+                return a0 << shift;
+            case Operation.ShiftRight:
+                GpuBigIntMath.ShiftRight(a, shift, result);
+                return a0 >> shift;
+            case Operation.Add:
+                GpuBigIntMath.Add(a, b, result);
+                return a0 + b0;
+            case Operation.AddScalar:
+                GpuBigIntMath.Add(a, scalar, result);
+                return a0 + scalar;
+            case Operation.Sub:
+                GpuBigIntMath.Sub(a, b, result);
+                return a0 - b0;
+            case Operation.SubScalar:
+                GpuBigIntMath.Sub(a, scalar, result);
+                return a0 - scalar;
+            case Operation.MulScalar:
+                GpuBigIntMath.Mul(a, scalar, result);
+                return a0 * scalar;
+            case Operation.BitwiseAnd:
+                GpuBigIntMath.BitwiseAnd(a, b, result);
+                return a0 & b0;
+            case Operation.BitwiseOr:
+                GpuBigIntMath.BitwiseOr(a, b, result);
+                return a0 | b0;
+            case Operation.BitwiseXor:
+                GpuBigIntMath.BitwiseXor(a, b, result);
+                return a0 ^ b0;
+            case Operation.BitwiseNot:
+                GpuBigIntMath.BitwiseNot(a, result);
+                return mask ^ a0;
+            default:
+                var remainder = GpuBigIntMath.DivideByUInt32(a, scalar, result);
+                Assert.Equal((uint)(a0 % scalar), remainder);
+                return a0 / scalar;
+        }
+    }
+
+    // Operands whose result fits in the operand width: a left shift keeps the top bits clear, a sum leaves the top bit
+    // free, a difference has a larger minuend, a scalar product leaves the top word free
+    private static (BigInteger A, BigInteger B) Operands(Operation operation, int words, int shift, Random random)
+    {
+        var bits = 32 * words;
+        var aBits = operation switch
+        {
+            Operation.ShiftLeft => bits - shift,
+            Operation.Add or Operation.AddScalar => bits - 1,
+            Operation.MulScalar => bits - 32,
+            _ => bits
+        };
+        var bBits = operation is Operation.Sub ? bits - 1 : operation is Operation.Add ? bits - 1 : bits;
+        return (RandomValue(random, aBits), RandomValue(random, bBits));
+    }
+
+    // A value of exactly the given bit length (its top bit set), or zero for no bits
+    private static BigInteger RandomValue(Random random, int bits)
+    {
+        if (bits <= 0)
+        {
+            return BigInteger.Zero;
+        }
+
+        var bytes = new byte[(bits + 7) / 8];
+        random.NextBytes(bytes);
+        var value = new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
+        value &= (BigInteger.One << bits) - 1;
+        return value | (BigInteger.One << (bits - 1));
+    }
+}
