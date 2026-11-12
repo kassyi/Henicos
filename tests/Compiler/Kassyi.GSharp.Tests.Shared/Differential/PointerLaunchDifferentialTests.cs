@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// <c>Launch{Kernel}Ptr</c> takes each array as a <c>GSharpArrayProxy</c>: the kernel sees the length the proxy carries,
-/// as the array launcher passes the array's length, and the launcher checks the proxies as it checks arrays (#720).
+/// as the array launcher passes the array's length, and the launcher rejects a proxy that describes no array (#720).
 /// </summary>
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
