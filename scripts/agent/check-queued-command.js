@@ -11,24 +11,33 @@
 // PowerShell tool and for Antigravity (` escapes in double quotes, \ does not; '' in single quotes), cmd inside cmd /c.
 // It is split into segments at &&, ||, ;, |, & and line breaks outside quotes, after joining continued lines
 // (\ or ` at the end of a line); comments, heredoc bodies and PowerShell here-strings are skipped, since their text is
-// data, and the bodies of command substitutions $( ... ) are checked as commands. A segment is denied when its
-// program, after environment assignments, launch prefixes (time, env, nohup, timeout, sudo, xargs, exec, !, the
-// PowerShell call operator, Invoke-Expression) and shell keywords (if, then, do, else, a PowerShell { body }), and
-// through Start-Process and shell wrappers (cmd /c, pwsh -Command, bash -c, with their other options), is
-//   - dotnet build, test, msbuild, publish, pack, vstest, stryker or watch, or msbuild itself (dotnet run is left alone:
-//     it starts the small tools of the repository, such as the demangler),
+// data, and the bodies of command substitutions $( ... ) and PowerShell @( ... ) are checked as commands. A segment is
+// denied when its program, after environment and PowerShell variable assignments, groups, launch prefixes (time, env,
+// nohup, timeout, nice, sudo, xargs, exec, !, the PowerShell call and dot operators) and shell keywords (if, then, do,
+// else, a { body }, a bash function body), and through Start-Process, Invoke-Expression, wsl, shell wrappers (cmd /c,
+// pwsh -Command, bash -c, with their other options; the wrapped string is unescaped as its shell does) and programs that
+// run a command given in their arguments (compute-sanitizer, valgrind, a program held in a variable), is
+//   - dotnet build, test, msbuild, publish, pack, vstest, stryker or watch, Stryker in any form, or msbuild itself
+//     (dotnet run is left alone: it starts the small tools of the repository, such as the demangler),
 //   - just with a recipe that builds or runs tests (test*, coverage-diff, fuzz-*, mutate, long-checks, bench*, doctest),
-//   - node with one of the long test scripts or gpu-lock.js.
+//     unless just only prints it (--dry-run, --show, --list) or mutate / long-checks get --dry-run,
+//   - node with one of the long test scripts or gpu-lock.js, unless they only print (--help, --self-test, --dry-run
+//     before any --), or gpu-lock.js takes a private lock (--lock-path, for its own tests).
 // A segment that runs build-queue.js is allowed with everything quoted in it, and a git or gh segment is left alone.
+// Out of reach: a command held in a variable and run later ($c = 'dotnet test'; cmd /c $c) and the contents of a
+// script file the command runs.
 //
 // Usage:
-//   node scripts/agent/check-queued-command.js --hook            reads the hook JSON on stdin
-//   node scripts/agent/check-queued-command.js --text "<command>" prints the decision (exit 1 when denied)
+//   node scripts/agent/check-queued-command.js --hook                                reads the hook JSON on stdin
+//   node scripts/agent/check-queued-command.js --text "<command>" [--dialect bash|pwsh|cmd]
+//                                                       prints the decision (exit 1 when denied; default dialect bash)
 //   node scripts/agent/check-queued-command.js --self-test
+//   require('./check-queued-command.js').check(command, dialect) returns the reasons (empty when allowed)
 
-const usage = 'Usage: check-queued-command.js (--hook | --text <command> | --self-test)';
+const usage = 'Usage: check-queued-command.js (--hook | --text <command> [--dialect bash|pwsh|cmd] | --self-test)';
 
-const JustRecipes = /^(test[\w-]*|coverage-diff|fuzz-[\w-]+|mutate|long-checks|bench[\w-]*|doctest)$/;
+// \S*: a recipe name may hold a variable, as in a loop: just test-$r
+const JustRecipes = /^(test\S*|coverage-diff|fuzz-\S+|mutate|long-checks|bench\S*|doctest)$/;
 const NodeScripts =
   /(^|[\\/])(gpu-lock|test-stability|long-checks|test-memory|test-sanitized|mutate|coverage-diff|fuzz-differential)\.js$/;
 const DotnetVerbs = /^(build|test|msbuild|publish|pack|vstest|stryker|watch)$/;
@@ -166,14 +175,17 @@ function splitSegments(command) {
 /** The words of a segment, quotes kept. */
 function words(segment) {
   // A word is a run of quoted parts and other non-blank characters, so that a quote may start inside it:
-  // msg="a b", -p:Foo="a b", $x="dotnet test"
+  // msg="a b", -p:Foo="a b", $x="dotnet test"; in bash a substitution belongs to its word too:
+  // LD_PRELOAD=$(g++ -print-file-name=libasan.so) (its body is checked on its own, see substitutions)
   const pattern =
     dialect === 'bash'
-      ? /(?:"(?:[^"\\]|\\.)*"?|'[^']*'?|\\.|[^\s"'\\])+/g
+      ? /(?:"(?:[^"\\]|\\.)*"?|'[^']*'?|\$\((?:[^()]|\([^()]*\))*\)|\\.|[^\s"'\\])+/g
       : dialect === 'pwsh'
         ? /(?:"(?:[^"`]|`.)*"?|'(?:[^']|'')*'?|`.|[^\s"'`])+/g
         : /(?:"[^"]*"?|[^\s"])+/g;
-  return segment.match(pattern) || [];
+  const list = segment.match(pattern) || [];
+  // PowerShell: the call operator may touch its operand: &"dotnet" test
+  return dialect === 'pwsh' ? list.flatMap((word) => (/^&["'$\w.\\/]/.test(word) ? ['&', word.slice(1)] : [word])) : list;
 }
 
 /**
@@ -191,6 +203,54 @@ function unquote(word) {
   return word.replace(/^["']|["']$/g, '');
 }
 
+/**
+ * The text a quoted argument passes on, escapes undone in the current dialect: the command string of a shell wrapper,
+ * as in pwsh -Command "& `"C:\x\dotnet.exe`" test" or bash -c "dotnet build \"x y\"".
+ */
+function argumentText(word) {
+  // A word may join quoted and bare parts ("cd x --filter "A|B), and a cut command may leave a quote open: join the
+  // parts as the shell does, quotes removed and escapes undone
+  let out = '';
+  let i = 0;
+  while (i < word.length) {
+    const ch = word[i];
+    if (ch === '"') {
+      i++;
+      while (i < word.length && word[i] !== '"') {
+        const escaped =
+          (dialect === 'pwsh' && word[i] === '`') || (dialect === 'bash' && word[i] === '\\' && '"\\$`'.includes(word[i + 1]));
+        if (escaped && i + 1 < word.length) {
+          out += word[i + 1];
+          i += 2;
+        } else {
+          out += word[i++];
+        }
+      }
+      i++;
+    } else if (ch === "'" && dialect !== 'cmd') {
+      i++;
+      while (i < word.length) {
+        if (word[i] === "'" && dialect === 'pwsh' && word[i + 1] === "'") {
+          out += "'";
+          i += 2;
+        } else if (word[i] === "'") {
+          break;
+        } else {
+          out += word[i++];
+        }
+      }
+      i++;
+    } else if (((dialect === 'pwsh' && ch === '`') || (dialect === 'bash' && ch === '\\')) && i + 1 < word.length) {
+      out += word[i + 1];
+      i += 2;
+    } else {
+      out += ch;
+      i++;
+    }
+  }
+  return out;
+}
+
 /** A program name without directory, extension and case: "C:\x\dotnet.exe" -> dotnet. */
 function programName(word) {
   return unquote(word)
@@ -203,6 +263,10 @@ function programName(word) {
 const LaunchPrefixes = [
   '&',
   '.', // PowerShell dot-source, bash source: . "C:\x\dotnet.exe" test
+  '(', // a group, subshell or subexpression whose opener stands alone: $o = ( dotnet test ), time ( dotnet build )
+  '{',
+  '@(',
+  '$(',
   '!',
   'time',
   'exec',
@@ -228,6 +292,11 @@ function dropPrefixes(list) {
     }
     const head = rest[0];
     const name = programName(head);
+    // An opener stuck to the program: time (timeout 600 dotnet build), {dotnet test}
+    if (/^[({]+[^({]/.test(head)) {
+      rest = [head.replace(/^[({]+/, ''), ...rest.slice(1)];
+      continue;
+    }
     // PowerShell assignment: $out = dotnet test, $x=dotnet build, $env:X = ...
     const assignment = /^\$[\w:.]+\s*[+]?=(.*)$/.exec(head);
     if (assignment !== null) {
@@ -321,6 +390,25 @@ function nestedReason(command) {
   return reasons.length > 0 ? reasons[0] : null;
 }
 
+/** Programs that run another command given among their arguments. */
+const Runners = [
+  'compute-sanitizer',
+  'cuda-memcheck',
+  'valgrind',
+  'strace',
+  'ltrace',
+  'nsys',
+  'ncu',
+  'drmemory',
+  'perf',
+  'gdb',
+  'lldb',
+  'dotnet-trace',
+  'dotnet-counters',
+  'dotnet-coverage',
+  'procdump',
+];
+
 /** True for the Stryker.NET tool name, also with a version: dotnet-stryker, dotnet-stryker@4.0.0. */
 function isStryker(word) {
   return /^dotnet-stryker(@.*)?$/i.test(word);
@@ -345,13 +433,16 @@ function segmentReason(segment) {
   }
   // PowerShell: a quoted string at the start is a value ($tool = "msbuild"), a command only after & or .
   const called =
-    calledInGroup || raw.slice(0, Math.max(raw.length - list.length, 0)).some((word) => word === '&' || word === '.');
+    calledInGroup || raw.slice(0, Math.max(raw.length - list.length, 0)).some((word) => /^[({]*[&.]$/.test(word));
   if (dialect === 'pwsh' && /^["']/.test(list[0]) && !called) {
     return null;
   }
   // A PowerShell body after the condition: if (...) { dotnet test }, foreach (...) { ... }
-  const brace = list.findIndex((word, index) => index > 0 && (word === '{' || word.endsWith('{')));
-  if (brace > 0 && !/^["']/.test(list[brace])) {
+  // ... and the body of a bash function: cnt(){ dotnet test; }, cnt() { dotnet test; }
+  const brace = list.findIndex(
+    (word, index) => (index > 0 && (word === '{' || word.endsWith('{'))) || (index === 0 && /\(\)\{$/.test(word)),
+  );
+  if (brace >= 0 && !/^["']/.test(list[brace])) {
     const inner = nestedReason(list.slice(brace + 1).join(' '));
     if (inner !== null) {
       return inner;
@@ -362,11 +453,25 @@ function segmentReason(segment) {
     return nestedReason(startProcessCommand(list));
   }
   if (name === 'invoke-expression' || name === 'iex') {
-    return nestedReason(list.slice(1).map(unquote).join(' '));
+    return nestedReason(list.slice(1).map(argumentText).join(' '));
+  }
+  if (name === 'wsl') {
+    // wsl [options] [-e | --exec] <command>, wsl [options] -- <command line>: the command runs in Linux, on this
+    // machine's CPU
+    let i = 1;
+    while (i < list.length && /^-/.test(list[i]) && !['-e', '--exec', '--'].includes(list[i])) {
+      i += ['-d', '--distribution', '-u', '--user', '--cd', '--shell-type'].includes(list[i]) ? 2 : 1;
+    }
+    if (['-e', '--exec', '--'].includes(list[i])) {
+      i++;
+    }
+    const inner = list.slice(i).join(' ');
+    const reasons = inner === '' ? [] : check(inner, 'bash');
+    return reasons.length > 0 ? reasons[0] : null;
   }
   const shellIndex = shellCommandIndex(name, list);
   if (shellIndex > 0) {
-    const inner = list.slice(shellIndex).map(unquote).join(' ');
+    const inner = list.slice(shellIndex).map(argumentText).join(' ');
     const reasons = check(inner, name === 'cmd' ? 'cmd' : /^(pwsh|powershell)$/.test(name) ? 'pwsh' : 'bash');
     return reasons.length > 0 ? reasons[0] : null;
   }
@@ -392,12 +497,34 @@ function segmentReason(segment) {
   if (isStryker(name) || (name === 'dnx' && args.some(isStryker))) {
     return 'dotnet-stryker';
   }
+  // A program that runs the command given in its arguments (a sanitizer, tracer or profiler, or a program held in a
+  // variable): compute-sanitizer --tool memcheck dotnet test, "$CS" --log-file x dotnet test
+  if (Runners.includes(name) || /^["']?\$/.test(list[0])) {
+    for (let i = 1; i < list.length; i++) {
+      if (['dotnet', 'just', 'msbuild', 'node'].includes(programName(list[i]))) {
+        const inner = segmentReason(list.slice(i).join(' '));
+        if (inner !== null) {
+          return inner;
+        }
+      }
+    }
+    return null;
+  }
   if (name === 'msbuild') {
     return 'msbuild';
   }
   if (name === 'just') {
     const recipe = justRecipe(list);
-    return JustRecipes.test(recipe) ? `just ${recipe}` : null;
+    if (!JustRecipes.test(recipe)) {
+      return null;
+    }
+    const recipeIndex = list.findIndex((word, index) => index > 0 && unquote(word) === recipe);
+    const before = list.slice(1, recipeIndex).map(unquote);
+    const after = list.slice(recipeIndex + 1).map(unquote);
+    // just --dry-run / --show / --list prints the recipe; mutate and long-checks run nothing with --dry-run
+    const printsOnly = before.some((arg) => ['-n', '--dry-run', '-s', '--show', '-l', '--list', '--summary', '--evaluate'].includes(arg));
+    const scriptDryRun = /^(mutate|long-checks)$/.test(recipe) && after.includes('--dry-run');
+    return printsOnly || scriptDryRun ? null : `just ${recipe}`;
   }
   if (NodeScripts.test(unquote(list[0]))) {
     return unquote(list[0]).replace(/^.*[\\/]/, ''); // ./scripts/human/long-checks.js run directly
@@ -415,7 +542,9 @@ function segmentReason(segment) {
       (!/fuzz-differential\.js$/.test(script) &&
         (passOn < 0 ? ownArgs : ownArgs.slice(0, passOn)).some((arg) =>
           ['--help', '-h', '--self-test', '--dry-run'].includes(arg),
-        ));
+        )) ||
+      // gpu-lock.js --lock-path <dir> takes a private lock, for tests of the script itself
+      (/gpu-lock\.js$/.test(script) && ownArgs.includes('--lock-path'));
     if (NodeScripts.test(script) && !helper) {
       return script.replace(/^.*[\\/]/, '');
     }
@@ -708,21 +837,139 @@ function selfTest() {
   }
   assert.notDeepStrictEqual(check('echo "x\\"; dotnet test', 'cmd'), [], 'cmd: "x\\" ends the quote');
   assert.notDeepStrictEqual(check('just profile=cpu fuzz-diff'), [], 'just variable before the recipe');
+  checkGeneratedForms(assert);
   process.stdout.write('check-queued-command self-test passed\n');
 }
 
-const args = process.argv.slice(2);
-if (args[0] === '--hook') {
-  runHook();
-} else if (args[0] === '--text' && (args.length === 2 || (args.length === 4 && args[2] === '--dialect'))) {
-  const reasons = check(args[1], args.length === 4 ? args[3] : 'bash');
-  process.stdout.write(reasons.length === 0 ? 'allowed\n' : `${denialText(reasons)}\n`);
-  process.exit(reasons.length === 0 ? 0 : 1);
-} else if (args[0] === '--self-test') {
-  selfTest();
-} else if (args[0] === '--help' || args[0] === '-h') {
-  process.stdout.write(`${usage}\n`);
-} else {
-  process.stderr.write(`${usage}\n`);
-  process.exit(2);
+/**
+ * Every build / test command in every form that runs it must be denied, and in every form that only names it (quotes,
+ * comments, heredocs, search patterns) allowed, per dialect. {B} stands for the command.
+ */
+function checkGeneratedForms(assert) {
+  const builds = [
+    'dotnet build',
+    'dotnet test tests/X.csproj --filter "A|B"',
+    'dotnet -d build -p:Foo="a b"',
+    'msbuild Henicos.slnx',
+    'just test',
+    'just -f justfile test-category Runtime',
+    'node --max-old-space-size=4096 scripts/human/test-stability.js',
+  ];
+  const runs = {
+    bash: [
+      '{B}',
+      'cd x && {B}',
+      'ls | {B}',
+      '{B} 2>&1 | tail -5',
+      'FOO=1 BAR="a b" {B}',
+      'LD_PRELOAD=$(g++ -print-file-name=libasan.so) {B}',
+      'timeout -s INT 600 {B}',
+      'nohup {B} &',
+      '( {B} )',
+      'time ({B})',
+      'if true; then\n  {B}\nfi',
+      'for i in 1 2; do {B}; done',
+      'f(){ {B}; }; f',
+      'x=$({B})',
+      'echo "$({B})"',
+      'bash -lc "{B}"',
+      'bash -c "echo \\"a\\"; {B}"',
+      'cmd /c "{B}"',
+      'wsl -- bash -lc "{B}"',
+      'compute-sanitizer --tool memcheck {B}',
+      '"$CS" --log-file "a b" {B}',
+      'cat <<EOF\ntext\nEOF\n{B}',
+      'echo a \\\n  && {B}',
+      'git status && {B}',
+    ],
+    pwsh: [
+      '{B}',
+      'Set-Location "tmp\\"; {B}',
+      '$out = {B}',
+      '$o = ( {B} )',
+      '$r = @({B})',
+      'Write-Output "$({B})"',
+      'if ($true) { {B} }',
+      '1..2 | ForEach-Object { {B} }',
+      '& {B}',
+      'pwsh -NoProfile -Command "{B}"',
+      'pwsh -Command "Write-Output `"a`"; {B}"',
+      'cmd.exe /c "{B}"',
+      "$b = @'\ntext\n'@\n{B}",
+    ],
+  };
+  const names = {
+    bash: [
+      'echo "{B}"',
+      'git commit -m "run {B} first"',
+      'git commit -m "$(cat <<\'EOF\'\nfix: run {B} first\nEOF\n)"',
+      'grep -n "{B}" justfile',
+      "cat > notes.md <<'EOF'\n{B}\nEOF",
+      'ls # see; {B}',
+      'echo "x\\"; {B}"',
+      'msg="{B}"; echo "$msg"',
+    ],
+    pwsh: [
+      'Write-Output "{B}"',
+      "gh pr comment 1 --body @'\nIt's fine. Ran {B}.\n'@",
+      'Select-String -Path justfile -Pattern "{B}"',
+      'Get-ChildItem # see; {B}',
+      '$msg = "{B}"; Write-Output $msg',
+      'Test-Path "src\\x\\"; Write-Output "fix; {B}"',
+    ],
+  };
+  // Inside double quotes the build's own double quotes become single ones, inside single quotes they are dropped
+  const fill = (template, build) => {
+    const before = template.slice(0, template.indexOf('{B}'));
+    const single = (before.match(/'/g) || []).length % 2 === 1;
+    const double = !single && (before.match(/"/g) || []).length % 2 === 1;
+    const b = single ? build.replace(/'/g, '') : double ? build.replace(/"/g, "'") : build;
+    return template.split('{B}').join(b);
+  };
+  for (const [kind, templates] of Object.entries(runs)) {
+    for (const template of templates) {
+      for (const build of builds) {
+        const command = fill(template, build);
+        assert.notDeepStrictEqual(check(command, kind), [], `should deny in ${kind}: ${command}`);
+      }
+    }
+  }
+  for (const [kind, templates] of Object.entries(names)) {
+    for (const template of templates) {
+      for (const build of builds) {
+        const command = fill(template, build);
+        assert.deepStrictEqual(check(command, kind), [], `should allow in ${kind}: ${command}`);
+      }
+    }
+  }
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const dialects = ['bash', 'pwsh', 'cmd'];
+  if (args[0] === '--hook') {
+    runHook();
+  } else if (args[0] === '--text' && (args.length === 2 || (args.length === 4 && args[2] === '--dialect'))) {
+    const kind = args.length === 4 ? args[3] : 'bash';
+    if (!dialects.includes(kind)) {
+      process.stderr.write(`--dialect needs ${dialects.join(', ')}.\n${usage}\n`);
+      process.exit(2);
+    }
+    const reasons = check(args[1], kind);
+    process.stdout.write(reasons.length === 0 ? 'allowed\n' : `${denialText(reasons)}\n`);
+    process.exit(reasons.length === 0 ? 0 : 1);
+  } else if (args[0] === '--self-test') {
+    selfTest();
+  } else if (args[0] === '--help' || args[0] === '-h') {
+    process.stdout.write(`${usage}\n`);
+  } else {
+    process.stderr.write(`${usage}\n`);
+    process.exit(2);
+  }
+}
+
+module.exports = { check };
+
+if (require.main === module) {
+  main();
 }

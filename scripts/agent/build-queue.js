@@ -12,11 +12,14 @@
 //
 // Slots follow the command, not only the connection:
 //   - The client reports the process id of the command it started. When the client dies but the command still runs
-//     (a tool timeout that kills only the client), the scheduler keeps the slot until that process has exited.
+//     (a tool timeout that kills only the client), the scheduler keeps the slot until no process of the command is
+//     left (on Windows: the shell or a child of it, matched by creation time, since the shell dies with the client).
+//   - A cancelled running job keeps its slot until its client has stopped the command and closed.
 //   - When the scheduler dies, a running client reconnects and re-registers its job, and a waiting client queues
-//     again with its original arrival time. For the first seconds after it starts, the scheduler accepts those
-//     re-registrations and grants nothing, so that waiting clients do not take the slots of running jobs that have not
-//     re-registered yet.
+//     again with its original arrival time, both with their job id, so that ids stay the same across a restart. For
+//     the first seconds after it starts, the scheduler accepts those re-registrations and grants nothing, so that
+//     waiting clients do not take the slots of running jobs that have not re-registered yet. Jobs whose client was
+//     already gone are restored from jobs-<port>.json, which also keeps the next job id.
 //
 // Weight: a test run (dotnet test, just test*, the long test scripts) weighs 2 slots, anything else 1; --weight
 // overrides it. A granted job gets cores / slots * weight MSBuild nodes: `-m:<n>` is added to each `dotnet build`,
@@ -443,7 +446,8 @@ function describeJob(job) {
 
 function serve(options) {
   const scheduler = new Scheduler(options.slots, Infinity); // nothing is granted before listening (see listen)
-  const log = (text) => process.stdout.write(`${new Date().toISOString()} ${text}\n`);
+  // Several schedulers may write to one log for a moment (one stopping, the next starting): tag each line
+  const log = (text) => process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`);
   let nextId = 1;
   let idleSince = Date.now();
 
@@ -451,7 +455,7 @@ function serve(options) {
     scheduler.waiting.forEach((job, index) => {
       if (job.lastPosition !== index) {
         job.lastPosition = index;
-        send(job.socket, { type: 'waiting', position: index + 1, used: scheduler.used, capacity: scheduler.capacity });
+        send(job.socket, { type: 'waiting', id: job.id, position: index + 1, used: scheduler.used, capacity: scheduler.capacity });
       }
     });
   };
@@ -465,8 +469,19 @@ function serve(options) {
       idleSince = Date.now();
     }
   };
+  // Job ids stay the same across a scheduler restart, so that `cancel <id>` read from an earlier `status` never hits
+  // another job: a re-registering client brings its id, and the next new id continues from the saved one.
+  const chooseId = (wanted) => {
+    const id = Number(wanted);
+    const taken = (candidate) => scheduler.running.concat(scheduler.waiting).some((job) => job.id === candidate);
+    if (Number.isInteger(id) && id > 0 && !taken(id)) {
+      nextId = Math.max(nextId, id + 1);
+      return id;
+    }
+    return nextId++;
+  };
   const createJob = (socket, message) => ({
-    id: nextId++,
+    id: chooseId(message.id),
     socket,
     weight: Number(message.weight) || 1,
     gpu: message.gpu === true,
@@ -494,22 +509,26 @@ function serve(options) {
       .map((job) => ({ ...describeJob(job), spawnedAt: job.spawnedAt }));
     try {
       fs.mkdirSync(path.dirname(jobsPath), { recursive: true });
-      fs.writeFileSync(jobsPath, JSON.stringify(records));
+      fs.writeFileSync(jobsPath, JSON.stringify({ nextId, jobs: records }));
     } catch (error) {
       log(`could not write ${jobsPath}: ${error.message}`);
     }
   };
   const restore = () => {
-    let records = [];
+    let saved = null;
     try {
-      records = JSON.parse(fs.readFileSync(jobsPath, 'utf8'));
+      saved = JSON.parse(fs.readFileSync(jobsPath, 'utf8'));
     } catch (error) {
       if (error.code !== 'ENOENT') {
         log(`could not read ${jobsPath}: ${error.message}`);
       }
       return;
     }
-    for (const record of Array.isArray(records) ? records : []) {
+    if (saved !== null && Number.isInteger(saved.nextId)) {
+      nextId = Math.max(nextId, saved.nextId);
+    }
+    const records = saved !== null && Array.isArray(saved.jobs) ? saved.jobs : [];
+    for (const record of records) {
       if (isClientAlive(Number(record.pid))) {
         continue; // its client re-registers it
       }
@@ -532,6 +551,9 @@ function serve(options) {
 
   /** The live processes of each orphan's command (Unix: its process group id), or null per job when unsure. */
   const orphanProcesses = async (orphans) => {
+    if (orphans.length === 0) {
+      return [];
+    }
     const processes = process.platform === 'win32' ? await queryWindowsProcesses() : null;
     return orphans.map((job) => {
       if (job.commandPid <= 0) {
@@ -565,18 +587,28 @@ function serve(options) {
   }, OrphanPollMs).unref();
 
   /** Cancels jobs: a waiting job leaves the queue, a running one is told to stop (or killed when its client is gone). */
-  const cancel = async (jobs) => {
-    const orphans = jobs.filter((job) => job.socket === null && scheduler.running.includes(job));
+  /** Cancels jobs and resolves to the ids it cancelled: a job that ended meanwhile (while the processes of lost
+   * clients were read) is left out. */
+  const cancel = async (requested) => {
+    const orphans = requested.filter((job) => job.socket === null && scheduler.running.includes(job));
     const live = await orphanProcesses(orphans);
     orphans.forEach((job, index) => (live[index] || []).forEach(killProcessTree));
+    const jobs = requested.filter((job) => !job.cancelled && (scheduler.running.includes(job) || scheduler.waiting.includes(job)));
     for (const job of jobs) {
       log(`cancel #${job.id}: ${job.command}`);
       send(job.socket, { type: 'cancelled', id: job.id });
+      if (scheduler.running.includes(job) && job.socket !== null && !job.socket.destroyed) {
+        // The client stops its command and then closes: keep the slot until then, so that the next job does not start
+        // beside a command that is still being stopped
+        job.cancelPending = true;
+        continue;
+      }
       job.cancelled = true;
       if (scheduler.running.includes(job) || scheduler.waiting.includes(job)) {
         release(job, 'cancelled');
       }
     }
+    return jobs.map((job) => job.id);
   };
 
   const server = net.createServer((socket) => {
@@ -584,6 +616,13 @@ function serve(options) {
     socket.on('error', () => socket.destroy());
     socket.on('close', () => {
       if (job === null || job.cancelled) {
+        return;
+      }
+      if (job.cancelPending) {
+        const cancelled = job;
+        job = null;
+        cancelled.cancelled = true;
+        release(cancelled, 'cancelled');
         return;
       }
       const lost = job;
@@ -631,6 +670,7 @@ function serve(options) {
           } else {
             log(`queue #${job.id} weight ${job.weight}${job.gpu ? ' gpu' : ''} pid ${job.pid}: ${job.command}`);
             announce(scheduler.enqueue(job));
+            persist(); // keeps the next id
           }
           break;
         }
@@ -660,17 +700,31 @@ function serve(options) {
         case 'cancel': {
           const all = scheduler.running.concat(scheduler.waiting);
           const targets = message.all === true ? all : all.filter((j) => j.id === message.id);
-          cancel(targets).then(() => {
-            send(socket, { type: 'cancel-result', cancelled: targets.map((j) => j.id) });
+          cancel(targets).then((cancelled) => {
+            send(socket, { type: 'cancel-result', cancelled });
             socket.end();
           });
           break;
         }
-        case 'stop':
+        case 'stop': {
           log('stop requested');
           send(socket, { type: 'stopping', running: scheduler.running.length, waiting: scheduler.waiting.length });
-          socket.end(() => process.exit(0));
+          // Flush what was sent to the clients (a cancel just before the stop) before leaving: end every connection
+          // and exit when they are closed, or after a second
+          server.close();
+          const open = scheduler.running.concat(scheduler.waiting).map((j) => j.socket).filter((s) => s !== null);
+          let pending = open.length + 1;
+          const closed = () => {
+            pending--;
+            if (pending === 0) {
+              process.exit(0);
+            }
+          };
+          setTimeout(() => process.exit(0), 1000).unref();
+          socket.end(closed);
+          open.forEach((s) => s.end(closed));
           break;
+        }
         default:
           send(socket, { type: 'error', message: `unknown message type ${message.type}` });
           socket.end();
@@ -1163,10 +1217,12 @@ async function run(options) {
       cwd: process.cwd(),
       command: options.command,
       queuedAt,
+      id: jobId, // keeps the job id across a scheduler restart
     });
     onMessages(current, (message) => {
       switch (message.type) {
         case 'waiting': {
+          jobId = Number(message.id) || jobId;
           const now = Date.now();
           if (message.position !== lastPosition || now - lastNotice >= NoticeIntervalMs) {
             lastPosition = message.position;
@@ -1188,9 +1244,19 @@ async function run(options) {
           jobId = message.id;
           break;
         case 'cancelled':
+          if (state === 'done') {
+            break; // the command had already ended
+          }
           prefix(`job #${message.id} was cancelled${state === 'running' ? '; stopping the command' : ''}`);
-          killChild(child);
-          finish(CancelledExitCode);
+          if (child !== null && child.exitCode === null && child.signalCode === null) {
+            // Leave (and so free the slot) once the command has really ended
+            const leave = () => finish(CancelledExitCode);
+            child.once('close', leave);
+            setTimeout(leave, 10000).unref();
+            killChild(child);
+          } else {
+            finish(CancelledExitCode);
+          }
           break;
         case 'error':
           prefix(`scheduler: ${message.message}`);
@@ -1477,6 +1543,8 @@ async function selfTest() {
     const result = await request({ port }, { type: 'cancel', all: true });
     assert.strictEqual(result.cancelled.length, 3);
     assert.deepStrictEqual(await Promise.all([r1.done, r2.done, w1.done]), [4, 4, 4]);
+    // A cancelled running job keeps its slot until its client has stopped the command and closed
+    assert.strictEqual(await usedWithin(port, 0, 5000), 0);
     const empty = await request({ port }, { type: 'status' });
     assert.deepStrictEqual([empty.used, empty.running.length, empty.waiting.length], [0, 0, 0]);
 
@@ -1578,12 +1646,19 @@ async function selfTest() {
     await delay(800);
     lost.kill('SIGKILL'); // the client only
     await delay(300);
+    const beforeRestart = await request({ port }, { type: 'status' });
     await request({ port }, { type: 'stop' });
     await delay(300);
     servers.push(await startTestScheduler(port, 2, env));
     const restored = await request({ port }, { type: 'status' });
     assert.strictEqual(restored.used, 1, 'the job of the lost client is restored after the restart');
     assert.strictEqual(restored.running[0].orphan, true);
+    assert.strictEqual(restored.running[0].id, beforeRestart.running[0].id, 'a job keeps its id across a restart');
+    const fresh = client(port, sleeper(100));
+    await delay(StartupGraceMs + 800);
+    assert.ok(fresh.exitCode === 0 || (await fresh.done) === 0);
+    const newIds = fs.readFileSync(path.join(dir, `jobs-${port}.json`), 'utf8');
+    assert.ok(JSON.parse(newIds).nextId > beforeRestart.running[0].id, 'new ids continue after the saved ones');
     assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanPollMs * 3), 0, 'and released when its command exits');
   } finally {
     children.forEach((child) => child.exitCode === null && killProcessTree(child.pid));
