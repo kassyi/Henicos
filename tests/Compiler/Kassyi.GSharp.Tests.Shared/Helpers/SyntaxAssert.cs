@@ -23,7 +23,7 @@ public static class SyntaxAssert
     /// </param>
     public static void Equivalent(string expected, SyntaxNode actual)
     {
-        if (!SyntaxFactory.AreEquivalent(Parse(expected, actual), actual, topLevel: false))
+        if (!AreEquivalent(Parse(expected, actual), actual))
         {
             Assert.Fail($"Expected `{expected}`, but found {Describe(actual)}.");
         }
@@ -32,7 +32,7 @@ public static class SyntaxAssert
     /// <summary>Asserts that <paramref name="actual"/> is equivalent to <paramref name="expected"/>.</summary>
     public static void Equivalent(SyntaxNode expected, SyntaxNode actual)
     {
-        if (!SyntaxFactory.AreEquivalent(expected, actual, topLevel: false))
+        if (!AreEquivalent(expected, actual))
         {
             Assert.Fail($"Expected a node equivalent to {Describe(expected)}, but found {Describe(actual)}.");
         }
@@ -53,12 +53,17 @@ public static class SyntaxAssert
 
         for (var i = 0; i < nodes.Length; i++)
         {
-            if (!SyntaxFactory.AreEquivalent(Parse(expected[i], nodes[i]), nodes[i], topLevel: false))
+            if (!AreEquivalent(Parse(expected[i], nodes[i]), nodes[i]))
             {
                 Assert.Fail($"Node {i}: expected `{expected[i]}`, but found {Describe(nodes[i])}.");
             }
         }
     }
+
+    // A rewritten node can store a list in another shape than a parsed one with the same nodes and tokens, and
+    // AreEquivalent tells the two apart; NormalizeWhitespace rebuilds both alike
+    private static bool AreEquivalent(SyntaxNode expected, SyntaxNode actual) =>
+        SyntaxFactory.AreEquivalent(expected.NormalizeWhitespace(), actual.NormalizeWhitespace(), topLevel: false);
 
     private static SyntaxNode Parse(string expected, SyntaxNode actual)
     {
