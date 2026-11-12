@@ -245,11 +245,9 @@ public class GlobalCppNamesTests
     }
 
     private static CSharpCompilation CreateCompilation(params (string Path, string Source)[] files) =>
-        CSharpCompilation.Create("GlobalCppNamesFileTests")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(files.Select(f =>
-                RoslynTestUtility.CreateCompilationAt(f.Path, f.Source).SyntaxTrees.Single()));
+        RoslynTestUtility.CreateCompilationAt(files)
+            .WithAssemblyName("GlobalCppNamesFileTests")
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
     // In declaration order.
     private static IMethodSymbol[] GetMethods(string typeMetadataName, string name) =>
@@ -264,8 +262,7 @@ public class GlobalCppNamesTests
         ?? throw new InvalidOperationException($"Test source does not declare '{metadataName}'.");
 
     private static CSharpCompilation CreateCompilation() =>
-        CSharpCompilation.Create("GlobalCppNamesTests")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(RoslynTestUtility.CreateCompilation(s_source).SyntaxTrees.Single());
+        RoslynTestUtility.CreateCompilation(s_source)
+            .WithAssemblyName("GlobalCppNamesTests")
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 }

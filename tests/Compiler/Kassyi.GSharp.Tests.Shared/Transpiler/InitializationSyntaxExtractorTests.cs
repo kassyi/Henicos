@@ -1,8 +1,4 @@
 using Kassyi.GSharp.Compiler.Transpiler.Helpers;
-using Kassyi.GSharp.Tests.Shared.Helpers;
-using Kassyi.ZeroAlloc.Linq;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
@@ -12,27 +8,18 @@ public class InitializationSyntaxExtractorTests
 {
     [Theory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData("span", "int", false)]
-    [InlineData("readOnlySpan", "float", true)]
-    [InlineData("array", "int", false)]
+    [InlineData("span", SpecialType.System_Int32, false)]
+    [InlineData("readOnlySpan", SpecialType.System_Single, true)]
+    [InlineData("array", SpecialType.System_Int32, false)]
     public void TryGetArrayElementType_SystemSpansAndArrays_ExtractsElementType(
         string parameter,
-        string elementType,
+        SpecialType elementType,
         bool isConst)
     {
         Assert.True(InitializationSyntaxExtractor.TryGetArrayElementType(GetParameterType(parameter), out var element, out var readOnly));
-        Assert.Equal(elementType, GetSimpleTypeName(element));
+        Assert.Equal<ISymbol>(TestCompilation.GetSpecialType(elementType), element, SymbolEqualityComparer.Default);
         Assert.Equal(isConst, readOnly);
     }
-
-    private static string GetSimpleTypeName(ITypeSymbol type) => type?.SpecialType switch
-    {
-        SpecialType.System_Int32 => "int",
-        SpecialType.System_Single => "float",
-        SpecialType.System_Double => "double",
-        SpecialType.System_Boolean => "bool",
-        _ => type?.Name
-    };
 
     // A user type named Span or ReadOnlySpan is a struct, not a stack array
     [Theory]
@@ -44,15 +31,17 @@ public class InitializationSyntaxExtractorTests
         Assert.False(InitializationSyntaxExtractor.TryGetArrayElementType(GetParameterType(parameter), out _, out _));
     }
 
+    private static Compilation TestCompilation =>
+        RoslynTestUtility.GetTestCaseContext("Transpiler/InitializationSyntaxExtractorSource.cs").Compilation;
+
     private static ITypeSymbol GetParameterType(string name)
     {
-        var (compilation, _, _) = RoslynTestUtility.GetTestCaseContext("Transpiler/InitializationSyntaxExtractorSource.cs");
-        var locals = compilation.GetTypeByMetadataName("Locals")
+        var locals = TestCompilation.GetTypeByMetadataName("Locals")
             ?? throw new InvalidOperationException("Test source does not declare 'Locals'.");
         var declare = locals.GetMembers("Declare")[0] as IMethodSymbol
             ?? throw new InvalidOperationException("Test source does not declare 'Locals.Declare'.");
-        return declare.Parameters.AsSpan().AsStackEnumerable()
-            .First(p => p.Name == name)
-            .Type;
+        var parameter = declare.Parameters.FirstOrDefault(p => p.Name == name)
+            ?? throw new InvalidOperationException($"'Locals.Declare' has no parameter '{name}'.");
+        return parameter.Type;
     }
 }

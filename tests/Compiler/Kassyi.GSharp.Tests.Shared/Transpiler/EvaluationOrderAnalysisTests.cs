@@ -135,8 +135,8 @@ public class EvaluationOrderAnalysisTests
     [Scenario(TestScenario.Boundary)]
     public void LastSpilledOperand_AliasInSecondCompilationOfSameTree_IsStillFound()
     {
-        var second = s_compilation.AddSyntaxTrees(
-            RoslynTestUtility.CreateCompilation("namespace OtherCases { class Unrelated { } }").SyntaxTrees.Single());
+        var second = RoslynTestUtility.CreateCompilation("namespace OtherCases { class Unrelated { } }")
+            .AddSyntaxTrees(s_compilation.SyntaxTrees);
 
         Assert.Equal(1, EvaluationOrder.LastSpilledOperand(GetOperandEffects("PointerAlias", s_compilation)));
         Assert.Equal(1, EvaluationOrder.LastSpilledOperand(GetOperandEffects("PointerAlias", second)));
