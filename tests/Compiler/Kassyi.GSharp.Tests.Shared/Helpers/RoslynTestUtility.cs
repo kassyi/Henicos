@@ -121,7 +121,7 @@ public static class RoslynTestUtility
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 #pragma warning disable RS0030
-        var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
+        var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions)).ToArray();
 #pragma warning restore RS0030
 
         return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTrees);
