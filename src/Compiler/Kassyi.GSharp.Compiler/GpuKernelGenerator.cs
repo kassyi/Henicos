@@ -156,12 +156,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild);
             });
 
-        // The wrappers take only the assembly names from the compilation, so this value compares equal across edits and
+        // The wrappers take only the module name from the compilation, so this value compares equal across edits and
         // the steps after it stay cached; the compilation itself is never combined with an output
         var hostOptions = context.CompilationProvider
-            .Select(static (compilation, _) => (compilation.Assembly.Name, compilation.AssemblyName))
+            .Select(static (compilation, _) => AotModuleNames.GetModuleName(compilation))
             .Combine(configProvider)
-            .Select(static (input, _) => HostEmitOptions.Create(input.Right, input.Left.Item1, input.Left.Item2));
+            .Select(static (input, _) => new HostEmitOptions(input.Right, input.Left));
 
         var aotTarget = context.CompilationProvider.Select(static (compilation, _) => AotTarget.Create(compilation));
 
@@ -847,7 +847,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             ReportInternalError(context, kernel.InternalError);
         }
 
-        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(model, options.Config, options.AssemblyName);
+        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(model, options.Config, options.ModuleName);
         context.AddSource(model.Class.HintName, SourceText.From(wrapperSource, Encoding.UTF8));
     }
 
@@ -1018,8 +1018,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
-        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(options.ModuleAssemblyName, warmups);
-        context.AddSource($"{AotHostNames.GetModuleContextName(options.ModuleAssemblyName)}.g.cs",
+        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(options.ModuleName, warmups);
+        context.AddSource($"{AotModuleNames.GetModuleContextName(options.ModuleName)}.g.cs",
             SourceText.From(contextSource, Encoding.UTF8));
     }
 

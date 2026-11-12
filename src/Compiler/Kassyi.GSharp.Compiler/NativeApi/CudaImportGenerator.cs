@@ -115,17 +115,8 @@ public class CudaImportGenerator : IIncrementalGenerator
             plan);
     }
 
-    private static string GetNamespaceName(INamedTypeSymbol containingClass)
-    {
-        if (containingClass.ContainingNamespace == null || containingClass.ContainingNamespace.IsGlobalNamespace)
-        {
-            return string.Empty;
-        }
-
-        using var nsWriter = new SourceWriter();
-        nsWriter.AppendNamespace(containingClass.ContainingNamespace);
-        return nsWriter.ToString();
-    }
+    private static string GetNamespaceName(INamedTypeSymbol containingClass) =>
+        containingClass.ContainingNamespace.GetCsharpNamespaceName();
 
     private static string RenderClassHeader(INamedTypeSymbol containingClass)
     {
