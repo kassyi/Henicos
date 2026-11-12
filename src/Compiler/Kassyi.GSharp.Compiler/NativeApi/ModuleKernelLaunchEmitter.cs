@@ -159,8 +159,11 @@ internal static class ModuleKernelLaunchEmitter
         writer.AppendLine(";");
     }
 
-    // <value> as a C# string literal, every character a regular literal cannot hold escaped
-    private static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
+    /// <summary>
+    /// Returns <paramref name="value"/> as a C# string literal, every character a regular literal cannot hold escaped.
+    /// Shared with <see cref="NativeBindingEmitter"/>.
+    /// </summary>
+    internal static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
 
     // The parameter as C# source names it (@in for 'in'); the launcher locals derived from it (d_in) need no escape
     private static string Identifier(ModuleKernelArgument argument) => argument.Name.ToCSharpIdentifier();

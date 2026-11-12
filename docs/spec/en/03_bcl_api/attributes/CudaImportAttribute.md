@@ -135,7 +135,8 @@ a pointer or an array cannot be passed by `ref`, `out` or `in`, and jagged array
 
 A YAML native API definition with `moduleName` may name the class of `[CudaImport]` methods as its `className`: the
 launchers of both kinds load a module through one field per module and class, so the YAML methods and the imported
-methods of the same module share it.
+methods of the same module share it. The YAML binding declares the class `public static partial`, so the class of
+the `[CudaImport]` methods must be declared `public static partial` as well (any other accessibility gives CS0262).
 
 ## See also
 

@@ -45,8 +45,8 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
         {
             if (result.Definition is { BindingKind: NativeApiBindingKind.Module } definition)
             {
-                classes.Add(new YamlModuleClass($"{definition.Namespace}.{definition.ClassName}",
-                    definition.ModuleName ?? string.Empty));
+                var typeName = YamlModuleClass.GetTypeName(definition.Namespace, definition.ClassName);
+                classes.Add(new YamlModuleClass(typeName, definition.ModuleName ?? string.Empty));
             }
         }
 

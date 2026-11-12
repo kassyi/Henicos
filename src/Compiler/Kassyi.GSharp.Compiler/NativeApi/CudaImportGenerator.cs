@@ -128,7 +128,8 @@ public class CudaImportGenerator : IIncrementalGenerator
     // <namespace>.<name> of a class that a YAML binding can also extend (not nested, not generic), keywords not escaped
     private static string? GetTopLevelTypeName(INamedTypeSymbol containingClass) =>
         containingClass is { ContainingType: null, TypeParameters.IsEmpty: true }
-            ? containingClass.ContainingNamespace.GetMetadataNamespaceName() + "." + containingClass.Name
+            ? YamlModuleClass.GetTypeName(containingClass.ContainingNamespace.GetMetadataNamespaceName(),
+                containingClass.Name)
             : null;
 
     private static string RenderClassHeader(INamedTypeSymbol containingClass)

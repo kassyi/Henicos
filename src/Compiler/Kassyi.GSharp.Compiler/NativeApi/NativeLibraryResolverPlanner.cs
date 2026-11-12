@@ -6,9 +6,9 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// <remarks>
 /// The runtime resolves a <c>[DllImport]</c> library name once per assembly, so every class that binds the same name
 /// gets the same handle: the candidates of all those definitions are probed together. Definitions are taken in the
-/// ordinal order of their file paths and each list keeps its order, so the result does not depend on the order in which
-/// the build passes the files; a repeated candidate is probed once, and the logical name comes last unless a list
-/// already names it.
+/// ordinal order of their file paths, with <c>\</c> read as <c>/</c>, and each list keeps its order, so the result
+/// depends neither on the order in which the build passes the files nor on the operating system; a repeated candidate
+/// is probed once, and the logical name comes last unless a list already names it.
 /// </remarks>
 internal static class NativeLibraryResolverPlanner
 {
@@ -18,9 +18,9 @@ internal static class NativeLibraryResolverPlanner
         var resolved = ImmutableArray.CreateBuilder<(string Path, NativeApiDefinition Definition)>();
         definitions
             .AsStackEnumerable()
-            .Where(static d => NativeBindingEmitter.RequiresResolver(d.Definition))
+            .Where(static d => RequiresResolver(d.Definition))
             .AddTo(resolved);
-        resolved.Sort(static (a, b) => string.CompareOrdinal(a.Path, b.Path));
+        resolved.Sort(static (a, b) => ComparePaths(a.Path, b.Path));
         var ordered = resolved.ToImmutable();
 
         var libraryNames = new SortedSet<string>(StringComparer.Ordinal);
@@ -42,6 +42,45 @@ internal static class NativeLibraryResolverPlanner
 
         return builder.MoveToImmutable();
     }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the library of <paramref name="def"/> cannot be found by the default
+    /// probing logic: it declares platform candidates or is given as a relative or absolute path.
+    /// </summary>
+    public static bool RequiresResolver(NativeApiDefinition def)
+    {
+        if (def.BindingKind != NativeApiBindingKind.Library)
+        {
+            return false;
+        }
+
+        if (def.LibraryNames is { IsEmpty: false })
+        {
+            return true;
+        }
+
+        var libraryName = def.LibraryName ?? string.Empty;
+        return libraryName.IndexOf('/') >= 0 || libraryName.IndexOf('\\') >= 0;
+    }
+
+    // Ordinal comparison of two paths with every \ read as /, so that Windows and Unix order the same files alike:
+    // \ (92) and / (47) sort on different sides of digits and upper-case letters
+    internal static int ComparePaths(string a, string b)
+    {
+        var length = Math.Min(a.Length, b.Length);
+        for (var i = 0; i < length; i++)
+        {
+            var difference = NormalizeSeparator(a[i]) - NormalizeSeparator(b[i]);
+            if (difference != 0)
+            {
+                return difference;
+            }
+        }
+
+        return a.Length - b.Length;
+    }
+
+    private static char NormalizeSeparator(char c) => c == '\\' ? '/' : c;
 
     // The candidates of one platform of every definition of libraryName, in order and each once, then libraryName
     private static EquatableArray<string> Merge(

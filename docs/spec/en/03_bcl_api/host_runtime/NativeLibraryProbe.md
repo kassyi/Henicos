@@ -15,7 +15,7 @@ description: "Probes native library candidates on behalf of generated DllImportR
 
 Probes native library candidates on behalf of the `DllImportResolver` emitted for YAML native API definitions that declare `libraryNames` or a path-qualified `libraryName`.
 
-The runtime resolves a library name once per assembly, so the resolver probes, for each `libraryName`, the candidates of every definition that declares it: the definitions in the ordinal order of their file paths, each list in its own order, a repeated candidate once, and the `libraryName` itself last unless a list already names it.
+The runtime resolves a library name once per assembly, so the resolver probes, for each `libraryName`, the candidates of every definition that declares it: the definitions in the ordinal order of their file paths (with `\` read as `/`, so the order is the same on every operating system), each list in its own order, a repeated candidate once, and the `libraryName` itself last unless a list already names it.
 
 ```csharp
 public static class NativeLibraryProbe

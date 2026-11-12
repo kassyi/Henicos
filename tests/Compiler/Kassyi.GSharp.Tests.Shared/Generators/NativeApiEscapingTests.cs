@@ -240,6 +240,106 @@ public class NativeApiEscapingTests
         Assert.DoesNotContain("s_candidates1", inOrder);
     }
 
+    // A YAML class may be named 'required', 'scoped' or 'file', which C# does not allow as a type name unless written
+    // with '@' (CS9029, CS9062, CS9056)
+    [Theory]
+    [InlineData("required")]
+    [InlineData("scoped")]
+    [InlineData("file")]
+    [Scenario(TestScenario.Boundary)]
+    public void ClassNamedByContextualKeyword_LibraryAndModuleBindingsCompile(string className)
+    {
+        var library = $"""
+            namespace: My.Lib
+            className: {className}
+            libraryName: fx
+            methods:
+              - name: f
+            """;
+        var module = $"""
+            namespace: My.Module
+            className: {className}
+            moduleName: k.gfatbin
+            methods:
+              - name: Run
+                parameters:
+                  - {"{"} name: data, type: "float[]" {"}"}
+            """;
+
+        var output = Compile(Api("lib.yml", library), Api("module.yml", module));
+
+        Assert.NotNull(output.GetTypeByMetadataName("My.Lib." + className));
+        Assert.NotNull(output.GetTypeByMetadataName("My.Module." + className));
+    }
+
+    // U+2028, U+2029 and U+0085 end a line of C# source: in a 'summary', a 'description', a 'returnDescription'
+    // or an 'xmlDoc' they continue the '///' comment instead of ending it, so the rest of the text is not read as code
+    [Theory]
+    [InlineData(LineSeparator)]
+    [InlineData(ParagraphSeparator)]
+    [InlineData(NextLine)]
+    [Scenario(TestScenario.Boundary)]
+    public void LineBreaksInDocumentation_StayInTheComment(string lineBreak)
+    {
+        var library = $$"""
+            namespace: My.Lib
+            className: Documented
+            libraryName: fx
+            methods:
+              - name: f
+                summary: "first{{lineBreak}}second line"
+                returnDescription: "a{{lineBreak}}b c"
+                returnType: int
+                parameters:
+                  - { name: x, type: int, description: "one{{lineBreak}}two three" }
+              - name: g
+                xmlDoc: "<summary>first{{lineBreak}}second line</summary>"
+            """;
+        var module = $$"""
+            namespace: My.Module
+            className: DocumentedKernels
+            moduleName: k.gfatbin
+            methods:
+              - name: Run
+                summary: "first{{lineBreak}}second line"
+                parameters:
+                  - { name: data, type: "float[]", description: "one{{lineBreak}}two three" }
+              - name: Other
+                xmlDoc: "<summary>first{{lineBreak}}second line</summary>"
+            """;
+
+        var output = Compile(Api("lib.yml", library), Api("module.yml", module));
+
+        Assert.NotNull(output.GetTypeByMetadataName("My.Lib.Documented")?.GetMembers("g").SingleOrDefault());
+        Assert.NotNull(output.GetTypeByMetadataName("My.Module.DocumentedKernels")?.GetMembers("Other")
+            .SingleOrDefault());
+    }
+
+    // Library definitions are merged in the order of their paths with '\' read as '/': 'dir\a.yml' comes before
+    // 'dir0.yml' as 'dir/a.yml' does, although '\' (92) sorts after '0' (48) and '/' (47) before it
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void SameLibraryNameInTwoDefinitions_PathSeparatorDoesNotChangeTheOrder()
+    {
+        static string Definition(string className, string candidate) => $"""
+            namespace: My.Order
+            className: {className}
+            libraryName: cufft
+            libraryNames:
+              windows: [{candidate}]
+            methods:
+              - name: f
+            """;
+
+        var backslash = FindSource(RunGenerator(Api(@"dir\a.yml", Definition("A", "first.dll")),
+            Api("dir0.yml", Definition("B", "second.dll"))), "GSharpNativeLibraryResolver");
+        var slash = FindSource(RunGenerator(Api("dir/a.yml", Definition("A", "first.dll")),
+            Api("dir0.yml", Definition("B", "second.dll"))), "GSharpNativeLibraryResolver");
+
+        Assert.Contains("s_candidates0Windows = [\"first.dll\", \"second.dll\", \"cufft\"];", backslash);
+        Assert.Equal(slash, backslash);
+    }
+
     // The generated sources compile without errors
     private static Compilation Compile(params TestFile[] files)
     {

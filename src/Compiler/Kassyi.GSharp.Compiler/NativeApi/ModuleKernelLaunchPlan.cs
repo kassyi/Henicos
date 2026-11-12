@@ -93,6 +93,15 @@ internal readonly record struct ModuleKernelLaunchPlan(
     EquatableArray<ModuleKernelProblem> Problems)
 {
     public bool CanLaunch => Problems.IsDefaultOrEmpty;
+
+    /// <summary>
+    /// Whether a kernel argument is a pointer or a function pointer, so the launcher is declared <c>unsafe</c> (CS0214
+    /// otherwise).
+    /// </summary>
+    public bool TakesPointer =>
+        Arguments
+            .AsStackEnumerable()
+            .Any(static a => a.Kind == ModuleKernelParameterKind.Pointer);
 }
 
 /// <summary>Builds a <see cref="ModuleKernelLaunchPlan"/> one parameter at a time, in declaration order.</summary>
