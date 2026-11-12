@@ -214,6 +214,25 @@ else the guidelines of [gsharp-naming-conventions](gsharp-naming-conventions.md)
 - Name the behavior, not the issue, the lane or a case number (see 3.2).
 - Test classes, kernel classes and helpers follow the normal PascalCase rules, without underscores.
 
+### 3.10. Banned String APIs in Tests (`RS0030`)
+
+The string bans of the root `BannedSymbols.txt` (`Substring`, `Replace`, `Split`, `Trim`, case conversion, `Regex`, ...)
+hold in tests as well. Lifting them would let string processing grow without limit and make the tests slower, so the
+ban stays and each exception is visible, one site at a time, with its reason.
+
+A test may suppress `RS0030` only where the string itself is what is checked and no syntax tree, symbol or registered
+set can express the check, in one of these four cases:
+
+1. The protocol of the test tooling itself (for example the result lines of a child process).
+2. Strings that come from the OS or from outside (`PATH`, an external header, a `BannedSymbols` file).
+3. Line breaks, letter case or path separators are themselves what is checked.
+4. The format of output for people to read (reports, logs).
+
+Wrap only that statement in `#pragma warning disable RS0030 // <reason in English>` and `#pragma warning restore RS0030`.
+Never wrap a whole method or file, and never hide the suppression inside a helper. The text of generated C++ is not
+covered by this permission (how to check it is not decided yet). Product code does not use this rule: a suppression
+there follows the procedure of [transpiler-emission.md](transpiler-emission.md) §1.
+
 ---
 
 ## 4. DEVELOPMENT METHODOLOGY (Test-Driven AI Vibe Coding)

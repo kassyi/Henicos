@@ -34,23 +34,23 @@
 #      - Generic Methods: Double backticks for method type parameters in signature (e.g., IEnumerable{``0}, Func{``0,System.Boolean}).
 # ==============================================================================
 
-# 1. Regular Expressions prohibition (Enforces Grammar & Performance)
+# 1. Regular expressions: banned in the root BannedSymbols.txt
 
 # 2. Reflection prohibition (keeps the compilation fast; .agents/rules/transpiler-emission.md 1.1)
 N:System.Reflection;Direct reflection is strictly prohibited in the compiler (it slows the compilation down). Use Roslyn SemanticModel, ITypeSymbol, and IMethodSymbol instead.
 P:System.Type.Assembly;Reflection via Type.Assembly is strictly prohibited in the compiler (it slows the compilation down).
 M:System.Type.GetType(System.String);Dynamic type resolution via string is strictly prohibited. Use Compilation.GetTypeByMetadataName instead.
 
-# 3. Non-deterministic APIs prohibition (Enforces YES Static Determinism & Incremental Cache)
-P:System.DateTime.Now;DateTime.Now is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
-P:System.DateTime.UtcNow;DateTime.UtcNow is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
-M:System.Guid.NewGuid;Guid.NewGuid is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based naming instead.
+# 3. Non-deterministic APIs (incremental cache, deterministic output)
+P:System.DateTime.Now;Values that change between runs break the incremental cache and deterministic output. Derive the value from the input (a hash of the source).
+P:System.DateTime.UtcNow;Values that change between runs break the incremental cache and deterministic output. Derive the value from the input (a hash of the source).
+M:System.Guid.NewGuid;Values that change between runs break the incremental cache and deterministic output. Derive the value from the input (a hash of the source).
 
 # 4. Collection prohibitions in Compiler
-T:System.Collections.Generic.List`1;Dynamic lists are prohibited in the compiler for performance and allocation reasons. Use ImmutableArray, Array, ArrayPool, or recursion with StringBuilder instead.
+T:System.Collections.Generic.List`1;List<T> grows by reallocation. Use ImmutableArray (ImmutableArray.CreateBuilder), an array, ArrayPool, or StackLinq .AsStackEnumerable().ToArray().
 
 # 5. LINQ prohibition (Enforces Zero-Allocation / High Performance in Compiler)
-# Covered globally by root BannedSymbols.txt. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable() or explicit loops.
+# Covered by the root BannedSymbols.Linq.txt. Use the embedded StackLinq (Kassyi.ZeroAlloc.Linq.Embedded) via .AsStackEnumerable(), not hand-written loops.
 
 # 6. StringBuilder prohibition (generated code goes through SourceWriter)
-T:System.Text.StringBuilder;Emit code with SourceWriter; build a name with + or an interpolated string.
+T:System.Text.StringBuilder;Emit code with SourceWriter, and build a name with + or an interpolated string.
