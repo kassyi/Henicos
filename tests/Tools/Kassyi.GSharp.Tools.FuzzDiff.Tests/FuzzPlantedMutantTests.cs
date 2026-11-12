@@ -118,22 +118,8 @@ public class FuzzPlantedMutantTests
 
     private static string ApplySyntaxMutant(string methodSource, string mutatedName, CSharpSyntaxRewriter rewriter)
     {
-        var tree = CSharpSyntaxTree.ParseText($"class __MutantContainer {{ {methodSource} }}", FuzzTestCompilationHelper.ParseOptions);
-        MethodDeclarationSyntax? method = null;
-        foreach (var node in tree.GetRoot().DescendantNodes())
-        {
-            if (node is MethodDeclarationSyntax m)
-            {
-                method = m;
-                break;
-            }
-        }
-
-        if (method is null)
-        {
-            throw new InvalidOperationException("Failed to parse kernel method declaration for mutant.");
-        }
-
+        var method = FuzzSyntaxHelpers.ParseFirstMethod($"class __MutantContainer {{ {methodSource} }}")
+            ?? throw new InvalidOperationException("Failed to parse kernel method declaration for mutant.");
         var renamed = method.WithIdentifier(SyntaxFactory.Identifier(mutatedName));
         var rewritten = rewriter.Visit(renamed) ?? renamed;
         return FuzzTestCompilationHelper.RenderNode(rewritten);

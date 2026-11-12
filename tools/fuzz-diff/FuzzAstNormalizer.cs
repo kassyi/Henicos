@@ -83,16 +83,7 @@ internal static class FuzzAstNormalizer
 
         string wrapped = $"class __Wrapper {{ {FuzzSyntaxHelpers.RenderFullNode(method)} }}";
         string hoistedWrapped = FuzzReducer.HoistLocalsToDefault(wrapped);
-        MethodDeclarationSyntax? parsedMethod = null;
-        foreach (var node in CSharpSyntaxTree.ParseText(hoistedWrapped, FuzzSyntaxHelpers.ParseOptions).GetRoot().DescendantNodes())
-        {
-            if (node is MethodDeclarationSyntax m)
-            {
-                parsedMethod = m;
-                break;
-            }
-        }
-
+        var parsedMethod = FuzzSyntaxHelpers.ParseFirstMethod(hoistedWrapped);
         if (parsedMethod?.Body is null)
         {
             return method;

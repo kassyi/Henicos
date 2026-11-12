@@ -81,7 +81,7 @@ internal static class MetamorphicTestSupport
     /// <summary>Asserts that <paramref name="source"/> compiles as C# without errors.</summary>
     internal static void AssertNoCompileErrors(string source)
     {
-        var compilation = CreateCompilation(source, "MetaCompileCheck");
+        var compilation = FuzzTestCompilationHelper.CreateCompilation(source, "MetaCompileCheck", OptimizationLevel.Release, out _);
         foreach (var d in compilation.GetDiagnostics())
         {
             Assert.False(d.Severity == DiagnosticSeverity.Error, $"Compilation error: {d}{Environment.NewLine}{source}");
@@ -94,12 +94,12 @@ internal static class MetamorphicTestSupport
     /// </summary>
     internal static void VerifyZeroGeneratorAndAnalyzerDiagnostics(string source, string dialect)
     {
-        var compilation = CreateCompilation(source, $"MetaVerify_{dialect}");
+        var compilation = FuzzTestCompilationHelper.CreateCompilation(source, $"MetaVerify_{dialect}", OptimizationLevel.Release, out _);
         var configProvider = new FuzzTestCompilationHelper.FuzzTestAnalyzerConfigOptionsProvider(dialect);
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: [new GpuKernelGenerator().AsSourceGenerator()],
             additionalTexts: null,
-            parseOptions: FuzzTestCompilationHelper.ParseOptions,
+            parseOptions: FuzzSyntaxHelpers.ParseOptions,
             optionsProvider: configProvider);
         driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiags);
 
@@ -132,17 +132,5 @@ internal static class MetamorphicTestSupport
                 Assert.Fail($"Unexpected G# analyzer diagnostic ({dialect}): {d}");
             }
         }
-    }
-
-    private static CSharpCompilation CreateCompilation(string source, string assemblyName)
-    {
-        var tree = CSharpSyntaxTree.ParseText(source, FuzzTestCompilationHelper.ParseOptions, path: $"{assemblyName}.cu.cs");
-        return CSharpCompilation.Create(
-            assemblyName,
-            [tree],
-            FuzzTestCompilationHelper.BaseReferences,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                .WithAllowUnsafe(true)
-                .WithOptimizationLevel(OptimizationLevel.Release));
     }
 }
