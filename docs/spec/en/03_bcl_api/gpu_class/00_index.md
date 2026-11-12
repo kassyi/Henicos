@@ -24,6 +24,7 @@ Core static methods for GPU hardware interaction, synchronization, and intrinsic
 - [Constant](Constant.md): Injects string literals as raw C++ constant expressions.
 - [HintUnroll](HintUnroll.md): Hints the compiler to unroll the immediately following loop.
 - [InlinePtx](InlinePtx.md): Injects raw PTX assembly directly into the generated kernel.
+- [NotNull](NotNull.md): Returns a nullable array as a non-nullable one, or throws when it is `null`.
 
 ## Intrinsics Without a Page
 

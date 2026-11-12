@@ -13,6 +13,14 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     [ThreadStatic]
     private static int s_depth;
 
+    // [WHY] StringBuilder.Clear keeps the capacity, so a pooled builder that once held a whole native module
+    // (11 MB for Tests.Cpu) would keep that buffer for the life of the thread. As in Roslyn's
+    // PooledStringBuilder.Free and .NET's StringBuilderCache (MaxBuilderSize), a builder that grew past a limit is
+    // dropped instead of returned. 32K characters keep a pooled buffer at 64 KB, below the 85,000-byte large object
+    // heap threshold, so the pool never holds a large object; a larger text grows a new builder in chunks of at most
+    // 8000 characters, which costs no more than the string that ToString makes from it anyway.
+    internal const int MaxPooledCapacity = 32 * 1024;
+
     private readonly int _myDepth;
 
     private StringBuilder Builder
@@ -40,6 +48,14 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public void Dispose()
     {
+        if (Builder is { Capacity: > MaxPooledCapacity } builder
+            && s_threadStaticBuilders is { } builders
+            && _myDepth < builders.Length
+            && ReferenceEquals(builders[_myDepth], builder))
+        {
+            builders[_myDepth] = null;
+        }
+
         if (_myDepth == s_depth - 1)
         {
             s_depth--;
