@@ -100,7 +100,9 @@ public class DifferentialRunnerTests
         var report = FakeCase(DiffPath.Native, CorruptSums).Evaluate([1]);
 
         Assert.Equal(5, report.UnexpectedMismatches.Count);
+#pragma warning disable RS0030 // Counts the "<- differs" rows of the mismatch report a person reads
         Assert.Equal(5, Regex.Matches(report.ToString(), "<- differs").Count);
+#pragma warning restore RS0030
     }
 
     [Fact]

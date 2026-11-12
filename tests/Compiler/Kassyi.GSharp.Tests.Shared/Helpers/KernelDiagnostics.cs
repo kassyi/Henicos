@@ -47,7 +47,9 @@ public readonly record struct ReportedDiagnostic(
     public override string ToString()
     {
         var range = HasLocation ? $"({StartLine},{StartColumn})-({EndLine},{EndColumn})" : "<no location>";
+#pragma warning disable RS0030 // Display text for a failed assertion: any origin name, lower case
         return $"{range} {Id} {Origin.ToString().ToLowerInvariant()}: {Message}";
+#pragma warning restore RS0030
     }
 }
 
