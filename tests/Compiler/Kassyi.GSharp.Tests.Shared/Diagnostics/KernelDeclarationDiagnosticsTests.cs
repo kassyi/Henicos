@@ -258,7 +258,7 @@ public class KernelDeclarationDiagnosticsTests
             return [.. generator, .. declarationErrors];
         }
 
-        DiagnosticAnalyzer[] analyzers = [.. KernelDiagnostics.Analyzers, new GpuKernelDirectInvocationAnalyzer()];
+        DiagnosticAnalyzer[] analyzers = [.. KernelDiagnostics.Analyzers];
         var analyzerDiagnostics = await run.Output
             .WithAnalyzers([.. analyzers], new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider("Cpu")))
             .GetAnalyzerDiagnosticsAsync();
