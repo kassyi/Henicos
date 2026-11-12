@@ -110,6 +110,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0107](GSH0107.md) | Error | A method without [GpuDeviceFunction] is called from GPU code |
 | [GSH0108](GSH0108.md) | Error | Struct field type is not accessible to the generated launcher |
 | [GSH0109](GSH0109.md) | Error | A method without a device implementation is called from GPU code |
+| [GSH0110](GSH0110.md) | Error | The launcher of a [CudaImport] method cannot pass a parameter to the kernel |
 | [SLQ0001](SLQ0001.md) | Error | StackLinq method chain is too deep |
 | [RS0030](RS0030.md) | Error | Banned API used (G# repository builds only) |
 

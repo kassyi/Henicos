@@ -868,6 +868,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "CudaImportParameterNotSupported",
+    "id": "GSH0110",
+    "title": "The launcher of a [CudaImport] method cannot pass a parameter to the kernel",
+    "messageFormat": "Parameter '{0}' of [CudaImport] method '{1}' has type '{2}', which the launcher cannot pass to the kernel: {3}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",
