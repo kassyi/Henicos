@@ -148,7 +148,10 @@ function splitSegments(command) {
       continue;
     }
     // A single & separates (bash background, PowerShell call operator) except in redirections such as 2>&1 and &>
-    if (ch === ';' || ch === '|' || (ch === '&' && command[i - 1] !== '>' && next !== '>')) {
+    // PowerShell: & at the start of a command is the call operator (& "C:\x\dotnet.exe" test), not a separator
+    // ... also after = ( { or , : $o = & "x.exe" test, { & "x.exe" test }, (& "x.exe" test)
+    const callOperator = ch === '&' && dialect === 'pwsh' && /(^|[=({,])\s*$/.test(current);
+    if (ch === ';' || ch === '|' || (ch === '&' && !callOperator && command[i - 1] !== '>' && next !== '>')) {
       push();
       i++;
       continue;
@@ -162,12 +165,14 @@ function splitSegments(command) {
 
 /** The words of a segment, quotes kept. */
 function words(segment) {
+  // A word is a run of quoted parts and other non-blank characters, so that a quote may start inside it:
+  // msg="a b", -p:Foo="a b", $x="dotnet test"
   const pattern =
     dialect === 'bash'
-      ? /"(?:[^"\\]|\\.)*"|'[^']*'|\S+/g
+      ? /(?:"(?:[^"\\]|\\.)*"?|'[^']*'?|\\.|[^\s"'\\])+/g
       : dialect === 'pwsh'
-        ? /"(?:[^"`]|`.)*"|'(?:[^']|'')*'|\S+/g
-        : /"[^"]*"|\S+/g;
+        ? /(?:"(?:[^"`]|`.)*"?|'(?:[^']|'')*'?|`.|[^\s"'`])+/g
+        : /(?:"[^"]*"?|[^\s"])+/g;
   return segment.match(pattern) || [];
 }
 
@@ -197,6 +202,7 @@ function programName(word) {
 /** Words that run the rest of the segment: launch prefixes and the keywords that open a shell body. */
 const LaunchPrefixes = [
   '&',
+  '.', // PowerShell dot-source, bash source: . "C:\x\dotnet.exe" test
   '!',
   'time',
   'exec',
@@ -322,13 +328,26 @@ function isStryker(word) {
 
 /** The reason a segment needs the queue, or null. */
 function segmentReason(segment) {
-  const list = dropPrefixes(words(segment.trim().replace(/^[({]+\s*/, '')));
-  if (list.length === 0) {
+  const raw = words(segment.trim().replace(/^[({]+\s*/, ''));
+  // The closer of a group or subshell may stick to a word: (just test), (msbuild)
+  const list = dropPrefixes(raw).map((word) => (/^["']/.test(word) ? word : word.replace(/[)}]+$/, '')));
+  if (list.length === 0 || list[0] === '') {
     return null;
   }
-  // A group or subexpression after an assignment: $out = (dotnet test), $r = @(dotnet test)
+  let calledInGroup = false;
+  // A group or subexpression after an assignment: $out = (dotnet test), $r = @(dotnet test), $o = (& "x.exe" build)
   if (/^[@$]?\(+./.test(list[0])) {
     list[0] = list[0].replace(/^[@$]?\(+/, '');
+    if ((list[0] === '&' || list[0] === '.') && list.length > 1) {
+      list.shift();
+      calledInGroup = true;
+    }
+  }
+  // PowerShell: a quoted string at the start is a value ($tool = "msbuild"), a command only after & or .
+  const called =
+    calledInGroup || raw.slice(0, Math.max(raw.length - list.length, 0)).some((word) => word === '&' || word === '.');
+  if (dialect === 'pwsh' && /^["']/.test(list[0]) && !called) {
+    return null;
   }
   // A PowerShell body after the condition: if (...) { dotnet test }, foreach (...) { ... }
   const brace = list.findIndex((word, index) => index > 0 && (word === '{' || word.endsWith('{')));
@@ -381,7 +400,7 @@ function segmentReason(segment) {
     return JustRecipes.test(recipe) ? `just ${recipe}` : null;
   }
   if (NodeScripts.test(unquote(list[0]))) {
-    return programName(list[0]) + '.js'; // ./scripts/human/long-checks.js run directly
+    return unquote(list[0]).replace(/^.*[\\/]/, ''); // ./scripts/human/long-checks.js run directly
   }
   if (name === 'node') {
     const scriptIndex = args.findIndex((arg) => !arg.startsWith('-'));
@@ -554,6 +573,11 @@ function selfTest() {
     'bash -c "cd x && just test"',
     'Start-Process dotnet -ArgumentList "test x" -Wait',
     'dotnet watch test',
+    'dotnet -p:Foo="a b" test',
+    'just args="a b" test',
+    'FOO="a b" dotnet test',
+    '(just test)',
+    '(msbuild)',
     'dotnet tool run dotnet-stryker',
     'dotnet tool exec dotnet-stryker',
     'dotnet dotnet-stryker',
@@ -607,6 +631,7 @@ function selfTest() {
     'gh issue create --body "just test fails"',
     'dotnet build-server shutdown',
     'dotnet --info',
+    'msg="fix: dotnet build failure"; git commit -m "$msg"',
     'dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle log.txt',
     'node scripts/agent/gpu-lock.js --help',
     'node scripts/agent/gpu-lock.js --self-test',
@@ -655,6 +680,14 @@ function selfTest() {
     '$r = @(dotnet test)',
     '$o = (dotnet test)',
     '$env:CI = "true"; dotnet test',
+    '& "C:\\Program Files\\dotnet\\dotnet.exe" test',
+    '$o = (just test)',
+    '$o = & "C:\\Program Files\\dotnet\\dotnet.exe" test',
+    'if ($x) { & "C:\\x\\dotnet.exe" test }',
+    '(& "C:\\x\\dotnet.exe" test)',
+    '$o = (& "C:\\x\\dotnet.exe" build)',
+    'Get-ChildItem | ForEach-Object { & "C:\\x\\dotnet.exe" test $_ }',
+    '. "C:\\x\\dotnet.exe" test',
     'git commit -m "$(dotnet test)"',
   ];
   const allowedPowerShell = [
@@ -664,6 +697,8 @@ function selfTest() {
     'if ($true) { Write-Output "a `" { dotnet test `"" }',
     "Write-Output 'it''s $(dotnet test)'",
     '$x = 1; Get-ChildItem',
+    '$msg="dotnet test"',
+    '$tool = "msbuild"',
   ];
   for (const command of deniedPowerShell) {
     assert.notDeepStrictEqual(check(command, 'pwsh'), [], `should deny in PowerShell: ${command}`);

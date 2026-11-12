@@ -787,16 +787,19 @@ function startScheduler(options) {
  */
 function startThroughWmi(args, stateDirectory, logPath) {
   const quote = (text) => `"${text}"`;
-  const serve = [quote(process.execPath), ...args.map((arg) => (/\s/.test(arg) ? quote(arg) : arg))].join(' ');
+  // cmd.exe treats & ^ ( ) and spaces in a path specially: quote every argument (it still expands %VAR% in quotes)
+  const serve = [quote(process.execPath), ...args.map(quote)].join(' ');
   const commandLine = `cmd.exe /d /s /c "${serve} >> ${quote(logPath)} 2>&1"`;
+  // A CIM error must fail the script (not exit 0 through `exit $null`), so that the caller falls back
   const script =
+    "$ErrorActionPreference = 'Stop'; " +
     '$s = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ ShowWindow = [uint16]0 }; ' +
     '$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ ' +
     'CommandLine = $env:GSHARP_BUILD_QUEUE_WMI_COMMAND; CurrentDirectory = $env:GSHARP_BUILD_QUEUE_WMI_DIRECTORY; ' +
-    'ProcessStartupInformation = $s }; exit $r.ReturnValue';
+    'ProcessStartupInformation = $s }; if ($null -eq $r -or $null -eq $r.ReturnValue) { exit 1 }; exit [int]$r.ReturnValue';
   const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
     windowsHide: true,
-    timeout: 30000,
+    timeout: 8000, // well inside the 15 s that connectOrStart waits, so that the fallback still has time
     env: { ...process.env, GSHARP_BUILD_QUEUE_WMI_COMMAND: commandLine, GSHARP_BUILD_QUEUE_WMI_DIRECTORY: stateDirectory },
   });
   if (result.error || result.status !== 0) {
@@ -828,7 +831,8 @@ function connect(port) {
 
 /** Connects, starting the scheduler when none listens, for up to 15 seconds. */
 async function connectOrStart(options) {
-  const deadline = Date.now() + 15000;
+  let deadline = Date.now() + 15000;
+  let extended = false;
   let started = 0;
   for (;;) {
     const socket = await connect(options.port);
@@ -836,8 +840,14 @@ async function connectOrStart(options) {
       return socket;
     }
     if (Date.now() - started > 5000) {
-      started = Date.now();
       startScheduler(options);
+      started = Date.now();
+      // Starting can take seconds (WMI, then a fallback): give the first scheduler time to listen, once only, so that
+      // a scheduler that never listens still ends the wait
+      if (!extended) {
+        extended = true;
+        deadline = Math.max(deadline, started + 8000);
+      }
     }
     if (Date.now() > deadline) {
       throw new Error(`could not reach or start the scheduler on 127.0.0.1:${options.port}`);
