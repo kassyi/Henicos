@@ -36,6 +36,14 @@ internal static class AotModuleNames
     /// </summary>
     public static string GetModuleContextName(string moduleName) => GSharpNameEncoding.GetModuleContextName(moduleName);
 
+    /// <summary>
+    /// Returns <paramref name="name"/> with every character that cannot be part of a C# identifier replaced by
+    /// <c>_</c>, for an identifier that a fixed prefix starts (so a first character that only a part may be, such as a
+    /// digit, is kept); the input itself when it has no such character.
+    /// </summary>
+    public static string ToIdentifierPart(string name) =>
+        ReplaceWithUnderscore(name, SyntaxFacts.IsIdentifierPartCharacter);
+
     // <name> with each character that keeps rejects replaced by '_'; the input itself when keeps accepts them all
     private static string ReplaceWithUnderscore(string name, Func<char, bool> keeps)
     {

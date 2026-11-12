@@ -9,7 +9,7 @@ namespace MyApp.Native;
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class MyKernels
 {
-private static readonly Lazy<byte[]> s_fatbin__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "./native/my-custom.kernels.fatbin")));
+private static readonly Lazy<byte[]> s_fatbin___native_my_custom_kernels_fatbin = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "./native/my-custom.kernels.fatbin")));
 /// <summary>User-defined custom matrix multiplication kernel.</summary>
 /// <param name="a">Matrix A.</param>
 /// <param name="c">Matrix C.</param>
@@ -23,7 +23,7 @@ throw new global::System.ArgumentNullException(nameof(c));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MyKernels.SgemmCustom");
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "sgemm_kernel_v1");
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "sgemm_kernel_v1");
 using var d_a = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(a.Length);
 d_a.CopyToDevice(a);
 using var d_c = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(c.Length);
@@ -53,7 +53,7 @@ if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "Fill");
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "Fill");
 using var d_data = new global::Kassyi.GSharp.Runtime.GpuBuffer<int>(data.Length);
 d_data.CopyToDevice(data);
 unsafe

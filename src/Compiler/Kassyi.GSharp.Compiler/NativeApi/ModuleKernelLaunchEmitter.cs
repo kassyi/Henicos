@@ -25,8 +25,8 @@ internal static class ModuleKernelLaunchEmitter
 
     public static void EmitModuleCacheField(SourceWriter writer, string moduleName)
     {
-        writer.Append("private static readonly Lazy<byte[]> ");
-        GSharpNameEncoding.AppendFatbinFieldName(writer, moduleName);
+        writer.Append("private static readonly Lazy<byte[]> s_fatbin_");
+        writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
         writer.Append(" = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, ");
         AppendStringLiteral(writer, moduleName);
         writer.AppendLine(")));");
@@ -78,8 +78,8 @@ internal static class ModuleKernelLaunchEmitter
         WriteNullChecks(writer, plan.Arguments);
         WriteLaunchLimitCheck(writer, launcherName, launch);
         writer.AppendLine($"using var scope = new {HostTypeNames.GpuKernelLoader}.CudaContextScope();");
-        writer.Append($"var kernel = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(");
-        GSharpNameEncoding.AppendFatbinFieldName(writer, moduleName);
+        writer.Append($"var kernel = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(s_fatbin_");
+        writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
         writer.Append(".Value, ");
         AppendStringLiteral(writer, entryPoint);
         writer.AppendLine(");");

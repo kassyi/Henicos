@@ -23,10 +23,9 @@ namespace Kassyi.GSharp.Naming;
 /// the <c>field</c> keyword; it decodes to <c>{name}.field</c>.</description></item>
 ///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
-///   <item><description><c>GSharpModuleContext_{module}</c> / <c>s_fatbin_{module}</c>: the generated C# class
-/// that loads the fatbin of an assembly and the field that holds the fatbin of a YAML module, with the module name
-/// escaped as a segment is (<see cref="TryDecodeModuleName"/>); they decode to <c>GSharpModuleContext(module)</c>
-/// and <c>s_fatbin(module)</c>.</description></item>
+///   <item><description><c>GSharpModuleContext_{module}</c>: the generated C# class that loads the fatbin of an
+/// assembly, with the module name escaped as a segment is (<see cref="TryDecodeModuleName"/>); it decodes to
+/// <c>GSharpModuleContext(module)</c>.</description></item>
 /// </list>
 /// GSH0055 rejects <c>__</c> in user identifiers, so a C# name never starts with a digit-and-underscore ordinal and
 /// decoding is unambiguous.
@@ -45,10 +44,7 @@ internal static class GSharpNameEncoding
     /// <summary>The prefix of the generated C# class that loads the fatbin module of one assembly.</summary>
     public const string ModuleContextPrefix = "GSharpModuleContext_";
 
-    /// <summary>The prefix of the generated C# field that holds the fatbin of a module named in YAML.</summary>
-    public const string FatbinFieldPrefix = "s_fatbin_";
-
-    private static readonly string[] s_renamedPrefixes = ["__gsharp_", ModuleContextPrefix, FatbinFieldPrefix];
+    private static readonly string[] s_renamedPrefixes = ["__gsharp_", ModuleContextPrefix];
 
     public const string SymbolHeaderPrefix = "// gsharp-symbols: ";
 
@@ -591,16 +587,6 @@ internal static class GSharpNameEncoding
     /// </summary>
     public static string GetModuleContextName(string moduleName) => ModuleContextPrefix + EscapeName(moduleName);
 
-    /// <summary>
-    /// Appends the name of the field that holds the fatbin of a module named in YAML: <c>s_fatbin_</c> and the module
-    /// name escaped as in <see cref="GetModuleContextName"/>.
-    /// </summary>
-    public static void AppendFatbinFieldName(in SourceWriter writer, string moduleName)
-    {
-        writer.Append(FatbinFieldPrefix);
-        AppendEscapedName(writer, moduleName);
-    }
-
     /// <summary>Appends <paramref name="name"/> escaped as described in <see cref="Encode(GlobalNamePath)"/>.</summary>
     public static void AppendEscapedName(in SourceWriter writer, string name)
     {
@@ -694,8 +680,7 @@ internal static class GSharpNameEncoding
             return true;
         }
 
-        if (TryDecodeModuleIdentifier(identifier, ModuleContextPrefix, "GSharpModuleContext", ref csharpName) ||
-            TryDecodeModuleIdentifier(identifier, FatbinFieldPrefix, "s_fatbin", ref csharpName))
+        if (TryDecodeModuleIdentifier(identifier, ModuleContextPrefix, "GSharpModuleContext", ref csharpName))
         {
             return true;
         }
@@ -845,7 +830,7 @@ internal static class GSharpNameEncoding
 
     /// <summary>
     /// Recovers a module name from its escaped form, the part of a module context class name
-    /// (<see cref="ModuleContextPrefix"/>) or a fatbin field name (<see cref="FatbinFieldPrefix"/>) after the prefix.
+    /// (<see cref="ModuleContextPrefix"/>) after the prefix.
     /// </summary>
     /// <returns><see langword="false"/> if <paramref name="escaped"/> is not exactly one escaped name.</returns>
     public static bool TryDecodeModuleName(string escaped, out string moduleName) =>
@@ -880,8 +865,8 @@ internal static class GSharpNameEncoding
         return true;
     }
 
-    // The first place at or after <index> where a renamed identifier may start: a __gsharp_ name, a module context
-    // class or a fatbin field; -1 when there is none
+    // The first place at or after <index> where a renamed identifier may start: a __gsharp_ name or a module
+    // context class; -1 when there is none
     private static int IndexOfRenamedIdentifier(string text, int index)
     {
         var first = -1;
