@@ -31,19 +31,19 @@ internal static class AotModuleNames
         ArtifactFilePrefix + ReplaceWithUnderscore(moduleName, static c => c != '.');
 
     /// <summary>
-    /// The name of the module context class of a module: <c>GSharpModuleContext_</c> and the module name with every
-    /// character that a C# identifier cannot hold replaced by <c>_</c> (letters of any script stay), so that any
-    /// assembly name gives an identifier.
+    /// The name of the module context class of a module: <c>GSharpModuleContext_</c> and the module name as
+    /// <see cref="ToIdentifierPart"/> escapes it, so that any assembly name gives an identifier and two names give two.
     /// </summary>
     public static string GetModuleContextName(string moduleName) => ModuleContextPrefix + ToIdentifierPart(moduleName);
 
     /// <summary>
-    /// Returns <paramref name="name"/> with every character that cannot be part of a C# identifier replaced by
-    /// <c>_</c>, for an identifier that a fixed prefix starts (so a first character that only a part may be, such as a
-    /// digit, is kept); the input itself when it has no such character.
+    /// Returns <paramref name="name"/> as a part of a C# identifier that a fixed prefix starts, escaped as the emitted
+    /// C++ names are (<see cref="GSharpNameEncoding.EscapeName"/>): ASCII letters and digits stay, <c>_</c> becomes
+    /// <c>_u</c> and any other character <c>_x</c> and six hex digits of its code point (<c>My.Lib</c> becomes
+    /// <c>My_x00002eLib</c>). The escaping is injective, so names that differ only in characters an identifier cannot
+    /// hold (<c>a-b</c>, <c>a_b</c>, <c>a.b</c>) give distinct identifiers.
     /// </summary>
-    public static string ToIdentifierPart(string name) =>
-        ReplaceWithUnderscore(name, SyntaxFacts.IsIdentifierPartCharacter);
+    public static string ToIdentifierPart(string name) => GSharpNameEncoding.EscapeName(name);
 
     // <name> with each character that keeps rejects replaced by '_'; the input itself when keeps accepts them all
     private static string ReplaceWithUnderscore(string name, Func<char, bool> keeps)
