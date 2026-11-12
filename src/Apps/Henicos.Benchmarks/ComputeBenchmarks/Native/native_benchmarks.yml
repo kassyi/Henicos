@@ -1,0 +1,27 @@
+# Launchers for the hand-written kernels of native_benchmarks.gfatbin whose arrays are copied both ways. The kernels
+# that read or write an array in one direction only keep [CudaImport] in NativeKernelInvoker, since a YAML binding has
+# no [In] / [Out] and would copy every array both ways, adding transfers to the measured launch.
+namespace: Henicos.Benchmarks.ComputeBenchmarks
+className: NativeBenchmarkKernels
+moduleName: native_benchmarks.gfatbin
+methods:
+  - name: LaunchEmpty
+    entryPoint: EmptyKernel_Native
+    parameters:
+      - { name: gridDimX, type: uint }
+      - { name: blockDimX, type: uint }
+  - name: LaunchMathFma
+    entryPoint: MathFmaKernel_Native
+    parameters:
+      - { name: data, type: "float[]" }
+      - { name: n, type: int }
+      - { name: iterations, type: int }
+      - { name: gridDimX, type: uint }
+      - { name: blockDimX, type: uint }
+  - name: LaunchBranchDivergence
+    entryPoint: BranchDivergenceKernel_Native
+    parameters:
+      - { name: data, type: "float[]" }
+      - { name: n, type: int }
+      - { name: gridDimX, type: uint }
+      - { name: blockDimX, type: uint }

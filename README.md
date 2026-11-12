@@ -93,7 +93,7 @@ public static partial class Mandelbrot
 
 ### Native CUDA Interop (`[CudaImport]`)
 
-Need to integrate existing, highly tuned CUDA C++ (`.cu`) kernels into your .NET application? G# seamlessly binds native `.fatbin` or `.ptx` binaries with zero P/Invoke boilerplate. Kernel entry point constants are automatically parsed from `.cu` files and exposed via `NativeCudaKernels`:
+Need to integrate existing, highly tuned CUDA C++ (`.cu`) kernels into your .NET application? G# seamlessly binds native `.fatbin` or `.ptx` binaries with zero P/Invoke boilerplate. `EntryPoint` names the `extern "C" __global__` function of the module:
 
 ```csharp
 using System.Runtime.InteropServices;
@@ -102,7 +102,7 @@ public static partial class NativeInterop
 {
     public const string FatbinName = "native_kernels.fatbin";
 
-    [CudaImport(FatbinName, EntryPoint = NativeCudaKernels.ReductionKernel_Native)]
+    [CudaImport(FatbinName, EntryPoint = "ReductionKernel_Native")]
     public static partial void LaunchReduction(
         [In] Float4[] input, [Out] float[] output, int n,
         uint gridDimX, uint blockDimX);
