@@ -1,3 +1,4 @@
+#nullable enable
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Aot;
@@ -6,8 +7,11 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests.Cuda;
 
 /// <summary>
-/// The arguments a YAML module launcher (<c>Native/module_arguments.yml</c>) passes to a hand-written kernel: an array
-/// parameter is staged through a device buffer however its type is spaced (<c>float[ ]</c>, <c>float [ ]</c>).
+/// The arguments a module launcher passes to a hand-written kernel (<c>Native/module_arguments.cu</c>), through the
+/// YAML binding <c>Native/module_arguments.yml</c> and through <c>[CudaImport]</c>
+/// (<see cref="ModuleArgumentImports"/>): an array parameter is staged through a device buffer however its type is
+/// spaced (<c>float[ ]</c>, <c>float [ ]</c>), null arrives as a null pointer for a nullable array and is rejected for
+/// another, a <c>ref</c> or <c>out</c> value comes back, and a two-dimensional array is passed in row-major order.
 /// </summary>
 /// <remarks>
 /// <c>RecordPointer</c> writes the address it received to page-locked host memory and waits until the test has asked
@@ -74,6 +78,205 @@ public class ModuleArgumentTests
 
         // The element past n is copied back as it was
         Assert.Equal(3f * n + 1, data[n]);
+    }
+
+    // Null for an array declared nullable (float[]?) reaches the kernel as a null pointer instead of failing on its
+    // length; the non-null control shows that the kernel ran and wrote the slot
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(Binding.Yaml)]
+    [InlineData(Binding.Import)]
+    public void Launch_NullForNullableArray_PassesNullPointer(Binding binding)
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        ulong[] seenNull = [ulong.MaxValue];
+        ulong[] seenArray = [ulong.MaxValue];
+
+        RecordAddress(binding, null, seenNull);
+        RecordAddress(binding, new float[4], seenArray);
+
+        Assert.Equal(0ul, seenNull[0]);
+        Assert.NotEqual(0ul, seenArray[0]);
+        Assert.NotEqual(ulong.MaxValue, seenArray[0]);
+    }
+
+    // Null for an array that is not declared nullable, one-dimensional or multidimensional, throws before anything is
+    // copied or launched, as the launcher of a [GpuKernel] method does: the slot the kernel would write keeps its
+    // value. The check precedes the CUDA context, so no device is needed.
+    [Theory]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(Binding.Yaml)]
+    [InlineData(Binding.Import)]
+    public void Launch_NullForNonNullableArray_ThrowsArgumentNullException(Binding binding)
+    {
+        // [WHY] Null is passed on purpose to parameters that are not nullable: the launcher must reject it
+        float[] vector = null!;
+        float[,] matrix = null!;
+        ulong[] seen = [ulong.MaxValue];
+
+        var vectorError = Assert.Throws<ArgumentNullException>(() =>
+        {
+            if (binding == Binding.Yaml)
+            {
+                ModuleArgumentKernels.RecordAddress(vector, seen);
+            }
+            else
+            {
+                ModuleArgumentImports.RecordAddress(vector, seen);
+            }
+        });
+        var matrixError = Assert.Throws<ArgumentNullException>(() =>
+        {
+            if (binding == Binding.Yaml)
+            {
+                ModuleArgumentKernels.ShiftMatrix(matrix, 3, 5, 32);
+            }
+            else
+            {
+                ModuleArgumentImports.ShiftMatrix(matrix, 3, 5, 32);
+            }
+        });
+
+        Assert.Equal("data", vectorError.ParamName);
+        Assert.Equal("x", matrixError.ParamName);
+        Assert.Equal(ulong.MaxValue, seen[0]);
+    }
+
+    // The kernel makes total = total * 3 + seed, result = <its value at the launch> + seed + 7, and overwrites seed on
+    // the device: 'ref' is copied in and back, 'out' starts from default whatever the caller's variable held, and 'in'
+    // (also 'ref readonly') is never copied back
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(Binding.Yaml)]
+    [InlineData(Binding.Import)]
+    [InlineData(Binding.ImportReadOnly)]
+    public void Launch_ValuesByReference_CopiesRefAndOutBack(Binding binding)
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var total = 5;
+        var seed = 4;
+        var result = 99;
+
+        switch (binding)
+        {
+            case Binding.Yaml:
+                ModuleArgumentKernels.UpdateByReference(ref total, in seed, out result);
+                break;
+            case Binding.Import:
+                ModuleArgumentImports.UpdateByReference(ref total, in seed, out result);
+                break;
+            default:
+                ModuleArgumentImports.UpdateByReadOnlyReference(ref total, in seed, out result);
+                break;
+        }
+
+        Assert.Equal(5 * 3 + 4, total);
+        Assert.Equal(4, seed);
+        Assert.Equal(4 + 7, result);
+    }
+
+    // The launcher keeps the default it sends for an 'out' value in a local of its own: the caller's variables change
+    // only in the write-back after the launch. A launch the driver rejects (64 threads for a kernel bounded to 32)
+    // throws after the arguments were staged and leaves them as they were; 32 threads run it as the control.
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(Binding.Yaml)]
+    [InlineData(Binding.Import)]
+    public void Launch_RejectedAfterStaging_LeavesOutAndRefVariablesUnchanged(Binding binding)
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var total = 5;
+        var seed = 4;
+        var result = 99;
+
+        Assert.Throws<CudaException>(() => UpdateBounded(binding, ref total, seed, out result, 64));
+
+        Assert.Equal(5, total);
+        Assert.Equal(99, result);
+
+        UpdateBounded(binding, ref total, seed, out result, 32);
+
+        Assert.Equal(5 * 3 + 4, total);
+        Assert.Equal(4 + 7, result);
+    }
+
+    // Element [i, j] of a 3 x 5 matrix starts as 100 * i + j and the kernel adds i - j at index i * 5 + j: a
+    // column-major or transposed copy would add j - i, or the values of other elements, so the result differs
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(Binding.Yaml)]
+    [InlineData(Binding.Import)]
+    public void Launch_TwoDimensionalArray_PassesRowMajorAndCopiesBack(Binding binding)
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        const int rows = 3;
+        const int cols = 5;
+        var matrix = new float[rows, cols];
+        for (var i = 0; i < rows; i++)
+        {
+            for (var j = 0; j < cols; j++)
+            {
+                matrix[i, j] = 100 * i + j;
+            }
+        }
+
+        if (binding == Binding.Yaml)
+        {
+            ModuleArgumentKernels.ShiftMatrix(matrix, rows, cols, 32);
+        }
+        else
+        {
+            ModuleArgumentImports.ShiftMatrix(matrix, rows, cols, 32);
+        }
+
+        for (var i = 0; i < rows; i++)
+        {
+            for (var j = 0; j < cols; j++)
+            {
+                Assert.Equal(100 * i + j + (i - j), matrix[i, j]);
+            }
+        }
+    }
+
+    public enum Binding
+    {
+        Yaml,
+        Import,
+        ImportReadOnly,
+    }
+
+    private static void UpdateBounded(Binding binding, ref int total, int seed, out int result, uint blockDimX)
+    {
+        if (binding == Binding.Yaml)
+        {
+            ModuleArgumentKernels.UpdateByReferenceBounded(ref total, in seed, out result, blockDimX);
+        }
+        else
+        {
+            ModuleArgumentImports.UpdateByReferenceBounded(ref total, in seed, out result, blockDimX);
+        }
+    }
+
+    private static void RecordAddress(Binding binding, float[]? data, ulong[] seen)
+    {
+        if (binding == Binding.Yaml)
+        {
+            ModuleArgumentKernels.RecordNullableAddress(data, seen);
+        }
+        else
+        {
+            ModuleArgumentImports.RecordNullableAddress(data, seen);
+        }
     }
 
     // Launches on another thread, reads the address the kernel recorded while the kernel waits, asks the driver what

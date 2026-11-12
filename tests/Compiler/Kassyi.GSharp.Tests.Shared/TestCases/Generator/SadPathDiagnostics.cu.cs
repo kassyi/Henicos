@@ -2,7 +2,7 @@
 using Kassyi.GSharp.Core;
 namespace TestSpace
 {
-    public static class ErrorSpecKernel
+    public static partial class ErrorSpecKernel
     {
         [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]

@@ -14,6 +14,29 @@ internal static class NullRepresentation
         type != null && (type.IsArrayLikeType() || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T);
 
     /// <summary>
+    /// The operand that <paramref name="node"/> compares with the <c>null</c> literal when it is written as a null test
+    /// (<see cref="AppendNullTest"/>): <c>x == null</c>, <c>null != x</c> and the like for an <paramref name="node"/>
+    /// whose other operand is <see cref="IsNullComparable"/>; <see langword="null"/> otherwise. The test is written
+    /// whatever operator C# binds (<c>Span&lt;T&gt;</c> compares through its user-defined <c>==</c>).
+    /// </summary>
+    public static ExpressionSyntax? GetNullTestOperand(BinaryExpressionSyntax node, SemanticModel model)
+    {
+        if (!node.IsKind(SyntaxKind.EqualsExpression) && !node.IsKind(SyntaxKind.NotEqualsExpression))
+        {
+            return null;
+        }
+
+        if (node.Left.IsKind(SyntaxKind.NullLiteralExpression) && IsNullComparable(model.GetTypeSymbol(node.Right)))
+        {
+            return node.Right;
+        }
+
+        return node.Right.IsKind(SyntaxKind.NullLiteralExpression) && IsNullComparable(model.GetTypeSymbol(node.Left))
+            ? node.Left
+            : null;
+    }
+
+    /// <summary>
     /// Emits <c>(&lt;operand&gt;.data == nullptr)</c> (or <c>(!&lt;operand&gt;.HasValue)</c> for a
     /// <c>System_Nullable&lt;T&gt;</c>), or the negated test when <paramref name="isNull"/> is false.
     /// </summary>

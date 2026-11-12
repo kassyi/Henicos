@@ -3,7 +3,7 @@ using System;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Generator;
 
-public class TestKernelReturnTypesSadPath
+public partial class TestKernelReturnTypesSadPath
 {
     // Managed array
     [GpuKernel]

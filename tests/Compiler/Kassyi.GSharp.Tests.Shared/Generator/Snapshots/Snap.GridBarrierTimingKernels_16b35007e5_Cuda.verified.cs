@@ -61,8 +61,8 @@ public const string Source = @"inline __device__ void __gsharp_fn_Kassyi__GSharp
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Cuda__GridBarrierTimingKernels__SpinInFirstBlock(long long __gsharp_id_0_cycles){
 if((int)blockIdx.x==0)
 {
-unsigned long long __gsharp_id_1_start = clock64();
-while((long long)(clock64()-__gsharp_id_1_start)<__gsharp_id_0_cycles)
+unsigned long long __gsharp_id_1_start = __gsharp_clock64();
+while((long long)(__gsharp_clock64()-__gsharp_id_1_start)<__gsharp_id_0_cycles)
 {
 }
 }
@@ -115,8 +115,8 @@ __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 218134691u);
 }());
 if((int)blockIdx.x==__gsharp_id_1_slowBlock)
 {
-unsigned long long __gsharp_id_6_start = clock64();
-while((long long)(clock64()-__gsharp_id_6_start)<__gsharp_id_2_cycles)
+unsigned long long __gsharp_id_6_start = __gsharp_clock64();
+while((long long)(__gsharp_clock64()-__gsharp_id_6_start)<__gsharp_id_2_cycles)
 {
 }
 }

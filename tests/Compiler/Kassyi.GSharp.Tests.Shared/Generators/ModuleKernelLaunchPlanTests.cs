@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.NativeApi;
+using Microsoft.CodeAnalysis;
 
 #nullable enable
 
@@ -22,6 +23,18 @@ public class ModuleKernelLaunchPlanTests
     [InlineData("data", " System.Single [] ", "Array", "System.Single", "None")]
     [InlineData("data", "global::System.Single[]", "Array", "global::System.Single", "None")]
     [InlineData("data", "params int[]", "Array", "int", "None")]
+    [InlineData("data", "float[]?", "Array", "float", "None")]
+    [InlineData("data", "float[ ]?", "Array", "float", "None")]
+    [InlineData("data", "params float[]?", "Array", "float", "None")]
+    [InlineData("data", "float[,]", "MultidimensionalArray", "float", "None")]
+    [InlineData("data", "float[ , ]", "MultidimensionalArray", "float", "None")]
+    [InlineData("data", "System.Int32[,,]?", "MultidimensionalArray", "System.Int32", "None")]
+    [InlineData("n", "ref int", "ByReference", "int", "None")]
+    [InlineData("n", "out  MyStruct", "ByReference", "MyStruct", "None")]
+    [InlineData("n", "in float", "ByReference", "float", "None")]
+    [InlineData("n", "ref readonly int", "ByReference", "int", "None")]
+    [InlineData("n", "scoped ref int", "ByReference", "int", "None")]
+    [InlineData("n", "scoped out uint", "ByReference", "uint", "None")]
     [InlineData("n", "int", "Value", "int", "None")]
     [InlineData("v", "MyStruct", "Value", "MyStruct", "None")]
     [InlineData("v", "MyNamespace.Nullable<int>", "Value", "MyNamespace.Nullable<int>", "None")]
@@ -53,10 +66,10 @@ public class ModuleKernelLaunchPlanTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("data", "float[ ]?", ModuleKernelParameterTypes.NullableArrayReason)]
-    [InlineData("data", "float[,]", ModuleKernelParameterTypes.MultidimensionalArrayReason)]
-    [InlineData("data", "float[ , ]", ModuleKernelParameterTypes.MultidimensionalArrayReason)]
     [InlineData("data", "float[][]", ModuleKernelParameterTypes.JaggedArrayReason)]
+    [InlineData("data", "float[,][]", ModuleKernelParameterTypes.JaggedArrayReason)]
+    [InlineData("data", "float[]?[]", ModuleKernelParameterTypes.JaggedArrayReason)]
+    [InlineData("data", "params float[,]", ModuleKernelParameterTypes.ParamsReason)]
     [InlineData("data", "float*[]", ModuleKernelParameterTypes.PointerElementReason)]
     [InlineData("data", "string[]", ModuleKernelParameterTypes.ManagedElementReason)]
     [InlineData("data", "int?[]", ModuleKernelParameterTypes.NullableValueReason)]
@@ -67,11 +80,20 @@ public class ModuleKernelLaunchPlanTests
     [InlineData("o", "global::System.Object", ModuleKernelParameterTypes.ManagedTypeReason)]
     [InlineData("o", "dynamic", ModuleKernelParameterTypes.ManagedTypeReason)]
     [InlineData("a", "System.Array", ModuleKernelParameterTypes.ManagedTypeReason)]
-    [InlineData("n", "ref int", ModuleKernelParameterTypes.ByReferenceReason)]
-    [InlineData("n", "out int", ModuleKernelParameterTypes.ByReferenceReason)]
-    [InlineData("n", "in int", ModuleKernelParameterTypes.ByReferenceReason)]
-    [InlineData("n", "ref readonly int", ModuleKernelParameterTypes.ByReferenceReason)]
-    [InlineData("n", "scoped ref int", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("data", "ref float[]", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("data", "out float[]?", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("p", "ref float*", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("s", "ref string", ModuleKernelParameterTypes.ManagedTypeReason)]
+    [InlineData("n", "in int?", ModuleKernelParameterTypes.NullableValueReason)]
+    [InlineData("v", "out (int, float)", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("s", "scoped ref Span<float>", ModuleKernelParameterTypes.RefStructReason)]
+    [InlineData("gridDimX", "ref uint", ModuleKernelParameterTypes.LaunchSettingByReferenceReason)]
+    [InlineData("stream", "in IntPtr", ModuleKernelParameterTypes.LaunchSettingByReferenceReason)]
+    [InlineData("n", "readonly int", ModuleKernelParameterTypes.ModifiersReason)]
+    [InlineData("n", "ref ref int", ModuleKernelParameterTypes.ModifiersReason)]
+    [InlineData("n", "in ref int", ModuleKernelParameterTypes.ModifiersReason)]
+    [InlineData("n", "ref scoped int", ModuleKernelParameterTypes.ModifiersReason)]
+    [InlineData("n", "params ref int[]", ModuleKernelParameterTypes.ModifiersReason)]
     [InlineData("n", "params int", ModuleKernelParameterTypes.ParamsReason)]
     [InlineData("n", "void", ModuleKernelParameterTypes.NotATypeReason)]
     [InlineData("n", "float[", ModuleKernelParameterTypes.NotATypeReason)]
@@ -100,6 +122,42 @@ public class ModuleKernelLaunchPlanTests
         Assert.Equal(reason, parsed.Reason);
     }
 
+    // Only an array written nullable passes null to the kernel; the launcher rejects null for another array
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("float[]", false)]
+    [InlineData("float[ ] ?", true)]
+    [InlineData("params float[]?", true)]
+    [InlineData("float[,]", false)]
+    [InlineData("float[,]?", true)]
+    [InlineData("int", false)]
+    public void Parse_ArrayNullability_AllowsNullOnlyWhenWrittenNullable(string type, bool allowsNull)
+    {
+        var parsed = ModuleKernelParameterTypes.Parse("data", type);
+
+        Assert.Null(parsed.Reason);
+        Assert.Equal(allowsNull, parsed.AllowsNull);
+    }
+
+    // 'ref readonly' is read as 'in': the kernel's value is not copied back
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("int", RefKind.None)]
+    [InlineData("float[]", RefKind.None)]
+    [InlineData("ref int", RefKind.Ref)]
+    [InlineData("scoped ref int", RefKind.Ref)]
+    [InlineData("out int", RefKind.Out)]
+    [InlineData("in int", RefKind.In)]
+    [InlineData("ref readonly int", RefKind.In)]
+    [InlineData("scoped  ref  readonly int", RefKind.In)]
+    public void Parse_ParameterModifiers_ReadsRefKind(string type, RefKind refKind)
+    {
+        var parsed = ModuleKernelParameterTypes.Parse("n", type);
+
+        Assert.Null(parsed.Reason);
+        Assert.Equal(refKind, parsed.RefKind);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void ModuleBindingPlanner_MixedParameters_SplitsKernelArgumentsFromLaunchSettings()
@@ -114,6 +172,10 @@ public class ModuleKernelLaunchPlanTests
                 new ParameterDefinition { Name = "n", Type = "int" },
                 new ParameterDefinition { Name = "p", Type = "float*" },
                 new ParameterDefinition { Name = "stream", Type = "IntPtr" },
+                new ParameterDefinition { Name = "grid", Type = "float[,]?" },
+                new ParameterDefinition { Name = "total", Type = "ref int" },
+                new ParameterDefinition { Name = "result", Type = "out double" },
+                new ParameterDefinition { Name = "seed", Type = "in uint" },
             ],
         };
 
@@ -125,6 +187,11 @@ public class ModuleKernelLaunchPlanTests
             new ModuleKernelArgument("data", ModuleKernelParameterKind.Array, "float", CopyIn: true, CopyOut: true),
             new ModuleKernelArgument("n", ModuleKernelParameterKind.Value, "int", CopyIn: true, CopyOut: true),
             new ModuleKernelArgument("p", ModuleKernelParameterKind.Pointer, "float*", CopyIn: true, CopyOut: true),
+            new ModuleKernelArgument("grid", ModuleKernelParameterKind.MultidimensionalArray, "float", true, true,
+                AllowsNull: true),
+            new ModuleKernelArgument("total", ModuleKernelParameterKind.ByReference, "int", true, true),
+            new ModuleKernelArgument("result", ModuleKernelParameterKind.ByReference, "double", false, true),
+            new ModuleKernelArgument("seed", ModuleKernelParameterKind.ByReference, "uint", true, false),
         ];
         Assert.Equal(expected, plan.Arguments.AsImmutableArray().ToArray());
         Assert.Equal(new ModuleLaunchConfiguration { GridDimX = "gridDimX", Stream = "stream" }, plan.Launch);
@@ -216,18 +283,30 @@ public class ModuleKernelLaunchPlanTests
             plan.Problems.Select(static p => (p.ParameterOrdinal, p.Reason)));
     }
 
+    // A value passed by reference is copied in unless it is 'out' and back unless it is 'in' or 'ref readonly'; an
+    // array follows [In] / [Out] whatever its rank and nullability
     [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void CudaImportPlanner_RefAndMultidimensionalParameters_ReportsBoth()
+    [Scenario(TestScenario.HappyPath)]
+    public void CudaImportPlanner_RefKindsAndArrays_StagesThroughDeviceBuffers()
     {
-        var plan = PlanCudaImport("Counted");
+        ModuleKernelArgument[] expected =
+        [
+            new("total", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: true),
+            new("grid", ModuleKernelParameterKind.MultidimensionalArray, "float", CopyIn: true, CopyOut: true),
+            new("result", ModuleKernelParameterKind.ByReference, "int", CopyIn: false, CopyOut: true),
+            new("seed", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: false),
+            new("limit", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: false),
+            new("total", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: true),
+            new("grid", ModuleKernelParameterKind.MultidimensionalArray, "float", true, false, AllowsNull: true),
+            new("values", ModuleKernelParameterKind.Array, "float", false, true, AllowsNull: true),
+            new("result", ModuleKernelParameterKind.ByReference, "double", CopyIn: false, CopyOut: true),
+            new("seed", ModuleKernelParameterKind.ByReference, "global::TestNamespace.Grid", true, false),
+        ];
 
-        Assert.Equal(
-            [
-                (0, ModuleKernelParameterTypes.ByReferenceReason),
-                (1, ModuleKernelParameterTypes.MultidimensionalArrayReason),
-            ],
-            plan.Problems.Select(static p => (p.ParameterOrdinal, p.Reason)));
+        var plans = new[] { PlanCudaImport("Counted"), PlanCudaImport("Written"), PlanCudaImport("Packed") };
+
+        Assert.All(plans, static plan => Assert.True(plan.CanLaunch));
+        Assert.Equal(expected, plans.SelectMany(static plan => plan.Arguments));
     }
 
     private static ModuleKernelLaunchPlan PlanCudaImport(string methodName)

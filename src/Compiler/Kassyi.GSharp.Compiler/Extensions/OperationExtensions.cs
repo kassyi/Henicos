@@ -49,4 +49,22 @@ internal static class OperationExtensions
              } field &&
              field.Instance == operation
     };
+
+    /// <summary>
+    /// The user-defined operator that <paramref name="operation"/> calls by itself: the method of a unary or binary
+    /// operator, an increment or decrement, or a compound assignment (for a user-defined <c>&amp;&amp;</c> or
+    /// <c>||</c>, its <c>&amp;</c> or <c>|</c>); <see langword="null"/> for a built-in operator or another operation.
+    /// </summary>
+    public static IMethodSymbol? GetUserDefinedOperator(this IOperation? operation)
+    {
+        var method = operation switch
+        {
+            IBinaryOperation binary => binary.OperatorMethod,
+            IUnaryOperation unary => unary.OperatorMethod,
+            IIncrementOrDecrementOperation step => step.OperatorMethod,
+            ICompoundAssignmentOperation compound => compound.OperatorMethod,
+            _ => null
+        };
+        return method is { MethodKind: MethodKind.UserDefinedOperator } ? method : null;
+    }
 }

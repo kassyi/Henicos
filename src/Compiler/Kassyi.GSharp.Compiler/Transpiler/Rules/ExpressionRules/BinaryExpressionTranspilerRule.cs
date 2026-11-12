@@ -31,28 +31,20 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             return;
         }
 
-        if (node.IsKind(SyntaxKind.EqualsExpression) || node.IsKind(SyntaxKind.NotEqualsExpression))
+        if (NullRepresentation.GetNullTestOperand(node, context.Query.SemanticModel) is { } tested)
         {
-            var isNull = node.IsKind(SyntaxKind.EqualsExpression);
-            if (node.Left.IsKind(SyntaxKind.NullLiteralExpression) &&
-                NullRepresentation.IsNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Right)))
-            {
-                NullRepresentation.AppendNullTest(node.Right, isNull, ref context);
-                return;
-            }
-
-            if (node.Right.IsKind(SyntaxKind.NullLiteralExpression) &&
-                NullRepresentation.IsNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Left)))
-            {
-                NullRepresentation.AppendNullTest(node.Left, isNull, ref context);
-                return;
-            }
+            NullRepresentation.AppendNullTest(tested, node.IsKind(SyntaxKind.EqualsExpression), ref context);
+            return;
         }
 
-        // An integer constant is written as its value: C# folds a constant shift with the masked count (3 << 33 is 6),
-        // which C++ leaves undefined (#722)
+        // A user-defined operator has no C++ operator unless it is a macro, which its own rule expands (GSH0060)
+        if (CallTargetEmitter.TryFailOperator(node, ref context))
+        {
+            return;
+        }
+
         var operation = GetOperation(node, ref context);
-        if (IntegerSemanticsEmitter.TryAppendConstant(operation, node, ref context))
+        if (TryAppendConstant(operation, node, ref context))
         {
             return;
         }
@@ -131,6 +123,27 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         context.Visitor.Visit(node.Left);
         AppendOperator(node, node.Right, ref context);
         context.Visitor.Visit(node.Right);
+    }
+
+    // An integer constant is written as its value: C# folds a constant shift with the masked count (3 << 33 is 6),
+    // which C++ leaves undefined (#722). A comparison of constant strings (nameof(T) == "T") is the bool C# folds it
+    // to: a string has no device form
+    private static bool TryAppendConstant(IBinaryOperation? operation, BinaryExpressionSyntax node,
+        ref TranspileContext context)
+    {
+        if (IntegerSemanticsEmitter.TryAppendConstant(operation, node, ref context))
+        {
+            return true;
+        }
+
+        if (operation is not { ConstantValue: { HasValue: true, Value: bool value }, Type: { } type } ||
+            !GpuCodeConstraints.IsString(operation.LeftOperand.Type))
+        {
+            return false;
+        }
+
+        ConstantAtUse.Append(node, type, value, ref context);
+        return true;
     }
 
     // The bound operation. It must come from a node of the same kind: a lowered node is mapped back to the user's source

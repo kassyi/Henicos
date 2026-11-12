@@ -301,17 +301,30 @@ inline bool __gsharp_end_grid_phase(GSharpErrorSlot* error, const uint8_t* statu
     return anyWaiting;
 }
 
-inline void __gsharp_unsupported(const char* message);
+// Gpu.ThreadFence, ThreadFenceBlock and ThreadFenceSystem: the threads of a launch share host memory, so each is a full
+// fence, which orders at least what the narrower GPU scopes order
+inline void __threadfence() { std::atomic_thread_fence(std::memory_order_seq_cst); }
+inline void __threadfence_block() { std::atomic_thread_fence(std::memory_order_seq_cst); }
+inline void __threadfence_system() { std::atomic_thread_fence(std::memory_order_seq_cst); }
 
-inline void __gsharp_mbarrier_init(unsigned long long*, unsigned int) {
-    __gsharp_unsupported("mbarrier is not supported by the StandardCpp dialect.");
+// Gpu.LoadCachedGlobal / StoreCachedGlobal: the cache hint has no CPU counterpart; the value is the same
+template <typename T>
+inline T __ldcg(const T* address) { return *address; }
+template <typename T>
+inline void __stcg(T* address, T value) { *address = value; }
+
+// Gpu.Prefetch, PrefetchUniform and ApplyPriorityL2: hints that change no value, so nothing to do on the CPU
+inline void __gsharp_prefetch_l2(long long) {}
+inline void __gsharp_prefetch_uniform(long long) {}
+inline void __gsharp_apply_priority_l2(long long, unsigned int, float) {}
+
+// Gpu.Clock and Gpu.Clock64: a counter that only grows while the launch runs, as the cycle counter of an SM does. The
+// CPU counts nanoseconds of the monotonic clock instead of cycles; Clock keeps the low 32 bits, as %clock wraps
+inline unsigned long long __gsharp_clock64() {
+    return (unsigned long long)std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
 }
-inline void __gsharp_mbarrier_arrive(unsigned long long*) {
-    __gsharp_unsupported("mbarrier is not supported by the StandardCpp dialect.");
-}
-inline void __gsharp_mbarrier_wait(unsigned long long*, unsigned int) {
-    __gsharp_unsupported("mbarrier is not supported by the StandardCpp dialect.");
-}
+inline unsigned int __gsharp_clock() { return (unsigned int)__gsharp_clock64(); }
 
 template <typename T>
 inline void __gsharp_cp_async(T* dst, const T* src) {

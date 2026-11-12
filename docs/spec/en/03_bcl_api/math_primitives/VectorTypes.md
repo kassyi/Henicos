@@ -13,7 +13,7 @@ description: "Information about G#'s native vector types (Float2, Int4, etc.) th
 **Namespace:** `Kassyi.GSharp.Core`  
 **Assembly:** `Kassyi.GSharp.Core.dll`
 
-G# provides 18 sequentially laid-out vector value types that match the CUDA built-in vector types: `Float2`..`Float4`, `Int2`..`Int4`, `UInt2`..`UInt4`, `Double2`..`Double4`, `Long2`..`Long4` and `ULong2`..`ULong4` (CUDA `float2`..`float4`, `int2`..`int4`, `uint2`..`uint4`, `double2`..`double4`, `longlong2`..`longlong4`, `ulonglong2`..`ulonglong4`). `System.Numerics.Vector2`, `Vector3` and `Vector4` are also supported in kernels and map to `float2`, `float3` and `float4`.
+G# provides 18 sequentially laid-out vector value types that match the CUDA built-in vector types: `Float2`..`Float4`, `Int2`..`Int4`, `UInt2`..`UInt4`, `Double2`..`Double4`, `Long2`..`Long4` and `ULong2`..`ULong4` (CUDA `float2`..`float4`, `int2`..`int4`, `uint2`..`uint4`, `double2`..`double4`, `longlong2`..`longlong4`, `ulonglong2`..`ulonglong4`). `System.Numerics.Vector2`, `Vector3` and `Vector4` are also supported in kernels and map to `float2`, `float3` and `float4`. Their operators and methods are not mapped yet: an operator such as `a + b` is reported as [GSH0060](../diagnostics/GSH0060.md) and a method such as `Vector3.Dot` as [GSH0109](../diagnostics/GSH0109.md).
 
 ```csharp
 // Execution Context: G# Kernel (GPU) or Host (CPU fallback)
