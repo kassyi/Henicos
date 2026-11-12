@@ -4,15 +4,6 @@ using System.Runtime.CompilerServices;
 namespace Kassyi.GSharp.Core;
 
 /// <summary>
-/// Represents the execution context coordinates for a single GPU thread.
-/// </summary>
-public readonly record struct GpuThreadContext(
-    int ThreadIdxX, int ThreadIdxY, int ThreadIdxZ,
-    int BlockIdxX, int BlockIdxY, int BlockIdxZ,
-    int BlockDimX, int BlockDimY, int BlockDimZ,
-    int GridDimX, int GridDimY, int GridDimZ);
-
-/// <summary>
 /// Provides a managed execution context for evaluating GPU kernels directly on the .NET host CPU without native
 /// toolchains.
 /// </summary>
@@ -21,80 +12,80 @@ public static partial class ManagedGpuContext
     /// <summary>
     /// Gets or sets a value indicating whether the current thread is executing within a managed cooperative scheduler.
     /// </summary>
-    [ThreadStatic]
-    public static bool IsActive;
+    [field: ThreadStatic]
+    public static bool IsActive { get; set; }
 
     /// <summary>
     /// Gets or sets the x-dimension thread index within the current thread block.
     /// </summary>
-    [ThreadStatic]
-    public static int ThreadIdxX;
+    [field: ThreadStatic]
+    public static int ThreadIdxX { get; set; }
 
     /// <summary>
     /// Gets or sets the y-dimension thread index within the current thread block.
     /// </summary>
-    [ThreadStatic]
-    public static int ThreadIdxY;
+    [field: ThreadStatic]
+    public static int ThreadIdxY { get; set; }
 
     /// <summary>
     /// Gets or sets the z-dimension thread index within the current thread block.
     /// </summary>
-    [ThreadStatic]
-    public static int ThreadIdxZ;
+    [field: ThreadStatic]
+    public static int ThreadIdxZ { get; set; }
 
     /// <summary>
     /// Gets or sets the x-dimension block index within the grid.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockIdxX;
+    [field: ThreadStatic]
+    public static int BlockIdxX { get; set; }
 
     /// <summary>
     /// Gets or sets the y-dimension block index within the grid.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockIdxY;
+    [field: ThreadStatic]
+    public static int BlockIdxY { get; set; }
 
     /// <summary>
     /// Gets or sets the z-dimension block index within the grid.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockIdxZ;
+    [field: ThreadStatic]
+    public static int BlockIdxZ { get; set; }
 
     /// <summary>
     /// Gets or sets the x-dimension size of each block.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockDimX;
+    [field: ThreadStatic]
+    public static int BlockDimX { get; set; }
 
     /// <summary>
     /// Gets or sets the y-dimension size of each block.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockDimY;
+    [field: ThreadStatic]
+    public static int BlockDimY { get; set; }
 
     /// <summary>
     /// Gets or sets the z-dimension size of each block.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockDimZ;
+    [field: ThreadStatic]
+    public static int BlockDimZ { get; set; }
 
     /// <summary>
     /// Gets or sets the x-dimension size of the grid.
     /// </summary>
-    [ThreadStatic]
-    public static int GridDimX;
+    [field: ThreadStatic]
+    public static int GridDimX { get; set; }
 
     /// <summary>
     /// Gets or sets the y-dimension size of the grid.
     /// </summary>
-    [ThreadStatic]
-    public static int GridDimY;
+    [field: ThreadStatic]
+    public static int GridDimY { get; set; }
 
     /// <summary>
     /// Gets or sets the z-dimension size of the grid.
     /// </summary>
-    [ThreadStatic]
-    public static int GridDimZ;
+    [field: ThreadStatic]
+    public static int GridDimZ { get; set; }
 
     /// <summary>
     /// Set by generated code when the GPU thread being stepped reaches <c>Gpu.SyncGrid</c>, in the kernel or in any
@@ -105,9 +96,9 @@ public static partial class ManagedGpuContext
     /// The managed launcher steps one GPU thread at a time on one host thread, so a request set during a step belongs
     /// to that GPU thread, however deep the call that set it.
     /// </remarks>
-    [ThreadStatic]
+    [field: ThreadStatic]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static bool GridSyncRequested;
+    public static bool GridSyncRequested { get; set; }
 
     // Gpu.GridStrideLoop stops the start and the step here: no int index reaches 2^31, so index + step never wraps
     // around in 32 bits
@@ -173,9 +164,9 @@ public static partial class ManagedGpuContext
     /// The launcher keeps the thread waiting at the barrier until every thread of its block that has not finished waits
     /// too, as on the GPU, where no thread passes a block barrier before the others have reached it.
     /// </remarks>
-    [ThreadStatic]
+    [field: ThreadStatic]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static bool BlockBarrierRequested;
+    public static bool BlockBarrierRequested { get; set; }
 
     // The managed launcher of a cooperative kernel runs the grid in phases, each ending when every block has reached
     // Gpu.SyncGrid (#664). The GPU never completes a grid sync that a block, or thread 0 of a block, does not reach,

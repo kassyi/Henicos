@@ -21,10 +21,13 @@ public static partial class ManagedGpuContext
 
     private sealed class SharedRegion
     {
-        public ulong SiteKey;
-        public int TypeId;
-        public int ByteLength;
-        public byte[] Bytes = [];
+        public ulong SiteKey { get; set; }
+
+        public int TypeId { get; set; }
+
+        public int ByteLength { get; set; }
+
+        public byte[] Bytes { get; set; } = [];
     }
 
     // The dynamic shared memory of each block (#544): one array of the launch's sharedMemBytes, in which the dynamic
@@ -49,10 +52,13 @@ public static partial class ManagedGpuContext
 
     private sealed class DynamicSharedMemory
     {
-        public byte[] Bytes = [];
-        public ulong Cursor;
-        public int RegionCount;
-        public DynamicRegion[] Regions = new DynamicRegion[8];
+        public byte[] Bytes { get; set; } = [];
+
+        public ulong Cursor { get; set; }
+
+        public int RegionCount { get; set; }
+
+        public DynamicRegion[] Regions { get; set; } = new DynamicRegion[8];
     }
 
     // A region is identified by the site key alone, as on CUDA and the native CPU path: the instantiations of a generic
@@ -369,7 +375,9 @@ public static partial class ManagedGpuContext
 
             if (block.RegionCount == block.Regions.Length)
             {
-                Array.Resize(ref block.Regions, block.RegionCount * 2);
+                var regions = block.Regions;
+                Array.Resize(ref regions, block.RegionCount * 2);
+                block.Regions = regions;
             }
 
             index = block.RegionCount++;
