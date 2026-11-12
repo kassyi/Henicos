@@ -106,7 +106,7 @@ public class NativeApiModuleGeneratorTests
         Assert.True(problems.Length == 0, string.Join(Environment.NewLine, problems));
         var source = Assert.Single(output.SyntaxTrees, t => t.FilePath.EndsWith("StagedKernels.NativeApi.g.cs"))
             .ToString();
-        Assert.Contains("var __gsharp_out_1 = default(double);", source);
+        Assert.Contains("double __gsharp_out_1 = default(double);", source);
         Assert.Contains("__gsharp_d_1.CopyToHost(new global::System.Span<double>(ref __gsharp_out_1));", source);
         Assert.Contains("result = __gsharp_out_1;", source);
         Assert.DoesNotContain("result = default;", source);
@@ -169,6 +169,39 @@ public class NativeApiModuleGeneratorTests
             .Where(d => d.Severity == DiagnosticSeverity.Error)
             .Select(d => d.ToString())
             .ToArray();
+        Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
+    }
+
+    // A YAML method named nameof, in a namespace with a nameof segment, still compiles: the null check names the
+    // parameter with a string literal, not nameof(<parameter>); a class named var still compiles: every launcher local
+    // has an explicit type, which 'var' would otherwise resolve to the class
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("My.nameof", "Kernels", "nameof")]
+    [InlineData("My.Native", "var", "Run")]
+    public void ModuleDefinition_ContextualKeywordNames_Compile(string namespaceName, string className,
+        string methodName)
+    {
+        var yaml = $$"""
+            namespace: {{namespaceName}}
+            className: {{className}}
+            moduleName: ./native/keyword.fatbin
+            methods:
+              - name: {{methodName}}
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: result, type: out int }
+                  - { name: grid, type: "float[,]?" }
+                  - { name: scale, type: float }
+                  - { name: gridDimX, type: uint }
+            """;
+        var compilation = CreateCompilation();
+        var driver = CreateDriver(Api("keyword.yml", yaml));
+
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
+
+        Assert.Empty(generatorDiagnostics);
+        var errors = GetErrors(output);
         Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
     }
 
@@ -301,7 +334,8 @@ public class NativeApiModuleGeneratorTests
         var source = FindSource(result, "SharedKernels");
         const string Prepare = "global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(" +
             "__gsharp_hfunc, sharedMemBytes, \"SharedKernels.LaunchShared\");";
-        var loadIndex = source.IndexOf($"var __gsharp_hfunc = {KernelLoader}.LoadAotKernel(", StringComparison.Ordinal);
+        var loadIndex = source.IndexOf(
+            $"global::System.IntPtr __gsharp_hfunc = {KernelLoader}.LoadAotKernel(", StringComparison.Ordinal);
         var prepareIndex = source.IndexOf(Prepare, StringComparison.Ordinal);
         var allocationIndex = source.IndexOf($"new {GpuBuffer}<float>(", StringComparison.Ordinal);
 
@@ -359,7 +393,7 @@ public class NativeApiModuleGeneratorTests
             "gridDimX, 1, 1, blockDimX, 1, blockDimZ, \"GridKernels.LaunchGrid\");";
         var checkIndex = source.IndexOf(Check, StringComparison.Ordinal);
         var scopeIndex = source.IndexOf(
-            $"using var __gsharp_cuda_context_scope = new {KernelLoader}.CudaContextScope();",
+            $"using {KernelLoader}.CudaContextScope __gsharp_cuda_context_scope = new();",
             StringComparison.Ordinal);
 
         Assert.NotEqual(-1, checkIndex);

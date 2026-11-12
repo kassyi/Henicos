@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 
 /// <summary>
 /// A class that a YAML <c>moduleName</c> binding extends, and the module whose field
-/// (<see cref="ModuleKernelLaunchEmitter.GetModuleFieldName"/>) the binding declares in it. <c>[CudaImport]</c>
+/// (<see cref="AotModuleNames.GetModuleFieldName"/>) the binding declares in it. <c>[CudaImport]</c>
 /// methods of the same module in that class use that field instead of declaring a second one.
 /// </summary>
 /// <param name="TypeName">

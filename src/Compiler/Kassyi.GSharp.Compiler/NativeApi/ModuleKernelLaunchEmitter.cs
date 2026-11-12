@@ -31,18 +31,6 @@ internal static class ModuleKernelLaunchEmitter
     private const string NativeContext = GSharpInternalNames.Launcher.NativeContext;
 
     /// <summary>
-    /// The static field of a class that holds the bytes of the module <paramref name="moduleName"/>,
-    /// <c>__gsharp_module_{module}</c> with the module name escaped (<see cref="GSharpNameEncoding.EscapeName"/>, which
-    /// is injective): one field per module and class, named the same way by the YAML bindings and
-    /// <c>[CudaImport]</c>, so a <c>[CudaImport]</c> part leaves out the field a YAML binding of the class declares.
-    /// </summary>
-    public static string GetModuleFieldName(string moduleName) =>
-        GlobalCppNames.Shorten(
-            GSharpInternalNames.Launcher.ModuleFieldPrefix,
-            GSharpNameEncoding.EscapeName(moduleName)
-        );
-
-    /// <summary>
     /// The struct that packs the arguments of the method at <paramref name="index"/> among the methods of a class,
     /// <c>__gsharp_native_context_{index}</c>; numbered, so that overloads get one each.
     /// </summary>
@@ -81,7 +69,7 @@ internal static class ModuleKernelLaunchEmitter
     /// </summary>
     /// <param name="writer">The destination source writer.</param>
     /// <param name="moduleField">
-    /// The field that holds the bytes of the module (<see cref="GetModuleFieldName"/>).
+    /// The field that holds the bytes of the module (<see cref="AotModuleNames.GetModuleFieldName"/>).
     /// </param>
     /// <param name="entryPoint">The mangled native kernel entry-point symbol.</param>
     /// <param name="launcherName">The launcher as <c>Type.Method</c>, named by the shared memory limit error.</param>
@@ -106,9 +94,11 @@ internal static class ModuleKernelLaunchEmitter
         var launch = plan.Launch;
         WriteNullChecks(writer, plan.Arguments);
         WriteLaunchLimitCheck(writer, launcherName, launch);
-        writer.AppendLine($"using var {CudaContextScope} = new {HostTypeNames.GpuKernelLoader}.CudaContextScope();");
+        // [WHY] Every launcher local has an explicit type: in a class named 'var', 'var' names that class
+        writer.AppendLine(
+            $"using {HostTypeNames.GpuKernelLoader}.CudaContextScope {CudaContextScope} = new();");
         var entryPointLiteral = SymbolDisplay.FormatLiteral(entryPoint, quote: true);
-        writer.AppendLine($"var {FunctionHandle} = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(" +
+        writer.AppendLine($"{HostTypeNames.IntPtr} {FunctionHandle} = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(" +
             $"{moduleField}.Value, {entryPointLiteral});");
 
         // [WHY] sharedMemBytes above 48 KB needs the function's opt-in, and a request the device cannot hold is
@@ -250,8 +240,8 @@ internal static class ModuleKernelLaunchEmitter
             {
                 case ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray:
                     writer.AppendLine(argument.AllowsNull
-                        ? $"using var {device} = {name} is null ? null : new {buffer}({name}.Length);"
-                        : $"using var {device} = new {buffer}({name}.Length);");
+                        ? $"using {buffer}? {device} = {name} is null ? null : new {buffer}({name}.Length);"
+                        : $"using {buffer} {device} = new {buffer}({name}.Length);");
                     if (argument.CopyIn)
                     {
                         writer.Append($"{device}{GetAccess(argument)}CopyToDevice(");
@@ -262,8 +252,9 @@ internal static class ModuleKernelLaunchEmitter
                     break;
                 case ModuleKernelParameterKind.ByReference:
                     var host = GetHostValue(argument);
-                    writer.AppendLineIf(!argument.CopyIn, $"var {host} = default({argument.TypeName});");
-                    writer.AppendLine($"using var {device} = new {buffer}(1);");
+                    var type = argument.TypeName;
+                    writer.AppendLineIf(!argument.CopyIn, $"{type} {host} = default({type});");
+                    writer.AppendLine($"using {buffer} {device} = new {buffer}(1);");
                     writer.AppendLine(
                         $"{device}.CopyToDevice(new {HostTypeNames.ReadOnlySpan}<{argument.TypeName}>(in {host}));");
                     break;
@@ -302,7 +293,7 @@ internal static class ModuleKernelLaunchEmitter
     private static void EmitContextInitialization(SourceWriter writer, string contextTypeName,
         EquatableArray<ModuleKernelArgument> arguments)
     {
-        writer.AppendLine($"var {NativeContext} = new {contextTypeName}");
+        writer.AppendLine($"{contextTypeName} {NativeContext} = new {contextTypeName}");
         using (writer.Scope())
         {
             for (var i = 0; i < arguments.Length; i++)
@@ -326,7 +317,7 @@ internal static class ModuleKernelLaunchEmitter
         {
             if (contextTypeName is not null)
             {
-                writer.AppendLine($"var {KernelParams} = stackalloc void*[1];");
+                writer.AppendLine($"void** {KernelParams} = stackalloc void*[1];");
                 writer.AppendLine($"{KernelParams}[0] = {AddressOf}<{contextTypeName}>(ref {NativeContext});");
             }
             else
@@ -354,8 +345,8 @@ internal static class ModuleKernelLaunchEmitter
         {
             var local = KernelHostNames.GetLocal(LauncherLocal.KernelArgument, argument.Ordinal);
             writer.AppendLine(argument.IsStaged
-                ? $"var {local} = {GetDevicePointer(argument)};"
-                : $"var {local} = {Identifier(argument)};");
+                ? $"{HostTypeNames.IntPtr} {local} = {GetDevicePointer(argument)};"
+                : $"{argument.TypeName} {local} = {Identifier(argument)};");
         }
 
         if (arguments.Length == 0)
@@ -364,7 +355,7 @@ internal static class ModuleKernelLaunchEmitter
             return;
         }
 
-        writer.AppendLine($"var {KernelParams} = stackalloc void*[{arguments.Length}];");
+        writer.AppendLine($"void** {KernelParams} = stackalloc void*[{arguments.Length}];");
         for (var i = 0; i < arguments.Length; i++)
         {
             var argument = arguments[i];

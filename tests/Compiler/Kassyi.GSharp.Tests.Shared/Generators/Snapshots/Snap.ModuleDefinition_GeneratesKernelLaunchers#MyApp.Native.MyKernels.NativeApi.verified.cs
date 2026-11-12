@@ -22,18 +22,18 @@ if (c is null){
 throw new global::System.ArgumentNullException("c");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MyKernels.SgemmCustom");
-using var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "sgemm_kernel_v1");
-using var __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(a.Length);
+using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "sgemm_kernel_v1");
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float> __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(a.Length);
 __gsharp_d_0.CopyToDevice(a);
-using var __gsharp_d_1 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(c.Length);
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float> __gsharp_d_1 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(c.Length);
 __gsharp_d_1.CopyToDevice(c);
 unsafe
 {
-var __gsharp_karg_0 = __gsharp_d_0.DevicePointer;
-var __gsharp_karg_1 = __gsharp_d_1.DevicePointer;
-var __gsharp_karg_2 = n;
-var __gsharp_kernel_params = stackalloc void*[3];
+global::System.IntPtr __gsharp_karg_0 = __gsharp_d_0.DevicePointer;
+global::System.IntPtr __gsharp_karg_1 = __gsharp_d_1.DevicePointer;
+int __gsharp_karg_2 = n;
+void** __gsharp_kernel_params = stackalloc void*[3];
 __gsharp_kernel_params[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref __gsharp_karg_0);
 __gsharp_kernel_params[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref __gsharp_karg_1);
 __gsharp_kernel_params[2] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<int>(ref __gsharp_karg_2);
@@ -52,15 +52,15 @@ public static void Fill(int[] data, int value)
 if (data is null){
 throw new global::System.ArgumentNullException("data");
 }
-using var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "Fill");
-using var __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<int>(data.Length);
+using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "Fill");
+using global::Kassyi.GSharp.Runtime.GpuBuffer<int> __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<int>(data.Length);
 __gsharp_d_0.CopyToDevice(data);
 unsafe
 {
-var __gsharp_karg_0 = __gsharp_d_0.DevicePointer;
-var __gsharp_karg_1 = value;
-var __gsharp_kernel_params = stackalloc void*[2];
+global::System.IntPtr __gsharp_karg_0 = __gsharp_d_0.DevicePointer;
+int __gsharp_karg_1 = value;
+void** __gsharp_kernel_params = stackalloc void*[2];
 __gsharp_kernel_params[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref __gsharp_karg_0);
 __gsharp_kernel_params[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<int>(ref __gsharp_karg_1);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(

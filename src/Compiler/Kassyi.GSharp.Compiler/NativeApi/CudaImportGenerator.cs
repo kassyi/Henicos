@@ -173,7 +173,7 @@ public class CudaImportGenerator : IIncrementalGenerator
         }
     }
 
-    // One field per module and class (named by the module, ModuleKernelLaunchEmitter.GetModuleFieldName), unless a
+    // One field per module and class (named by the module, AotModuleNames.GetModuleFieldName), unless a
     // YAML binding of the class declares it, then the methods
     private static void WriteMembers(SourceWriter writer, CudaImportClassModel classGroup,
         EquatableArray<YamlModuleClass> yamlModuleClasses)
@@ -185,7 +185,7 @@ public class CudaImportGenerator : IIncrementalGenerator
                 !IsDeclaredByYaml(yamlModuleClasses, classGroup.TopLevelTypeName, method.ModuleName))
             {
                 ModuleKernelLaunchEmitter.EmitModuleCacheField(writer,
-                    ModuleKernelLaunchEmitter.GetModuleFieldName(method.ModuleName), method.ModuleName);
+                    AotModuleNames.GetModuleFieldName(method.ModuleName), method.ModuleName);
             }
         }
 
@@ -207,7 +207,7 @@ public class CudaImportGenerator : IIncrementalGenerator
     // method stays implemented and the build shows the diagnostic instead of CS8795
     private static void EmitMethod(SourceWriter writer, CudaImportMethodModel method, int index)
     {
-        var moduleField = ModuleKernelLaunchEmitter.GetModuleFieldName(method.ModuleName);
+        var moduleField = AotModuleNames.GetModuleFieldName(method.ModuleName);
         var plan = method.Plan;
         var contextTypeName = method.PackContext && plan.CanLaunch
             ? ModuleKernelLaunchEmitter.GetNativeContextTypeName(index)

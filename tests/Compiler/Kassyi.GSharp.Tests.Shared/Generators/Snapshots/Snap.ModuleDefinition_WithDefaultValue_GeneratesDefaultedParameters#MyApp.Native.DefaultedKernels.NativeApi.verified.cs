@@ -15,15 +15,15 @@ public static void Scale(float[] data, float factor = 2.0f)
 if (data is null){
 throw new global::System.ArgumentNullException("data");
 }
-using var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fdefaulted_x00002efatbin.Value, "Scale");
-using var __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(data.Length);
+using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fdefaulted_x00002efatbin.Value, "Scale");
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float> __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(data.Length);
 __gsharp_d_0.CopyToDevice(data);
 unsafe
 {
-var __gsharp_karg_0 = __gsharp_d_0.DevicePointer;
-var __gsharp_karg_1 = factor;
-var __gsharp_kernel_params = stackalloc void*[2];
+global::System.IntPtr __gsharp_karg_0 = __gsharp_d_0.DevicePointer;
+float __gsharp_karg_1 = factor;
+void** __gsharp_kernel_params = stackalloc void*[2];
 __gsharp_kernel_params[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref __gsharp_karg_0);
 __gsharp_kernel_params[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<float>(ref __gsharp_karg_1);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
