@@ -33,7 +33,9 @@ internal static class StructBlockCopyEmitter
         writer.Append("global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch(\"");
         writer.Append(TypeLayoutCalculator.FormatTypeName(s));
         writer.AppendLine("\");");
-        writer.Append($"ref var host = ref {HostTypeNames.Unsafe}.As<");
+        writer.Append("ref ");
+        writer.AppendAotStructPath(s);
+        writer.Append($".{NativeStructEmitter.HostMirrorName} host = ref {HostTypeNames.Unsafe}.As<");
         writer.AppendFullyQualifiedCsharpName(s);
         writer.Append(", ");
         writer.AppendAotStructPath(s);
@@ -144,7 +146,7 @@ internal static class StructBlockCopyEmitter
     internal static void WritePinnedCopy(SourceWriter writer, string pinned, string device, bool toDevice)
     {
         writer.AppendLine(
-            $"var handle = {HostTypeNames.GCHandle}.Alloc({pinned}, " +
+            $"{HostTypeNames.GCHandle} handle = {HostTypeNames.GCHandle}.Alloc({pinned}, " +
             $"{HostTypeNames.GCHandleType}.Pinned);");
         writer.AppendLine("try");
         using (writer.Scope())

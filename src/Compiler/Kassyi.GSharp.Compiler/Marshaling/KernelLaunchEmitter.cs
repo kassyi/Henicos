@@ -52,7 +52,7 @@ internal static class KernelLaunchEmitter
         // One table for the whole launch, so that every array argument, struct argument and converted element finds the
         // arrays the others already copied (#707, #721)
         writer.AppendLineIf(plan.UsesTable,
-            $"var {DeviceArrays} = new {StructMarshalingEmitter.DeviceArrayRegionsType}();");
+            $"{StructMarshalingEmitter.DeviceArrayRegionsType} {DeviceArrays} = new();");
         foreach (var shape in kernel.Parameters)
         {
             if (isDevicePtr)
@@ -112,7 +112,7 @@ internal static class KernelLaunchEmitter
 
         AutoResultEmitter.WriteCudaCopyBack(writer, kernel);
         writer.AppendLineIf(isCheckedBuild,
-            "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+            $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
         // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record
         // of its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves
         // it to the next synchronization of the stream. A managed-array launcher whose copy-back may copy nothing

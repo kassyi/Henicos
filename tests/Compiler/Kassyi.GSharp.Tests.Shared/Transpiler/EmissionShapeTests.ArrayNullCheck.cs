@@ -110,9 +110,9 @@ public partial class EmissionShapeTests
         var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
 
         Assert.Contains("if (values.Data == global::System.IntPtr.Zero)", launcher, StringComparison.Ordinal);
-        Assert.Contains("throw new global::System.ArgumentNullException(nameof(values));", launcher, StringComparison.Ordinal);
-        Assert.Contains("throw new global::System.ArgumentNullException(nameof(o));", launcher, StringComparison.Ordinal);
-        Assert.DoesNotContain("ArgumentNullException(nameof(bias))", launcher, StringComparison.Ordinal);
+        Assert.Contains("throw new global::System.ArgumentNullException(\"values\");", launcher, StringComparison.Ordinal);
+        Assert.Contains("throw new global::System.ArgumentNullException(\"o\");", launcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("ArgumentNullException(\"bias\")", launcher, StringComparison.Ordinal);
     }
 
     // The nullable annotation is the contract (#1409): a non-nullable field of a struct argument is read unchecked, a call
@@ -152,7 +152,7 @@ public partial class EmissionShapeTests
 
         Assert.Contains($"if ({test})", launcher, StringComparison.Ordinal);
         Assert.Contains(
-            "throw new global::System.ArgumentNullException(nameof(p), \"p.Data is null, but the field is not nullable.\");",
+            "throw new global::System.ArgumentNullException(\"p\", \"p.Data is null, but the field is not nullable.\");",
             launcher,
             StringComparison.Ordinal);
         Assert.DoesNotContain("h.Data", launcher, StringComparison.Ordinal);

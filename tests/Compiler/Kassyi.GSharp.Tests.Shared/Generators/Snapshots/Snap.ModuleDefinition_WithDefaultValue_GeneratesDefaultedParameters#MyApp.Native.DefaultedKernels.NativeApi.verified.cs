@@ -9,21 +9,21 @@ namespace MyApp.Native;
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class DefaultedKernels
 {
-private static readonly Lazy<byte[]> s_fatbin___native_defaulted_fatbin = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "./native/defaulted.fatbin")));
+private static readonly global::System.Lazy<byte[]> s_fatbin__x00002e_x00002fnative_x00002fdefaulted_x00002efatbin = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "./native/defaulted.fatbin")));
 public static void Scale(float[] data, float factor = 2.0f)
 {
 if (data is null){
-throw new global::System.ArgumentNullException(nameof(data));
+throw new global::System.ArgumentNullException("data");
 }
-using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_defaulted_fatbin.Value, "Scale");
-using var d_data = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(data.Length);
+using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope scope = new();
+global::System.IntPtr kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin__x00002e_x00002fnative_x00002fdefaulted_x00002efatbin.Value, "Scale");
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float> d_data = new(data.Length);
 d_data.CopyToDevice(data);
 unsafe
 {
-var p_data = d_data.DevicePointer;
-var p_factor = factor;
-var kernelParams = stackalloc void*[2];
+global::System.IntPtr p_data = d_data.DevicePointer;
+float p_factor = factor;
+void** kernelParams = stackalloc void*[2];
 kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_data);
 kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<float>(ref p_factor);
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(

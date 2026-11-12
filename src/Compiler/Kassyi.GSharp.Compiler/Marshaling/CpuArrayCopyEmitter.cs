@@ -30,8 +30,9 @@ internal static class CpuArrayCopyEmitter
 
             var shape = plan.Parameters[i];
 
-            // var __gsharp_source_<ord> = <name>;             (an [In] T[] that a later [In] T[] may hold as well)
-            writer.AppendLineIf(plan.KeepsSource(i), $"var {KernelHostNames.GetLocal(LauncherLocal.CopySource, shape)} = {shape.Identifier};");
+            // <type> __gsharp_source_<ord> = <name>;          (an [In] T[] that a later [In] T[] may hold as well)
+            writer.AppendLineIf(plan.KeepsSource(i),
+                $"{shape.TypeName} {KernelHostNames.GetLocal(LauncherLocal.CopySource, shape)} = {shape.Identifier};");
 
             if (shape.IsOptional)
             {
@@ -167,7 +168,7 @@ internal static class CpuArrayCopyEmitter
 
         var copy = KernelHostNames.GetLocal(LauncherLocal.CopyBuffer, shape);
         var copyIndex = KernelHostNames.GetLocal(LauncherLocal.CopyIndex, shape);
-        writer.Append($"var {copy} = ");
+        writer.Append($"{shape.ElementTypeName}[] {copy} = ");
         WriteElementsCopy(writer, shape);
         writer.AppendLine(";");
         writer.AppendLine($"for (int {copyIndex} = 0; {copyIndex} < {copy}.Length; {copyIndex}++)");

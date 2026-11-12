@@ -82,19 +82,19 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine();
     }
 
-    // var __gsharp_dll_path = <the native library of the module for this architecture>;
+    // string __gsharp_dll_path = <the native library of the module for this architecture>;
     private static void WriteDllPath(SourceWriter writer, string moduleName)
     {
         var fileStem = AotModuleNames.GetArtifactFileStem(moduleName);
         writer.AppendLine(
-            $"var {ArchSuffix} = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==" +
+            $"string {ArchSuffix} = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==" +
             $" global::System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
         // [WHY] The name goes into an interpolated string: a quote or backslash is escaped, a brace doubled
-        writer.Append($"var {DllName} = $\"");
+        writer.Append($"string {DllName} = $\"");
         AppendInterpolatedStringText(writer, fileStem);
         writer.AppendLine($"{{{ArchSuffix}}}.dll\";");
         writer.AppendLine(
-            $"var {DllPath} = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, {DllName});");
+            $"string {DllPath} = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, {DllName});");
     }
 
     // <text> as the text of a regular interpolated string: escaped as a string literal, each brace doubled.
@@ -115,8 +115,10 @@ internal static class CpuHostLaunchEmitter
     {
         var exportName = kernel.Host.LaunchExportName;
 
-        writer.AppendLine(
-            $"var {FunctionHandle} = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{KernelHostNames.GetDelegateTypeName(kernel)}>(\"{exportName}\", {DllPath});");
+        var delegateType = KernelHostNames.GetDelegateTypeName(kernel);
+        writer.Append($"{delegateType} {FunctionHandle} = ");
+        writer.Append($"global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{delegateType}>");
+        writer.AppendLine($"(\"{exportName}\", {DllPath});");
         if (!kernel.ErrorSites.IsDefaultOrEmpty)
         {
             writer.AppendLine("if (s_errorSites.Length > 0)");
@@ -208,11 +210,11 @@ internal static class CpuHostLaunchEmitter
         {
             case { IsCpuConvertedStruct: true, AotStructPath: { } shadow }:
                 writer.AppendLine($"{shadow} {KernelHostNames.GetLocal(LauncherLocal.Native, shape)} = default;");
-                writer.AppendLine($"var {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)} = new global::System.Collections.Generic.List<global::System.IntPtr>();");
+                WriteAllocatedPointerList(writer, shape);
                 return true;
             case { IsCpuConvertedArray: true, Cpu.ConvertedElementAotStructPath: { } element }:
                 writer.AppendLine($"byte[]? {KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)} = null;");
-                writer.AppendLine($"var {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)} = new global::System.Collections.Generic.List<global::System.IntPtr>();");
+                WriteAllocatedPointerList(writer, shape);
                 writer.AppendLine($"int {KernelHostNames.GetLocal(LauncherLocal.Size, shape)} = checked({shape.LengthExpression} * sizeof({element}));");
                 return true;
             default:
@@ -335,9 +337,18 @@ internal static class CpuHostLaunchEmitter
         }
     }
 
-    private static void WriteHandleRelease(SourceWriter writer, in KernelParameterShape shape) =>
+    // List<IntPtr> __gsharp_allocated_<ord> = new();
+    private static void WriteAllocatedPointerList(SourceWriter writer, in KernelParameterShape shape) =>
         writer.AppendLine(
-            $"foreach (var {PinnedHandle} in {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)}) global::System.Runtime.InteropServices.GCHandle.FromIntPtr({PinnedHandle}).Free();");
+            $"{HostTypeNames.PointerList} {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)} = new();");
+
+    // foreach (IntPtr <handle> in __gsharp_allocated_<ord>) GCHandle.FromIntPtr(<handle>).Free();
+    private static void WriteHandleRelease(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var pointers = KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape);
+        writer.Append($"foreach ({HostTypeNames.IntPtr} {PinnedHandle} in {pointers}) ");
+        writer.AppendLine($"{HostTypeNames.GCHandle}.FromIntPtr({PinnedHandle}).Free();");
+    }
 
     private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
     {

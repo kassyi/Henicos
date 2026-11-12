@@ -8,27 +8,27 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 public static partial class TestInvoker
 {
-private static readonly Lazy<byte[]> s_fatbin_my_fatbin = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "my_fatbin")));
+private static readonly global::System.Lazy<byte[]> s_fatbin_my_ufatbin = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "my_fatbin")));
 public static partial void LaunchMyKernel(float[] a, float[] b, float scalarValue, uint gridDimX, uint blockDimX)
 {
 if (a is null){
-throw new global::System.ArgumentNullException(nameof(a));
+throw new global::System.ArgumentNullException("a");
 }
 if (b is null){
-throw new global::System.ArgumentNullException(nameof(b));
+throw new global::System.ArgumentNullException("b");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "TestInvoker.LaunchMyKernel");
-using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_my_fatbin.Value, "MyKernel");
-using var d_a = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(a.Length);
+using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope scope = new();
+global::System.IntPtr kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_my_ufatbin.Value, "MyKernel");
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float> d_a = new(a.Length);
 d_a.CopyToDevice(a);
-using var d_b = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(b.Length);
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float> d_b = new(b.Length);
 unsafe
 {
-var p_a = d_a.DevicePointer;
-var p_b = d_b.DevicePointer;
-var p_scalarValue = scalarValue;
-var kernelParams = stackalloc void*[3];
+global::System.IntPtr p_a = d_a.DevicePointer;
+global::System.IntPtr p_b = d_b.DevicePointer;
+float p_scalarValue = scalarValue;
+void** kernelParams = stackalloc void*[3];
 kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_a);
 kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_b);
 kernelParams[2] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<float>(ref p_scalarValue);

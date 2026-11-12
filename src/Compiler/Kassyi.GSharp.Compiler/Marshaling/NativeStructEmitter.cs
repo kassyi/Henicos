@@ -173,7 +173,7 @@ internal static class NativeStructEmitter
 
             writer.AppendFullyQualifiedCsharpName(s);
             writer.AppendLine(" s = default;");
-            writer.Append($"ref var m = ref {Unsafe}.As<");
+            writer.Append($"ref {HostMirrorName} m = ref {Unsafe}.As<");
             writer.AppendFullyQualifiedCsharpName(s);
             writer.AppendLine($", {HostMirrorName}>(ref s);");
             writer.Append("return true");

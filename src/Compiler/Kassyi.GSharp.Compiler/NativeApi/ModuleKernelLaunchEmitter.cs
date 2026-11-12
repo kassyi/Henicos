@@ -25,9 +25,10 @@ internal static class ModuleKernelLaunchEmitter
 
     public static void EmitModuleCacheField(SourceWriter writer, string moduleName)
     {
-        writer.Append("private static readonly Lazy<byte[]> s_fatbin_");
+        writer.Append("private static readonly global::System.Lazy<byte[]> s_fatbin_");
         writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
-        writer.Append(" = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, ");
+        writer.Append(" = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(");
+        writer.Append("global::System.AppContext.BaseDirectory, ");
         AppendStringLiteral(writer, moduleName);
         writer.AppendLine(")));");
         writer.AppendLine();
@@ -77,8 +78,8 @@ internal static class ModuleKernelLaunchEmitter
         var launch = plan.Launch;
         WriteNullChecks(writer, plan.Arguments);
         WriteLaunchLimitCheck(writer, launcherName, launch);
-        writer.AppendLine($"using var scope = new {HostTypeNames.GpuKernelLoader}.CudaContextScope();");
-        writer.Append($"var kernel = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(s_fatbin_");
+        writer.AppendLine($"using {HostTypeNames.GpuKernelLoader}.CudaContextScope scope = new();");
+        writer.Append($"{HostTypeNames.IntPtr} kernel = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(s_fatbin_");
         writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
         writer.Append(".Value, ");
         AppendStringLiteral(writer, entryPoint);
@@ -116,7 +117,7 @@ internal static class ModuleKernelLaunchEmitter
         writer.AppendLine(
             $"throw new global::System.NotSupportedException({SymbolDisplay.FormatLiteral(message, quote: true)});");
 
-    // if (<name> is null) { throw new global::System.ArgumentNullException(nameof(<name>)); }
+    // if (<name> is null) { throw new global::System.ArgumentNullException("<name>"); }
     // [WHY] Only an array declared nullable (T[]?, T[,]?) reaches the kernel as a null pointer; null for another array
     // is rejected before anything is copied or launched, as the launchers of [GpuKernel] methods reject it
     private static void WriteNullChecks(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
@@ -136,7 +137,9 @@ internal static class ModuleKernelLaunchEmitter
 
             using (writer.Scope())
             {
-                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({argument.Name}));");
+                writer.Append("throw new global::System.ArgumentNullException(");
+                AppendStringLiteral(writer, argument.Name);
+                writer.AppendLine(");");
             }
         }
     }
@@ -201,10 +204,10 @@ internal static class ModuleKernelLaunchEmitter
         writer.Append('"');
     }
 
-    // Array: using var d_<name> = new GpuBuffer<<element>>(<name>.Length); d_<name>.CopyToDevice(<elements of name>);
-    // Nullable array: using var d_<name> = <name> is null ? null : new GpuBuffer<<element>>(<name>.Length);
+    // Array: using GpuBuffer<<element>> d_<name> = new(<name>.Length); d_<name>.CopyToDevice(<elements of name>);
+    // Nullable array: using GpuBuffer<<element>>? d_<name> = <name> is null ? null : new(<name>.Length);
     //                 d_<name>?.CopyToDevice(<elements of name>);
-    // By reference: [var h_<name> = default(<type>);] using var d_<name> = new GpuBuffer<<type>>(1);
+    // By reference: [<type> h_<name> = default;] using GpuBuffer<<type>> d_<name> = new(1);
     //               d_<name>.CopyToDevice(new ReadOnlySpan<<type>>(in <name> or h_<name>));
     // [WHY] A null nullable array is passed as a null pointer. An 'out' value sends default from a local of the
     // launcher (h_<name>): C# cannot read the parameter before it is assigned, the kernel starts from a known value
@@ -220,8 +223,8 @@ internal static class ModuleKernelLaunchEmitter
             {
                 case ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray:
                     writer.AppendLine(argument.AllowsNull
-                        ? $"using var d_{name} = {name} is null ? null : new {buffer}({name}.Length);"
-                        : $"using var d_{name} = new {buffer}({name}.Length);");
+                        ? $"using {buffer}? d_{name} = {name} is null ? null : new({name}.Length);"
+                        : $"using {buffer} d_{name} = new({name}.Length);");
                     if (argument.CopyIn)
                     {
                         writer.Append($"d_{name}{GetAccess(argument)}CopyToDevice(");
@@ -232,8 +235,8 @@ internal static class ModuleKernelLaunchEmitter
                     break;
                 case ModuleKernelParameterKind.ByReference:
                     var host = GetHostValue(argument);
-                    writer.AppendLineIf(!argument.CopyIn, $"var {host} = default({argument.TypeName});");
-                    writer.AppendLine($"using var d_{name} = new {buffer}(1);");
+                    writer.AppendLineIf(!argument.CopyIn, $"{argument.TypeName} {host} = default;");
+                    writer.AppendLine($"using {buffer} d_{name} = new(1);");
                     writer.AppendLine(
                         $"d_{name}.CopyToDevice(new {HostTypeNames.ReadOnlySpan}<{argument.TypeName}>(in {host}));");
                     break;
@@ -264,7 +267,7 @@ internal static class ModuleKernelLaunchEmitter
     private static void EmitContextInitialization(SourceWriter writer, string methodName,
         EquatableArray<ModuleKernelArgument> arguments)
     {
-        writer.AppendLine($"var ctx = new {NativeContextPrefix}{methodName}");
+        writer.AppendLine($"{NativeContextPrefix}{methodName} ctx = new()");
         using (writer.Scope())
         {
             for (var i = 0; i < arguments.Length; i++)
@@ -289,7 +292,7 @@ internal static class ModuleKernelLaunchEmitter
         {
             if (packContext)
             {
-                writer.AppendLine("var kernelParams = stackalloc void*[1];");
+                writer.AppendLine("void** kernelParams = stackalloc void*[1];");
                 writer.AppendLine($"kernelParams[0] = {AddressOf}<{NativeContextPrefix}{methodName}>(ref ctx);");
             }
             else
@@ -304,7 +307,8 @@ internal static class ModuleKernelLaunchEmitter
         EmitLaunchSynchronization(writer, plan.Launch);
     }
 
-    // var p_<name> = <name or the device pointer of d_<name>>; ... kernelParams[<i>] = AddressOf<<type>>(ref p_<name>);
+    // <type> p_<name> = <name or the device pointer of d_<name>>; ...
+    // kernelParams[<i>] = AddressOf<<type>>(ref p_<name>);
     // [WHY] The address of a value goes through AddressOf, which only accepts unmanaged types: a class written in a
     // YAML binding, which the reader cannot tell from a struct, fails to compile there instead of reaching the kernel
     // as the host address of the reference. A pointer cannot be a type argument and is never a reference, so its local
@@ -315,8 +319,8 @@ internal static class ModuleKernelLaunchEmitter
         foreach (var argument in arguments)
         {
             writer.AppendLine(argument.IsStaged
-                ? $"var p_{argument.Name} = {GetDevicePointer(argument)};"
-                : $"var p_{argument.Name} = {argument.Name};");
+                ? $"{HostTypeNames.IntPtr} p_{argument.Name} = {GetDevicePointer(argument)};"
+                : $"{argument.TypeName} p_{argument.Name} = {argument.Name};");
         }
 
         if (arguments.Length == 0)
@@ -325,7 +329,7 @@ internal static class ModuleKernelLaunchEmitter
             return;
         }
 
-        writer.AppendLine($"var kernelParams = stackalloc void*[{arguments.Length}];");
+        writer.AppendLine($"void** kernelParams = stackalloc void*[{arguments.Length}];");
         for (var i = 0; i < arguments.Length; i++)
         {
             var argument = arguments[i];

@@ -5,6 +5,8 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits the CUDA host launch members of a kernel wrapper class and the per-assembly module context.</summary>
 internal static class CudaHostLaunchEmitter
 {
+    private const string ContextScopeType = HostTypeNames.GpuKernelLoader + ".CudaContextScope";
+
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName,
         bool isCheckedBuild = false)
@@ -42,7 +44,7 @@ internal static class CudaHostLaunchEmitter
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr));
 
             writer.AppendLine(
-                $"using (var {GSharpInternalNames.Launcher.CudaContextScope} = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
+                $"using ({ContextScopeType} {GSharpInternalNames.Launcher.CudaContextScope} = new())");
             using (writer.Scope())
             {
                 WriteCudaKernelCompilationCall(writer, kernel);
@@ -213,10 +215,10 @@ internal static class CudaHostLaunchEmitter
             /// </summary>
             public static byte[] GetFatbin()
             {
-            var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+            byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
             if (fatbin is not null) return fatbin;
-            var baseDir = global::System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-            var fatbinPath = global::System.IO.Path.Combine(baseDir, {{fatbinLiteral}});
+            string baseDir = global::System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+            string fatbinPath = global::System.IO.Path.Combine(baseDir, {{fatbinLiteral}});
             if (!global::System.IO.File.Exists(fatbinPath))
             {
             throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");

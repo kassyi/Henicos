@@ -20,7 +20,8 @@ internal static class ConvertedArrayEmitter
         writer.AppendLine($"for (int {index} = 0; {index} < {native}.Length; {index}++)");
     }
 
-    // var __gsharp_native_<ord> = MemoryMarshal.Cast<byte, <element shadow>>(__gsharp_shadow_<ord>.AsSpan(0, __gsharp_size_<ord>));
+    // Span<<element shadow>> __gsharp_native_<ord> = MemoryMarshal.Cast<byte, <element shadow>>(
+    //     __gsharp_shadow_<ord>.AsSpan(0, __gsharp_size_<ord>));
     // Span<<element>> __gsharp_host_<ord> = <argument span>;                     (ReadOnlySpan for a read-only container)
     // __gsharp_native_<ord> spans the rented bytes in the device layout; __gsharp_host_<ord> spans the argument
     internal static void WriteShadowAndHostSpans(SourceWriter writer, in KernelParameterShape shape,
@@ -30,12 +31,12 @@ internal static class ConvertedArrayEmitter
         var shadow = KernelHostNames.GetLocal(LauncherLocal.Shadow, shape);
         var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
         var host = KernelHostNames.GetLocal(LauncherLocal.HostSpan, shape);
-        writer.AppendLine(
-            $"var {native} = global::System.Runtime.InteropServices.MemoryMarshal" +
-            $".Cast<byte, {GetElementShadowPath(shape, transfer)}>({shadow}.AsSpan(0, {size}));");
-        var span = shape.IsReadOnlyContainer ? "global::System.ReadOnlySpan" : "global::System.Span";
-        var element = shape.ElementTypeName ??
-            throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not an array-like type.");
+        var shadowPath = GetElementShadowPath(shape, transfer);
+        writer.Append($"{HostTypeNames.Span}<{shadowPath}> {native} = ");
+        writer.Append($"global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, {shadowPath}>");
+        writer.AppendLine($"({shadow}.AsSpan(0, {size}));");
+        var span = shape.IsReadOnlyContainer ? HostTypeNames.ReadOnlySpan : HostTypeNames.Span;
+        var element = GetElementTypeName(shape);
         writer.AppendLine($"{span}<{element}> {host} = {shape.SpanExpression};");
     }
 
@@ -56,7 +57,7 @@ internal static class ConvertedArrayEmitter
             {
                 // A read-only container gives no ref to its element; Marshal_ only reads its copy
                 var elementLocal = KernelHostNames.GetLocal(LauncherLocal.Element, shape);
-                writer.AppendLine($"var {elementLocal} = {host}[{index}];");
+                writer.AppendLine($"{GetElementTypeName(shape)} {elementLocal} = {host}[{index}];");
                 hostElement = elementLocal;
             }
 
@@ -87,4 +88,9 @@ internal static class ConvertedArrayEmitter
     internal static string GetElementShadowPath(in KernelParameterShape shape, in ParameterTransfer transfer) =>
         transfer.ConvertedElementAotStructPath ??
         throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not a converted array.");
+
+    // The fully qualified element type of an array-like parameter
+    private static string GetElementTypeName(in KernelParameterShape shape) =>
+        shape.ElementTypeName ??
+        throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not an array-like type.");
 }

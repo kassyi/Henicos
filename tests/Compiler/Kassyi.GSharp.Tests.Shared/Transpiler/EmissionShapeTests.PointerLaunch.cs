@@ -73,24 +73,24 @@ public partial class EmissionShapeTests
     public void PointerLauncher_ChecksProxiesAsTheArrayLauncherChecksArrays()
     {
         var launcher = PointerLauncher(Generate("PointerLaunchShapeKernels", "Cuda"), "LaunchEveryKindKernelPtr");
-        var launch = launcher.IndexOf("CudaContextScope()", StringComparison.Ordinal);
+        var launch = launcher.IndexOf("CudaContextScope __gsharp", StringComparison.Ordinal);
 
         foreach (var name in (string[])["values", "words"])
         {
             AssertCheckBeforeLaunch(launcher, launch,
                 $"if ({name}.Length < 0){{",
-                $"throw new global::System.ArgumentOutOfRangeException(nameof({name}), {name}.Length, \"The array length must not be negative.\");",
+                $"throw new global::System.ArgumentOutOfRangeException(\"{name}\", {name}.Length, \"The array length must not be negative.\");",
                 "}",
                 $"if ({name}.Data == global::System.IntPtr.Zero){{",
-                $"throw new global::System.ArgumentNullException(nameof({name}));",
+                $"throw new global::System.ArgumentNullException(\"{name}\");",
                 "}",
                 $"if ({name}.Length == 0){{",
-                "throw new global::System.ArgumentException(\"Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.\", nameof(" + name + "));");
+                "throw new global::System.ArgumentException(\"Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.\", \"" + name + "\");");
         }
 
         AssertCheckBeforeLaunch(launcher, launch,
             "if (extra.Length < 0){",
-            "throw new global::System.ArgumentOutOfRangeException(nameof(extra), extra.Length, \"The array length must not be negative.\");",
+            "throw new global::System.ArgumentOutOfRangeException(\"extra\", extra.Length, \"The array length must not be negative.\");",
             "}",
             "if (extra.Data == global::System.IntPtr.Zero || extra.Length == 0){",
             "extra = default;",

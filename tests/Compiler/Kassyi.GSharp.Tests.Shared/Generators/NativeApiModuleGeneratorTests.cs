@@ -106,7 +106,7 @@ public class NativeApiModuleGeneratorTests
         Assert.True(problems.Length == 0, string.Join(Environment.NewLine, problems));
         var source = Assert.Single(output.SyntaxTrees, t => t.FilePath.EndsWith("StagedKernels.NativeApi.g.cs"))
             .ToString();
-        Assert.Contains("var h_result = default(double);", source);
+        Assert.Contains("double h_result = default;", source);
         Assert.Contains("d_result.CopyToHost(new global::System.Span<double>(ref h_result));", source);
         Assert.Contains("result = h_result;", source);
         Assert.DoesNotContain("result = default;", source);
@@ -119,9 +119,9 @@ public class NativeApiModuleGeneratorTests
         Assert.Contains(
             "d_cube?.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<int>(cube));",
             source);
-        Assert.Contains("throw new global::System.ArgumentNullException(nameof(grid));", source);
-        Assert.DoesNotContain("nameof(cube)", source);
-        Assert.DoesNotContain("nameof(values)", source);
+        Assert.Contains("throw new global::System.ArgumentNullException(\"grid\");", source);
+        Assert.DoesNotContain("ArgumentNullException(\"cube\")", source);
+        Assert.DoesNotContain("ArgumentNullException(\"values\")", source);
     }
 
     // A class named in YAML cannot be told from a struct without the compilation; the launcher takes the address of
@@ -253,9 +253,10 @@ public class NativeApiModuleGeneratorTests
         var source = FindSource(result, "SharedKernels");
         const string Prepare = "global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(" +
             "kernel, sharedMemBytes, \"SharedKernels.LaunchShared\");";
-        var loadIndex = source.IndexOf($"var kernel = {KernelLoader}.LoadAotKernel(", StringComparison.Ordinal);
+        var loadIndex = source.IndexOf($"global::System.IntPtr kernel = {KernelLoader}.LoadAotKernel(",
+            StringComparison.Ordinal);
         var prepareIndex = source.IndexOf(Prepare, StringComparison.Ordinal);
-        var allocationIndex = source.IndexOf($"new {GpuBuffer}<float>(", StringComparison.Ordinal);
+        var allocationIndex = source.IndexOf($"using {GpuBuffer}<float> d_data = new(", StringComparison.Ordinal);
 
         Assert.NotEqual(-1, loadIndex);
         Assert.True(loadIndex < prepareIndex, "Prepare must follow the function lookup");
@@ -310,7 +311,7 @@ public class NativeApiModuleGeneratorTests
         const string Check = "global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(" +
             "gridDimX, 1, 1, blockDimX, 1, blockDimZ, \"GridKernels.LaunchGrid\");";
         var checkIndex = source.IndexOf(Check, StringComparison.Ordinal);
-        var scopeIndex = source.IndexOf($"using var scope = new {KernelLoader}.CudaContextScope();",
+        var scopeIndex = source.IndexOf($"using {KernelLoader}.CudaContextScope scope = new();",
             StringComparison.Ordinal);
 
         Assert.NotEqual(-1, checkIndex);
