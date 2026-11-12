@@ -35,12 +35,9 @@ public static class DeviceLibraryBuilder
     private static MetadataReference BuildFiles(string assemblyName, Dictionary<string, string>? options,
         MetadataReference[] references, (string Path, string Source)[] files)
     {
-        var compilation = CSharpCompilation.Create(assemblyName)
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddReferences(references)
-            .AddSyntaxTrees(files.Select(static file =>
-                CSharpSyntaxTree.ParseText(file.Source, s_parseOptions, path: file.Path)));
+        var compilation = RoslynTestUtility.CreateCompilationAt(files)
+            .WithAssemblyName(assemblyName)
+            .AddReferences(references);
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: [new GpuKernelGenerator().AsSourceGenerator()],
@@ -62,9 +59,7 @@ public static class DeviceLibraryBuilder
 
     /// <summary>A consumer compilation of <paramref name="source"/> that references <paramref name="libraries"/>.</summary>
     public static CSharpCompilation CreateConsumer(string source, params MetadataReference[] libraries) =>
-        CSharpCompilation.Create("DeviceImportConsumer")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddReferences(libraries)
-            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(source, s_parseOptions, path: "consumer.cs"));
+        RoslynTestUtility.CreateCompilationAt("consumer.cs", source)
+            .WithAssemblyName("DeviceImportConsumer")
+            .AddReferences(libraries);
 }

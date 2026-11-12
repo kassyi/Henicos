@@ -25,10 +25,16 @@ public class StatePlanTests
     {
         var plan = new StatePlan([s_again], new Dictionary<DeclarationKey, int> { [s_again] = 2 }, null);
 
-        var lowered = new StateMachineLowerer(false, null, plan).Lower(ReadBody()).NormalizeWhitespace().ToFullString();
+        var lowered = new StateMachineLowerer(false, null, plan).Lower(ReadBody());
 
-        Assert.Contains("case 2:", lowered);
-        Assert.Contains("goto case 2;", lowered);
+        Assert.Contains(
+            lowered.DescendantNodes().OfType<CaseSwitchLabelSyntax>(),
+            static label => label.Value is LiteralExpressionSyntax lit && lit.Token.ValueText == "2");
+
+        Assert.Contains(
+            lowered.DescendantNodes().OfType<GotoStatementSyntax>(),
+            static @goto => @goto.IsKind(SyntaxKind.GotoCaseStatement) &&
+                            @goto.Expression is LiteralExpressionSyntax lit && lit.Token.ValueText == "2");
     }
 
     // A pass between the planner and the lowerer that moved a label or a split point would make a goto case jump into
@@ -47,7 +53,7 @@ public class StatePlanTests
     // The kernel body, with its barrier annotated by spelling as a lowering without a semantic model does
     private static BlockSyntax ReadBody()
     {
-        var root = CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase("StateMachines/LabelAfterBarrier.cs")).GetRoot();
+        var root = RoslynTestUtility.GetTestCaseContext("StateMachines/LabelAfterBarrier.cs").Tree.GetRoot();
         var body = root.DescendantNodes().OfType<MethodDeclarationSyntax>().Single().Body
                    ?? throw new InvalidOperationException("The test case kernel has no block body.");
         return TestSyncAnnotator.Annotate(body);

@@ -164,10 +164,14 @@ public sealed class DeviceErrorChannelTests
     [Scenario(TestScenario.Boundary)]
     public void ErrorSiteTable_VaryingLineEndings_ProducesIdenticalSiteIds()
     {
+#pragma warning disable RS0030 // The line endings of the source text are the subject: the same file with LF and with CRLF
         var source = RoslynTestUtility.ReadTestCase("Runtime/ErrorSiteLineEndingCases.cs").Replace("\r\n", "\n");
+#pragma warning restore RS0030
 
         var lf = CreateSitesForTerminals(source);
+#pragma warning disable RS0030 // The line endings of the source text are the subject: the same file with LF and with CRLF
         var crlf = CreateSitesForTerminals(source.Replace("\n", "\r\n"));
+#pragma warning restore RS0030
 
         // Three terminals on different lines, each with a real file name, so the comparison below cannot pass vacuously
         Assert.Equal(3, lf.Count);
@@ -178,13 +182,9 @@ public sealed class DeviceErrorChannelTests
 
     private static List<ErrorSiteEntry> CreateSitesForTerminals(string source)
     {
-        var tree = CSharpSyntaxTree.ParseText(
-            source,
-            new CSharpParseOptions(LanguageVersion.Preview),
-            path: "ErrorSiteLineEndingCases.cs");
-        var compilation = CSharpCompilation.Create("ErrorSiteLineEndings")
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(tree);
+        var compilation = RoslynTestUtility.CreateCompilationAt("ErrorSiteLineEndingCases.cs", source)
+            .WithAssemblyName("ErrorSiteLineEndings");
+        var tree = compilation.SyntaxTrees.Single();
         var model = compilation.GetSemanticModel(tree);
         return tree.GetRoot()
             .DescendantNodes()
@@ -224,19 +224,8 @@ public sealed class DeviceErrorChannelTests
             }
             """;
 
-        var syntaxTree = CSharpSyntaxTree.ParseText(source);
-        var references = new List<MetadataReference>
-        {
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(GpuKernelAttribute).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(CudaDriverApi).Assembly.Location)
-        };
-
-        var compilation = CSharpCompilation.Create(
-            "SampleAssembly",
-            [syntaxTree],
-            references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
+        var compilation = RoslynTestUtility.CreateCompilation(source)
+            .WithAssemblyName("SampleAssembly");
 
         var optionsProvider = new TestAnalyzerConfigOptionsProvider(
             "Cuda",

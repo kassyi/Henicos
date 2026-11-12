@@ -243,13 +243,12 @@ public class IteratorTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Transpile_ExternalAssemblyIterator_ReportsUnsupportedSyntax()
     {
-        var externalLibrarySource = RoslynTestUtility.ReadTestCase("Analyzers/IteratorExternalAssembly_Lib.cs");
-        var consumerSource = RoslynTestUtility.ReadTestCase("Analyzers/IteratorExternalAssembly_Consumer.cu.cs");
+        var externalTree = RoslynTestUtility.GetTestCaseContext("Analyzers/IteratorExternalAssembly_Lib.cs").Tree;
+        var consumerTree = RoslynTestUtility.GetTestCaseContext("Analyzers/IteratorExternalAssembly_Consumer.cu.cs").Tree;
 
-        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
         var externalComp = CSharpCompilation.Create(
             "ExternalIteratorLib",
-            [CSharpSyntaxTree.ParseText(externalLibrarySource, parseOptions)],
+            [externalTree],
             RoslynTestUtility.BaseReferences,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
@@ -261,7 +260,7 @@ public class IteratorTests : TranspilerTestBase
 
         var consumerComp = CSharpCompilation.Create(
             "ConsumerApp",
-            [CSharpSyntaxTree.ParseText(consumerSource, parseOptions, path: "IteratorExternalAssembly_Consumer.cu.cs")],
+            [consumerTree],
             RoslynTestUtility.BaseReferences.Append(externalRef),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 

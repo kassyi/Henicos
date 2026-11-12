@@ -122,11 +122,11 @@ public static class RoslynTestUtility
     }
 
     /// <summary>Creates a Roslyn compilation by parsing each source text and adding it to the mega compilation cache.</summary>
-    public static Compilation CreateCompilation(params string[] sources)
+    public static CSharpCompilation CreateCompilation(params string[] sources)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 #pragma warning disable RS0030
-        var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
+        var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions)).ToArray();
 #pragma warning restore RS0030
 
         return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTrees);
@@ -136,14 +136,20 @@ public static class RoslynTestUtility
     /// Creates a Roslyn compilation of one source text whose tree has the file path <paramref name="path"/>, so that
     /// places in the generated code (error sites, messages) name it.
     /// </summary>
-    public static Compilation CreateCompilationAt(string path, string source)
+    public static CSharpCompilation CreateCompilationAt(string path, string source) => CreateCompilationAt((path, source));
+
+    /// <summary>
+    /// Creates a Roslyn compilation of several source texts, in that order, each tree with its file path, so that the
+    /// declaration order of a partial type and the places in the generated code follow the paths.
+    /// </summary>
+    public static CSharpCompilation CreateCompilationAt(params (string Path, string Source)[] files)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 #pragma warning disable RS0030
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions, path);
+        var syntaxTrees = files.Select(file => CSharpSyntaxTree.ParseText(file.Source, parseOptions, file.Path)).ToArray();
 #pragma warning restore RS0030
 
-        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
+        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTrees);
     }
 
     /// <summary>Creates a dummy semantic model and method symbol for testing analyzers or isolated transpiler nodes.</summary>
