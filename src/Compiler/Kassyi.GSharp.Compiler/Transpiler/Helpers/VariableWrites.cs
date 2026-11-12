@@ -8,16 +8,12 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// </summary>
 internal static class VariableWrites
 {
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<ISymbol, bool>> s_written = new();
+    private static readonly PerCompilationSymbolCache<ISymbol, bool> s_written = new();
 
     /// <summary>Whether <paramref name="variable"/> may change after its declaration.</summary>
     public static bool IsWritten(ISymbol variable, Compilation compilation)
     {
-        var written = s_written.GetValue(
-            compilation,
-            static _ => new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default)
-        );
-        return written.GetOrAdd(variable, v => FindWrite(v, compilation));
+        return s_written.For(compilation).GetOrAdd(variable, v => FindWrite(v, compilation));
     }
 
     private static bool FindWrite(ISymbol variable, Compilation compilation)

@@ -245,7 +245,7 @@ public class IrInvariantsTests
     {
         var method = IrTestCases.BuildCase("SameLocalTwice");
         var local = ((IrLocalDeclaration)IrTestCases.Statement(method)).Variable;
-        var constant = IrTestCases.Result(IrTestCases.BuildCase("Literal"));
+        var constant = IrTestCases.CaseResult("Literal");
 
         AssertViolates("I19", WithStatement(method, IrTestCases.Statement(method), new IrExpressionStatement(
             new IrSequence([local], [], constant, IrCategory.Value, constant.Source), constant.Source)));

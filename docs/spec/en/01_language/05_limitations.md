@@ -196,6 +196,8 @@ examples:
 | [**GSH0106**](../03_bcl_api/diagnostics/GSH0106.md) | Error | Kernel parameter name conflicts with a launch parameter | Triggered when a kernel parameter shares a name with a launch wrapper parameter. |
 | [**GSH0107**](../03_bcl_api/diagnostics/GSH0107.md) | Error | A method without [GpuDeviceFunction] is called from GPU code | Triggered when unmarked code is invoked from device context. |
 | [**GSH0108**](../03_bcl_api/diagnostics/GSH0108.md) | Error | Struct field type is not accessible to the generated launcher | Triggered when a struct used by a kernel parameter or return value has a field whose type the generated launcher cannot name, such as a private type nested in the struct. |
+| [**GSH0109**](../03_bcl_api/diagnostics/GSH0109.md) | Error | A method without a device implementation is called from GPU code | Triggered when GPU code calls a method of another assembly, such as `int.Max` or `Math.Max(long, long)`, that the target dialect does not implement. |
+| [**GSH0110**](../03_bcl_api/diagnostics/GSH0110.md) | Error | The launcher of a [CudaImport] method cannot pass a parameter to the kernel | Triggered when a `[CudaImport]` parameter is a reference type, a struct with `LayoutKind.Auto`, a ref struct, `Nullable<T>`, passed by reference, a multidimensional or jagged array, or a launch setting name of the wrong type. |
 | [**SLQ0001**](../03_bcl_api/diagnostics/SLQ0001.md) | Error | StackLinq method chain is too deep | Triggered when a StackLinq chain exceeds the compiler depth limit. |
 | [**RS0030**](../03_bcl_api/diagnostics/RS0030.md) | Error | Banned API in GPU kernel | Triggered via `BannedApiAnalyzers` when a banned API is used in GPU kernels or GPU intrinsics in host code. |
 

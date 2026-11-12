@@ -338,7 +338,13 @@ __nanosleep(64);
 (void)held;
 #endif
 }
+#ifndef __GSHARP_TRAP_EXITS
+// The other threads of the warp wait for the leader's record before their trap aborts the launch. [WHY] Not
+// when threads exit: an exiting thread stops only itself, as in __gsharp_null_read_trap, and the barrier is
+// the only call left in this function, so without it ptxas saves no return address here (a module with a
+// recursive device function compiles every function that is not inlined with the call ABI)
 __syncwarp(active);
+#endif
 }
 __gsharp_exit_thread();
 }
@@ -963,6 +969,17 @@ if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 
 __gsharp_null_read_trap(__gsharp_null_read_site(site));
 }
 return array[index];
+}
+// The array of Gpu.NotNull(array): a null array fails as the C# method throws NullReferenceException. Unlike
+// __gsharp_array_ref, a null optional kernel argument fails too: it reads as an empty array, but it is null
+template <typename A, typename S>
+__device__ __forceinline__ A __gsharp_array_not_null(A&& array, S site)
+{
+if (array.data == nullptr)
+{
+__gsharp_null_read_trap(__gsharp_null_read_site(site));
+}
+return static_cast<A&&>(array);
 }
 // A by-value struct argument of a device function whose parameter reaches non-nullable array fields (#1409): each field
 // that a getter names is checked as __gsharp_array_ref checks an array, at the call, and the struct is passed on

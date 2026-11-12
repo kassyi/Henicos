@@ -13,7 +13,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             symbol = context.Query.SemanticModel.GetSymbol(invocation);
         }
 
-        if (UnemittedMethodCall.TryFailMethodGroup(node, symbol, ref context))
+        if (CallTargetEmitter.TryFailMethodGroup(node, symbol, ref context))
         {
             return;
         }
