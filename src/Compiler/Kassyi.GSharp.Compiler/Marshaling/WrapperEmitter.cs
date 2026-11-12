@@ -440,8 +440,8 @@ internal static class WrapperEmitter
 
     /// <summary>
     /// Emits the checks of the <c>GSharpArrayProxy</c> arguments of the <c>Launch{Kernel}Ptr</c> launcher: a proxy with
-    /// a negative length, or with no data and a length other than 0, describes no array and is rejected. Any other proxy
-    /// is passed as it is: <c>Data == 0</c> is a null array, and an empty array has a non-null <c>Data</c>
+    /// a negative length, or with no data and a length other than 0, describes no array and is rejected. Any other
+    /// proxy is passed as it is: <c>Data == 0</c> is a null array, and an empty array has a non-null <c>Data</c>
     /// (<c>GSharpArrayProxy.EmptyArrayData</c>). The non-nullable array fields of a by-value struct argument must not
     /// be null.
     /// </summary>

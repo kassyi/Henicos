@@ -32,7 +32,8 @@ public struct GSharpArrayProxy
     public int Flags;
 
     /// <summary>
-    /// Initializes a proxy for <paramref name="length"/> elements at <paramref name="data"/>, with <see cref="Flags"/> 0.
+    /// Initializes a proxy for <paramref name="length"/> elements at <paramref name="data"/>; <see cref="Flags"/> is
+    /// 0.
     /// </summary>
     /// <param name="data">The address of the first element, or <see cref="IntPtr.Zero"/> for a null array.</param>
     /// <param name="length">The number of elements the kernel sees as the array's <c>Length</c>.</param>

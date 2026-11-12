@@ -205,10 +205,14 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 }
 #pragma warning restore CS8602, CS8604
 
-/// <summary>The read of the argument that a kernel of <see cref="ArrayArgumentNullEmptyDifferentialKernels"/> makes.</summary>
+/// <summary>
+/// The read of the argument that a kernel of <see cref="ArrayArgumentNullEmptyDifferentialKernels"/> makes.
+/// </summary>
 public static class ArrayArgumentReads
 {
-    /// <summary><c>a is null</c> and <c>a == null</c>, or what tells a default span-like value from one over an array.</summary>
+    /// <summary>
+    /// <c>a is null</c> and <c>a == null</c>, or what tells a default span-like value from one over an array.
+    /// </summary>
     public const int IsNull = 0;
 
     /// <summary><c>Length</c> (<c>Count</c> of a segment).</summary>

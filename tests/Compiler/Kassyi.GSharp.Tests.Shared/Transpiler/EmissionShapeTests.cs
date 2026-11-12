@@ -189,7 +189,8 @@ public partial class EmissionShapeTests
             "}",
             "int __gsharp_id_9_first;");
         Assert.Contains(
-            $"for(auto __gsharp_id_8_picked : __gsharp_array_ref(({Statements}TryGet(__gsharp_id_0_data,&__gsharp_id_9_first)?__gsharp_id_0_data:__gsharp_id_1_output), ",
+            $"for(auto __gsharp_id_8_picked : __gsharp_array_ref(({Statements}TryGet(__gsharp_id_0_data," +
+            "&__gsharp_id_9_first)?__gsharp_id_0_data:__gsharp_id_1_output), ",
             cuda,
             StringComparison.Ordinal);
         AssertContainsLines(cuda,

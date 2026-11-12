@@ -20,8 +20,8 @@ public partial class EmissionShapeTests
         Assert.DoesNotMatch(@"__gsharp_array_(ref|at)\(__gsharp_id_\d+_local\b", kernel);
     }
 
-    // A kernel array parameter may be null whatever its annotation, as in a C# call, so its reads are checked, also when
-    // the kernel never writes it
+    // A kernel array parameter may be null whatever its annotation, as in a C# call, so its reads are checked, also
+    // when the kernel never writes it
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Cpu")]
@@ -85,7 +85,9 @@ public partial class EmissionShapeTests
         }
 
         Assert.Contains(
-            "__gsharp_proxy_1[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(bias) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;",
+            "__gsharp_proxy_1[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(bias) ? " +
+            "global::System.IntPtr.Zero : " +
+            "(global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;",
             launcher,
             StringComparison.Ordinal
         );
@@ -126,7 +128,10 @@ public partial class EmissionShapeTests
         Assert.True(start >= 0, "The Ptr launcher of ElidedKernel is not generated.");
         var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
 
-        Assert.Contains("if (values.Data == global::System.IntPtr.Zero && values.Length != 0)", launcher, StringComparison.Ordinal);
+        Assert.Contains(
+            "if (values.Data == global::System.IntPtr.Zero && values.Length != 0)",
+            launcher,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("ArgumentNullException", launcher, StringComparison.Ordinal);
     }
 

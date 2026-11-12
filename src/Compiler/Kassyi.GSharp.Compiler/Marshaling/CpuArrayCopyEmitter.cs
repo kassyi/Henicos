@@ -34,8 +34,8 @@ internal static class CpuArrayCopyEmitter
             writer.AppendLineIf(plan.KeepsSource(i),
                 $"{shape.TypeName} {KernelHostNames.GetLocal(LauncherLocal.CopySource, shape)} = {shape.Identifier};");
 
-            // if (<name> != null) for an array, if (<length> > 0) for a span-like value: a null array has nothing to copy,
-            // and a copy of an empty span-like value would be one over an array where the argument may have none
+            // if (<name> != null) for an array, if (<length> > 0) for a span-like value: a null array has nothing to
+            // copy, and a copy of an empty span-like value would be one over an array where the argument may have none
             writer.AppendLine(shape.Container == ArrayContainerKind.Array
                 ? $"if ({shape.Identifier} != null)"
                 : $"if ({shape.LengthExpression} > 0)");
