@@ -3,8 +3,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>
 /// Fails a call or a method group whose target <see cref="CallTargetClassifier"/> rejects: reports the diagnostic of
 /// the plan (GSH0107, GSH0109, or GSH0002 and GSH0003 for an invocation that binds to no method) and writes the
-/// placeholder, so the device code never names a function that nothing
-/// defines.
+/// placeholder, so the device code never names a function that nothing defines.
 /// </summary>
 internal static class CallTargetEmitter
 {

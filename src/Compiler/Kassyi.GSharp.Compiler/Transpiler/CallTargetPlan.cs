@@ -64,13 +64,13 @@ internal enum CallTargetKind
 
     /// <summary>
     /// An invocation that binds to no method and that lowering did not synthesize (GSH0003): a call through a function
-    /// pointer, a call bound at run time, or a node of a lowered tree that lost its binding.
+    /// pointer or a call bound at run time.
     /// </summary>
     Unbound,
 
     /// <summary>
     /// An invocation that C# cannot bind (a name that does not exist, no applicable overload): the C# compiler reports
-    /// it, so nothing is reported and nothing is emitted for it.
+    /// it, so it is not reported again and only the placeholder is written for it.
     /// </summary>
     NotCSharp
 }

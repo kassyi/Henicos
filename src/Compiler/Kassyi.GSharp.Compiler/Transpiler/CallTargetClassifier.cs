@@ -122,32 +122,22 @@ internal static class CallTargetClassifier
     /// </remarks>
     public static CallTargetPlan ClassifyUntyped(InvocationExpressionSyntax call, SemanticModel model)
     {
-        // A call copied into a lowered tree is decided on the call written in the user's file; a prelude call that
-        // lowering wrote in place of a written one (a warp shuffle read) keeps that call's span
-        if (GetCalledName(call.Expression)?.Identifier.ValueText.StartsWith(InternalNamePrefix,
-                StringComparison.Ordinal) == true ||
-            model.GetOriginalNode(call) is not InvocationExpressionSyntax written)
+        // A call copied into a lowered tree is decided on the call written in the user's file; a call that lowering
+        // synthesized (a prelude helper, __gsharp_*) has no original span, or one that is not an invocation
+        if (!model.TryGetOriginalNode(call, out var original, out var writtenModel) ||
+            original is not InvocationExpressionSyntax written)
         {
             return new CallTargetPlan(CallTargetKind.Synthesized);
         }
 
-        var writtenModel = written.SyntaxTree == model.SyntaxTree
-            ? model
-            : model.Compilation.GetCachedSemanticModel(written.SyntaxTree);
         if (written.Expression is IdentifierNameSyntax { Identifier.ValueText: NameofKeyword } &&
             writtenModel.GetConstantValue(written) is { HasValue: true, Value: string })
         {
             return new CallTargetPlan(CallTargetKind.NameofString);
         }
 
-        // A rewrite of a call that binds to a method is lowering's own call. A call that does not bind in C# (no such
-        // name, no applicable overload) is the C# compiler's error
+        // A call that does not bind in C# (no such name, no applicable overload) is the C# compiler's error
         var symbolInfo = writtenModel.GetSymbolInfo(written);
-        if (symbolInfo.Symbol is IMethodSymbol)
-        {
-            return new CallTargetPlan(CallTargetKind.Synthesized);
-        }
-
         if (symbolInfo.CandidateReason is not (CandidateReason.None or CandidateReason.LateBound) ||
             writtenModel.GetTypeInfo(written).Type is null or { TypeKind: TypeKind.Error })
         {
@@ -185,15 +175,6 @@ internal static class CallTargetClassifier
                 Expression: IdentifierNameSyntax { Identifier.ValueText: NameofKeyword }
             });
     }
-
-    // The name a call is written with: F of F(), U.F() and u?.F()
-    private static SimpleNameSyntax? GetCalledName(ExpressionSyntax expression) => expression switch
-    {
-        SimpleNameSyntax name => name,
-        MemberAccessExpressionSyntax access => access.Name,
-        MemberBindingExpressionSyntax binding => binding.Name,
-        _ => null
-    };
 
     /// <summary>The name of <paramref name="called"/> in the GSH0107 message: <c>Type.Method</c>.</summary>
     public static string GetDisplayName(IMethodSymbol called)
