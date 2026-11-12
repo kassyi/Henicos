@@ -270,7 +270,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     public async Task SharedPreludeHeader_CurrentPrelude_MatchesVerifiedSnapshot()
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
-        var src = @"using Kassyi.GSharp.Core; public class Dummy { [GpuKernel] public static void Kernel() {} }";
+        var src = @"using Kassyi.GSharp.Core; partial class Dummy { [GpuKernel] public static void Kernel() {} }";
         var syntaxTrees = new List<SyntaxTree> { CSharpSyntaxTree.ParseText(src, options: parseOptions) };
         var compilation = CSharpCompilation.Create("DummyCompilation")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))

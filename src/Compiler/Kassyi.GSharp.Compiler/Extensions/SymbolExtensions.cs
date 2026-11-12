@@ -132,6 +132,15 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool IsArrayLikeType(this ITypeSymbol? type) => type.TryGetArrayLikeElementType(out _);
 
+    /// <summary>T of <see cref="Nullable{T}"/>, or <paramref name="type"/> itself.</summary>
+    public static ITypeSymbol UnwrapNullable(this ITypeSymbol type) =>
+        type is INamedTypeSymbol
+        {
+            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlying]
+        }
+            ? underlying
+            : type;
+
     /// <summary>
     /// Returns T when type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } and its single type argument is array-like; otherwise returns type unchanged.
     /// </summary>

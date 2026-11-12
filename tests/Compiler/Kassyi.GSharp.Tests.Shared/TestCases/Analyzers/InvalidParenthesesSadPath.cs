@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 
-public static class SYN91_92_InvalidParenthesesSadPathCase
+public static partial class SYN91_92_InvalidParenthesesSadPathCase
 {
     [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]

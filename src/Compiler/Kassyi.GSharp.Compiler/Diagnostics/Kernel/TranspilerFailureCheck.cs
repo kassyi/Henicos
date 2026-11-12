@@ -34,6 +34,9 @@ internal static class TranspilerFailureCheck
         // CallTargetRule reports a call that the project's dialect does not implement, with the project's dialect;
         // this run's verdict is the CUDA dialect's
         (GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id, static _ => true),
+        // UserDefinedOperatorRule reports an operator without a device definition from the same decision, with the
+        // project's dialect
+        (GSharpDiagnostics.UserDefinedOperatorNotSupported.Id, static _ => true),
     ];
 
     /// <summary>Adds a diagnostic for each failure of the CUDA transpilation that the generator runs for <paramref name="method"/>.</summary>
