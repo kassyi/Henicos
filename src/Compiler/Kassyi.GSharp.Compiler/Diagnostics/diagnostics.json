@@ -859,6 +859,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "UnmappedMethodCalledFromGpuCode",
+    "id": "GSH0109",
+    "title": "A method without a device implementation is called from GPU code",
+    "messageFormat": "The method '{0}' has no implementation in the '{1}' dialect and cannot be called from GPU code{2}",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "CudaImportParameterNotSupported",
     "id": "GSH0110",
     "title": "The launcher of a [CudaImport] method cannot pass a parameter to the kernel",
