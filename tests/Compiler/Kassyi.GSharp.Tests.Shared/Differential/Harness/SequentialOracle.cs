@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
 
@@ -12,8 +13,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 /// <remarks>
 /// A kernel that reaches a barrier, a warp intrinsic, shared memory, an operator macro or a StackLinq floating-point
-/// sum cannot run one thread at a time: its launcher throws <see cref="InvalidOperationException"/> before any thread
-/// runs. Such a case needs a reference model (<see cref="DifferentialCase.Reference"/>).
+/// sum cannot run one thread at a time: its launcher throws <see cref="CSharpExecutionUnsupportedException"/> before
+/// any thread runs, which <see cref="Run"/> turns into a <see cref="DifferentialHarnessException"/>, also when the case
+/// expects exceptions. Such a case needs a reference model (<see cref="DifferentialCase.Reference"/>).
 /// </remarks>
 public static class SequentialOracle
 {
@@ -22,23 +24,35 @@ public static class SequentialOracle
     /// <paramref name="order"/>.
     /// </summary>
     /// <param name="shape">
-    /// The launch shape; every launch of <paramref name="launch"/> must have its thread count.
+    /// The launch shape; every launch of <paramref name="launch"/> must have its dimensions.
     /// </param>
     /// <param name="order">The order of the threads.</param>
     /// <param name="launch">
     /// The launch, e.g. <c>() =&gt; Kernels.LaunchAddKernel(a, b, r, gridDimX: 2, blockDimX: 64)</c>.
     /// </param>
     /// <exception cref="DifferentialHarnessException">
-    /// A launch has another thread count than <paramref name="shape"/>.
+    /// A launch has other dimensions than <paramref name="shape"/>, or a kernel cannot run as C#
+    /// (<see cref="CSharpExecutionUnsupportedException"/>, the inner exception).
     /// </exception>
     public static void Run(LaunchShape shape, ThreadOrder order, Action launch)
     {
         ArgumentNullException.ThrowIfNull(shape);
         ArgumentNullException.ThrowIfNull(launch);
-        using (GpuExecution.Use(KernelExecution.CSharp))
-        using (CSharpKernelRunner.UseThreadOrder(count => Enumerate(shape, order, count)))
+        try
         {
-            launch();
+            using (GpuExecution.Use(KernelExecution.CSharp))
+            using (CSharpKernelRunner.UseThreadOrder(dimensions => Enumerate(shape, order, dimensions)))
+            {
+                launch();
+            }
+        }
+        catch (CSharpExecutionUnsupportedException ex)
+        {
+            // The oracle has no C# value, which is a fault of the case, not an exception of the kernel to compare
+            throw new DifferentialHarnessException(
+                $"the oracle cannot run as C#; give the case a Reference: {ex.Message}",
+                ex
+            );
         }
     }
 
@@ -76,11 +90,13 @@ public static class SequentialOracle
     public static void RunEachThread(LaunchShape shape, ThreadOrder order, Action body) =>
         Run(shape, order, () => RunEachThread(shape, body));
 
-    // The ids of the order, for a launch of the shape's thread count: a launch with other dimensions than the shape
-    // would give the threads other coordinates than the paths under test see
-    private static int[] Enumerate(LaunchShape shape, ThreadOrder order, int count) =>
-        count == shape.ThreadCount
+    // The ids of the order, for a launch of the shape's dimensions: a launch with other dimensions than the shape,
+    // even with as many threads, would give the threads other coordinates than the paths under test see
+    private static int[] Enumerate(LaunchShape shape, ThreadOrder order, CSharpLaunchDimensions launch) =>
+        launch.GridDimX == shape.GridX && launch.GridDimY == shape.GridY && launch.GridDimZ == shape.GridZ &&
+        launch.BlockDimX == shape.BlockX && launch.BlockDimY == shape.BlockY && launch.BlockDimZ == shape.BlockZ
             ? order.Enumerate(shape)
             : throw new DifferentialHarnessException(
-                $"the oracle launched {count} threads, but the launch shape {shape} has {shape.ThreadCount}");
+                $"the oracle launched grid=({launch.GridDimX},{launch.GridDimY},{launch.GridDimZ}) " +
+                $"block=({launch.BlockDimX},{launch.BlockDimY},{launch.BlockDimZ}), but the launch shape is {shape}");
 }

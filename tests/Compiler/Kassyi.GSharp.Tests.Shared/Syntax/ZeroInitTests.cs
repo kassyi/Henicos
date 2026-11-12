@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Tests.Shared.Differential;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -327,12 +327,7 @@ public class ZeroInitTests : TranspilerTestBase
         Assert.Equal(expected, output);
     }
 
-    // The C# value of a kernel: the launcher runs the kernel's own method under KernelExecution.CSharp
-    private static void RunAsCSharp(Action launch)
-    {
-        using (GpuExecution.Use(KernelExecution.CSharp))
-        {
-            launch();
-        }
-    }
+    // The C# value of a kernel launched with one thread: the launcher runs the kernel's own method as C#
+    private static void RunAsCSharp(Action launch) =>
+        SequentialOracle.Run(LaunchShape.ForRows(1, blockX: 1), ThreadOrder.Forward, launch);
 }

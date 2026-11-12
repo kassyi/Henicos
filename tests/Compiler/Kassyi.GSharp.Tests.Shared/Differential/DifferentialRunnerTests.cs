@@ -263,7 +263,7 @@ public class DifferentialRunnerTests
     public void DifferentialRunner_OracleLaunchOtherThanTheShape_ReportsHarnessError()
     {
         // A launch with fewer threads than the shape would give the oracle threads other coordinates than the paths see
-        // mutant: SequentialOracle.cs Enumerate `count == shape.ThreadCount` -> `true` (an order of the wrong length)
+        // mutant: SequentialOracle.cs Enumerate dimension check -> `true` (an order of the wrong length)
         var shortLaunch = new DifferentialCase("HarnessProbeKernels.UInt32AddMatrixKernel")
         {
             Shape = LaunchShape.ForRows(8, blockX: 4),
@@ -285,7 +285,42 @@ public class DifferentialRunnerTests
             () => DifferentialRunner.Evaluate(shortLaunch, [0], NativeOnly, NoEntries)
         );
         Assert.Equal(
-            "the oracle launched 4 threads, but the launch shape grid=(2,1,1) block=(4,1,1) has 8",
+            "the oracle launched grid=(1,1,1) block=(4,1,1), but the launch shape is grid=(2,1,1) block=(4,1,1)",
+            ex.Message
+        );
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void DifferentialRunner_OracleLaunchWithSwappedDimensions_ReportsHarnessError()
+    {
+        // As many threads as the shape, but block (2,4) instead of (4,2): every thread but two would read other
+        // coordinates than the paths under test see
+        // mutant: SequentialOracle.cs Enumerate compares only the thread count
+        var swapped = new DifferentialCase("HarnessProbeKernels.UInt32AddMatrixKernel")
+        {
+            Shape = new LaunchShape(1, 1, 1, 4, 2, 1, 8),
+            Inputs = static (_, rows) => new DiffBuffers()
+                .In("a", new uint[rows])
+                .In("b", new uint[rows])
+                .Out<uint>("r", rows, HarnessProbeKernels.UInt32AddColumns, OutputPolicy.Exact),
+            Launch = static (_, _) => throw new InvalidOperationException("no path may run after the oracle fails"),
+            Oracle = static (b, s) => HarnessProbeKernels.LaunchUInt32AddMatrixKernel(
+                b.Get<uint>("a"),
+                b.Get<uint>("b"),
+                b.Get<uint>("r"),
+                blockDimX: s.BlockY,
+                blockDimY: s.BlockX
+            ),
+        };
+
+        var ex = Assert.Throws<DifferentialHarnessException>(
+            () => DifferentialRunner.Evaluate(swapped, [0], NativeOnly, NoEntries)
+        );
+        Assert.Equal(
+            "the oracle launched grid=(1,1,1) block=(2,4,1), but the launch shape is grid=(1,1,1) block=(4,2,1)",
             ex.Message
         );
     }
@@ -314,9 +349,18 @@ public class DifferentialRunnerTests
         var ex = Assert.Throws<DifferentialHarnessException>(
             () => DifferentialRunner.Evaluate(barrier, [0], NativeOnly, NoEntries)
         );
-        Assert.Contains("the oracle (forward) threw for seed 0", ex.Message);
-        var inner = Assert.IsType<InvalidOperationException>(ex.InnerException);
+        Assert.StartsWith("the oracle cannot run as C#; give the case a Reference: ", ex.Message);
+        var inner = Assert.IsType<CSharpExecutionUnsupportedException>(ex.InnerException);
         Assert.Contains("cannot run under KernelExecution.CSharp: it reaches Gpu.SyncThreads()", inner.Message);
+
+        // A case that matches the oracle's exceptions must not take the refusal for an exception of the kernel: it
+        // would compare the paths with "oracle: CSharpExecutionUnsupportedException" instead of reporting the case
+        // mutant: SequentialOracle.cs Run without the catch of CSharpExecutionUnsupportedException
+        var matching = barrier with { OracleExceptions = OracleExceptionMode.MatchOracle };
+        var matchingEx = Assert.Throws<DifferentialHarnessException>(
+            () => DifferentialRunner.Evaluate(matching, [0], NativeOnly, NoEntries)
+        );
+        Assert.IsType<CSharpExecutionUnsupportedException>(matchingEx.InnerException);
     }
 
     [Fact]

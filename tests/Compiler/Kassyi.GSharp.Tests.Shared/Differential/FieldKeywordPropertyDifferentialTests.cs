@@ -104,20 +104,15 @@ public class FieldKeywordPropertyDifferentialTests
         nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordLibraryMacroTarget),
         FieldKeywordPropertyDifferentialKernels.LibraryMacroColumns,
         static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordLibraryMacroTarget(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX)) with
-    {
-        // The operator macro has no host body, so the reference adds the values the target adds
-        OracleIsLaunch = false,
-        Reference = static (b, _) =>
+            i, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+        static (i, r) =>
         {
-            int[] i = b.Get<int>("inputs");
-            int[] r = b.Get<int>("r");
+            // The operator macro has no host body, so the reference adds the values the target adds
             for (int k = 0; k < i.Length; k++)
             {
                 r[k] = (i[k] % 1000) * 2;
             }
-        },
-    };
+        });
 
     internal static readonly DifferentialCase s_order = IntCase(
         nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordOrder),
@@ -311,8 +306,9 @@ public class FieldKeywordPropertyDifferentialTests
         DifferentialRunner.Run(s_memberwise);
 
     // A case of a kernel (int[] inputs, int[] r) with one row of columns per input
+    // The launch is the oracle, unless the case gives a reference model of the inputs and the results
     private static DifferentialCase IntCase(string kernel, string[] columns,
-        Action<int[], int[], LaunchShape> launch) =>
+        Action<int[], int[], LaunchShape> launch, Action<int[], int[]>? reference = null) =>
         new($"{Kernels}.{kernel}")
         {
             Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -320,7 +316,8 @@ public class FieldKeywordPropertyDifferentialTests
                 .In("inputs", DiffValues.Int32(rng, rows))
                 .Out<int>("r", rows, columns, OutputPolicy.Exact),
             Launch = (b, s) => launch(b.Get<int>("inputs"), b.Get<int>("r"), s),
-            OracleIsLaunch = true,
+            OracleIsLaunch = reference is null,
+            Reference = reference is null ? null : (b, _) => reference(b.Get<int>("inputs"), b.Get<int>("r")),
         };
 
     // [WHY] A copy of the struct keeps the stored value; an object initializer would run the accessors

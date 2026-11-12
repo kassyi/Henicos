@@ -162,6 +162,27 @@ The class has two static helpers for the bodies of GPU-only members:
 | `static void Throw()` | Throws a new `GpuOnlyException`. Use it as the body of a `void` member. |
 | `static T Throw<T>()` | Throws a new `GpuOnlyException`; the return type lets it stand where an expression of type `T` is expected (`public static int Lane => GpuOnlyException.Throw<int>();`). It never returns. |
 
+### CSharpExecutionUnsupportedException
+
+- **Namespace:** `Kassyi.GSharp.Core`
+- **Inherits from:** `System.InvalidOperationException`
+
+Thrown when a kernel launched under [`KernelExecution.CSharp`](execution_context/GpuExecution.md) cannot run one GPU thread at a time: it reaches a barrier, a warp operation, shared memory, or code whose meaning only the generated code gives (an operator macro, a floating-point StackLinq `Sum`). The launcher throws it before any thread runs when the compiler finds such an operation in the kernel or the device functions it calls; an operation reached through a delegate throws it when a thread reaches it. Launch the kernel under `KernelExecution.Default` or `KernelExecution.Managed` instead.
+
+```csharp
+try
+{
+    using (GpuExecution.Use(KernelExecution.CSharp))
+    {
+        Kernels.LaunchReduceKernel(data, blockDimX: 256); // the kernel calls Gpu.SyncThreads()
+    }
+}
+catch (CSharpExecutionUnsupportedException ex)
+{
+    Console.WriteLine(ex.Message); // names the kernel and the operation
+}
+```
+
 ### CudaException
 
 - **Namespace:** `Kassyi.GSharp.Runtime.Interop`

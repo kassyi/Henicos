@@ -41,7 +41,7 @@ public static partial class Gpu
     /// Synchronizes all threads in the current block barrier (<c>__syncthreads()</c>).
     /// </summary>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="CSharpExecutionUnsupportedException">
     /// Thrown in a kernel launched under <c>KernelExecution.CSharp</c>, which runs one GPU thread at a time.
     /// </exception>
     [CudaIntrinsic("__syncthreads")]

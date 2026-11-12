@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -42,48 +41,40 @@ public class StackLinqUnfusedDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Reference = static (b, _) => UnfusedOperatorReference(b.Get<int>("xs"), b.Get<long>("r")),
+        OracleIsLaunch = true,
     };
 
-    // The kernel's body on the host, row by row: its double Sum stops the C# run of the launcher (an analysis cannot
-    // tell that a sum of four ints does not depend on the order), so the reference repeats the C# of each column
-    private static void UnfusedOperatorReference(int[] xs, long[] r)
+    internal static readonly DifferentialCase s_unfusedDoubleSum = new(DiffKernelNames.Of(
+        typeof(StackLinqUnfusedDifferentialKernels),
+        nameof(StackLinqUnfusedDifferentialKernels.UnfusedDoubleSumKernel)
+    ))
+    {
+        Shapes = LaunchShapes.OneDimensionalMatrix(64),
+        Inputs = static (rng, rows) => new DiffBuffers()
+            .In("xs", BuildSlices(rng, rows), OutputPolicy.Exact)
+            .Out<long>("r", rows, OutputPolicy.Exact),
+        Launch = static (b, s) => StackLinqUnfusedDifferentialKernels.LaunchUnfusedDoubleSumKernel(
+            b.Get<int>("xs"),
+            b.Get<long>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX
+        ),
+        Reference = static (b, _) => UnfusedDoubleSumReference(b.Get<int>("xs"), b.Get<long>("r")),
+    };
+
+    // A floating-point Sum stops the C# run of the launcher (it cannot tell that a sum of four ints does not depend on
+    // the order), so the reference sums each slice in order, as the generated code does; four ints sum exactly
+    private static void UnfusedDoubleSumReference(int[] xs, long[] r)
     {
         for (int t = 0; (t + 1) * SliceLen <= xs.Length; t++)
         {
-            var slice = xs.AsSpan(t * SliceLen, SliceLen);
-            int x0 = slice[0];
-            int o = t * 24;
-            r[o] = slice.AsStackEnumerable().TakeLast(2).ElementAtOrDefault(0);
-            r[o + 1] = slice.AsStackEnumerable().TakeLast(0).ElementAtOrDefault(0);
-            r[o + 2] = slice.AsStackEnumerable().TakeLast(-1).ElementAtOrDefault(0);
-            r[o + 3] = slice.AsStackEnumerable().TakeLast(10).ElementAtOrDefault(3);
-            r[o + 4] = slice.AsStackEnumerable().TakeLast(3).SkipLast(1).ElementAtOrDefault(1);
-            r[o + 5] = slice.AsStackEnumerable().TakeLast(3).SkipLast(1).ElementAtOrDefault(2);
-            r[o + 6] = slice.AsStackEnumerable().SkipLast(3).SingleOrDefault();
-            r[o + 7] = slice.AsStackEnumerable().SkipLast(4).SingleOrDefault();
-            r[o + 8] = slice.AsStackEnumerable().SkipLast(-1).ElementAtOrDefault(3);
-            r[o + 9] = slice.AsStackEnumerable().SkipLast(2).ElementAtOrDefault(1);
-            r[o + 10] = slice.AsStackEnumerable().SkipLast(2).ElementAtOrDefault(2);
-            r[o + 11] = StackLinqExtensions.TakeLast(slice.AsStackEnumerable(), 1).ElementAt(0);
+            double sum = 0;
+            for (int j = 0; j < SliceLen; j++)
+            {
+                sum += xs[(t * SliceLen) + j];
+            }
 
-            var local = slice.AsStackEnumerable();
-            r[o + 12] = local.Sum(x => x * 2);
-            r[o + 13] = (long)local.Sum(x => (double)x);
-            r[o + 14] = local.LastOrDefault(x => x > 0);
-            r[o + 15] = local.LastOrDefault(x => x > 0 && x < 0);
-            r[o + 16] = local.Last(x => x >= int.MinValue);
-            r[o + 17] = local.Last(x => x <= x0);
-            r[o + 18] = (long)slice.AsStackEnumerable().Select(x => (double)x).SumSequential();
-            r[o + 19] = (long)slice.AsStackEnumerable().SumSequential(x => (double)x);
-            r[o + 20] = slice.AsStackEnumerable().AsParallel().Sum();
-            r[o + 21] = slice.AsStackEnumerable().Aggregate(func: (a, b) => a + b, seed: 10L);
-            r[o + 22] = local.Aggregate(func: (a, b) => a - b, seed: 7L);
-            r[o + 23] = StackLinqExtensions.Aggregate(
-                func: (a, b) => a * 3 + b,
-                seed: 5L,
-                source: slice.AsStackEnumerable()
-            );
+            r[t] = (long)sum;
         }
     }
 
@@ -156,6 +147,10 @@ public class StackLinqUnfusedDifferentialTests
 
     [SkippableFact]
     public void StackLinq_UnfusedOperators_MatchTheOracleOnEveryPath() => DifferentialRunner.Run(s_unfusedOperators);
+
+    [SkippableFact]
+    public void StackLinq_UnfusedDoubleSum_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_unfusedDoubleSum);
 
     [SkippableFact]
     public void StackLinq_IndexedLambdas_MatchTheOracleOnEveryPath() => DifferentialRunner.Run(s_indexedLambdas);
