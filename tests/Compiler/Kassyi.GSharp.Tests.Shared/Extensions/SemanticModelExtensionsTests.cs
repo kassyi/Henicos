@@ -55,7 +55,7 @@ public class SemanticModelExtensionsTests
         var originalNode = model0.GetOriginalNode(detachedInvocation);
         Assert.NotNull(originalNode);
         Assert.Same(tree1, originalNode.SyntaxTree);
-        Assert.Equal("Helper(input)", originalNode.ToString());
+        SyntaxAssert.Equivalent("Helper(input)", originalNode);
 
         // 2. GetSymbol resolves TreeOneProvider.Helper from model0
         var helperSymbol = Assert.IsAssignableFrom<IMethodSymbol>(model0.GetSymbol(detachedInvocation));
@@ -194,7 +194,7 @@ public class SemanticModelExtensionsTests
         var originalNode = model0.GetOriginalNode(detachedInvocation);
         Assert.NotNull(originalNode);
         Assert.Same(tree1, originalNode.SyntaxTree);
-        Assert.Equal("Helper(input)", originalNode.ToString());
+        SyntaxAssert.Equivalent("Helper(input)", originalNode);
 
         var localSymbol = model0.GetDeclaredSymbol<ILocalSymbol>(detachedDeclarator);
         Assert.NotNull(localSymbol);

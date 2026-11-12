@@ -161,8 +161,8 @@ public class CopiedParameterTests
         var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
                      ?? throw new InvalidOperationException("FieldAssignment has no symbol.");
         // The model cannot find the barrier of an unbound body either; it is annotated by spelling
-        var unbound = TestSyncAnnotator.Annotate((BlockSyntax)SyntaxFactory.ParseStatement(
-            (method.Body ?? throw new InvalidOperationException("FieldAssignment has no block body.")).ToFullString()));
+        var unbound = TestSyncAnnotator.Annotate(SyntaxFactory.Block(
+            (method.Body ?? throw new InvalidOperationException("FieldAssignment has no block body.")).Statements));
 
         var lowered = AstLoweringPipeline.Lower(unbound, model, symbol, isDeviceFunction: true);
 

@@ -57,7 +57,15 @@ public class IteratorInlinerSpanTests
         var loopVariable = Locals(expansion).Single(static d => d.Identifier.ValueText == "x");
         var consumerStatement = expansion.DescendantNodes()
             .OfType<ExpressionStatementSyntax>()
-            .Single(static s => s.ToString().StartsWith("output[tid] += x", System.StringComparison.Ordinal));
+            .Single(static s => s.Expression is AssignmentExpressionSyntax
+            {
+                RawKind: (int)SyntaxKind.AddAssignmentExpression,
+                Left: ElementAccessExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax { Identifier.ValueText: "output" }
+                },
+                Right: IdentifierNameSyntax { Identifier.ValueText: "x" }
+            });
 
         Assert.Equal(forEach.GetLocation(), model.GetOriginalLocation(loopVariable));
         Assert.Equal(
