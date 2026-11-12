@@ -7,9 +7,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </summary>
 internal static class AotModuleNames
 {
-    /// <summary>The prefix of the class that loads the fatbin module of one assembly.</summary>
-    public const string ModuleContextPrefix = "GSharpModuleContext_";
-
     /// <summary>The prefix of the file names of the native artifacts of one assembly.</summary>
     public const string ArtifactFilePrefix = "Kassyi.GSharp.Kernels_";
 
@@ -31,19 +28,13 @@ internal static class AotModuleNames
         ArtifactFilePrefix + ReplaceWithUnderscore(moduleName, static c => c != '.');
 
     /// <summary>
-    /// The name of the module context class of a module: <c>GSharpModuleContext_</c> and the module name as
-    /// <see cref="ToIdentifierPart"/> escapes it, so that any assembly name gives an identifier and two names give two.
+    /// The name of the module context class of a module: <c>GSharpModuleContext_</c> and the module name escaped as the
+    /// emitted C++ names are (<see cref="GSharpNameEncoding.GetModuleContextName"/>): ASCII letters and digits stay,
+    /// <c>_</c> becomes <c>_u</c> and any other character <c>_x</c> and six hex digits of its code point
+    /// (<c>My.Lib</c> gives <c>GSharpModuleContext_My_x00002eLib</c>). Two names give two classes, and the demangle
+    /// tool recovers the name.
     /// </summary>
-    public static string GetModuleContextName(string moduleName) => ModuleContextPrefix + ToIdentifierPart(moduleName);
-
-    /// <summary>
-    /// Returns <paramref name="name"/> as a part of a C# identifier that a fixed prefix starts, escaped as the emitted
-    /// C++ names are (<see cref="GSharpNameEncoding.EscapeName"/>): ASCII letters and digits stay, <c>_</c> becomes
-    /// <c>_u</c> and any other character <c>_x</c> and six hex digits of its code point (<c>My.Lib</c> becomes
-    /// <c>My_x00002eLib</c>). The escaping is injective, so names that differ only in characters an identifier cannot
-    /// hold (<c>a-b</c>, <c>a_b</c>, <c>a.b</c>) give distinct identifiers.
-    /// </summary>
-    public static string ToIdentifierPart(string name) => GSharpNameEncoding.EscapeName(name);
+    public static string GetModuleContextName(string moduleName) => GSharpNameEncoding.GetModuleContextName(moduleName);
 
     // <name> with each character that keeps rejects replaced by '_'; the input itself when keeps accepts them all
     private static string ReplaceWithUnderscore(string name, Func<char, bool> keeps)

@@ -23,6 +23,10 @@ namespace Kassyi.GSharp.Naming;
 /// the <c>field</c> keyword; it decodes to <c>{name}.field</c>.</description></item>
 ///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
+///   <item><description><c>GSharpModuleContext_{module}</c> / <c>s_fatbin_{module}</c>: the generated C# class that loads
+/// the fatbin of an assembly and the field that holds the fatbin of a YAML module, with the module name escaped as a
+/// segment is (<see cref="TryDecodeModuleName"/>); they decode to <c>GSharpModuleContext(module)</c> and
+/// <c>s_fatbin(module)</c>.</description></item>
 /// </list>
 /// GSH0055 rejects <c>__</c> in user identifiers, so a C# name never starts with a digit-and-underscore ordinal and
 /// decoding is unambiguous.
@@ -37,6 +41,14 @@ internal static class GSharpNameEncoding
     public const string FunctionPrefix = "__gsharp_fn_";
     public const string KernelPrefix = "__gsharp_k_";
     public const string TypeParameterPrefix = "__gsharp_tp_";
+
+    /// <summary>The prefix of the generated C# class that loads the fatbin module of one assembly.</summary>
+    public const string ModuleContextPrefix = "GSharpModuleContext_";
+
+    /// <summary>The prefix of the generated C# field that holds the fatbin of a module named in YAML.</summary>
+    public const string FatbinFieldPrefix = "s_fatbin_";
+
+    private static readonly string[] s_renamedPrefixes = ["__gsharp_", ModuleContextPrefix, FatbinFieldPrefix];
 
     public const string SymbolHeaderPrefix = "// gsharp-symbols: ";
 
@@ -379,7 +391,7 @@ internal static class GSharpNameEncoding
         var index = 0;
         while (index < text.Length)
         {
-            var start = text.IndexOf("__gsharp_", index, StringComparison.Ordinal);
+            var start = IndexOfRenamedIdentifier(text, index);
             if (start < 0)
             {
                 break;
@@ -571,6 +583,24 @@ internal static class GSharpNameEncoding
         return name;
     }
 
+    /// <summary>
+    /// The name of the module context class of a module: <c>GSharpModuleContext_</c> and the module name escaped as a
+    /// segment of <see cref="Encode(GlobalNamePath)"/> (<c>Henicos.Benchmarks</c> gives
+    /// <c>GSharpModuleContext_Henicos_x00002eBenchmarks</c>), so that any name gives an identifier, two names give two,
+    /// and <see cref="TryDecodeModuleName"/> recovers the name.
+    /// </summary>
+    public static string GetModuleContextName(string moduleName) => ModuleContextPrefix + EscapeName(moduleName);
+
+    /// <summary>
+    /// Appends the name of the field that holds the fatbin of a module named in YAML: <c>s_fatbin_</c> and the module
+    /// name escaped as in <see cref="GetModuleContextName"/>.
+    /// </summary>
+    public static void AppendFatbinFieldName(in SourceWriter writer, string moduleName)
+    {
+        writer.Append(FatbinFieldPrefix);
+        AppendEscapedName(writer, moduleName);
+    }
+
     /// <summary>Appends <paramref name="name"/> escaped as described in <see cref="Encode(GlobalNamePath)"/>.</summary>
     public static void AppendEscapedName(in SourceWriter writer, string name)
     {
@@ -661,6 +691,12 @@ internal static class GSharpNameEncoding
             }
 
             csharpName += ".field";
+            return true;
+        }
+
+        if (TryDecodeModuleIdentifier(identifier, ModuleContextPrefix, "GSharpModuleContext", ref csharpName) ||
+            TryDecodeModuleIdentifier(identifier, FatbinFieldPrefix, "s_fatbin", ref csharpName))
+        {
             return true;
         }
 
@@ -780,7 +816,7 @@ internal static class GSharpNameEncoding
     {
         while (index < text.Length)
         {
-            start = text.IndexOf("__gsharp_", index, StringComparison.Ordinal);
+            start = IndexOfRenamedIdentifier(text, index);
             if (start < 0)
             {
                 break;
@@ -805,6 +841,60 @@ internal static class GSharpNameEncoding
         identifier = string.Empty;
         csharpName = string.Empty;
         return false;
+    }
+
+    /// <summary>
+    /// Recovers a module name from its escaped form, the part of a module context class name
+    /// (<see cref="ModuleContextPrefix"/>) or a fatbin field name (<see cref="FatbinFieldPrefix"/>) after the prefix.
+    /// </summary>
+    /// <returns><see langword="false"/> if <paramref name="escaped"/> is not exactly one escaped name.</returns>
+    public static bool TryDecodeModuleName(string escaped, out string moduleName) =>
+        TryParseWholeName(escaped, 0, out moduleName);
+
+    // The name escaped in <s> from <start> to its end
+    private static bool TryParseWholeName(string s, int start, out string name)
+    {
+        name = string.Empty;
+        var index = start;
+        var builder = new StringBuilder(s.Length - start);
+        if (!TryParseName(s, ref index, builder) || index != s.Length)
+        {
+            return false;
+        }
+
+        name = builder.ToString();
+        return true;
+    }
+
+    // <display>(<module>) for <prefix><escaped module>
+    private static bool TryDecodeModuleIdentifier(string identifier, string prefix, string display,
+        ref string csharpName)
+    {
+        if (!identifier.StartsWith(prefix, StringComparison.Ordinal) ||
+            !TryParseWholeName(identifier, prefix.Length, out var moduleName))
+        {
+            return false;
+        }
+
+        csharpName = display + "(" + moduleName + ")";
+        return true;
+    }
+
+    // The first place at or after <index> where a renamed identifier may start: a __gsharp_ name, a module context
+    // class or a fatbin field; -1 when there is none
+    private static int IndexOfRenamedIdentifier(string text, int index)
+    {
+        var first = -1;
+        foreach (var prefix in s_renamedPrefixes)
+        {
+            var found = text.IndexOf(prefix, index, StringComparison.Ordinal);
+            if (found >= 0 && (first < 0 || found < first))
+            {
+                first = found;
+            }
+        }
+
+        return first;
     }
 
     private static bool TrySetName(string identifier, int start, ref string csharpName)

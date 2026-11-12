@@ -8,15 +8,15 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 public static partial class MultiMethodInvoker
 {
-private static readonly Lazy<byte[]> s_fatbin_shared_module = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "shared_module")));
-private static readonly Lazy<byte[]> s_fatbin_other_module = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "other_module")));
+private static readonly Lazy<byte[]> s_fatbin_shared_umodule = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "shared_module")));
+private static readonly Lazy<byte[]> s_fatbin_other_umodule = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "other_module")));
 public static partial void MethodOne(float[] input, float factor)
 {
 if (input is null){
 throw new global::System.ArgumentNullException(nameof(input));
 }
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "Kernel1");
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_umodule.Value, "Kernel1");
 using var d_input = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(input.Length);
 d_input.CopyToDevice(input);
 unsafe
@@ -46,7 +46,7 @@ if (output is null){
 throw new global::System.ArgumentNullException(nameof(output));
 }
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "MethodTwo");
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_umodule.Value, "MethodTwo");
 using var d_output = new global::Kassyi.GSharp.Runtime.GpuBuffer<int>(output.Length);
 var ctx = new __gsharp_native_context_MethodTwo
 {
@@ -76,7 +76,7 @@ if (output is null){
 throw new global::System.ArgumentNullException(nameof(output));
 }
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_other_module.Value, "MethodThree");
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_other_umodule.Value, "MethodThree");
 using var d_input = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(input.Length);
 d_input.CopyToDevice(input);
 using var d_output = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(output.Length);
@@ -105,7 +105,7 @@ throw new global::System.ArgumentNullException(nameof(output));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MultiMethodInvoker.MethodFour");
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_other_module.Value, "SharedKernel");
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_other_umodule.Value, "SharedKernel");
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(kernel, sharedMemBytes, "MultiMethodInvoker.MethodFour");
 using var d_output = new global::Kassyi.GSharp.Runtime.GpuBuffer<uint>(output.Length);
 unsafe
@@ -137,14 +137,14 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 internal static partial class SecondaryInvoker
 {
-private static readonly Lazy<byte[]> s_fatbin_shared_module = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "shared_module")));
+private static readonly Lazy<byte[]> s_fatbin_shared_umodule = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "shared_module")));
 public static partial void SecondaryMethod(double[] data, double scale)
 {
 if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "SecondaryMethod");
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_umodule.Value, "SecondaryMethod");
 using var d_data = new global::Kassyi.GSharp.Runtime.GpuBuffer<double>(data.Length);
 d_data.CopyToDevice(data);
 unsafe

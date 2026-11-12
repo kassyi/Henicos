@@ -99,4 +99,65 @@ public class GSharpNameEncodingTests
 
         Assert.Contains("Symbol file hash '0123456789abcdef' does not match source hash 'fedcba9876543210'.", ex.Message);
     }
+
+    // The module context class and the fatbin field name the module escaped injectively, and the demangle tool turns
+    // them back into the module name, for every character an assembly or file name may hold
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Henicos.Benchmarks")]
+    [InlineData("Kassyi.GSharp.Tests.Cuda")]
+    [InlineData("a_b_")]
+    [InlineData("my-lib")]
+    [InlineData("./native/my-custom.kernels.fatbin")]
+    [InlineData("a{b}\"c")]
+    [InlineData("été")]
+    [InlineData("日本")]
+    [InlineData("🚀")]
+    [InlineData("1lib")]
+    public void ModuleNames_EncodedThenDecoded_GiveTheModuleNameBack(string moduleName)
+    {
+        var contextName = GSharpNameEncoding.GetModuleContextName(moduleName);
+        string fieldName;
+        using (var writer = new SourceWriter())
+        {
+            GSharpNameEncoding.AppendFatbinFieldName(writer, moduleName);
+            fieldName = writer.ToString();
+        }
+
+        Assert.True(SyntaxFacts.IsValidIdentifier(contextName), contextName);
+        Assert.True(SyntaxFacts.IsValidIdentifier(fieldName), fieldName);
+        Assert.True(GSharpNameEncoding.TryDecode(contextName, out var decodedContext));
+        Assert.Equal($"GSharpModuleContext({moduleName})", decodedContext);
+        Assert.True(GSharpNameEncoding.TryDecode(fieldName, out var decodedField));
+        Assert.Equal($"s_fatbin({moduleName})", decodedField);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void DecodeText_ModuleContextAndFatbinField_ReplacesBothWithTheModuleName()
+    {
+        const string Log = "CS0103: GSharpModuleContext_Henicos_x00002eBenchmarks and s_fatbin_a_x00002db.Value; " +
+            "MyGSharpModuleContext_a stays";
+        const string Expected =
+            "CS0103: GSharpModuleContext(Henicos.Benchmarks) and s_fatbin(a-b).Value; MyGSharpModuleContext_a stays";
+
+        Assert.Equal(Expected, GSharpNameEncoding.DecodeText(Log));
+        Assert.Equal(Expected, GSharpNameEncoding.DecodeText(Log, new Dictionary<string, string>()));
+    }
+
+    // A name in the replacing spelling of earlier versions ('_' for '.') is not an escaped name and stays as it is
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("GSharpModuleContext_")]
+    [InlineData("GSharpModuleContext_Henicos_Benchmarks")]
+    [InlineData("s_fatbin_a_x00002")]
+    [InlineData("s_fatbin__x000041")]
+    public void TryDecode_NotAnEscapedModuleName_ReturnsFalse(string identifier)
+    {
+        Assert.False(GSharpNameEncoding.TryDecode(identifier, out var name));
+        Assert.Equal(string.Empty, name);
+    }
 }

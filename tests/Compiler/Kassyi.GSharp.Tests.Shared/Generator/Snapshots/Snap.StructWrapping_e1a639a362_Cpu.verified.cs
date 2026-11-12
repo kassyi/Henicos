@@ -8,7 +8,7 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 public static partial class TestInvoker
 {
-private static readonly Lazy<byte[]> s_fatbin_my_fatbin = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "my_fatbin")));
+private static readonly Lazy<byte[]> s_fatbin_my_ufatbin = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "my_fatbin")));
 public static partial void LaunchMyKernel(float[] a, float[] b, float scalarValue, uint gridDimX, uint blockDimX)
 {
 if (a is null){
@@ -19,7 +19,7 @@ throw new global::System.ArgumentNullException(nameof(b));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "TestInvoker.LaunchMyKernel");
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_my_fatbin.Value, "MyKernel");
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_my_ufatbin.Value, "MyKernel");
 using var d_a = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(a.Length);
 d_a.CopyToDevice(a);
 using var d_b = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(b.Length);

@@ -33,26 +33,16 @@ public class IdentifierHelperTests
     public void GetModuleContextName_ModuleName_EscapesInjectively(string input, string expected) =>
         Assert.Equal(expected, AotModuleNames.GetModuleContextName(input));
 
-    // Names that differ only in characters an identifier cannot hold give distinct identifier parts (each of them was
-    // '_' when every such character was replaced by '_')
+    // Names that differ only in characters an identifier cannot hold give distinct module context classes (each of
+    // them was '_' when every such character was replaced by '_')
     [Theory]
-    [InlineData("a-b", "a_x00002db")]
-    [InlineData("a_b", "a_ub")]
-    [InlineData("a.b", "a_x00002eb")]
-    [InlineData("a{b}", "a_x00007bb_x00007d")]
-    [InlineData("a_b_", "a_ub_u")]
+    [InlineData("a-b", "GSharpModuleContext_a_x00002db")]
+    [InlineData("a_b", "GSharpModuleContext_a_ub")]
+    [InlineData("a.b", "GSharpModuleContext_a_x00002eb")]
+    [InlineData("a{b}", "GSharpModuleContext_a_x00007bb_x00007d")]
+    [InlineData("a_b_", "GSharpModuleContext_a_ub_u")]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void ToIdentifierPart_NamesDifferingInPunctuation_StayDistinct(string input, string expected) =>
-        Assert.Equal(expected, AotModuleNames.ToIdentifierPart(input));
-
-    [Fact]
-    [Category(TestCategory.Unit)]
-    [Scenario(TestScenario.HappyPath)]
-    public void ToIdentifierPart_AsciiLettersAndDigitsOnly_ReturnsTheInput()
-    {
-        const string Name = "AlreadyAnIdentifier9";
-
-        Assert.Same(Name, AotModuleNames.ToIdentifierPart(Name));
-    }
+    public void GetModuleContextName_NamesDifferingInPunctuation_StayDistinct(string input, string expected) =>
+        Assert.Equal(expected, AotModuleNames.GetModuleContextName(input));
 }
