@@ -101,7 +101,9 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
             {
                 if (IsEligibleKernelFile(file))
                 {
+#pragma warning disable RS0030 // The separators of a Directory.GetFiles path are the subject: the case list keys use '/'
                     var relativePath = file.Substring(rootDir.Length).TrimStart('\\', '/').Replace('\\', '/');
+#pragma warning restore RS0030
                     unique.Add(relativePath);
                 }
             }

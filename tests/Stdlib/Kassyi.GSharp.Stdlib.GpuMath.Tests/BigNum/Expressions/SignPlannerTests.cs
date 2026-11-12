@@ -120,7 +120,9 @@ public sealed class SignPlannerTests
         var chosen = ChosenOperand.None;
         var kernel = SignKernel.None;
         string? sign = null;
+#pragma warning disable RS0030 // The test's own expectation string from the Plans table, space-separated tokens such as "first Forward -"
         foreach (var token in expected.Split(' '))
+#pragma warning restore RS0030
         {
             if (token is "first" or "second")
             {

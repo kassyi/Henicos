@@ -591,9 +591,11 @@ public class FatbinParserTests
     private static bool IsNvccOnPath()
     {
         var fileName = OperatingSystem.IsWindows() ? "nvcc.exe" : "nvcc";
-        foreach (var directory in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
+        var path = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).AsSpan();
+        foreach (var range in path.Split(Path.PathSeparator))
         {
-            if (directory.Length > 0 && File.Exists(Path.Combine(directory.Trim('"'), fileName)))
+            var directory = path[range].Trim('"');
+            if (!directory.IsEmpty && File.Exists(Path.Combine(directory.ToString(), fileName)))
             {
                 return true;
             }

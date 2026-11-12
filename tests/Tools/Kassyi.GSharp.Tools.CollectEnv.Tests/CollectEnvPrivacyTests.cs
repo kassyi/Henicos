@@ -21,7 +21,9 @@ public class CollectEnvPrivacyTests
 
         Assert.Equal(0, exitCode);
         AssertNoPersonalData(stdout);
+#pragma warning disable RS0030 // The Markdown report of the tool is line-oriented text for people; the probe is one of its lines
         string probeLine = Assert.Single(stdout.Split('\n'), static l => l.Contains(ProbeName, StringComparison.Ordinal));
+#pragma warning restore RS0030
         Assert.Contains($"{ProbeName}=~", probeLine, StringComparison.Ordinal);
         AssertProbeShape(probeLine);
     }
@@ -75,7 +77,9 @@ public class CollectEnvPrivacyTests
     private static void AssertNoPersonalData(string text)
     {
         Assert.DoesNotContain(Profile, text, StringComparison.OrdinalIgnoreCase);
+#pragma warning disable RS0030 // The OS profile path with '/' separators, the spelling the tool may print it in, must not appear either
         Assert.DoesNotContain(Profile.Replace('\\', '/'), text, StringComparison.OrdinalIgnoreCase);
+#pragma warning restore RS0030
         if (IsRedactableName(Environment.UserName))
         {
             Assert.DoesNotContain(Environment.UserName, text, StringComparison.OrdinalIgnoreCase);
