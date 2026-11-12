@@ -64,7 +64,9 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
   `ArgumentNullException`; a call of a device function checks an argument that may be `null` once, at the call, for a
   non-nullable array parameter (or a struct that holds one) and throws `NullReferenceException` there. This is the one
   place where G# throws earlier than C#, which throws only when such a `null` is read. A nullable (`T[]?`) or
-  unannotated array keeps the check where it is read.
+  unannotated array keeps the check where it is read, unless it is read through
+  [`Gpu.NotNull`](../03_bcl_api/gpu_class/NotNull.md): the call checks once, and a local initialized from it and never
+  assigned afterwards is read without a check.
 - Removing the remaining checks for speed is explicit: you write a marker, in the same way `[SkipLocalsInit]` turns off zero-initialization in C#. `Gpu.SyncGrid(GridSyncMode.Fast)` is such a marker for the check that a grid barrier makes before a block arrives (§6.3).
 
 ## 6.5 The CPU paths

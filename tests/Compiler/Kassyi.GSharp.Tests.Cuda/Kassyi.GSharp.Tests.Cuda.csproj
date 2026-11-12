@@ -56,6 +56,8 @@
     <_GSharpCudaSources Include="..\..\..\src\Apps\Henicos.Benchmarks\ComputeBenchmarks\Native\*.cu" />
     <!-- Hand-written external-module kernels for the [CudaImport] tests (DynamicSharedMemoryModuleTests) -->
     <_GSharpCudaSources Include="Native\*.cu" />
+    <!-- The YAML module binding of Native/module_arguments.cu (ModuleArgumentTests) -->
+    <AdditionalFiles Include="Native\module_arguments.yml" GSharpApi="true" />
   </ItemGroup>
 
   <PropertyGroup>

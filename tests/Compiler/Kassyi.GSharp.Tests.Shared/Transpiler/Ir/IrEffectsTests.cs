@@ -42,7 +42,7 @@ public class IrEffectsTests
     [Scenario(TestScenario.HappyPath)]
     public void Of_ScalarMath_ReadsOnlyItsOperands()
     {
-        var effects = IrEffects.Of(IrTestCases.Result(IrClassifierTests.Classify("ScalarMath")), Compilation);
+        var effects = EffectsOfResult("ScalarMath");
 
         Assert.Equal("{a, b}", effects.Reads.ToString());
         Assert.True(effects.Writes.IsEmpty);
@@ -52,7 +52,7 @@ public class IrEffectsTests
     [Scenario(TestScenario.Boundary)]
     public void Of_ArrayAsSpan_ReadsNoMemory()
     {
-        var effects = IrEffects.Of(IrTestCases.Result(IrClassifierTests.Classify("AsSpanView")), Compilation);
+        var effects = EffectsOfResult("AsSpanView");
 
         Assert.Equal("{data}", effects.Reads.ToString());
     }
@@ -61,7 +61,7 @@ public class IrEffectsTests
     [Scenario(TestScenario.HappyPath)]
     public void Of_PureDeviceFunction_ReadsMemoryAndWritesNothing()
     {
-        var effects = IrEffects.Of(IrTestCases.Result(IrClassifierTests.Classify("CallsPure")), Compilation);
+        var effects = EffectsOfResult("CallsPure");
 
         Assert.Equal("{memory, x}", effects.Reads.ToString());
         Assert.True(effects.Writes.IsEmpty);
@@ -72,7 +72,7 @@ public class IrEffectsTests
     public void Of_OutDiscard_WritesNothing()
     {
         // The syntax walk takes the discard as a location in memory
-        var effects = IrEffects.Of(IrTestCases.Result(IrClassifierTests.Classify("DiscardOut")), Compilation);
+        var effects = EffectsOfResult("DiscardOut");
 
         Assert.True(effects.Writes.IsEmpty);
     }
@@ -112,6 +112,10 @@ public class IrEffectsTests
     // The members of a set in a fixed order
     private static string Normalize(string set) =>
         "{" + string.Join(", ", set.Trim('{', '}').Split(", ").OrderBy(static m => m, StringComparer.Ordinal)) + "}";
+
+    // The effects of the result of the classified case name
+    private static ExpressionEffects EffectsOfResult(string name) =>
+        IrEffects.Of(IrTestCases.Result(IrClassifierTests.Classify(name)), Compilation);
 
     private static (ExpressionEffects Left, ExpressionEffects Right) Operands(string name)
     {
