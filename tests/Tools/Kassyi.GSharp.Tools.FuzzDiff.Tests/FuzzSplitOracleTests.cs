@@ -1,10 +1,12 @@
 #nullable enable
 using System.Runtime.Loader;
 using Kassyi.GSharp.Compiler;
+using Kassyi.GSharp.Compiler.Diagnostics.Host;
 using Kassyi.GSharp.Tests.Shared.Differential;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Tools.FuzzDiff.Tests;
 
@@ -101,6 +103,33 @@ public class FuzzSplitOracleTests
                     $"{kernel} thread {gid}: expected {expected(gid)}, managed path gave {(long)checksum[gid]}");
             }
         }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void OracleTwins_HandComputedKernels_RaiseNoHostIntrinsicError()
+    {
+        string source = FuzzSplitOracle.WithOracleTwins(TestCaseFiles.Read("Split", "HandComputedSplitKernels.cs"));
+        var compilation = FuzzTestCompilationHelper.CreateCompilation(
+            source,
+            "SplitTwinHostIntrinsics",
+            OptimizationLevel.Release,
+            out _
+        );
+        var diagnostics = compilation
+            .WithAnalyzers([new HostIntrinsicAnalyzer()])
+            .GetAnalyzerDiagnosticsAsync()
+            .GetAwaiter()
+            .GetResult();
+
+        // A twin is a plain method that reads the thread index; the fuzzer runs it once per thread with the thread
+        // context set (SequentialOracle.RunEachThread). The batch project builds with the G# analyzers, so a GSH0018
+        // error on the twins fails the build of every batch that holds a split kernel.
+        // mutant: FuzzSplitOracle.WithOracleTwins: write the twins without the GSH0018 suppression
+        // input: HandComputedSplitKernels.cs with its twins
+        Assert.DoesNotContain(diagnostics, static d => d.Id == "GSH0018");
     }
 
     [Theory]
