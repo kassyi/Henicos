@@ -545,8 +545,8 @@ internal static class WrapperEmitter
 
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    $"throw new {HostTypeNames.ArgumentException}(\"{InconsistentProxyMessage}\", {Literal(shape.Name)});");
+                writer.Append($"throw new {HostTypeNames.ArgumentException}(\"{InconsistentProxyMessage}\", ");
+                writer.AppendLine($"{Literal(shape.Name)});");
             }
         }
 
