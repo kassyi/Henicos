@@ -1,5 +1,11 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Host;
 
+/// <summary>
+/// Reports host code that calls, reads or names a GPU-only member (<see cref="GpuOnlyMembers"/>): a call, a property or
+/// indexer access, or a method group (a delegate or a function pointer) (GSH0018).
+/// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class HostIntrinsicAnalyzer : DiagnosticAnalyzer
 {
@@ -8,31 +14,40 @@ public class HostIntrinsicAnalyzer : DiagnosticAnalyzer
 
     public override void Initialize(AnalysisContext context)
     {
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        // Generated code is analyzed too; HostReferences skips only G#'s own output
+        context.ConfigureGeneratedCodeAnalysis(
+            GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics
+        );
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
+        context.RegisterOperationAction(
+            AnalyzeReference,
+            OperationKind.Invocation,
+            OperationKind.MethodReference,
+            OperationKind.PropertyReference
+        );
     }
 
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeReference(OperationAnalysisContext context)
     {
-        var invocation = (InvocationExpressionSyntax)context.Node;
-        if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol methodSymbol)
+        var operation = context.Operation;
+        var member = GetMember(operation);
+        if (!GpuOnlyMembers.IsGpuOnly(member) || !HostReferences.IsHostReference(operation, context.CancellationToken))
         {
             return;
         }
 
-        var isIntrinsic = methodSymbol.HasAttribute(KnownAttributes.CudaIntrinsic);
-        if (!isIntrinsic)
-        {
-            return;
-        }
-
-        if (GpuExecutionSpace.IsWithinGpuFunction(
-                context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart, context.CancellationToken)))
-        {
-            return;
-        }
-
-        context.ReportDiagnostic(GSharpDiagnostics.HostIntrinsicCallError, invocation, methodSymbol.Name);
+        context.ReportDiagnostic(
+            GSharpDiagnostics.HostIntrinsicCallError,
+            operation.Syntax,
+            GpuOnlyMembers.GetDisplayName(member.OriginalDefinition)
+        );
     }
+
+    private static ISymbol? GetMember(IOperation operation) => operation switch
+    {
+        IInvocationOperation invocation => invocation.TargetMethod,
+        IMethodReferenceOperation reference => reference.Method,
+        IPropertyReferenceOperation property => property.Property,
+        _ => null
+    };
 }

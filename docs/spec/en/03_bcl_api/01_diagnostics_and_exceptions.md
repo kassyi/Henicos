@@ -44,7 +44,7 @@ During the build, the source generator of the `Kassyi.GSharp.Compiler` package (
 | [**GSH0015**](diagnostics/GSH0015.md) | Warning | **Auto-allocate return in loop.** You called a kernel that returns an array from inside a loop (`for`, `foreach`, `while`, `do`) on the host. This allocates a new unmanaged buffer every iteration. |
 | [**GSH0016**](diagnostics/GSH0016.md) | Error | **Unroll factor must be a non-negative compile-time constant.** The argument `factor` of `Gpu.Hint.Unroll` must be a compile-time non-negative integer. |
 | [**GSH0017**](diagnostics/GSH0017.md) | Error | **Unroll hint must precede a loop.** `Gpu.Hint.Unroll` must immediately precede a `for`, `while`, or `do-while` loop. |
-| [**GSH0018**](diagnostics/GSH0018.md) | Error | **GPU intrinsic called from host.** Triggered when a GPU-specific intrinsic is invoked from a CPU host method. |
+| [**GSH0018**](diagnostics/GSH0018.md) | Error | **GPU intrinsic called from host.** Triggered when host code calls, reads or names a GPU-only intrinsic (`Gpu.SyncThreads()`, `ThreadIndex.X`). |
 | [**GSH0019**](diagnostics/GSH0019.md) | Error | **Manual GetEnumerator calls are not supported.** Explicit calls to `GetEnumerator()` are prohibited to ensure zero-allocation. Use a `foreach` loop over supported types like `Span<T>` instead. |
 | [**GSH0020**](diagnostics/GSH0020.md) | Error | **Missing IDisposable implementation.** A class holds a disposable GPU resource (e.g., `GpuWorkspace`) but does not implement `IDisposable`. |
 | [**GSH0021**](diagnostics/GSH0021.md) | Warning | **Undisposed GPU resource (Deprecated).** Disabled by default and no longer reported; an owned field that `Dispose()` does not release is reported as [GSH0022](diagnostics/GSH0022.md). |
