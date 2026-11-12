@@ -43,9 +43,6 @@ public sealed class KnownIssueFilter
     /// <summary>Issue #1103: <c>default(T)</c> leaves the fields of a struct with an implicit conversion uninitialized on native and CUDA.</summary>
     public const int Issue1103StructConversionDefault = 1103;
 
-    /// <summary>Issue #1078: MSVC <c>/Og</c> optimizer miscompiles in generated native C++ kernels (including negated dividend division, 11177375).</summary>
-    public const int Issue1078MsvcOptimizerMiscompile = 1078;
-
     /// <summary>Gets the complete list of issue numbers that have an avoidance handler in the generator.</summary>
     public static IReadOnlyList<int> SupportedAvoidanceIssues { get; } =
     [
@@ -58,7 +55,6 @@ public sealed class KnownIssueFilter
         Issue1101CoalesceAssignValue,
         Issue1102ComplexTupleDeconstruction,
         Issue1103StructConversionDefault,
-        Issue1078MsvcOptimizerMiscompile,
     ];
 
     private readonly HashSet<int> _avoidedIssues;
@@ -122,9 +118,6 @@ public sealed class KnownIssueFilter
 
     /// <summary>Gets whether #1103 (<c>default(T)</c> of a struct with a conversion operator) should be avoided.</summary>
     public bool AvoidStructConversionDefault => _avoidedIssues.Contains(Issue1103StructConversionDefault);
-
-    /// <summary>Gets whether #1078 shape 1 (negation followed by division) should be avoided.</summary>
-    public bool AvoidMsvcNegatedConstantDivision => _avoidedIssues.Contains(Issue1078MsvcOptimizerMiscompile);
 
     /// <summary>Returns <see langword="true"/> if <paramref name="issueNumber"/> is currently avoided.</summary>
     public bool IsAvoided(int issueNumber) => _avoidedIssues.Contains(issueNumber);

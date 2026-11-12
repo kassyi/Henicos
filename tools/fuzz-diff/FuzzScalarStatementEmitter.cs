@@ -179,10 +179,7 @@ internal static class FuzzScalarStatementEmitter
             leftIsSimpleLocal: true);
         state.Statements.Add($"{uint32Local.Name} = ({uint32Local.Name} ^ {unsignedDivExpr});");
 
-        if (!state.IssueFilter.AvoidMsvcNegatedConstantDivision)
-        {
-            state.Statements.Add($"{int32Local.Name} = ({int32Local.Name} ^ ((-{int32Local.Name}) / 3));");
-        }
+        state.Statements.Add($"{int32Local.Name} = ({int32Local.Name} ^ ((-{int32Local.Name}) / 3));");
     }
 
     private static void EmitEnumStatements(KernelGenerationState state)

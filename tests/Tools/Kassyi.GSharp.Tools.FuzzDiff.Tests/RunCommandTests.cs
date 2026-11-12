@@ -251,15 +251,15 @@ public class RunCommandTests
     {
         var totals = new FuzzRunTotals();
 
-        totals.Count(new JsonObject { ["suspectedIssue"] = 1078 });
-        totals.Count(new JsonObject { ["suspectedIssue"] = 998 });
-        totals.Count(new JsonObject { ["suspectedIssue"] = 1078 });
+        totals.Count(new JsonObject { ["suspectedIssue"] = 90001 });
+        totals.Count(new JsonObject { ["suspectedIssue"] = 90002 });
+        totals.Count(new JsonObject { ["suspectedIssue"] = 90001 });
         totals.Count(new JsonObject { ["status"] = "hang" });
         totals.Count(new JsonObject { ["status"] = "failed" });
 
         Assert.Equal(5, totals.Failures);
-        Assert.Equal(2, totals.SuspectedIssues[1078]);
-        Assert.Equal(1, totals.SuspectedIssues[998]);
+        Assert.Equal(2, totals.SuspectedIssues[90001]);
+        Assert.Equal(1, totals.SuspectedIssues[90002]);
         Assert.Equal(1, totals.Hangs);
         Assert.Equal(1, totals.OtherFindings);
     }

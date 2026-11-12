@@ -72,21 +72,6 @@
       "profiles": ["C", "G"],
       "paths": ["Native", "Cuda"],
       "avoidedShape": "default(T) or default literal for a struct that declares a user-defined conversion operator or contains such a struct as a field, including reducer local-declaration hoisting to default(T)."
-    },
-    {
-      "issue": 1078,
-      "kind": "classify",
-      "classifyOnlyPaths": ["Native"],
-      "summary": "MSVC /Og optimizer miscompiles in generated native C++ kernels",
-      "profiles": ["C", "G"],
-      "paths": ["Native"],
-      "shapes": [
-        "Negation followed by division by a constant (-x / C or (0 - x) / C; Microsoft 11177375)",
-        "Zero-extension and sign-extension mix-up on a single short value (Microsoft 11127140)",
-        "Truncation to short dropped before choosing a pointer assignment target (fixed in MSVC 19.52+)"
-      ],
-      "removalCondition": "Remove this entry once the #1078 compiler workaround is merged.",
-      "avoidedShape": "Negation (-x or 0 - x) used directly as the dividend of a division or remainder operation on Profile C until the #1078 workaround is merged."
     }
   ]
 }
