@@ -17,10 +17,10 @@ private static byte[]? s_fatbin;
 /// </summary>
 public static byte[] GetFatbin()
 {
-var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
 if (fatbin is not null) return fatbin;
-var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
+string fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
 {
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
@@ -159,7 +159,7 @@ if (host.OperandA != null)
 int size = checked(host.OperandA.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.OperandA, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.OperandA, out global::System.IntPtr region))
 {
 native.OperandA.Data = region;
 }
@@ -167,7 +167,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.OperandA.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.OperandA, native.OperandA.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandA, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandA, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.OperandA.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -189,7 +189,7 @@ if (host.OperandB != null)
 int size = checked(host.OperandB.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.OperandB, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.OperandB, out global::System.IntPtr region))
 {
 native.OperandB.Data = region;
 }
@@ -197,7 +197,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.OperandB.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.OperandB, native.OperandB.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandB, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandB, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.OperandB.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -219,7 +219,7 @@ if (host.Result != null)
 int size = checked(host.Result.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.Result, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Result, out global::System.IntPtr region))
 {
 native.Result.Data = region;
 }
@@ -227,7 +227,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.Result.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.Result, native.Result.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Result, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Result, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Result.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -254,7 +254,7 @@ if (host.OperandA != null && native.OperandA.Data != global::System.IntPtr.Zero)
 int size = checked(host.OperandA.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandA, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandA, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.OperandA.Data, (global::System.IntPtr)size, hStream));
@@ -270,7 +270,7 @@ if (host.OperandB != null && native.OperandB.Data != global::System.IntPtr.Zero)
 int size = checked(host.OperandB.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandB, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandB, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.OperandB.Data, (global::System.IntPtr)size, hStream));
@@ -286,7 +286,7 @@ if (host.Result != null && native.Result.Data != global::System.IntPtr.Zero)
 int size = checked(host.Result.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Result, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Result, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Result.Data, (global::System.IntPtr)size, hStream));
@@ -324,7 +324,7 @@ if (host.Buffer1 != null)
 int size = checked(host.Buffer1.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.Buffer1, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Buffer1, out global::System.IntPtr region))
 {
 native.Buffer1.Data = region;
 }
@@ -332,7 +332,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.Buffer1.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.Buffer1, native.Buffer1.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Buffer1.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -354,7 +354,7 @@ if (host.Buffer2 != null)
 int size = checked(host.Buffer2.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.Buffer2, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Buffer2, out global::System.IntPtr region))
 {
 native.Buffer2.Data = region;
 }
@@ -362,7 +362,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.Buffer2.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.Buffer2, native.Buffer2.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Buffer2.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -384,7 +384,7 @@ if (host.Twiddles != null)
 int size = checked(host.Twiddles.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.Twiddles, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Twiddles, out global::System.IntPtr region))
 {
 native.Twiddles.Data = region;
 }
@@ -392,7 +392,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.Twiddles.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.Twiddles, native.Twiddles.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Twiddles, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Twiddles, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Twiddles.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -418,7 +418,7 @@ if (host.Buffer1 != null && native.Buffer1.Data != global::System.IntPtr.Zero)
 int size = checked(host.Buffer1.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Buffer1.Data, (global::System.IntPtr)size, hStream));
@@ -434,7 +434,7 @@ if (host.Buffer2 != null && native.Buffer2.Data != global::System.IntPtr.Zero)
 int size = checked(host.Buffer2.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Buffer2.Data, (global::System.IntPtr)size, hStream));
@@ -450,7 +450,7 @@ if (host.Twiddles != null && native.Twiddles.Data != global::System.IntPtr.Zero)
 int size = checked(host.Twiddles.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Twiddles, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Twiddles, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Twiddles.Data, (global::System.IntPtr)size, hStream));
@@ -490,7 +490,7 @@ if (host.OperandA != null)
 int size = checked(host.OperandA.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.OperandA, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.OperandA, out global::System.IntPtr region))
 {
 native.OperandA.Data = region;
 }
@@ -498,7 +498,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.OperandA.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.OperandA, native.OperandA.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandA, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandA, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.OperandA.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -520,7 +520,7 @@ if (host.OperandB != null)
 int size = checked(host.OperandB.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.OperandB, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.OperandB, out global::System.IntPtr region))
 {
 native.OperandB.Data = region;
 }
@@ -528,7 +528,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.OperandB.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.OperandB, native.OperandB.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandB, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandB, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.OperandB.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -550,7 +550,7 @@ if (host.Result != null)
 int size = checked(host.Result.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.Result, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Result, out global::System.IntPtr region))
 {
 native.Result.Data = region;
 }
@@ -558,7 +558,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.Result.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.Result, native.Result.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Result, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Result, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Result.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -580,7 +580,7 @@ if (host.Scratch != null)
 int size = checked(host.Scratch.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.Scratch, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Scratch, out global::System.IntPtr region))
 {
 native.Scratch.Data = region;
 }
@@ -588,7 +588,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.Scratch.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.Scratch, native.Scratch.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Scratch, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Scratch, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Scratch.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -614,7 +614,7 @@ if (host.OperandA != null && native.OperandA.Data != global::System.IntPtr.Zero)
 int size = checked(host.OperandA.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandA, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandA, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.OperandA.Data, (global::System.IntPtr)size, hStream));
@@ -630,7 +630,7 @@ if (host.OperandB != null && native.OperandB.Data != global::System.IntPtr.Zero)
 int size = checked(host.OperandB.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandB, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.OperandB, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.OperandB.Data, (global::System.IntPtr)size, hStream));
@@ -646,7 +646,7 @@ if (host.Result != null && native.Result.Data != global::System.IntPtr.Zero)
 int size = checked(host.Result.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Result, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Result, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Result.Data, (global::System.IntPtr)size, hStream));
@@ -662,7 +662,7 @@ if (host.Scratch != null && native.Scratch.Data != global::System.IntPtr.Zero)
 int size = checked(host.Scratch.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Scratch, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Scratch, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Scratch.Data, (global::System.IntPtr)size, hStream));
@@ -736,11 +736,11 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext __gsharp_csharp_arg_0 = 
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.FermatMegaKernel(__gsharp_csharp_arg_0));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.__gsharp_hfunc_FermatMegaKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeepStructMarshalingGuideKernels.FermatMegaKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
+global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions __gsharp_device_arrays = new();
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
@@ -781,7 +781,7 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeepStructMarshalingGuideKernels.FermatMegaKernel", "LaunchFermatMegaKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFermatMegaKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.__gsharp_hfunc_FermatMegaKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeepStructMarshalingGuideKernels.FermatMegaKernel");
@@ -853,11 +853,11 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext __gsharp_csharp_arg_0 = 
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.ModernKernel(__gsharp_csharp_arg_0));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.__gsharp_hfunc_ModernKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeepStructMarshalingGuideKernels.ModernKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
+global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions __gsharp_device_arrays = new();
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
@@ -898,7 +898,7 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeepStructMarshalingGuideKernels.ModernKernel", "LaunchModernKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchModernKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.__gsharp_hfunc_ModernKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeepStructMarshalingGuideKernels.ModernKernel");
