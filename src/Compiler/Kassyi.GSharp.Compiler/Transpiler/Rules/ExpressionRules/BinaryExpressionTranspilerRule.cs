@@ -31,22 +31,16 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             return;
         }
 
-        if (node.IsKind(SyntaxKind.EqualsExpression) || node.IsKind(SyntaxKind.NotEqualsExpression))
+        if (NullRepresentation.GetNullTestOperand(node, context.Query.SemanticModel) is { } tested)
         {
-            var isNull = node.IsKind(SyntaxKind.EqualsExpression);
-            if (node.Left.IsKind(SyntaxKind.NullLiteralExpression) &&
-                NullRepresentation.IsNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Right)))
-            {
-                NullRepresentation.AppendNullTest(node.Right, isNull, ref context);
-                return;
-            }
+            NullRepresentation.AppendNullTest(tested, node.IsKind(SyntaxKind.EqualsExpression), ref context);
+            return;
+        }
 
-            if (node.Right.IsKind(SyntaxKind.NullLiteralExpression) &&
-                NullRepresentation.IsNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Left)))
-            {
-                NullRepresentation.AppendNullTest(node.Left, isNull, ref context);
-                return;
-            }
+        // A user-defined operator has no C++ operator unless it is a macro, which its own rule expands (GSH0060)
+        if (CallTargetEmitter.TryFailOperator(node, ref context))
+        {
+            return;
         }
 
         var operation = GetOperation(node, ref context);

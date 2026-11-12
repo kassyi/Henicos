@@ -90,7 +90,7 @@ public partial class DiagnosticParityTests : TranspilerTestBase
         }
 
         // Bidirectional check between GSharpDiagnostics descriptor fields (via Roslyn symbols) and diagnostics.json
-        var gsharpDiagnosticsSymbol = MegaCompilationCache.BaseCompilation
+        var gsharpDiagnosticsSymbol = RoslynTestUtility.BaseCompilation
             .GetTypeByMetadataName("Kassyi.GSharp.Compiler.Diagnostics.GSharpDiagnostics");
         Assert.NotNull(gsharpDiagnosticsSymbol);
 

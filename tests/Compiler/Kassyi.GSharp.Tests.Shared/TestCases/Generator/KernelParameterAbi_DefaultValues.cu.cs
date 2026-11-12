@@ -9,7 +9,7 @@ namespace AbiTest.DefaultValues
         [GpuKernel]
         [SkipSnapshotConsistency("Generator case")]
         public static void ScaleKernel(float[] data, bool enabled = true, bool inverted = false, float scale = 1.5f,
-            double offset = 0.25, int count = 3, string label = "a\"b", float[]? extra = null)
+            double offset = 0.25, int count = 3, float[]? extra = null)
         {
             int i = ThreadIndex.X;
             data[i] = data[i] * scale;

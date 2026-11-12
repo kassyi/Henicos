@@ -29,6 +29,12 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             return;
         }
 
+        // A user-defined operator has no C++ operator unless it is a macro, which its own rule expands (GSH0060)
+        if (CallTargetEmitter.TryFailOperator(node, ref context))
+        {
+            return;
+        }
+
         if ((node.IsKind(SyntaxKind.PreIncrementExpression) || node.IsKind(SyntaxKind.PreDecrementExpression)) &&
             PropertyAccessorCall.IsAccessorPropertyTarget(node.Operand, ref context))
         {

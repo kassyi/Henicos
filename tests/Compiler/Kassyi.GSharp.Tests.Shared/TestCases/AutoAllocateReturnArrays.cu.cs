@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
-    public unsafe class AutoAllocateReturnTest
+    public unsafe partial class AutoAllocateReturnTest
     {
         [GpuKernel]
         public static float ComputeMag(float* a) 

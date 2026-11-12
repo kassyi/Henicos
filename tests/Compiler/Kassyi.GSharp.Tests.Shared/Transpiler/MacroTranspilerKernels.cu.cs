@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.TestCases.Transpiler;
 
 [SkipSnapshotConsistency]
-public class GEN_35_MacroTranspiler_InGpuKernel
+public partial class GEN_35_MacroTranspiler_InGpuKernel
 {
     [GpuKernel(Cooperative = true)]
     public static void MyKernel()
