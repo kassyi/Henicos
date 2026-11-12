@@ -112,7 +112,9 @@ internal static class MetamorphicTestSupport
         {
             if (d.Severity == DiagnosticSeverity.Error)
             {
+#pragma warning disable RS0030 // Picks the source line of a compile error for the human-readable failure message
                 string[] lines = source.Split('\n');
+#pragma warning restore RS0030
                 int errLine = d.Location.GetLineSpan().StartLinePosition.Line;
                 string snippet = errLine >= 0 && errLine < lines.Length ? lines[errLine] : string.Empty;
                 Assert.Fail($"Compilation error ({dialect}): {d} | Line {errLine + 1}: {snippet}");
