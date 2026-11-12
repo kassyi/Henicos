@@ -58,7 +58,7 @@ public class KeywordTypeNameGeneratorTests
 
     private static (GeneratorDriver Driver, Compilation Output, ImmutableArray<Diagnostic> Diagnostics) Run(
         string dialect) =>
-        RoslynTestUtility.RunGenerator(
+        GeneratorTestRunner.RunGenerator(
             RoslynTestUtility.CreateCompilation(
                 RoslynTestUtility.ReadTestCase("Generators/KeywordTypeNames.cs"),
                 RoslynTestUtility.ReadTestCase("Generators/KeywordNamespaceKernels.cs")

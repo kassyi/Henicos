@@ -15,7 +15,7 @@ public class ExplicitUnionEmissionTests
     {
         var source = RoslynTestUtility.ReadTestCase("Layout/ExplicitUnionOrder.cs");
 
-        var (_, output, _) = RoslynTestUtility.RunGenerator(source, dialect);
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(source, dialect);
 
         var generated = string.Concat(output.SyntaxTrees.Select(static tree => tree.ToString()));
         Assert.True(

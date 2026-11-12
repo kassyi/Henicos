@@ -108,7 +108,7 @@ public class KernelParameterAbiTests
 
     private static string GetWrapper(string source, string dialect, string className)
     {
-        var (_, output, diagnostics) = RoslynTestUtility.RunGenerator(source, dialect);
+        var (_, output, diagnostics) = GeneratorTestRunner.RunGenerator(source, dialect);
         Assert.DoesNotContain(diagnostics, static d => d.Severity == DiagnosticSeverity.Error);
         return output.SyntaxTrees
             .Single(t => t.FilePath.EndsWith($"{className}.g.cs", StringComparison.Ordinal))

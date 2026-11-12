@@ -11,7 +11,7 @@ public class WmmaTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void WmmaInt8RowMajor_Transpilation_EmitsDialectFragmentsAndIntrinsics()
     {
-        var (source, diagnostics) = RoslynTestUtility.TranspileMethod<WmmaKernels>(
+        var (source, diagnostics) = TranspileTestRunner.TranspileMethod<WmmaKernels>(
             nameof(WmmaKernels.WmmaInt8RowMajorKernel), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

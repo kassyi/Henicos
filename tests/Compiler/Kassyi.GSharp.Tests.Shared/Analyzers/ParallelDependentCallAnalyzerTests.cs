@@ -12,7 +12,7 @@ public class ParallelDependentCallAnalyzerTests : TranspilerTestBase
         string testCasePath,
         string[] expectedDiagnosticIds)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsDiagnosticsAsync(expectedDiagnosticIds);
     }
 
@@ -23,7 +23,7 @@ public class ParallelDependentCallAnalyzerTests : TranspilerTestBase
         string featureId,
         string testCasePath)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .HasNoErrorsAsync();
     }
 }

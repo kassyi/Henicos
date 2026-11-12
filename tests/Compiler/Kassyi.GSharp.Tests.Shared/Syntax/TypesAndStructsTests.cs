@@ -116,7 +116,7 @@ public class TypesAndStructsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void TranspileMethod_TargetTypedNewKernel_ProducesCudaWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod(
             typeof(TargetTypedNewKernels), nameof(TargetTypedNewKernels.HappyPathKernel), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -127,7 +127,7 @@ public class TypesAndStructsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void TupleDeconstruction_InvocationAndTranspilation_TranspilesAndUpdatesArray()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.TupleDeconstruction), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -143,7 +143,7 @@ public class TypesAndStructsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void PrimaryConstructor_InvocationAndTranspilation_TranspilesAndCalculatesSum()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.PrimaryConstructor), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -159,7 +159,7 @@ public class TypesAndStructsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void RecordStructWithExpression_WithAssignment_EmitsSourceWithoutUnsupportedDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.RecordStructWithExpression), isDevice: false, dialect: CurrentDialect);
 
         // 'with' on a struct is a supported construct (StructWithExpressionTests runs it); a class is reported by
@@ -173,7 +173,7 @@ public class TypesAndStructsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void StructIndexer_InvocationAndTranspilation_TranspilesAndCalculatesSum()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.StructIndexer), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -188,7 +188,7 @@ public class TypesAndStructsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void StructOperatorOverload_InvocationAndTranspilation_TranspilesAndSumsFields()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.StructOperatorOverload), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -203,7 +203,7 @@ public class TypesAndStructsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void ReadonlyStruct_InvocationAndTranspilation_TranspilesAndCalculatesSum()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.ReadonlyStruct), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -219,7 +219,7 @@ public class TypesAndStructsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void EnumBaseTypeAndFlags_InvocationAndTranspilation_TranspilesAndCalculatesFlag()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.EnumBaseTypeAndFlags), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

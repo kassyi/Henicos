@@ -75,7 +75,7 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public async Task BarrierAfterDivergentExit_DivergentReturnPrecedingBarrier_ReportsWarning()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/BarrierUsage/ExitOnlyBarrierKernels.cu.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
@@ -95,7 +95,7 @@ public class FlowSensitiveUniformityAnalyzerTests : TranspilerTestBase
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath)
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
 
         return diagnostics
             .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))

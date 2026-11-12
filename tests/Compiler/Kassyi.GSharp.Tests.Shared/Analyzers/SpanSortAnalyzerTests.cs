@@ -16,7 +16,7 @@ public class SpanSortAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Sort_UnsupportedForms_ReportGSH0003AtTheirArgument()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/SpanSort/SpanSortUnsupported.cs", s_analyzer)
             .GetDiagnosticsAsync();
 

@@ -1056,7 +1056,7 @@ public class MathDifferentialTests
     public void BitOperationsNuintOverloads_GeneratorEmission_EmitsIntrinsicCallsWithoutUndeclaredSystemUIntPtr()
     {
         var source = Helpers.RoslynTestUtility.ReadTestCase("Differential/BitOpsNuintProbeKernels.cs");
-        var (driver, _, _) = Helpers.RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = Helpers.GeneratorTestRunner.RunGenerator(source, "Cpu");
         var sb = new System.Text.StringBuilder();
         foreach (var tree in driver.GetRunResult().GeneratedTrees)
         {

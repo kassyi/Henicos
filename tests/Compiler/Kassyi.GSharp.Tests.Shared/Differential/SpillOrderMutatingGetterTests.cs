@@ -19,7 +19,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     private static Assembly CompileManagedShapeAssembly(string testId, string relativePath = "Transpiler/Emission/SpillOrderMutatingGetterShapeKernels.cu.cs")
     {
         string source = RoslynTestUtility.ReadTestCase(relativePath);
-        var (_, outputCompilation, generatorDiagnostics) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (_, outputCompilation, generatorDiagnostics) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         var genErrors = generatorDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
         Assert.Empty(genErrors);
 

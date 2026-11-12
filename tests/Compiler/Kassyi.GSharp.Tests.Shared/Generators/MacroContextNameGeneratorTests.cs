@@ -9,7 +9,7 @@ public class MacroContextNameGeneratorTests
     private static string Generate(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase("Generators/GpuKernel_MacroContextName.cu.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, dialect);
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, dialect);
         return string.Join("\n", driver.GetRunResult().GeneratedTrees.Select(static t => t.GetText().ToString()));
     }
 

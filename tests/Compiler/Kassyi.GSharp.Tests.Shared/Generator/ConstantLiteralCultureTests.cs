@@ -39,7 +39,7 @@ public class ConstantLiteralCultureTests
         try
         {
             CultureInfo.CurrentCulture = culture;
-            var (driver, _, diagnostics) = RoslynTestUtility.RunGenerator(source, dialect);
+            var (driver, _, diagnostics) = GeneratorTestRunner.RunGenerator(source, dialect);
             Assert.Empty(diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
             return driver.GetRunResult().Results
                 .SelectMany(static r => r.GeneratedSources)

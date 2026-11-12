@@ -57,7 +57,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_UnsafeAsPointer_FailsAsAMethodTheDialectDoesNotImplement()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.UnsafeAsPointer), dialect: CurrentDialect);
 
         // No dialect defines Unsafe.AsPointer; its bare name would not build
@@ -70,7 +70,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_MemoryMarshalCast_FailsAsAMethodTheDialectDoesNotImplement()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.MemoryMarshalCast), dialect: CurrentDialect);
 
         // No dialect defines MemoryMarshal.Cast; its bare name would not build
@@ -82,7 +82,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_RefFieldsUpdate_EmitsRefWrapperStructAndAssignment()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.RefFieldsUpdate), isDevice: true, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -94,7 +94,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_SimdVector128_EmitsVectorTypeAndArrayAccess()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.SimdVector128), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -113,7 +113,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_PointerIncrementKernel_EmitsPointerArithmeticAssignments()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod(
             typeof(AdvancedMemoryKernels), nameof(AdvancedMemoryKernels.PointerIncrementKernel), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -125,7 +125,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_FixedSizeBuffers_EmitsStructWithInlineArray()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.FixedSizeBuffers), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

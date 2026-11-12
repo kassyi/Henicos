@@ -22,7 +22,7 @@ public class CudaImportAnalyzerTests
     [Scenario(TestScenario.SadPath)]
     public async Task Parameters_LauncherCannotPass_ReportGSH0110OverEachParameter()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer(TestCase, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer(TestCase, s_analyzer).GetDiagnosticsAsync();
 
         var actual = diagnostics
             .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
@@ -78,7 +78,7 @@ public class CudaImportAnalyzerTests
         string type,
         string reason)
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer(TestCase, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer(TestCase, s_analyzer).GetDiagnosticsAsync();
 
         var message = Assert.Single(
             diagnostics,

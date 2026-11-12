@@ -24,7 +24,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_IndexAndRange_EmitsUnsupportedDiagnosticAndPlaceholder()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<CollectionsAndMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<CollectionsAndMemoryTarget>(
             nameof(CollectionsAndMemoryTarget.IndexAndRange), dialect: CurrentDialect);
 
         // The analyzer reports the construct (UnsupportedSyntaxKindDiagnosticsTests); the transpiler records the failure and
@@ -37,7 +37,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_SpanUsage_EmitsAsSpanCallsAndLengthProperty()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<CollectionsAndMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<CollectionsAndMemoryTarget>(
             nameof(CollectionsAndMemoryTarget.SpanUsage), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -50,7 +50,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_MultidimensionalIndexer_EmitsFlatIndexCalculation()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<CollectionsAndMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<CollectionsAndMemoryTarget>(
             nameof(CollectionsAndMemoryTarget.MultidimensionalIndexer), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

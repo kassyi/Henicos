@@ -11,7 +11,7 @@ public class WmmaAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Wmma_UnsupportedFragmentsLocationsAndOperands_ReportsGSH0076()
     {
-        var diagnostics = (await RoslynTestUtility
+        var diagnostics = (await GeneratorTestRunner
             .TestAnalyzer("Analyzers/Wmma_SadPath.cs", s_analyzer)
             .GetDiagnosticsAsync())
             .Where(static d => d.Id == GSharpDiagnostics.UnsupportedWarpMatrixOperation.Id)
@@ -73,7 +73,7 @@ public class WmmaAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Wmma_UserAndCoreMarkerLocals_ReportsGSH0076OnlyForTheCoreMarkers()
     {
-        var diagnostics = (await RoslynTestUtility
+        var diagnostics = (await GeneratorTestRunner
             .TestAnalyzer("Analyzers/Wmma_MarkerKinds.cs", s_analyzer)
             .GetDiagnosticsAsync())
             .Where(static d => d.Severity >= DiagnosticSeverity.Warning)

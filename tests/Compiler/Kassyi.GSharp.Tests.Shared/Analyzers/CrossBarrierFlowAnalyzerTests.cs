@@ -16,7 +16,7 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task CrossBarrierLocals_LiveAfterSplit_ReportedOnlyWhenLiveAfterSplit()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierFlowKernels.cu.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
@@ -69,7 +69,7 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task CrossBarrierSpilledArgument_SpanChangedByEarlierArgument_ReportsChangedSpan()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierSpilledArgumentKernels.cu.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
@@ -99,7 +99,7 @@ public class CrossBarrierFlowAnalyzerTests : TranspilerTestBase
         var (compilation, _, _) = RoslynTestUtility.GetTestCaseContext("Analyzers/BarrierUsage/CrossBarrierRefStructParameterKernels.cu.cs");
         Assert.DoesNotContain(compilation.GetDiagnostics(), static d => d.Severity == DiagnosticSeverity.Error);
 
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/BarrierUsage/CrossBarrierRefStructParameterKernels.cu.cs", s_analyzer)
             .GetDiagnosticsAsync();
 

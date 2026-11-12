@@ -25,7 +25,7 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.HappyPath)]
     public void GridSyncMode_DeterministicMode_EmitsOnlyDeterministicBarrier()
     {
-        var (source, failures) = RoslynTestUtility.TranspileMethod(typeof(GridSyncModeKernels),
+        var (source, failures) = TranspileTestRunner.TranspileMethod(typeof(GridSyncModeKernels),
             nameof(GridSyncModeKernels.DeterministicOnlyKernel), isDevice: false, dialect: new GSharpCudaDialect());
 
         Assert.Empty(failures);
@@ -38,7 +38,7 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.HappyPath)]
     public void GridSyncMode_FastMode_EmitsOnlyFastBarrier()
     {
-        var (source, failures) = RoslynTestUtility.TranspileMethod(typeof(GridSyncModeKernels),
+        var (source, failures) = TranspileTestRunner.TranspileMethod(typeof(GridSyncModeKernels),
             nameof(GridSyncModeKernels.FastOnlyKernel), isDevice: false, dialect: new GSharpCudaDialect());
 
         Assert.Empty(failures);
@@ -53,7 +53,7 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.Boundary)]
     public void GridSyncMode_EveryConstantSpelling_PicksBarrierOfItsMode()
     {
-        var (source, failures) = RoslynTestUtility.TranspileMethod(typeof(GridSyncModeKernels),
+        var (source, failures) = TranspileTestRunner.TranspileMethod(typeof(GridSyncModeKernels),
             nameof(GridSyncModeKernels.EveryModeSpellingKernel), isDevice: false, dialect: new GSharpCudaDialect());
 
         Assert.Empty(failures);
@@ -68,7 +68,7 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.Boundary)]
     public void GridSyncMode_FastInsideBody_KeepsModeAndInsertedBarriersAreDeterministic()
     {
-        var (source, failures) = RoslynTestUtility.TranspileMethod(typeof(GridSyncModeKernels),
+        var (source, failures) = TranspileTestRunner.TranspileMethod(typeof(GridSyncModeKernels),
             nameof(GridSyncModeKernels.FastInsideBodyKernel), isDevice: false, dialect: new GSharpCudaDialect());
 
         Assert.Empty(failures);

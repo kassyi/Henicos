@@ -7,7 +7,7 @@ public class NativeStructGenerationTests
     [Category(TestCategory.Syntax)]
     public async Task NativeStructGeneration_ArrayFieldsAndNestedStructs_EmitsMatchingCppStructs()
     {
-        var testConfig = RoslynTestUtility.TestGenerator("Analyzers/NativeStructGeneration.cs");
+        var testConfig = GeneratorTestRunner.TestGenerator("Analyzers/NativeStructGeneration.cs");
 
         // 0. Verify that generator execution and compilation produced no errors
         await testConfig.HasNoErrorsAsync();

@@ -100,7 +100,7 @@ public class HostIntrinsicAnalyzerTests
         var compilation = RoslynTestUtility.CreateCompilationAt(
             ("ManagedKernelBody.cs", ReadCase("ManagedKernelBody.cs"))
         );
-        var (_, output, _) = RoslynTestUtility.RunGenerator(compilation, "Cpu");
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(compilation, "Cpu");
 
         // The managed body of the Cpu dialect reads the GPU-only members, so the test sees the generator's own output
         var generated = output.SyntaxTrees.Where(tree => tree.FilePath != "ManagedKernelBody.cs").ToArray();

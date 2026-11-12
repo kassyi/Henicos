@@ -80,7 +80,7 @@ public class ContractsAndPtxTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_ConstexprPropagation_EmitsFoldedConstantValue()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ContractsAndPtxTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ContractsAndPtxTarget>(
             nameof(ContractsAndPtxTarget.ConstexprPropagation), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -93,7 +93,7 @@ public class ContractsAndPtxTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_WmmaTensorCores_EmitsPtxOrUnsupportedComment()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ContractsAndPtxTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ContractsAndPtxTarget>(
             nameof(ContractsAndPtxTarget.WmmaTensorCores), dialect: CurrentDialect);
 
         // The analyzer warns about the call in the CPU dialect (DialectDiagnosticsTests); the transpiler reports nothing

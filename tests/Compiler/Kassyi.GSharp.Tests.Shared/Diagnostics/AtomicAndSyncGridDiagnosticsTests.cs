@@ -60,7 +60,7 @@ public class AtomicAndSyncGridDiagnosticsTests
     public void InterlockedAdd64Cast_GeneratorRun_EmitsSignedResult(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase(Atomic64AndSharedEmissionCase);
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, dialect);
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, dialect);
         string generated = string.Join(
             "\n",
             driver.GetRunResult().Results.SelectMany(static r => r.GeneratedSources).Select(static s => s.SourceText.ToString()));
@@ -76,7 +76,7 @@ public class AtomicAndSyncGridDiagnosticsTests
     public void SharedMemoryDeclaration_CudaGeneratorRun_HasNoInvalidInitializer()
     {
         var source = RoslynTestUtility.ReadTestCase(Atomic64AndSharedEmissionCase);
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cuda");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cuda");
         string generated = string.Join(
             "\n",
             driver.GetRunResult().Results.SelectMany(static r => r.GeneratedSources).Select(static s => s.SourceText.ToString()));
