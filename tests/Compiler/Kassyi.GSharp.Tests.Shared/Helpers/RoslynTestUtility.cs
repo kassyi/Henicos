@@ -96,6 +96,11 @@ public static class RoslynTestUtility
         return (compilation, tree, model);
     }
 
+    /// <summary>Retrieves the shared compilation and the syntax tree of the calling test file.</summary>
+    public static (Compilation Compilation, SyntaxTree Tree) GetCallerSourceContext(
+        [CallerFilePath] string callerFilePath = "") =>
+        MegaCompilationCache.GetSourceContext(callerFilePath);
+
     /// <summary>Gets the base compilation references to be used for dynamically compiled tests or analyzers.</summary>
     public static IEnumerable<MetadataReference> BaseReferences => MegaCompilationCache.BaseCompilation.References;
 

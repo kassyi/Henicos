@@ -6,9 +6,7 @@ public class StructOrderingTests : TranspilerTestBase
     // Resolves within this file only: the shared compilation may contain other types with the same name.
     private static INamedTypeSymbol GetLocalTypeSymbol(string name, [CallerFilePath] string callerFilePath = "")
     {
-        var comp = RoslynTestUtility.SharedCompilation;
-        var fullPath = Path.GetFullPath(callerFilePath);
-        var tree = comp.SyntaxTrees.First(t => string.Equals(Path.GetFullPath(t.FilePath), fullPath, StringComparison.OrdinalIgnoreCase));
+        var (comp, tree) = RoslynTestUtility.GetCallerSourceContext(callerFilePath);
         var model = comp.GetSemanticModel(tree);
         return tree.GetRoot().DescendantNodes()
             .OfType<TypeDeclarationSyntax>()
@@ -18,7 +16,7 @@ public class StructOrderingTests : TranspilerTestBase
     }
 
     private static Compilation GetLocalCompilation([CallerFilePath] string callerFilePath = "") =>
-        RoslynTestUtility.SharedCompilation;
+        RoslynTestUtility.GetCallerSourceContext(callerFilePath).Compilation;
 
     [Fact]
     [Category(TestCategory.Unit)]

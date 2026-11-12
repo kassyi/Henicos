@@ -18,9 +18,7 @@ public class PropertyAccessorCopyPlanTests
         string propertyName,
         [CallerFilePath] string callerFilePath = "")
     {
-        var compilation = RoslynTestUtility.SharedCompilation;
-        var fullPath = Path.GetFullPath(callerFilePath);
-        var tree = compilation.SyntaxTrees.First(t => string.Equals(Path.GetFullPath(t.FilePath), fullPath, StringComparison.OrdinalIgnoreCase));
+        var (compilation, tree) = RoslynTestUtility.GetCallerSourceContext(callerFilePath);
         var model = compilation.GetSemanticModel(tree);
         var member = tree.GetRoot()
             .DescendantNodes()

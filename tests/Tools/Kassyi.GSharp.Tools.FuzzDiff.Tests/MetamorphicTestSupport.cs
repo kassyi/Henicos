@@ -112,20 +112,11 @@ internal static class MetamorphicTestSupport
         {
             if (d.Severity == DiagnosticSeverity.Error)
             {
+#pragma warning disable RS0030 // Picks the source line of a compile error for the human-readable failure message
+                string[] lines = source.Split('\n');
+#pragma warning restore RS0030
                 int errLine = d.Location.GetLineSpan().StartLinePosition.Line;
-                string snippet = string.Empty;
-                int currentLine = 0;
-                foreach (var lineSpan in source.AsSpan().EnumerateLines())
-                {
-                    if (currentLine == errLine)
-                    {
-                        snippet = lineSpan.ToString();
-                        break;
-                    }
-
-                    currentLine++;
-                }
-
+                string snippet = errLine >= 0 && errLine < lines.Length ? lines[errLine] : string.Empty;
                 Assert.Fail($"Compilation error ({dialect}): {d} | Line {errLine + 1}: {snippet}");
             }
         }
@@ -145,7 +136,7 @@ internal static class MetamorphicTestSupport
 
     private static CSharpCompilation CreateCompilation(string source, string assemblyName)
     {
-        var tree = SyntaxFactory.ParseSyntaxTree(source, FuzzTestCompilationHelper.ParseOptions, path: $"{assemblyName}.cu.cs");
+        var tree = CSharpSyntaxTree.ParseText(source, FuzzTestCompilationHelper.ParseOptions, path: $"{assemblyName}.cu.cs");
         return CSharpCompilation.Create(
             assemblyName,
             [tree],
