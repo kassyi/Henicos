@@ -120,22 +120,17 @@ public sealed class SignPlannerTests
         var chosen = ChosenOperand.None;
         var kernel = SignKernel.None;
         string? sign = null;
-        var expectedSpan = expected.AsSpan();
-        foreach (var range in expectedSpan.Split(' '))
+#pragma warning disable RS0030 // The test's own expectation string from the Plans table, space-separated tokens such as "first Forward -"
+        foreach (var token in expected.Split(' '))
+#pragma warning restore RS0030
         {
-            var token = expectedSpan[range];
-            if (token.IsEmpty)
-            {
-                continue;
-            }
-
             if (token is "first" or "second")
             {
-                chosen = token is "first" ? ChosenOperand.First : ChosenOperand.Second;
+                chosen = token == "first" ? ChosenOperand.First : ChosenOperand.Second;
             }
             else if (token is "+" or "-")
             {
-                sign = token is "+" ? "+" : "-";
+                sign = token;
             }
             else
             {

@@ -20,9 +20,9 @@ public class FuzzRunDecisionTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData("native", 1002)]
-    [InlineData("CUDA,Native", 1003)]
-    public void Classify_ExactPathSet_NamesTheFirstMatchingIssue(string paths, int expectedIssue)
+    [InlineData(1002, "native")]
+    [InlineData(1003, "CUDA", "Native")]
+    public void Classify_ExactPathSet_NamesTheFirstMatchingIssue(int expectedIssue, params string[] paths)
     {
         var details = Failure("failed", paths);
 
@@ -37,10 +37,10 @@ public class FuzzRunDecisionTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("Managed,Native")]
+    [InlineData("Managed", "Native")]
     [InlineData("Cuda")]
-    [InlineData("Managed,Native,Cuda")]
-    public void Classify_SupersetOrSubsetOfThePaths_IsNotClassified(string paths)
+    [InlineData("Managed", "Native", "Cuda")]
+    public void Classify_SupersetOrSubsetOfThePaths_IsNotClassified(params string[] paths)
     {
         var details = Failure("failed", paths);
 
@@ -141,18 +141,6 @@ public class FuzzRunDecisionTests
 
     private static KnownIssueEntry Entry(int issue, string[]? classifyOnlyPaths) =>
         new(issue, "wrong-result", $"issue {issue}", ["C", "G"], ["Native"], string.Empty, [], null, classifyOnlyPaths);
-
-    private static JsonObject Failure(string status, string paths)
-    {
-        var array = new JsonArray();
-        var span = paths.AsSpan();
-        foreach (var range in span.Split(','))
-        {
-            array.Add(span[range].ToString());
-        }
-
-        return new JsonObject { ["status"] = status, ["kernel"] = "K1", ["failingPaths"] = array };
-    }
 
     private static JsonObject Failure(string status, string[] paths)
     {

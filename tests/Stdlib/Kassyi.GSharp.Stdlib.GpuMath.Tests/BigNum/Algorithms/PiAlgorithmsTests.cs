@@ -12,10 +12,10 @@ public class PiAlgorithmsTests
         // Offset 0 starts from the first fractional digit '2'
         
         var first10 = BbpAlgorithm.ExtractHexDigits(0, 10);
-        Assert.True(first10.AsSpan().Equals("243F6A8885", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("243F6A8885", first10, ignoreCase: true);
         
         var next10 = BbpAlgorithm.ExtractHexDigits(10, 10);
-        Assert.True(next10.AsSpan().Equals("A308D31319", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("A308D31319", next10, ignoreCase: true);
 
         var largeOff = BbpAlgorithm.ExtractHexDigits(10000, 2);
         Assert.Equal(2, largeOff.Length);
@@ -117,12 +117,12 @@ public class PiAlgorithmsTests
 
         ChudnovskyAlgorithm.ComputePi(digits, sw, thresholdTerms: 8, asHex: true);
 
-        var output = sw.ToString().AsSpan().Trim();
+        var output = sw.ToString().AsSpan().Trim().ToString();
         var fractionHexDigits = digits;
 
         // Every printed hex digit is a digit of pi: the reference is Machin's formula in BigInteger, independent of
         // both the Chudnovsky series and the BBP digit extraction that the algorithm uses for its own self-check.
-        Assert.True(output.Equals(("3." + MachinPiHexFraction(fractionHexDigits)).AsSpan(), StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("3." + MachinPiHexFraction(fractionHexDigits), output, ignoreCase: true);
     }
 
     // The BBP self-check of the hex output covers its last digits, up to 16, at their position after the point, for
