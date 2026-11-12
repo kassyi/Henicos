@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases;
 
-public static class GEN_57_InOutArrayMarshaling
+public static partial class GEN_57_InOutArrayMarshaling
 {
     [GpuKernel]
     public static void InOutKernel([In, Out] float[] data, int n)

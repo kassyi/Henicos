@@ -25,6 +25,8 @@ public class GeneratorSadPathTests
     [InlineData("GEN-52", "Analyzers/InvalidMappingSadPath.cs", "GSH0001")]
     // A struct field of a reference type other than an array (the generated code no longer states it as #error)
     [InlineData("GEN-33", "Analyzers/UnsupportedStructFieldsSadPath.cs", "GSH0078")]
+    // An object creation inside parentheses is found as well
+    [InlineData("SYN-91_92", "Analyzers/InvalidParenthesesSadPath.cs", "GSH0001")]
     public async Task Analyzer_InvalidKernel_ReportsTheGivenDiagnostic(
         string featureId,
         string testCasePath,
@@ -76,15 +78,6 @@ public class GeneratorSadPathTests
     {
         await RoslynTestUtility.TestGenerator(testCasePath)
                                .HasNoErrorsAsync();
-    }
-
-    [Theory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData("SYN-91_92", "Analyzers/InvalidParenthesesSadPath.cs")]
-    public async Task Generator_InvalidConstruct_HasErrors(string featureId, string testCasePath)
-    {
-        await RoslynTestUtility.TestGenerator(testCasePath)
-                               .HasErrorsAsync();
     }
 
     [Fact]

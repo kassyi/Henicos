@@ -63,3 +63,10 @@ public static class GeneratedCodeHost
 {
     public static void Run(int[] o) => GeneratedCodeKernels.Valid(o);
 }
+
+// A kernel without a body has nothing to launch (GSH0003)
+public static partial class GeneratedCodeExtern
+{
+    [GpuKernel]
+    public static extern void External(int[] o);
+}

@@ -74,10 +74,10 @@ Methods marked with this attribute are mapped to `__global__` functions in CUDA 
 
 ### Where a Kernel May Be Declared
 
-A kernel runs only through the `Launch{Kernel}` method that G# generates into its class, so `[GpuKernel]` is allowed only on an ordinary `static` method of a class (a `static` class, a record class or a class nested in any type). G# reports [GSH0111](../diagnostics/GSH0111.md) and generates nothing for a kernel that is:
+A kernel runs only through the `Launch{Kernel}` method that G# generates into its class, so `[GpuKernel]` is allowed only on an ordinary `static` method of a class (a `static` class, a record class, or a class nested in a type that is not generic). The class and every type around it must be `partial` ([GSH0036](../diagnostics/GSH0036.md)). G# reports [GSH0111](../diagnostics/GSH0111.md) and generates nothing for a kernel that is:
 
 - an operator, a conversion operator, an accessor, a lambda or a local function;
-- an instance method, or a member of a struct, an interface or a C# 14 extension block;
+- an instance method, or a member of a struct, an interface, a C# 14 extension block or a `file` type;
 - a generic method, or a member of a generic type;
 - the entry point, a `[ModuleInitializer]` or `[UnmanagedCallersOnly]` method, or a method that implements an interface member;
 - an extension method that C# calls by its name (`GetEnumerator`, `GetAsyncEnumerator`, `Deconstruct`, `GetAwaiter`, `GetPinnableReference`, `Add`, `Dispose`, `DisposeAsync`), or a method that a `[CollectionBuilder]` attribute names.

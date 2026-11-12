@@ -20,7 +20,10 @@ public class KernelDeclarationAnalyzer : DiagnosticAnalyzer
 
     public override void Initialize(AnalysisContext context)
     {
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        // A kernel in code that another generator or a tool writes gets no launcher either; G#'s own output declares
+        // none
+        context.ConfigureGeneratedCodeAnalysis(
+            GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
         context.RegisterSymbolAction(AnalyzeMethod, SymbolKind.Method);
         context.RegisterOperationAction(AnalyzeFunction, OperationKind.AnonymousFunction, OperationKind.LocalFunction);
@@ -50,6 +53,7 @@ public class KernelDeclarationAnalyzer : DiagnosticAnalyzer
         // A finalizer is reported by GpuFinalizerRule (GSH0003); the implementing part of a partial method shares its
         // attributes with the defining part, which is analyzed
         if (method.MethodKind == MethodKind.Destructor || method.PartialDefinitionPart is not null ||
+            method.Locations.Length == 0 || GSharpGeneratedTrees.IsOwnOutput(method.Locations[0].SourceTree) ||
             method.GetAttribute(KnownAttributes.GpuKernel) is not { } attribute)
         {
             return;

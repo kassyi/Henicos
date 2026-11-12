@@ -13,8 +13,14 @@ internal enum KernelPlacement
     StructMember,
     InterfaceMember,
 
-    /// <summary>A member of a type that is not a class, a struct or an interface: a C# 14 extension block.</summary>
+    /// <summary>A member of a C# 14 extension block.</summary>
     ExtensionBlockMember,
+
+    /// <summary>A member of another kind of type that is not a class.</summary>
+    OtherTypeMember,
+
+    /// <summary>A member of a <c>file</c> type, or of a type nested in one.</summary>
+    FileLocalTypeMember,
     InstanceMethod,
     GenericMethod,
     MemberOfGenericType,

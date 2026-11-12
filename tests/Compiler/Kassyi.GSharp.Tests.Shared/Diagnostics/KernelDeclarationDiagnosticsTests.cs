@@ -93,7 +93,10 @@ public class KernelDeclarationDiagnosticsTests
                 (34, 42, 34, 58, Gsh0112("value", ParameterCases + "ObjectByReference", "object")),
                 (37, 42, 37, 69, Gsh0112("bag", ParameterCases + "ExtensionReceiver", "KernelParameterBag")),
                 (40, 40, 40, 51, Gsh0112("text", ParameterCases + "StringParameter", "string")),
-                (43, 37, 43, 62, Gsh0112("bags", ParameterCases + "ArrayOfClass", "KernelParameterBag[]"))
+                (43, 37, 43, 62, Gsh0112("bags", ParameterCases + "ArrayOfClass", "KernelParameterBag[]")),
+                (46, 43, 46, 61, Gsh0112("pair", ParameterCases + "TupleWithReference", "(string, int)")),
+                (49, 51, 49, 72,
+                    Gsh0112("texts", ParameterCases + "NullableMemoryOfReferences", "Memory<string>?"))
             ],
             RangesAndMessages(diagnostics, GSharpDiagnostics.KernelParameterHasNoDeviceRepresentation.Id));
     }
@@ -106,8 +109,12 @@ public class KernelDeclarationDiagnosticsTests
         new string[0])]
     [InlineData("Analyzers/KernelParameterType_SadPath.cs",
         new[] { "KernelParameterTypeCases" },
-        new[] { "LaunchDeviceParameters(" },
-        new[] { "LaunchClassParameter(", "LaunchStringParameter(", "LaunchArrayOfClass(", "LaunchExtensionReceiver(" })]
+        new[] { "LaunchDeviceParameters(", "LaunchValueTupleParameter(" },
+        new[]
+        {
+            "LaunchClassParameter(", "LaunchStringParameter(", "LaunchArrayOfClass(", "LaunchExtensionReceiver(",
+            "LaunchTupleWithReference(", "LaunchNullableMemoryOfReferences("
+        })]
     [Scenario(TestScenario.SadPath)]
     public async Task Generator_RejectedKernels_EmitsNothingForThem(
         string testCasePath,
@@ -135,16 +142,10 @@ public class KernelDeclarationDiagnosticsTests
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase("Analyzers/KernelDeclaration_GeneratedCode.cs"));
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
+        var reported = await BuildLikeCscAsync(run);
 
-        Assert.Empty(run.Output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+        Assert.Empty(CompilerErrors(reported));
         Assert.Equal(["GeneratedCodeKernels"], GeneratedKernelClasses(run));
-
-        DiagnosticAnalyzer[] analyzers = [.. KernelDiagnostics.Analyzers, new GpuKernelDirectInvocationAnalyzer()];
-        var reported = (await run.Output
-                .WithAnalyzers([.. analyzers], new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider("Cpu")))
-                .GetAnalyzerDiagnosticsAsync())
-            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
-            .ToImmutableArray();
 
         Assert.Equal(
             [
@@ -167,7 +168,119 @@ public class KernelDeclarationDiagnosticsTests
             [(64, 40, 64, 69)],
             reported.Ranges(GSharpDiagnostics.DirectGpuKernelInvocation.Id)
                 .Select(static d => (d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+        Assert.Contains(
+            (71, 31, 71, 39),
+            reported.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "without a body")
+                .Select(static d => (d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
     }
+
+    // GSH0036 reports a kernel class that is not partial, or a type around it that is not; the generator writes no
+    // part of it, which would be CS0260 and hide the analyzer diagnostics
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Generator_KernelClassesThatAreNotPartial_LeavesGsh0036AndTheOtherDiagnostics()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/KernelDeclaration_NonPartial.cs"));
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
+        var reported = await BuildLikeCscAsync(run);
+
+        Assert.Empty(CompilerErrors(reported));
+        Assert.Equal(["NonPartialWitness"], GeneratedKernelClasses(run));
+        Assert.Equal(
+            [(7, 21, 7, 38), (13, 15, 13, 30)],
+            reported.Ranges(GSharpDiagnostics.KernelClassMustBePartial.Id)
+                .Select(static d => (d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+        Assert.Equal(
+            [(30, 40, 30, 66)],
+            reported.Ranges(GSharpDiagnostics.DirectGpuKernelInvocation.Id)
+                .Select(static d => (d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+    }
+
+    // Another file cannot reopen a file-local class: alone, its launcher would land in a different class; in two
+    // files, the two generated parts would be one class with duplicate attributes (CS0579)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task KernelDeclaration_FileLocalClassesInTwoFiles_ReportsGsh0111AndGeneratesNothing()
+    {
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+            ("FileLocalA.cs", RoslynTestUtility.ReadTestCase("Analyzers/KernelDeclaration_FileLocalA.cs")),
+            ("FileLocalB.cs", RoslynTestUtility.ReadTestCase("Analyzers/KernelDeclaration_FileLocalB.cs")));
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
+        var reported = await BuildLikeCscAsync(run);
+
+        Assert.Empty(CompilerErrors(reported));
+        Assert.Empty(GeneratedKernelClasses(run));
+        Assert.Equal(
+            [
+                (8, 6, 8, 15, Gsh0111("a member of a file-local type")),
+                (8, 6, 8, 15, Gsh0111("a member of a file-local type"))
+            ],
+            RangesAndMessages(reported, GSharpDiagnostics.KernelDeclarationNotSupported.Id));
+    }
+
+    // Code that another generator or a tool writes (*.g.cs) is checked as well; the generator skips its kernels too
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task KernelDeclaration_InGeneratedFile_ReportsGsh0111AndGsh0112(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+            "KernelDeclaration_InGeneratedFile.g.cs",
+            RoslynTestUtility.ReadTestCase("Analyzers/KernelDeclaration_InGeneratedFile.cs"));
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+        var reported = run.Analyzer
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .ToImmutableArray();
+
+        Assert.Empty(GeneratedKernelClasses(run));
+        Assert.Equal(
+            [(8, 6, 8, 15, Gsh0111("a member of a struct"))],
+            RangesAndMessages(reported, GSharpDiagnostics.KernelDeclarationNotSupported.Id));
+        Assert.Equal(
+            [(15, 40, 15, 52, Gsh0112("value", "GeneratedFileKernels.ObjectParameter", "object"))],
+            RangesAndMessages(reported, GSharpDiagnostics.KernelParameterHasNoDeviceRepresentation.Id));
+    }
+
+    // What csc reports (CommonCompiler.CompileAndEmit): the generator's diagnostics, then the declaration errors of
+    // the output compilation, generated trees included, which stop the build before any analyzer runs; without them,
+    // every error of the output and the diagnostics of the analyzers run on the output
+    private static async Task<ImmutableArray<ReportedDiagnostic>> BuildLikeCscAsync(KernelDiagnosticsRun run)
+    {
+        var generator = run.Generator.Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Generator, d));
+        var declarationErrors = run.Output.GetDeclarationDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Generator, d))
+            .ToList();
+        if (declarationErrors.Count > 0)
+        {
+            return [.. generator, .. declarationErrors];
+        }
+
+        DiagnosticAnalyzer[] analyzers = [.. KernelDiagnostics.Analyzers, new GpuKernelDirectInvocationAnalyzer()];
+        var analyzerDiagnostics = await run.Output
+            .WithAnalyzers([.. analyzers], new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider("Cpu")))
+            .GetAnalyzerDiagnosticsAsync();
+        var outputErrors = run.Output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Generator, d));
+        return
+        [
+            .. generator
+                .Concat(outputErrors)
+                .Concat(analyzerDiagnostics.Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d)))
+                .OrderBy(static d => d.StartLine)
+                .ThenBy(static d => d.StartColumn)
+        ];
+    }
+
+    // The C# compiler's errors (CSxxxx) among the reported diagnostics, as text for a readable failure
+    private static IReadOnlyList<string> CompilerErrors(ImmutableArray<ReportedDiagnostic> reported) =>
+        reported
+            .Where(static d => d.Id.StartsWith("CS", StringComparison.Ordinal))
+            .Select(static d => d.ToString())
+            .ToList();
 
     private static string Gsh0111(string placement) =>
         $"[GpuKernel] cannot be applied to {placement}. A kernel must be an ordinary static method of a class; " +

@@ -15,6 +15,10 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// </remarks>
 internal static class KernelDeclaration
 {
+    // [WHY] TypeKind.Extension of Roslyn 5 (a C# 14 extension block); Roslyn 4.8, which the compiler builds against,
+    // does not name it
+    private const TypeKind ExtensionTypeKind = (TypeKind)14;
+
     /// <summary>Where <paramref name="kernel"/> is declared, and whether that place can have a launcher.</summary>
     public static KernelPlacement GetPlacement(IMethodSymbol kernel, Compilation compilation,
         CancellationToken cancellationToken)
@@ -37,6 +41,12 @@ internal static class KernelDeclaration
 
         for (var type = kernel.ContainingType; type is not null; type = type.ContainingType)
         {
+            // [WHY] The parts of a file-local type are all in its file; the generated file cannot add one
+            if (type.IsFileLocal)
+            {
+                return KernelPlacement.FileLocalTypeMember;
+            }
+
             if (type.IsGenericType)
             {
                 return KernelPlacement.MemberOfGenericType;
@@ -48,12 +58,14 @@ internal static class KernelDeclaration
 
     /// <summary>
     /// Whether the generator emits <paramref name="kernel"/>: its placement is <see cref="KernelPlacement.Allowed"/>,
-    /// every parameter has a device representation, and its return type can be the element of the launcher's result
-    /// array.
+    /// it has a body, its class and the types around it are partial (GSH0036), every parameter has a device
+    /// representation, and its return type can be the element of the launcher's result array.
     /// </summary>
     public static bool IsLaunchable(IMethodSymbol kernel, Compilation compilation,
         CancellationToken cancellationToken) =>
         GetPlacement(kernel, compilation, cancellationToken) == KernelPlacement.Allowed &&
+        HasBody(kernel) &&
+        AreContainingTypesPartial(kernel, cancellationToken) &&
         !kernel.Parameters
             .AsStackEnumerable()
             .Any(static parameter => FindManagedReference(parameter.Type) is not null) &&
@@ -62,15 +74,24 @@ internal static class KernelDeclaration
     /// <summary>
     /// The reference type that makes a kernel parameter of <paramref name="type"/> have no device representation: the
     /// type itself when it is a reference type other than an array (a class, <see cref="string"/>, an interface, a
-    /// delegate, <see cref="object"/>, <c>dynamic</c>), or the innermost element type of an array or span when that is
-    /// one; otherwise <see langword="null"/>. GSH0112 reports it, except <c>dynamic</c>, which GSH0003 reports.
+    /// delegate, <see cref="object"/>, <c>dynamic</c>), or such a type inside it: the innermost element of an array or
+    /// span, the value of a <see cref="Nullable{T}"/>, an element of a tuple; otherwise <see langword="null"/>. GSH0112
+    /// reports it, except <c>dynamic</c>, which GSH0003 reports.
     /// </summary>
     public static ITypeSymbol? FindManagedReference(ITypeSymbol type)
     {
-        var element = type;
+        var element = type.UnwrapNullable();
         while (element.TryGetArrayLikeElementType(out var inner))
         {
-            element = inner;
+            element = inner.UnwrapNullable();
+        }
+
+        if (element is INamedTypeSymbol { IsTupleType: true } tuple)
+        {
+            return tuple.TupleElements
+                .AsStackEnumerable()
+                .Select(static field => FindManagedReference(field.Type))
+                .FirstOrDefault(static reference => reference is not null);
         }
 
         return element is { IsReferenceType: true } and not (ITypeParameterSymbol or IErrorTypeSymbol) ? element : null;
@@ -87,6 +108,8 @@ internal static class KernelDeclaration
         KernelPlacement.StructMember => "a member of a struct",
         KernelPlacement.InterfaceMember => "a member of an interface",
         KernelPlacement.ExtensionBlockMember => "a member of an extension block",
+        KernelPlacement.OtherTypeMember => "a member of a type that is not a class",
+        KernelPlacement.FileLocalTypeMember => "a member of a file-local type",
         KernelPlacement.InstanceMethod => "an instance method",
         KernelPlacement.GenericMethod => "a generic method",
         KernelPlacement.MemberOfGenericType => "a member of a generic type",
@@ -118,8 +141,8 @@ internal static class KernelDeclaration
         TypeKind.Class => KernelPlacement.Allowed,
         TypeKind.Struct => KernelPlacement.StructMember,
         TypeKind.Interface => KernelPlacement.InterfaceMember,
-        // [WHY] Roslyn 4.8, which the compiler builds against, has no TypeKind for a C# 14 extension block
-        _ => KernelPlacement.ExtensionBlockMember
+        ExtensionTypeKind => KernelPlacement.ExtensionBlockMember,
+        _ => KernelPlacement.OtherTypeMember
     };
 
     // A static method of a class that the runtime, native code or C# itself calls without a launcher
@@ -185,6 +208,30 @@ internal static class KernelDeclaration
         arguments[1].Value is string methodName &&
         methodName == kernel.Name &&
         builder.IsEqualTo(kernel.ContainingType.OriginalDefinition);
+
+    // An extern method, or a partial method without an implementing declaration, has nothing to launch (GSH0003)
+    private static bool HasBody(IMethodSymbol kernel) =>
+        !kernel.IsExtern && !kernel.IsAbstract && !kernel.IsPartialWithoutImplementation();
+
+    // The generator reopens the class and every type around it with a partial declaration; GSH0036 reports the types
+    // that are not partial
+    private static bool AreContainingTypesPartial(IMethodSymbol kernel, CancellationToken cancellationToken)
+    {
+        for (var type = kernel.ContainingType; type is not null; type = type.ContainingType)
+        {
+            var partial = type.DeclaringSyntaxReferences
+                .AsStackEnumerable()
+                .All(cancellationToken, static (reference, token) =>
+                    reference.GetSyntax(token) is TypeDeclarationSyntax declaration &&
+                    declaration.Modifiers.Any(SyntaxKind.PartialKeyword));
+            if (!partial)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     // The launcher returns the results of all threads in an array of the return type
     private static bool HasLaunchableReturnType(IMethodSymbol kernel) =>
