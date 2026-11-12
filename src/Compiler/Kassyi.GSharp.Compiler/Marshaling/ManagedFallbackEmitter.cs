@@ -57,7 +57,7 @@ internal static class ManagedFallbackEmitter
         // The contexts of the grid live in one array, which bounds the threads of a launch on this path only (#1443)
         LaunchLimitEmitter.WriteManagedCounts(writer, kernel);
         writer.AppendLine($"int {ThreadsPerBlock} = (int)(blockDimX * blockDimY * blockDimZ);");
-        writer.AppendLine($"var {Contexts} = new {kernel.ContextName}[{ContextCount}];");
+        writer.AppendLine($"{kernel.ContextName}[] {Contexts} = new {kernel.ContextName}[{ContextCount}];");
         // An unsafe context is a struct, so the array already holds one per thread
         if (!kernel.IsUnsafeContext)
         {
@@ -88,10 +88,10 @@ internal static class ManagedFallbackEmitter
 
         // A thread that stopped at a block barrier waits there until every thread of its block that has not finished
         // waits too; in a cooperative kernel, a thread that reached the grid sync waits until the next grid phase (#664)
-        writer.AppendLine($"var {ThreadAtBlockBarrier} = new bool[{Contexts}.Length];");
+        writer.AppendLine($"bool[] {ThreadAtBlockBarrier} = new bool[{Contexts}.Length];");
         if (kernel.IsCooperative)
         {
-            writer.AppendLine($"var {ThreadAtGridSync} = new bool[{Contexts}.Length];");
+            writer.AppendLine($"bool[] {ThreadAtGridSync} = new bool[{Contexts}.Length];");
         }
     }
 

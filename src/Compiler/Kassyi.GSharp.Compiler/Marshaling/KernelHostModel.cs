@@ -304,7 +304,9 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 /// <param name="Namespace">
 /// The namespace as C# source spells it (<c>@event.P3</c>), or empty for the global namespace.
 /// </param>
-/// <param name="Name">The class name as C# source spells it (<c>@class</c>).</param>
+/// <param name="Name">
+/// The class name and type parameters as C# source spells them (<c>@class</c>, <c>G&lt;T&gt;</c>).
+/// </param>
 /// <param name="Keyword">
 /// The keyword of the user's declaration after <c>partial</c> (<c>class</c>, or <c>record</c> for a record class),
 /// which every part must repeat (CS0261).
@@ -338,7 +340,7 @@ internal readonly record struct HostClassHeader(
     public static HostClassHeader Create(INamedTypeSymbol type, Compilation compilation) => new(
         GlobalCppNames.GetHintName(type),
         type.ContainingNamespace.GetCsharpNamespaceName(),
-        type.Name.ToCSharpIdentifier(),
+        type.GetDeclaredTypeName(),
         GetKeyword(type),
         SyntaxFacts.GetText(type.DeclaredAccessibility),
         type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,

@@ -2,9 +2,9 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 /// <summary>
-/// An expression evaluated into one of its own operands (<c>x.Value = x / y</c>, #636, design gpumath-m1-misc 4.2.4 and
-/// 4.2.5): the root computes into a temporary when the target overlaps one of its operands and copies the result into
-/// the target, so no kernel receives an output that overlaps an input (its pointers are <c>__restrict__</c>).
+/// An expression evaluated into one of its own operands (<c>x.Value = x / y</c>, #636): the root computes into a
+/// temporary when the target overlaps one of its operands and copies the result into the target, so no kernel receives
+/// an output that overlaps an input (some kernels read words that other threads write).
 /// </summary>
 /// <remarks>
 /// The values are compared with <see cref="BigInteger"/>; a correct value alone does not prove the guard, because an

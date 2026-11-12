@@ -109,9 +109,7 @@ internal static class StructUnmarshalMethodEmitter
             {
                 if (TypeLayoutCalculator.IsUserStruct(elementType))
                 {
-                    writer.Append("var tempArray = new ");
-                    writer.AppendAotStructPath(elementType);
-                    writer.AppendLine($"[{host}.Length];");
+                    StructMarshalMethodEmitter.WriteShadowArray(writer, "tempArray", host, elementType);
 
                     StructBlockCopyEmitter.WritePinnedCopy(writer, "tempArray", $"{native}.Data", toDevice: false);
 
@@ -131,9 +129,11 @@ internal static class StructUnmarshalMethodEmitter
     }
 
     // if (<host> != null) {
-    //   var pinnedHandles = allocatedPtrs ?? throw new ArgumentNullException(nameof(allocatedPtrs));
-    //   [var shadow = new <element shadow>[<host>.Length]; for (...) Marshal_<element>(ref <host>[i], ref shadow[i], ...);]
-    //   var handle = GCHandle.Alloc(<host or shadow>, GCHandleType.Pinned); pinnedHandles.Add(GCHandle.ToIntPtr(handle));
+    //   List<IntPtr> pinnedHandles = allocatedPtrs ?? throw new ArgumentNullException("allocatedPtrs");
+    //   [<element shadow>[] shadow = new <element shadow>[<host>.Length];
+    //    for (...) Marshal_<element>(ref <host>[i], ref shadow[i], ...);]
+    //   GCHandle handle = GCHandle.Alloc(<host or shadow>, GCHandleType.Pinned);
+    //   pinnedHandles.Add(GCHandle.ToIntPtr(handle));
     //   <native>.Data = handle.AddrOfPinnedObject(); <native>.Length = <host>.Length; }
 
     private static void WriteCpuUnmarshalArrayMember(SourceWriter writer, string host, string native,
@@ -147,7 +147,8 @@ internal static class StructUnmarshalMethodEmitter
         writer.AppendLine($"if ({host} != null && {native}.Data != global::System.IntPtr.Zero)");
         using (writer.Scope())
         {
-            writer.Append("var shadow = (");
+            writer.AppendAotStructPath(elementType);
+            writer.Append("* shadow = (");
             writer.AppendAotStructPath(elementType);
             writer.AppendLine($"*){native}.Data;");
             writer.AppendLine($"for (int i = 0; i < {host}.Length; i++)");
