@@ -15,6 +15,12 @@ private static readonly Lazy<byte[]> s_fatbin___native_my_custom_kernels_fatbin 
 /// <param name="c">Matrix C.</param>
 public static void SgemmCustom(float[] a, float[] c, int n, uint gridDimX, uint blockDimX)
 {
+if (a is null){
+throw new global::System.ArgumentNullException(nameof(a));
+}
+if (c is null){
+throw new global::System.ArgumentNullException(nameof(c));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MyKernels.SgemmCustom");
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "sgemm_kernel_v1");
@@ -43,6 +49,9 @@ d_c.CopyToHost(c);
 }
 public static void Fill(int[] data, int value)
 {
+if (data is null){
+throw new global::System.ArgumentNullException(nameof(data));
+}
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "Fill");
 using var d_data = new global::Kassyi.GSharp.Runtime.GpuBuffer<int>(data.Length);
