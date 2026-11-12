@@ -205,6 +205,16 @@ public class ThreadStopTests
             )
         );
 
+    // A failure inside a generic struct constructor leaves the shared memory of that struct type to the other lanes
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void GenericConstructor_OneLaneFailsInside_OtherLanesKeepItsSharedMemory() =>
+        AssertThreadStops<InvalidOperationException>(
+            EveryPath,
+            [80, S, 80, 80],
+            dst => ThreadStopKernels.LaunchFailureInGenericConstructorKernel(s_threeElements, dst, blockDimX: 4)
+        );
+
     // Runs the launch on each path of this build among paths, with an output of expected.Length entries filled with the
     // sentinel, and checks the exception and the output
     private static void AssertThreadStops<TException>(DiffPath paths, int[] expected, Action<int[]> launch)

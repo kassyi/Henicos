@@ -377,8 +377,9 @@ internal static class ManagedFallbackEmitter
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {
-                // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
-                // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
+                    // The state machines of the kernel and of the device functions it calls request a grid sync (#665)
+                    // and report a block barrier through thread-static flags; the launcher steps one GPU thread at a
+                    // time on this host thread
                     writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.GridSyncRequestedName} = false;");
                     writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.BlockBarrierRequestedName} = false;");
                     WriteStateMachineCall(writer, kernel);
@@ -403,15 +404,17 @@ internal static class ManagedFallbackEmitter
     }
 
     // The exception ends the step of the thread, which has finished and waits nowhere; the first one is thrown at the
-    // end of the launch.
+    // end of the launch. An exception that left a generic struct constructor left its type-key salt set, which the next
+    // thread would use for its shared memory sites.
     // catch (Exception __gsharp_failure) { __gsharp_first_failure ??= ExceptionDispatchInfo.Capture(__gsharp_failure);
-    // <context>.__gsharp_state = -1; <its waits> = false; }
+    // ManagedGpuContext.ResetTypeKeyScope(); <context>.__gsharp_state = -1; <its waits> = false; }
     private static void WriteManagedThreadFailureCatch(SourceWriter writer, in KernelHostModel kernel)
     {
         writer.AppendLine($"catch (global::System.Exception {Failure})");
         using (writer.Scope())
         {
             writer.AppendLine($"{FirstFailure} ??= {ExceptionDispatchInfo}.Capture({Failure});");
+            writer.AppendLine($"{ManagedNames.Context}.ResetTypeKeyScope();");
             var contextSlot = kernel.IsUnsafeContext ? PinnedLinearContext : LinearContext;
             writer.AppendLine($"{contextSlot}.{GSharpInternalNames.StateMachine.State} = -1;");
             writer.AppendLine($"{ThreadAtBlockBarrier}[{LinearThreadIndex}] = false;");

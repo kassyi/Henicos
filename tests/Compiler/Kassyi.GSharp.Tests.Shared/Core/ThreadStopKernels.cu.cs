@@ -32,6 +32,30 @@ public struct ThreadStopFailingRecorder : IDisposable
 }
 
 /// <summary>
+/// A generic struct whose constructor declares a <see cref="SharedMemory{T}"/> of its own per closed type. Writing
+/// stores <c>value</c> at <c>lane</c> and then takes the first of <c>count</c> elements of <c>source</c> (fails when
+/// <c>count</c> is 0); reading sums the entries 0, 2 and 3.
+/// </summary>
+public struct ThreadStopSharedSlot<TTag> where TTag : unmanaged
+{
+    public int Value;
+
+    public ThreadStopSharedSlot(bool read, int lane, int value, int[] source, int count)
+    {
+        var shared = new SharedMemory<int>(32);
+        if (read)
+        {
+            Value = shared[0] + shared[2] + shared[3];
+        }
+        else
+        {
+            shared[lane] = value;
+            Value = ThreadStopKernels.FirstOf(source, count);
+        }
+    }
+}
+
+/// <summary>
 /// Kernels in which a C# check fails in the middle of a thread: the thread stops at the failing check, so nothing it
 /// would write after the check reaches the output, and the other threads of the launch run on, as on the GPU.
 /// </summary>
@@ -240,5 +264,17 @@ public static partial class ThreadStopKernels
 
         Gpu.SyncGrid();
         dst[total + gid] = 2;
+    }
+
+    // Lane 1 fails inside the constructor of a generic struct that declares shared memory; the other lanes still use
+    // the shared memory of that struct type, so after the barrier each reads the values of lanes 0, 2 and 3
+    [GpuKernel]
+    public static void FailureInGenericConstructorKernel(int[] source, int[] dst)
+    {
+        int lane = ThreadIndex.X;
+        ThreadStopSharedSlot<int> write = new(false, lane, 10 * (lane + 1), source, lane == 1 ? 0 : 3);
+        Gpu.SyncThreads();
+        ThreadStopSharedSlot<int> read = new(true, lane, 0, source, 3);
+        dst[lane] = read.Value + write.Value - 3;
     }
 }

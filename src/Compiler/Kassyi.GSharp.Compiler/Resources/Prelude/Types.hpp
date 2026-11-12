@@ -19,9 +19,11 @@ enum class GSharpErrorCode : int32_t {
     DataRace = 9,
     SwitchExpression = 10
 };
-// A failed C# check: records the error and ends the thread's kernel step (ErrorChannel.hpp). The attribute belongs on
-// the first declaration, so that every check below already knows that the call does not return
-[[noreturn]] __GSHARP_COLD void __gsharp_trap(GSharpErrorCode code, const char* message);
+// A failed C# check: records the error and ends the thread's kernel step (ErrorChannel.hpp). [[noreturn]] belongs on
+// the first declaration, so that every check below already knows that the call does not return. inline and the cold
+// attributes are on the definition only: GCC warns when a declaration that is not a definition combines inline and
+// noinline
+[[noreturn]] void __gsharp_trap(GSharpErrorCode code, const char* message);
 
 template <GSharpErrorCode ErrorCode>
 inline const char* __gsharp_range_message() {

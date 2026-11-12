@@ -289,8 +289,16 @@ int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_3_tid,3);
 {
 auto __gsharp_id_7_intBox = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffGenScope_g1_bSystem__Int32_e(__gsharp_id_4_x, __gsharp_id_5_y&0xFF, __gsharp_id_2_r, __gsharp_add_i32(__gsharp_id_6_o,2));
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffGenScope_g1_bSystem__Int32_e> __gsharp_using_guard_0{__gsharp_id_7_intBox};
+try
+{
 __gsharp_id_2_r[__gsharp_id_6_o+0]=__gsharp_add_i32(__gsharp_id_7_intBox.__gsharp_mb_Value,(__gsharp_id_7_intBox.__gsharp_mb_IsPositiveTag()?1:0));
 __gsharp_id_2_r[__gsharp_add_i32(__gsharp_id_6_o,1)]=__gsharp_id_7_intBox.__gsharp_mb_TagPlusTen();
+}
+catch (...)
+{
+__gsharp_using_failed(__gsharp_using_guard_0);
+throw;
+}
 }
 __gsharp_state=-1;
 return;
@@ -525,6 +533,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -915,6 +924,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -1236,6 +1246,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -1571,6 +1582,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -1901,6 +1913,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -2225,6 +2238,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -2555,6 +2569,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -2858,6 +2873,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -3165,6 +3181,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -3523,6 +3540,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -3860,6 +3878,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -4174,6 +4193,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -4484,6 +4504,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -4794,6 +4815,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -5148,6 +5170,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }
@@ -5477,6 +5500,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }

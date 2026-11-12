@@ -281,8 +281,19 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitBlock(BlockSyntax node)
     {
         JumpedOverDeclarations.WriteDeclarations(node.Statements, ref Context);
-        foreach (var statement in node.Statements)
+        VisitStatements(node.Statements, 0);
+    }
+
+    // The statements of a block from start on. On the CPU the statements after a using declaration are the body of the
+    // try that tells its guards about a failure (UsingTranspiler.WriteFailureCatch); C# forbids a goto into that part
+    // (CS8648), so the try has no jump into it.
+    private void VisitStatements(SyntaxList<StatementSyntax> statements, int start)
+    {
+        for (var i = start; i < statements.Count; i++)
         {
+            var statement = statements[i];
+            var firstGuard = Context.Emitter.UsingCounter;
+
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
             // block with a using declaration or a synthesized iterator scope keeps them.
             if (statement is BlockSyntax nested &&
@@ -297,6 +308,21 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             }
 
             Context.Emitter.Writer.AppendLine();
+            if (!UsingTranspiler.IsUsingDeclaration(statement) ||
+                !UsingTranspiler.CatchesFailures(firstGuard, ref Context))
+            {
+                continue;
+            }
+
+            var endGuard = Context.Emitter.UsingCounter;
+            Context.Emitter.Writer.AppendLine("try");
+            using (Context.Emitter.Writer.Scope())
+            {
+                VisitStatements(statements, i + 1);
+            }
+
+            UsingTranspiler.WriteFailureCatch(firstGuard, endGuard, ref Context);
+            return;
         }
     }
 

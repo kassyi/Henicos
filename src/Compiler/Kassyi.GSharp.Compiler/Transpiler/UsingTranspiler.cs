@@ -79,7 +79,7 @@ internal static class UsingTranspiler
     // {
     // <declaration or T __gsharp_using_resource_<n> = <expression>;>
     // __gsharp_using_scope<T> __gsharp_using_guard_<n>{<resource>};
-    // <body>
+    // <body, on the CPU in the try of WriteFailureCatch>
     // }
     public static void TranspileUsingStatement(UsingStatementSyntax node, ref TranspileContext context)
     {
@@ -92,6 +92,7 @@ internal static class UsingTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
+            var firstGuard = context.Emitter.UsingCounter;
             if (node.Declaration != null)
             {
                 StatementPrelude.Emit(node.Declaration, ref context);
@@ -105,15 +106,69 @@ internal static class UsingTranspiler
                 WriteExpressionResource(node.Expression, ref context);
             }
 
-            if (node.Statement is BlockSyntax block)
+            var endGuard = context.Emitter.UsingCounter;
+            if (!CatchesFailures(firstGuard, ref context))
             {
-                context.Visitor.VisitBlock(block);
+                WriteBody(node.Statement, ref context);
+                return;
             }
-            else
+
+            context.Emitter.Writer.AppendLine("try");
+            using (context.Emitter.Writer.Scope())
             {
-                context.Visitor.Visit(node.Statement);
-                context.Emitter.Writer.AppendLine();
+                WriteBody(node.Statement, ref context);
             }
+
+            WriteFailureCatch(firstGuard, endGuard, ref context);
+        }
+    }
+
+    private static void WriteBody(StatementSyntax statement, ref TranspileContext context)
+    {
+        if (statement is BlockSyntax block)
+        {
+            context.Visitor.VisitBlock(block);
+        }
+        else
+        {
+            context.Visitor.Visit(statement);
+            context.Emitter.Writer.AppendLine();
+        }
+    }
+
+    /// <summary>
+    /// Whether the code after the guards written since <paramref name="firstGuard"/> runs in a <c>try</c> whose catch
+    /// tells them that a failure leaves the <c>using</c> (<see cref="WriteFailureCatch"/>): on the CPU, where a failed
+    /// check ends the step with an exception and C# disposes the resource as it leaves.
+    /// </summary>
+    public static bool CatchesFailures(int firstGuard, ref TranspileContext context) =>
+        !context.Emitter.Dialect.IsCuda && context.Emitter.UsingCounter > firstGuard;
+
+    /// <summary>
+    /// Writes the catch after the <c>try</c> that holds the body of a <c>using</c>, for the guards numbered from
+    /// <paramref name="firstGuard"/> up to <paramref name="endGuard"/> (exclusive).
+    /// </summary>
+    // catch (...) { __gsharp_using_failed(__gsharp_using_guard_<first>, ...); throw; }
+    // [WHY] The guard learns of the failure here and reads only its flag when it is destroyed (StandardTypes.hpp), so a
+    // using that ends normally costs no more than the call of Dispose.
+    public static void WriteFailureCatch(int firstGuard, int endGuard, ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        writer.AppendLine("catch (...)");
+        using (writer.Scope())
+        {
+            writer.Append(GSharpInternalNames.Using.Failed);
+            using (writer.Parentheses())
+            {
+                for (var guard = firstGuard; guard < endGuard; guard++)
+                {
+                    writer.AppendIf(guard > firstGuard, ", ");
+                    writer.Append($"{GSharpInternalNames.Using.GuardPrefix}{guard}");
+                }
+            }
+
+            writer.AppendLine(";");
+            writer.AppendLine("throw;");
         }
     }
 

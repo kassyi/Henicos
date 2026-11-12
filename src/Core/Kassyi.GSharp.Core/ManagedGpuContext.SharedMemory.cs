@@ -163,6 +163,15 @@ public static partial class ManagedGpuContext
         return value;
     }
 
+    /// <summary>
+    /// Leaves every generic struct constructor scope of the thread (#543): a failed thread whose exception left a
+    /// constructor between <see cref="BeginTypeKeyScope{TKey}"/> and <see cref="EndTypeKeyScope{T}"/> must not pass its
+    /// salt on to the next thread of the launch. For generated code only.
+    /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    // ReSharper disable once UnusedMember.Global -- Public API for code generators
+    public static void ResetTypeKeyScope() => s_currentTypeKeySalt = 0;
+
     private static int LinearBlockId => BlockIdxZ * GridDimY * GridDimX + BlockIdxY * GridDimX + BlockIdxX;
 
     // The index of the current block's dynamic shared memory. Blocks that do not run in phases share index 0: the first

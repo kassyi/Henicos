@@ -287,7 +287,15 @@ auto __gsharp_id_8_g = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetGuard __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_1_r; __gsharp_tmp.__gsharp_mb_Slot = __gsharp_add_i32(__gsharp_id_4_o,14); __gsharp_tmp.__gsharp_mb_State = __gsharp_id_3_x; return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetGuard> __gsharp_using_guard_0{__gsharp_id_8_g};
+try
+{
 __gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,15)]=__gsharp_id_8_g.__gsharp_mb_Step();
+}
+catch (...)
+{
+__gsharp_using_failed(__gsharp_using_guard_0);
+throw;
+}
 }
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__MutGetCounter __gsharp_id_9_counters[2]{};
 __gsharp_id_9_counters[0].__gsharp_mb_N=__gsharp_id_3_x;
@@ -590,6 +598,7 @@ __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
 catch (global::System.Exception __gsharp_failure)
 {
 __gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
 __gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
 }

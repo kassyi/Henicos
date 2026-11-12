@@ -89,7 +89,7 @@ private:
         size_t length = std::strlen(msg);
         if (length >= sizeof(text)) {
             length = sizeof(text) - 1;
-                // msg[length] is the first byte left out; while it continues a UTF-8 character, leave that character out
+            // msg[length] is the first byte left out; while it continues a UTF-8 character, leave that character out
             while (length > 0 && (static_cast<unsigned char>(msg[length]) & 0xC0u) == 0x80u) {
                 --length;
             }
@@ -149,15 +149,12 @@ struct __gsharp_step_abort {};
 
 // The depth of the comparisons of MemoryExtensions.Sort that the thread is running (Sort.hpp).
 inline thread_local int __gsharp_sort_compare_depth = 0;
-// The failures the calling OpenMP thread has recorded, and whether the last one is the one its launch reports: a using
-// that disposes its resource while a failure unwinds the step (__gsharp_dispose_unwinding) reads both
-inline thread_local uint32_t __gsharp_failures = 0;
+// Whether the last failure the calling OpenMP thread recorded is the one its launch reports: a using that disposes its
+// resource while a failure unwinds the step (__gsharp_dispose_unwinding) reads it
 inline thread_local bool __gsharp_failure_reported = false;
 // Set while such a Dispose runs after a failure of this thread that its launch reports: a failure of the Dispose then
 // replaces it, as C# replaces the exception
 inline thread_local bool __gsharp_failure_replaces = false;
-
-inline uint32_t __gsharp_failure_mark() noexcept { return __gsharp_failures; }
 
 // Records a failure of the calling thread into the slot of its launch (the host slot outside a launch). The first
 // failure of a launch wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
@@ -165,7 +162,6 @@ inline void __gsharp_record_failure(GSharpErrorCode code, const char* message, u
 {
     GSharpErrorSlot& slot =
         __gsharp_active_error_slot != nullptr ? *__gsharp_active_error_slot : __gsharp_host_last_error;
-    __gsharp_failures++;
     if (__gsharp_failure_replaces) {
         slot.Replace(code, message, site_id);
         return;
@@ -190,7 +186,7 @@ inline void __gsharp_translate_sort_failure(GSharpErrorCode& code, const char*& 
 }
 
 // A construct the CPU dialect cannot execute (e.g. Gpu.InlinePtx): fails with NotSupportedException
-[[noreturn]] __GSHARP_COLD void __gsharp_unsupported(const char* message)
+[[noreturn]] __GSHARP_COLD inline void __gsharp_unsupported(const char* message)
 {
     __gsharp_record_failure(GSharpErrorCode::NotSupported, message, 0u);
     throw __gsharp_step_abort{};
@@ -198,7 +194,7 @@ inline void __gsharp_translate_sort_failure(GSharpErrorCode& code, const char*& 
 
 // A failed check (e.g. an empty sequence or an index out of range in StackLinq): records the failure and ends the step.
 // Declared in Types.hpp, so that GSharpArray<T> can report its argument errors.
-[[noreturn]] __GSHARP_COLD void __gsharp_trap(GSharpErrorCode code, const char* message)
+[[noreturn]] __GSHARP_COLD inline void __gsharp_trap(GSharpErrorCode code, const char* message)
 {
     __gsharp_translate_sort_failure(code, message);
     __gsharp_record_failure(code, message, 0u);
@@ -206,7 +202,7 @@ inline void __gsharp_translate_sort_failure(GSharpErrorCode& code, const char*& 
 }
 
 // The same, with the place of the check in the kernel's error site table
-[[noreturn]] __GSHARP_COLD void __gsharp_trap_site(GSharpErrorCode code, uint32_t site_id)
+[[noreturn]] __GSHARP_COLD inline void __gsharp_trap_site(GSharpErrorCode code, uint32_t site_id)
 {
     const char* message = nullptr;
     __gsharp_translate_sort_failure(code, message);
@@ -234,14 +230,14 @@ inline void __gsharp_translate_sort_failure(GSharpErrorCode& code, const char*& 
 
 // Disposes the resource of a using while a failure of the thread leaves the using (StandardTypes.hpp), as C# runs
 // Dispose in a finally. [WHY] A destructor that runs while an exception unwinds must not throw, so a failure of the
-// Dispose ends here: when the failure being unwound began inside the using (failureMark) and is the one its launch
+// Dispose ends here: when the failure being unwound is a failed check of this thread (recorded) that its launch
 // reports, the new failure replaces it, as the exception of a finally replaces the one in flight in C#. The unwinding
 // then goes on.
 template <typename T>
-inline void __gsharp_dispose_unwinding(T& resource, uint32_t failureMark) noexcept
+inline void __gsharp_dispose_unwinding(T& resource, bool recorded) noexcept
 {
     bool outer = __gsharp_failure_replaces;
-    __gsharp_failure_replaces = __gsharp_failures != failureMark && __gsharp_failure_reported;
+    __gsharp_failure_replaces = recorded && __gsharp_failure_reported;
     try {
         resource.__gsharp_dispose();
     } catch (const __gsharp_step_abort&) {
@@ -251,6 +247,24 @@ inline void __gsharp_dispose_unwinding(T& resource, uint32_t failureMark) noexce
                                 "G#: the native CPU path could not allocate memory for a kernel step", 0u);
     }
     __gsharp_failure_replaces = outer;
+}
+
+// Called by the catch that the CPU dialect writes around the body of a using (UsingTranspiler) before it rethrows: the
+// guards then dispose their resources as the failure unwinds (__gsharp_dispose_unwinding). [WHY] The guard learns of
+// the failure here instead of asking std::uncaught_exceptions() and a thread-local counter when it is created and
+// destroyed, which made every using that ends normally pay for the failure path.
+template <typename... G>
+inline void __gsharp_using_failed(G&... guards) noexcept
+{
+    unsigned char failure = __gsharp_using_other_failure;
+    try {
+        throw;
+    } catch (const __gsharp_step_abort&) {
+        failure = __gsharp_using_recorded_failure;
+    } catch (...) {
+        // Any other exception (std::bad_alloc) was not recorded as a failed check; the launcher records it
+    }
+    ((guards.failure = failure), ...);
 }
 
 // GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
