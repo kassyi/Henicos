@@ -203,12 +203,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
                 last = Math.Max(last, 3);
             }
 
-            // A System.Array call checks its arrays for null before it runs (WriteArrayOperand), after C# has evaluated
-            // every argument: an argument that writes is evaluated first, into a temporary.
-            if (GetDescriptor(kind).IsSystemArray)
-            {
-                last = Math.Max(last, LastOperandWithEffects(effects.AsSpan(1, count - 1)));
-            }
+            last = Math.Max(last, LastSystemArrayWrite(kind, effects.AsSpan(1, count - 1)));
 
             // Array.Copy(..., length) emits length in both source and destination AsSpan(..., length) calls.
             var spillRepeatedLength = kind is SpanMemberKind.ArrayCopy3 or SpanMemberKind.ArrayCopy5 &&
@@ -253,9 +248,16 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         }
     }
 
-    // The index of the last operand after the first that writes (-1 when none does)
-    private static int LastOperandWithEffects(ReadOnlySpan<ExpressionEffects> rest)
+    // A System.Array call checks its arrays for null before it runs (WriteArrayOperand), after C# has evaluated every
+    // argument: the index of the last operand after the first that writes, which is then evaluated first, into a
+    // temporary (-1 for another call, or when none writes)
+    private static int LastSystemArrayWrite(SpanMemberKind kind, ReadOnlySpan<ExpressionEffects> rest)
     {
+        if (!GetDescriptor(kind).IsSystemArray)
+        {
+            return -1;
+        }
+
         for (var i = rest.Length - 1; i >= 0; i--)
         {
             if (!rest[i].Writes.IsEmpty)
