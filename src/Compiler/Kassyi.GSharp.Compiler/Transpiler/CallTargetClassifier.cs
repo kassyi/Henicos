@@ -78,14 +78,17 @@ internal static class CallTargetClassifier
 
         if (GpuMacroClassifier.Classify(method) is { Kind: not GpuMacroKind.None } macro)
         {
-            return IsWrittenMacroCall(macro, call)
-                ? new CallTargetPlan(CallTargetKind.ClaimedByRule)
-                : Unmapped(method, dialect, GetMacroBodyDetail(method));
+            return MacroCallTarget.Classify(macro, method, call);
         }
 
         if (IsClaimedByRule(called, method, call))
         {
             return new CallTargetPlan(CallTargetKind.ClaimedByRule);
+        }
+
+        if (ArrayViewMethods.IsViewMember(method))
+        {
+            return new CallTargetPlan(CallTargetKind.ArrayViewMember);
         }
 
         if (IsDeclaredIn(method, model.Compilation))
@@ -159,15 +162,6 @@ internal static class CallTargetClassifier
         method.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) == true ||
         dialect.TryMapIntrinsic(called, out _);
 
-    // A macro without a body, or with its body written as a lambda, is written by the macro rules or expanded by
-    // lowering; the body as a method group or a delegate reaches the standard emission, which has no function to call.
-    // Gpu.SyncGrid reports such a body itself (GSH0003, GpuCodeConstraints.SyncGridRequiresLambda)
-    private static bool IsWrittenMacroCall(GpuMacroCall macro, SyntaxNode call) =>
-        call is InvocationExpressionSyntax invocation &&
-        (!macro.HasBody ||
-         macro.Kind == GpuMacroKind.SyncGrid ||
-         macro.GetBody(invocation.ArgumentList.Arguments) is not null);
-
     // The calls that a rule of the transpiler writes before the standard emission (TranspilerRuleRegistry), each by
     // the test the rule claims its calls with
     private static bool IsClaimedByRule(IMethodSymbol called, IMethodSymbol method, SyntaxNode call) =>
@@ -195,10 +189,6 @@ internal static class CallTargetClassifier
         method.ContainingType is { } type
             ? IteratorTypeResolver.FormatType(type) + "." + method.FormatSignature()
             : method.FormatSignature();
-
-    private static string GetMacroBodyDetail(IMethodSymbol method) =>
-        "; " + TypeConstants.GpuType + "." + method.Name +
-        " takes its body as a lambda; a method group or a delegate is not supported yet";
 
     // What the dialect implements instead: the Math or MathF member with the same parameters for a generic math member
     // of a numeric type (int.Max(int, int) is Math.Max(int, int)), otherwise the mapped overloads of the same name, in

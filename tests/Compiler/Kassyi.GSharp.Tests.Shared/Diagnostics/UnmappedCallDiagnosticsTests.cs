@@ -4,17 +4,17 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
 /// A call from GPU code of a method of another assembly that the dialect does not implement (GSH0109): generic math
-/// members of the numeric types, unmapped overloads of Math and MathF, a Vector3 method, and a Gpu macro whose body is
-/// a method group. Mapped calls, device functions of other assemblies, local functions and the calls that rules write
-/// are not reported.
+/// members of the numeric types, unmapped overloads of Math and MathF and a Vector3 method. Mapped calls, device
+/// functions of other assemblies, local functions and the calls that rules write are not reported; a Gpu macro whose
+/// body is a method group is a form the macro does not take (GSH0003, <see cref="GpuMacroCallFormDiagnosticsTests"/>).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class UnmappedCallDiagnosticsTests
 {
     private const string TestCase = "Diagnostics/UnmappedCall.cs";
 
-    // float.Clamp, int.Max, Math.Max(long, long), MathF.Cbrt, int.Abs and short.Abs (lines 24 to 29), Vector3.Dot
-    // (line 37) and Gpu.SingleThread(Body) (line 45): the whole call, once, from the analyzer
+    // float.Clamp, int.Max, Math.Max(long, long), MathF.Cbrt, int.Abs and short.Abs (lines 24 to 29) and Vector3.Dot
+    // (line 37): the whole call, once, from the analyzer
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -31,8 +31,7 @@ public class UnmappedCallDiagnosticsTests
                 (Analyzer, 27, 20, 27, 36),
                 (Analyzer, 28, 20, 28, 33),
                 (Analyzer, 29, 20, 29, 35),
-                (Analyzer, 37, 20, 37, 43),
-                (Analyzer, 45, 13, 45, 35)
+                (Analyzer, 37, 20, 37, 43)
             ],
             diagnostics.Ranges(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id));
     }
@@ -47,8 +46,6 @@ public class UnmappedCallDiagnosticsTests
     [InlineData("Cpu", "'short.Abs(short)'",
         "; the dialect implements Math.Abs(double), Math.Abs(float), Math.Abs(int), MathF.Abs(float)")]
     [InlineData("Cpu", "'MathF.Cbrt(float)'", "cannot be called from GPU code")]
-    [InlineData("Cpu", "'Gpu.SingleThread(Action)'",
-        "; Gpu.SingleThread takes its body as a lambda; a method group or a delegate is not supported yet")]
     [InlineData("Cuda", "'int.Max(int, int)'", "; use Math.Max(int, int) instead")]
     [Scenario(TestScenario.SadPath)]
     public async Task UnmappedCall_DiagnosticMessage_NamesTheDialectAndTheAlternative(string dialect, string method,
@@ -99,8 +96,7 @@ public class UnmappedCallDiagnosticsTests
                 ("(27,20): GSH0109", true),
                 ("(28,20): GSH0109", true),
                 ("(29,20): GSH0109", true),
-                ("(37,20): GSH0109", true),
-                ("(45,13): GSH0109", true)
+                ("(37,20): GSH0109", true)
             ],
             KernelDiagnostics.FindStatedFailures(run)
                 .Where(static f => f.Failure.EndsWith(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id))

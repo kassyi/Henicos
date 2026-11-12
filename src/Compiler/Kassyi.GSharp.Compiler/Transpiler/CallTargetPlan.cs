@@ -32,10 +32,23 @@ internal enum CallTargetKind
     OperatorMacro,
 
     /// <summary>
-    /// A call that a rule writes before the standard emission: a <c>Gpu</c> macro, StackLinq, a span, array or
-    /// <c>MemoryExtensions</c> member, <c>Nullable&lt;T&gt;.GetValueOrDefault</c>.
+    /// A call that a rule writes before the standard emission: a <c>Gpu</c> macro where its rule applies, StackLinq, a
+    /// span, array or <c>MemoryExtensions</c> member, <c>Nullable&lt;T&gt;.GetValueOrDefault</c>.
     /// </summary>
     ClaimedByRule,
+
+    /// <summary>
+    /// A method of <c>Memory&lt;T&gt;</c>, <c>ReadOnlyMemory&lt;T&gt;</c>, <c>ArraySegment&lt;T&gt;</c> or
+    /// <c>ImmutableArray&lt;T&gt;</c> that the array view of device code defines with its C# meaning
+    /// (<see cref="Analysis.ArrayViewMethods"/>).
+    /// </summary>
+    ArrayViewMember,
+
+    /// <summary>
+    /// A <c>Gpu</c> macro written where no macro rule writes it: outside a statement of its own, or with a body that
+    /// is not a lambda (GSH0003).
+    /// </summary>
+    MisusedMacro,
 
     /// <summary>A method of the project without a device definition (GSH0107).</summary>
     Unemitted,
@@ -50,21 +63,25 @@ internal enum CallTargetKind
 /// </summary>
 /// <param name="Kind">What the call calls.</param>
 /// <param name="Method">
-/// The method in the message: <c>Type.Method</c> for GSH0107, with its parameters for GSH0109.
+/// The method in the message: <c>Type.Method</c> for GSH0107, with its parameters for GSH0109; empty for GSH0003.
 /// </param>
 /// <param name="Detail">
-/// The reason of GSH0107, or the end of the GSH0109 message: what the dialect implements instead, or why a macro is not
-/// written; empty when there is nothing to add.
+/// The reason of GSH0107, the end of the GSH0109 message (what the dialect implements instead; empty when there is
+/// nothing to add), or the syntax of GSH0003.
 /// </param>
 /// <param name="Dialect">The dialect that has no implementation (GSH0109).</param>
+/// <param name="ReportAt">
+/// Where a failure is reported when it is not the call itself: the body argument of a misused macro.
+/// </param>
 internal readonly record struct CallTargetPlan(
     CallTargetKind Kind,
     string Method = "",
     string Detail = "",
-    string Dialect = "")
+    string Dialect = "",
+    SyntaxNode? ReportAt = null)
 {
     /// <summary>Whether the call cannot be emitted and is reported.</summary>
-    public bool IsFailure => Kind is CallTargetKind.Unemitted or CallTargetKind.Unmapped;
+    public bool IsFailure => Kind is CallTargetKind.Unemitted or CallTargetKind.Unmapped or CallTargetKind.MisusedMacro;
 
     /// <summary>The diagnostic of a failure.</summary>
     /// <exception cref="InvalidOperationException">The plan is not a failure.</exception>
@@ -72,9 +89,15 @@ internal readonly record struct CallTargetPlan(
     {
         CallTargetKind.Unemitted => GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode,
         CallTargetKind.Unmapped => GSharpDiagnostics.UnmappedMethodCalledFromGpuCode,
+        CallTargetKind.MisusedMacro => GSharpDiagnostics.UnsupportedSyntax,
         _ => throw new InvalidOperationException($"A call target of kind {Kind} is not a failure.")
     };
 
     /// <summary>The arguments of the message of <see cref="Descriptor"/>.</summary>
-    public object[] MessageArgs => Kind == CallTargetKind.Unmapped ? [Method, Dialect, Detail] : [Method, Detail];
+    public object[] MessageArgs => Kind switch
+    {
+        CallTargetKind.Unmapped => [Method, Dialect, Detail],
+        CallTargetKind.MisusedMacro => [Detail],
+        _ => [Method, Detail]
+    };
 }

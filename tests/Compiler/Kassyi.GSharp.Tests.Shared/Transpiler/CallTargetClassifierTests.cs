@@ -62,6 +62,8 @@ public class CallTargetClassifierTests
     [InlineData(nameof(CallTargetCases.CallsGetValueOrDefault), "GetValueOrDefault",
         nameof(CallTargetKind.ClaimedByRule))]
     [InlineData(nameof(CallTargetCases.CallsSingleThreadLambda), "SingleThread", nameof(CallTargetKind.ClaimedByRule))]
+    [InlineData(nameof(CallTargetCases.CallsMemorySlice), "Slice", nameof(CallTargetKind.ArrayViewMember))]
+    [InlineData(nameof(CallTargetCases.CallsSegmentCopyTo), "CopyTo", nameof(CallTargetKind.ArrayViewMember))]
     [Scenario(TestScenario.HappyPath)]
     public void Classify_EmittedMappedOrWrittenTarget_ReturnsItsKind(string caller, string method,
         string expected)
@@ -94,9 +96,7 @@ public class CallTargetClassifierTests
     [InlineData(nameof(CallTargetCases.CallsLongMax), "Max", "Math.Max(long, long)",
         "; the dialect implements Math.Max(double, double), Math.Max(float, float), Math.Max(int, int)")]
     [InlineData(nameof(CallTargetCases.CallsCbrt), "Cbrt", "MathF.Cbrt(float)", "")]
-    [InlineData(nameof(CallTargetCases.CallsSingleThreadMethodGroup), nameof(Gpu.SingleThread),
-        "Gpu.SingleThread(Action)",
-        "; Gpu.SingleThread takes its body as a lambda; a method group or a delegate is not supported yet")]
+    [InlineData(nameof(CallTargetCases.CallsImmutableClear), "Clear", "ImmutableArray<T>.Clear()", "")]
     [Scenario(TestScenario.SadPath)]
     public void Classify_LibraryMethodWithoutMapping_ReturnsUnmappedWithAlternative(string caller, string method,
         string display, string detail)
@@ -106,6 +106,24 @@ public class CallTargetClassifierTests
         Assert.Equal(CallTargetKind.Unmapped, plan.Kind);
         Assert.Equal("GSH0109", plan.Descriptor.Id);
         Assert.Equal(new object[] { display, "StandardCppDialect", detail }, plan.MessageArgs);
+    }
+
+    [Theory]
+    [InlineData(nameof(CallTargetCases.CallsSingleThreadMethodGroup), "CallTargetHelpers.Body",
+        "Gpu.SingleThread with a body that is not a lambda (a Gpu macro body must be a lambda)")]
+    [InlineData(nameof(CallTargetCases.CallsSingleThreadInExpression),
+        "Gpu.SingleThread(() => CallTargetHelpers.Body())",
+        "Gpu.SingleThread outside a statement (call it as a statement of its own)")]
+    [Scenario(TestScenario.SadPath)]
+    public void Classify_MacroWhereNoRuleWritesIt_ReturnsMisusedMacroAtTheForm(string caller, string reportedAt,
+        string syntax)
+    {
+        var plan = Classify(caller, nameof(Gpu.SingleThread));
+
+        Assert.Equal(CallTargetKind.MisusedMacro, plan.Kind);
+        Assert.Equal("GSH0003", plan.Descriptor.Id);
+        Assert.Equal(new object[] { syntax }, plan.MessageArgs);
+        Assert.Equal(reportedAt, plan.ReportAt?.ToString());
     }
 
     [Fact]
@@ -180,9 +198,27 @@ public static class CallTargetCases
 
     public static int CallsGetValueOrDefault(int? v) => v.GetValueOrDefault();
 
-    public static void CallsSingleThreadLambda() => Gpu.SingleThread(() => CallTargetHelpers.Body());
+    public static void CallsSingleThreadLambda()
+    {
+        Gpu.SingleThread(() => CallTargetHelpers.Body());
+    }
 
-    public static void CallsSingleThreadMethodGroup() => Gpu.SingleThread(CallTargetHelpers.Body);
+    public static void CallsSingleThreadMethodGroup()
+    {
+        Gpu.SingleThread(CallTargetHelpers.Body);
+    }
+
+    public static void CallsSingleThreadInExpression() => Gpu.SingleThread(() => CallTargetHelpers.Body());
+
+    public static int CallsMemorySlice(Memory<int> m) => m.Slice(1, 2).Length + m.Slice(1).Length;
+
+    public static int CallsSegmentCopyTo(ArraySegment<int> s, int[] a)
+    {
+        s.CopyTo(a);
+        return a.Length;
+    }
+
+    public static ImmutableArray<int> CallsImmutableClear(ImmutableArray<int> a) => a.Clear();
 
     public static void CallsInstance(ref CallTargetBox box) => box.Set(1);
 

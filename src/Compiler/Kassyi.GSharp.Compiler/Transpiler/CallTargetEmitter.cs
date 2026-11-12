@@ -20,7 +20,7 @@ internal static class CallTargetEmitter
             return false;
         }
 
-        context.Reporter.Fail(plan.Descriptor, node, plan.MessageArgs);
+        context.Reporter.Fail(plan.Descriptor, plan.ReportAt ?? node, plan.MessageArgs);
         context.Visitor.AppendUnsupportedPlaceholder(node);
         return true;
     }

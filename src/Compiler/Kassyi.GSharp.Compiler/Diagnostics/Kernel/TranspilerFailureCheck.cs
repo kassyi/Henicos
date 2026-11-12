@@ -20,6 +20,22 @@ internal static class TranspilerFailureCheck
 {
     private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
 
+    // The failures that a rule of the analyzer reports itself in the method it walks, by ID and message arguments
+    private static readonly (string Id, Func<object?[], bool> Matches)[] s_reportedByRules =
+    [
+        // UnsupportedConstructRule reports checked and unchecked, also where the transpiler writes a constant as its
+        // value and never visits them; the generator still states them in the native source
+        (
+            GSharpDiagnostics.UnsupportedSyntax.Id,
+            static args => args is
+                [nameof(SyntaxKind.CheckedExpression) or nameof(SyntaxKind.UncheckedExpression) or
+                nameof(SyntaxKind.CheckedStatement) or nameof(SyntaxKind.UncheckedStatement)]
+        ),
+        // CallTargetRule reports a call that the project's dialect does not implement, with the project's dialect;
+        // this run's verdict is the CUDA dialect's
+        (GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id, static _ => true),
+    ];
+
     /// <summary>Adds a diagnostic for each failure of the CUDA transpilation that the generator runs for <paramref name="method"/>.</summary>
     /// <remarks>
     /// When the transpiler throws, the failures of this method are dropped and nothing is added for it: the generator runs
@@ -106,22 +122,12 @@ internal static class TranspilerFailureCheck
                 return;
             }
 
-            // UnsupportedConstructRule reports checked and unchecked in the method it walks, also where the transpiler
-            // writes a constant as its value and never visits them; the generator still states them in the native
-            // source. One in code the rule does not walk (the getter of a computed property) stays a failure here
-            if (failure.Descriptor.Id == GSharpDiagnostics.UnsupportedSyntax.Id &&
-                failure.MessageArgs is
-                    [nameof(SyntaxKind.CheckedExpression) or nameof(SyntaxKind.UncheckedExpression) or
-                    nameof(SyntaxKind.CheckedStatement) or nameof(SyntaxKind.UncheckedStatement)] &&
-                IsInDeclaration(failure.Location))
-            {
-                return;
-            }
-
-            // CallTargetRule reports a call that the project's dialect does not implement, with the project's dialect;
-            // this run's verdict is the CUDA dialect's. One in code the rule does not walk stays a failure here
-            if (failure.Descriptor.Id == GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id &&
-                IsInDeclaration(failure.Location))
+            // A rule reports these in the method it walks; one in code the rule does not walk (the getter of a
+            // computed property) stays a failure here
+            if (IsInDeclaration(failure.Location) &&
+                s_reportedByRules
+                    .AsStackEnumerable()
+                    .Any(failure, static (rule, f) => rule.Id == f.Descriptor.Id && rule.Matches(f.MessageArgs)))
             {
                 return;
             }
