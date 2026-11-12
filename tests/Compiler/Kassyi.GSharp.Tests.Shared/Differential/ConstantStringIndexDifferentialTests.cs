@@ -28,7 +28,7 @@ public sealed class ConstantStringIndexDifferentialTests
             .Out<int>("dst", Columns, OutputPolicy.Exact),
         Launch = static (b, s) => LaunchStringIndexKernel(b.Get<int>("index"), b.Get<int>("dst"),
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => StringIndexKernel(b.Get<int>("index"), b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_constantIndexOutside = new(
@@ -43,7 +43,7 @@ public sealed class ConstantStringIndexDifferentialTests
             .Out<int>("dst", 3, OutputPolicy.Exact),
         Launch = static (b, s) => LaunchConstantIndexOutsideKernel(b.Get<int>("mode"), b.Get<int>("dst"),
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => ConstantIndexOutsideKernel(b.Get<int>("mode"), b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_forEach = new(
@@ -53,7 +53,7 @@ public sealed class ConstantStringIndexDifferentialTests
         Seeds = [0],
         Inputs = static (_, _) => new DiffBuffers().Out<int>("dst", ForEachColumns, OutputPolicy.Exact),
         Launch = static (b, s) => LaunchForEachKernel(b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => ForEachKernel(b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     // index[0] into Text, index[1] into a three-element string

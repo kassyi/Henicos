@@ -47,7 +47,7 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         Inputs = static (rng, _) => Buffers(Mode(rng.Seed < 2 ? ReceiverArgument : ReceiverDefault, rng.Seed % 2)),
         Launch = static (b, s) => LaunchSegmentSliceKernel(Segment(), b.Get<int>("mode"), b.Get<int>("dst"),
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SegmentSliceKernel(Segment(), b.Get<int>("mode"), b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_segmentCopyTo = new(Name(nameof(SegmentCopyToKernel)))
@@ -75,8 +75,7 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         },
         Launch = static (b, s) => LaunchSegmentCopyToKernel(Segment(), b.Get<int>("mode"), b.GetNullable<int>("target"),
             b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) =>
-            SegmentCopyToKernel(Segment(), b.Get<int>("mode"), b.GetNullable<int>("target"), b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_segmentCopyToSegment = new(Name(nameof(SegmentCopyToSegmentKernel)))
@@ -91,8 +90,7 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         Launch = static (b, s) => LaunchSegmentCopyToSegmentKernel(Segment(),
             new ArraySegment<int>(b.Get<int>("destination"), 1, 4), b.Get<int>("mode"), b.Get<int>("dst"),
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SegmentCopyToSegmentKernel(Segment(),
-            new ArraySegment<int>(b.Get<int>("destination"), 1, 4), b.Get<int>("mode"), b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_immutableCopyTo = new(Name(nameof(ImmutableCopyToKernel)))
@@ -115,8 +113,7 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         },
         Launch = static (b, s) => LaunchImmutableCopyToKernel(ImmutableArray.Create(4, 5, 6), b.Get<int>("mode"),
             b.GetNullable<int>("target"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => ImmutableCopyToKernel(ImmutableArray.Create(4, 5, 6), b.Get<int>("mode"),
-            b.GetNullable<int>("target"), b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullableImmutable = new(Name(nameof(NullableImmutableKernel)))
@@ -129,7 +126,7 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
             .Out<int>("dst", 2, OutputPolicy.Exact),
         Launch = static (b, s) => LaunchNullableImmutableKernel(Argument(b), b.Get<int>("dst"),
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableImmutableKernel(Argument(b), b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     private static ImmutableArray<int>? Argument(DiffBuffers buffers) =>
