@@ -207,12 +207,13 @@ public sealed class MarshalingAliasingDifferentialTests
             Seeds = [0],
             Inputs = static (_, _) => new DiffBuffers()
                 .In("backing", new int[OverlappingPointerShiftCount + 1], OutputPolicy.Exact),
-            Oracle = static (b, _) =>
+            // The launch with host pointers: Launch passes device pointers on CUDA
+            Oracle = static (b, s) =>
             {
                 fixed (int* backing = b.Get<int>("backing"))
                 {
-                    MarshalingAliasingDifferentialKernels.OverlappingPointerShiftKernel(
-                        backing, backing + 1, OverlappingPointerShiftCount);
+                    MarshalingAliasingDifferentialKernels.LaunchOverlappingPointerShiftKernel(
+                        backing, backing + 1, OverlappingPointerShiftCount, gridDimX: s.GridX, blockDimX: s.BlockX);
                 }
             },
             Launch = static (b, s) =>
