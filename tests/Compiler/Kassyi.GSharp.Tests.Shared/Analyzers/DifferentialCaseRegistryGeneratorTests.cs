@@ -42,7 +42,10 @@ public class DifferentialCaseRegistryGeneratorTests
                 ("Holders.PropertyHolder.AutoProperty", "Holders.PropertyHolder", "AutoProperty", false),
                 ("Holders.PropertyHolder.ExpressionProperty", "Holders.PropertyHolder", "ExpressionProperty", false),
             ];
-        Assert.Equal(expected.Select(static e => (e.Name, e.IsCollection)), entries.Select(static e => (e.Name, e.IsCollection)));
+        Assert.Equal(
+            expected.Select(static e => (e.Name, e.IsCollection)),
+            entries.Select(static e => (e.Name, e.IsCollection))
+        );
         for (int i = 0; i < expected.Length; i++)
         {
             var member = compilation.GetTypeByMetadataName(expected[i].Type)?.GetMembers(expected[i].Member).Single();
