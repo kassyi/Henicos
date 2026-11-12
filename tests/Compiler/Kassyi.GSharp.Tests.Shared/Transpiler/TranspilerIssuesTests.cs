@@ -69,7 +69,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
     [Category(TestCategory.Compiler)]
     public void GeneralTupleSupport_TupleExpressions_EmitsTupleStructsWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TranspilerIssuesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TranspilerIssuesTarget>(
             nameof(TranspilerIssuesTarget.GeneralTupleSupport), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -83,7 +83,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
     [Category(TestCategory.Compiler)]
     public void LocalFunctionsSupport_CapturedLocalsInLocalFunction_EmitsLambdaWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TranspilerIssuesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TranspilerIssuesTarget>(
             nameof(TranspilerIssuesTarget.LocalFunctionsSupport), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -99,7 +99,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
     [Category(TestCategory.Compiler)]
     public void StackAllocFixedArray_StackAllocatedBuffer_EmitsFixedArrayWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TranspilerIssuesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TranspilerIssuesTarget>(
             nameof(TranspilerIssuesTarget.StackAllocFixedArray), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -111,7 +111,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
     [Category(TestCategory.Compiler)]
     public void GenericsConstraintResolution_ConcreteStructConstraints_ResolvesWithoutTemplates()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TranspilerIssuesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<TranspilerIssuesTarget>(
             nameof(TranspilerIssuesTarget.GenericsConstraintResolution), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

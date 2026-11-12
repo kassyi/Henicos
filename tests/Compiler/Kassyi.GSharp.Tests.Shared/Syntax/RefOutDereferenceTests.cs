@@ -41,7 +41,7 @@ public partial class RefOutDereferenceTests
     public void TranspileMethod_ModifyingRefArgument_EmitsDereferencedAssignment()
     {
         var (cudaSource, diagnostics) =
-            RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
+            TranspileTestRunner.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
 
         Assert.Empty(diagnostics);
         Assert.Matches(SuccessFlagRegex(), cudaSource.WithCSharpNames());
@@ -52,12 +52,12 @@ public partial class RefOutDereferenceTests
     public void TranspileMethod_MemberAccessAndChainedAssignments_EmitsDereferencedAccessAndAssignment()
     {
         var (cudaSourceMember, diagnosticsMember) =
-            RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
+            TranspileTestRunner.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
         Assert.Empty(diagnosticsMember);
         Assert.Matches(RefArgFieldRegex(), cudaSourceMember.WithCSharpNames());
 
         var (cudaSourceChained, diagnosticsChained) =
-            RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ChainedRefAssignment));
+            TranspileTestRunner.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ChainedRefAssignment));
         Assert.Empty(diagnosticsChained);
         Assert.Matches(ChainedRefRegex(), cudaSourceChained.WithCSharpNames());
     }

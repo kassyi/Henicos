@@ -216,20 +216,19 @@ public class FuzzSplitOracleTests
     // two blocks of 64 threads; with no native library on disk the launch takes the managed path.
     private static Type CompileWithGenerator(string source, string assemblyName)
     {
-        var parseOptions = FuzzTestCompilationHelper.ParseOptions;
-        SyntaxTree[] trees =
-        [
-            CSharpSyntaxTree.Create(FuzzSyntaxHelpers.ParseRoot(source), parseOptions, path: $"{assemblyName}.cu.cs"),
+        var parseOptions = FuzzSyntaxHelpers.ParseOptions;
+        var compilation = FuzzTestCompilationHelper.CreateCompilation(
+            source,
+            $"{assemblyName}_{Guid.NewGuid():N}",
+            OptimizationLevel.Debug,
+            out _
+        ).AddSyntaxTrees(
             CSharpSyntaxTree.Create(
                 FuzzSyntaxHelpers.ParseRoot(BuildHandRunnerSource()),
                 parseOptions,
-                path: $"{assemblyName}.Runner.cs"),
-        ];
-        var compilation = CSharpCompilation.Create(
-            $"{assemblyName}_{Guid.NewGuid():N}",
-            trees,
-            FuzzTestCompilationHelper.BaseReferences,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true));
+                path: $"{assemblyName}.Runner.cs"
+            )
+        );
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: [new GpuKernelGenerator().AsSourceGenerator()],
             additionalTexts: null,

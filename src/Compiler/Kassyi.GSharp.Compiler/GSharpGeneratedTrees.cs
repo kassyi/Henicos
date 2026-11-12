@@ -22,8 +22,7 @@ internal static class GSharpGeneratedTrees
         AssemblyName + "/" + AssemblyName + "." + nameof(GpuKernelGenerator) + "/",
         AssemblyName + "/" + AssemblyName + "." + nameof(TrustedKeysGenerator) + "/",
         AssemblyName + "/" + AssemblyName + ".NativeApi." + nameof(CudaImportGenerator) + "/",
-        AssemblyName + "/" + AssemblyName + ".NativeApi." + nameof(NativeApiGenerator) + "/",
-        AssemblyName + "/" + AssemblyName + ".NativeApi." + nameof(NativeCudaKernelsGenerator) + "/"
+        AssemblyName + "/" + AssemblyName + ".NativeApi." + nameof(NativeApiGenerator) + "/"
     ];
 
     /// <summary>Whether a generator of <c>Kassyi.GSharp.Compiler</c> added <paramref name="tree"/>.</summary>

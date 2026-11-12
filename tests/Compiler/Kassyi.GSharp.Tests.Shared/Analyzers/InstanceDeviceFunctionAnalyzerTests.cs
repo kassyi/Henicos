@@ -14,7 +14,7 @@ public class InstanceDeviceFunctionAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task InstanceDeviceFunction_InstanceMethod_ReportsGSH0066()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/InstanceDeviceFunction_SadPath.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
@@ -36,7 +36,7 @@ public class InstanceDeviceFunctionAnalyzerTests : TranspilerTestBase
         var (compilation, _, _) = RoslynTestUtility.GetTestCaseContext("Analyzers/InstanceDeviceFunction_HappyPath.cs");
         Assert.DoesNotContain(compilation.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
 
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/InstanceDeviceFunction_HappyPath.cs", s_analyzer)
             .GetDiagnosticsAsync();
 

@@ -12,7 +12,7 @@ public class ReceiverGetterOrderDifferentialTests
 {
     private const int Rows = 64;
 
-    private static readonly DifferentialCase s_receiverGetter = new(
+    internal static readonly DifferentialCase s_receiverGetter = new(
         KernelName(nameof(ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel)))
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 32),
@@ -27,7 +27,7 @@ public class ReceiverGetterOrderDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_implicitThisGetter = new(
+    internal static readonly DifferentialCase s_implicitThisGetter = new(
         KernelName(nameof(ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel)))
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 32),
@@ -43,7 +43,7 @@ public class ReceiverGetterOrderDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_accessorCall = new(
+    internal static readonly DifferentialCase s_accessorCall = new(
         KernelName(nameof(ReceiverGetterOrderDifferentialKernels.AccessorCallKernel)))
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 32),

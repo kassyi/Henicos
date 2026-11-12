@@ -12,7 +12,7 @@ public class StackLinqLocalQueryDifferentialTests
     private const int SliceLen = StackLinqLocalQueryDifferentialKernels.SliceLength;
     private const string KernelName = nameof(StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel);
 
-    private static readonly DifferentialCase s_localQuery = new(
+    internal static readonly DifferentialCase s_localQuery = new(
         $"{nameof(StackLinqLocalQueryDifferentialKernels)}.{KernelName}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(64),

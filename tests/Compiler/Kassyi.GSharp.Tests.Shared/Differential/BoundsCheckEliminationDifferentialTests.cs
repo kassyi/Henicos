@@ -16,7 +16,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.BoundsAndMemoryDifferential)]
 public class BoundsCheckEliminationDifferentialTests
 {
-    private static readonly DifferentialCase s_boundsCheckEliminationValid = new(
+    internal static readonly DifferentialCase s_boundsCheckEliminationValid = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationValidKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -53,7 +53,7 @@ public class BoundsCheckEliminationDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_boundsCheckEliminationOffByOne = new(
+    internal static readonly DifferentialCase s_boundsCheckEliminationOffByOne = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationOffByOneKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -97,7 +97,7 @@ public class BoundsCheckEliminationDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_boundsCheckEliminationWrongSpan = new(
+    internal static readonly DifferentialCase s_boundsCheckEliminationWrongSpan = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWrongSpanKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -147,7 +147,7 @@ public class BoundsCheckEliminationDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_boundsCheckEliminationPostIncrement = new(
+    internal static readonly DifferentialCase s_boundsCheckEliminationPostIncrement = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationPostIncrementKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -191,7 +191,7 @@ public class BoundsCheckEliminationDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_boundsCheckEliminationUpperOnly = new(
+    internal static readonly DifferentialCase s_boundsCheckEliminationUpperOnly = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),

@@ -19,7 +19,7 @@ public class GpuKernelAnalyzerTests
         string testCasePath,
         string expectedErrorId)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsErrorsAsync(expectedErrorId);
     }
 
@@ -39,7 +39,7 @@ public class GpuKernelAnalyzerTests
         string testCasePath,
         string[] expectedDiagnosticIds)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsDiagnosticsAsync(expectedDiagnosticIds);
     }
 
@@ -50,7 +50,7 @@ public class GpuKernelAnalyzerTests
     [InlineData("GSH-34-Happy", "Analyzers/ParamsProhibited_HappyPath.cs")]
     public async Task GpuKernelAnalyzer_ValidKernelConstruct_HasNoErrors(string featureId, string testCasePath)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .HasNoErrorsAsync();
     }
 
@@ -58,7 +58,7 @@ public class GpuKernelAnalyzerTests
     [Scenario(TestScenario.SadPath)]
     public async Task UserDefinedGpuMacros_CustomMacroMethods_AreNotValidatedAsGpuMacros()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/GpuKernel/LookalikeGpuMacros_InGpuKernel.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/GpuKernel/LookalikeGpuMacros_InGpuKernel.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.MacroArgumentMustBeConstant.Id);
@@ -75,7 +75,7 @@ public class GpuKernelAnalyzerTests
         const string ExpectedMessageFormat =
             "The type '{0}' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.";
 
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/EnclosingTypeMustBePartial_SadPath.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/EnclosingTypeMustBePartial_SadPath.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var actual = diagnostics
             .Where(d => d.Id == GSharpDiagnostics.KernelClassMustBePartial.Id)
@@ -107,7 +107,7 @@ public class GpuKernelAnalyzerTests
     [Scenario(TestScenario.SadPath)]
     public async Task TranspilerFailureCheck_NoDepthLimit_ReportsOnlyOtherDiagnosticWithoutThrowingAD0001()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/IteratorInlineDepth_SadPath.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/IteratorInlineDepth_SadPath.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");

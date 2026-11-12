@@ -13,7 +13,7 @@ public class UnrollShadowDifferentialTests
 {
     private const int Rows = 128;
 
-    private static readonly DifferentialCase s_unrollShadow = new(
+    internal static readonly DifferentialCase s_unrollShadow = new(
         $"{nameof(UnrollShadowDifferentialKernels)}.{nameof(UnrollShadowDifferentialKernels.UnrollShadowKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),

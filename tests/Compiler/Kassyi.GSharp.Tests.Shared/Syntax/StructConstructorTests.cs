@@ -13,7 +13,7 @@ public class StructConstructorTests : TranspilerTestBase
     public void StructConstructorCall_UserDefinedConstructorInvocation_AvoidsAggregateInitializationAndRunsConstructor(
         string kernel)
     {
-        var (source, failures) = RoslynTestUtility.TranspileMethod(
+        var (source, failures) = TranspileTestRunner.TranspileMethod(
             typeof(StructConstructorKernels), kernel, isDevice: false, dialect: CurrentDialect);
 
         // A constructor body, default value or argument name cannot survive S{a, b}: either the call must be lowered

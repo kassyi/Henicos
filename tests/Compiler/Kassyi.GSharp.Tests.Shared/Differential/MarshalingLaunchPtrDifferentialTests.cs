@@ -21,7 +21,7 @@ public sealed class MarshalingLaunchPtrDifferentialTests
 {
     private const int PtrLengthGuardedScaleCount = 64;
 
-    private static readonly DifferentialCase s_ptrLengthGuardedScale = new(
+    internal static readonly DifferentialCase s_ptrLengthGuardedScale = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel)))
     {
         Shape = LaunchShapes.Linear(PtrLengthGuardedScaleCount, blockX: 32),
@@ -102,7 +102,7 @@ public sealed class MarshalingLaunchPtrDifferentialTests
     // --- Launch{Kernel}Ptr with overloaded GpuBuffer<T> signature ---
     private const int OverloadedPtrCount = 64;
 
-    private static readonly DifferentialCase s_overloadedPtr = new(
+    internal static readonly DifferentialCase s_overloadedPtr = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.OverloadedPtrKernel)))
     {
         Shape = LaunchShapes.Linear(OverloadedPtrCount, blockX: 32),
@@ -177,7 +177,7 @@ public sealed class MarshalingLaunchPtrDifferentialTests
     // --- Launch{Kernel}Ptr with ref Convert struct ---
     private const int PtrConvertStructAndRefCount = 32;
 
-    private static readonly DifferentialCase s_ptrConvertStructAndRef = new(
+    internal static readonly DifferentialCase s_ptrConvertStructAndRef = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.PtrConvertStructAndRefKernel)))
     {
         Shape = LaunchShapes.Linear(PtrConvertStructAndRefCount, blockX: 32),

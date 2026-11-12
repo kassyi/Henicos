@@ -9,7 +9,7 @@ public class UnsupportedMathRoundTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Round_WithDigitsOrMidpointRounding_ReportsGsh0109AtTheCall()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/UnsupportedMathRoundOverloads.cu.cs", s_analyzer)
             .GetDiagnosticsAsync();
 

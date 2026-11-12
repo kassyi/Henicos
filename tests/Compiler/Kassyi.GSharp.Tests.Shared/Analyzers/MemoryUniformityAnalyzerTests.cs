@@ -15,7 +15,7 @@ public class MemoryUniformityAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task MemoryWrittenSinceLastBarrier_ThreadVariantWrite_IsThreadVariant()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/BarrierUsage/MemoryUniformityKernels.cu.cs", s_analyzer)
             .GetDiagnosticsAsync();
 

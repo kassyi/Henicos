@@ -15,15 +15,15 @@ internal static class CpuHostLaunchEmitter
     private const string GridBlockCount = GSharpInternalNames.Launcher.GridBlockCount;
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
-    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
+    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName)
     {
         writer.AppendLine(kernel.ManagedCSharpSource);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
         WriteCpuDelegateDeclaration(writer, kernel);
-        WriteLaunchMethodCpu(writer, kernel, assemblyName);
+        WriteLaunchMethodCpu(writer, kernel, moduleName);
     }
 
-    private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel, string assemblyName)
+    private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel, string moduleName)
     {
         using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id);
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false);
@@ -36,7 +36,7 @@ internal static class CpuHostLaunchEmitter
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));
             var sharing = ArraySharingPlan.ForCpu(kernel.Host);
             CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
-            WriteDllPath(writer, assemblyName);
+            WriteDllPath(writer, moduleName);
             ManagedFallbackEmitter.WriteManagedExecutionFallback(writer, kernel.Host);
 
             // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
@@ -82,17 +82,33 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine();
     }
 
-    // var __gsharp_dll_path = <the native library of the assembly for this architecture>;
-    private static void WriteDllPath(SourceWriter writer, string assemblyName)
+    // var __gsharp_dll_path = <the native library of the module for this architecture>;
+    private static void WriteDllPath(SourceWriter writer, string moduleName)
     {
-        var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
+        var fileStem = AotModuleNames.GetArtifactFileStem(moduleName);
         writer.AppendLine(
             $"var {ArchSuffix} = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==" +
             $" global::System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
-        writer.AppendLine(
-            $"var {DllName} = $\"Kassyi.GSharp.Kernels_{safeAssemblyName}{{{ArchSuffix}}}.dll\";");
+        // [WHY] The name goes into an interpolated string: a quote or backslash is escaped, a brace doubled
+        writer.Append($"var {DllName} = $\"");
+        AppendInterpolatedStringText(writer, fileStem);
+        writer.AppendLine($"{{{ArchSuffix}}}.dll\";");
         writer.AppendLine(
             $"var {DllPath} = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, {DllName});");
+    }
+
+    // <text> as the text of a regular interpolated string: escaped as a string literal, each brace doubled.
+    // [WHY] FormatLiteral escapes a double quote only when it writes the quotes, so the quoted form is written without
+    // its first and last character
+    private static void AppendInterpolatedStringText(SourceWriter writer, string text)
+    {
+        var literal = SymbolDisplay.FormatLiteral(text, quote: true);
+        for (var i = 1; i < literal.Length - 1; i++)
+        {
+            var c = literal[i];
+            writer.Append(c);
+            writer.AppendIf(c == '{', "{").AppendIf(c == '}', "}");
+        }
     }
 
     private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, in KernelEmission kernel)

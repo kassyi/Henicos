@@ -22,7 +22,7 @@ public class IntrinsicDifferentialTests
         0x3210u, 0x7654u, 0x0123u, 0x4567u, 0x0000u, 0x7777u, 0x89ABu, 0xFEDCu, 0x5140u, 0xFFFFu, 0x8888u, 0xFFFF_3210u,
     ];
 
-    private static readonly DifferentialCase s_integer32 =
+    internal static readonly DifferentialCase s_integer32 =
         new(KernelName(nameof(IntrinsicDifferentialKernels.Integer32IntrinsicsKernel)))
     {
         Shape = LaunchShapes.Linear(Rows, 32),
@@ -59,7 +59,7 @@ public class IntrinsicDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_integer64 =
+    internal static readonly DifferentialCase s_integer64 =
         new(KernelName(nameof(IntrinsicDifferentialKernels.Integer64IntrinsicsKernel)))
     {
         Shape = LaunchShapes.Linear(Rows, 32),
@@ -116,7 +116,7 @@ public class IntrinsicDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_cacheHintAndFence =
+    internal static readonly DifferentialCase s_cacheHintAndFence =
         new(KernelName(nameof(IntrinsicDifferentialKernels.CacheHintAndFenceKernel)))
         {
             Shape = LaunchShapes.Linear(Rows, 32),
@@ -141,7 +141,7 @@ public class IntrinsicDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_smId = new(KernelName(nameof(IntrinsicDifferentialKernels.SmIdKernel)))
+    internal static readonly DifferentialCase s_smId = new(KernelName(nameof(IntrinsicDifferentialKernels.SmIdKernel)))
     {
         Shape = LaunchShapes.Linear(Rows, 32),
         Inputs = static (_, shape) => new DiffBuffers()
@@ -170,7 +170,7 @@ public class IntrinsicDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_clock = new(KernelName(nameof(IntrinsicDifferentialKernels.ClockKernel)))
+    internal static readonly DifferentialCase s_clock = new(KernelName(nameof(IntrinsicDifferentialKernels.ClockKernel)))
     {
         Shape = LaunchShapes.Linear(Rows, 32),
         Inputs = static (rng, shape) => new DiffBuffers()

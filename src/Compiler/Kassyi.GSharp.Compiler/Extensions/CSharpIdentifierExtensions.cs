@@ -9,5 +9,5 @@ internal static class CSharpIdentifierExtensions
     /// </summary>
     /// <remarks>Only names emitted on their own need this; derived names such as <c>d_class</c> are never keywords.</remarks>
     public static string ToCSharpIdentifier(this string name) =>
-        SyntaxFacts.GetKeywordKind(name) == SyntaxKind.None ? name : "@" + name;
+        CSharpTypeNameWriter.IsReservedKeyword(name) ? "@" + name : name;
 }

@@ -91,7 +91,7 @@ public sealed class GeneratorTestConfig : DiagnosticTestConfigBase<GeneratorTest
     public async Task<GeneratorDriver> GetDriverAsync()
     {
         var source = await File.ReadAllTextAsync(FullPath);
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, TargetDialect);
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, TargetDialect);
         return driver;
     }
 
@@ -99,7 +99,7 @@ public sealed class GeneratorTestConfig : DiagnosticTestConfigBase<GeneratorTest
     public override async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync()
     {
         var source = await File.ReadAllTextAsync(FullPath);
-        var (_, outputCompilation, diagnostics) = RoslynTestUtility.RunGenerator(source, TargetDialect);
+        var (_, outputCompilation, diagnostics) = GeneratorTestRunner.RunGenerator(source, TargetDialect);
         return diagnostics.AddRange(outputCompilation.GetDiagnostics());
     }
 }
@@ -118,7 +118,7 @@ public sealed class AnalyzerTestConfig : DiagnosticTestConfigBase<AnalyzerTestCo
     public override async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync()
     {
         var source = await File.ReadAllTextAsync(FullPath);
-        return await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, _analyzer, TargetDialect);
+        return await GeneratorTestRunner.GetAnalyzerDiagnosticsAsync(source, _analyzer, TargetDialect);
     }
 
     /// <summary>Asserts that running the analyzer reports zero diagnostics.</summary>

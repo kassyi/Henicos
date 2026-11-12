@@ -10,7 +10,7 @@ public class KeywordParameterNameGeneratorTests
     [Scenario(TestScenario.Boundary)]
     public async Task KeywordParameterNames_GenerateCompilableWrappers(string dialect)
     {
-        var testConfig = RoslynTestUtility.TestGenerator("Generators/GpuKernel_KeywordParameterNames.cu.cs")
+        var testConfig = GeneratorTestRunner.TestGenerator("Generators/GpuKernel_KeywordParameterNames.cu.cs")
             .WithDialect(dialect);
 
         await testConfig.HasNoErrorsAsync();

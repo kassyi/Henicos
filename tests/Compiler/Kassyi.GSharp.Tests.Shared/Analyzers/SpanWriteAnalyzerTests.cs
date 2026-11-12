@@ -13,7 +13,7 @@ public class SpanWriteAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task SpanWrite_UnsupportedForms_ReportGSH0003AndSupportedFormsProduceNone()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/SpanWrite/SpanWriteUnsupported.cs", s_analyzer)
             .GetDiagnosticsAsync();
 

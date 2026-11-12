@@ -9,14 +9,14 @@ public class GpuBigIntExprAnalyzerTests
     [Fact]
     public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/LocalDeclaration.cs", s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer("Analyzers/GpuBigIntExpr/LocalDeclaration.cs", s_analyzer)
                                .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment);
     }
 
     [Fact]
     public async Task MultipleDeclarations_InSingleStatement_EdgeCase()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/MultipleDeclarations.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/GpuBigIntExpr/MultipleDeclarations.cs", s_analyzer)
                                                 .GetDiagnosticsAsync();
         var count = diagnostics.Count(d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
         Assert.Equal(2, count);
@@ -25,21 +25,21 @@ public class GpuBigIntExprAnalyzerTests
     [Fact]
     public async Task BigIntExpr_MalformedSyntax_DoesNotCrash()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/MalformedSyntax.cs", s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer("Analyzers/GpuBigIntExpr/MalformedSyntax.cs", s_analyzer)
                                .ReportsErrorsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment);
     }
 
     [Fact]
     public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/Assignment.cs", s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer("Analyzers/GpuBigIntExpr/Assignment.cs", s_analyzer)
                                .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment);
     }
 
     [Fact]
     public async Task LegacyNamespace_Declaration_ReportsDiagnostic()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/LegacyNamespace.cs", s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer("Analyzers/GpuBigIntExpr/LegacyNamespace.cs", s_analyzer)
                                .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment);
     }
 }

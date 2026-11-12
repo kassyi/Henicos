@@ -53,7 +53,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public async Task TranspileMethod_StringInterpolationPrintf_EmitsUnsupportedCallOrPrintfAndMatchesSnapshot()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.StringInterpolationPrintf), isDevice: false, dialect: CurrentDialect);
 
         // Dialects without InlineAssembly (CPU) must replace the call with a runtime failure; the analyzer warns
@@ -71,7 +71,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public async Task TranspileMethod_Utf8StringLiteral_TranspilesSuccessfullyAndMatchesSnapshot()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.Utf8StringLiteral), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -86,7 +86,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public async Task TranspileMethod_NameOfExpression_FailsWithStringNotSupportedDiagnostic()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.NameOfExpression), isDevice: false, dialect: CurrentDialect);
 
         // The analyzer reports the string variable (UnsupportedConstructDiagnosticsTests); the transpiler records the
@@ -101,7 +101,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public async Task TranspileMethod_LoopUnrollAttribute_TranspilesSuccessfullyAndMatchesSnapshot()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.LoopUnrollAttribute), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -116,7 +116,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public async Task TranspileMethod_GenericStructType_TranspilesSuccessfullyAndMatchesSnapshot()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.GenericStruct), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

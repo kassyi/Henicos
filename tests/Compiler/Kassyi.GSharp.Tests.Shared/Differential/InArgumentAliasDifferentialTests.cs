@@ -16,48 +16,48 @@ public unsafe class InArgumentAliasDifferentialTests
     private const int Rows = 128;
     private const string Kernels = nameof(InArgumentAliasDifferentialKernels);
 
-    private static readonly DifferentialCase s_inlineElement = ArrayCase(
+    internal static readonly DifferentialCase s_inlineElement = ArrayCase(
         nameof(K.InlineElementKernel),
         static (b, s) => K.LaunchInlineElementKernel(b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_parenthesizedInlineElement = ArrayCase(
+    internal static readonly DifferentialCase s_parenthesizedInlineElement = ArrayCase(
         nameof(K.ParenthesizedInlineElementKernel),
         static (b, s) => K.LaunchParenthesizedInlineElementKernel(b.Get<int>("xs"), b.Get<int>("r"),
             gridDimX: s.GridX, blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_parenthesizedLocal = ArrayCase(
+    internal static readonly DifferentialCase s_parenthesizedLocal = ArrayCase(
         nameof(K.ParenthesizedLocalKernel),
         static (b, s) => K.LaunchParenthesizedLocalKernel(b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_fixedBufferElement = ArrayCase(
+    internal static readonly DifferentialCase s_fixedBufferElement = ArrayCase(
         nameof(K.FixedBufferElementKernel),
         static (b, s) => K.LaunchFixedBufferElementKernel(b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_readOnlyReference = ArrayCase(
+    internal static readonly DifferentialCase s_readOnlyReference = ArrayCase(
         nameof(K.ReadOnlyReferenceKernel),
         static (b, s) => K.LaunchReadOnlyReferenceKernel(b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_structFieldInlineElement = ArrayCase(
+    internal static readonly DifferentialCase s_structFieldInlineElement = ArrayCase(
         nameof(K.StructFieldInlineElementKernel),
         static (b, s) => K.LaunchStructFieldInlineElementKernel(b.Get<int>("xs"), b.Get<int>("r"),
             gridDimX: s.GridX, blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_nestedInlineElement = ArrayCase(
+    internal static readonly DifferentialCase s_nestedInlineElement = ArrayCase(
         nameof(K.NestedInlineElementKernel),
         static (b, s) => K.LaunchNestedInlineElementKernel(b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_indexMovedByCallee = ArrayCase(
+    internal static readonly DifferentialCase s_indexMovedByCallee = ArrayCase(
         nameof(K.IndexMovedByCalleeKernel),
         static (b, s) => K.LaunchIndexMovedByCalleeKernel(b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
     // C# copies the element of a value once: the callee reads x, and MakeInline runs once
-    private static readonly DifferentialCase s_valueElement = new(Kernels + "." + nameof(K.ValueElementKernel))
+    internal static readonly DifferentialCase s_valueElement = new(Kernels + "." + nameof(K.ValueElementKernel))
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -77,33 +77,33 @@ public unsafe class InArgumentAliasDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_pointerIndirection = PointerCase(
+    internal static readonly DifferentialCase s_pointerIndirection = PointerCase(
         nameof(K.PointerIndirectionKernel),
         static (g, b, s) => K.LaunchPointerIndirectionKernel(g, b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_pointerElement = PointerCase(
+    internal static readonly DifferentialCase s_pointerElement = PointerCase(
         nameof(K.PointerElementKernel),
         static (g, b, s) => K.LaunchPointerElementKernel(g, b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_pointerMember = PointerCase(
+    internal static readonly DifferentialCase s_pointerMember = PointerCase(
         nameof(K.PointerMemberKernel),
         static (g, b, s) => K.LaunchPointerMemberKernel(g, b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_dereferencedMember = PointerCase(
+    internal static readonly DifferentialCase s_dereferencedMember = PointerCase(
         nameof(K.DereferencedMemberKernel),
         static (g, b, s) => K.LaunchDereferencedMemberKernel(g, b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX,
             blockDimX: s.BlockX));
 
-    private static readonly DifferentialCase s_pointerMovedByLaterArgument = PointerCase(
+    internal static readonly DifferentialCase s_pointerMovedByLaterArgument = PointerCase(
         nameof(K.PointerMovedByLaterArgumentKernel),
         static (g, b, s) => K.LaunchPointerMovedByLaterArgumentKernel(g, b.Get<int>("xs"), b.Get<int>("r"),
             gridDimX: s.GridX, blockDimX: s.BlockX),
         K.MovedPointerScale);
 
-    private static readonly DifferentialCase s_pointerMovedByLaterKeywordArgument = PointerCase(
+    internal static readonly DifferentialCase s_pointerMovedByLaterKeywordArgument = PointerCase(
         nameof(K.PointerMovedByLaterKeywordArgumentKernel),
         static (g, b, s) => K.LaunchPointerMovedByLaterKeywordArgumentKernel(g, b.Get<int>("xs"), b.Get<int>("r"),
             gridDimX: s.GridX, blockDimX: s.BlockX),

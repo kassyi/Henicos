@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.AtomicsDifferential)]
 public class AtomicsFloatAndSyncDifferentialTests
 {
-    private static readonly DifferentialCase s_floatExactPowersOfTwoAtomics =
+    internal static readonly DifferentialCase s_floatExactPowersOfTwoAtomics =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.FloatExactPowersOfTwoAtomicKernel)}")
@@ -90,7 +90,7 @@ public class AtomicsFloatAndSyncDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_floatTwoStageRoundingBound =
+    internal static readonly DifferentialCase s_floatTwoStageRoundingBound =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.FloatTwoStageRoundingBoundKernel)}")
@@ -160,7 +160,7 @@ public class AtomicsFloatAndSyncDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_floatSpecialValuesContention =
+    internal static readonly DifferentialCase s_floatSpecialValuesContention =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.FloatSpecialValuesContentionKernel)}")
@@ -238,7 +238,7 @@ public class AtomicsFloatAndSyncDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_blockLeaderCasSpinlock =
+    internal static readonly DifferentialCase s_blockLeaderCasSpinlock =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.BlockLeaderCasSpinlockKernel)}")
@@ -288,7 +288,7 @@ public class AtomicsFloatAndSyncDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_cooperativeCasLockFreeStack =
+    internal static readonly DifferentialCase s_cooperativeCasLockFreeStack =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.CooperativeCasLockFreeStackKernel)}")

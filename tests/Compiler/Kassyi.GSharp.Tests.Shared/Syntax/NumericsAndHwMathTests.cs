@@ -210,7 +210,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_HalfPrecision_EmitsValidSource()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<NumericsAndHwMathTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<NumericsAndHwMathTarget>(
             nameof(NumericsAndHwMathTarget.HalfPrecision), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -225,7 +225,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_NativeInt_EmitsValidSource()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<NumericsAndHwMathTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<NumericsAndHwMathTarget>(
             nameof(NumericsAndHwMathTarget.NativeInt), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -242,7 +242,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_Int128UInt128_EmitsValidSource()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<NumericsAndHwMathTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<NumericsAndHwMathTarget>(
             nameof(NumericsAndHwMathTarget.Int128UInt128), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -259,7 +259,7 @@ public class NumericsAndHwMathTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_BFloat16Fp8_EmitsValidSource()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<NumericsAndHwMathTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<NumericsAndHwMathTarget>(
             nameof(NumericsAndHwMathTarget.BFloat16Fp8), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

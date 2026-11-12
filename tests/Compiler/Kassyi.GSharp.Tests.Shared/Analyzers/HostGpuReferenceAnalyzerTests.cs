@@ -13,7 +13,7 @@ public class HostGpuReferenceAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task GpuKernelDirectInvocation_DirectCallFromHost_ReportsGSH0031()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/DirectGpuKernelInvocation.cs", s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer("Analyzers/DirectGpuKernelInvocation.cs", s_analyzer)
                                .ReportsErrorsAsync(GSharpDiagnostics.DirectGpuKernelInvocation);
     }
 
@@ -21,7 +21,7 @@ public class HostGpuReferenceAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public async Task GpuKernelDirectInvocation_NestedCalls_FollowEnclosingFunction()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/DirectGpuKernelInvocationNested.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/DirectGpuKernelInvocationNested.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         // Only the lambda in host code is reported; lambdas and local functions inside GPU functions are device code.
@@ -43,7 +43,7 @@ public class HostGpuReferenceAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task HostReference_EveryForm_ReportsGsh0031AtTheReference()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/HostKernelReferences.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/HostKernelReferences.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         Assert.Equal(
@@ -79,7 +79,7 @@ public class HostGpuReferenceAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task HostReference_MethodGroup_KeepsTheMessageOfACall()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/HostKernelReferences.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/HostKernelReferences.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         const string Expected =
@@ -127,7 +127,7 @@ public class HostGpuReferenceAnalyzerTests : TranspilerTestBase
             "Kernels/GeneratedCodeKernel.cs",
             RoslynTestUtility.ReadTestCase("Analyzers/GeneratedCodeKernel.cs"));
 
-        var (_, output, _) = RoslynTestUtility.RunGenerator(input);
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(input);
 
         var generated = output.SyntaxTrees.Except(input.SyntaxTrees).ToList();
         Assert.NotEmpty(generated);

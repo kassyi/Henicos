@@ -72,7 +72,7 @@ public class UnsupportedSyntaxKindDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'SpreadElement'"));
 
         // The generator states it in the kernel's native source, so the native build stops even without the analyzer
-        var (_, output, _) = RoslynTestUtility.RunGenerator(
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(
             RoslynTestUtility.ReadTestCase("Diagnostics/UnsupportedSyntaxKinds.cu.cs"), dialect);
         Assert.Contains(
             output.SyntaxTrees,

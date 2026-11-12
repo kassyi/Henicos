@@ -45,7 +45,7 @@ public class StackAllocFixedArrayTests : TranspilerTestBase
         LoopsAndJumpsKernels.LaunchForeachStackAllocKernel(output, blockDimX: 1);
         Assert.Equal(100, output[0]);
 
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StackAllocFixedArrayTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<StackAllocFixedArrayTarget>(
             nameof(StackAllocFixedArrayTarget.StackAllocHappyPath), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -60,7 +60,7 @@ public class StackAllocFixedArrayTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void TranspileAndExecute_StackAllocInTightLoop_ProducesExpectedOutputAndEmptyDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StackAllocFixedArrayTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<StackAllocFixedArrayTarget>(
             nameof(StackAllocFixedArrayTarget.StackAllocInTightLoop), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -75,7 +75,7 @@ public class StackAllocFixedArrayTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void TranspileAndExecute_StackAllocAsMethodArgument_PassesSpanDirectly()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StackAllocFixedArrayTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<StackAllocFixedArrayTarget>(
             nameof(StackAllocFixedArrayTarget.StackAllocAsMethodArgument), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

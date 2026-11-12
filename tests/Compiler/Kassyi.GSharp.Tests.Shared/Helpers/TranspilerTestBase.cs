@@ -41,14 +41,14 @@ public abstract class TranspilerTestBase
             return new GeneratorTestConfig(resolvedFile).WithDialect(DialectName);
         }
 
-        return RoslynTestUtility.TestGenerator(relativePathToTestCases, callerFilePath)
+        return GeneratorTestRunner.TestGenerator(relativePathToTestCases, callerFilePath)
             .WithDialect(DialectName);
     }
 
     protected AnalyzerTestConfig TestAnalyzer(string relativePathToTestCases,
         DiagnosticAnalyzer analyzer, [CallerFilePath] string callerFilePath = "")
     {
-        return RoslynTestUtility.TestAnalyzer(relativePathToTestCases, analyzer, callerFilePath)
+        return GeneratorTestRunner.TestAnalyzer(relativePathToTestCases, analyzer, callerFilePath)
             .WithDialect(DialectName);
     }
 
