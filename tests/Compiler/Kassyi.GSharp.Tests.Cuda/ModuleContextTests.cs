@@ -10,7 +10,9 @@ namespace Kassyi.GSharp.Tests.Cuda;
 /// </summary>
 /// <remarks>
 /// The launch tests run in a child process: they need a process in which the kernel has not been launched yet, and a
-/// stale function handle crashes the process inside <c>cuLaunchKernel</c> instead of failing the test.
+/// stale function handle crashes the process inside <c>cuLaunchKernel</c> instead of failing the test. The module test
+/// runs in a child process as well: a second context with the whole module of this assembly loaded adds about 300 MB
+/// to the private memory of the process, which the test host's memory budget leaves no room for.
 /// </remarks>
 [Collection(TestCollections.DeviceExclusive)]
 public class ModuleContextTests
@@ -141,6 +143,11 @@ public class ModuleContextTests
     public void GetOrLoadModule_LoadsTheModuleOncePerContext()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        if (!IsolatedTestProcess.IsChild(nameof(GetOrLoadModule_LoadsTheModuleOncePerContext)))
+        {
+            IsolatedTestProcess.Run(typeof(ModuleContextTests), nameof(GetOrLoadModule_LoadsTheModuleOncePerContext));
+            return;
+        }
 
         var global = GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule();
         Assert.Equal(global, GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule());

@@ -4,6 +4,9 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 // cuBLAS / cuRAND lazily initialize the process-wide CUDA runtime; concurrent first use races.
+// Each test runs in a child process: loading cuBLAS adds about 430 MB to the private memory of the process for the rest of
+// its life (cublasLt alone maps a 570 MB image, about 250 MB of it copy-on-write), which the memory budget of the test
+// host leaves no room for.
 [Collection(TestCollections.GlobalStateSequential)]
 [Category(TestCategory.Runtime)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -14,6 +17,10 @@ public class CuBlasInteropTests
     public void CublasSgemm_StandardMatrices_MatchesCpuReference()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        if (RunInChildProcess())
+        {
+            return;
+        }
 
         const int M = 64;
         const int N = 48;
@@ -55,6 +62,10 @@ public class CuBlasInteropTests
     public void CublasDgemm_TransposedMatrixA_MatchesCpuReference()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        if (RunInChildProcess())
+        {
+            return;
+        }
 
         const int M = 16;
         const int N = 8;
@@ -125,6 +136,10 @@ public class CuBlasInteropTests
     public void CublasGetVersion_ValidHandle_ReportsSupportedMajorVersion()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        if (RunInChildProcess())
+        {
+            return;
+        }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         Skip.IfNot(TryCreateHandle(out var handle), "cuBLAS library is not available.");
@@ -145,6 +160,10 @@ public class CuBlasInteropTests
     public void CublasSgemm_InvalidLeadingDimension_ReturnsInvalidValue()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        if (RunInChildProcess())
+        {
+            return;
+        }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         Skip.IfNot(TryCreateHandle(out var handle), "cuBLAS library is not available.");
@@ -161,6 +180,18 @@ public class CuBlasInteropTests
         {
             AssertSuccess(CuBlasApi.cublasDestroy_v2(handle));
         }
+    }
+
+    // In the test host, runs the calling test in a child process and returns true; in that child, returns false
+    private static bool RunInChildProcess([CallerMemberName] string testMethodName = "")
+    {
+        if (IsolatedTestProcess.IsChild(testMethodName))
+        {
+            return false;
+        }
+
+        IsolatedTestProcess.Run(typeof(CuBlasInteropTests), testMethodName);
+        return true;
     }
 
     private static bool TryCreateHandle(out IntPtr handle)
