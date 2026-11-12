@@ -315,9 +315,10 @@ __forceinline__ int __gsharp_tzc_32(uint32_t value) { unsigned long index; retur
 __forceinline__ int __gsharp_tzc_64(uint64_t value) { unsigned long index; return _BitScanForward64(&index, value) ? (int)index : 64; }
 __forceinline__ int __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? (int)index : 0; }
 __forceinline__ int __gsharp_log2_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? (int)index : 0; }
-// PTX bfe.u32 / bfe.u64: the field of a from start, of length bits, with the bits past the top of a zero. The GPU takes
-// pos and len modulo 256 for 32 bits and as unsigned 32-bit values for 64 bits (measured on the GPU; the PTX ISA says
-// modulo 256 for both)
+// PTX bfe.u32 / bfe.u64: the field of a from start, of length bits, with the bits past the top of a zero. The device
+// code takes pos and len modulo 256 for 32 bits and as unsigned 32-bit values for 64 bits: ptxas (CUDA 13.4) lowers
+// bfe.u64 / bfi.b64 to shifts without the modulo, although the PTX ISA says modulo 256 for both (measured on sm_86,
+// same SASS for sm_75 and sm_120)
 __forceinline__ unsigned long long __gsharp_extract_field(unsigned long long a, unsigned int start, unsigned int length,
 unsigned int bits) {
 if (length == 0 || start >= bits) return 0;
