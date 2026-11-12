@@ -14,9 +14,9 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// </summary>
 /// <remarks>
 /// Every output starts filled with <see cref="Sentinel"/>, so an entry that keeps it was never written. The release
-/// CUDA build does not check <c>Slice</c> and <c>AsSpan</c>, so those cases run on CUDA only in a checked build. On CUDA
-/// a failure inside a <c>using</c> does not dispose the resource yet (#1770), so the cases that need it run on the CPU
-/// paths.
+/// CUDA build does not check <c>Slice</c> and <c>AsSpan</c>, so those cases run on CUDA only in a checked build. On
+/// CUDA a failure inside a <c>using</c> does not dispose the resource yet (#1770), so the cases that need it run on the
+/// CPU paths.
 /// </remarks>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Compiler)]

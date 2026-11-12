@@ -41,11 +41,11 @@ inline void __gsharp_dispose_unwinding(T& resource, uint32_t failureMark) noexce
 
 // The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
 // goto). Guards of one block are destroyed in reverse order, as C# disposes nested usings.
-// [WHY] On the CPU a failed check ends the step with an exception (ErrorChannel.hpp), and C# disposes the resource as the
-// exception leaves the using (a finally), so the guard disposes it while the exception unwinds too; a failure of that
-// Dispose cannot leave a destructor during unwinding and is recorded there instead (__gsharp_dispose_unwinding). When
-// the block ends normally a failure of Dispose leaves the destructor like any failed check. On CUDA the failing thread
-// exits and does not dispose.
+// [WHY] On the CPU a failed check ends the step with an exception (ErrorChannel.hpp), and C# disposes the resource as
+// the exception leaves the using (a finally), so the guard disposes it while the exception unwinds too; a failure of
+// that Dispose cannot leave a destructor during unwinding and is recorded there instead (__gsharp_dispose_unwinding).
+// When the block ends normally, a failure of Dispose leaves the destructor like any failed check. On CUDA the failing
+// thread exits and does not dispose.
 template <typename T>
 struct __gsharp_using_scope {
 T& resource;
