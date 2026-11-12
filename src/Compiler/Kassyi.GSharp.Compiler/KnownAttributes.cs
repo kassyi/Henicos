@@ -36,6 +36,9 @@ internal static class KnownAttributes
     public const string In = nameof(In);
     public const string Out = nameof(Out);
     public const string DefaultParameterValue = nameof(DefaultParameterValue);
+    public const string ModuleInitializer = nameof(ModuleInitializer);
+    public const string CollectionBuilder = nameof(CollectionBuilder);
+    public const string UnmanagedCallersOnly = nameof(UnmanagedCallersOnly);
 
     /// <summary>
     /// Zero-allocation, reflection-free helper to match an attribute name against a short name or its Attribute-suffixed name.
@@ -71,9 +74,10 @@ internal static class KnownAttributes
             or CudaIntrinsicPattern or GpuOperatorMacro or GpuResource or TakesOwnership or CudaImport or BclIntrinsicMap
             or GpuDeviceExport =>
             declaringNamespace.IsCoreNamespace(),
-        MethodImpl or SkipLocalsInit or InlineArray or CompilerGenerated =>
+        MethodImpl or SkipLocalsInit or InlineArray or CompilerGenerated or ModuleInitializer or CollectionBuilder =>
             declaringNamespace.IsSystemRuntimeCompilerServices(),
-        StructLayout or FieldOffset or In or Out or DefaultParameterValue => declaringNamespace.IsSystemRuntimeInteropServices(),
+        StructLayout or FieldOffset or In or Out or DefaultParameterValue or UnmanagedCallersOnly =>
+            declaringNamespace.IsSystemRuntimeInteropServices(),
         _ => true
     };
 }

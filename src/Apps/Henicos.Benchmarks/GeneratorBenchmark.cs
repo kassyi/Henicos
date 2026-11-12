@@ -16,9 +16,10 @@ namespace Henicos.Benchmarks;
 
 /// <summary>
 /// In-process CPU benchmarks measuring the G# source generator (<see cref="GpuKernelGenerator"/>) and kernel analyzers
-/// (<see cref="GpuKernelAnalyzer"/>, <see cref="KernelClassAnalyzer"/>, <see cref="BarrierUsageAnalyzer"/>,
-/// <see cref="ParallelDependentCallAnalyzer"/>) on the fixed benchmark kernel suite in <c>GeneratorInputs</c>, and the
-/// build of the compiler's intermediate representation (<see cref="IrBuilder"/>) of every GPU method of the suite.
+/// (<see cref="GpuKernelAnalyzer"/>, <see cref="KernelClassAnalyzer"/>, <see cref="KernelDeclarationAnalyzer"/>,
+/// <see cref="BarrierUsageAnalyzer"/>, <see cref="ParallelDependentCallAnalyzer"/>) on the fixed benchmark kernel
+/// suite in <c>GeneratorInputs</c>, and the build of the compiler's intermediate representation
+/// (<see cref="IrBuilder"/>) of every GPU method of the suite.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -52,6 +53,7 @@ public class GeneratorBenchmark
     [
         new GpuKernelAnalyzer(),
         new KernelClassAnalyzer(),
+        new KernelDeclarationAnalyzer(),
         new BarrierUsageAnalyzer(),
         new ParallelDependentCallAnalyzer()
     ];
