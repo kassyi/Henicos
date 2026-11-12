@@ -8,7 +8,7 @@ internal static class TypeLayoutCalculator
     /// <summary>Determines whether the type requires custom native struct generation on the host.</summary>
     /// <remarks>
     /// This is the host marshaling classification (native shadow structs), not the device one: unlike
-    /// <see cref="Transpiler.GlobalCppNames.IsEmittedUserType"/> it leaves out array-like structs and Core types.
+    /// <see cref="Transpiler.GlobalCppNames.IsEmittedUserType"/> it leaves out Core types.
     /// </remarks>
     public static bool IsUserStruct(ITypeSymbol type)
     {

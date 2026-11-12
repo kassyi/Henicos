@@ -32,7 +32,8 @@ internal static class GlobalCppNames
 
     /// <summary>
     /// Whether <paramref name="type"/> is a user struct whose definition G# emits itself. Other types
-    /// (<c>System_Nullable</c>, shared memory) are defined by the prelude under their legacy spelling.
+    /// (<c>System_Nullable</c>, shared memory) are defined by the prelude under their legacy spelling, and every
+    /// array-like type, <c>ImmutableArray&lt;T&gt;</c> included, is the prelude's <c>GSharpArray&lt;T&gt;</c>.
     /// </summary>
     /// <remarks>
     /// Used for the definition: collecting the structs to define and naming the definition. References use
@@ -41,7 +42,8 @@ internal static class GlobalCppNames
     /// exists today.
     /// </remarks>
     public static bool IsEmittedUserType(INamedTypeSymbol type) =>
-        type.TypeKind == TypeKind.Struct && !type.ContainingNamespace.IsSystemOrNumerics() && !type.IsSharedMemoryType() && !type.IsWmmaFragmentType() && !type.IsWmmaMarkerType();
+        type.TypeKind == TypeKind.Struct && !type.ContainingNamespace.IsSystemOrNumerics() && !type.IsArrayLikeType() &&
+        !type.IsSharedMemoryType() && !type.IsWmmaFragmentType() && !type.IsWmmaMarkerType();
 
     /// <summary>
     /// Whether a reference to <paramref name="type"/> or to one of its instance members uses the encoded name: an

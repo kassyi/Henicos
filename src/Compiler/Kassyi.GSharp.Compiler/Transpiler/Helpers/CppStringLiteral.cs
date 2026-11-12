@@ -9,6 +9,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 internal static class CppStringLiteral
 {
     private const int ReplacementCharacter = 0xFFFD;
+    private const string HexDigits = "0123456789abcdef";
 
     /// <summary>Writes <c>"&lt;value&gt;"</c> with the escapes described on the type.</summary>
     public static void Append(SourceWriter writer, string value)
@@ -39,6 +40,43 @@ internal static class CppStringLiteral
 
         writer.Append('"');
     }
+
+    /// <summary>
+    /// Writes <c>u"&lt;value&gt;"</c>, a C++ <c>char16_t</c> literal with the UTF-16 code units of
+    /// <paramref name="value"/> as C# indexes them: a printable ASCII character other than <c>"</c>, <c>\</c> and
+    /// <c>?</c> as it is, any other code unit (a lone surrogate included) as a hexadecimal escape.
+    /// </summary>
+    /// <remarks>
+    /// A hexadecimal escape takes every hexadecimal digit after it, so a digit that follows one starts the next piece
+    /// of the literal (<c>u"\x00e9" u"1"</c>), which C++ joins into one literal.
+    /// </remarks>
+    public static void AppendUtf16(SourceWriter writer, string value)
+    {
+        writer.Append("u\"");
+        var afterEscape = false;
+        foreach (var c in value)
+        {
+            if (c >= 0x20 && c <= 0x7E && c != '"' && c != '\\' && c != '?')
+            {
+                writer.AppendIf(afterEscape && IsHexDigit(c), "\" u\"");
+                writer.Append(c);
+                afterEscape = false;
+                continue;
+            }
+
+            writer.Append("\\x");
+            for (var shift = 12; shift >= 0; shift -= 4)
+            {
+                writer.Append(HexDigits[(c >> shift) & 0xF]);
+            }
+
+            afterEscape = true;
+        }
+
+        writer.Append('"');
+    }
+
+    private static bool IsHexDigit(char c) => c is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F';
 
     // The UTF-8 bytes of one code point, each as \ooo (an octal escape ends after three digits, so a following digit is
     // never read into it)

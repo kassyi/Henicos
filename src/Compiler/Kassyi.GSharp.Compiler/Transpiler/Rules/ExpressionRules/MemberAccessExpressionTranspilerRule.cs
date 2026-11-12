@@ -44,7 +44,8 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             TryTranspileTypeQualifiedAccess(memberExprSymbol, symbol, node, ref context) ||
             TryTranspileReducedExtensionMethodGroup(node, symbol, ref context) ||
             StackArrayLengthAccess.TryTranspile(node, ref context) ||
-            TryTranspileSpecialArrayMembers(node, ref context))
+            TryTranspileSpecialArrayMembers(node, ref context) ||
+            ArrayViewMemberCall.TryAppendCallee(node, symbol, ref context))
         {
             return;
         }
