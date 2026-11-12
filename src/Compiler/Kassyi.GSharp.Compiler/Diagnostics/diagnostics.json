@@ -877,6 +877,24 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "KernelDeclarationNotSupported",
+    "id": "GSH0111",
+    "title": "[GpuKernel] is only allowed on an ordinary static method of a class",
+    "messageFormat": "[GpuKernel] cannot be applied to {0}. A kernel must be an ordinary static method of a class; move the body to a [GpuDeviceFunction] method and call it from such a kernel.",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "KernelParameterHasNoDeviceRepresentation",
+    "id": "GSH0112",
+    "title": "Kernel parameter type has no device representation",
+    "messageFormat": "Parameter '{0}' of kernel '{1}' has the type '{2}', which holds references to managed objects and has no device representation. Pass the values the kernel reads, or structs, instead.",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

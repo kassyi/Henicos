@@ -185,7 +185,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .ForAttributeWithMetadataName(
                 KnownAttributes.GpuKernelMetadataName,
                 predicate: static (node, _) => node is MethodDeclarationSyntax,
-                transform: static (ctx, _) => TranspileKernel(ctx))
+                transform: static (ctx, cancellationToken) => TranspileKernel(ctx, cancellationToken))
             .WithTrackingName(KernelTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
@@ -322,10 +322,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
             static (spc, sites) => EmitTypeKeyedSitesRegistration(spc, sites));
     }
 
-    private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context)
+    private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context,
+        CancellationToken cancellationToken)
     {
+        // A kernel that KernelDeclarationAnalyzer rejects (GSH0111, GSH0112) or whose return type cannot be the element
+        // of the result array (GSH0004) gets nothing: a launcher in a struct, an interface or a generic method would be
+        // a declaration error, which stops the C# build before any analyzer diagnostic of the project is reported
         if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
-            context.TargetSymbol is not IMethodSymbol methodSymbol)
+            context.TargetSymbol is not IMethodSymbol methodSymbol ||
+            !KernelDeclaration.IsLaunchable(methodSymbol, context.SemanticModel.Compilation, cancellationToken))
         {
             return null;
         }

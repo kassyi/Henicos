@@ -266,11 +266,7 @@ internal static class TransferPlannerTestHelper
             {
                 var symbol = model.GetDeclaredSymbol(declaration) ??
                              throw new InvalidOperationException(declaration.Identifier.Text);
-                var metadataName = $"{symbol.ContainingNamespace.ToDisplayString()}.{symbol.MetadataName}";
-                var runtimeType = s_runtimeStandIns.TryGetValue(metadataName, out var standIn)
-                    ? standIn
-                    : assembly.GetType(metadataName) ??
-                      throw new InvalidOperationException($"{metadataName} is not compiled into the test assembly");
+                var runtimeType = FindRuntimeType(compilation, symbol, assembly);
 
                 if (!symbol.IsGenericType)
                 {
@@ -280,7 +276,7 @@ internal static class TransferPlannerTestHelper
 
                 if (!s_typeArguments.TryGetValue(symbol.MetadataName, out var arguments))
                 {
-                    throw new InvalidOperationException($"Add type arguments for {metadataName}");
+                    throw new InvalidOperationException($"Add type arguments for {symbol.MetadataName}");
                 }
 
                 foreach (var argument in arguments)
@@ -291,6 +287,42 @@ internal static class TransferPlannerTestHelper
                 }
             }
         }
+    }
+
+    // The runtime type that symbol is compiled to: its stand-in, or the type of the test assembly whose full name
+    // resolves back to symbol in the compilation of its case file
+    private static Type FindRuntimeType(Compilation compilation, INamedTypeSymbol symbol, Assembly assembly)
+    {
+        foreach (var (metadataName, standIn) in s_runtimeStandIns)
+        {
+            if (SymbolEqualityComparer.Default.Equals(compilation.GetTypeByMetadataName(metadataName), symbol))
+            {
+                return standIn;
+            }
+        }
+
+        var runtimeType = assembly.GetType(GetMetadataName(symbol));
+        return runtimeType?.FullName is { } fullName &&
+               SymbolEqualityComparer.Default.Equals(compilation.GetTypeByMetadataName(fullName), symbol)
+            ? runtimeType
+            : throw new InvalidOperationException($"{symbol.MetadataName} is not compiled into the test assembly");
+    }
+
+    // Namespace.Outer+Inner`1, as Assembly.GetType and Compilation.GetTypeByMetadataName spell a type
+    private static string GetMetadataName(INamedTypeSymbol symbol)
+    {
+        if (symbol.ContainingType is { } containingType)
+        {
+            return GetMetadataName(containingType) + "+" + symbol.MetadataName;
+        }
+
+        var name = symbol.MetadataName;
+        for (var ns = symbol.ContainingNamespace; ns is { IsGlobalNamespace: false }; ns = ns.ContainingNamespace)
+        {
+            name = ns.Name + "." + name;
+        }
+
+        return name;
     }
 
     internal static IEnumerable<INamedTypeSymbol> EnumerateUnsupportedCaseStructs() =>
@@ -342,13 +374,17 @@ internal static class TransferPlannerTestHelper
     };
 
     internal static bool ContainsReferences(Type type) =>
+#pragma warning disable RS0030 // The CLR is the oracle: whether the runtime type holds references
         (bool)(typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.IsReferenceOrContainsReferences))
                    ?.MakeGenericMethod(type).Invoke(null, null) ??
                throw new InvalidOperationException("RuntimeHelpers.IsReferenceOrContainsReferences"));
+#pragma warning restore RS0030
 
     internal static int SizeOf(Type type) =>
+#pragma warning disable RS0030 // The CLR is the oracle: the size the planned size must match
         (int)(typeof(Unsafe).GetMethod(nameof(Unsafe.SizeOf))?.MakeGenericMethod(type).Invoke(null, null) ??
               throw new InvalidOperationException("Unsafe.SizeOf"));
+#pragma warning restore RS0030
 
     // The offset the CLR gives a field: fill a boxed instance with 0xFF, write the field's default (all zero bytes)
     // through reflection, and find the first zero byte
@@ -358,7 +394,9 @@ internal static class TransferPlannerTestHelper
         var box = RuntimeHelpers.GetUninitializedObject(structType);
         var bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<RawBox>(box).Data, SizeOf(structType));
         bytes.Fill(0xFF);
+#pragma warning disable RS0030 // The CLR is the oracle: writing the field shows the offset it gave it
         field.SetValue(box, DefaultOf(field.FieldType));
+#pragma warning restore RS0030
         return bytes.IndexOf((byte)0);
     }
 
@@ -372,7 +410,9 @@ internal static class TransferPlannerTestHelper
     }
 
     internal static unsafe object? DefaultOf(Type type) =>
+#pragma warning disable RS0030 // The CLR is the oracle: the default of a field type known at run time
         type.IsPointer ? Pointer.Box(null, type) : type.IsValueType ? Activator.CreateInstance(type) : null;
+#pragma warning restore RS0030
 
     // The data of a boxed value starts where the first field of any class does
     internal sealed class RawBox

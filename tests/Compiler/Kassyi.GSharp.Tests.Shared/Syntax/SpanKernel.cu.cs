@@ -3,10 +3,10 @@ using System;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-public partial class SpanKernel
+public static partial class SpanKernel
 {
     [GpuKernel]
-    public void Execute(Span<int> data)
+    public static void Execute(Span<int> data)
     {
     }
 }

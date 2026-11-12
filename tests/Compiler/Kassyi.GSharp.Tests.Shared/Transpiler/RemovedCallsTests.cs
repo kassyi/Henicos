@@ -18,15 +18,12 @@ public class RemovedCallsTests
 
     private static (Compilation Compilation, SyntaxTree Tree) CreateCase()
     {
-        var options = new CSharpParseOptions(LanguageVersion.Preview,
-            preprocessorSymbols: ["OPTION_ON", "UNDEFINED_HERE"]);
-        var tree = CSharpSyntaxTree.ParseText(
-            RoslynTestUtility.ReadTestCase("Transpiler/RemovedCallCases.cs"), options, path: "RemovedCallCases.cs");
-        var compilation = CSharpCompilation.Create("RemovedCallCases")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(tree);
-        return (compilation, tree);
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+            "RemovedCallCases.cs",
+            RoslynTestUtility.ReadTestCase("Transpiler/RemovedCallCases.cs"),
+            ["OPTION_ON", "UNDEFINED_HERE"]
+        );
+        return (compilation, compilation.SyntaxTrees.Single());
     }
 
     private static MethodDeclarationSyntax FindMethod(string name) =>
@@ -94,14 +91,23 @@ public class RemovedCallsTests
 
         Assert.Empty(lowered.CallSites);
         Assert.Equal(0, lowered.WarpSiteCount);
-        var text = lowered.LoweredBody.ToFullString();
-        Assert.DoesNotContain("BumpAfterBarrier", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("Shuffle", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("Trace", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("__gsharp_seq", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("__gsharp_spill", text, StringComparison.Ordinal);
-        Assert.Contains("k++)", text, StringComparison.Ordinal);
-        Assert.Contains("Local(i)", text, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            Identifiers(lowered.LoweredBody),
+            static name => name.Contains("BumpAfterBarrier", StringComparison.Ordinal) ||
+                           name.Contains("Shuffle", StringComparison.Ordinal) ||
+                           name.Contains("Trace", StringComparison.Ordinal) ||
+                           name.StartsWith("__gsharp_seq", StringComparison.Ordinal) ||
+                           name.StartsWith("__gsharp_spill", StringComparison.Ordinal)
+        );
+        var loop = Assert.Single(lowered.LoweredBody.DescendantNodes().OfType<ForStatementSyntax>());
+        SyntaxAssert.Equivalent(["k++"], loop.Incrementors);
+        SyntaxAssert.Equivalent(
+            "Local(i)",
+            Assert.Single(
+                lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>(),
+                static call => call.Expression is IdentifierNameSyntax { Identifier.ValueText: "Local" }
+            )
+        );
     }
 
     [Fact]
@@ -139,10 +145,22 @@ public class RemovedCallsTests
 
         var erased = RemovedCallEraser.Erase(method.Body ?? throw new InvalidOperationException(), Model);
 
-        var text = erased.NormalizeWhitespace().ToFullString();
-        Assert.DoesNotContain("Trace", text, StringComparison.Ordinal);
-        Assert.Contains("void Local(int value)", text, StringComparison.Ordinal);
-        Assert.Contains("for (int k = 0; k < 2; k++)", text, StringComparison.Ordinal);
-        Assert.Equal(2, erased.Statements.OfType<EmptyStatementSyntax>().Count());
+        Assert.DoesNotContain("Trace", Identifiers(erased));
+        SyntaxAssert.Equivalent(
+            [
+                "int i = ThreadIndex.X;",
+                "void Local(int value) { }",
+                ";",
+                ";",
+                "for (int k = 0; k < 2; k++) { data[i] += 1; }",
+                "Local(i);"
+            ],
+            erased.Statements
+        );
     }
+
+    private static IEnumerable<string> Identifiers(SyntaxNode node) =>
+        node.DescendantTokens()
+            .Where(static token => token.IsKind(SyntaxKind.IdentifierToken))
+            .Select(static token => token.ValueText);
 }
