@@ -187,20 +187,18 @@ public static partial class Ntt35CarryKernels
     }
 
     [GpuKernel]
-    public static void MultiplyNtt35PointwiseMultiplyKernel(Ntt35PointwiseMultiplyContext ctx)
+    public static void MultiplyNtt35PointwiseMultiplyKernel(Ntt35PointwiseMultiplyContext ctx) =>
+        ExecutePointwiseMultiply(ctx);
+
+    // The call checks the six buffers of the context once; the loop then reads them without a check
+    [GpuDeviceFunction]
+    private static void ExecutePointwiseMultiply(Ntt35PointwiseMultiplyContext ctx)
     {
-        // Checked once here, not at each read in the loop
-        uint[] buf1A = Gpu.NotNull(ctx.Buf1A);
-        uint[] buf1B = Gpu.NotNull(ctx.Buf1B);
-        uint[] buf2A = Gpu.NotNull(ctx.Buf2A);
-        uint[] buf2B = Gpu.NotNull(ctx.Buf2B);
-        uint[] buf3A = Gpu.NotNull(ctx.Buf3A);
-        uint[] buf3B = Gpu.NotNull(ctx.Buf3B);
         Gpu.GridStrideLoop(ctx.TransformLength, index =>
         {
-            buf1A[index] = ModMul1(buf1A[index], buf1B[index]);
-            buf2A[index] = ModMul2(buf2A[index], buf2B[index]);
-            buf3A[index] = ModMul3(buf3A[index], buf3B[index]);
+            ctx.Buf1A[index] = ModMul1(ctx.Buf1A[index], ctx.Buf1B[index]);
+            ctx.Buf2A[index] = ModMul2(ctx.Buf2A[index], ctx.Buf2B[index]);
+            ctx.Buf3A[index] = ModMul3(ctx.Buf3A[index], ctx.Buf3B[index]);
         });
     }
 

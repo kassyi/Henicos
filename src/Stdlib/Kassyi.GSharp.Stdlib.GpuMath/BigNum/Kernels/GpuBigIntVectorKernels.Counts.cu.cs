@@ -7,18 +7,20 @@ public static partial class GpuBigIntVectorKernels
     /// <c>Result[0]</c> first, so an empty vector gives false, as System.Linq's <c>Any</c>.
     /// </summary>
     [GpuKernel]
-    public static void VectorAnyTrueKernel(VectorBoolReductionContext ctx)
+    public static void VectorAnyTrueKernel(VectorBoolReductionContext ctx) => AnyTrue(ctx);
+
+    // The call checks the arrays of the context once; the loop then reads them without a check
+    [GpuDeviceFunction]
+    private static void AnyTrue(VectorBoolReductionContext ctx)
     {
         int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
-        uint[] flags = Gpu.NotNull(ctx.Flags);
-        uint[] result = Gpu.NotNull(ctx.Result);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int stride = GridDimension.X * BlockDimension.X;
         for (; i < n; i += stride)
         {
-            if (flags[i] != 0u)
+            if (ctx.Flags[i] != 0u)
             {
-                Gpu.AtomicMax(ref result[0], 1u);
+                Gpu.AtomicMax(ref ctx.Result[0], 1u);
             }
         }
     }
@@ -28,18 +30,20 @@ public static partial class GpuBigIntVectorKernels
     /// so an empty vector gives true, as System.Linq's <c>All</c>.
     /// </summary>
     [GpuKernel]
-    public static void VectorAllTrueKernel(VectorBoolReductionContext ctx)
+    public static void VectorAllTrueKernel(VectorBoolReductionContext ctx) => AllTrue(ctx);
+
+    // The call checks the arrays of the context once; the loop then reads them without a check
+    [GpuDeviceFunction]
+    private static void AllTrue(VectorBoolReductionContext ctx)
     {
         int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
-        uint[] flags = Gpu.NotNull(ctx.Flags);
-        uint[] result = Gpu.NotNull(ctx.Result);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int stride = GridDimension.X * BlockDimension.X;
         for (; i < n; i += stride)
         {
-            if (flags[i] == 0u)
+            if (ctx.Flags[i] == 0u)
             {
-                Gpu.AtomicExch(ref result[0], 0u);
+                Gpu.AtomicExch(ref ctx.Result[0], 0u);
             }
         }
     }
@@ -65,16 +69,18 @@ public static partial class GpuBigIntVectorKernels
     /// the caller's target without reading the count on the host.
     /// </summary>
     [GpuKernel]
-    public static void CopyCountedElementsKernel(CountedCopyContext ctx)
+    public static void CopyCountedElementsKernel(CountedCopyContext ctx) => CopyCountedElements(ctx);
+
+    // The call checks the arrays of the context once; the loop then reads them without a check
+    [GpuDeviceFunction]
+    private static void CopyCountedElements(CountedCopyContext ctx)
     {
         int words = GpuStreamCompactionKernels.ResolveCount(ctx.Count) * ctx.WordsPerElement;
-        uint[] destination = Gpu.NotNull(ctx.Destination);
-        uint[] source = Gpu.NotNull(ctx.Source);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int stride = GridDimension.X * BlockDimension.X;
         for (; i < words; i += stride)
         {
-            destination[i] = source[i];
+            ctx.Destination[i] = ctx.Source[i];
         }
     }
 }
