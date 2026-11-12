@@ -75,7 +75,7 @@ but follow the same language and convention rules (§1, §3).
 | `node scripts/agent/check-gpumath-mutant-comments.js [--root <dir>] [--verbose]` | Checks that the code quoted at each line citation of the GpuMath test comments is on the cited line (rules in the header) |
 | `node .agents/skills/gsharp-transpiler-guidelines/scripts/check-helpers.js` | Checks that the helper catalog names only existing members |
 | `node .agents/skills/pr-review-pairing/scripts/hot-spots.js --changed <base> [--worktree <dir>]` / `<file.cs>...` | Lists the longest methods and the switches with many cases of the changed C# files, for the structural hot spots of a PR review |
-| `dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle <log> [symbols]` | Turns `__gsharp_*` names in a log back into C# names (`just gsharp-demangle`) |
+| `dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle <log> [symbols]` | Turns `__gsharp_*` names in a log back into C# names, and the module names in `GSharpModuleContext_*` classes and `s_fatbin_*` fields back into the assembly or file name (`just gsharp-demangle`) |
 | `dotnet run tools/collect-env/collect-env.cs [--json] [--output <file>]` | Prints the bug-report environment (OS, GPU, CUDA, host C++, .NET, checkout) with no user name, host name, serial or profile path (`just env-info`). `/issue.prompt` Step 2 runs it for bug reports |
 
 `tools/collect-env/` is a user-facing native tool (a .NET file-based app, published as a NativeAOT executable for people without the SDK or a clone), so the Node-only rule above does not apply to it. It must not reference the compiler projects.
