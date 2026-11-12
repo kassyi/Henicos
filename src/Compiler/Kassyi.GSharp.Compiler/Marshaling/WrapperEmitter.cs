@@ -406,7 +406,7 @@ internal static class WrapperEmitter
         var name = shape.Identifier;
         if (shape.IsOptional)
         {
-            WriteOptionalArrayCheck(writer, name, shape.LengthMember);
+            WriteOptionalArrayCheck(writer, in shape);
             return;
         }
 
@@ -426,12 +426,18 @@ internal static class WrapperEmitter
         }
     }
 
-    private static void WriteOptionalArrayCheck(SourceWriter writer, string name, string lengthMember)
+    // if (<name> is { [IsDefault: false, ]<Length or Count>: 0 }) { <name> = null; }
+    // An empty optional array is passed as null (#860). An ImmutableArray<T>? that holds a default value has a value in
+    // C#, whose Length throws: the pattern tests IsDefault first and passes it on as it is, without an array
+    private static void WriteOptionalArrayCheck(SourceWriter writer, in KernelParameterShape shape)
     {
+        var name = shape.Identifier;
         writer.Append("if ");
         using (writer.Parentheses())
         {
-            writer.Append($"{name} is {{ {lengthMember}: 0 }}");
+            writer.Append($"{name} is {{ ");
+            writer.AppendIf(shape.Container == ArrayContainerKind.ImmutableArray, "IsDefault: false, ");
+            writer.Append($"{shape.LengthMember}: 0 }}");
         }
 
         using (writer.Scope())
