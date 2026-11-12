@@ -38,14 +38,28 @@ internal static class IrNodeChildren
         _ => []
     };
 
-    /// <summary>Calls <paramref name="visit"/> on <paramref name="node"/> and every node below it, depth
-    /// first.</summary>
-    public static void Visit(IrNode node, Action<IrNode> visit)
+    /// <summary>Whether <paramref name="predicate"/> holds for <paramref name="node"/> or a node below it; stops at
+    /// the first match.</summary>
+    public static bool Exists(IrNode node, Func<IrNode, bool> predicate) =>
+        predicate(node) ||
+        Of(node)
+            .AsStackEnumerable()
+            .Any(predicate, static (child, match) => Exists(child, match));
+
+    /// <summary><paramref name="node"/> and every node below it, depth first.</summary>
+    public static ImmutableArray<IrNode> DescendantsAndSelf(IrNode node)
     {
-        visit(node);
+        var nodes = ImmutableArray.CreateBuilder<IrNode>();
+        AddDescendantsAndSelf(node, nodes);
+        return nodes.ToImmutable();
+    }
+
+    private static void AddDescendantsAndSelf(IrNode node, ImmutableArray<IrNode>.Builder nodes)
+    {
+        nodes.Add(node);
         foreach (var child in Of(node))
         {
-            Visit(child, visit);
+            AddDescendantsAndSelf(child, nodes);
         }
     }
 

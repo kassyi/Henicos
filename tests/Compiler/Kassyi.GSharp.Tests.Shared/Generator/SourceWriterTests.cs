@@ -1,4 +1,6 @@
 #nullable enable
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using VerifyXunit;
 
@@ -119,6 +121,53 @@ public class SourceWriterTests
 
         var methodName = nameof(SourceWriter_NestedScopeAndIndentation_MatchesExpectedSnapshot);
         return Verifier.Verify(writer.ToString(), "cs").UseFastHashSnapshotName(methodName);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Dispose_BuilderGrewPastThePoolLimit_NextWriterStartsSmall()
+    {
+        var (first, next) = WriteThenReopenOnFreshThread(4 * SourceWriter.MaxPooledCapacity);
+
+        Assert.NotSame(first, next);
+        Assert.InRange(next.Capacity, 0, SourceWriter.MaxPooledCapacity);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Dispose_BuilderWithinThePoolLimit_NextWriterReusesIt()
+    {
+        var (first, next) = WriteThenReopenOnFreshThread(SourceWriter.MaxPooledCapacity / 2);
+
+        Assert.Same(first, next);
+        Assert.Equal(0, next.Length);
+    }
+
+    // The pool is thread-static, and a test thread may hold a pool that earlier tests left at any depth, so both
+    // writers are opened on a new thread whose pool starts empty.
+    private static (StringBuilder First, StringBuilder Next) WriteThenReopenOnFreshThread(int length)
+    {
+        StringBuilder? first = null;
+        StringBuilder? next = null;
+        var thread = new Thread(() =>
+        {
+            using (var writer = new SourceWriter())
+            {
+                writer.Append(new string('x', length));
+                first = writer.GetBuilder();
+            }
+
+            using var reopened = new SourceWriter();
+            next = reopened.GetBuilder();
+        });
+        thread.Start();
+        thread.Join();
+
+        Assert.NotNull(first);
+        Assert.NotNull(next);
+        return (first, next);
     }
 }
 
