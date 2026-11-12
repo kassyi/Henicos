@@ -18,6 +18,11 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
+        if (TryTranspileConstantStringLength(node, symbol, ref context))
+        {
+            return;
+        }
+
         if (symbol is IPropertySymbol spanProperty && TryTranspileSpanProperty(node, spanProperty, ref context))
         {
             return;
@@ -45,6 +50,28 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
 
         TranspileMemberAccess(node, symbol, ref context);
+    }
+
+    // The length of a constant string (nameof(T).Length, "abc".Length) is the value C# gives it; the string itself has
+    // no device form
+    private static bool TryTranspileConstantStringLength(
+        MemberAccessExpressionSyntax node,
+        ISymbol? symbol,
+        ref TranspileContext context)
+    {
+        if (symbol is not IPropertySymbol
+            {
+                Name: nameof(string.Length),
+                ContainingType.SpecialType: SpecialType.System_String
+            } length ||
+            context.Query.SemanticModel.GetSafeConstantValue(node.Expression) is not
+                { HasValue: true, Value: string text })
+        {
+            return false;
+        }
+
+        ConstantAtUse.Append(node, length.Type, text.Length, ref context);
+        return true;
     }
 
     // Span<T>.Empty, Span<T>.IsEmpty and the Span / ReadOnlySpan properties that G# does not support.

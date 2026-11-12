@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// Decides what a call in GPU code, or a method group that device code names, calls (<see cref="CallTargetPlan"/>):
 /// the target must be removed by C#, synthesized by lowering, emitted, mapped by the dialect or written by a rule; any
 /// other target is a failure, GSH0107 for a method of the compilation and GSH0109 for a method of another assembly.
+/// An invocation that binds to no method is decided by <see cref="ClassifyUntyped"/>.
 /// </summary>
 /// <remarks>
 /// [WHY] A closed list, as Roslyn binds every name before it generates code and ComputeSharp accepts only intrinsics
@@ -27,7 +28,15 @@ internal static class CallTargetClassifier
         "calls through an interface or an abstract method are not supported in GPU code; call a static " +
         "[GpuDeviceFunction] method of the concrete type instead";
 
+    /// <summary>The GSH0003 text for an invocation that binds to no method (<see cref="ClassifyUntyped"/>).</summary>
+    public const string UnboundCall = "call that binds to no method at compile time";
+
+    /// <summary>The GSH0003 text for a call through a function pointer (<see cref="ClassifyUntyped"/>).</summary>
+    public const string FunctionPointerCall = "call through a function pointer";
+
     private const string InternalNamePrefix = "__gsharp_";
+
+    private const string NameofKeyword = "nameof";
 
     // The types whose members a generic math member of a numeric type has the same meaning as
     private static readonly string[] s_mathTypeNames =
@@ -100,6 +109,58 @@ internal static class CallTargetClassifier
     }
 
     /// <summary>
+    /// What <paramref name="call"/>, an invocation that binds to no method, is in the tree of <paramref name="model"/>
+    /// or a lowered copy of it: a call that lowering synthesized (a prelude helper, <c>__gsharp_*</c>), which is
+    /// written as it is; <c>nameof</c>, whose value reaches here only where it stays a string (GSH0002); a call C#
+    /// cannot bind, which C# reports; any other (a call through a function pointer, a call bound at run time) is a
+    /// failure (GSH0003), never a name written as it is.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] In the user's code only <c>nameof</c> binds to no method, and its value is a constant: where the value is
+    /// not a string (<c>nameof(T).Length</c>, <c>nameof(T) == "T"</c>) the rule of the enclosing expression writes the
+    /// value and never visits the <c>nameof</c>.
+    /// </remarks>
+    public static CallTargetPlan ClassifyUntyped(InvocationExpressionSyntax call, SemanticModel model)
+    {
+        // A call copied into a lowered tree is decided on the call written in the user's file; a prelude call that
+        // lowering wrote in place of a written one (a warp shuffle read) keeps that call's span
+        if (GetCalledName(call.Expression)?.Identifier.ValueText.StartsWith(InternalNamePrefix,
+                StringComparison.Ordinal) == true ||
+            model.GetOriginalNode(call) is not InvocationExpressionSyntax written)
+        {
+            return new CallTargetPlan(CallTargetKind.Synthesized);
+        }
+
+        var writtenModel = written.SyntaxTree == model.SyntaxTree
+            ? model
+            : model.Compilation.GetCachedSemanticModel(written.SyntaxTree);
+        if (written.Expression is IdentifierNameSyntax { Identifier.ValueText: NameofKeyword } &&
+            writtenModel.GetConstantValue(written) is { HasValue: true, Value: string })
+        {
+            return new CallTargetPlan(CallTargetKind.NameofString);
+        }
+
+        // A rewrite of a call that binds to a method is lowering's own call. A call that does not bind in C# (no such
+        // name, no applicable overload) is the C# compiler's error
+        var symbolInfo = writtenModel.GetSymbolInfo(written);
+        if (symbolInfo.Symbol is IMethodSymbol)
+        {
+            return new CallTargetPlan(CallTargetKind.Synthesized);
+        }
+
+        if (symbolInfo.CandidateReason is not (CandidateReason.None or CandidateReason.LateBound) ||
+            writtenModel.GetTypeInfo(written).Type is null or { TypeKind: TypeKind.Error })
+        {
+            return new CallTargetPlan(CallTargetKind.NotCSharp);
+        }
+
+        var detail = writtenModel.GetTypeInfo(written.Expression).Type is IFunctionPointerTypeSymbol
+            ? FunctionPointerCall
+            : UnboundCall;
+        return new CallTargetPlan(CallTargetKind.Unbound, Detail: detail);
+    }
+
+    /// <summary>
     /// Whether <paramref name="node"/> names a method without calling it (<c>U.F</c>, <c>F</c>), outside
     /// <c>nameof</c>: a method group that device code would name. The name of a conditional call (<c>u?.F()</c>) is
     /// called.
@@ -121,9 +182,18 @@ internal static class CallTargetClassifier
             .AsStackEnumerable()
             .Any(static ancestor => ancestor is InvocationExpressionSyntax
             {
-                Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" }
+                Expression: IdentifierNameSyntax { Identifier.ValueText: NameofKeyword }
             });
     }
+
+    // The name a call is written with: F of F(), U.F() and u?.F()
+    private static SimpleNameSyntax? GetCalledName(ExpressionSyntax expression) => expression switch
+    {
+        SimpleNameSyntax name => name,
+        MemberAccessExpressionSyntax access => access.Name,
+        MemberBindingExpressionSyntax binding => binding.Name,
+        _ => null
+    };
 
     /// <summary>The name of <paramref name="called"/> in the GSH0107 message: <c>Type.Method</c>.</summary>
     public static string GetDisplayName(IMethodSymbol called)
