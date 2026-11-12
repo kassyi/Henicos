@@ -34,56 +34,65 @@
 #      - Generic Methods: Double backticks for method type parameters in signature (e.g., IEnumerable{``0}, Func{``0,System.Boolean}).
 # ==============================================================================
 
-# 1. Regular Expressions prohibition (Enforces Grammar & Performance)
-T:System.Text.RegularExpressions.Regex;Regular expressions are strictly prohibited (Violates YES AST / Anti-Pattern). Use string matching operations or Roslyn instead.
+# Reading the descriptions below:
+#   Each description says why the API is banned and what to use instead. The ban is on the problem, not on the
+#   name: doing the same thing through another API or a hand-written loop is a workaround, not a fix, and is not
+#   allowed (a matcher of IndexOf calls and char tests in place of Regex, StringBuilder.Replace in place of
+#   string.Replace, a string range in place of Substring, Delegate.CreateDelegate in place of MethodInfo).
+#   Check what the text means instead of its spelling: code through the Roslyn tree (SyntaxKind, IOperation,
+#   ISymbol), IDs and names against the set they are registered in, values against the known values.
+# ==============================================================================
 
-M:Microsoft.CodeAnalysis.ISymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ITypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IMethodSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IPropertySymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IFieldSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IEventSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IParameterSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ILocalSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ITypeParameterSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.INamespaceSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IAliasSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ILabelSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IDynamicTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IArrayTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString(Microsoft.CodeAnalysis.SymbolDisplayFormat);Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-T:System.Reflection.MethodInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
-T:System.Reflection.PropertyInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
-T:System.Reflection.FieldInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
-M:System.Type.GetMethod(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
-M:System.Type.GetProperty(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
-M:System.Type.GetField(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
-M:System.Activator.CreateInstance(System.Type);Dynamic instantiation is prohibited. Use direct AST/Symbol resolution.
-# AST stringification prohibition (Enforces YES AST)
-M:Microsoft.CodeAnalysis.SyntaxNode.ToString;Converting AST nodes to string is strictly prohibited (Violates YES AST). Inspect and transform code using SyntaxKind, SyntaxNode, IOperation, or ISymbol directly.
-M:Microsoft.CodeAnalysis.SyntaxNode.ToFullString;Converting AST nodes to string is strictly prohibited (Violates YES AST). Inspect and transform code using SyntaxKind, SyntaxNode, IOperation, or ISymbol directly.
+# 1. Regular expressions
+T:System.Text.RegularExpressions.Regex;Regex checks the spelling of text, not its meaning, and so does a hand-written matcher (IndexOf, char tests) that replaces it. Check the meaning directly: code through the Roslyn tree, IDs and names against their registered set, values against the known values.
 
-# String manipulation prohibitions (Enforces Zero-Allocation and Span/AST-based handling)
-M:System.String.Substring(System.Int32);String manipulation is prohibited. Use Range/Index ([..]) or spans instead.
-M:System.String.Substring(System.Int32,System.Int32);String manipulation is prohibited. Use Range/Index ([start..end]) or spans instead.
-M:System.String.Replace(System.String,System.String);String replacement is prohibited. Use AST/Symbol formatting, spans, or StringBuilder instead.
-M:System.String.Replace(System.Char,System.Char);String replacement is prohibited. Use AST/Symbol formatting, spans, or StringBuilder instead.
-M:System.String.Split(System.Char[]);String.Split causes heap allocations. Use span-based tokenization or MemoryExtensions instead.
-M:System.String.Split(System.Char[],System.StringSplitOptions);String.Split causes heap allocations. Use span-based tokenization or MemoryExtensions instead.
-M:System.String.Split(System.String[],System.StringSplitOptions);String.Split causes heap allocations. Use span-based tokenization or MemoryExtensions instead.
-M:System.String.Split(System.Char,System.StringSplitOptions);String.Split causes heap allocations. Use span-based tokenization or MemoryExtensions instead.
-M:System.String.Trim;String.Trim causes heap allocations. Use AsSpan().Trim() instead.
-M:System.String.TrimStart;String.TrimStart causes heap allocations. Use AsSpan().TrimStart() instead.
-M:System.String.TrimEnd;String.TrimEnd causes heap allocations. Use AsSpan().TrimEnd() instead.
-M:System.String.ToLower;String case conversion causes heap allocations. Use StringComparison.OrdinalIgnoreCase or span operations instead.
-M:System.String.ToLowerInvariant;String case conversion causes heap allocations. Use StringComparison.OrdinalIgnoreCase or span operations instead.
-M:System.String.ToUpper;String case conversion causes heap allocations. Use StringComparison.OrdinalIgnoreCase or span operations instead.
-M:System.String.ToUpperInvariant;String case conversion causes heap allocations. Use StringComparison.OrdinalIgnoreCase or span operations instead.
-M:System.String.Insert(System.Int32,System.String);String manipulation is prohibited. Use StringBuilder or spans instead.
-M:System.String.Remove(System.Int32);String manipulation is prohibited. Use Range/Index or spans instead.
-M:System.String.Remove(System.Int32,System.Int32);String manipulation is prohibited. Use Range/Index or spans instead.
+M:Microsoft.CodeAnalysis.ISymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.ITypeSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IMethodSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IPropertySymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IFieldSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IEventSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IParameterSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.ILocalSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.ITypeParameterSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.INamespaceSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IAliasSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.ILabelSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IDynamicTypeSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IArrayTypeSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString;Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString(Microsoft.CodeAnalysis.SymbolDisplayFormat);Formatting a symbol allocates and compares spelling. Compare with SymbolEqualityComparer, Name or ContainingType. To write a name use SourceWriter.AppendFullyQualifiedCsharpName / AppendFullyQualifiedCppName, or GetFullyQualifiedCsharpName when a string is required.
+T:System.Reflection.MethodInfo;Reflection is banned: it slows the compilation (.agents/rules/transpiler-emission.md 1.1) and is not resolved statically. Use Roslyn symbols in the compiler, a direct reference to the type or member elsewhere. Delegate.CreateDelegate, UnsafeAccessor and other indirect lookups are the same and not allowed.
+T:System.Reflection.PropertyInfo;Reflection is banned: it slows the compilation (.agents/rules/transpiler-emission.md 1.1) and is not resolved statically. Use Roslyn symbols in the compiler, a direct reference to the type or member elsewhere. Delegate.CreateDelegate, UnsafeAccessor and other indirect lookups are the same and not allowed.
+T:System.Reflection.FieldInfo;Reflection is banned: it slows the compilation (.agents/rules/transpiler-emission.md 1.1) and is not resolved statically. Use Roslyn symbols in the compiler, a direct reference to the type or member elsewhere. Delegate.CreateDelegate, UnsafeAccessor and other indirect lookups are the same and not allowed.
+M:System.Type.GetMethod(System.String);Reflection is banned: it slows the compilation (.agents/rules/transpiler-emission.md 1.1) and is not resolved statically. Use Roslyn symbols in the compiler, a direct reference to the type or member elsewhere. Delegate.CreateDelegate, UnsafeAccessor and other indirect lookups are the same and not allowed.
+M:System.Type.GetProperty(System.String);Reflection is banned: it slows the compilation (.agents/rules/transpiler-emission.md 1.1) and is not resolved statically. Use Roslyn symbols in the compiler, a direct reference to the type or member elsewhere. Delegate.CreateDelegate, UnsafeAccessor and other indirect lookups are the same and not allowed.
+M:System.Type.GetField(System.String);Reflection is banned: it slows the compilation (.agents/rules/transpiler-emission.md 1.1) and is not resolved statically. Use Roslyn symbols in the compiler, a direct reference to the type or member elsewhere. Delegate.CreateDelegate, UnsafeAccessor and other indirect lookups are the same and not allowed.
+M:System.Activator.CreateInstance(System.Type);Creating an instance from a Type is reflection. Call the constructor directly, or resolve through Roslyn symbols in the compiler. Delegate.CreateDelegate, UnsafeAccessor and other indirect forms are not allowed either.
+# Syntax to text
+M:Microsoft.CodeAnalysis.SyntaxNode.ToString;Turning syntax into text loses its meaning. Inspect code through SyntaxKind, the node types, IOperation or ISymbol. GetText(), $"{node}" or a node passed as a diagnostic argument is the same and not allowed.
+M:Microsoft.CodeAnalysis.SyntaxNode.ToFullString;Turning syntax into text loses its meaning. Inspect code through SyntaxKind, the node types, IOperation or ISymbol. GetText(), $"{node}" or a node passed as a diagnostic argument is the same and not allowed.
+
+# String manipulation (allocates a new string per call)
+M:System.String.Substring(System.Int32);Cutting a string allocates a new one, and so does a range on a string (s[a..b]). Slice a ReadOnlySpan<char> (s.AsSpan(start, length)), or compare by meaning instead of cutting text.
+M:System.String.Substring(System.Int32,System.Int32);Cutting a string allocates a new one, and so does a range on a string (s[a..b]). Slice a ReadOnlySpan<char> (s.AsSpan(start, length)), or compare by meaning instead of cutting text.
+M:System.String.Replace(System.String,System.String);Replacing text allocates, and StringBuilder.Replace allocates the same. Write the right text in the first place (generated code through SourceWriter), or check the meaning instead of rewriting a string.
+M:System.String.Replace(System.Char,System.Char);Replacing text allocates, and StringBuilder.Replace allocates the same. Write the right text in the first place (generated code through SourceWriter), or check the meaning instead of rewriting a string.
+M:System.String.Split(System.Char[]);Split allocates an array and a string per part. Tokenize the span: MemoryExtensions.Split on s.AsSpan(), or AsSpan().EnumerateLines(). Not a hand-written index loop.
+M:System.String.Split(System.Char[],System.StringSplitOptions);Split allocates an array and a string per part. Tokenize the span: MemoryExtensions.Split on s.AsSpan(), or AsSpan().EnumerateLines(). Not a hand-written index loop.
+M:System.String.Split(System.String[],System.StringSplitOptions);Split allocates an array and a string per part. Tokenize the span: MemoryExtensions.Split on s.AsSpan(), or AsSpan().EnumerateLines(). Not a hand-written index loop.
+M:System.String.Split(System.Char,System.StringSplitOptions);Split allocates an array and a string per part. Tokenize the span: MemoryExtensions.Split on s.AsSpan(), or AsSpan().EnumerateLines(). Not a hand-written index loop.
+M:System.String.Trim;Trim allocates. Use s.AsSpan().Trim() and work on the span, not a hand-written loop.
+M:System.String.TrimStart;TrimStart allocates. Use s.AsSpan().TrimStart() and work on the span, not a hand-written loop.
+M:System.String.TrimEnd;TrimEnd allocates. Use s.AsSpan().TrimEnd() and work on the span, not a hand-written loop.
+M:System.String.ToLower;Case conversion allocates. Compare with StringComparison.OrdinalIgnoreCase (string.Equals, StartsWith, MemoryExtensions.Equals on spans), not a hand-written loop.
+M:System.String.ToLowerInvariant;Case conversion allocates. Compare with StringComparison.OrdinalIgnoreCase (string.Equals, StartsWith, MemoryExtensions.Equals on spans), not a hand-written loop.
+M:System.String.ToUpper;Case conversion allocates. Compare with StringComparison.OrdinalIgnoreCase (string.Equals, StartsWith, MemoryExtensions.Equals on spans), not a hand-written loop.
+M:System.String.ToUpperInvariant;Case conversion allocates. Compare with StringComparison.OrdinalIgnoreCase (string.Equals, StartsWith, MemoryExtensions.Equals on spans), not a hand-written loop.
+M:System.String.Insert(System.Int32,System.String);Inserting allocates a new string. Write the text in order through SourceWriter, or join a name with + or an interpolated string.
+M:System.String.Remove(System.Int32);Cutting a string allocates a new one, and so does a range on a string (s[a..b]). Slice a ReadOnlySpan<char> (s.AsSpan(start, length)), or compare by meaning instead of cutting text.
+M:System.String.Remove(System.Int32,System.Int32);Cutting a string allocates a new one, and so does a range on a string (s[a..b]). Slice a ReadOnlySpan<char> (s.AsSpan(start, length)), or compare by meaning instead of cutting text.
 
