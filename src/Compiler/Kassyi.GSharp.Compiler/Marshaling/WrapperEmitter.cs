@@ -388,10 +388,11 @@ internal static class WrapperEmitter
     }
 
     /// <summary>
-    /// Emits the checks of the array arguments of the <c>Launch{Kernel}</c> launcher. An array argument is passed as a C#
-    /// call passes it, a null or empty one included. A span-like value (<c>Span&lt;T&gt;</c>, <c>Memory&lt;T&gt;</c>,
-    /// <c>ArraySegment&lt;T&gt;</c>, <c>ImmutableArray&lt;T&gt;</c>) must not be empty or default, and an empty
-    /// nullable one is passed as null. A null in a non-nullable array field of a by-value struct argument is rejected.
+    /// Emits the checks of the array arguments of the <c>Launch{Kernel}</c> launcher. An array argument is passed as a
+    /// C# call passes it, a null or empty one included. A span-like value (<c>Span&lt;T&gt;</c>,
+    /// <c>Memory&lt;T&gt;</c>, <c>ArraySegment&lt;T&gt;</c>, <c>ImmutableArray&lt;T&gt;</c>) must not be empty or
+    /// default, and an empty nullable one is passed as null. A null in a non-nullable array field of a by-value struct
+    /// argument is rejected.
     /// </summary>
     internal static void WriteArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
     {
@@ -510,8 +511,8 @@ internal static class WrapperEmitter
 
     /// <summary>
     /// Emits the checks of the <c>GSharpArrayProxy</c> arguments of the <c>Launch{Kernel}Ptr</c> launcher: a proxy with
-    /// a negative length, or with no data and a length other than 0, describes no array and is rejected. Any other proxy
-    /// is passed as it is: <c>Data == 0</c> is a null array, and an empty array has a non-null <c>Data</c>
+    /// a negative length, or with no data and a length other than 0, describes no array and is rejected. Any other
+    /// proxy is passed as it is: <c>Data == 0</c> is a null array, and an empty array has a non-null <c>Data</c>
     /// (<c>GSharpArrayProxy.EmptyArrayData</c>). The non-nullable array fields of a by-value struct argument must not
     /// be null.
     /// </summary>

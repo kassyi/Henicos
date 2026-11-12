@@ -83,7 +83,8 @@ public partial class EmissionShapeTests
                 "\"The array length must not be negative.\");",
                 "}",
                 $"if ({name}.Data == global::System.IntPtr.Zero && {name}.Length != 0){{",
-                $"throw new global::System.ArgumentException(\"A null array has no elements, so its length must be 0.\", \"{name}\");",
+                "throw new global::System.ArgumentException(" +
+                $"\"A null array has no elements, so its length must be 0.\", \"{name}\");",
                 "}");
         }
 

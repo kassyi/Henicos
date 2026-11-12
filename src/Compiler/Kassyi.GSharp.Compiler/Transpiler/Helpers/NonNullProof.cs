@@ -20,10 +20,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// The proof (<see cref="IsProvenNonNull"/>): an array is non-null when it is a stack array (a local array of a
 /// constant size), a device function parameter of that kind that nothing in its method writes, a non-nullable array
 /// field of a proven struct, a <c>Gpu.NotNull</c> call (which throws on null), or a local that nothing writes after an
-/// initializer that is proven: <c>int[] data = Gpu.NotNull(ctx.Data);</c> proves every later read of <c>data</c>. A proven struct
-/// is a by-value struct parameter that nothing writes, a struct field of a proven struct, or a local that nothing
-/// writes after an initializer that is a proven struct. An element of an array is never proven: the launchers do not
-/// walk the elements.
+/// initializer that is proven: <c>int[] data = Gpu.NotNull(ctx.Data);</c> proves every later read of <c>data</c>. A
+/// proven struct is a by-value struct parameter that nothing writes, a struct field of a proven struct, or a local that
+/// nothing writes after an initializer that is a proven struct. An element of an array is never proven: the launchers
+/// do not walk the elements.
 /// </para>
 /// </remarks>
 internal static class NonNullProof

@@ -58,7 +58,10 @@ public class DeviceImportTests
     {
         var (device, kernels) = Generate(dialect);
 
-        Assert.Contains("__gsharp_fn_DeviceExportCase__LibMath__Scale_o1(__gsharp_array_at(__gsharp_id_0_data, ", kernels, StringComparison.Ordinal);
+        Assert.Contains(
+            "__gsharp_fn_DeviceExportCase__LibMath__Scale_o1(__gsharp_array_at(__gsharp_id_0_data, ",
+            kernels,
+            StringComparison.Ordinal);
         Assert.Contains("float __gsharp_fn_DeviceExportCase__LibMath__Scale_o1(float __gsharp_id_0_x){", device,
             StringComparison.Ordinal);
     }
@@ -86,8 +89,14 @@ public class DeviceImportTests
             .Single(s => s.HintName == $"GSharpShared{dialect}DeviceCode.g.cs")
             .SourceText.ToString();
 
-        Assert.Contains("__gsharp_fn_OverloadLibrary__LibPick__Pick_o1(__gsharp_array_at(__gsharp_id_0_ints, ", kernels, StringComparison.Ordinal);
-        Assert.Contains("__gsharp_fn_OverloadLibrary__LibPick__Pick_o0(__gsharp_array_at(__gsharp_id_1_floats, ", kernels, StringComparison.Ordinal);
+        Assert.Contains(
+            "__gsharp_fn_OverloadLibrary__LibPick__Pick_o1(__gsharp_array_at(__gsharp_id_0_ints, ",
+            kernels,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "__gsharp_fn_OverloadLibrary__LibPick__Pick_o0(__gsharp_array_at(__gsharp_id_1_floats, ",
+            kernels,
+            StringComparison.Ordinal);
         Assert.Contains("int __gsharp_fn_OverloadLibrary__LibPick__Pick_o1(int __gsharp_id_0_x){", device, StringComparison.Ordinal);
     }
 
@@ -312,7 +321,10 @@ public class DeviceImportTests
             .SourceText.ToString();
 
         Assert.Contains("__gsharp_fn_DeviceExportCase__LibMath__Helper(int __gsharp_id_0_x){", device, StringComparison.Ordinal);
-        Assert.Contains("__gsharp_fn_DeviceExportCase__LibMath__Scale_o1(__gsharp_array_at(__gsharp_id_0_data, ", kernels, StringComparison.Ordinal);
+        Assert.Contains(
+            "__gsharp_fn_DeviceExportCase__LibMath__Scale_o1(__gsharp_array_at(__gsharp_id_0_data, ",
+            kernels,
+            StringComparison.Ordinal);
         Assert.Contains("__gsharp_ctor_DeviceExportCase__Vec2(", kernels, StringComparison.Ordinal);
 
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);

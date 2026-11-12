@@ -4,10 +4,10 @@ using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 namespace Kassyi.GSharp.Tests.Shared.Analysis;
 
 /// <summary>
-/// Verifies which array reads <see cref="NonNullProof"/> proves non-null (#1409 (Reading an element of a null array in a
-/// CUDA kernel fails the launch instead of throwing NullReferenceException)): a non-nullable array that a call (or, for a
-/// struct field, a launch) has checked and that nothing in its method can change, and a <c>Gpu.NotNull</c> call, which
-/// throws on null.
+/// Verifies which array reads <see cref="NonNullProof"/> proves non-null (#1409 (Reading an element of a null array in
+/// a CUDA kernel fails the launch instead of throwing NullReferenceException)): a non-nullable array that a call (or,
+/// for a struct field, a launch) has checked and that nothing in its method can change, and a <c>Gpu.NotNull</c> call,
+/// which throws on null.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class NonNullProofTests
