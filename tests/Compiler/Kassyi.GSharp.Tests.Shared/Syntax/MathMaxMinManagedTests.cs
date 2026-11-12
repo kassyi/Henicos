@@ -3,6 +3,7 @@ using System;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -38,15 +39,9 @@ public class MathMaxMinManagedTests : TranspilerTestBase
 
     private static void RunManaged(Action launch)
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             launch();
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
         }
     }
 }

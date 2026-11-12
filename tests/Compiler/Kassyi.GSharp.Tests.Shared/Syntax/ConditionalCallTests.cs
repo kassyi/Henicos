@@ -1,5 +1,6 @@
 #if GSHARP_CPU
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime;
 #endif
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -165,15 +166,9 @@ public class ConditionalCallTests : TranspilerTestBase
     {
         check();
 #if GSHARP_CPU
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             check();
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
 #endif
     }

@@ -138,6 +138,17 @@ if (doubles.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(doubles));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::System.Int32[] __gsharp_csharp_arg_0 = ints;
+global::System.UInt32[] __gsharp_csharp_arg_1 = uints;
+global::System.Int64[] __gsharp_csharp_arg_2 = longs;
+global::System.UInt64[] __gsharp_csharp_arg_3 = ulongs;
+global::System.Single[] __gsharp_csharp_arg_4 = floats;
+global::System.Double[] __gsharp_csharp_arg_5 = doubles;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.DigitSeparatorKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, __gsharp_csharp_arg_5));
+return;
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.__gsharp_hfunc_DigitSeparatorKernel.Resolve();
@@ -469,6 +480,10 @@ if (doubles.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(doubles));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DigitSeparatorLiteralKernels.DigitSeparatorKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchDigitSeparatorKernel");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DigitSeparatorLiteralKernels.__gsharp_hfunc_DigitSeparatorKernel.Resolve();

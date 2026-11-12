@@ -26,6 +26,10 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// <param name="callerFilePath">The file of the declaration, filled in by the compiler. Do not pass it.</param>
     /// <param name="callerLineNumber">The line of the declaration, filled in by the compiler. Do not pass it.</param>
     /// <param name="callerMemberName">The method of the declaration, filled in by the compiler. Do not pass it.</param>
+    /// <exception cref="GpuOnlyException">
+    /// The kernel runs under <c>KernelExecution.CSharp</c>, one GPU thread at a time, so no other thread shares the
+    /// memory.
+    /// </exception>
     /// <remarks>
     /// The declaration has one buffer per block, like a CUDA <c>__shared__</c> variable: every call of the declaring
     /// method, from any call site, gets the same buffer. Under managed execution, code that the G# compiler does not
@@ -55,6 +59,7 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     [EditorBrowsable(EditorBrowsableState.Never)]
     public SharedMemory(int size, ulong siteKey)
     {
+        ManagedGpuContext.ThrowIfCSharpExecution("SharedMemory<T>");
         _span = ManagedGpuContext.IsActive
             ? ManagedGpuContext.AllocateSharedMemory<T>(siteKey, size)
             : default;
@@ -73,6 +78,7 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     [EditorBrowsable(EditorBrowsableState.Never)]
     public SharedMemory(int size, ulong siteKey, string dynamicPlace)
     {
+        ManagedGpuContext.ThrowIfCSharpExecution("SharedMemory<T>");
         _span = ManagedGpuContext.IsActive
             ? ManagedGpuContext.AllocateDynamicSharedMemory<T>(
                 siteKey, size, dynamicPlace)

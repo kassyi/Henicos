@@ -3,6 +3,7 @@ using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Syntax;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
@@ -17,10 +18,7 @@ public class ManagedExecutionTests : TranspilerTestBase
     public void LaunchSharedMemoryAndSyncThreads_DirectManagedExecution_ReversesTheArray(int length)
     {
         // 1. Force the engine to execute the Managed Cooperative Scheduler (skip native AOT DLL execution)
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             var input = new int[length];
             var output = new int[length];
@@ -46,19 +44,12 @@ public class ManagedExecutionTests : TranspilerTestBase
                 Assert.Equal(length - 1 - i, output[i]);
             }
         }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
-        }
     }
 
     [SkippableFact]
     public void LaunchWarpShuffleReduceSum_DirectManagedExecution_ProducesExpectedSum()
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             const int threadsPerWarp = 32;
             const int numWarps = 4;
@@ -89,18 +80,14 @@ public class ManagedExecutionTests : TranspilerTestBase
                 Assert.Equal(expectedWarpSum, output[w]);
             }
         }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
-        }
     }
     [Fact]
     public void ManagedGpuContext_DirectMethodCalls_ExecutesWithoutException()
     {
         try
         {
-            ManagedGpuContext.ClearThreadContext();
-            ManagedGpuContext.SetThreadContext(new Kassyi.GSharp.Core.GpuThreadContext(
+            ManagedThreadContext.Clear();
+            ManagedThreadContext.Set(new Kassyi.GSharp.Core.GpuThreadContext(
                 0, 0, 0, 0, 0, 0, 32, 1, 1, 1, 1, 1
             ));
 
@@ -142,7 +129,7 @@ public class ManagedExecutionTests : TranspilerTestBase
         }
         finally
         {
-            ManagedGpuContext.ClearThreadContext();
+            ManagedThreadContext.Clear();
         }
     }
 

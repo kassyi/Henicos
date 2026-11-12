@@ -83,7 +83,9 @@ public static partial class ManagedGpuContext
     /// <summary>
     /// Forgets the warp collectives of the threads at the start of a block. The launcher then marks the threads of the
     /// block that have exited (<see cref="MarkWarpLaneExited"/>).
+    /// For generated code only.
     /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static void ResetWarpExchange()
     {
@@ -100,8 +102,12 @@ public static partial class ManagedGpuContext
         }
     }
 
-    /// <summary>Records that a thread of the block has exited: it no longer takes part in a warp collective.</summary>
+    /// <summary>
+    /// Records that a thread of the block has exited: it no longer takes part in a warp collective.
+    /// For generated code only.
+    /// </summary>
     /// <param name="threadIndex">The linear index of the thread in its block.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static void MarkWarpLaneExited(int threadIndex) => WarpExited[threadIndex] = true;
 
@@ -109,10 +115,12 @@ public static partial class ManagedGpuContext
     /// Whether a thread of the block takes its next step in this round: it does not wait at a warp collective, or every
     /// lane of the mask that has not exited published the same instance in an earlier round. The lanes of a group all
     /// go on in the same round, so none of them publishes twice before the others have read.
+    /// For generated code only.
     /// </summary>
     /// <param name="threadIndex">The linear index of the thread in its block.</param>
     /// <param name="round">The launcher's round of the block, counted from 1.</param>
     /// <returns>Whether the thread runs in this round.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static bool WarpCanRun(int threadIndex, int round)
     {
@@ -133,9 +141,11 @@ public static partial class ManagedGpuContext
     /// <summary>
     /// The error of a round in which no thread of the block could run while some wait at a warp collective: a lane of
     /// their mask that has not exited never reaches the same call with them, which CUDA leaves undefined.
+    /// For generated code only.
     /// </summary>
     /// <param name="threadsPerBlock">The threads of the block.</param>
     /// <returns>The exception to throw, which names the first such lane.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static InvalidOperationException WarpStall(int threadsPerBlock)
     {

@@ -38,6 +38,7 @@ internal static class CudaHostLaunchEmitter
 
             LaunchLimitEmitter.WriteCudaCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
+            CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr));
 
             writer.AppendLine(
                 $"using (var {GSharpInternalNames.Launcher.CudaContextScope} = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");

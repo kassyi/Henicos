@@ -19,19 +19,8 @@ Loads AOT-compiled native CPU kernel libraries, manages function pointer/delegat
 public static class CpuKernelLoader
 ```
 
-## Properties
-
-| Name | Description |
-| --- | --- |
-| [ForceManagedExecution](#forcemanagedexecution) | Gets or sets a value indicating whether to forcefully bypass native AOT DLL execution and use pure C# managed execution. |
-
-## ForceManagedExecution
-
-Gets or sets a value indicating whether to forcefully bypass native AOT DLL execution and use pure C# managed execution (stored per async flow in an `AsyncLocal<bool>`).
-
-```csharp
-public static bool ForceManagedExecution { get; set; }
-```
+To run the kernels on the managed path although the native library exists, select
+[`KernelExecution.Managed`](../execution_context/GpuExecution.md) with `GpuExecution.Use`.
 
 ## Methods
 
@@ -60,7 +49,7 @@ The path to the native DLL to check.
 #### Returns
 
 _bool_<br>
-`true` if `ForceManagedExecution` is enabled or `dllPath` does not exist on disk; otherwise, `false`.
+`true` if the current flow selected [`KernelExecution.Managed`](../execution_context/GpuExecution.md) or `dllPath` does not exist on disk; otherwise, `false`.
 
 ## LoadAotKernelPtr(string, string)
 
@@ -167,14 +156,17 @@ The file path to the native dynamic library.
 
 ```csharp
 using System;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
 
 // Execution Context: Host (CPU)
 
-CpuKernelLoader.ForceManagedExecution = true;
-bool useManaged = CpuKernelLoader.ShouldUseManagedExecution("nonexistent_kernel.dll");
-Console.WriteLine($"ShouldUseManagedExecution: {useManaged}");
-CpuKernelLoader.ForceManagedExecution = false;
+string existing = typeof(CpuKernelLoader).Assembly.Location;
+using (GpuExecution.Use(KernelExecution.Managed))
+{
+    bool useManaged = CpuKernelLoader.ShouldUseManagedExecution(existing);
+    Console.WriteLine($"ShouldUseManagedExecution: {useManaged}");   // True: the managed path is selected
+}
 ```
 
 ## Remarks

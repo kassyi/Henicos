@@ -32,7 +32,7 @@ public static class SequentialOracle
             {
                 foreach (int id in order.Enumerate(shape))
                 {
-                    ManagedGpuContext.SetThreadContext(shape.ContextOf(id));
+                    ManagedThreadContext.Set(shape.ContextOf(id));
                     body();
                 }
             }
@@ -42,7 +42,7 @@ public static class SequentialOracle
             }
             finally
             {
-                ManagedGpuContext.ClearThreadContext();
+                ManagedThreadContext.Clear();
             }
         });
         thread.Start();

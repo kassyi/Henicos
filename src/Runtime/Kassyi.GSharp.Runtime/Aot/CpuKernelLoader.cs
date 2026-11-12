@@ -5,8 +5,6 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// </summary>
 public static class CpuKernelLoader
 {
-    private static readonly AsyncLocal<bool> s_forceManagedExecution = new();
-
     // Module cache: normalized DLL path -> Lazy<IntPtr> module handle
     private static readonly ConcurrentDictionary<string, Lazy<IntPtr>> s_moduleCache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -17,20 +15,13 @@ public static class CpuKernelLoader
     private static readonly ConcurrentDictionary<(string DllPath, string KernelName, Type DelegateType), Delegate> s_delegateCache = new();
 
     /// <summary>
-    /// Gets or sets a value indicating whether to forcefully bypass native AOT DLL execution and use pure C# managed execution.
-    /// </summary>
-    public static bool ForceManagedExecution
-    {
-        get => s_forceManagedExecution.Value;
-        set => s_forceManagedExecution.Value = value;
-    }
-
-    /// <summary>
-    /// Determines whether the managed execution fallback should be used.
+    /// Determines whether the managed execution fallback should be used: under <see cref="KernelExecution.Managed"/>
+    /// (<see cref="GpuExecution.Use"/>), or when the native library is not there.
     /// </summary>
     /// <param name="dllPath">The path to the native DLL to check.</param>
     /// <returns><see langword="true"/> if managed execution should be used; otherwise, <see langword="false"/>.</returns>
-    public static bool ShouldUseManagedExecution(string dllPath) => ForceManagedExecution || !File.Exists(dllPath);
+    public static bool ShouldUseManagedExecution(string dllPath) =>
+        GpuExecution.Current == KernelExecution.Managed || !File.Exists(dllPath);
 
     /// <summary>
     /// Unloads all cached CPU modules and clears the in-memory cache to reclaim memory.

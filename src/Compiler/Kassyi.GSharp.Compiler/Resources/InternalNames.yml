@@ -251,6 +251,12 @@ Launcher:
     CopySourcePrefix: __gsharp_source_
     CopyBufferPrefix: __gsharp_copy_
     CopyIndexPrefix: __gsharp_copy_index_
+    # The C# execution of a launcher (KernelExecution.CSharp): the linear index of the GPU thread that the lambda runs,
+    # the copy of a ref or out argument that the lambda captures, and the pinned pointer and length of a span argument
+    CSharpThread: __gsharp_csharp_thread
+    CSharpArgumentPrefix: __gsharp_csharp_arg_
+    CSharpPinnedPrefix: __gsharp_csharp_pin_
+    CSharpLengthPrefix: __gsharp_csharp_len_
 
 ReturnValue:
   Summary: The buffer that a kernel returning a value writes into, the device-side locals that fill it, and the launcher locals that convert a returned struct whose layouts differ.

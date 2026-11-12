@@ -1,6 +1,7 @@
 #nullable enable
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -21,18 +22,12 @@ public class SwitchExpressionManagedTests : TranspilerTestBase
         int[] input = [5];
         int[] output = [0];
 
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             var exception = Assert.Throws<SwitchExpressionException>(() =>
                 SwitchExpressionKernels.LaunchNoDiscardArmSwitchKernel(input, output, blockDimX: 1));
 
             Assert.Equal(5, exception.UnmatchedValue);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 }

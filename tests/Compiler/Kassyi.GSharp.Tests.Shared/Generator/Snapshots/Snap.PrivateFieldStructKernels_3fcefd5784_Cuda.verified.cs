@@ -655,6 +655,13 @@ public static void WarmupFunctionPointerStepPrivateFieldsKernel() => global::Kas
 public static unsafe void LaunchStepPrivateFieldsKernel(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder holder, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepPrivateFieldsKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder __gsharp_csharp_arg_0 = holder;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.StepPrivateFieldsKernel(ref __gsharp_csharp_arg_0));
+holder = __gsharp_csharp_arg_0;
+return;
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.__gsharp_hfunc_StepPrivateFieldsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.s_errorSites);
@@ -705,6 +712,10 @@ __gsharp_device_arrays.Free(hStream);
 public static unsafe void LaunchStepPrivateFieldsKernelPtr(global::System.IntPtr holder, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepPrivateFieldsKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.StepPrivateFieldsKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchStepPrivateFieldsKernel");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.__gsharp_hfunc_StepPrivateFieldsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.s_errorSites);
@@ -792,6 +803,13 @@ if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.PfExplicitSwapped __gsharp_csharp_arg_0 = value;
+global::System.Int32[] __gsharp_csharp_arg_1 = output;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.ReadExplicitSwappedKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+return;
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.__gsharp_hfunc_ReadExplicitSwappedKernel.Resolve();
@@ -868,6 +886,10 @@ if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.ReadExplicitSwappedKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchReadExplicitSwappedKernel");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.__gsharp_hfunc_ReadExplicitSwappedKernel.Resolve();
@@ -934,6 +956,13 @@ public static void WarmupFunctionPointerStepLibraryInternalFieldsKernel() => glo
 public static unsafe void LaunchStepLibraryInternalFieldsKernel(ref global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder holder, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder __gsharp_csharp_arg_0 = holder;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.StepLibraryInternalFieldsKernel(ref __gsharp_csharp_arg_0));
+holder = __gsharp_csharp_arg_0;
+return;
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.__gsharp_hfunc_StepLibraryInternalFieldsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.s_errorSites);
@@ -984,6 +1013,10 @@ __gsharp_device_arrays.Free(hStream);
 public static unsafe void LaunchStepLibraryInternalFieldsKernelPtr(global::System.IntPtr holder, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.StepLibraryInternalFieldsKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchStepLibraryInternalFieldsKernel");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.__gsharp_hfunc_StepLibraryInternalFieldsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.s_errorSites);

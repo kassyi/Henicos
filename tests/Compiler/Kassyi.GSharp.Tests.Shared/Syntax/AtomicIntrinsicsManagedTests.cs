@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -65,11 +66,10 @@ public class AtomicIntrinsicsManagedTests : TranspilerTestBase
         var launches = new Task[hostThreads];
         for (var i = 0; i < hostThreads; i++)
         {
-            // LongRunning: a thread of its own, since ForceManagedExecution is per thread and Barrier blocks
+            // LongRunning: a thread of its own, since each task selects the managed path for its own flow and Barrier blocks
             launches[i] = Task.Factory.StartNew(() =>
             {
-                CpuKernelLoader.ForceManagedExecution = true;
-                try
+                using (GpuExecution.Use(KernelExecution.Managed))
                 {
                     start.SignalAndWait();
                     for (var launch = 0; launch < launchesPerThread; launch++)
@@ -77,10 +77,6 @@ public class AtomicIntrinsicsManagedTests : TranspilerTestBase
                         AtomicIntrinsicsKernels.LaunchAtomicFloatAddStressKernel(
                             sum, gridDimX: blocksPerGrid, blockDimX: threadsPerBlock);
                     }
-                }
-                finally
-                {
-                    CpuKernelLoader.ForceManagedExecution = false;
                 }
             }, TaskCreationOptions.LongRunning);
         }

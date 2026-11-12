@@ -163,6 +163,13 @@ if (r.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::System.Int32[] __gsharp_csharp_arg_0 = xs;
+global::System.Int32[] __gsharp_csharp_arg_1 = r;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+return;
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.__gsharp_hfunc_LocalQueryWithLambdaStagesKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.s_errorSites);
@@ -278,6 +285,10 @@ if (r.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchLocalQueryWithLambdaStagesKernel");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.__gsharp_hfunc_LocalQueryWithLambdaStagesKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.s_errorSites);

@@ -1,5 +1,6 @@
 using System;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -72,19 +73,13 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = forceManaged;
-        try
+        using (GpuExecution.Use(forceManaged ? KernelExecution.Managed : KernelExecution.Default))
         {
             int[] data = [7, 8, 9];
             int[] result = [0];
 
             Assert.Throws<ArgumentOutOfRangeException>(
                 () => CpuDialectLibraryCallKernels.LaunchElementAtIndexKernel(data, index, result));
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 
@@ -98,19 +93,13 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = forceManaged;
-        try
+        using (GpuExecution.Use(forceManaged ? KernelExecution.Managed : KernelExecution.Default))
         {
             int[] data = [7, 8, 9];
             int[] result = [0];
 
             Assert.Throws<InvalidOperationException>(
                 () => CpuDialectLibraryCallKernels.LaunchUnfusedFirstKernel(data, 0, result));
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 
@@ -124,19 +113,13 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = forceManaged;
-        try
+        using (GpuExecution.Use(forceManaged ? KernelExecution.Managed : KernelExecution.Default))
         {
             int[] data = [7, 8, 9];
             int[] result = [0];
 
             Assert.Throws<InvalidOperationException>(
                 () => CpuDialectLibraryCallKernels.LaunchUnfusedLastKernel(data, 0, result));
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 
@@ -152,19 +135,13 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = forceManaged;
-        try
+        using (GpuExecution.Use(forceManaged ? KernelExecution.Managed : KernelExecution.Default))
         {
             int[] data = [7, 8, 9];
             int[] result = [0];
 
             Assert.Throws<InvalidOperationException>(
                 () => CpuDialectLibraryCallKernels.LaunchUnfusedSingleKernel(data, takeCount, result));
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 
@@ -178,19 +155,13 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = forceManaged;
-        try
+        using (GpuExecution.Use(forceManaged ? KernelExecution.Managed : KernelExecution.Default))
         {
             int[] data = [7, 8, 9];
             int[] result = [0];
 
             Assert.Throws<InvalidOperationException>(
                 () => CpuDialectLibraryCallKernels.LaunchUnfusedSingleOrDefaultKernel(data, 2, result));
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 
@@ -204,9 +175,7 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
     {
         Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
 
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = forceManaged;
-        try
+        using (GpuExecution.Use(forceManaged ? KernelExecution.Managed : KernelExecution.Default))
         {
             int[] data = [7, 8, 9];
             int[] intResult = [0];
@@ -237,10 +206,6 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
                 () => CpuDialectLibraryCallKernels.LaunchUnfusedAverageKernel(data, 0, doubleResult));
             Assert.Throws<InvalidOperationException>(
                 () => CpuDialectLibraryCallKernels.LaunchUnfusedSeedlessAggregateKernel(data, 0, intResult));
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 }

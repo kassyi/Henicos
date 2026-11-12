@@ -4,6 +4,7 @@ using System.Linq;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
@@ -144,15 +145,9 @@ public class GridSyncPhaseTests : TranspilerTestBase
     {
         Skip.If(forceManaged && IsCudaDialect, "The managed execution path exists only on the CPU dialects.");
 
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = forceManaged;
-        try
+        using (GpuExecution.Use(forceManaged ? KernelExecution.Managed : KernelExecution.Default))
         {
             launch();
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 

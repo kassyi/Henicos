@@ -40,10 +40,14 @@ public static partial class Gpu
     /// <summary>
     /// Synchronizes all threads in the current block barrier (<c>__syncthreads()</c>).
     /// </summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    /// <exception cref="GpuOnlyException">
+    /// Thrown when evaluated on the host CPU outside of a managed execution context, or in a kernel launched under
+    /// <c>KernelExecution.CSharp</c>, which runs one GPU thread at a time.
+    /// </exception>
     [CudaIntrinsic("__syncthreads")]
     public static void SyncThreads()
     {
+        ManagedGpuContext.ThrowIfCSharpExecution("Gpu.SyncThreads()");
         if (!ManagedGpuContext.IsActive)
         {
             GpuOnlyException.Throw();
@@ -67,7 +71,11 @@ public static partial class Gpu
     /// </remarks>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a kernel.</exception>
     [CudaIntrinsic("__gsharp_grid_sync")]
-    public static void SyncGrid(GridSyncMode mode = GridSyncMode.Deterministic) => GpuOnlyException.Throw();
+    public static void SyncGrid(GridSyncMode mode = GridSyncMode.Deterministic)
+    {
+        ManagedGpuContext.ThrowIfCSharpExecution("Gpu.SyncGrid()");
+        GpuOnlyException.Throw();
+    }
 
     /// <summary>
     /// Executes the provided action, automatically inserting a grid synchronization
@@ -88,7 +96,11 @@ public static partial class Gpu
     /// in the grid synchronizations of the remaining statements.
     /// </para>
     /// </remarks>
-    public static void SyncGrid(Action body) => GpuOnlyException.Throw();
+    public static void SyncGrid(Action body)
+    {
+        ManagedGpuContext.ThrowIfCSharpExecution("Gpu.SyncGrid(body)");
+        GpuOnlyException.Throw();
+    }
 
     /// <summary>
     /// Marker method for compile-time constant macro expansion. Replaced with the literal macro value during transpilation.

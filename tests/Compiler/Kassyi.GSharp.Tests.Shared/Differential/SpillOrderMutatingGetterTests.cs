@@ -8,6 +8,7 @@ using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -106,15 +107,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
         var invoke = CompileAndCreateManagedSeedInvoker("RunMutatingGetterOnKernelValueParameterAcrossBarrier");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 10);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -143,15 +138,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
         var invoke = CompileAndCreateManagedSeedInvoker("RunMutatingGetterOnDeviceValueParameterAcrossBarrier");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 20);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -180,15 +169,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
         var invoke = CompileAndCreateManagedSeedInvoker("RunMutatingIndexerOnKernelValueParameterAcrossBarrier");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 5);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -217,15 +200,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
         var invoke = CompileAndCreateManagedSeedInvoker("RunMutatingGetterAfterStructIdentifierArgument");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 10);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -255,15 +232,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
         var invoke = CompileAndCreateManagedSeedInvoker("RunMutatingIndexerAfterStructIdentifierArgument");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 10);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -305,16 +276,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 
 #if GSHARP_CPU
         int[] managedActual = new int[ThreadCount];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchRefConditionalWriteOnKernelValueParameterAcrossBarrierKernel(
                 managedActual, 10, 20, blockDimX: ThreadCount);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(expected, managedActual);
@@ -347,16 +312,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 
 #if GSHARP_CPU
         int[] managedActual = new int[ThreadCount];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchRefConditionalArgumentOnKernelValueParameterAcrossBarrierKernel(
                 managedActual, 10, 20, blockDimX: ThreadCount);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(expected, managedActual);
@@ -389,16 +348,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 
 #if GSHARP_CPU
         int[] managedActual = new int[ThreadCount];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchRefConditionalWriteOnDeviceValueParameterAcrossBarrierKernel(
                 managedActual, 15, 25, blockDimX: ThreadCount);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(expected, managedActual);
@@ -426,16 +379,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 #if GSHARP_CPU
         uint[] managedResult = [0];
         uint[] managedCalls = [0];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchOperatorMacroOnKernelValueParameterAcrossBarrierKernel(
                 initialState, [3], [4], managedResult, managedCalls);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(107u, managedResult[0]);
@@ -464,16 +411,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 #if GSHARP_CPU
         uint[] managedResult = [0];
         uint[] managedCalls = [0];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchOperatorMacroOnDeviceValueParameterAcrossBarrierKernel(
                 initialState, [5], [6], managedResult, managedCalls);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(61u, managedResult[0]);
@@ -496,15 +437,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
         int[] backing = Enumerable.Range(100, ThreadCount).ToArray();
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(backing, actual);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -529,15 +464,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
             "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 40);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -562,15 +491,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
             "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 50);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -601,16 +524,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 
 #if GSHARP_CPU
         int[] managedActual = new int[ThreadCount];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchUnsafeBlockWithSyncThreadsKernel(
                 managedActual, blockDimX: ThreadCount);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(expected, managedActual);
@@ -635,16 +552,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 
 #if GSHARP_CPU
         int[] managedActual = new int[ThreadCount];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchUnsafeBlockWithWarpShuffleKernel(
                 managedActual, 100, blockDimX: ThreadCount);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(expected, managedActual);
@@ -669,16 +580,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 
 #if GSHARP_CPU
         int[] managedActual = new int[ThreadCount];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchRefConditionalValueReadOneLevelKernel(
                 managedActual, 7, blockDimX: ThreadCount);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(expected, managedActual);
@@ -700,16 +605,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 
 #if GSHARP_CPU
         int[] managedActual = new int[ThreadCount];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchRefConditionalValueReadNestedKernel(
                 managedActual, 7, blockDimX: ThreadCount);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(expected, managedActual);
@@ -731,16 +630,10 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
 
 #if GSHARP_CPU
         int[] managedActual = new int[ThreadCount];
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             SpillOrderMutatingGetterKernels.LaunchRefConditionalValueReadNestedWithBarrierKernel(
                 managedActual, 7, blockDimX: ThreadCount);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 
         Assert.Equal(expected, managedActual);
@@ -764,15 +657,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
             "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 100);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -797,15 +684,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
             "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 0);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -828,15 +709,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
         int[] backing = Enumerable.Range(10, ThreadCount).ToArray();
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(backing, actual);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -861,15 +736,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
             "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
         int[] actual = new int[ThreadCount];
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             invoke(actual, 200);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
 
@@ -894,9 +763,7 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
             "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels");
 
 #if GSHARP_CPU
-        bool prev = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             using var cts = new System.Threading.CancellationTokenSource();
             var gcTask = System.Threading.Tasks.Task.Run(() =>
@@ -923,10 +790,6 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
                 cts.Cancel();
                 gcTask.Wait(TimeSpan.FromSeconds(5));
             }
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = prev;
         }
 #endif
     }

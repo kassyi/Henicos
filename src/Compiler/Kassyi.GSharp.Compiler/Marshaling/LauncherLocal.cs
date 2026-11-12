@@ -52,4 +52,18 @@ internal enum LauncherLocal
 
     /// <summary>The loop index local that copies nested arrays of a parameter on the CPU, <c>__gsharp_copy_index_{ordinal}</c>.</summary>
     CopyIndex,
+
+    /// <summary>
+    /// The local of the C# execution that a GPU thread's call reads: the copy of a <c>ref</c> / <c>out</c> argument, or
+    /// the pointer to a pinned span, <c>__gsharp_csharp_arg_{ordinal}</c>.
+    /// </summary>
+    CSharpArgument,
+
+    /// <summary>
+    /// The <c>fixed</c> pointer local of a span argument of the C# execution, <c>__gsharp_csharp_pin_{ordinal}</c>.
+    /// </summary>
+    CSharpPinned,
+
+    /// <summary>The length of a span argument of the C# execution, <c>__gsharp_csharp_len_{ordinal}</c>.</summary>
+    CSharpLength,
 }

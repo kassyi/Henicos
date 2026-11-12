@@ -4,10 +4,11 @@ using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
-/// <summary>Runs a kernel launch on the managed fallback (<see cref="CpuKernelLoader.ForceManagedExecution"/>).</summary>
+/// <summary>Runs a kernel launch on the managed fallback (<see cref="KernelExecution.Managed"/>).</summary>
 internal static class ManagedKernelRun
 {
     /// <summary>
@@ -20,16 +21,14 @@ internal static class ManagedKernelRun
         {
             try
             {
-                CpuKernelLoader.ForceManagedExecution = true;
-                launch();
+                using (GpuExecution.Use(KernelExecution.Managed))
+                {
+                    launch();
+                }
             }
             catch (Exception ex)
             {
                 failures.Enqueue(ex);
-            }
-            finally
-            {
-                CpuKernelLoader.ForceManagedExecution = false;
             }
         });
         thread.Start();

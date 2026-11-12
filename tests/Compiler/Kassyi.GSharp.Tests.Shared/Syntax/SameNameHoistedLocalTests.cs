@@ -4,6 +4,7 @@ using Kassyi.GSharp.Runtime.Aot;
 #endif
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -65,15 +66,9 @@ public class SameNameHoistedLocalTests : TranspilerTestBase
 
     private static void RunManaged(Action run)
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             run();
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
         }
     }
 #endif

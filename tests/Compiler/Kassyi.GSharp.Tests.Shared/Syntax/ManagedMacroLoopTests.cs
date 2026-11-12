@@ -3,6 +3,7 @@ using Xunit;
 #if GSHARP_CPU
 using System;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime;
 #endif
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -284,15 +285,9 @@ public class ManagedMacroLoopTests : TranspilerTestBase
 
     private static void RunManaged(Action run)
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             run();
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
         }
     }
 #endif

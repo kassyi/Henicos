@@ -2,6 +2,7 @@ using System;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
@@ -11,10 +12,7 @@ public class GridSyncManagedTests : TranspilerTestBase
     [SkippableFact]
     public void GlobalBarrier_DirectManagedExecution_ProducesExpectedSequentialValues()
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             int numBlocks = 4;
             int threadsPerBlock = 32;
@@ -36,19 +34,12 @@ public class GridSyncManagedTests : TranspilerTestBase
                 Assert.Equal(expected, buffer[i]);
             }
         }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
-        }
     }
 
     [SkippableFact]
     public void GlobalReduction_DirectManagedExecution_ProducesExpectedSum()
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             int numBlocks = 4;
             int threadsPerBlock = 256;
@@ -74,10 +65,6 @@ public class GridSyncManagedTests : TranspilerTestBase
             );
 
             Assert.Equal(expectedSum, totalSum[0]);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
         }
     }
 }
