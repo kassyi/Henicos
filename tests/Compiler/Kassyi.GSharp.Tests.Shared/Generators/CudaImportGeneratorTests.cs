@@ -39,8 +39,9 @@ public class CudaImportGeneratorTests
     }
 
     // A method with a parameter the launcher cannot pass gets a body that throws the GSH0110 message instead of a
-    // launch that passes the host address of a reference (#1296); it stays implemented, so no CS8795 joins the
-    // diagnostic
+    // launch that passes the host address of a reference (#1296). The implementation repeats the parameter modifiers of
+    // the declaration (ref kinds, scoped, params), so every method stays implemented and the output compiles without a
+    // using directive of the runtime: GSH0110 is the only error of such a method
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void ParameterTheLauncherCannotPass_ThrowsInsteadOfLaunching()
@@ -59,11 +60,29 @@ public class CudaImportGeneratorTests
             ModuleKernelParameterTypes.ManagedTypeReason + "\");",
             text);
         Assert.Contains("cuLaunchKernel", MethodBody(source, "public static partial void Passable("));
-        var diagnostics = output.GetDiagnostics();
-        Assert.DoesNotContain(diagnostics, static d => d.Id == "CS8500");
-        string[] rejected = ["Text", "Callback", "Rows", "Streamed", "Optional"];
-        Assert.All(rejected, method => Assert.DoesNotContain(diagnostics, d =>
-            d.Id == "CS8795" && d.GetMessage().Contains($"ImportedKernels.{method}(", StringComparison.Ordinal)));
+        var errors = output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error || d.Id == "CS8500")
+            .Select(static d => d.ToString())
+            .ToArray();
+        Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
+    }
+
+    // The implementation part repeats each modifier of the declaration and writes a function pointer type in full
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Written(out int result, in int seed, ref readonly int limit)")]
+    [InlineData("Spans(scoped global::System.Span<float> values)")]
+    [InlineData("Many(int __gsharp_d_count, params float[] values)")]
+    [InlineData("Called(delegate* unmanaged<int, void> callback, delegate*<ref int, float> compute)")]
+    public void Signature_ParameterModifiersAndFunctionPointers_MatchTheDeclaration(string signature)
+    {
+        var compilation = CreateCompilation(
+            RoslynTestUtility.ReadTestCase("NativeApi/CudaImportParameterDiagnostics.cs"));
+
+        CreateDriver().RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+
+        var source = Assert.Single(output.SyntaxTrees, static t => t.FilePath.EndsWith("_CudaImport.g.cs")).ToString();
+        Assert.Contains($"public static partial void {signature}", source);
     }
 
     // The statements between the braces that follow <signature>

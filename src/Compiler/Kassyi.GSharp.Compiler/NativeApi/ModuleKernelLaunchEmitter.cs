@@ -17,6 +17,10 @@ internal static class ModuleKernelLaunchEmitter
 
     private const string AddressOf = "global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf";
 
+    private const string Zero = HostTypeNames.IntPtr + ".Zero";
+
+    private const string ThrowIfError = HostTypeNames.CudaException + ".ThrowIfError";
+
     public static void EmitModuleCacheField(SourceWriter writer, string moduleName)
     {
         writer.Append("private static readonly Lazy<byte[]> s_fatbin_");
@@ -29,14 +33,14 @@ internal static class ModuleKernelLaunchEmitter
 
     public static void EmitNativeContextStruct(SourceWriter writer, string methodName, ModuleKernelLaunchPlan plan)
     {
-        writer.AppendLine("[StructLayout(LayoutKind.Sequential)]");
+        writer.AppendLine($"[{HostTypeNames.StructLayout}({HostTypeNames.LayoutKind}.Sequential)]");
         writer.AppendLine($"private struct {NativeContextPrefix}{methodName}");
         using (writer.Scope())
         {
             foreach (var argument in plan.Arguments)
             {
                 writer.AppendLine(argument.IsArray
-                    ? $"public IntPtr {argument.Name};"
+                    ? $"public {HostTypeNames.IntPtr} {argument.Name};"
                     : $"public {argument.TypeName} {argument.Name};");
             }
         }
@@ -70,8 +74,8 @@ internal static class ModuleKernelLaunchEmitter
 
         var launch = plan.Launch;
         WriteLaunchLimitCheck(writer, launcherName, launch);
-        writer.AppendLine("using var scope = new GpuKernelLoader.CudaContextScope();");
-        writer.Append("var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_");
+        writer.AppendLine($"using var scope = new {HostTypeNames.GpuKernelLoader}.CudaContextScope();");
+        writer.Append($"var kernel = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(s_fatbin_");
         AppendSanitizedIdentifier(writer, moduleName);
         writer.Append(".Value, ");
         AppendStringLiteral(writer, entryPoint);
@@ -186,8 +190,8 @@ internal static class ModuleKernelLaunchEmitter
                 continue;
             }
 
-            writer.AppendLine(
-                $"using var d_{argument.Name} = new GpuBuffer<{argument.TypeName}>({argument.Name}.Length);");
+            writer.Append($"using var d_{argument.Name} = new {HostTypeNames.GpuBuffer}<{argument.TypeName}>");
+            writer.AppendLine($"({argument.Name}.Length);");
             if (argument.CopyIn)
             {
                 writer.AppendLine($"d_{argument.Name}.CopyToDevice({argument.Name});");
@@ -269,7 +273,7 @@ internal static class ModuleKernelLaunchEmitter
             {
                 case ModuleKernelParameterKind.Array:
                     writer.AppendLine(
-                        $"kernelParams[{i}] = {AddressOf}<global::System.IntPtr>(ref p_{argument.Name});");
+                        $"kernelParams[{i}] = {AddressOf}<{HostTypeNames.IntPtr}>(ref p_{argument.Name});");
                     break;
                 case ModuleKernelParameterKind.Pointer:
                     writer.AppendLine($"kernelParams[{i}] = &p_{argument.Name};");
@@ -283,20 +287,20 @@ internal static class ModuleKernelLaunchEmitter
 
     private static void EmitCuLaunchKernelCall(SourceWriter writer, ModuleLaunchConfiguration launch)
     {
-        writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(");
+        writer.AppendLine($"{ThrowIfError}({HostTypeNames.CudaDriverApi}.cuLaunchKernel(");
         writer.AppendLine("kernel,");
         writer.AppendLine($"{launch.GridDimX ?? "1"}, {launch.GridDimY ?? "1"}, {launch.GridDimZ ?? "1"},");
         writer.AppendLine($"{launch.BlockDimX ?? "1"}, {launch.BlockDimY ?? "1"}, {launch.BlockDimZ ?? "1"},");
         writer.AppendLine(
-            $"{launch.SharedMemBytes ?? "0"}, {launch.Stream ?? "IntPtr.Zero"}, kernelParams, IntPtr.Zero));");
+            $"{launch.SharedMemBytes ?? "0"}, {launch.Stream ?? Zero}, kernelParams, {Zero}));");
     }
 
     private static void EmitLaunchSynchronization(SourceWriter writer, ModuleLaunchConfiguration launch)
     {
         writer.AppendLine();
         writer.AppendLine(launch.Stream is { } stream
-            ? $"CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize({stream}));"
-            : "CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());");
+            ? $"{ThrowIfError}({HostTypeNames.CudaDriverApi}.cuStreamSynchronize({stream}));"
+            : $"{ThrowIfError}({HostTypeNames.CudaDriverApi}.cuCtxSynchronize());");
     }
 
     private static void EmitBufferOutputs(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)

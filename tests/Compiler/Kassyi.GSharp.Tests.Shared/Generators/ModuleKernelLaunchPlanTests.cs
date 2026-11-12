@@ -24,7 +24,9 @@ public class ModuleKernelLaunchPlanTests
     [InlineData("data", "params int[]", "Array", "int", "None")]
     [InlineData("n", "int", "Value", "int", "None")]
     [InlineData("v", "MyStruct", "Value", "MyStruct", "None")]
-    [InlineData("v", "(int, float)", "Value", "(int, float)", "None")]
+    [InlineData("v", "MyNamespace.Nullable<int>", "Value", "MyNamespace.Nullable<int>", "None")]
+    [InlineData("v", "MyNamespace.ValueTuple<int, float>", "Value", "MyNamespace.ValueTuple<int, float>", "None")]
+    [InlineData("__gsharp_d_data", "int", "Value", "int", "None")]
     [InlineData("callback", "Action", "Value", "Action", "None")]
     [InlineData("p", "float *", "Pointer", "float*", "None")]
     [InlineData("f", "delegate* unmanaged<int, void>", "Pointer", "delegate* unmanaged<int, void>", "None")]
@@ -77,7 +79,20 @@ public class ModuleKernelLaunchPlanTests
     [InlineData("gridDimX", "int", ModuleKernelParameterTypes.DimensionTypeReason)]
     [InlineData("sharedMemBytes", "ulong", ModuleKernelParameterTypes.DimensionTypeReason)]
     [InlineData("stream", "int", ModuleKernelParameterTypes.StreamTypeReason)]
-    [InlineData("__gsharp_d_data", "int", ModuleKernelParameterTypes.ReservedNameReason)]
+    [InlineData("v", "(int, float)", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("v", "(byte a, double b)", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("v", "ValueTuple<byte, double>", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("v", "global::System.ValueTuple<byte, double>", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("v", "System.DateTime", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("v", "DateTimeOffset", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("data", "(int, float)[]", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("n", "Nullable<float>", ModuleKernelParameterTypes.NullableValueReason)]
+    [InlineData("data", "System.Nullable<int>[]", ModuleKernelParameterTypes.NullableValueReason)]
+    [InlineData("s", "System . String", ModuleKernelParameterTypes.ManagedTypeReason)]
+    [InlineData("data", "System . String[]", ModuleKernelParameterTypes.ManagedElementReason)]
+    [InlineData("s", "Span<float>", ModuleKernelParameterTypes.RefStructReason)]
+    [InlineData("s", "scoped Span<float>", ModuleKernelParameterTypes.RefStructReason)]
+    [InlineData("s", "scoped ReadOnlySpan<float>", ModuleKernelParameterTypes.RefStructReason)]
     public void Parse_TypeTheLauncherCannotPass_GivesReason(string name, string type, string reason)
     {
         var parsed = ModuleKernelParameterTypes.Parse(name, type);
@@ -151,6 +166,54 @@ public class ModuleKernelLaunchPlanTests
         Assert.Equal(ordinal, problem.ParameterOrdinal);
         Assert.Equal(reason, problem.Reason);
         Assert.DoesNotContain(plan.Arguments, a => a.Name == problem.ParameterName);
+    }
+
+    // A dimension of a struct type with an implicit operator to uint sets the launch like a uint one: the launcher
+    // passes it where cuLaunchKernel takes a uint, and C# applies the operator there
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CudaImportPlanner_DimensionWithUserDefinedConversion_SetsLaunch()
+    {
+        var plan = PlanCudaImport("Gridded");
+
+        Assert.True(plan.CanLaunch);
+        Assert.Equal(new ModuleLaunchConfiguration { GridDimX = "gridDimX", BlockDimX = "blockDimX" }, plan.Launch);
+        Assert.Equal(["data"], plan.Arguments.Select(static a => a.Name));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CudaImportPlanner_FunctionPointersParamsAndInternalLookingName_PassesThem()
+    {
+        ModuleKernelArgument[] expected =
+        [
+            new("callback", ModuleKernelParameterKind.Pointer, "delegate* unmanaged<int, void>", true, true),
+            new("compute", ModuleKernelParameterKind.Pointer, "delegate*<ref int, float>", true, true),
+            new("__gsharp_d_count", ModuleKernelParameterKind.Value, "int", true, true),
+            new("values", ModuleKernelParameterKind.Array, "float", true, true),
+        ];
+
+        var arguments = PlanCudaImport("Called").Arguments.Concat(PlanCudaImport("Many").Arguments).ToArray();
+
+        Assert.Equal(expected, arguments);
+    }
+
+    // LayoutKind.Auto lets the runtime reorder the fields, the ValueTuple<byte, double> of the test case keeps
+    // Item1 at offset 8 and Item2 at 0, so the kernel would read other bytes than the C declaration names
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void CudaImportPlanner_AutoLayoutValues_ReportsEach()
+    {
+        var plan = PlanCudaImport("Paired");
+
+        Assert.Equal(
+            [
+                (0, ModuleKernelParameterTypes.AutoLayoutReason),
+                (1, ModuleKernelParameterTypes.AutoLayoutReason),
+                (2, ModuleKernelParameterTypes.AutoLayoutReason),
+                (3, ModuleKernelParameterTypes.AutoLayoutReason),
+            ],
+            plan.Problems.Select(static p => (p.ParameterOrdinal, p.Reason)));
     }
 
     [Fact]

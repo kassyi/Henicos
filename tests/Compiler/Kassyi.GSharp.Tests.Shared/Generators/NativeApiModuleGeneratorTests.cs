@@ -14,6 +14,10 @@ namespace Kassyi.GSharp.Tests.Shared.Generators;
 [Category(TestCategory.Compiler)]
 public class NativeApiModuleGeneratorTests
 {
+    private const string DriverApi = "global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi";
+    private const string KernelLoader = "global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader";
+    private const string GpuBuffer = "global::Kassyi.GSharp.Runtime.GpuBuffer";
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task ModuleDefinition_GeneratesKernelLaunchers()
@@ -115,7 +119,7 @@ public class NativeApiModuleGeneratorTests
 
         Assert.Empty(result.Diagnostics);
         var source = FindSource(result, "StreamKernels");
-        Assert.Contains("CudaDriverApi.cuStreamSynchronize(stream)", source);
+        Assert.Contains($"{DriverApi}.cuStreamSynchronize(stream)", source);
         Assert.DoesNotContain("cuCtxSynchronize", source);
         Assert.Contains(", stream, kernelParams,", source);
     }
@@ -138,7 +142,7 @@ public class NativeApiModuleGeneratorTests
 
         Assert.Empty(result.Diagnostics);
         var source = FindSource(result, "NoStreamKernels");
-        Assert.Contains("CudaDriverApi.cuCtxSynchronize()", source);
+        Assert.Contains($"{DriverApi}.cuCtxSynchronize()", source);
         Assert.DoesNotContain("cuStreamSynchronize", source);
     }
 
@@ -161,7 +165,7 @@ public class NativeApiModuleGeneratorTests
 
         Assert.Empty(result.Diagnostics);
         var source = FindSource(result, "CopyOutKernels");
-        var syncIndex = source.IndexOf("CudaDriverApi.cuStreamSynchronize(stream)");
+        var syncIndex = source.IndexOf($"{DriverApi}.cuStreamSynchronize(stream)");
         var copyIndex = source.IndexOf(".CopyToHost(");
 
         Assert.NotEqual(-1, syncIndex);
@@ -191,9 +195,9 @@ public class NativeApiModuleGeneratorTests
         var source = FindSource(result, "SharedKernels");
         const string Prepare = "global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(" +
             "kernel, sharedMemBytes, \"SharedKernels.LaunchShared\");";
-        var loadIndex = source.IndexOf("var kernel = GpuKernelLoader.LoadAotKernel(", StringComparison.Ordinal);
+        var loadIndex = source.IndexOf($"var kernel = {KernelLoader}.LoadAotKernel(", StringComparison.Ordinal);
         var prepareIndex = source.IndexOf(Prepare, StringComparison.Ordinal);
-        var allocationIndex = source.IndexOf("new GpuBuffer<float>(", StringComparison.Ordinal);
+        var allocationIndex = source.IndexOf($"new {GpuBuffer}<float>(", StringComparison.Ordinal);
 
         Assert.NotEqual(-1, loadIndex);
         Assert.True(loadIndex < prepareIndex, "Prepare must follow the function lookup");
@@ -219,7 +223,7 @@ public class NativeApiModuleGeneratorTests
         Assert.Empty(result.Diagnostics);
         var source = FindSource(result, "NoSharedKernels");
         Assert.DoesNotContain("DynamicSharedMemoryOptIn", source);
-        Assert.Contains("0, IntPtr.Zero, kernelParams, IntPtr.Zero));", source);
+        Assert.Contains("0, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));", source);
     }
 
     // The module launcher checks its dimensions against the limits of every GPU (#799) before the context, the
@@ -248,7 +252,7 @@ public class NativeApiModuleGeneratorTests
         const string Check = "global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(" +
             "gridDimX, 1, 1, blockDimX, 1, blockDimZ, \"GridKernels.LaunchGrid\");";
         var checkIndex = source.IndexOf(Check, StringComparison.Ordinal);
-        var scopeIndex = source.IndexOf("using var scope = new GpuKernelLoader.CudaContextScope();",
+        var scopeIndex = source.IndexOf($"using var scope = new {KernelLoader}.CudaContextScope();",
             StringComparison.Ordinal);
 
         Assert.NotEqual(-1, checkIndex);

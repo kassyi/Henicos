@@ -74,6 +74,13 @@ public class NativeApiGeneratorDiagnosticsTests
     [InlineData("in int", ModuleKernelParameterTypes.ByReferenceReason)]
     [InlineData("scoped ref int", ModuleKernelParameterTypes.ByReferenceReason)]
     [InlineData("\"float[\"", ModuleKernelParameterTypes.NotATypeReason)]
+    [InlineData("\"(byte, double)\"", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("\"System.ValueTuple<int, float>[]\"", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("DateTime", ModuleKernelParameterTypes.AutoLayoutReason)]
+    [InlineData("\"Nullable<float>\"", ModuleKernelParameterTypes.NullableValueReason)]
+    [InlineData("\"System.Nullable<int>[]\"", ModuleKernelParameterTypes.NullableValueReason)]
+    [InlineData("\"System . String\"", ModuleKernelParameterTypes.ManagedTypeReason)]
+    [InlineData("\"scoped Span<float>\"", ModuleKernelParameterTypes.RefStructReason)]
     public void ModuleDefinition_ParameterTheLauncherCannotPass_ReportsSchemaDiagnostic(
         string type,
         string reason)

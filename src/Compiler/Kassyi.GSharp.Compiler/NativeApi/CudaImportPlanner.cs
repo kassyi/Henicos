@@ -72,21 +72,21 @@ internal static class CudaImportPlanner
     private static string? GetProblem(IParameterSymbol parameter, ModuleLaunchSetting launchSetting,
         Compilation compilation)
     {
-        if (ModuleKernelParameterTypes.IsReservedName(parameter.Name))
-        {
-            return ModuleKernelParameterTypes.ReservedNameReason;
-        }
-
-        if (parameter.RefKind != RefKind.None || parameter.ScopedKind != ScopedKind.None)
-        {
-            return ModuleKernelParameterTypes.ByReferenceReason;
-        }
-
         var type = parameter.Type;
         if (type.TypeKind == TypeKind.Error)
         {
             // The compiler already reports the type; the launcher passes it as written
             return null;
+        }
+
+        if (type.IsRefLikeType)
+        {
+            return ModuleKernelParameterTypes.RefStructReason;
+        }
+
+        if (parameter.RefKind != RefKind.None || parameter.ScopedKind != ScopedKind.None)
+        {
+            return ModuleKernelParameterTypes.ByReferenceReason;
         }
 
         if (launchSetting != ModuleLaunchSetting.None)
@@ -98,10 +98,7 @@ internal static class CudaImportPlanner
         {
             IPointerTypeSymbol or IFunctionPointerTypeSymbol => null,
             IArrayTypeSymbol array => GetArrayProblem(array),
-            { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } =>
-                ModuleKernelParameterTypes.NullableValueReason,
-            { IsUnmanagedType: false } => ModuleKernelParameterTypes.ManagedTypeReason,
-            _ => null,
+            _ => GetValueProblem(type),
         };
     }
 
@@ -113,11 +110,10 @@ internal static class CudaImportPlanner
             return type.SpecialType == SpecialType.System_IntPtr ? null : ModuleKernelParameterTypes.StreamTypeReason;
         }
 
-        // [WHY] The launcher passes the parameter where cuLaunchKernel and the launch check take a uint
+        // [WHY] The launcher passes the parameter where cuLaunchKernel and the launch check take a uint; a user-defined
+        // implicit conversion is applied there as in any C# call
         var conversion = compilation.ClassifyConversion(type, compilation.GetSpecialType(SpecialType.System_UInt32));
-        return conversion is { IsImplicit: true, IsUserDefined: false }
-            ? null
-            : ModuleKernelParameterTypes.DimensionTypeReason;
+        return conversion.IsImplicit ? null : ModuleKernelParameterTypes.DimensionTypeReason;
     }
 
     private static string? GetArrayProblem(IArrayTypeSymbol array)
@@ -138,14 +134,29 @@ internal static class CudaImportPlanner
             return ModuleKernelParameterTypes.NullableArrayReason;
         }
 
-        return element switch
+        if (element is IPointerTypeSymbol or IFunctionPointerTypeSymbol)
         {
-            { TypeKind: TypeKind.Error } => null,
-            IPointerTypeSymbol or IFunctionPointerTypeSymbol => ModuleKernelParameterTypes.PointerElementReason,
-            { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } =>
-                ModuleKernelParameterTypes.NullableValueReason,
-            { IsUnmanagedType: false } => ModuleKernelParameterTypes.ManagedElementReason,
-            _ => null,
-        };
+            return ModuleKernelParameterTypes.PointerElementReason;
+        }
+
+        var problem = GetValueProblem(element);
+        return problem == ModuleKernelParameterTypes.ManagedTypeReason
+            ? ModuleKernelParameterTypes.ManagedElementReason
+            : problem;
     }
+
+    // Why a value of <type> (not a pointer or an array) cannot be copied to the kernel byte for byte
+    private static string? GetValueProblem(ITypeSymbol type) => type switch
+    {
+        { TypeKind: TypeKind.Error } => null,
+        { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } =>
+            ModuleKernelParameterTypes.NullableValueReason,
+        { IsRefLikeType: true } => ModuleKernelParameterTypes.RefStructReason,
+        { IsUnmanagedType: false } => ModuleKernelParameterTypes.ManagedTypeReason,
+
+        // [WHY] An unmanaged struct whose host layout is not known has LayoutKind.Auto itself, or in a field of a
+        // field: ValueTuple, DateTime and a struct with [StructLayout(LayoutKind.Auto)] (HostLayoutCalculator)
+        _ when !HostLayoutCalculator.TryGetHostLayout(type, out _) => ModuleKernelParameterTypes.AutoLayoutReason,
+        _ => null,
+    };
 }

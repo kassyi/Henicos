@@ -22,6 +22,10 @@ public class ModuleArgumentTests
     private const uint MemoryTypeDevice = 2;
     private const int CudaSuccess = 0;
 
+    // slots[0]: the address the kernel received; slots[1]: set by the test to release the kernel; slots[2]: set by the
+    // kernel when it stopped waiting before the release
+    private const int SlotCount = 3;
+
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
@@ -37,8 +41,9 @@ public class ModuleArgumentTests
             _ => ModuleArgumentKernels.RecordPointerSpaceBeforeRank,
         };
 
-        var (result, memoryType, address) = LaunchAndQueryRecordedPointer(launch);
+        var (result, memoryType, address, timedOut) = LaunchAndQueryRecordedPointer(launch);
 
+        Assert.False(timedOut, "The kernel timed out before the query, so the device buffer may have been freed.");
         Assert.NotEqual(0ul, address);
         Assert.True(result == CudaSuccess,
             $"cuPointerGetAttribute(0x{address:x}) returned {result}: the kernel did not receive a device address.");
@@ -73,18 +78,21 @@ public class ModuleArgumentTests
 
     // Launches on another thread, reads the address the kernel recorded while the kernel waits, asks the driver what
     // kind of memory it is, then releases the kernel
-    private static unsafe (int Result, uint MemoryType, ulong Address) LaunchAndQueryRecordedPointer(
+    private static unsafe (int Result, uint MemoryType, ulong Address, bool TimedOut) LaunchAndQueryRecordedPointer(
         Action<float[], ulong> launch)
     {
         IntPtr host;
         using (new GpuKernelLoader.CudaContextScope())
         {
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAllocHost(out host, 2 * sizeof(ulong)));
+            CudaException.ThrowIfError(CudaDriverApi.cuMemAllocHost(out host, SlotCount * sizeof(ulong)));
         }
 
         var slots = (ulong*)host;
-        Volatile.Write(ref slots[0], 0ul);
-        Volatile.Write(ref slots[1], 0ul);
+        for (var i = 0; i < SlotCount; i++)
+        {
+            Volatile.Write(ref slots[i], 0ul);
+        }
+
         try
         {
             IntPtr deviceSlots;
@@ -100,7 +108,9 @@ public class ModuleArgumentTests
                 using (new GpuKernelLoader.CudaContextScope())
                 {
                     var result = GetMemoryType(address, out var memoryType);
-                    return (result, memoryType, address);
+
+                    // Read after the query: a kernel that stopped waiting before it may have let the buffer go
+                    return (result, memoryType, address, Volatile.Read(ref slots[2]) != 0);
                 }
             }
             finally

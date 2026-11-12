@@ -101,23 +101,9 @@ internal static class NativeBindingEmitter
                 var plan = ModuleBindingPlanner.Plan(m);
 
                 NativeApiDocumentation.EmitDocumentation(writer, m);
-                writer.Append($"public static void {m.Name}(");
-                for (var i = 0; i < m.Parameters.Length; i++)
-                {
-                    var p = m.Parameters[i];
-                    if (i > 0)
-                    {
-                        writer.Append(", ");
-                    }
-
-                    writer.Append($"{p.Type} {p.Name}");
-                    if (!string.IsNullOrEmpty(p.DefaultValue))
-                    {
-                        writer.Append($" = {p.DefaultValue}");
-                    }
-                }
-
-                writer.AppendLine(")");
+                writer.Append($"public static void {m.Name}");
+                WriteModuleParameterList(writer, m);
+                writer.AppendLine();
                 using (writer.Scope())
                 {
                     var entryPoint = string.IsNullOrEmpty(m.EntryPoint) ? m.Name : m.EntryPoint ?? m.Name;
@@ -130,6 +116,24 @@ internal static class NativeBindingEmitter
         }
 
         return writer.ToString();
+    }
+
+    // (<type> <name>[ = <default>], ...) as the YAML definition writes them
+    private static void WriteModuleParameterList(SourceWriter writer, ApiMethodDefinition method)
+    {
+        using (writer.Parentheses())
+        {
+            for (var i = 0; i < method.Parameters.Length; i++)
+            {
+                var parameter = method.Parameters[i];
+                writer.AppendIf(i > 0, ", ");
+                writer.Append($"{parameter.Type} {parameter.Name}");
+                if (!string.IsNullOrEmpty(parameter.DefaultValue))
+                {
+                    writer.Append($" = {parameter.DefaultValue}");
+                }
+            }
+        }
     }
 
     /// <summary>

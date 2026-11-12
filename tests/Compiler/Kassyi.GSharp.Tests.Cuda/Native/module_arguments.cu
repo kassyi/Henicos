@@ -9,7 +9,8 @@ static __device__ unsigned long long GlobalTimerNanoseconds()
 
 // Stores the address received for data in slots[0], page-locked host memory that the test reads while the kernel
 // runs, and waits until the test sets slots[1] (at most 500 ms, below the Windows display driver timeout), so the
-// device buffer behind the address is still allocated when the test asks the driver what kind of memory it is.
+// device buffer behind the address is still allocated when the test asks the driver what kind of memory it is. When it
+// stops waiting without the answer, it sets slots[2], so the test can tell a late query from a host address.
 // The kernel never reads through data: a launcher that passes a host address cannot fault the device.
 extern "C" __global__ void RecordPointer(float* data, unsigned long long slots)
 {
@@ -17,8 +18,14 @@ extern "C" __global__ void RecordPointer(float* data, unsigned long long slots)
     s[0] = (unsigned long long)data;
     __threadfence_system();
     unsigned long long start = GlobalTimerNanoseconds();
-    while (s[1] == 0ull && GlobalTimerNanoseconds() - start < 500000000ull)
+    while (s[1] == 0ull)
     {
+        if (GlobalTimerNanoseconds() - start >= 500000000ull)
+        {
+            s[2] = 1ull;
+            __threadfence_system();
+            return;
+        }
     }
 }
 

@@ -275,6 +275,14 @@ public class CudaImportGenerator : IIncrementalGenerator
         for (var i = 0; i < methodSymbol.Parameters.Length; i++)
         {
             var param = methodSymbol.Parameters[i];
+
+            // [WHY] The implementation repeats the modifiers of the declaration ('params', 'scoped', 'this', the ref
+            // kind); a partial method whose two parts differ in them does not compile (CS0758, CS0759, CS8988)
+            foreach (var modifier in methodSyntax.ParameterList.Parameters[i].Modifiers)
+            {
+                writer.Append($"{modifier.Text} ");
+            }
+
             writer.AppendCsharpTypeName(param.Type);
             writer.Append($" {param.Name}");
             if (i < methodSymbol.Parameters.Length - 1)

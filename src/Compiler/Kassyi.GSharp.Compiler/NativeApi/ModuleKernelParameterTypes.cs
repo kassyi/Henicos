@@ -87,7 +87,13 @@ internal static class ModuleKernelParameterTypes
 
     public const string ParamsReason = "'params' needs a one-dimensional array type.";
 
-    public const string ReservedNameReason = "names starting with '__gsharp_' are reserved for the generated launcher.";
+    public const string AutoLayoutReason =
+        "it has LayoutKind.Auto (a ValueTuple, DateTime, or a struct with [StructLayout(LayoutKind.Auto)] or a field " +
+        "of one), so the runtime may reorder its fields and the kernel would read them at other offsets.";
+
+    public const string RefStructReason =
+        "a ref struct (Span<T>, ReadOnlySpan<T>, ...) cannot leave the stack of the launcher, so no kernel can " +
+        "receive it.";
 
     public const string StreamTypeReason =
         "a parameter named 'stream' sets the stream of the launch and must be an IntPtr (nint).";
@@ -100,7 +106,6 @@ internal static class ModuleKernelParameterTypes
 
     private const string GlobalPrefix = "global::";
     private const string SystemPrefix = "System.";
-    private const string ReservedPrefix = "__gsharp_";
 
     /// <summary>Gets the launch setting a parameter named <paramref name="name"/> supplies.</summary>
     public static ModuleLaunchSetting GetLaunchSetting(string name) => name switch
@@ -116,28 +121,22 @@ internal static class ModuleKernelParameterTypes
         _ => ModuleLaunchSetting.None,
     };
 
-    /// <summary>Gets whether <paramref name="name"/> could collide with a local of the generated launcher.</summary>
-    public static bool IsReservedName(string name) => name.StartsWith(ReservedPrefix, StringComparison.Ordinal);
-
     /// <summary>Reads the type of a YAML module binding parameter.</summary>
     /// <param name="name">The parameter name, which selects a launch setting.</param>
     /// <param name="type">The C# type as written in the YAML definition, with its modifiers.</param>
     public static ModuleParameterType Parse(string name, string type)
     {
-        var text = type.Trim();
+        var text = type.AsSpan().Trim().ToString();
         var launchSetting = GetLaunchSetting(name);
-        if (IsReservedName(name))
-        {
-            return Unsupported(text, launchSetting, ReservedNameReason);
-        }
-
         var isParams = false;
+        var isScoped = false;
         var isByReference = false;
         var typeStart = 0;
         while (TryReadModifier(text, ref typeStart, out var modifier))
         {
             isParams |= modifier == "params";
-            isByReference |= modifier != "params";
+            isScoped |= modifier == "scoped";
+            isByReference |= modifier is "ref" or "out" or "in" or "readonly";
         }
 
         var typeText = text[typeStart..];
@@ -147,10 +146,11 @@ internal static class ModuleKernelParameterTypes
             return Unsupported(text, launchSetting, NotATypeReason);
         }
 
-        var typeName = syntax.NormalizeWhitespace(indentation: string.Empty, elasticTrivia: false).ToString();
-        if (isByReference)
+        var typeName = GetText(syntax);
+        if (isByReference || isScoped)
         {
-            return Unsupported(typeName, launchSetting, ByReferenceReason);
+            // [WHY] 'scoped' without 'ref' applies only to a ref struct
+            return Unsupported(typeName, launchSetting, isByReference ? ByReferenceReason : RefStructReason);
         }
 
         var result = Classify(syntax, typeName);
@@ -163,6 +163,12 @@ internal static class ModuleKernelParameterTypes
             ? result
             : result with { LaunchSetting = launchSetting, Reason = GetLaunchSettingReason(launchSetting, typeName) };
     }
+
+    // The type without whitespace inside it, as the launcher writes it back (float [ ] becomes float[])
+    private static string GetText(TypeSyntax syntax) =>
+#pragma warning disable RS0030 // A YAML binding names its types only as text, which the launcher writes back as C#
+        syntax.NormalizeWhitespace(indentation: string.Empty, elasticTrivia: false).ToString();
+#pragma warning restore RS0030
 
     // Why a parameter named for <launchSetting> cannot set it, or null when its type is the one the launch takes
     private static string? GetLaunchSettingReason(ModuleLaunchSetting launchSetting, string typeName) =>
@@ -206,20 +212,13 @@ internal static class ModuleKernelParameterTypes
                     null, null);
             case NullableTypeSyntax { ElementType: ArrayTypeSyntax }:
                 return Unsupported(typeName, ModuleLaunchSetting.None, NullableArrayReason);
-            case NullableTypeSyntax nullable:
-                return Unsupported(typeName, ModuleLaunchSetting.None,
-                    IsReferenceTypeName(nullable.ElementType) ? ManagedTypeReason : NullableValueReason);
             case ArrayTypeSyntax array:
                 return ClassifyArray(array, typeName);
-            case PredefinedTypeSyntax when IsVoid(syntax):
-                return Unsupported(typeName, ModuleLaunchSetting.None, NotATypeReason);
-            case PredefinedTypeSyntax or NameSyntax or TupleTypeSyntax when IsReferenceTypeName(syntax):
-                return Unsupported(typeName, ModuleLaunchSetting.None, ManagedTypeReason);
-            case PredefinedTypeSyntax or NameSyntax or TupleTypeSyntax:
-                return new ModuleParameterType(ModuleKernelParameterKind.Value, ModuleLaunchSetting.None, typeName,
-                    null, null);
             default:
-                return Unsupported(typeName, ModuleLaunchSetting.None, NotATypeReason);
+                return GetValueProblem(syntax) is { } reason
+                    ? Unsupported(typeName, ModuleLaunchSetting.None, reason)
+                    : new ModuleParameterType(ModuleKernelParameterKind.Value, ModuleLaunchSetting.None, typeName,
+                        null, null);
         }
     }
 
@@ -236,36 +235,69 @@ internal static class ModuleKernelParameterTypes
         }
 
         var element = array.ElementType;
-        var reason = element switch
-        {
-            PointerTypeSyntax or FunctionPointerTypeSyntax => PointerElementReason,
-            NullableTypeSyntax nullable when IsReferenceTypeName(nullable.ElementType) => ManagedElementReason,
-            NullableTypeSyntax => NullableValueReason,
-            PredefinedTypeSyntax or NameSyntax or TupleTypeSyntax when IsReferenceTypeName(element) =>
-                ManagedElementReason,
-            PredefinedTypeSyntax or NameSyntax or TupleTypeSyntax => null,
-            _ => NotATypeReason,
-        };
-
-        var elementTypeName = element.NormalizeWhitespace(indentation: string.Empty, elasticTrivia: false).ToString();
+        var reason = element is PointerTypeSyntax or FunctionPointerTypeSyntax
+            ? PointerElementReason
+            : GetValueProblem(element);
+        var elementTypeName = GetText(element);
         return new ModuleParameterType(ModuleKernelParameterKind.Array, ModuleLaunchSetting.None, typeName,
-            elementTypeName, reason);
+            elementTypeName, reason == ManagedTypeReason ? ManagedElementReason : reason);
     }
 
-    private static bool IsVoid(TypeSyntax syntax) =>
-        syntax is PredefinedTypeSyntax predefined && predefined.Keyword.IsKind(SyntaxKind.VoidKeyword);
-
-    // The reference types a name alone identifies; any other class fails to compile in the launcher (see remarks)
-    private static bool IsReferenceTypeName(TypeSyntax syntax)
+    // Why a value of <syntax> (not a pointer or an array) cannot be passed, from what its name alone tells: the
+    // reference types, Nullable<T>, the auto-layout and ref struct types of the System namespace, and tuple syntax.
+    // Any other named type is passed; a class among them fails to compile in the launcher (see remarks).
+    private static string? GetValueProblem(TypeSyntax syntax)
     {
-        if (syntax is PredefinedTypeSyntax predefined)
+        switch (syntax)
         {
-            return predefined.Keyword.Kind() is SyntaxKind.StringKeyword or SyntaxKind.ObjectKeyword;
+            case PredefinedTypeSyntax predefined:
+                return predefined.Keyword.Kind() switch
+                {
+                    SyntaxKind.VoidKeyword => NotATypeReason,
+                    SyntaxKind.StringKeyword or SyntaxKind.ObjectKeyword => ManagedTypeReason,
+                    _ => null,
+                };
+            case NullableTypeSyntax nullable:
+                return GetValueProblem(nullable.ElementType) == ManagedTypeReason
+                    ? ManagedTypeReason
+                    : NullableValueReason;
+            case TupleTypeSyntax:
+                return AutoLayoutReason;
+            case NameSyntax name:
+                return GetSystemSimpleName(name, out var arity) switch
+                {
+                    "dynamic" or "String" or "Object" or "Array" when arity == 0 => ManagedTypeReason,
+                    "Nullable" when arity == 1 => NullableValueReason,
+                    "ValueTuple" or "DateTime" or "DateTimeOffset" => AutoLayoutReason,
+                    "Span" or "ReadOnlySpan" when arity == 1 => RefStructReason,
+                    _ => null,
+                };
+            default:
+                return NotATypeReason;
         }
-
-        // [WHY] The launcher file starts with 'using System;', so the names without 'System.' are the same types
-        return GetSystemTypeName(syntax.ToString()) is "dynamic" or "String" or "Object" or "Array";
     }
+
+    // The name of a type of the System namespace as the launcher file reads it (it starts with 'using System;'):
+    // "Nullable" for Nullable<int>, System.Nullable<int> and global::System.Nullable<int>; null for another namespace
+    private static string? GetSystemSimpleName(NameSyntax name, out int arity)
+    {
+        var simple = name switch
+        {
+            SimpleNameSyntax simpleName => simpleName,
+            QualifiedNameSyntax qualified when IsSystemNamespace(qualified.Left) => qualified.Right,
+            _ => null,
+        };
+        arity = simple is GenericNameSyntax generic ? generic.TypeArgumentList.Arguments.Count : 0;
+        return simple?.Identifier.ValueText;
+    }
+
+    private static bool IsSystemNamespace(NameSyntax name) => name switch
+    {
+        IdentifierNameSyntax identifier => identifier.Identifier.ValueText == "System",
+        AliasQualifiedNameSyntax aliased => aliased.Alias.Identifier.ValueText == "global" &&
+                                            aliased.Name.Identifier.ValueText == "System",
+        _ => false,
+    };
 
     private static bool IsDimensionTypeName(string typeName) =>
         GetSystemTypeName(typeName) is "uint" or "ushort" or "byte" or "char"

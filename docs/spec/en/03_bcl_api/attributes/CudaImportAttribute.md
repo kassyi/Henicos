@@ -121,14 +121,15 @@ in order:
 
 | Parameter type | The kernel receives |
 | :--- | :--- |
-| An unmanaged value (`int`, `float`, an unmanaged struct, an enum) | The value |
+| An unmanaged value (`int`, `float`, an enum, an unmanaged struct with sequential or explicit layout) | The value |
 | A pointer or function pointer | The pointer |
 | A one-dimensional array of unmanaged elements (`float[]`) | A pointer to a device copy of the array; `[In]` copies it only to the device, `[Out]` only back, neither or both copies it both ways |
 
 Any other parameter is reported as [GSH0110](../diagnostics/GSH0110.md), and the generated method throws
 `NotSupportedException`: a reference type (`string`, a class, a delegate) or an array of them would reach the kernel as
-a host address, `Nullable<T>` has no counterpart in a kernel, and `ref` / `out` / `in` parameters, nullable arrays,
-multidimensional and jagged arrays are not supported yet.
+a host address, a struct with `LayoutKind.Auto` (a tuple, `DateTime`, or a struct that holds one) may have its fields
+reordered by the runtime, a ref struct cannot leave the launcher's stack, `Nullable<T>` has no counterpart in a kernel,
+and `ref` / `out` / `in` parameters, nullable arrays, multidimensional and jagged arrays are not supported yet.
 
 ## See also
 
