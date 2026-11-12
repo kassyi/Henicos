@@ -54,7 +54,10 @@ public interface ITranspilerDialect
     void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol);
 
     /// <summary>
-    /// Emits the target C++ parameter type and modifier attributes, resolving pointer, reference, and alias semantics.
+    /// Emits the target C++ parameter type: an array as <c>GSharpArray&lt;T&gt;</c> (<c>const T</c> with
+    /// <c>[GpuReadOnly]</c>), a <c>SharedMemory&lt;T&gt;</c> as <c>T*</c>, and a pointer for <c>ref</c> / <c>out</c>
+    /// (and <c>in</c> outside kernels). No parameter is marked as non-aliasing: C# lets two of them address the same
+    /// memory.
     /// </summary>
     /// <param name="context">The active transpilation context used for source output.</param>
     /// <param name="p">The syntax node defining the method parameter.</param>
