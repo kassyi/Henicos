@@ -82,7 +82,10 @@ public class HoistedFieldTypeResolverTests
 
         var typeSymbol = HoistedFieldTypeResolver.Resolve(FindDeclarator(tree, "ok"), model, "K");
 
-        Assert.Equal("Wrapper<int>", typeSymbol.ToDisplayString());
+        var wrapper = compilation.GetTypeByMetadataName("Wrapper`1")
+            ?? throw new InvalidOperationException("Wrapper`1");
+        var expectedType = wrapper.Construct(compilation.GetSpecialType(SpecialType.System_Int32));
+        Assert.Equal(expectedType, typeSymbol, SymbolEqualityComparer.Default);
     }
 
     private static VariableDeclaratorSyntax FindDeclarator(SyntaxTree tree, string name) =>
@@ -114,7 +117,7 @@ public class HoistedFieldTypeResolverTests
 
         var typeSymbol = HoistedFieldTypeResolver.Resolve(lowered, model, "K");
 
-        Assert.Equal("Pair", typeSymbol.ToDisplayString());
+        Assert.Equal("Pair", typeSymbol.Name);
     }
 
     [Fact]
@@ -133,6 +136,6 @@ public class HoistedFieldTypeResolverTests
         var typeSymbol = HoistedFieldTypeResolver.Resolve(declarator, model, "K");
 
         Assert.NotNull(typeSymbol);
-        Assert.Equal("uint", typeSymbol.ToDisplayString());
+        Assert.Equal(SpecialType.System_UInt32, typeSymbol.SpecialType);
     }
 }

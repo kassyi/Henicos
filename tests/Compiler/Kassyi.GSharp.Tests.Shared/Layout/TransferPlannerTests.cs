@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Compiler.Dialects;
+using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Layout;
 using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Core;
@@ -35,7 +36,7 @@ public class TransferPlannerTests
             foreach (var dialect in s_dialects)
             {
                 var plan = TransferPlanner.Plan(symbol, dialect);
-                var where = $"{symbol.ToDisplayString()} ({dialect.GetType().Name})";
+                var where = Describe(symbol, dialect);
 
                 if (plan is TransferPlan.Unsupported unsupported)
                 {
@@ -100,13 +101,13 @@ public class TransferPlannerTests
             .Select(static c => c.Symbol)
             .Concat(EnumerateUnsupportedCaseStructs()))
         {
-            Assert.True(TypeLayoutCalculator.IsUserStruct(symbol), symbol.ToDisplayString());
+            Assert.True(TypeLayoutCalculator.IsUserStruct(symbol), symbol.GetFullyQualifiedCsharpName());
             foreach (var dialect in s_dialects)
             {
                 var plan = TransferPlanner.Plan(symbol, dialect);
                 kinds.Add(plan.GetType());
                 compared += ComparePlan(
-                    plan, symbol, dialect, [], $"{symbol.ToDisplayString()} ({dialect.GetType().Name})", failures);
+                    plan, symbol, dialect, [], Describe(symbol, dialect), failures);
             }
         }
 
@@ -199,4 +200,7 @@ public class TransferPlannerTests
             }
         }
     }
+
+    private static string Describe(ITypeSymbol symbol, ITranspilerDialect dialect) =>
+        $"{symbol.GetFullyQualifiedCsharpName()} ({dialect.GetType().Name})";
 }
