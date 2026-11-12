@@ -254,7 +254,7 @@ internal static class StructArrayHelperEmitter
 
     // if (Unsafe.SizeOf<S>() != Unsafe.SizeOf<Mirror>()) LayoutGuard.ThrowSizeMismatch(...);
     // if (!Mirror.FieldOffsetsMatch) LayoutGuard.ThrowFieldOffsetMismatch(...);
-    // ref var host = ref Unsafe.As<S, Mirror>(ref hostValue);
+    // ref Mirror host = ref Unsafe.As<S, Mirror>(ref hostValue);
     // [WHY] The members are then read and written by the names of the mirror, whose fields name the hidden fields of
     // the captured primary constructor parameters and the fields generated code cannot name
     // (NativeStructEmitter.NeedsHostMirror). The size and offset checks

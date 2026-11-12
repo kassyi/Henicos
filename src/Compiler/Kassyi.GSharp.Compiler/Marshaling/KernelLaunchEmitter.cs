@@ -52,7 +52,7 @@ internal static class KernelLaunchEmitter
         // One table for the whole launch, so that every array argument, struct argument and converted element finds the
         // arrays the others already copied (#707, #721)
         writer.AppendLineIf(plan.UsesTable,
-            $"var {DeviceArrays} = new {StructMarshalingEmitter.DeviceArrayRegionsType}();");
+            $"{StructMarshalingEmitter.DeviceArrayRegionsType} {DeviceArrays} = new();");
         foreach (var shape in kernel.Parameters)
         {
             if (isDevicePtr)
@@ -112,7 +112,7 @@ internal static class KernelLaunchEmitter
 
         AutoResultEmitter.WriteCudaCopyBack(writer, kernel);
         writer.AppendLineIf(isCheckedBuild,
-            "CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
+            $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
         // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record
         // of its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves
         // it to the next synchronization of the stream. A managed-array launcher whose copy-back may copy nothing
@@ -337,7 +337,8 @@ internal static class KernelLaunchEmitter
         var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
 
         writer.AppendLine($"// Marshal array: {shape.Identifier}");
-        writer.AppendLine($"int {size} = checked({lenExpr} * sizeof({GetElementTypeName(shape)}));");
+        var element = ConvertedArrayEmitter.GetElementTypeName(shape);
+        writer.AppendLine($"int {size} = checked({lenExpr} * sizeof({element}));");
 
         writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
         writer.AppendLine($"{proxy}[0] = {IntPtrType}.Zero;");
@@ -486,7 +487,8 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        writer.AppendLine($"fixed ({GetElementTypeName(shape)}* {pinned} = {shape.SpanExpression})");
+        var element = ConvertedArrayEmitter.GetElementTypeName(shape);
+        writer.AppendLine($"fixed ({element}* {pinned} = {shape.SpanExpression})");
         using (writer.Scope())
         {
             WriteSynchronizedCopy(writer, CopyDirection.HostToDevice, device, $"({IntPtrType}){pinned}", size);
@@ -694,7 +696,8 @@ internal static class KernelLaunchEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            writer.AppendLine($"fixed ({GetElementTypeName(shape)}* {pinned} = {shape.SpanExpression})");
+            var element = ConvertedArrayEmitter.GetElementTypeName(shape);
+            writer.AppendLine($"fixed ({element}* {pinned} = {shape.SpanExpression})");
             using (writer.Scope())
             {
                 WriteSynchronizedCopy(writer, CopyDirection.DeviceToHost, $"({IntPtrType}){pinned}", device, size);
@@ -818,8 +821,4 @@ internal static class KernelLaunchEmitter
 
         writer.AppendLine($" {CudaDriverApiType}.cuMemFreeAsync({device}, hStream);");
     }
-
-    private static string GetElementTypeName(in KernelParameterShape shape) =>
-        shape.ElementTypeName ??
-        throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not an array-like type.");
 }

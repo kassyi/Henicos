@@ -413,15 +413,15 @@ internal static class WrapperEmitter
         switch (shape.Container)
         {
             case ArrayContainerKind.Array:
-                WriteNullCheck(writer, name, $"{name} is null");
-                WriteEmptyArrayCheck(writer, $"{name}.Length", name);
+                WriteNullCheck(writer, shape.Name, $"{name} is null");
+                WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);
                 break;
             case ArrayContainerKind.ImmutableArray:
-                WriteNullCheck(writer, name, $"{name}.IsDefault");
-                WriteEmptyArrayCheck(writer, $"{name}.Length", name);
+                WriteNullCheck(writer, shape.Name, $"{name}.IsDefault");
+                WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);
                 break;
             default:
-                WriteEmptyArrayCheck(writer, shape.LengthExpression, name);
+                WriteEmptyArrayCheck(writer, shape.LengthExpression, shape.Name);
                 break;
         }
     }
@@ -446,7 +446,9 @@ internal static class WrapperEmitter
         }
     }
 
-    private static void WriteNullCheck(SourceWriter writer, string name, string condition)
+    // if (<condition>) { throw new ArgumentNullException("<parameter name>"); }
+    // [WHY] The parameter name is a string literal: nameof(<name>) would call a parameter or method named nameof
+    private static void WriteNullCheck(SourceWriter writer, string parameterName, string condition)
     {
         writer.Append("if ");
         using (writer.Parentheses())
@@ -456,11 +458,12 @@ internal static class WrapperEmitter
 
         using (writer.Scope())
         {
-            writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
+            writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}({Literal(parameterName)});");
         }
     }
 
-    // if (<name>.<field path> is null) { throw new ArgumentNullException(nameof(<name>), "<name>.<field path> is null, ..."); }
+    // if (<name>.<field path> is null)
+    // { throw new ArgumentNullException("<name>", "<name>.<field path> is null, ..."); }
     // if (<name>.<field path>.Data == IntPtr.Zero) { ... }   (the shadow struct of the pointer launcher)
     // [WHY] The kernel reads a non-nullable array field of a by-value struct argument without a null check
     // (NonNullProof); the launcher enforces the annotation, as it rejects a null non-optional array argument (#1409)
@@ -486,15 +489,18 @@ internal static class WrapperEmitter
 
                 using (writer.Scope())
                 {
+                    var message = Literal($"{shape.Name}.{path} is null, but the field is not nullable.");
                     writer.AppendLine(
-                        $"throw new global::System.ArgumentNullException(nameof({name}), \"{name}.{path} is null, but the field is not nullable.\");");
+                        $"throw new {HostTypeNames.ArgumentNullException}({Literal(shape.Name)}, {message});");
                 }
             }
         }
     }
 
-    // if (<length> == 0) { throw new ArgumentException(<message>, nameof(<name>)); }
-    private static void WriteEmptyArrayCheck(SourceWriter writer, string length, string name)
+    private static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
+
+    // if (<length> == 0) { throw new ArgumentException(<message>, "<parameter name>"); }
+    private static void WriteEmptyArrayCheck(SourceWriter writer, string length, string parameterName)
     {
         writer.Append("if ");
         using (writer.Parentheses())
@@ -504,7 +510,8 @@ internal static class WrapperEmitter
 
         using (writer.Scope())
         {
-            writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({name}));");
+            writer.AppendLine(
+                $"throw new {HostTypeNames.ArgumentException}(\"{EmptyArrayMessage}\", {Literal(parameterName)});");
         }
     }
 
@@ -537,8 +544,8 @@ internal static class WrapperEmitter
 
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    $"throw new global::System.ArgumentOutOfRangeException(nameof({name}), {name}.Length, \"{NegativeLengthMessage}\");");
+                writer.Append($"throw new {HostTypeNames.ArgumentOutOfRangeException}({Literal(shape.Name)}, ");
+                writer.AppendLine($"{name}.Length, \"{NegativeLengthMessage}\");");
             }
 
             if (kind == PointerArgumentKind.OptionalArray)
@@ -565,10 +572,10 @@ internal static class WrapperEmitter
 
             using (writer.Scope())
             {
-                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
+                writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}({Literal(shape.Name)});");
             }
 
-            WriteEmptyArrayCheck(writer, $"{name}.Length", name);
+            WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);
         }
 
         WriteStructFieldChecks(writer, kernel, isPointer: true);

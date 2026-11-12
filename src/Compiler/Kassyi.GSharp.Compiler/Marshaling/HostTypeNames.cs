@@ -8,9 +8,13 @@ internal static class HostTypeNames
     public const string CudaDriverApi = "global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi";
     public const string CudaException = "global::Kassyi.GSharp.Runtime.Interop.CudaException";
     public const string GpuKernelLoader = "global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader";
+    public const string CudaContextScope = GpuKernelLoader + ".CudaContextScope";
     public const string GpuBuffer = "global::Kassyi.GSharp.Runtime.GpuBuffer";
     public const string LaunchErrorRecords = "global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords";
     public const string IntPtr = "global::System.IntPtr";
+    public const string ArgumentNullException = "global::System.ArgumentNullException";
+    public const string ArgumentException = "global::System.ArgumentException";
+    public const string ArgumentOutOfRangeException = "global::System.ArgumentOutOfRangeException";
     public const string ArrayProxy = "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy";
     public const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
     public const string GCHandle = "global::System.Runtime.InteropServices.GCHandle";

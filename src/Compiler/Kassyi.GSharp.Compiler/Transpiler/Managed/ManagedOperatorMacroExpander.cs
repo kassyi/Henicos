@@ -371,7 +371,7 @@ internal static class ManagedOperatorMacroExpander
             // (<parameter type>)<expression>, with the expression in parentheses unless it is a primary expression
             return SyntaxFactory.Argument(
                 SyntaxFactory.CastExpression(
-                    ParseType(conversion),
+                    conversion.ToCsharpTypeSyntax(),
                     IsPrimary(expression) ? expression : SyntaxFactory.ParenthesizedExpression(expression)
                 )
             );
@@ -451,7 +451,7 @@ internal static class ManagedOperatorMacroExpander
         private static LocalDeclarationStatementSyntax DeclareLocal(ITypeSymbol? type, string name,
             ExpressionSyntax value, RefKind reference = RefKind.None)
         {
-            TypeSyntax typeSyntax = type is null ? SyntaxFactory.IdentifierName("var") : ParseType(type);
+            TypeSyntax typeSyntax = type is null ? SyntaxFactory.IdentifierName("var") : type.ToCsharpTypeSyntax();
             typeSyntax = reference switch
             {
                 // ref <type>
@@ -470,13 +470,6 @@ internal static class ManagedOperatorMacroExpander
             return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(typeSyntax, SyntaxFactory.SingletonSeparatedList(declarator))
             );
-        }
-
-        private static TypeSyntax ParseType(ITypeSymbol type)
-        {
-            using var writer = new SourceWriter();
-            writer.AppendCsharpTypeName(type);
-            return SyntaxFactory.ParseTypeName(writer.ToString());
         }
     }
 }

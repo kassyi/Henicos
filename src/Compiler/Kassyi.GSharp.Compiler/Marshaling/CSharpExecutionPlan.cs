@@ -21,8 +21,14 @@ internal readonly record struct CSharpExecutionPlan
     /// <summary>The arguments of the kernel call, in parameter order; empty when the kernel does not run.</summary>
     public ImmutableArray<CSharpArgument> Arguments { get; init; }
 
-    /// <summary>Whether the kernel returns a value, which each GPU thread writes into its auto result slot.</summary>
-    public bool ReturnsValue { get; init; }
+    /// <summary>
+    /// The fully qualified type of the value the kernel returns, which each GPU thread writes into its auto result
+    /// slot, or <see langword="null"/> for a <see langword="void"/> kernel.
+    /// </summary>
+    public string? ReturnTypeName { get; init; }
+
+    /// <summary>Whether the kernel returns a value.</summary>
+    public bool ReturnsValue => ReturnTypeName is not null;
 
     /// <summary>The plan of the launcher of <paramref name="kernel"/>.</summary>
     /// <param name="kernel">The kernel.</param>
@@ -34,7 +40,7 @@ internal readonly record struct CSharpExecutionPlan
             MessageName = kernel.MessageName,
             Method = kernel.ClassQualifiedName + "." + kernel.Name.ToCSharpIdentifier(),
             Arguments = ImmutableArray<CSharpArgument>.Empty,
-            ReturnsValue = kernel.ReturnsValue
+            ReturnTypeName = kernel.ReturnTypeName
         };
 
         var reason = GetCannotRunReason(kernel, isDevicePtr);
