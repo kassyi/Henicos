@@ -95,7 +95,7 @@ __gsharp_id_3_s=__gsharp_id_0_segment;
 }
 __gsharp_id_2_dst[0]=1;
 GSharpArray<int> __gsharp_id_4_t = (__gsharp_id_1_mode[1]==0?__gsharp_id_3_s.template CheckedSlice<GSharpErrorCode::InvalidOperation>(1,1):__gsharp_id_3_s.template CheckedSlice<GSharpErrorCode::InvalidOperation>(1));
-__gsharp_id_2_dst[1]=__gsharp_add_i32(__gsharp_add_i32(100,__gsharp_mul_i32(__gsharp_id_4_t.length,10)),__gsharp_id_4_t[0]);
+__gsharp_id_2_dst[1]=__gsharp_add_i32(__gsharp_add_i32(100,__gsharp_mul_i32(__gsharp_id_4_t.length,10)),(__gsharp_id_4_t.length>0?__gsharp_id_4_t[0]:0));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SegmentSliceKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ArrayViewDefaultDifferentialKernels__SegmentSliceKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -1226,7 +1226,7 @@ public const string NullableImmutableKernel_Source = @"extern ""C"" __global__ v
 __gsharp_launch_epoch = __gsharp_epoch;
 System_Nullable<GSharpArray<int>> __gsharp_id_0_s = __gsharp_raw_arg___gsharp_id_0_s.data != nullptr && (__gsharp_raw_arg___gsharp_id_0_s.flags & __gsharp_array_null_reads_empty) == 0 ? System_Nullable<GSharpArray<int>>(__gsharp_raw_arg___gsharp_id_0_s) : System_Nullable<GSharpArray<int>>();
 __gsharp_id_1_dst[0]=1;
-__gsharp_id_1_dst[1]=(__gsharp_id_0_s.HasValue?10:2);
+__gsharp_id_1_dst[1]=(__gsharp_id_0_s.HasValue?__gsharp_add_i32(10,__gsharp_id_0_s.Value.length):2);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NullableImmutableKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ArrayViewDefaultDifferentialKernels__NullableImmutableKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

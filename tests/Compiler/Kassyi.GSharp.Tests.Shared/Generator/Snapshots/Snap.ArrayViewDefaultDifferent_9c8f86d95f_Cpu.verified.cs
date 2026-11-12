@@ -57,7 +57,7 @@ __gsharp_id_3_s=__gsharp_id_0_segment;
 }
 __gsharp_id_2_dst[0]=1;
 GSharpArray<int> __gsharp_id_4_t = (__gsharp_id_1_mode[1]==0?__gsharp_id_3_s.template CheckedSlice<GSharpErrorCode::InvalidOperation>(1,1):__gsharp_id_3_s.template CheckedSlice<GSharpErrorCode::InvalidOperation>(1));
-__gsharp_id_2_dst[1]=__gsharp_add_i32(__gsharp_add_i32(100,__gsharp_mul_i32(__gsharp_id_4_t.length,10)),__gsharp_id_4_t[0]);
+__gsharp_id_2_dst[1]=__gsharp_add_i32(__gsharp_add_i32(100,__gsharp_mul_i32(__gsharp_id_4_t.length,10)),(__gsharp_id_4_t.length>0?__gsharp_id_4_t[0]:0));
 __gsharp_state=-1;
 return;
 }
@@ -160,7 +160,10 @@ s = segment;
 
 dst[0] = 1;
 global::System.ArraySegment<int> t = mode[1] == 0 ? s.Slice(1, 1) : s.Slice(1);
-dst[1] = 100 + t.Count * 10 + t[0];
+// The native path runs on after the failed Slice (#1714 (the native CPU path keeps running a thread after a
+// failed C# check)) and does not check the index yet (#718 (array and span bounds are not checked as in C#)),
+// so t[0] of the empty view it returns would read address 0 and end the test host
+dst[1] = 100 + t.Count * 10 + (t.Count > 0 ? t[0] : 0);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
