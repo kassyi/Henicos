@@ -109,7 +109,7 @@ public class NativeApiModuleGeneratorTests
         Assert.Contains("double h_result = default;", source);
         Assert.Contains("d_result.CopyToHost(new global::System.Span<double>(ref h_result));", source);
         Assert.Contains("result = h_result;", source);
-        Assert.DoesNotContain("result = default;", source);
+        Assert.DoesNotContain("\nresult = default;", source);
         Assert.Contains("d_total.CopyToHost(new global::System.Span<int>(ref total));", source);
         Assert.DoesNotContain("d_seed.CopyToHost", source);
         Assert.DoesNotContain("d_limit.CopyToHost", source);

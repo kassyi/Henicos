@@ -9,7 +9,7 @@ namespace MyApp.Native;
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class MyKernels
 {
-private static readonly global::System.Lazy<byte[]> s_fatbin__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "./native/my-custom.kernels.fatbin")));
+private static readonly global::System.Lazy<byte[]> s_fatbin___native_my_custom_kernels_fatbin = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "./native/my-custom.kernels.fatbin")));
 /// <summary>User-defined custom matrix multiplication kernel.</summary>
 /// <param name="a">Matrix A.</param>
 /// <param name="c">Matrix C.</param>
@@ -23,7 +23,7 @@ throw new global::System.ArgumentNullException("c");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MyKernels.SgemmCustom");
 using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope scope = new();
-global::System.IntPtr kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "sgemm_kernel_v1");
+global::System.IntPtr kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "sgemm_kernel_v1");
 using global::Kassyi.GSharp.Runtime.GpuBuffer<float> d_a = new(a.Length);
 d_a.CopyToDevice(a);
 using global::Kassyi.GSharp.Runtime.GpuBuffer<float> d_c = new(c.Length);
@@ -53,7 +53,7 @@ if (data is null){
 throw new global::System.ArgumentNullException("data");
 }
 using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope scope = new();
-global::System.IntPtr kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "Fill");
+global::System.IntPtr kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "Fill");
 using global::Kassyi.GSharp.Runtime.GpuBuffer<int> d_data = new(data.Length);
 d_data.CopyToDevice(data);
 unsafe

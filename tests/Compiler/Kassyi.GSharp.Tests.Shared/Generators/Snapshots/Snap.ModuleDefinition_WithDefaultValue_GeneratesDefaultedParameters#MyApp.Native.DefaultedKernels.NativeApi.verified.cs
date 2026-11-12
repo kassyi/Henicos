@@ -9,14 +9,14 @@ namespace MyApp.Native;
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class DefaultedKernels
 {
-private static readonly global::System.Lazy<byte[]> s_fatbin__x00002e_x00002fnative_x00002fdefaulted_x00002efatbin = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "./native/defaulted.fatbin")));
+private static readonly global::System.Lazy<byte[]> s_fatbin___native_defaulted_fatbin = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "./native/defaulted.fatbin")));
 public static void Scale(float[] data, float factor = 2.0f)
 {
 if (data is null){
 throw new global::System.ArgumentNullException("data");
 }
 using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope scope = new();
-global::System.IntPtr kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin__x00002e_x00002fnative_x00002fdefaulted_x00002efatbin.Value, "Scale");
+global::System.IntPtr kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_defaulted_fatbin.Value, "Scale");
 using global::Kassyi.GSharp.Runtime.GpuBuffer<float> d_data = new(data.Length);
 d_data.CopyToDevice(data);
 unsafe
