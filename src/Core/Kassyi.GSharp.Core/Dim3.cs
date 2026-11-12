@@ -6,6 +6,9 @@ namespace Kassyi.GSharp.Core;
 /// <remarks>
 /// This struct is a marker intercepted by the GSharp Transpiler and mapped to CUDA <c>dim3</c>.
 /// </remarks>
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
+#pragma warning disable IDE0051 // Justification: Public API exposed for library consumers
 public struct Dim3
 {
     /// <summary>Gets the X component of the 3D vector.</summary>

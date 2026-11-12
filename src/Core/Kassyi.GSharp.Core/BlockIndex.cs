@@ -3,6 +3,8 @@ namespace Kassyi.GSharp.Core;
 /// <summary>
 /// Provides access to the current thread block coordinates (<c>blockIdx</c>) within the grid.
 /// </summary>
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
 [CudaIntrinsicPattern("(int)blockIdx.{0}")]
 public static class BlockIndex
 {

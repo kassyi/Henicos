@@ -4,6 +4,8 @@ namespace Kassyi.GSharp.Core;
 /// Provides strongly-typed static logging helpers tagged with the generic type name.
 /// </summary>
 /// <typeparam name="T">The type used to identify log message sources.</typeparam>
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 public class Logger<T> : Logger
 {
     /// <inheritdoc />

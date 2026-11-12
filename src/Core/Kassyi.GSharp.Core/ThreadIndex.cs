@@ -3,6 +3,8 @@ namespace Kassyi.GSharp.Core;
 /// <summary>
 /// Provides access to the current GPU thread coordinates (<c>threadIdx</c>) within the thread block.
 /// </summary>
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
 // threadIdx, blockIdx, blockDim and gridDim are unsigned int in CUDA; the cast gives them the C# type int, so that
 // var and the arithmetic on them are signed as in C# (#521)
 [CudaIntrinsicPattern("(int)threadIdx.{0}")]

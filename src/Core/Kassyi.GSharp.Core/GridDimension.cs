@@ -3,6 +3,8 @@ namespace Kassyi.GSharp.Core;
 /// <summary>
 /// Provides access to the dimensions of the grid (<c>gridDim</c>).
 /// </summary>
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
 [CudaIntrinsicPattern("(int)gridDim.{0}")]
 public static class GridDimension
 {
