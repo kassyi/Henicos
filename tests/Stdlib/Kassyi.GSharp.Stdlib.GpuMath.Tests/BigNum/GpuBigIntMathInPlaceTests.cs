@@ -58,7 +58,9 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         DivideByUInt32
     }
 
-    /// <summary>The operation, the word count, the shift in bits (shifts only) and which operand is the result.</summary>
+    /// <summary>
+    /// The operation, the word count, the shift in bits (shifts only) and which operand is the result.
+    /// </summary>
     public static TheoryData<Operation, int, int, bool> InPlaceCases()
     {
         var data = new TheoryData<Operation, int, int, bool>
@@ -128,9 +130,9 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         // P1: the value in the result buffer equals the BigInteger result of the original operands, as with a separate
         // result buffer.
         // P2: the operand that is not the result keeps its value.
-        // mutant: KernelBasicMathHandler.ShiftLeft without the overlap branch (the existing grid kernel runs in place):
-        //         ShiftLeft LargeWords (32 * 4096 + 5) fails
-        // mutant: KernelBasicMathHandler.ShiftRight without the overlap branch: ShiftRight SmallWords 37 fails
+        // mutant: KernelBasicMathHandler.Shift without the overlap branch (the grid kernel runs in place): ShiftLeft
+        //         LargeWords by 64 and by 32 * 4096 + 5, and ShiftRight LargeWords by 32 * 4096 + 5 fail
+        // A missing barrier in the in-place kernels fails here only now and then; Shift_InPlaceManyTimes catches it.
         var seed = 701 + ((int)operation * 1_000_003) + (words * 31) + shift + (resultIsRight ? 7 : 0);
         var random = new Random(seed);
         var (a0, b0) = Operands(operation, words, shift, random);
@@ -172,9 +174,10 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         // P1: the shifted value lands in the result words as from a separate operand, and the word of the buffer
         // outside the result keeps its value.
         // mutant: KernelBasicMathHandler.Shift `!DeviceRanges.Overlaps(...)` -> `resultBuffer.DevicePointer !=
-        //         operand.DevicePointer` (a partial overlap runs the grid kernel in place): the first two cases fail
-        // mutant: GpuBigIntMath.ShiftAndResizeCore `DeviceRanges.Overlaps(...)` -> `source.DevicePointer ==
-        //         resultBuffer.DevicePointer`: LeftIntoAWiderBufferBelow fails
+        //         operand.DevicePointer` (a partial overlap runs the grid kernel in place): LeftIntoTheWordsAbove fails
+        // mutant: the same branch removed: LeftIntoTheWordsAbove and RightIntoTheWordsBelow fail
+        // Without the copy of ShiftAndResizeCore, LeftIntoAWiderBufferBelow is a race that did not show on an RTX 3070
+        // Ti; ShiftLeft_WiderResultOneBlockAboveTheOperand is the case that fails without it.
         var seed = 7010 + ((int)overlap * 97) + words;
         var random = new Random(seed);
         var wordBits = 32 * words;
@@ -203,6 +206,67 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         }
 
         Assert.True(expected == buffer.ToBigInteger(), $"{overlap} words {words} shift {shift} seed {seed}");
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ShiftLeft_WiderResultOneBlockAboveTheOperand_GivesTheSeparateBufferResult()
+    {
+        // P1: ShiftLeft from words [0, n) into the n + 1 words [1024, n + 1025) of the same buffer (ShiftAndResize)
+        // gives the shifted operand there, and the 1024 words below the result keep their value.
+        // Coverage: the resize kernel strides by its 1024 threads, so without the copy each thread would read in its
+        // second pass the word it wrote in its first: the failure does not depend on timing.
+        // mutant: GpuBigIntMath.ShiftAndResizeCore `DeviceRanges.Overlaps(...)` -> `source.DevicePointer ==
+        //         resultBuffer.DevicePointer`: fails
+        const int Words = 2048;
+        const int Gap = 1024;
+        const int Shift = 7;
+        const int Seed = 7011;
+        var source0 = RandomValue(new Random(Seed), 32 * Words);
+
+        using var buffer = GpuBigUInt.FromBigInteger(_workspace, source0, Gap + Words + 1);
+        GpuBigUIntView view = buffer;
+        GpuBigIntMath.ShiftLeft(view.Slice(0, Words), Shift, view.Slice(Gap, Words + 1));
+
+        var below = source0 & ((BigInteger.One << (32 * Gap)) - 1);
+        var expected = (source0 << Shift << (32 * Gap)) | below;
+        Assert.True(expected == buffer.ToBigInteger(), $"seed {Seed}");
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(Operation.ShiftLeft)]
+    [InlineData(Operation.ShiftRight)]
+    public void Shift_InPlaceManyTimes_GivesTheShiftByTheSum(Operation operation)
+    {
+        // P1: 64 shifts in place by 5 bits of the largest operand that runs in one block (32 passes of 1024 threads,
+        // each word reading its neighbour) give the shift by 320 bits.
+        // Coverage: a missing barrier lets a warp write a word that another warp has not read yet; one shift does not
+        // always show it, 64 make it near certain.
+        // mutant: GpuBigIntKernels.ShiftLeftInPlaceKernel without `Gpu.SyncThreads()`: ShiftLeft fails
+        // mutant: GpuBigIntKernels.ShiftRightInPlaceKernel without `Gpu.SyncThreads()`: ShiftRight fails
+        const int Shift = 5;
+        const int Count = 64;
+        var seed = 7012 + (int)operation;
+        // A left shift checks the bits shifted out, so its operand leaves the top 320 bits clear
+        var bits = (32 * InPlaceMaxWords) - (operation == Operation.ShiftLeft ? Shift * Count : 0);
+        var value0 = RandomValue(new Random(seed), bits);
+
+        using var value = GpuBigUInt.FromBigInteger(_workspace, value0, InPlaceMaxWords);
+        for (var n = 0; n < Count; n++)
+        {
+            if (operation == Operation.ShiftLeft)
+            {
+                GpuBigIntMath.ShiftLeft(value, Shift, value);
+            }
+            else
+            {
+                GpuBigIntMath.ShiftRight(value, Shift, value);
+            }
+        }
+
+        var expected = operation == Operation.ShiftLeft ? value0 << (Shift * Count) : value0 >> (Shift * Count);
+        Assert.True(expected == value.ToBigInteger(), $"{operation} seed {seed}");
     }
 
     // Runs the operation into result and returns the expected value
