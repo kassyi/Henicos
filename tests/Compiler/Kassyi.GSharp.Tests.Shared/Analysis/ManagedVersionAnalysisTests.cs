@@ -238,14 +238,17 @@ public class ManagedVersionAnalysisTests
 
         Assert.NotNull(rewritten);
         Assert.Empty(rewritten.DescendantNodes().OfType<ThrowStatementSyntax>());
-        var invocation = Assert.Single(rewritten.DescendantNodes().OfType<InvocationExpressionSyntax>());
-        var memberAccess = Assert.IsType<MemberAccessExpressionSyntax>(invocation.Expression);
-        Assert.Equal("InlinePtx", memberAccess.Name.Identifier.ValueText);
-        var targetAccess = Assert.IsType<QualifiedNameSyntax>(memberAccess.Expression);
-        Assert.Equal("Lookalike", targetAccess.Right.Identifier.ValueText);
-        var arg = Assert.Single(invocation.ArgumentList.Arguments);
-        var literal = Assert.IsType<LiteralExpressionSyntax>(arg.Expression);
-        Assert.Equal("nop;", literal.Token.ValueText);
+        // The qualifier is a name (global::ManagedVersionCases.Lookalike), which an expression never parses to
+        var expected = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.ParseName("global::ManagedVersionCases.Lookalike"),
+                SyntaxFactory.IdentifierName("InlinePtx")
+            ),
+            SyntaxFactory.ParseArgumentList("(\"nop;\")")
+        );
+        var call = Assert.Single(rewritten.DescendantNodes().OfType<InvocationExpressionSyntax>());
+        SyntaxAssert.Equivalent(expected, call);
     }
 
     [Fact]
@@ -264,15 +267,9 @@ public class ManagedVersionAnalysisTests
 
         Assert.NotNull(rewritten);
         Assert.Empty(rewritten.DescendantNodes().OfType<InvocationExpressionSyntax>());
-        var throwStmt = Assert.Single(rewritten.DescendantNodes().OfType<ThrowStatementSyntax>());
-        var objectCreation = Assert.IsType<ObjectCreationExpressionSyntax>(throwStmt.Expression);
-        var typeName = Assert.IsAssignableFrom<QualifiedNameSyntax>(objectCreation.Type);
-        Assert.Equal("NotSupportedException", typeName.Right.Identifier.ValueText);
-        var arg = Assert.Single(objectCreation.ArgumentList?.Arguments ?? default);
-        var messageLiteral = Assert.IsType<LiteralExpressionSyntax>(arg.Expression);
-        Assert.Equal(
-            "Gpu.InlinePtx is not supported by the StandardCppDialect dialect",
-            messageLiteral.Token.ValueText);
+        SyntaxAssert.Equivalent(
+            "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");",
+            Assert.Single(rewritten.DescendantNodes().OfType<ThrowStatementSyntax>()));
     }
 
     [Fact]

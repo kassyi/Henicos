@@ -55,12 +55,7 @@ public class SemanticModelExtensionsTests
         var originalNode = model0.GetOriginalNode(detachedInvocation);
         Assert.NotNull(originalNode);
         Assert.Same(tree1, originalNode.SyntaxTree);
-        var originalInvocation = Assert.IsType<InvocationExpressionSyntax>(originalNode);
-        var originalIdentifier = Assert.IsType<IdentifierNameSyntax>(originalInvocation.Expression);
-        Assert.Equal("Helper", originalIdentifier.Identifier.ValueText);
-        var originalArg = Assert.Single(originalInvocation.ArgumentList.Arguments);
-        var originalArgIdentifier = Assert.IsType<IdentifierNameSyntax>(originalArg.Expression);
-        Assert.Equal("input", originalArgIdentifier.Identifier.ValueText);
+        SyntaxAssert.Equivalent("Helper(input)", originalNode);
 
         // 2. GetSymbol resolves TreeOneProvider.Helper from model0
         var helperSymbol = Assert.IsAssignableFrom<IMethodSymbol>(model0.GetSymbol(detachedInvocation));
@@ -199,12 +194,7 @@ public class SemanticModelExtensionsTests
         var originalNode = model0.GetOriginalNode(detachedInvocation);
         Assert.NotNull(originalNode);
         Assert.Same(tree1, originalNode.SyntaxTree);
-        var originalInvocation = Assert.IsType<InvocationExpressionSyntax>(originalNode);
-        var originalIdentifier = Assert.IsType<IdentifierNameSyntax>(originalInvocation.Expression);
-        Assert.Equal("Helper", originalIdentifier.Identifier.ValueText);
-        var originalArg = Assert.Single(originalInvocation.ArgumentList.Arguments);
-        var originalArgIdentifier = Assert.IsType<IdentifierNameSyntax>(originalArg.Expression);
-        Assert.Equal("input", originalArgIdentifier.Identifier.ValueText);
+        SyntaxAssert.Equivalent("Helper(input)", originalNode);
 
         var localSymbol = model0.GetDeclaredSymbol<ILocalSymbol>(detachedDeclarator);
         Assert.NotNull(localSymbol);
