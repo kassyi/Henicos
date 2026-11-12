@@ -92,13 +92,14 @@ public class GpuKernelAnalyzerTests
             })
             .ToArray();
 
-        // DeviceOnlyStruct is not reported, and OuterOfTwoClasses only once
+        // DeviceOnlyStruct and DeviceOnlyRecordStruct are not reported, and OuterOfTwoClasses only once
         Assert.Equal(
         [
             (4, 13, 4, 33, string.Format(ExpectedMessageFormat, "OuterNonPartialClass")),
             (6, 18, 6, 39, string.Format(ExpectedMessageFormat, "OuterNonPartialStruct")),
             (18, 14, 18, 35, string.Format(ExpectedMessageFormat, "OuterNonPartialRecord")),
             (35, 13, 35, 30, string.Format(ExpectedMessageFormat, "OuterOfTwoClasses")),
+            (58, 14, 58, 36, string.Format(ExpectedMessageFormat, "NonPartialKernelRecord")),
         ], actual);
     }
 

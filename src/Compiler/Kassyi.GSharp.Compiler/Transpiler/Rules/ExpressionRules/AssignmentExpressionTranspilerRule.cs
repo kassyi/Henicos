@@ -66,6 +66,13 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
+        // A user-defined compound operator has no C++ operator unless it is a macro, which its own rule expands
+        // (GSH0060)
+        if (CallTargetEmitter.TryFailOperator(node, ref context))
+        {
+            return;
+        }
+
         if (isAccessorProperty)
         {
             PropertyAccessorAssignment.TranspileAssignment(node, ref context);

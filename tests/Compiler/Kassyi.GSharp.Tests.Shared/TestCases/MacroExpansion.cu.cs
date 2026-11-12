@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace TestSpace
 {
-    public static class MacroExpansionKernel
+    public static partial class MacroExpansionKernel
     {
         [GpuKernel]
         public static void TestMacroKernel(int[] data, int length)

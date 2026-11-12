@@ -123,14 +123,11 @@ internal static class SpanWriteClassifier
             return symbol;
         }
 
-        if (semanticModel.GetOriginalNode(node) is not { } original)
+        if (!semanticModel.TryGetOriginalNode(node, out var original, out var targetModel))
         {
             return null;
         }
 
-        var targetModel = original.SyntaxTree == semanticModel.SyntaxTree
-            ? semanticModel
-            : semanticModel.Compilation.GetCachedSemanticModel(original.SyntaxTree);
         var info = targetModel.GetSymbolInfo(original);
         return info.CandidateSymbols is [IMethodSymbol candidate, ..] ? candidate : null;
     }

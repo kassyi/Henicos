@@ -50,9 +50,10 @@ public class NativeApiIntrinsicsEmitterTests
             "public static void ReductionAdd(ref float address, float val) => " +
             "Kassyi.GSharp.Core.ManagedAtomics.Add(ref address, val);",
             source);
-        // An intrinsic without a managed member still throws
+        // An intrinsic without a managed member (one the CPU dialect does not implement) still throws
         Assert.Contains(
-            "public static uint BitReverse(uint val) => Kassyi.GSharp.Core.GpuOnlyException.Throw<uint>();",
+            "public static void MBarrierInit(ref ulong barrier, uint expectedCount) => " +
+            "Kassyi.GSharp.Core.GpuOnlyException.Throw();",
             source);
     }
 
@@ -91,11 +92,11 @@ public class NativeApiIntrinsicsEmitterTests
 
         Assert.Contains(
             "[Kassyi.GSharp.Core.CudaIntrinsic(\"malloc\")]\n" +
-            "public static unsafe void* Malloc(int size) => Kassyi.GSharp.Core.GpuOnlyException.Throw<nint>().ToPointer();",
+            "public static unsafe void* Malloc(int size) => Kassyi.GSharp.Core.ManagedIntrinsics.Malloc(size);",
             source);
         Assert.Contains(
             "[Kassyi.GSharp.Core.CudaIntrinsic(\"free\")]\n" +
-            "public static unsafe void Free(void* ptr) => Kassyi.GSharp.Core.GpuOnlyException.Throw();",
+            "public static unsafe void Free(void* ptr) => Kassyi.GSharp.Core.ManagedIntrinsics.Free(ptr);",
             source);
         Assert.Contains(
             "/// <exception cref=\"GpuOnlyException\">Thrown when evaluated on the host CPU.</exception>\n" +

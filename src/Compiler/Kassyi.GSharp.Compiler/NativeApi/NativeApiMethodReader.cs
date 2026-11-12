@@ -24,6 +24,7 @@ internal static class NativeApiMethodReader
             StringMarshalling = OptionalScalar(mapping, "stringMarshalling"),
             IsUnsafe = OptionalBoolean(mapping, "isUnsafe"),
             ManagedName = OptionalScalar(mapping, "managed"),
+            UnsupportedDialects = ReadStringList(mapping, "unsupported"),
             Summary = OptionalScalar(mapping, "summary"),
             XmlDoc = OptionalScalar(mapping, "xmlDoc"),
             ReturnType = OptionalScalar(mapping, "returnType") ?? "void",
@@ -53,6 +54,7 @@ internal static class NativeApiMethodReader
                 "of Kassyi.GSharp.Core on an intrinsic.");
         }
 
+        ValidateUnsupportedDialects(mapping, method, bindingKind);
         if (method.StringMarshalling is not null)
         {
             ValidateIdentifier(mapping, "stringMarshalling", method.StringMarshalling);
@@ -63,6 +65,41 @@ internal static class NativeApiMethodReader
             throw Schema(LineOf(mapping, "returnType"),
                 $"'returnType' must be 'void' for module (kernel) bindings, but method '{method.Name}' " +
                 $"declares '{method.ReturnType}'.");
+        }
+    }
+
+    // unsupported: [Cpu]: only on an intrinsic, only the dialects that exist, and not together with the managed member
+    // that would implement it on the CPU dialect
+    private static void ValidateUnsupportedDialects(
+        YamlMapping mapping, ApiMethodDefinition method, NativeApiBindingKind bindingKind)
+    {
+        if (method.UnsupportedDialects.IsEmpty)
+        {
+            return;
+        }
+
+        var line = LineOf(mapping, "unsupported");
+        if (bindingKind != NativeApiBindingKind.Intrinsic)
+        {
+            throw Schema(line, $"'unsupported' of method '{method.Name}' is supported only by intrinsic definitions.");
+        }
+
+        const string Cpu = ApiMethodDefinition.CpuDialect;
+        const string Cuda = ApiMethodDefinition.CudaDialect;
+        foreach (var dialect in method.UnsupportedDialects)
+        {
+            if (dialect is not (Cpu or Cuda))
+            {
+                throw Schema(line,
+                    $"'unsupported' value '{dialect}' of method '{method.Name}' must be '{Cpu}' or '{Cuda}'.");
+            }
+
+            if (dialect == Cpu && method.ManagedName is not null)
+            {
+                throw Schema(line,
+                    $"'unsupported' of method '{method.Name}' names '{Cpu}', whose managed path runs the 'managed' " +
+                    $"member '{method.ManagedName}'; remove one of the two.");
+            }
         }
     }
 

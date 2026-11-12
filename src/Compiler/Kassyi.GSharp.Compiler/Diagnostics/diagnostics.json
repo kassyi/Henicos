@@ -479,10 +479,10 @@
     "isEnabledByDefault": true
   },
   {
-    "name": "InlinePtxNotSupportedByDialect",
+    "name": "IntrinsicNotImplementedByDialect",
     "id": "GSH0054",
-    "title": "Gpu.InlinePtx is not supported by the target dialect",
-    "messageFormat": "Gpu.InlinePtx is not supported by the '{0}' dialect; the call is replaced with a runtime failure",
+    "title": "An intrinsic is not implemented by the target dialect",
+    "messageFormat": "'{0}' is not implemented by the '{1}' dialect; the call is replaced with a runtime failure",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
     "isEnabledByDefault": true
@@ -872,6 +872,24 @@
     "id": "GSH0110",
     "title": "The launcher of a [CudaImport] method cannot pass a parameter to the kernel",
     "messageFormat": "Parameter '{0}' of [CudaImport] method '{1}' has type '{2}', which the launcher cannot pass to the kernel: {3}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "KernelDeclarationNotSupported",
+    "id": "GSH0111",
+    "title": "[GpuKernel] is only allowed on an ordinary static method of a class",
+    "messageFormat": "[GpuKernel] cannot be applied to {0}. A kernel must be an ordinary static method of a class; move the body to a [GpuDeviceFunction] method and call it from such a kernel.",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "KernelParameterHasNoDeviceRepresentation",
+    "id": "GSH0112",
+    "title": "Kernel parameter type has no device representation",
+    "messageFormat": "Parameter '{0}' of kernel '{1}' has the type '{2}', which holds references to managed objects and has no device representation. Pass the values the kernel reads, or structs, instead.",
     "category": "GSharpCompiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true

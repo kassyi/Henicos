@@ -79,7 +79,7 @@ Standard C# math functions are transpiled to their highly-optimized CUDA equival
 
 - **[Standard BCL Mappings](02_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
 - **[Diagnostics and Exceptions](01_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
-- **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0000`–`GSH0110`, `SLQ0001`, `RS0030`).
+- **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0000`–`GSH0112`, `SLQ0001`, `RS0030`).
 
 ### 8. Utilities
 

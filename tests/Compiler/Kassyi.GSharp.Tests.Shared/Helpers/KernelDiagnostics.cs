@@ -70,13 +70,15 @@ public sealed record KernelDiagnosticsRun(
 /// </remarks>
 public static class KernelDiagnostics
 {
-    /// <summary>The analyzers that check kernels and device functions.</summary>
+    /// <summary>The analyzers that check kernels and device functions, and the host references of kernels.</summary>
     public static ImmutableArray<DiagnosticAnalyzer> Analyzers { get; } =
     [
         new GpuKernelAnalyzer(),
         new KernelClassAnalyzer(),
+        new KernelDeclarationAnalyzer(),
         new BarrierUsageAnalyzer(),
-        new ParallelDependentCallAnalyzer()
+        new ParallelDependentCallAnalyzer(),
+        new HostGpuReferenceAnalyzer()
     ];
 
     /// <summary>

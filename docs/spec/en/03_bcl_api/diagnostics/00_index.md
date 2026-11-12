@@ -67,7 +67,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0051](GSH0051.md) | Error | Cannot take ownership of a reference parameter |
 | [GSH0052](GSH0052.md) | Error | Native API definition is not valid YAML |
 | [GSH0053](GSH0053.md) | Error | Native API definition violates the schema |
-| [GSH0054](GSH0054.md) | Warning | Gpu.InlinePtx is not supported by the target dialect |
+| [GSH0054](GSH0054.md) | Warning | An intrinsic is not implemented by the target dialect |
 | [GSH0055](GSH0055.md) | Error | Identifier containing '__' is reserved |
 | [GSH0056](GSH0056.md) | Error | GPU method name is a C++ keyword (Deprecated) |
 | [GSH0057](GSH0057.md) | Error | Malformed trusted key line |
@@ -111,6 +111,8 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0108](GSH0108.md) | Error | Struct field type is not accessible to the generated launcher |
 | [GSH0109](GSH0109.md) | Error | A method without a device implementation is called from GPU code |
 | [GSH0110](GSH0110.md) | Error | The launcher of a [CudaImport] method cannot pass a parameter to the kernel |
+| [GSH0111](GSH0111.md) | Error | [GpuKernel] is only allowed on an ordinary static method of a class |
+| [GSH0112](GSH0112.md) | Error | Kernel parameter type has no device representation |
 | [SLQ0001](SLQ0001.md) | Error | StackLinq method chain is too deep |
 | [RS0030](RS0030.md) | Error | Banned API used (G# repository builds only) |
 

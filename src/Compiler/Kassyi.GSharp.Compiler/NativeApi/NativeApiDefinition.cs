@@ -68,6 +68,13 @@ internal sealed class NativeLibraryNames
 
 internal sealed class ApiMethodDefinition
 {
+    /// <summary>The CPU dialect in <see cref="UnsupportedDialects"/>, as <c>GSharpTargetDialect</c> names it.</summary>
+    public const string CpuDialect = "Cpu";
+
+    /// <summary>The CUDA dialect in <see cref="UnsupportedDialects"/>, as <c>GSharpTargetDialect</c> names it.
+    /// </summary>
+    public const string CudaDialect = "Cuda";
+
     public string Name { get; set; } = string.Empty;
 
     public string? NativeName { get; set; }
@@ -96,6 +103,13 @@ internal sealed class ApiMethodDefinition
     /// <c>GpuOnlyException</c> itself outside a managed launch. <see langword="null"/> for an intrinsic that only throws.
     /// </summary>
     public string? ManagedName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the dialects that do not implement an intrinsic (<c>unsupported: [Cpu]</c>): <c>Cpu</c> or
+    /// <c>Cuda</c>, as <c>GSharpTargetDialect</c> names them. A call in a project of such a dialect is reported
+    /// (GSH0054) and replaced with a runtime failure, so the dialect's prelude does not define the native name.
+    /// </summary>
+    public ImmutableArray<string> UnsupportedDialects { get; set; } = ImmutableArray<string>.Empty;
 
     public string? Summary { get; set; }
 

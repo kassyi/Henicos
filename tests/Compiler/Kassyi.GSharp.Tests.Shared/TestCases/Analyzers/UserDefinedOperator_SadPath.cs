@@ -1,3 +1,4 @@
+using System.Numerics;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers;
@@ -45,6 +46,14 @@ public static partial class GSH_62_UserDefinedOperator_SadPath
         V2 a = v[t];
         a++;
         v[t] = a;
+    }
+
+    // System.Numerics is not exempt: no dialect defines the operators of Vector2
+    [GpuKernel]
+    public static void SystemNumericsVectorKernel(Vector2[] v)
+    {
+        int t = ThreadIndex.X;
+        v[t] = v[t] + v[t];
     }
 
     [GpuDeviceFunction]

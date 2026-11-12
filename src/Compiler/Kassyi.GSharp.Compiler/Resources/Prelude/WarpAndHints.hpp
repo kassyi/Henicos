@@ -311,6 +311,8 @@ inline uint32_t __gsharp_warp_linear_tid() {
 // Gpu.LaneId() and Gpu.WarpId(): a warp holds 32 consecutive linear thread indices of the block, as on the GPU (#845)
 inline int __gsharp_lane_id() { return (int)(__gsharp_warp_linear_tid() & 31u); }
 inline int __gsharp_warp_id() { return (int)(__gsharp_warp_linear_tid() >> 5); }
+// Gpu.SmId(): the CPU runs the launch as one streaming multiprocessor, whose number 0 a GPU also gives
+inline int __gsharp_smid() { return 0; }
 
 // Warp.ActiveMask() (#844): the lanes of the caller's warp that stopped at the same call (path and site) in the same
 // round, which the lanes that reach it together on the GPU do: the lanes that took the same way through the
@@ -709,26 +711,7 @@ struct __gsharp_wmma_accumulator {};
 struct __gsharp_wmma_row_major {};
 struct __gsharp_wmma_col_major {};
 template <int M, int N, int K> struct __gsharp_wmma_shape {};
+// The fragment types only: the CPU dialect does not implement the WMMA operations (wmma_intrinsics.yml), so a call
+// becomes a runtime failure (GSH0054)
 template <class Use, int M, int N, int K, class T, class Layout = void>
 struct __gsharp_wmma_fragment {};
-
-template <class Shape, class T, class Layout = void, class Frag>
-inline void __gsharp_wmma_fill(Frag*, T) {
-    __gsharp_unsupported("WMMA is not supported by the StandardCpp dialect.");
-}
-template <class Shape, class T, class Layout, class Frag>
-inline void __gsharp_wmma_load(Frag*, const T*, unsigned int) {
-    __gsharp_unsupported("WMMA is not supported by the StandardCpp dialect.");
-}
-template <class Shape, class T, class Frag>
-inline void __gsharp_wmma_load(Frag*, const T*, unsigned int, int) {
-    __gsharp_unsupported("WMMA is not supported by the StandardCpp dialect.");
-}
-template <class Shape, class T, class Frag>
-inline void __gsharp_wmma_store(T*, const Frag*, unsigned int, int) {
-    __gsharp_unsupported("WMMA is not supported by the StandardCpp dialect.");
-}
-template <class Shape, class TIn, class LayoutA, class LayoutB, class TAcc, class FragD, class FragA, class FragB, class FragC>
-inline void __gsharp_wmma_mma(FragD*, const FragA*, const FragB*, const FragC*) {
-    __gsharp_unsupported("WMMA is not supported by the StandardCpp dialect.");
-}

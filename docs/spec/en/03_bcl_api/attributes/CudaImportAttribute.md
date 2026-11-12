@@ -123,13 +123,15 @@ in order:
 | :--- | :--- |
 | An unmanaged value (`int`, `float`, an enum, an unmanaged struct with sequential or explicit layout) | The value |
 | A pointer or function pointer | The pointer |
-| A one-dimensional array of unmanaged elements (`float[]`) | A pointer to a device copy of the array; `[In]` copies it only to the device, `[Out]` only back, neither or both copies it both ways |
+| A one-dimensional array of unmanaged elements (`float[]`, `float[]?`) | A pointer to a device copy of the array; `[In]` copies it only to the device, `[Out]` only back, neither or both copies it both ways; null is passed as a null pointer when the array is declared nullable (`float[]?`), and throws `ArgumentNullException` before the launch otherwise; an empty array is passed as a null pointer too, so the kernel cannot tell it from null (pass the length when it matters) |
+| A multidimensional array of unmanaged elements (`float[,]`) | A pointer to a device copy of the elements in row-major order (element `[i, j]` of an `m x n` array at `i * n + j`), copied as a one-dimensional array is |
+| A `ref`, `out` or `in` (also `ref readonly`) unmanaged value | A pointer to a one-element device copy of the value; `ref` and `in` copy it to the device, `out` sends `default` and leaves the caller's variable as it was until the launch has run; `ref` and `out` copy it back after the launch, `in` does not |
 
 Any other parameter is reported as [GSH0110](../diagnostics/GSH0110.md), and the generated method throws
 `NotSupportedException`: a reference type (`string`, a class, a delegate) or an array of them would reach the kernel as
 a host address, a struct with `LayoutKind.Auto` (a tuple, `DateTime`, or a struct that holds one) may have its fields
 reordered by the runtime, a ref struct cannot leave the launcher's stack, `Nullable<T>` has no counterpart in a kernel,
-and `ref` / `out` / `in` parameters, nullable arrays, multidimensional and jagged arrays are not supported yet.
+a pointer or an array cannot be passed by `ref`, `out` or `in`, and jagged arrays are not supported yet.
 
 ## See also
 

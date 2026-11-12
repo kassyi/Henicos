@@ -123,6 +123,20 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// The node of the compilation tree that <paramref name="node"/> is, or was derived from by lowering
+    /// (<see cref="GetOriginalNode"/>), with the semantic model of that node's tree; false when it is unmapped.
+    /// </summary>
+    public static bool TryGetOriginalNode(this SemanticModel semanticModel, SyntaxNode node,
+        [NotNullWhen(true)] out SyntaxNode? originalNode, out SemanticModel originalModel)
+    {
+        originalNode = semanticModel.GetOriginalNode(node);
+        originalModel = originalNode is null
+            ? semanticModel
+            : GetSemanticModelForTree(semanticModel, originalNode.SyntaxTree);
+        return originalNode is not null;
+    }
+
+    /// <summary>
     /// Gets the original location for the specified syntax node, or null if unmapped.
     /// </summary>
     public static Location? GetOriginalLocation(this SemanticModel semanticModel, SyntaxNode node)

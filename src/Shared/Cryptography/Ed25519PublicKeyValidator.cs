@@ -1,17 +1,6 @@
 namespace Kassyi.GSharp.Cryptography;
 
 /// <summary>
-/// Result of <see cref="Ed25519PublicKeyValidator.Validate"/>.
-/// </summary>
-internal enum Ed25519PublicKeyStatus
-{
-    Valid,
-    InvalidLength,
-    NotOnCurve,
-    SmallOrder,
-}
-
-/// <summary>
 /// Validates Ed25519 public keys before they are trusted.
 /// Shared by the trusted keys source generator (GSH0057) and <c>GpuSecurityPolicy.RegisterTrustedKey</c>.
 /// </summary>

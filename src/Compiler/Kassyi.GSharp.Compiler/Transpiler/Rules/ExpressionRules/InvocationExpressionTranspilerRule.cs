@@ -93,7 +93,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         // A method with no device definition (of the project, #891, or one the dialect does not map) would be
         // called by a name nothing defines
-        if (CallTargetEmitter.TryFailCall(node, symbol, ref context))
+        if (CallTargetEmitter.TryReplaceCall(node, symbol, ref context))
         {
             return;
         }
@@ -222,10 +222,17 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
     }
 
+    // A call that lowering synthesized (a prelude helper), as it is written; nameof and any other call without a method
+    // never reach the output by name (CallTargetClassifier.ClassifyUntyped)
     private static void TranspileUntypedInvocation(
         InvocationExpressionSyntax node,
         ref TranspileContext context)
     {
+        if (CallTargetEmitter.TryFailUntypedCall(node, ref context))
+        {
+            return;
+        }
+
         var arguments = node.ArgumentList.Arguments;
         using var sequence = EvaluationOrder.BeginCall(ref context, arguments, callee: null, node.Expression,
             spillAll: false);

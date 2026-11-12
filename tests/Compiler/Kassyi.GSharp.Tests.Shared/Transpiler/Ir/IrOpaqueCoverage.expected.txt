@@ -14,7 +14,7 @@ UnsupportedOperation	CollectionExpression	CollectionExpression	16
 UnsupportedOperation	ConditionalAccess	ConditionalAccessExpression	4
 UnsupportedOperation	DeconstructionAssignment	SimpleAssignmentExpression	32
 UnsupportedOperation	DelegateCreation	GenericName	1
-UnsupportedOperation	DelegateCreation	IdentifierName	15
+UnsupportedOperation	DelegateCreation	IdentifierName	16
 UnsupportedOperation	DelegateCreation	ParenthesizedLambdaExpression	98
 UnsupportedOperation	DelegateCreation	SimpleLambdaExpression	296
 UnsupportedOperation	DelegateCreation	SimpleMemberAccessExpression	10
@@ -47,7 +47,7 @@ statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
 statement UnsupportedOperation	Loop	ForEachStatement	134
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
-statement UnsupportedOperation	Loop	ForStatement	113
+statement UnsupportedOperation	Loop	ForStatement	116
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	5
 statement UnsupportedOperation	Switch	SwitchStatement	39

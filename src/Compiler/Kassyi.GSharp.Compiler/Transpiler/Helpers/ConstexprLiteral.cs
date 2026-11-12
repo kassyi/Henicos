@@ -46,7 +46,7 @@ internal static class ConstexprLiteral
     /// <returns><see langword="false"/> when <paramref name="type"/> has no literal on the device (<c>decimal</c>, <c>string</c>).</returns>
     public static bool TryFormatConstant(ITypeSymbol type, object value, out (string Cpp, string CSharp) literal)
     {
-        type = UnwrapNullable(type);
+        type = type.UnwrapNullable();
         var specialType = GetPrimitiveType(type);
         if (!specialType.IsPrimitiveValue())
         {
@@ -94,12 +94,6 @@ internal static class ConstexprLiteral
     /// </summary>
     public static string FormatCppChar(char value) =>
         "(char16_t)" + ((int)value).ToString(CultureInfo.InvariantCulture);
-
-    // T of Nullable<T>, or the type itself
-    private static ITypeSymbol UnwrapNullable(ITypeSymbol type) =>
-        type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlying] }
-            ? underlying
-            : type;
 
     // -5 becomes (-5); a form that is already parenthesized ((-2147483647-1)) stays as it is
     private static string ParenthesizeNegative(string cpp) =>
