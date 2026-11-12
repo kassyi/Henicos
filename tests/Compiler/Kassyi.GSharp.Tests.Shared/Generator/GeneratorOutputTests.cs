@@ -80,32 +80,22 @@ public class GeneratorOutputTests
     }
 
     // The module context class and the wrappers that name it take one module name: the assembly name, or
-    // UnknownAssembly without one. Its identifier keeps ASCII letters and digits and escapes every other character
-    // injectively ('_' as _u, any other as _x and six hex digits, as the C++ names), while the artifact files keep the
-    // assembly name with only '.' replaced, as the native build names them; the fatbin path is a C# string literal with
-    // '"' and '\' escaped
+    // UnknownAssembly without one. Its identifier keeps every character that C# allows in an identifier (letters of any
+    // script) and turns the others into '_', while the artifact files keep the assembly name with only '.' replaced, as
+    // the native build names them; the fatbin path is a C# string literal with '"' and '\' escaped
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("my-lib", "GSharpModuleContext_my_x00002dlib", "\"Kassyi.GSharp.Kernels_my-lib.gfatbin\"")]
-    [InlineData("my_lib", "GSharpModuleContext_my_ulib", "\"Kassyi.GSharp.Kernels_my_lib.gfatbin\"")]
-    [InlineData(
-        "My.Lib-2",
-        "GSharpModuleContext_My_x00002eLib_x00002d2",
-        "\"Kassyi.GSharp.Kernels_My_Lib-2.gfatbin\""
-    )]
+    [InlineData("my-lib", "GSharpModuleContext_my_lib", "\"Kassyi.GSharp.Kernels_my-lib.gfatbin\"")]
+    [InlineData("My.Lib-2", "GSharpModuleContext_My_Lib_2", "\"Kassyi.GSharp.Kernels_My_Lib-2.gfatbin\"")]
     [InlineData(null, "GSharpModuleContext_UnknownAssembly", "\"Kassyi.GSharp.Kernels_UnknownAssembly.gfatbin\"")]
-    [InlineData(
-        "\u65e5\u672c",
-        "GSharpModuleContext__x0065e5_x00672c",
-        "\"Kassyi.GSharp.Kernels_\u65e5\u672c.gfatbin\""
-    )]
+    [InlineData("\u65e5\u672c", "GSharpModuleContext_\u65e5\u672c", "\"Kassyi.GSharp.Kernels_\u65e5\u672c.gfatbin\"")]
     [InlineData(
         "\u00e9t\u00e9",
-        "GSharpModuleContext__x0000e9t_x0000e9",
+        "GSharpModuleContext_\u00e9t\u00e9",
         "\"Kassyi.GSharp.Kernels_\u00e9t\u00e9.gfatbin\""
     )]
-    [InlineData("a{b}", "GSharpModuleContext_a_x00007bb_x00007d", "\"Kassyi.GSharp.Kernels_a{b}.gfatbin\"")]
-    [InlineData("a\"b", "GSharpModuleContext_a_x000022b", "\"Kassyi.GSharp.Kernels_a\\\"b.gfatbin\"")]
+    [InlineData("a{b}", "GSharpModuleContext_a_b_", "\"Kassyi.GSharp.Kernels_a{b}.gfatbin\"")]
+    [InlineData("a\"b", "GSharpModuleContext_a_b", "\"Kassyi.GSharp.Kernels_a\\\"b.gfatbin\"")]
     public void ModuleContext_AssemblyNameNotAnIdentifier_WrappersNameTheGeneratedContext(
         string? assemblyName,
         string contextName,

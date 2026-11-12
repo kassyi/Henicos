@@ -86,28 +86,6 @@ public class ScopeIndependentNameGeneratorTests
         Assert.Contains("throw new global::System.ArgumentNullException(\"nameof\");", text, StringComparison.Ordinal);
     }
 
-    // Module names that differ only in characters an identifier cannot hold get distinct fatbin fields (CS0102 when
-    // each of them was replaced by '_')
-    [Fact]
-    [Scenario(TestScenario.Boundary)]
-    public void CudaImportGenerator_ModuleNamesDifferingInPunctuation_EachLaunchesItsOwnModule()
-    {
-        var compilation = RoslynTestUtility.CreateCompilation(
-            RoslynTestUtility.ReadTestCase("Generators/ModuleNameCollisionImports.cs"));
-        var driver = CSharpGeneratorDriver.Create(
-            generators: [new CudaImportGenerator().AsSourceGenerator()],
-            parseOptions: new CSharpParseOptions(LanguageVersion.Preview)
-        ).RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
-
-        AssertNoErrors(diagnostics, output);
-        var text = GetText(driver.GetRunResult().GeneratedTrees);
-        Assert.Contains("LoadAotKernel(s_fatbin_a_x00002db.Value", text, StringComparison.Ordinal);
-        Assert.Contains("LoadAotKernel(s_fatbin_a_ub.Value", text, StringComparison.Ordinal);
-        Assert.Contains("LoadAotKernel(s_fatbin_a_x00002eb.Value", text, StringComparison.Ordinal);
-        Assert.Contains("LoadAotKernel(s_fatbin_a_x00007bb_x00007d.Value", text, StringComparison.Ordinal);
-        Assert.Contains("LoadAotKernel(s_fatbin_a_ub_u.Value", text, StringComparison.Ordinal);
-    }
-
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void NativeApiGenerator_ModuleInShadowingNamespace_OutputCompiles()

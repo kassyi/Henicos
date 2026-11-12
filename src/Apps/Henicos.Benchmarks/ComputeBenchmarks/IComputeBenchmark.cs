@@ -28,7 +28,7 @@ public interface IComputeBenchmark
             return IntPtr.Zero;
         }
 
-        var hModule = GSharpModuleContext_Henicos_x00002eBenchmarks.GetOrLoadModule();
+        var hModule = GSharpModuleContext_Henicos_Benchmarks.GetOrLoadModule();
         return GpuKernelLoader.GetFunction(hModule, GSharpKernelName);
     }
     string NativeKernelName => "";
