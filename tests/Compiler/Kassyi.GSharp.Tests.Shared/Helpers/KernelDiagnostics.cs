@@ -75,6 +75,7 @@ public static class KernelDiagnostics
     [
         new GpuKernelAnalyzer(),
         new KernelClassAnalyzer(),
+        new KernelDeclarationAnalyzer(),
         new BarrierUsageAnalyzer(),
         new ParallelDependentCallAnalyzer(),
         new HostGpuReferenceAnalyzer()

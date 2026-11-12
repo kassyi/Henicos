@@ -1,5 +1,4 @@
 ﻿## Generator/SadPathDiagnostics.cu.cs
-(5,25)-(5,40) GSH0036 analyzer: The type 'ErrorSpecKernel' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (11,13)-(11,19) GSH0002 analyzer: The string type is not supported in GPU kernels
 (12,26)-(12,38) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
 
@@ -170,7 +169,6 @@
 (15,25)-(15,27) GSH0016 analyzer: The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer
 
 ## Generator/KernelReturnTypes_SadPath.cs
-(6,14)-(6,42) GSH0036 analyzer: The type 'TestKernelReturnTypesSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (10,27)-(10,38) GSH0004 analyzer: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.
 (14,26)-(14,38) GSH0004 analyzer: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.
 (30,33)-(30,52) GSH0004 analyzer: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.

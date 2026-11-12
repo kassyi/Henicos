@@ -40,11 +40,19 @@ public class CSharpExecutionAllocationTests : TranspilerTestBase
 
     private static void LaunchVoidKernel() => CSharpExecutionKernels.LaunchIgnoreScaleKernel(1, blockDimX: Threads);
 
+    // The least of several launches, the steady cost: in a full run one launch once allocated 7 KB more for work that
+    // the tests running beside it caused
     private static long Measure(Action launch)
     {
         Assert.Equal(KernelExecution.Default, GpuExecution.Current);
-        var before = GC.GetAllocatedBytesForCurrentThread();
-        launch();
-        return GC.GetAllocatedBytesForCurrentThread() - before;
+        var least = long.MaxValue;
+        for (var i = 0; i < 5; i++)
+        {
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            launch();
+            least = Math.Min(least, GC.GetAllocatedBytesForCurrentThread() - before);
+        }
+
+        return least;
     }
 }

@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases;
 
-public static class DefaultAndNamedArgumentsTestCase
+public static partial class DefaultAndNamedArgumentsTestCase
 {
     [GpuDeviceFunction]
     public static int ComputeStep(int input, int offset = 0, int scale = 1)

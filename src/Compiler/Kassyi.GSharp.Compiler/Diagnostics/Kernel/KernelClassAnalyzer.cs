@@ -27,10 +27,13 @@ public class KernelClassAnalyzer : DiagnosticAnalyzer
     {
         var type = (INamedTypeSymbol)context.Symbol;
         var kernels = ImmutableArray.CreateBuilder<IMethodSymbol>();
+        // The kernels that the generator emits; KernelDeclarationAnalyzer reports the others
         type.GetMembers()
             .AsStackEnumerable()
             .OfType<IMethodSymbol>()
             .Where(static method => method.HasAttribute(KnownAttributes.GpuKernel))
+            .Where(context, static (method, analysis) =>
+                KernelDeclaration.IsLaunchable(method, analysis.Compilation, analysis.CancellationToken))
             .AddTo(kernels);
         if (kernels.Count == 0)
         {

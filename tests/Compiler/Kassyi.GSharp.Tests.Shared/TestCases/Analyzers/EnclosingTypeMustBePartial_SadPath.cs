@@ -54,3 +54,18 @@ public class OuterOfTwoClasses
         public static int Inc(int x) => x + 1;
     }
 }
+
+// A record class is reopened like a class; a record struct that holds device functions is not
+public record NonPartialKernelRecord
+{
+    [GpuKernel]
+    public static void Kernel()
+    {
+    }
+}
+
+public record struct DeviceOnlyRecordStruct
+{
+    [GpuDeviceFunction]
+    public static int Twice(int x) => x * 2;
+}

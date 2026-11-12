@@ -42,9 +42,5 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerArrayKernel();
-global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerStringKernel();
 global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerPointerKernel2();
-global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerManagedStructKernel();
-global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.WarmupFunctionPointerSpanKernel();
 }}}
