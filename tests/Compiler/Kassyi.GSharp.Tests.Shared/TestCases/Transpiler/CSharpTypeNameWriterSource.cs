@@ -15,6 +15,8 @@ namespace Names
         public struct Nested { }
     }
 
+    public struct KeywordParameters<@in, U> { }
+
     public class Holder
     {
         public Outer<int>.Inner NestedInGeneric;
@@ -31,4 +33,9 @@ namespace Names
 namespace @event
 {
     public struct Plain { }
+}
+
+namespace @event.@base
+{
+    public struct Deep { }
 }
