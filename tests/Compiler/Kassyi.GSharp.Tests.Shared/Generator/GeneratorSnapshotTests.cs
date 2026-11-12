@@ -385,7 +385,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable))
-            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.MegaCompilationCache.BaseCompilation.References)
+            .AddReferences(RoslynTestUtility.BaseCompilation.References)
             .AddSyntaxTrees(syntaxTree);
 
         var generator = new GpuKernelGenerator();

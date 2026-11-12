@@ -11,21 +11,12 @@ public class GeneratorFileIoArchitectureTests
     [Scenario(TestScenario.SadPath)]
     public void CompilerSources_PathLiterals_ContainNoAbsolutePathLiterals()
     {
-        var compilerRoot = RepositoryPaths.CompilerProject;
         var violations = new List<string>();
 
-        foreach (var path in Directory.EnumerateFiles(compilerRoot, "*.cs", SearchOption.AllDirectories))
+        foreach (var tree in RoslynTestUtility.CompilerSourceCompilation.SyntaxTrees)
         {
-            if (path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}") ||
-                path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
-            {
-                continue;
-            }
-
-            var fileName = Path.GetFileName(path);
-            var root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
-
-            foreach (var token in root.DescendantTokens())
+            var fileName = Path.GetFileName(tree.FilePath);
+            foreach (var token in tree.GetRoot().DescendantTokens())
             {
                 if (token.Kind() is not (SyntaxKind.StringLiteralToken or SyntaxKind.InterpolatedStringTextToken))
                 {
@@ -53,9 +44,11 @@ public class GeneratorFileIoArchitectureTests
     [InlineData("Aot/AotArtifactWriter.cs")]
     public void GeneratorSources_CatchBlocks_DoNotWriteFiles(string relativePath)
     {
-        var compilerRoot = RepositoryPaths.CompilerProject;
-        var generatorPath = Path.Combine(compilerRoot, relativePath);
-        var root = CSharpSyntaxTree.ParseText(File.ReadAllText(generatorPath)).GetRoot();
+        var generatorPath = Path.GetFullPath(Path.Combine(RepositoryPaths.CompilerProject, relativePath));
+        var root = RoslynTestUtility.CompilerSourceCompilation.SyntaxTrees
+            .Single(tree =>
+                string.Equals(Path.GetFullPath(tree.FilePath), generatorPath, StringComparison.OrdinalIgnoreCase))
+            .GetRoot();
         var violations = new List<string>();
 
         foreach (var catchClause in root.DescendantNodes().OfType<CatchClauseSyntax>())
@@ -95,12 +88,7 @@ public class GeneratorFileIoArchitectureTests
             return true;
         }
 
-        if (expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "File" })
-        {
-            return true;
-        }
-
-        var text = expression.ToString();
-        return text == "File" || text == "System.IO.File";
+        // System.IO.File
+        return expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "File" };
     }
 }
