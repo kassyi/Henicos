@@ -13,7 +13,7 @@ public static class GridDimension
     public static int X => ManagedGpuContext.IsActive ? ManagedGpuContext.GridDimX : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the number of blocks per grid along the Y axis (<c>gridDim.y</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown inside of a managed execution context if disabled.</exception>
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
     public static int Y => ManagedGpuContext.IsActive ? ManagedGpuContext.GridDimY : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the number of blocks per grid along the Z axis (<c>gridDim.z</c>).</summary>

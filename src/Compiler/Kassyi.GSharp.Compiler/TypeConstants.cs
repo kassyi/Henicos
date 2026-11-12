@@ -30,6 +30,7 @@ internal static class TypeConstants
     public const string WmmaType = "Wmma";
     public const string ThreadIndexType = "ThreadIndex";
     public const string BlockIndexType = "BlockIndex";
+    public const string Dim3Type = "Dim3";
     public const string SyncThreadsMethod = "SyncThreads";
     public const string ActiveMaskMethod = "ActiveMask";
 

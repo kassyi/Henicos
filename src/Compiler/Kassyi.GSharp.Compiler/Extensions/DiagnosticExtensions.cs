@@ -32,6 +32,13 @@ internal static class DiagnosticExtensions
         context.ReportDiagnostic(Diagnostic.Create(descriptor, node.GetLocation(), messageArgs));
 
     /// <summary>
+    /// Reports a diagnostic at the syntax node's location for the given operation analysis context.
+    /// </summary>
+    public static void ReportDiagnostic(this OperationAnalysisContext context, DiagnosticDescriptor descriptor,
+        SyntaxNode node, params object?[]? messageArgs) =>
+        context.ReportDiagnostic(Diagnostic.Create(descriptor, node.GetLocation(), messageArgs));
+
+    /// <summary>
     /// Reports a diagnostic for the given symbol analysis context.
     /// </summary>
     public static void ReportDiagnostic(this SymbolAnalysisContext context, DiagnosticDescriptor descriptor, Location? location,

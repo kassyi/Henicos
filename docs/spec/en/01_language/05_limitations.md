@@ -119,7 +119,7 @@ examples:
 | [**GSH0015**](../03_bcl_api/diagnostics/GSH0015.md) | Warning | Auto-allocated array in loop | Triggered when an auto-allocated array return kernel is invoked from within a host CPU loop. |
 | [**GSH0016**](../03_bcl_api/diagnostics/GSH0016.md) | Error | Unroll factor must be a non-negative compile-time constant | Triggered when `factor` in `Gpu.Hint.Unroll` is negative or non-constant. |
 | [**GSH0017**](../03_bcl_api/diagnostics/GSH0017.md) | Error | Unroll hint must precede a loop | Triggered when `Gpu.Hint.Unroll` does not immediately precede a `for`, `while`, or `do-while` loop. |
-| [**GSH0018**](../03_bcl_api/diagnostics/GSH0018.md) | Error | GPU intrinsic called from host | Triggered when a GPU-specific intrinsic is invoked from standard CPU host code. |
+| [**GSH0018**](../03_bcl_api/diagnostics/GSH0018.md) | Error | GPU intrinsic called from host | Triggered when standard CPU host code calls, reads or names a GPU-only intrinsic (`Gpu.SyncThreads()`, `ThreadIndex.X`). |
 | [**GSH0019**](../03_bcl_api/diagnostics/GSH0019.md) | Error | Manual GetEnumerator calls are not supported | Triggered when explicit calls to `GetEnumerator()` are made in device code. |
 | [**GSH0020**](../03_bcl_api/diagnostics/GSH0020.md) | Error | Missing IDisposable implementation | Triggered when a class holds an owned disposable GPU resource but does not implement `IDisposable`. |
 | [**GSH0021**](../03_bcl_api/diagnostics/GSH0021.md) | Warning | Undisposed GPU resource (Deprecated) | Was triggered when `Dispose()` failed to dispose all owned GPU resources. (Deprecated, replaced by composite scopes; no longer reported) |
