@@ -134,8 +134,8 @@ public partial class MethodAttributesTests
     [Category(TestCategory.Syntax)]
     public void Transpile_MultipleAttributes_EmitsForceinlineDevice()
     {
-        // That __forceinline__ is written once is fixed by the snapshot of MethodAttributesKernels.MultiAttributeMultiply,
-        // which carries the same attributes
+        // That __forceinline__ is written once is fixed by the snapshot of
+        // MethodAttributesKernels.MultiAttributeMultiply, which carries the same attributes
         var (cudaSource, diagnostics) = TranspileDeviceMethod("MultipleAttributesFunc");
 
         Assert.Empty(diagnostics);
