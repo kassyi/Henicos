@@ -950,7 +950,13 @@ function runUnderGpuLock(options, weight) {
 
 /** Quotes one argument for a shell, so that the shell passes it on as one unchanged word. */
 function quoteArgument(shell, word) {
-  if (/^[\w@%+=:,./\\-]+$/.test(word)) {
+  const powerShell = shell === 'pwsh' || shell === 'powershell';
+  // PowerShell splits -Name.Part=1 at the dot and a word with a leading or trailing comma into an array; bash and sh
+  // read \ as an escape outside quotes (C:\dir\file). cmd needs no quotes for \ in a path.
+  const needsQuotes =
+    (powerShell && ((/^-/.test(word) && word.includes('.')) || /^,|,$/.test(word))) ||
+    ((shell === 'bash' || shell === 'sh') && word.includes('\\'));
+  if (/^[\w+=:,./\\-]+$/.test(word) && !needsQuotes) {
     return word;
   }
   if (shell === 'cmd') {
@@ -965,6 +971,10 @@ function quoteArgument(shell, word) {
 async function run(options) {
   if (options.commandWords !== null) {
     const shell = resolveShell(options.shell);
+    if ((shell === 'pwsh' || shell === 'powershell') && options.commandWords.includes('--%')) {
+      // PowerShell cannot pass a literal --% to a program, quoted or not: it is its stop-parsing token
+      usageError('PowerShell cannot pass --% on; give the command as one string or choose another --shell.');
+    }
     const words = options.commandWords.map((word) => quoteArgument(shell, word));
     // PowerShell runs a quoted first word only through the call operator
     options.command = (shell === 'pwsh' || shell === 'powershell') && words[0] !== options.commandWords[0] ? `& ${words.join(' ')}` : words.join(' ');
@@ -1303,6 +1313,13 @@ async function selfTest() {
   assert.strictEqual(limitMsbuildNodes('dotnet run --project x', 6), 'dotnet run --project x');
   assert.strictEqual(limitMsbuildNodes('dotnet test --filter "A|B" -m:2', 6), 'dotnet test --filter "A|B" -m:2');
   assert.strictEqual(limitMsbuildNodes('dotnet test bin/x.Tests.dll', 6), 'dotnet test bin/x.Tests.dll');
+  assert.strictEqual(quoteArgument('pwsh', '@x.rsp'), "'@x.rsp'", 'PowerShell would splat @x');
+  assert.strictEqual(quoteArgument('pwsh', '-Dfoo.bar=1'), "'-Dfoo.bar=1'", 'PowerShell splits -a.b at the dot');
+  assert.strictEqual(quoteArgument('bash', 'C:\\dir\\f.txt'), "'C:\\dir\\f.txt'", 'bash reads \\ as an escape');
+  assert.strictEqual(quoteArgument('cmd', 'C:\\dir\\f.txt'), 'C:\\dir\\f.txt');
+  assert.strictEqual(quoteArgument('pwsh', 'x,'), "'x,'", 'PowerShell reads a trailing comma as an array');
+  assert.strictEqual(quoteArgument('bash', '-p:Foo.Bar=1'), '-p:Foo.Bar=1');
+  assert.strictEqual(quoteArgument('bash', "it's"), "'it'\\''s'");
   assert.strictEqual(defaultWeight('just test --filter X'), 2);
   assert.strictEqual(defaultWeight('dotnet build Henicos.slnx'), 1);
 
@@ -1427,9 +1444,12 @@ async function selfTest() {
     // 7. Several words after `--` arrive as argv already split by the caller's shell; each reaches the command as it was.
     const argvExit = (shell) =>
       new Promise((resolve) => {
-        const check = 'process.exit(process.argv[1] === "A&B c|d" && process.argv[2] === "it\'s" ? 0 : 9)';
-        const args = [__filename, 'run', '--port', String(port), '--shell', shell, '--', process.execPath, '-e', check, 'A&B c|d', "it's"];
-        const child = spawn(process.execPath, args, { stdio: 'ignore', windowsHide: true, env });
+        // The command compares its own argv with the words, so each word makes the round trip through the shell
+        const check = 'process.exit(JSON.stringify(process.argv.slice(1))===process.env.BQ_EXPECT?0:9)';
+        const words = ['A&B c|d', "it's", '-Dfoo.bar=1', 'C:\\dir\\f.txt', '@x.rsp', 'x,', '-p:A=1', 'Category!=Stress', '$HOME'];
+        const args = [__filename, 'run', '--port', String(port), '--shell', shell, '--', process.execPath, '-e', check, ...words];
+        const childEnv = { ...env, BQ_EXPECT: JSON.stringify(words) };
+        const child = spawn(process.execPath, args, { stdio: 'ignore', windowsHide: true, env: childEnv });
         children.push(child);
         child.on('close', resolve);
       });
@@ -1440,6 +1460,48 @@ async function selfTest() {
     for (const shell of shells) {
       assert.strictEqual(await argvExit(shell), 0, `argv after -- survives ${shell}`);
     }
+
+    // 8. A client that lost only its connection re-registers: its kept slot is replaced, and a waiting job does not
+    //    get it in between (capacity 2: A weighs 2, W waits with 2).
+    await usedWithin(port, 0, 5000);
+    const raw = () =>
+      new Promise((resolve) => {
+        const socket = net.connect(port, '127.0.0.1', () => resolve(socket));
+        socket.on('error', () => socket.destroy());
+      });
+    const sleeperProcess = spawn(process.execPath, ['-e', 'setTimeout(function(){},20000)'], { windowsHide: true });
+    children.push(sleeperProcess);
+    const fakeClientPid = process.pid;
+    const first = await raw();
+    send(first, { version: ProtocolVersion, type: 'request', weight: 2, pid: fakeClientPid, command: 'A', queuedAt: Date.now() });
+    await delay(300);
+    send(first, { version: ProtocolVersion, type: 'started', commandPid: sleeperProcess.pid, spawnedAt: Date.now() });
+    const waiter = await raw();
+    send(waiter, { version: ProtocolVersion, type: 'request', weight: 2, pid: 1, command: 'W', queuedAt: Date.now() });
+    await delay(300);
+    first.destroy();
+    await delay(500);
+    const again = await raw();
+    send(again, {
+      version: ProtocolVersion,
+      type: 'adopt',
+      weight: 2,
+      pid: fakeClientPid,
+      commandPid: sleeperProcess.pid,
+      spawnedAt: Date.now(),
+      command: 'A',
+      queuedAt: Date.now(),
+    });
+    await delay(500);
+    const readopted = await request({ port }, { type: 'status' });
+    assert.deepStrictEqual(
+      [readopted.used, readopted.running.map((j) => j.command), readopted.waiting.map((j) => j.command)],
+      [2, ['A'], ['W']],
+      're-registration replaces the kept slot without handing it to W',
+    );
+    again.destroy();
+    waiter.destroy();
+    killProcessTree(sleeperProcess.pid);
 
     // 5. A job whose client was lost before a restart still holds its slot after it (restored from jobs-<port>.json).
     await usedWithin(port, 0, 5000);

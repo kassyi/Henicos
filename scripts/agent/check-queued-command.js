@@ -284,6 +284,11 @@ function nestedReason(command) {
   return reasons.length > 0 ? reasons[0] : null;
 }
 
+/** True for the Stryker.NET tool name, also with a version: dotnet-stryker, dotnet-stryker@4.0.0. */
+function isStryker(word) {
+  return /^dotnet-stryker(@.*)?$/i.test(word);
+}
+
 /** The reason a segment needs the queue, or null. */
 function segmentReason(segment) {
   const list = dropPrefixes(words(segment.trim().replace(/^[({]+\s*/, '')));
@@ -315,16 +320,21 @@ function segmentReason(segment) {
     const verbIndex = args.findIndex((arg) => !arg.startsWith('-'));
     const verb = verbIndex < 0 ? '' : args[verbIndex];
     const rest = args.slice(verbIndex + 1);
+    // dotnet tool run / exec, dotnet dnx, dotnet dotnet-stryker: Stryker anywhere among the words, with any version
+    // (dotnet-stryker@4.0.0) and options before it (--tool-manifest m.json)
+    if (/^(tool|dnx|dotnet-stryker(@.*)?)$/i.test(verb) && args.some(isStryker)) {
+      return 'dotnet-stryker';
+    }
     if (rest.some((arg) => ['--help', '-h', '-?', '/?'].includes(arg))) {
       return null; // dotnet test --help builds nothing
     }
     if (DotnetVerbs.test(verb)) {
       return `dotnet ${verb}`;
     }
-    if (verb === 'tool' && rest[0] === 'run' && /^dotnet-stryker$/i.test(rest[1] || '')) {
-      return 'dotnet tool run dotnet-stryker';
-    }
     return null;
+  }
+  if (isStryker(name) || (name === 'dnx' && args.some(isStryker))) {
+    return 'dotnet-stryker';
   }
   if (name === 'msbuild') {
     return 'msbuild';
@@ -339,10 +349,17 @@ function segmentReason(segment) {
   if (name === 'node') {
     const scriptIndex = args.findIndex((arg) => !arg.startsWith('-'));
     const script = scriptIndex < 0 ? '' : args[scriptIndex];
-    // node --check <script>, <script> --help / --self-test: no build, no test run
+    // node --check <script>, <script> --help / --self-test / --dry-run: no build, no test run. Only the script's own
+    // options count, not those after `--` that it passes on (test-stability.js -- --dry-run still builds), and
+    // the fuzzer builds tools/fuzz-diff even for --help.
+    const ownArgs = args.slice(scriptIndex + 1);
+    const passOn = ownArgs.indexOf('--');
     const helper =
       args.slice(0, Math.max(scriptIndex, 0)).some((arg) => arg === '--check' || arg === '-c') ||
-      args.slice(scriptIndex + 1).some((arg) => ['--help', '-h', '--self-test', '--dry-run'].includes(arg));
+      (!/fuzz-differential\.js$/.test(script) &&
+        (passOn < 0 ? ownArgs : ownArgs.slice(0, passOn)).some((arg) =>
+          ['--help', '-h', '--self-test', '--dry-run'].includes(arg),
+        ));
     if (NodeScripts.test(script) && !helper) {
       return script.replace(/^.*[\\/]/, '');
     }
@@ -485,6 +502,19 @@ function selfTest() {
     'Start-Process dotnet -ArgumentList "test x" -Wait',
     'dotnet watch test',
     'dotnet tool run dotnet-stryker',
+    'dotnet tool exec dotnet-stryker',
+    'dotnet dotnet-stryker',
+    'dotnet dnx dotnet-stryker',
+    'dnx dotnet-stryker',
+    'dnx dotnet-stryker@4.0.0',
+    'dotnet dnx --yes dotnet-stryker@4.0.0',
+    'dotnet tool exec dotnet-stryker@4.0.0',
+    'dotnet tool run --tool-manifest m.json dotnet-stryker',
+    'dnx --source https://x dotnet-stryker',
+    'dotnet tool run dotnet-stryker --help',
+    'dotnet-stryker --since main',
+    'node scripts/human/test-stability.js -- --dry-run',
+    'node scripts/human/fuzz-differential.js --help',
     'nice -n 10 dotnet build',
     'stdbuf -oL dotnet test',
     'env -C tmp dotnet test',
@@ -529,6 +559,10 @@ function selfTest() {
     'node scripts/agent/gpu-lock.js --self-test',
     'node --check scripts/agent/gpu-lock.js',
     'dotnet test --help',
+    'dotnet tool list',
+    'dotnet tool restore',
+    'dotnet tool install -g dotnet-counters',
+    'dnx dotnet-counters',
     'node scripts/human/long-checks.js --dry-run',
     'just env-info',
     'just --list',
