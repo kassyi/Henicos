@@ -3,15 +3,6 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Constants;
 namespace Kassyi.GSharp.Stdlib.GpuMath;
 
 /// <summary>
-/// Specifies the GPU kernel execution engine backend.
-/// </summary>
-public enum GpuExecutionEngine
-{
-    /// <summary>Executes pre-compiled GSharp device kernels via Ahead-Of-Time (AOT) loaded modules.</summary>
-    GSharpAot
-}
-
-/// <summary>
 /// Represents a GPU execution context managing memory allocation pools, device workspaces, and backend providers for large integer computations.
 /// </summary>
 /// <remarks>
