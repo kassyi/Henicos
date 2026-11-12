@@ -9,21 +9,21 @@ namespace MyApp.Native;
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class MyKernels
 {
-private static readonly global::System.Lazy<byte[]> __gsharp_module_0 = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "./native/my-custom.kernels.fatbin")));
+private static readonly global::System.Lazy<byte[]> __gsharp_module__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "./native/my-custom.kernels.fatbin")));
 /// <summary>User-defined custom matrix multiplication kernel.</summary>
 /// <param name="a">Matrix A.</param>
 /// <param name="c">Matrix C.</param>
 public static void SgemmCustom(float[] a, float[] c, int n, uint gridDimX, uint blockDimX)
 {
 if (a is null){
-throw new global::System.ArgumentNullException(nameof(a));
+throw new global::System.ArgumentNullException("a");
 }
 if (c is null){
-throw new global::System.ArgumentNullException(nameof(c));
+throw new global::System.ArgumentNullException("c");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MyKernels.SgemmCustom");
 using var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module_0.Value, "sgemm_kernel_v1");
+var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "sgemm_kernel_v1");
 using var __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(a.Length);
 __gsharp_d_0.CopyToDevice(a);
 using var __gsharp_d_1 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(c.Length);
@@ -50,10 +50,10 @@ __gsharp_d_1.CopyToHost(c);
 public static void Fill(int[] data, int value)
 {
 if (data is null){
-throw new global::System.ArgumentNullException(nameof(data));
+throw new global::System.ArgumentNullException("data");
 }
 using var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module_0.Value, "Fill");
+var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "Fill");
 using var __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<int>(data.Length);
 __gsharp_d_0.CopyToDevice(data);
 unsafe

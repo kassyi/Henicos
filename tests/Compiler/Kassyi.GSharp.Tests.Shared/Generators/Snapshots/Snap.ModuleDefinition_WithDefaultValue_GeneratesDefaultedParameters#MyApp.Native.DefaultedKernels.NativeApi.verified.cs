@@ -9,14 +9,14 @@ namespace MyApp.Native;
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class DefaultedKernels
 {
-private static readonly global::System.Lazy<byte[]> __gsharp_module_0 = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "./native/defaulted.fatbin")));
+private static readonly global::System.Lazy<byte[]> __gsharp_module__x00002e_x00002fnative_x00002fdefaulted_x00002efatbin = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "./native/defaulted.fatbin")));
 public static void Scale(float[] data, float factor = 2.0f)
 {
 if (data is null){
-throw new global::System.ArgumentNullException(nameof(data));
+throw new global::System.ArgumentNullException("data");
 }
 using var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module_0.Value, "Scale");
+var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fdefaulted_x00002efatbin.Value, "Scale");
 using var __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(data.Length);
 __gsharp_d_0.CopyToDevice(data);
 unsafe

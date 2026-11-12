@@ -79,7 +79,7 @@ internal static class NativeBindingEmitter
     public static string EmitModuleBindings(NativeApiDefinition def)
     {
         var moduleName = def.ModuleName ?? string.Empty;
-        var moduleField = ModuleKernelLaunchEmitter.GetModuleFieldName(0);
+        var moduleField = ModuleKernelLaunchEmitter.GetModuleFieldName(moduleName);
 
         using var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();

@@ -20,7 +20,7 @@ internal static class CudaImportPlanner
             }
             else if (launchSetting != ModuleLaunchSetting.None)
             {
-                builder.AddLaunchSetting(launchSetting, parameter.Name.ToCSharpIdentifier());
+                builder.AddLaunchSetting(launchSetting, parameter.Name);
             }
             else
             {
@@ -55,7 +55,7 @@ internal static class CudaImportPlanner
             // 'out' has no value to copy in; 'in' and 'ref readonly' promise not to change the caller's value
             return new ModuleKernelArgument(
                 parameter.Ordinal,
-                parameter.Name.ToCSharpIdentifier(),
+                parameter.Name,
                 ModuleKernelParameterKind.ByReference,
                 typeWriter.ToString(),
                 CopyIn: parameter.RefKind != RefKind.Out,
@@ -75,7 +75,7 @@ internal static class CudaImportPlanner
         var hasOut = parameter.HasAttribute(KnownAttributes.Out);
         return new ModuleKernelArgument(
             parameter.Ordinal,
-            parameter.Name.ToCSharpIdentifier(),
+            parameter.Name,
             kind,
             typeWriter.ToString(),
             CopyIn: hasIn || !hasOut,

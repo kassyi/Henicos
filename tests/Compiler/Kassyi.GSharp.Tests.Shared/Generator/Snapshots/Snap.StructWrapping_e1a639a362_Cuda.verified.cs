@@ -4,18 +4,18 @@
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 unsafe partial class TestInvoker
 {
-private static readonly global::System.Lazy<byte[]> __gsharp_module_0 = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "my_fatbin")));
+private static readonly global::System.Lazy<byte[]> __gsharp_module_my_ufatbin = new(() => global::System.IO.File.ReadAllBytes(global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, "my_fatbin")));
 public static partial void LaunchMyKernel(float[] a, float[] b, float scalarValue, uint gridDimX, uint blockDimX)
 {
 if (a is null){
-throw new global::System.ArgumentNullException(nameof(a));
+throw new global::System.ArgumentNullException("a");
 }
 if (b is null){
-throw new global::System.ArgumentNullException(nameof(b));
+throw new global::System.ArgumentNullException("b");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "TestInvoker.LaunchMyKernel");
 using var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module_0.Value, "MyKernel");
+var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module_my_ufatbin.Value, "MyKernel");
 using var __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(a.Length);
 __gsharp_d_0.CopyToDevice(a);
 using var __gsharp_d_1 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(b.Length);

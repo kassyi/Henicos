@@ -119,9 +119,9 @@ public class NativeApiModuleGeneratorTests
         Assert.Contains(
             "__gsharp_d_6?.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<int>(cube));",
             source);
-        Assert.Contains("throw new global::System.ArgumentNullException(nameof(grid));", source);
-        Assert.DoesNotContain("nameof(cube)", source);
-        Assert.DoesNotContain("nameof(values)", source);
+        Assert.Contains("throw new global::System.ArgumentNullException(\"grid\");", source);
+        Assert.DoesNotContain("ArgumentNullException(\"cube\")", source);
+        Assert.DoesNotContain("ArgumentNullException(\"values\")", source);
     }
 
     // The launcher that YAML bindings share with [CudaImport] declares no local that a parameter name can collide with,

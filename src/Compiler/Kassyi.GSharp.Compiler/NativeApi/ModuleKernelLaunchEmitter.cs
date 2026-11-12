@@ -31,11 +31,16 @@ internal static class ModuleKernelLaunchEmitter
     private const string NativeContext = GSharpInternalNames.Launcher.NativeContext;
 
     /// <summary>
-    /// The static field that holds the bytes of the module at <paramref name="index"/> among the modules of a class,
-    /// <c>__gsharp_module_{index}</c>.
+    /// The static field of a class that holds the bytes of the module <paramref name="moduleName"/>,
+    /// <c>__gsharp_module_{module}</c> with the module name escaped (<see cref="GSharpNameEncoding.EscapeName"/>, which
+    /// is injective): one field per module and class, named the same way by the YAML bindings and
+    /// <c>[CudaImport]</c>, so a <c>[CudaImport]</c> part leaves out the field a YAML binding of the class declares.
     /// </summary>
-    public static string GetModuleFieldName(int index) =>
-        GSharpInternalNames.Launcher.ModuleFieldPrefix + index.ToString(CultureInfo.InvariantCulture);
+    public static string GetModuleFieldName(string moduleName) =>
+        GlobalCppNames.Shorten(
+            GSharpInternalNames.Launcher.ModuleFieldPrefix,
+            GSharpNameEncoding.EscapeName(moduleName)
+        );
 
     /// <summary>
     /// The struct that packs the arguments of the method at <paramref name="index"/> among the methods of a class,
@@ -63,8 +68,8 @@ internal static class ModuleKernelLaunchEmitter
             foreach (var argument in plan.Arguments)
             {
                 writer.AppendLine(argument.IsStaged
-                    ? $"public {HostTypeNames.IntPtr} {argument.Name};"
-                    : $"public {argument.TypeName} {argument.Name};");
+                    ? $"public {HostTypeNames.IntPtr} {Identifier(argument)};"
+                    : $"public {argument.TypeName} {Identifier(argument)};");
             }
         }
 
@@ -137,7 +142,8 @@ internal static class ModuleKernelLaunchEmitter
         writer.AppendLine(
             $"throw new global::System.NotSupportedException({SymbolDisplay.FormatLiteral(message, quote: true)});");
 
-    // if (<name> is null) { throw new global::System.ArgumentNullException(nameof(<name>)); }
+    // if (<name> is null) { throw new global::System.ArgumentNullException("<name>"); }
+    // [WHY] The name is a string literal: 'nameof' would bind to a parameter named 'nameof' (CS0149)
     // [WHY] Only an array declared nullable (T[]?, T[,]?) reaches the kernel as a null pointer; null for another array
     // is rejected before anything is copied or launched, as the launchers of [GpuKernel] methods reject it
     private static void WriteNullChecks(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
@@ -152,12 +158,13 @@ internal static class ModuleKernelLaunchEmitter
             writer.Append("if ");
             using (writer.Parentheses())
             {
-                writer.Append($"{argument.Name} is null");
+                writer.Append($"{Identifier(argument)} is null");
             }
 
             using (writer.Scope())
             {
-                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({argument.Name}));");
+                var name = SymbolDisplay.FormatLiteral(argument.Name, quote: true);
+                writer.AppendLine($"throw new global::System.ArgumentNullException({name});");
             }
         }
     }
@@ -236,7 +243,7 @@ internal static class ModuleKernelLaunchEmitter
     {
         foreach (var argument in arguments)
         {
-            var name = argument.Name;
+            var name = Identifier(argument);
             var device = GetDeviceBuffer(argument);
             var buffer = $"{HostTypeNames.GpuBuffer}<{argument.TypeName}>";
             switch (argument.Kind)
@@ -269,8 +276,11 @@ internal static class ModuleKernelLaunchEmitter
     // <name>, or ModuleKernelArguments.Flatten<<element>>(<name>): the elements of an array as one span
     private static void WriteHostElements(SourceWriter writer, ModuleKernelArgument argument) =>
         writer.Append(argument.Kind == ModuleKernelParameterKind.MultidimensionalArray
-            ? $"{ModuleKernelArguments}.Flatten<{argument.TypeName}>({argument.Name})"
-            : argument.Name);
+            ? $"{ModuleKernelArguments}.Flatten<{argument.TypeName}>({Identifier(argument)})"
+            : Identifier(argument));
+
+    // The parameter as C# source names it (@in for 'in')
+    private static string Identifier(ModuleKernelArgument argument) => argument.Name.ToCSharpIdentifier();
 
     // The device buffer local of <argument>, __gsharp_d_<ordinal>
     private static string GetDeviceBuffer(ModuleKernelArgument argument) =>
@@ -284,7 +294,7 @@ internal static class ModuleKernelLaunchEmitter
     // The host storage of a value passed by reference: the parameter, or the launcher local __gsharp_out_<ordinal> of
     // an 'out' value
     private static string GetHostValue(ModuleKernelArgument argument) =>
-        argument.CopyIn ? argument.Name : KernelHostNames.GetLocal(LauncherLocal.OutValue, argument.Ordinal);
+        argument.CopyIn ? Identifier(argument) : KernelHostNames.GetLocal(LauncherLocal.OutValue, argument.Ordinal);
 
     // The member access on the buffer of <argument>: '?.' when a nullable array leaves it null
     private static string GetAccess(ModuleKernelArgument argument) => argument.AllowsNull ? "?." : ".";
@@ -299,8 +309,8 @@ internal static class ModuleKernelLaunchEmitter
             {
                 var argument = arguments[i];
                 writer.Append(argument.IsStaged
-                    ? $"{argument.Name} = {GetDevicePointer(argument)}"
-                    : $"{argument.Name} = {argument.Name}");
+                    ? $"{Identifier(argument)} = {GetDevicePointer(argument)}"
+                    : $"{Identifier(argument)} = {Identifier(argument)}");
                 writer.AppendLine(i < arguments.Length - 1 ? "," : string.Empty);
             }
         }
@@ -345,7 +355,7 @@ internal static class ModuleKernelLaunchEmitter
             var local = KernelHostNames.GetLocal(LauncherLocal.KernelArgument, argument.Ordinal);
             writer.AppendLine(argument.IsStaged
                 ? $"var {local} = {GetDevicePointer(argument)};"
-                : $"var {local} = {argument.Name};");
+                : $"var {local} = {Identifier(argument)};");
         }
 
         if (arguments.Length == 0)
@@ -399,7 +409,7 @@ internal static class ModuleKernelLaunchEmitter
                 continue;
             }
 
-            var name = argument.Name;
+            var name = Identifier(argument);
             var device = GetDeviceBuffer(argument);
             if (argument.IsArray)
             {

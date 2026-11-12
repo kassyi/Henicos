@@ -182,6 +182,26 @@ public class CudaImportGeneratorTests
         Assert.DoesNotContain(" Implemented(", source, StringComparison.Ordinal);
     }
 
+    // A parameter named nameof does not capture the name of the null check, which is a string literal (with
+    // nameof(data), every nameof bound to the parameter: CS0149)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ParameterNamedNameof_Compiles()
+    {
+        var output = RunGenerator(
+            "NativeApi/CudaImportNameofParameter.cs",
+            out var generatorDiagnostics,
+            out var trees
+        );
+
+        Assert.Empty(generatorDiagnostics);
+        AssertNoErrors(output);
+        Assert.Contains(
+            "throw new global::System.ArgumentNullException(\"data\");",
+            Assert.Single(trees).GetText().ToString(),
+            StringComparison.Ordinal);
+    }
+
     private static Compilation RunGenerator(string testCase, out ImmutableArray<Diagnostic> generatorDiagnostics,
         out ImmutableArray<SyntaxTree> generatedTrees)
     {

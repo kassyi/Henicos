@@ -11,6 +11,9 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// <param name="TypeDeclarations">
 /// The partial declarations of the containing class and of the types that contain it, outermost first.
 /// </param>
+/// <param name="TopLevelTypeName">
+/// The metadata name of the containing class when a YAML binding can extend it too (not nested, not generic).
+/// </param>
 /// <param name="MessageName">The method as messages name it (<c>Type.Method</c>).</param>
 /// <param name="ModuleName">The fatbin module name specified in the attribute.</param>
 /// <param name="EntryPoint">The kernel entry point function name in CUDA C++.</param>
@@ -21,6 +24,7 @@ internal readonly record struct CudaImportMethodModel(
     string HintName,
     string NamespaceName,
     EquatableArray<string> TypeDeclarations,
+    string? TopLevelTypeName,
     string MessageName,
     string ModuleName,
     string EntryPoint,
@@ -36,9 +40,11 @@ internal readonly record struct CudaImportMethodModel(
 /// <param name="TypeDeclarations">
 /// The partial declarations of the class and of the types that contain it, outermost first.
 /// </param>
+/// <param name="TopLevelTypeName">The metadata name of the class when a YAML binding can extend it too.</param>
 /// <param name="Methods">The collection of import methods contained within this class.</param>
 internal readonly record struct CudaImportClassModel(
     string HintName,
     string NamespaceName,
     EquatableArray<string> TypeDeclarations,
+    string? TopLevelTypeName,
     EquatableArray<CudaImportMethodModel> Methods);

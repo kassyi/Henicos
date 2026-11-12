@@ -34,7 +34,12 @@ public class CudaImportGenerator : IIncrementalGenerator
             .Collect()
             .SelectMany(static (items, _) => GroupByClass(items));
 
-        context.RegisterSourceOutput(classGroups, GenerateCudaImportForClass);
+        // [WHY] A YAML module binding into the same class declares the field of its module; the methods of that
+        // module use it instead of declaring a second one (CS0102)
+        var yamlModuleClasses = NativeApiGenerator.GetSourceFiles(context)
+            .Select(NativeApiGenerator.GetModuleClasses);
+
+        context.RegisterSourceOutput(classGroups.Combine(yamlModuleClasses), GenerateCudaImportForClass);
     }
 
     // One model per containing class, in the order the classes first appear, each with its methods in input order
@@ -64,6 +69,7 @@ public class CudaImportGenerator : IIncrementalGenerator
                 key,
                 first.NamespaceName,
                 first.TypeDeclarations,
+                first.TopLevelTypeName,
                 builder.ToImmutable().AsEquatableArray()));
         }
 
@@ -99,6 +105,7 @@ public class CudaImportGenerator : IIncrementalGenerator
             GlobalCppNames.GetHintName(containingType, HintNameExtension),
             containingType.ContainingNamespace.GetCsharpNamespaceName(),
             CreateTypeDeclarations(containingType),
+            GetTopLevelTypeName(containingType),
             CudaImportPlanner.GetMessageName(methodSymbol),
             moduleName,
             entryPoint,
@@ -124,6 +131,12 @@ public class CudaImportGenerator : IIncrementalGenerator
         return declarations.ToImmutable().AsEquatableArray();
     }
 
+    // <namespace>.<name> of a class that a YAML binding can also extend (not nested, not generic), keywords not escaped
+    private static string? GetTopLevelTypeName(INamedTypeSymbol containingClass) =>
+        containingClass is { ContainingType: null, TypeParameters.IsEmpty: true }
+            ? containingClass.ContainingNamespace.GetMetadataNamespaceName() + "." + containingClass.Name
+            : null;
+
     private static string RenderMethodSignature(MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
     {
         using var sigWriter = new SourceWriter();
@@ -131,56 +144,70 @@ public class CudaImportGenerator : IIncrementalGenerator
         return sigWriter.ToString();
     }
 
-    private static void GenerateCudaImportForClass(SourceProductionContext context, CudaImportClassModel classGroup)
+    private static void GenerateCudaImportForClass(SourceProductionContext context,
+        (CudaImportClassModel Class, EquatableArray<YamlModuleClass> YamlModuleClasses) input)
     {
+        var (classGroup, yamlModuleClasses) = input;
         using var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
         EmitNamespace(writer, classGroup.NamespaceName);
-        WriteTypeDeclaration(writer, classGroup, 0);
+        WriteTypeDeclaration(writer, classGroup, yamlModuleClasses, 0);
         context.AddSource(classGroup.HintName, writer.ToString());
     }
 
     // <declaration> { <the next declaration, or the members of the class> }
-    private static void WriteTypeDeclaration(SourceWriter writer, CudaImportClassModel classGroup, int depth)
+    private static void WriteTypeDeclaration(SourceWriter writer, CudaImportClassModel classGroup,
+        EquatableArray<YamlModuleClass> yamlModuleClasses, int depth)
     {
         writer.AppendLine(classGroup.TypeDeclarations[depth]);
         using (writer.Scope())
         {
             if (depth + 1 < classGroup.TypeDeclarations.Length)
             {
-                WriteTypeDeclaration(writer, classGroup, depth + 1);
+                WriteTypeDeclaration(writer, classGroup, yamlModuleClasses, depth + 1);
             }
             else
             {
-                WriteMembers(writer, classGroup.Methods);
+                WriteMembers(writer, classGroup, yamlModuleClasses);
             }
         }
     }
 
-    // One field per module, numbered in the order the methods first name it, then the methods
-    private static void WriteMembers(SourceWriter writer, EquatableArray<CudaImportMethodModel> methods)
+    // One field per module and class (named by the module, ModuleKernelLaunchEmitter.GetModuleFieldName), unless a
+    // YAML binding of the class declares it, then the methods
+    private static void WriteMembers(SourceWriter writer, CudaImportClassModel classGroup,
+        EquatableArray<YamlModuleClass> yamlModuleClasses)
     {
-        var moduleFields = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var method in methods)
+        var modules = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var method in classGroup.Methods)
         {
-            if (!moduleFields.ContainsKey(method.ModuleName))
+            if (modules.Add(method.ModuleName) &&
+                !IsDeclaredByYaml(yamlModuleClasses, classGroup.TopLevelTypeName, method.ModuleName))
             {
-                var field = ModuleKernelLaunchEmitter.GetModuleFieldName(moduleFields.Count);
-                moduleFields.Add(method.ModuleName, field);
-                ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, field, method.ModuleName);
+                ModuleKernelLaunchEmitter.EmitModuleCacheField(writer,
+                    ModuleKernelLaunchEmitter.GetModuleFieldName(method.ModuleName), method.ModuleName);
             }
         }
 
-        for (var i = 0; i < methods.Length; i++)
+        for (var i = 0; i < classGroup.Methods.Length; i++)
         {
-            EmitMethod(writer, methods[i], moduleFields[methods[i].ModuleName], i);
+            EmitMethod(writer, classGroup.Methods[i], i);
         }
     }
+
+    // Whether a YAML module binding declares the field of <moduleName> in the class <typeName>
+    private static bool IsDeclaredByYaml(EquatableArray<YamlModuleClass> yamlModuleClasses, string? typeName,
+        string moduleName) =>
+        typeName is not null &&
+        yamlModuleClasses
+            .AsStackEnumerable()
+            .Any(new YamlModuleClass(typeName, moduleName), static (c, key) => c == key);
 
     // A method whose parameters the launcher cannot pass gets a body that throws the GSH0110 message, so the partial
     // method stays implemented and the build shows the diagnostic instead of CS8795
-    private static void EmitMethod(SourceWriter writer, CudaImportMethodModel method, string moduleField, int index)
+    private static void EmitMethod(SourceWriter writer, CudaImportMethodModel method, int index)
     {
+        var moduleField = ModuleKernelLaunchEmitter.GetModuleFieldName(method.ModuleName);
         var plan = method.Plan;
         var contextTypeName = method.PackContext && plan.CanLaunch
             ? ModuleKernelLaunchEmitter.GetNativeContextTypeName(index)
