@@ -98,6 +98,58 @@ internal static class GpuCodeConstraints
     }
 
     /// <summary>
+    /// Why device code cannot call the user-defined operator <paramref name="method"/> (GSH0060): the operator name and
+    /// the name of the type that declares it, or <see langword="null"/> when the operator has a device definition.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] A closed list, as for calls (<c>CallTargetClassifier</c>): the transpiler writes an operator expression as
+    /// the C++ operator, which exists only when the dialect's C++ type defines it, so the namespace of the type proves
+    /// nothing (#512). Two operators have a definition: a <c>[GpuOperatorMacro]</c> one, which the transpiler expands
+    /// to a call of its target where <see cref="OperatorMacroPosition"/> allows it, and one that a row of the dialect's
+    /// YAML names, which declares that the dialect's C++ type defines the C++ operator (no row does today). A
+    /// <c>[CudaIntrinsic]</c> or intrinsic pattern also maps a method, but the operator expression would not call it.
+    /// </remarks>
+    public static (string Operator, string Type)? GetOperatorProblem(IMethodSymbol method, ITranspilerDialect dialect)
+    {
+        if (method.HasAttribute(KnownAttributes.GpuOperatorMacro) || IsDialectOperator(method, dialect))
+        {
+            return null;
+        }
+
+        return (method.Name, method.ContainingType?.Name ?? string.Empty);
+    }
+
+    /// <summary>
+    /// The user-defined operator that <paramref name="node"/> (a binary, unary, increment or decrement expression or a
+    /// compound assignment, of the model's tree or of a lowered tree mapped to it) calls where the transpiler writes it
+    /// as an operator, with the user's expression that calls it; <see langword="null"/> for a built-in operator and for
+    /// a comparison with <c>null</c> written as a null test (<see cref="NullRepresentation.GetNullTestOperand"/>).
+    /// </summary>
+    /// <remarks>
+    /// [WHY] A node of a lowered tree is mapped back to the user's source by span, which can name a node of another
+    /// kind; only an operation of the node's own kind is its operator.
+    /// </remarks>
+    public static (IMethodSymbol Method, ExpressionSyntax Written)? GetUserDefinedOperator(ExpressionSyntax node,
+        SemanticModel model)
+    {
+        var operation = model.GetSafeOperation(node);
+        if (operation?.Syntax is not ExpressionSyntax written ||
+            written.RawKind != node.RawKind ||
+            operation.GetUserDefinedOperator() is not { } method ||
+            (node is BinaryExpressionSyntax binary && NullRepresentation.GetNullTestOperand(binary, model) != null))
+        {
+            return null;
+        }
+
+        return (method, written);
+    }
+
+    private static bool IsDialectOperator(IMethodSymbol method, ITranspilerDialect dialect) =>
+        !method.HasAttribute(KnownAttributes.CudaIntrinsic) &&
+        method.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) != true &&
+        dialect.TryMapIntrinsic(method, out _);
+
+    /// <summary>
     /// The GSH0003 text for a call of a <c>[GpuKernel]</c> method from device code: a kernel is launched by the host
     /// through its launcher, and C++ has no call of it from another kernel or a device function.
     /// </summary>

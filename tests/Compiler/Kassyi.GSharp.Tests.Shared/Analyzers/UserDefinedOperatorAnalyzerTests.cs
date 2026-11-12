@@ -26,6 +26,7 @@ public class UserDefinedOperatorAnalyzerTests : TranspilerTestBase
             ("CompoundKernel", SyntaxKind.PlusEqualsToken, SyntaxKind.AddAssignmentExpression),
             ("UnaryKernel", SyntaxKind.MinusToken, SyntaxKind.UnaryMinusExpression),
             ("IncrementKernel", SyntaxKind.PlusPlusToken, SyntaxKind.PostIncrementExpression),
+            ("SystemNumericsVectorKernel", SyntaxKind.PlusToken, SyntaxKind.AddExpression),
             ("AddInDevice", SyntaxKind.PlusToken, SyntaxKind.AddExpression)
         };
 
