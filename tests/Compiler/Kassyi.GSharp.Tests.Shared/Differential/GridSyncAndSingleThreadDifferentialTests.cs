@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public class GridSyncAndSingleThreadDifferentialTests
 {
-    private static readonly DifferentialCase s_cooperativeMultiPhaseReduceNormalize =
+    internal static readonly DifferentialCase s_cooperativeMultiPhaseReduceNormalize =
         new($"{nameof(GridSyncAndSingleThreadDifferentialKernels)}.{nameof(GridSyncAndSingleThreadDifferentialKernels.CooperativeMultiPhaseReduceNormalizeKernel)}")
         {
             Shapes =
@@ -101,7 +101,7 @@ public class GridSyncAndSingleThreadDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_cooperativePingPongStencilAndXorSwap =
+    internal static readonly DifferentialCase s_cooperativePingPongStencilAndXorSwap =
         new($"{nameof(GridSyncAndSingleThreadDifferentialKernels)}.{nameof(GridSyncAndSingleThreadDifferentialKernels.CooperativePingPongStencilAndXorSwapKernel)}")
         {
             Shapes =
@@ -163,7 +163,7 @@ public class GridSyncAndSingleThreadDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_cooperativeSyncGridBodyControlFlowAndDeviceFn =
+    internal static readonly DifferentialCase s_cooperativeSyncGridBodyControlFlowAndDeviceFn =
         new($"{nameof(GridSyncAndSingleThreadDifferentialKernels)}.{nameof(GridSyncAndSingleThreadDifferentialKernels.CooperativeSyncGridBodyControlFlowAndDeviceFnKernel)}")
         {
             Shapes =
@@ -248,7 +248,7 @@ public class GridSyncAndSingleThreadDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_singleThreadMultiDimAndReturn =
+    internal static readonly DifferentialCase s_singleThreadMultiDimAndReturn =
         new($"{nameof(GridSyncAndSingleThreadDifferentialKernels)}.{nameof(GridSyncAndSingleThreadDifferentialKernels.SingleThreadMultiDimAndReturnKernel)}")
         {
             Shapes =
@@ -299,7 +299,7 @@ public class GridSyncAndSingleThreadDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_singleThreadCooperativeBarrier =
+    internal static readonly DifferentialCase s_singleThreadCooperativeBarrier =
         new($"{nameof(GridSyncAndSingleThreadDifferentialKernels)}.{nameof(GridSyncAndSingleThreadDifferentialKernels.SingleThreadCooperativeBarrierKernel)}")
         {
             Shapes =

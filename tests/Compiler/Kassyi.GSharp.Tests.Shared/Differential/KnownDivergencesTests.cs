@@ -1,11 +1,9 @@
 #nullable enable
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using Xunit;
@@ -19,7 +17,6 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public class KnownDivergencesTests
 {
-    private const string DifferentialNamespace = "Kassyi.GSharp.Tests.Shared.Differential";
     private const string TestCaseFolder = "KnownDivergences/";
 
     // ---- The registered entries ----
@@ -38,7 +35,7 @@ public class KnownDivergencesTests
             {
                 problems.Add(
                     $"case {group.Key} (#{group.First().Issue}) is not the name of " +
-                    "a static readonly DifferentialCase field"
+                    "a DifferentialCase held by a static field or property"
                 );
                 continue;
             }
@@ -140,7 +137,7 @@ public class KnownDivergencesTests
                 );
             }
 
-            if (WithoutTemplatePrefix(title) != WithoutTemplatePrefix(issue.Title))
+            if (!WithoutTemplatePrefix(title).Equals(WithoutTemplatePrefix(issue.Title), StringComparison.Ordinal))
             {
                 problems.Add(
                     $"#{issue.Number} (line {issue.Line}) is titled \"{title}\" on GitHub, not \"{issue.Title}\""
@@ -156,10 +153,10 @@ public class KnownDivergencesTests
 
     // The issue templates put the kind in front of the title ("[Bug]: ", "[Cleanup]: "), and issues get that prefix
     // when they are moved onto a template; the recorded title is the part after it.
-    private static string WithoutTemplatePrefix(string title)
+    private static ReadOnlySpan<char> WithoutTemplatePrefix(string title)
     {
         int end = title.IndexOf("]: ", StringComparison.Ordinal);
-        return title.StartsWith("[", StringComparison.Ordinal) && end > 0 ? title.Substring(end + 3) : title;
+        return title.StartsWith('[') && end > 0 ? title.AsSpan(end + 3) : title;
     }
 
     // ---- The reader ----
@@ -229,53 +226,11 @@ public class KnownDivergencesTests
 
     // ---- Helpers ----
 
-    // Every DifferentialCase held by a static field of a type of the differential tests, by case name
-    private static Dictionary<string, List<DifferentialCase>> CollectCases()
-    {
-        Type?[] types;
-        try
-        {
-            types = typeof(KnownDivergencesTests).Assembly.GetTypes();
-        }
-        catch (ReflectionTypeLoadException ex)
-        {
-            // The MSBuild task tests reference MSBuild assemblies that load only through MSBuildLocator; the types of
-            // the differential tests do not depend on them and are among the loaded ones
-            types = ex.Types;
-        }
-
-        // Nested types are skipped by their metadata flags before Namespace is read: Namespace and IsNested load the
-        // declaring type, which may be one of the MSBuild-dependent types above. The cases are fields of top-level
-        // test classes.
-        return types
-            .OfType<Type>()
-            .Where(static t => IsTopLevel(t) && t.Namespace == DifferentialNamespace && !t.ContainsGenericParameters)
-            .SelectMany(static t => t.GetFields(
-                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly
-            ))
-            .SelectMany(CasesIn)
-            .GroupBy(static c => c.Name, StringComparer.Ordinal)
+    // Every DifferentialCase held by a static field or property of the test assembly, by case name
+    private static Dictionary<string, List<DifferentialCase>> CollectCases() =>
+        DifferentialCaseRegistry.All
+            .GroupBy(static entry => entry.Case.Name, static entry => entry.Case, StringComparer.Ordinal)
             .ToDictionary(static g => g.Key, static g => g.ToList(), StringComparer.Ordinal);
-    }
-
-    private static bool IsTopLevel(Type type) =>
-        (type.Attributes & TypeAttributes.VisibilityMask) is TypeAttributes.Public or TypeAttributes.NotPublic;
-
-    private static IEnumerable<DifferentialCase> CasesIn(FieldInfo field)
-    {
-        if (field.FieldType == typeof(DifferentialCase))
-        {
-            return field.GetValue(null) is DifferentialCase single ? [single] : [];
-        }
-
-        if (typeof(IEnumerable).IsAssignableFrom(field.FieldType) && field.FieldType != typeof(string) &&
-            field.GetValue(null) is IEnumerable values)
-        {
-            return values.OfType<DifferentialCase>();
-        }
-
-        return [];
-    }
 
     // The column names of the buffers the cases build, for every seed and launch shape they run
     private static HashSet<string> ColumnsOf(List<DifferentialCase> definitions) =>
@@ -322,7 +277,7 @@ public class KnownDivergencesTests
         // An issue number that does not exist makes gh exit with 1 but still print the data of the others
         JsonElement repository = default;
         bool hasData = false;
-        if (result.Stdout.TrimStart().StartsWith('{'))
+        if (result.Stdout.AsSpan().TrimStart().StartsWith('{'))
         {
             using var document = JsonDocument.Parse(result.Stdout);
             if (document.RootElement.TryGetProperty("data", out var data) &&
@@ -338,7 +293,7 @@ public class KnownDivergencesTests
         return hasData
             ? repository
             : throw GitHubUnavailable(
-                $"gh api graphql gave no data (exit code {result.ExitCode}): {result.Stderr.Trim()}"
+                $"gh api graphql gave no data (exit code {result.ExitCode}): {result.Stderr.AsSpan().Trim()}"
             );
     }
 

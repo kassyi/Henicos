@@ -18,7 +18,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.GlobalStateSequential)]
 public sealed class MarshalingNullAndEmptyDifferentialTests
 {
-    private static readonly DifferentialCase s_nonNullableArrayNull = new(
+    internal static readonly DifferentialCase s_nonNullableArrayNull = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.NonNullableArrayKernel), "Null"))
     {
         Shape = LaunchShapes.SingleThread(),
@@ -40,7 +40,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_nonNullableArrayEmpty = new(
+    internal static readonly DifferentialCase s_nonNullableArrayEmpty = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.NonNullableArrayKernel), "Empty"))
     {
         Shape = LaunchShapes.SingleThread(),
@@ -142,11 +142,11 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
         };
     }
 
-    private static readonly DifferentialCase s_nullableTopLevelBothNull =
+    internal static readonly DifferentialCase s_nullableTopLevelBothNull =
         CreateNullableTopLevelCase("both_null", null, null);
-    private static readonly DifferentialCase s_nullableTopLevelBothEmpty =
+    internal static readonly DifferentialCase s_nullableTopLevelBothEmpty =
         CreateNullableTopLevelCase("both_empty", Array.Empty<int>(), Array.Empty<DiffDeepBag>());
-    private static readonly DifferentialCase s_nullableTopLevelPopulated =
+    internal static readonly DifferentialCase s_nullableTopLevelPopulated =
         CreateNullableTopLevelCase("populated", [10, 20], [new DiffDeepBag { Data = [30, 40], Tag = 5 }]);
 
     [SkippableFact]
@@ -226,11 +226,11 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
         };
     }
 
-    private static readonly DifferentialCase s_structFieldWarmupPopulated =
+    internal static readonly DifferentialCase s_structFieldWarmupPopulated =
         CreateStructFieldNullOrEmptySafeCase("warmup_populated", [10, 20, 30], [40, 50]);
-    private static readonly DifferentialCase s_structFieldNullVsEmpty =
+    internal static readonly DifferentialCase s_structFieldNullVsEmpty =
         CreateStructFieldNullOrEmptySafeCase("null_vs_empty", null, Array.Empty<int>());
-    private static readonly DifferentialCase s_structFieldEmptyVsNull =
+    internal static readonly DifferentialCase s_structFieldEmptyVsNull =
         CreateStructFieldNullOrEmptySafeCase("empty_vs_null", Array.Empty<int>(), null);
 
     [SkippableFact]
@@ -249,7 +249,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
         DifferentialRunner.Run(s_structFieldEmptyVsNull);
 
     // --- Struct field null array dereference throws NullReferenceException (#706) ---
-    private static readonly DifferentialCase s_structFieldNullDereference = new(
+    internal static readonly DifferentialCase s_structFieldNullDereference = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.StructFieldNullDereferenceKernel)))
     {
         Shape = LaunchShapes.SingleThread(),

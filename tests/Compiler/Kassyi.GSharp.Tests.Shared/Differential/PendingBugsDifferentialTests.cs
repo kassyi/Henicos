@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class PendingBugsDifferentialTests
 {
-    private static readonly DifferentialCase s_selectTakeZeroSideEffect =
+    internal static readonly DifferentialCase s_selectTakeZeroSideEffect =
         new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.SelectTakeZeroSideEffectKernel)}")
         {
             Shape = LaunchShape.ForRows(16, blockX: 8),
@@ -33,7 +33,7 @@ public class PendingBugsDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_forUnrollOverflowBound =
+    internal static readonly DifferentialCase s_forUnrollOverflowBound =
         new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.ForUnrollOverflowBoundKernel)}")
         {
             Shape = LaunchShape.ForRows(64, blockX: 32),
@@ -59,7 +59,7 @@ public class PendingBugsDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_gridStrideLoopUniformWarpShuffle =
+    internal static readonly DifferentialCase s_gridStrideLoopUniformWarpShuffle =
         new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.GridStrideLoopUniformWarpShuffleKernel)}")
         {
             Shape = LaunchShape.ForRows(128, blockX: 64),
@@ -91,7 +91,7 @@ public class PendingBugsDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_zeroSharedMemBytes =
+    internal static readonly DifferentialCase s_zeroSharedMemBytes =
         new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryZeroBytesKernel)}")
         {
             Shape = LaunchShape.ForRows(1, blockX: 1),
@@ -109,7 +109,7 @@ public class PendingBugsDifferentialTests
                 ExceptionPolicy.Expect<ArgumentOutOfRangeException>(DiffPath.Managed | DiffPath.Native),
         };
 
-    private static readonly DifferentialCase s_growthAfterLaterDecl =
+    internal static readonly DifferentialCase s_growthAfterLaterDecl =
         new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryGrowthAfterLaterDeclKernel)}")
         {
             Shape = LaunchShape.ForRows(1, blockX: 1),
@@ -128,7 +128,7 @@ public class PendingBugsDifferentialTests
                 ExceptionPolicy.Expect<InvalidOperationException>(DiffPath.Managed | DiffPath.Native),
         };
 
-    private static readonly DifferentialCase s_negativeCount =
+    internal static readonly DifferentialCase s_negativeCount =
         new($"{nameof(PendingBugsDifferentialKernels)}.{nameof(PendingBugsDifferentialKernels.HelperDynamicSharedMemoryNegativeCountKernel)}")
         {
             Shape = LaunchShape.ForRows(1, blockX: 1),

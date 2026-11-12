@@ -21,7 +21,7 @@ public sealed class PointerLaunchDifferentialTests
     private const int LongLength = 8;
     private const int ShortLength = 5;
 
-    private static readonly DifferentialCase s_twoLengths = new(
+    internal static readonly DifferentialCase s_twoLengths = new(
         $"{nameof(PointerLaunchDifferentialKernels)}.{nameof(PointerLaunchDifferentialKernels.TwoLengthsKernel)}")
     {
         Shape = LaunchShapes.Linear(LongLength, blockX: 32),
@@ -78,7 +78,7 @@ public sealed class PointerLaunchDifferentialTests
     [Scenario(TestScenario.HappyPath)]
     public void LaunchPtr_MultipleArrays_EachArraySeesItsOwnLength() => DifferentialRunner.Run(s_twoLengths);
 
-    private static readonly DifferentialCase s_optionalLength = new(
+    internal static readonly DifferentialCase s_optionalLength = new(
         $"{nameof(PointerLaunchDifferentialKernels)}.{nameof(PointerLaunchDifferentialKernels.OptionalLengthKernel)}")
     {
         Shape = LaunchShapes.SingleThread(),

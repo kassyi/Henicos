@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public class BarrierAndWarpDifferentialTests
 {
-    private static readonly DifferentialCase s_sharedMemoryBlockReductionAndScan =
+    internal static readonly DifferentialCase s_sharedMemoryBlockReductionAndScan =
         new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SharedMemoryBlockReductionAndScanKernel)}")
         {
             Shape = LaunchShape.ForRows(128, blockX: 64),
@@ -76,7 +76,7 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_warpShuffleFullWidth =
+    internal static readonly DifferentialCase s_warpShuffleFullWidth =
         new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.WarpShuffleFullWidthKernel)}")
         {
             Shape = LaunchShape.ForRows(128, blockX: 64),
@@ -135,7 +135,7 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_warpShuffleSubWarpWidths =
+    internal static readonly DifferentialCase s_warpShuffleSubWarpWidths =
         new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.WarpShuffleSubWarpWidthsKernel)}")
         {
             Shape = LaunchShape.ForRows(64, blockX: 64),
@@ -199,7 +199,7 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_hybridWarpAndSharedMemoryBlockReduce =
+    internal static readonly DifferentialCase s_hybridWarpAndSharedMemoryBlockReduce =
         new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.HybridWarpAndSharedMemoryBlockReduceKernel)}")
         {
             Shape = LaunchShape.ForRows(128, blockX: 64),
@@ -269,7 +269,7 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_subWarpConditionalShuffle =
+    internal static readonly DifferentialCase s_subWarpConditionalShuffle =
         new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}")
         {
             Shape = LaunchShape.ForRows(32, blockX: 32),
@@ -311,7 +311,7 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_genericStructStaticSharedMemory =
+    internal static readonly DifferentialCase s_genericStructStaticSharedMemory =
         new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}")
         {
             Shape = LaunchShape.ForRows(32, blockX: 32),
@@ -354,7 +354,7 @@ public class BarrierAndWarpDifferentialTests
     private const int RefTernaryRows = 64;
 
     // Fixed to an exact multiple of RefTernaryRows because early `if (t >= n) return;` precedes `Gpu.SyncThreads()`.
-    private static readonly DifferentialCase s_refTernaryParameterWriteAcrossBarrier = new(
+    internal static readonly DifferentialCase s_refTernaryParameterWriteAcrossBarrier = new(
         $"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.RefTernaryParameterWriteAcrossBarrierReproKernel)}")
     {
         Shape = LaunchShape.ForRows(RefTernaryRows, blockX: 32),
@@ -431,7 +431,7 @@ public class BarrierAndWarpDifferentialTests
     public void StaticSharedMemory_GenericStruct_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_genericStructStaticSharedMemory);
 
-    private static readonly DifferentialCase s_subWarpUpperHalfConditionalShuffle =
+    internal static readonly DifferentialCase s_subWarpUpperHalfConditionalShuffle =
         new("M1DiffWarpExtraKernels.SubWarpUpperHalfConditionalShuffleKernel")
         {
             Shape = LaunchShape.ForRows(32, blockX: 32),
@@ -480,7 +480,7 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_genericPairStructStaticSharedMemory =
+    internal static readonly DifferentialCase s_genericPairStructStaticSharedMemory =
         new("M1DiffWarpExtraKernels.GenericPairStructStaticSharedMemoryKernel")
         {
             Shape = LaunchShape.ForRows(32, blockX: 32),
@@ -521,7 +521,7 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_warpMatchAnyAndAllSync =
+    internal static readonly DifferentialCase s_warpMatchAnyAndAllSync =
         new("M1DiffWarpExtraKernels.WarpMatchAnyAndAllSyncKernel")
         {
             Shape = LaunchShape.ForRows(32, blockX: 32),
@@ -607,7 +607,7 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_genericStructNestedCalleeSharedMemory =
+    internal static readonly DifferentialCase s_genericStructNestedCalleeSharedMemory =
         new("M1DiffWarpExtraKernels.GenericStructNestedCalleeSharedMemoryKernel")
         {
             Shape = LaunchShape.ForRows(32, blockX: 32),
@@ -632,7 +632,7 @@ public class BarrierAndWarpDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_genericStructNestedInnerSharedMemory =
+    internal static readonly DifferentialCase s_genericStructNestedInnerSharedMemory =
         new("M1DiffWarpExtraKernels.GenericStructNestedInnerSharedMemoryKernel")
         {
             Shape = LaunchShape.ForRows(32, blockX: 32),

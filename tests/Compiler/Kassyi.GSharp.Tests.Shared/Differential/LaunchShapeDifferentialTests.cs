@@ -22,7 +22,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     // -------------------------------------------------------------------------
     // 3D Index Linearization, Bijection & Signed Arithmetic
     // -------------------------------------------------------------------------
-    private static readonly DifferentialCase s_threeDimensionalIndexAndSignedness =
+    internal static readonly DifferentialCase s_threeDimensionalIndexAndSignedness =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.ThreeDimensionalIndexAndSignednessKernel)}")
         {
             Shapes = LaunchShapes.FullMetamorphicMatrix(150),
@@ -82,7 +82,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     // -------------------------------------------------------------------------
     // Gpu.GridStrideLoop 3D & Metamorphic Shape Invariance
     // -------------------------------------------------------------------------
-    private static readonly DifferentialCase s_gridStrideLoopMetamorphic =
+    internal static readonly DifferentialCase s_gridStrideLoopMetamorphic =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.GridStrideLoopMetamorphicKernel)}")
         {
             Shapes = LaunchShapes.FullMetamorphicMatrix(64),
@@ -134,7 +134,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     // -------------------------------------------------------------------------
     // Gpu.SingleThread 3D Origin & Early-Return Semantics (#693)
     // -------------------------------------------------------------------------
-    private static readonly DifferentialCase s_singleThreadMultiDimAndEarlyReturn =
+    internal static readonly DifferentialCase s_singleThreadMultiDimAndEarlyReturn =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.SingleThreadMultiDimAndEarlyReturnKernel)}")
         {
             Shapes =
@@ -179,7 +179,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     // -------------------------------------------------------------------------
     // Cross-Axis 2D/3D Warp Shuffle & Partial-Warp ActiveMask
     // -------------------------------------------------------------------------
-    private static readonly DifferentialCase s_crossAxisWarpShuffleAndActiveMask =
+    internal static readonly DifferentialCase s_crossAxisWarpShuffleAndActiveMask =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.CrossAxisWarpShuffleAndActiveMaskKernel)}")
         {
             Shapes =
@@ -284,7 +284,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     // -------------------------------------------------------------------------
     // 2D/3D SharedMemory & Gpu.SyncThreads State-Machine Lowering
     // -------------------------------------------------------------------------
-    private static readonly DifferentialCase s_multiDimSharedMemoryAndBarrier =
+    internal static readonly DifferentialCase s_multiDimSharedMemoryAndBarrier =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.MultiDimSharedMemoryAndBarrierKernel)}")
         {
             // Shapes are capped at 128 threads per block to fit staticBuf (size 128).
@@ -358,7 +358,7 @@ public sealed class LaunchShapeDifferentialTests : TranspilerTestBase
     // -------------------------------------------------------------------------
     // Value-Returning Kernel (AutoResult) across 2D/3D Shapes
     // -------------------------------------------------------------------------
-    private static readonly DifferentialCase s_autoResultThreeDimensional =
+    internal static readonly DifferentialCase s_autoResultThreeDimensional =
         new($"{nameof(LaunchShapeDifferentialKernels)}.{nameof(LaunchShapeDifferentialKernels.AutoResultThreeDimensionalKernel)}")
         {
             Shapes =

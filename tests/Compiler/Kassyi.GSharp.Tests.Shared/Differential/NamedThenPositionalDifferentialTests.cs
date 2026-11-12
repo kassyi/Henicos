@@ -14,7 +14,7 @@ public class NamedThenPositionalDifferentialTests
 {
     private const int Rows = 128;
 
-    private static readonly DifferentialCase s_namedThenPositional = new(
+    internal static readonly DifferentialCase s_namedThenPositional = new(
         nameof(NamedThenPositionalDifferentialKernels) + "." +
         nameof(NamedThenPositionalDifferentialKernels.NamedThenPositionalKernel))
     {
@@ -40,7 +40,7 @@ public class NamedThenPositionalDifferentialTests
     };
 
     // The oracle cannot run barriers; the reference is SubAcrossBarrier(x, y)
-    private static readonly DifferentialCase s_suspendingCall = new(
+    internal static readonly DifferentialCase s_suspendingCall = new(
         nameof(NamedThenPositionalDifferentialKernels) + "." +
         nameof(NamedThenPositionalDifferentialKernels.NamedThenPositionalSuspendingCallKernel))
     {

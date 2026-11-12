@@ -34,7 +34,7 @@ public sealed class ExpressionEmissionDifferentialTests
         0x1_0000, 123_456_789
     ];
 
-    private static readonly DifferentialCase s_switchArmConversion = new(
+    internal static readonly DifferentialCase s_switchArmConversion = new(
         $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.SwitchArmConversionKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -49,7 +49,7 @@ public sealed class ExpressionEmissionDifferentialTests
             b.Get<int>("a"), b.Get<long>("dst"), b.Get<float>("fdst"), Rows),
     };
 
-    private static readonly DifferentialCase s_floatingSwitch = new(
+    internal static readonly DifferentialCase s_floatingSwitch = new(
         $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.FloatingSwitchKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -65,7 +65,7 @@ public sealed class ExpressionEmissionDifferentialTests
             b.Get<double>("d"), b.Get<float>("f"), b.Get<int>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_nullableSwitch = new(
+    internal static readonly DifferentialCase s_nullableSwitch = new(
         $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.NullableSwitchKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -81,7 +81,7 @@ public sealed class ExpressionEmissionDifferentialTests
             b.Get<int>("a"), b.Get<double>("d"), b.Get<int>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_nullForgivingAndArrayCoalesce = new(
+    internal static readonly DifferentialCase s_nullForgivingAndArrayCoalesce = new(
         $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.NullForgivingAndArrayCoalesceKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -96,7 +96,7 @@ public sealed class ExpressionEmissionDifferentialTests
             b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_implicitArgumentConversion = new(
+    internal static readonly DifferentialCase s_implicitArgumentConversion = new(
         $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.ImplicitArgumentConversionKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -112,7 +112,7 @@ public sealed class ExpressionEmissionDifferentialTests
             b.Get<int>("a"), b.Get<long>("la"), b.Get<float>("dst"), b.Get<double>("ddst"), Rows),
     };
 
-    private static readonly DifferentialCase s_nestedMemberInitializer = new(
+    internal static readonly DifferentialCase s_nestedMemberInitializer = new(
         $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.NestedMemberInitializerKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
