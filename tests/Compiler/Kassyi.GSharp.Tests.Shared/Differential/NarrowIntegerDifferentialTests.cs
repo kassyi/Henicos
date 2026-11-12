@@ -88,7 +88,7 @@ public class NarrowIntegerDifferentialTests
         long.MinValue,
     ];
 
-    private static readonly DifferentialCase s_narrowCompoundAndStep = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowCompoundAndStepMatrixKernel)}")
+    internal static readonly DifferentialCase s_narrowCompoundAndStep = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowCompoundAndStepMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) =>
@@ -118,7 +118,7 @@ public class NarrowIntegerDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_narrowEnumAndSignedEnum = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumMatrixKernel)}")
+    internal static readonly DifferentialCase s_narrowEnumAndSignedEnum = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -139,7 +139,7 @@ public class NarrowIntegerDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_mixedSignDivRem = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.MixedSignDivRemMatrixKernel)}")
+    internal static readonly DifferentialCase s_mixedSignDivRem = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.MixedSignDivRemMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) =>
@@ -173,7 +173,7 @@ public class NarrowIntegerDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_bitOpsReturnSign = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.BitOpsReturnSignMatrixKernel)}")
+    internal static readonly DifferentialCase s_bitOpsReturnSign = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.BitOpsReturnSignMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(32),
         Inputs = static (rng, rows) =>
@@ -199,7 +199,7 @@ public class NarrowIntegerDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_targetEvaluationOrder = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.TargetEvaluationOrderMatrixKernel)}")
+    internal static readonly DifferentialCase s_targetEvaluationOrder = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.TargetEvaluationOrderMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(16),
         Inputs = static (rng, rows) => new DiffBuffers()

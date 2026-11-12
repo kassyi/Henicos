@@ -195,7 +195,7 @@ public class MathDifferentialTests
         ("FastMath.Log(logWideX)", OutputPolicy.Ulp(4, "CUDA Programming Guide __logf <= 3 ulp outside [0.5,2.0] + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
     ];
 
-    private static readonly DifferentialCase s_mathOfSingle = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathOfSingleMatrixKernel)}")
+    internal static readonly DifferentialCase s_mathOfSingle = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathOfSingleMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(s_singleRoundBoundaries.Length * 4),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -210,7 +210,7 @@ public class MathDifferentialTests
         Oracle = static (b, _) => MathDifferentialKernels.MathOfSingleMatrixKernel(b.Get<float>("f"), b.Get<double>("r")),
     };
 
-    private static readonly DifferentialCase s_singleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel)}")
+    internal static readonly DifferentialCase s_singleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(s_singleRoundBoundaries.Length * 4),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -225,7 +225,7 @@ public class MathDifferentialTests
         Oracle = static (b, _) => MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel(b.Get<float>("f"), b.Get<float>("r")),
     };
 
-    private static readonly DifferentialCase s_doubleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel)}")
+    internal static readonly DifferentialCase s_doubleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(s_doubleBoundaries.Length * 4),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -240,7 +240,7 @@ public class MathDifferentialTests
         Oracle = static (b, _) => MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel(b.Get<double>("d"), b.Get<double>("r")),
     };
 
-    private static readonly DifferentialCase s_singleMaxMinClamp = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleMaxMinClampMatrixKernel)}")
+    internal static readonly DifferentialCase s_singleMaxMinClamp = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleMaxMinClampMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(DiffValues.SingleBoundaries.Length * DiffValues.SingleBoundaries.Length),
         Inputs = static (rng, rows) =>
@@ -272,7 +272,7 @@ public class MathDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_doubleMaxMinClamp = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleMaxMinClampMatrixKernel)}")
+    internal static readonly DifferentialCase s_doubleMaxMinClamp = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleMaxMinClampMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(s_doubleBoundaries.Length * s_doubleBoundaries.Length),
         Inputs = static (rng, rows) =>
@@ -304,7 +304,7 @@ public class MathDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_mixedFloatMaxMin = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MixedFloatMaxMinMatrixKernel)}")
+    internal static readonly DifferentialCase s_mixedFloatMaxMin = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MixedFloatMaxMinMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(DiffValues.SingleBoundaries.Length * s_doubleBoundaries.Length),
         Inputs = static (rng, rows) =>
@@ -336,7 +336,7 @@ public class MathDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_int32Math = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.Int32MathMatrixKernel)}")
+    internal static readonly DifferentialCase s_int32Math = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.Int32MathMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(s_intSafeAbsBoundaries.Length * s_intSafeAbsBoundaries.Length),
         Inputs = static (rng, rows) =>
@@ -376,7 +376,7 @@ public class MathDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_mathFIntArgument = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathFIntArgumentMatrixKernel)}")
+    internal static readonly DifferentialCase s_mathFIntArgument = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathFIntArgumentMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(s_intSafeAbsBoundaries.Length * 4),
         Inputs = static (rng, rows) =>
@@ -406,7 +406,7 @@ public class MathDifferentialTests
     };
 
     // Subnormal IEEE 754 0-ulp arithmetic and Sqrt without FTZ
-    private static readonly DifferentialCase s_subnormalIeeeExact = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SubnormalIeeeExactMatrixKernel)}")
+    internal static readonly DifferentialCase s_subnormalIeeeExact = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SubnormalIeeeExactMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(DiffValues.SubnormalSingleBoundaries.Length * DiffValues.SubnormalSingleBoundaries.Length, blockX: 64),
         Inputs = static (rng, rows) =>
@@ -442,7 +442,7 @@ public class MathDifferentialTests
     };
 
     // Transcendental and Pow special values / fixed points (Bitwise)
-    private static readonly DifferentialCase s_transcendentalSpecialValues = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.TranscendentalSpecialValuesKernel)}")
+    internal static readonly DifferentialCase s_transcendentalSpecialValues = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.TranscendentalSpecialValuesKernel)}")
     {
         Shape = LaunchShape.ForRows(64, blockX: 32),
         Inputs = static (rng, rows) =>
@@ -512,7 +512,7 @@ public class MathDifferentialTests
     };
 
     // System.Numerics.BitOperations all 18 mapped overloads + shift count masking + named arguments
-    private static readonly DifferentialCase s_bitOperations = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.BitOperationsMatrixKernel)}")
+    internal static readonly DifferentialCase s_bitOperations = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.BitOperationsMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(DiffValues.BitOperationUInt32Boundaries.Length * DiffValues.ShiftCounts.Length, blockX: 64),
         Inputs = static (rng, rows) =>
@@ -576,7 +576,7 @@ public class MathDifferentialTests
     };
 
     // IEEE 754 unordered comparisons and large-exponent Round ties
-    private static readonly DifferentialCase s_floatComparisonAndLargeTie = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.FloatComparisonAndLargeTieMatrixKernel)}")
+    internal static readonly DifferentialCase s_floatComparisonAndLargeTie = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.FloatComparisonAndLargeTieMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(s_singleRoundBoundaries.Length * 8, blockX: 64),
         Inputs = static (rng, rows) =>
@@ -634,7 +634,7 @@ public class MathDifferentialTests
     };
 
     // Mul-Add exact inputs (Bitwise) and FMA contraction witness (Verify)
-    private static readonly DifferentialCase s_mulAddExactAndContraction = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MulAddExactAndContractionKernel)}")
+    internal static readonly DifferentialCase s_mulAddExactAndContraction = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MulAddExactAndContractionKernel)}")
     {
         Shape = LaunchShape.ForRows(128, blockX: 64),
         Inputs = static (rng, rows) =>
@@ -723,7 +723,7 @@ public class MathDifferentialTests
     };
 
     // MathF single-precision transcendentals (ULP + Verify)
-    private static readonly DifferentialCase s_singleTranscendental = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleTranscendentalMatrixKernel)}")
+    internal static readonly DifferentialCase s_singleTranscendental = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleTranscendentalMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(256, blockX: 64),
         Inputs = static (rng, rows) =>
@@ -805,7 +805,7 @@ public class MathDifferentialTests
     };
 
     // System.Math double-precision transcendentals + float argument widening (#876)
-    private static readonly DifferentialCase s_doubleAndPromotedSingleTranscendental = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleAndPromotedSingleTranscendentalMatrixKernel)}")
+    internal static readonly DifferentialCase s_doubleAndPromotedSingleTranscendental = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleAndPromotedSingleTranscendentalMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(256, blockX: 64),
         Inputs = static (rng, rows) =>
@@ -868,7 +868,7 @@ public class MathDifferentialTests
     };
 
     // FastMath (Sqrt, Abs, Exp, Log)
-    private static readonly DifferentialCase s_fastMath = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.FastMathMatrixKernel)}")
+    internal static readonly DifferentialCase s_fastMath = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.FastMathMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(128, blockX: 64),
         Inputs = static (rng, rows) =>

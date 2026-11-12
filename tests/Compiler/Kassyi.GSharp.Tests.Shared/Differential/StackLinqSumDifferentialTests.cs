@@ -13,7 +13,7 @@ public class StackLinqSumDifferentialTests
 {
     private const int Rows = 4;
 
-    private static readonly DifferentialCase s_floatSum = new("StackLinqSumDifferentialKernels.FloatSumMatrixKernel")
+    internal static readonly DifferentialCase s_floatSum = new("StackLinqSumDifferentialKernels.FloatSumMatrixKernel")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 4),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -28,7 +28,7 @@ public class StackLinqSumDifferentialTests
         Reference = static (b, _) => FillReference(b, (float)System.Linq.Enumerable.Sum(b.Get<float>("data"))),
     };
 
-    private static readonly DifferentialCase s_doubleSum = new("StackLinqSumDifferentialKernels.DoubleSumMatrixKernel")
+    internal static readonly DifferentialCase s_doubleSum = new("StackLinqSumDifferentialKernels.DoubleSumMatrixKernel")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 4),
         Inputs = static (rng, rows) => new DiffBuffers()

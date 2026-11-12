@@ -13,7 +13,7 @@ public class MacroNamedArgumentDifferentialTests
 {
     private const int Rows = 128;
 
-    private static readonly DifferentialCase s_forUnroll = new(
+    internal static readonly DifferentialCase s_forUnroll = new(
         nameof(MacroNamedArgumentDifferentialKernels) + "." +
         nameof(MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsKernel))
     {
@@ -38,7 +38,7 @@ public class MacroNamedArgumentDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_gridStrideLoop = new(
+    internal static readonly DifferentialCase s_gridStrideLoop = new(
         nameof(MacroNamedArgumentDifferentialKernels) + "." +
         nameof(MacroNamedArgumentDifferentialKernels.GridStrideLoopNamedArgumentsKernel))
     {
@@ -72,7 +72,7 @@ public class MacroNamedArgumentDifferentialTests
     };
 
     // The oracle cannot run barriers; the reference is the loop with start 1, count 3 and start 2, count 2
-    private static readonly DifferentialCase s_forUnrollWithBarrier = new(
+    internal static readonly DifferentialCase s_forUnrollWithBarrier = new(
         nameof(MacroNamedArgumentDifferentialKernels) + "." +
         nameof(MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsWithBarrierKernel))
     {

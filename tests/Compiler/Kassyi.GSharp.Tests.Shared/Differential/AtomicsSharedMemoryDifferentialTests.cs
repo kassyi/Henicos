@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.AtomicsDifferential)]
 public class AtomicsSharedMemoryDifferentialTests
 {
-    private static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsInt32 =
+    internal static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsInt32 =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.IntegerSharedMemoryTwoStageAtomicsInt32Kernel)}")
@@ -43,7 +43,7 @@ public class AtomicsSharedMemoryDifferentialTests
             Reference = AtomicsDifferentialTestHelpers.SimulateSharedMemoryTwoStageInt32,
         };
 
-    private static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsUInt32 =
+    internal static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsUInt32 =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.IntegerSharedMemoryTwoStageAtomicsUInt32Kernel)}")
@@ -81,7 +81,7 @@ public class AtomicsSharedMemoryDifferentialTests
             Reference = AtomicsDifferentialTestHelpers.SimulateSharedMemoryTwoStageUInt32,
         };
 
-    private static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsUInt64 =
+    internal static readonly DifferentialCase s_integerSharedMemoryTwoStageAtomicsUInt64 =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.IntegerSharedMemoryTwoStageAtomicsUInt64Kernel)}")

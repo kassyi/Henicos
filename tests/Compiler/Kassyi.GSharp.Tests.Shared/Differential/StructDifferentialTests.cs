@@ -11,7 +11,7 @@ public class StructDifferentialTests
 {
     private const int Rows = 441;
 
-    private static readonly DifferentialCase s_mutationAndCopy = new(
+    internal static readonly DifferentialCase s_mutationAndCopy = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructMutationAndCopySemantics)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -35,7 +35,7 @@ public class StructDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_defaultVsNew = new(
+    internal static readonly DifferentialCase s_defaultVsNew = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructDefaultVsNewAndFieldInitializers)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -59,7 +59,7 @@ public class StructDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_recordWith = new(
+    internal static readonly DifferentialCase s_recordWith = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.RecordStructWithExpressions)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -87,7 +87,7 @@ public class StructDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_autoPropInDefensiveCopy = new(
+    internal static readonly DifferentialCase s_autoPropInDefensiveCopy = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -119,7 +119,7 @@ public class StructDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_userDefinedImplicitConv = new(
+    internal static readonly DifferentialCase s_userDefinedImplicitConv = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -140,7 +140,7 @@ public class StructDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_userDefinedExplicitConv = new(
+    internal static readonly DifferentialCase s_userDefinedExplicitConv = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedExplicitConversion)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -161,7 +161,7 @@ public class StructDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_liftedUserDefinedConv = new(
+    internal static readonly DifferentialCase s_liftedUserDefinedConv = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructLiftedUserDefinedConversion)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -191,7 +191,7 @@ public class StructDifferentialTests
             b.Get<int>("r")),
     };
 
-    private static readonly DifferentialCase s_repro1103Default = new(
+    internal static readonly DifferentialCase s_repro1103Default = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.DefaultOfConvertingStructReproKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -212,7 +212,7 @@ public class StructDifferentialTests
             b.Get<int>("dst")),
     };
 
-    private static readonly DifferentialCase s_constantSizedFixedBuffer = new(
+    internal static readonly DifferentialCase s_constantSizedFixedBuffer = new(
         $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.ConstantSizedFixedBufferKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),

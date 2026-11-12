@@ -17,7 +17,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.GlobalStateSequential)]
 public sealed class MarshalingDirectionAttributesDifferentialTests
 {
-    private static readonly DifferentialCase s_inArrayMutationIsolation = new(
+    internal static readonly DifferentialCase s_inArrayMutationIsolation = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.InArrayMutationIsolationKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
@@ -79,7 +79,7 @@ public sealed class MarshalingDirectionAttributesDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_outArrayFullWrite = new(
+    internal static readonly DifferentialCase s_outArrayFullWrite = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel), "Full"))
     {
         Shape = LaunchShapes.Linear(64, blockX: 32),
@@ -115,7 +115,7 @@ public sealed class MarshalingDirectionAttributesDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_outArrayPartialWrite = new(
+    internal static readonly DifferentialCase s_outArrayPartialWrite = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel), "Partial"))
     {
         Shape = LaunchShapes.Linear(64, blockX: 32),

@@ -27,7 +27,7 @@ public class ConversionDifferentialTests
         '\uFFFF',
     ];
 
-    private static readonly DifferentialCase s_foreachFloatToInt = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel)}")
+    internal static readonly DifferentialCase s_foreachFloatToInt = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -48,7 +48,7 @@ public class ConversionDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_enumCast = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.EnumCastMatrixKernel)}")
+    internal static readonly DifferentialCase s_enumCast = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.EnumCastMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(64),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -72,7 +72,7 @@ public class ConversionDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_intToFloat = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntToFloatConversionMatrixKernel)}")
+    internal static readonly DifferentialCase s_intToFloat = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntToFloatConversionMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(70),
         Inputs = static (rng, rows) =>
@@ -104,7 +104,7 @@ public class ConversionDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_intToDouble = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel)}")
+    internal static readonly DifferentialCase s_intToDouble = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(70),
         Inputs = static (rng, rows) =>
@@ -136,7 +136,7 @@ public class ConversionDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_charScalarArg = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.CharScalarArgKernel)}")
+    internal static readonly DifferentialCase s_charScalarArg = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.CharScalarArgKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(24),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -157,7 +157,7 @@ public class ConversionDifferentialTests
     };
 
     // Direct casts between float/double and all 9 integer types (#724, #890)
-    private static readonly DifferentialCase s_directFloatDoubleCast = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.DirectFloatDoubleCastMatrixKernel)}")
+    internal static readonly DifferentialCase s_directFloatDoubleCast = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.DirectFloatDoubleCastMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(72, blockX: 32),
         Inputs = static (rng, rows) => new DiffBuffers()
@@ -193,7 +193,7 @@ public class ConversionDifferentialTests
         ),
     };
 
-    private static readonly DifferentialCase s_integerCastAndShiftMask = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntegerCastAndShiftMaskMatrixKernel)}")
+    internal static readonly DifferentialCase s_integerCastAndShiftMask = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntegerCastAndShiftMaskMatrixKernel)}")
     {
         Shape = LaunchShape.ForRows(72, blockX: 32),
         Inputs = static (rng, rows) =>

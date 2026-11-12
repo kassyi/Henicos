@@ -43,7 +43,7 @@ public class NarrowStepDifferentialTests
             Oracle = (b, _) => oracle(b),
         };
 
-    private static readonly DifferentialCase s_sbyteStep = CreateStepCase(
+    internal static readonly DifferentialCase s_sbyteStep = CreateStepCase(
         nameof(NarrowStepDifferentialKernels.SByteStepKernel),
         static (b, s) => NarrowStepDifferentialKernels.LaunchSByteStepKernel(
             b.Get<int>("a"),
@@ -54,7 +54,7 @@ public class NarrowStepDifferentialTests
             b.Get<int>("a"),
             b.Get<long>("r")));
 
-    private static readonly DifferentialCase s_byteStep = CreateStepCase(
+    internal static readonly DifferentialCase s_byteStep = CreateStepCase(
         nameof(NarrowStepDifferentialKernels.ByteStepKernel),
         static (b, s) => NarrowStepDifferentialKernels.LaunchByteStepKernel(
             b.Get<int>("a"),
@@ -65,7 +65,7 @@ public class NarrowStepDifferentialTests
             b.Get<int>("a"),
             b.Get<long>("r")));
 
-    private static readonly DifferentialCase s_int16Step = CreateStepCase(
+    internal static readonly DifferentialCase s_int16Step = CreateStepCase(
         nameof(NarrowStepDifferentialKernels.Int16StepKernel),
         static (b, s) => NarrowStepDifferentialKernels.LaunchInt16StepKernel(
             b.Get<int>("a"),
@@ -76,7 +76,7 @@ public class NarrowStepDifferentialTests
             b.Get<int>("a"),
             b.Get<long>("r")));
 
-    private static readonly DifferentialCase s_uint16Step = CreateStepCase(
+    internal static readonly DifferentialCase s_uint16Step = CreateStepCase(
         nameof(NarrowStepDifferentialKernels.UInt16StepKernel),
         static (b, s) => NarrowStepDifferentialKernels.LaunchUInt16StepKernel(
             b.Get<int>("a"),
@@ -87,7 +87,7 @@ public class NarrowStepDifferentialTests
             b.Get<int>("a"),
             b.Get<long>("r")));
 
-    private static readonly DifferentialCase s_charStep = CreateStepCase(
+    internal static readonly DifferentialCase s_charStep = CreateStepCase(
         nameof(NarrowStepDifferentialKernels.CharStepKernel),
         static (b, s) => NarrowStepDifferentialKernels.LaunchCharStepKernel(
             b.Get<int>("a"),

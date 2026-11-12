@@ -37,7 +37,7 @@ public class FloatAtomicAddDifferentialTests
         BitConverter.UInt32BitsToSingle(0xFFC05678u), // negative quiet NaN with payload
     ];
 
-    private static readonly DifferentialCase s_floatAtomicAdd = new("FloatAtomicAddMatrixKernels.FloatAtomicAddMatrixKernel")
+    internal static readonly DifferentialCase s_floatAtomicAdd = new("FloatAtomicAddMatrixKernels.FloatAtomicAddMatrixKernel")
     {
         Shape = LaunchShape.ForRows(s_boundaries.Length * s_boundaries.Length, blockX: FloatAtomicAddMatrixKernels.StaticSharedCount),
         Inputs = static (rng, rows) =>

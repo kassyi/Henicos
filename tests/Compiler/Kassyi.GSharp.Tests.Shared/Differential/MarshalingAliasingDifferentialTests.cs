@@ -30,7 +30,7 @@ public sealed class MarshalingAliasingDifferentialTests
 
     // --- Top-level array aliasing across 4 attribute combinations (#721)
     // + overlapping Span (#857) + aliased ref scalar (#1061) ---
-    private static readonly DifferentialCase s_aliasTwoRwArrays = new(
+    internal static readonly DifferentialCase s_aliasTwoRwArrays = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.AliasTwoRwArraysKernel)))
     {
         Shape = LaunchShapes.Linear(16, blockX: 16),
@@ -63,7 +63,7 @@ public sealed class MarshalingAliasingDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_aliasInAndRwArray = new(
+    internal static readonly DifferentialCase s_aliasInAndRwArray = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.AliasInAndRwArrayKernel)))
     {
         Shape = LaunchShapes.Linear(16, blockX: 16),
@@ -96,7 +96,7 @@ public sealed class MarshalingAliasingDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_aliasOutAndInArray = new(
+    internal static readonly DifferentialCase s_aliasOutAndInArray = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.AliasOutAndInArrayKernel)))
     {
         Shape = LaunchShapes.Linear(16, blockX: 16),
@@ -129,7 +129,7 @@ public sealed class MarshalingAliasingDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_aliasTwoInArrays = new(
+    internal static readonly DifferentialCase s_aliasTwoInArrays = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.AliasTwoInArraysKernel)))
     {
         Shape = LaunchShapes.Linear(16, blockX: 16),
@@ -163,7 +163,7 @@ public sealed class MarshalingAliasingDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_overlappingSpanSlice = new(
+    internal static readonly DifferentialCase s_overlappingSpanSlice = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
@@ -190,7 +190,7 @@ public sealed class MarshalingAliasingDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_aliasedRefScalars = new(
+    internal static readonly DifferentialCase s_aliasedRefScalars = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
@@ -214,7 +214,7 @@ public sealed class MarshalingAliasingDifferentialTests
     };
 
     // --- Deep Struct internal array aliasing (#707) ---
-    private static readonly DifferentialCase s_deepStructInternalArraySharing = new(
+    internal static readonly DifferentialCase s_deepStructInternalArraySharing = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.DeepStructInternalAliasKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
@@ -274,7 +274,7 @@ public sealed class MarshalingAliasingDifferentialTests
     };
 
     // --- Cross-level aliasing between top-level array and Deep Struct field ---
-    private static readonly DifferentialCase s_crossLevelTopAndDeepStruct = new(
+    internal static readonly DifferentialCase s_crossLevelTopAndDeepStruct = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.CrossLevelTopAndDeepStructKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
@@ -323,7 +323,7 @@ public sealed class MarshalingAliasingDifferentialTests
     };
 
     // --- Cross-aliasing between [In] DeepStruct[] element field and writable int[] (#985) ---
-    private static readonly DifferentialCase s_crossAliasInDeepArrayAndRwArray = new(
+    internal static readonly DifferentialCase s_crossAliasInDeepArrayAndRwArray = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)))
     {
         Shape = LaunchShapes.SingleThread(),

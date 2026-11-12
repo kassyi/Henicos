@@ -17,7 +17,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.IntegerTrapAndCheckedDifferential)]
 public class IntegerMinValueOverflowDifferentialTests
 {
-    private static readonly DifferentialCase s_int32MinValueDivide = new(
+    internal static readonly DifferentialCase s_int32MinValueDivide = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -78,7 +78,7 @@ public class IntegerMinValueOverflowDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_int32MinValueRemainder = new(
+    internal static readonly DifferentialCase s_int32MinValueRemainder = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -139,7 +139,7 @@ public class IntegerMinValueOverflowDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_int64MinValueDivide = new(
+    internal static readonly DifferentialCase s_int64MinValueDivide = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -200,7 +200,7 @@ public class IntegerMinValueOverflowDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_int64MinValueRemainder = new(
+    internal static readonly DifferentialCase s_int64MinValueRemainder = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -261,7 +261,7 @@ public class IntegerMinValueOverflowDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_shortMinValueDivide = new(
+    internal static readonly DifferentialCase s_shortMinValueDivide = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.ShortMinValueDivideKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -295,7 +295,7 @@ public class IntegerMinValueOverflowDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_sbyteMinValueDivide = new(
+    internal static readonly DifferentialCase s_sbyteMinValueDivide = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.SByteMinValueDivideKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),

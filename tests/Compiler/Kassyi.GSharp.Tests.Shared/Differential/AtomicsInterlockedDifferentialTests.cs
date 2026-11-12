@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.AtomicsDifferential)]
 public class AtomicsInterlockedDifferentialTests
 {
-    private static readonly DifferentialCase s_interlockedInt32Overloads =
+    internal static readonly DifferentialCase s_interlockedInt32Overloads =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.InterlockedInt32OverloadsKernel)}")
@@ -93,7 +93,7 @@ public class AtomicsInterlockedDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_interlockedUInt32Overloads =
+    internal static readonly DifferentialCase s_interlockedUInt32Overloads =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.InterlockedUInt32OverloadsKernel)}")
@@ -161,7 +161,7 @@ public class AtomicsInterlockedDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_interlockedInt64Overloads =
+    internal static readonly DifferentialCase s_interlockedInt64Overloads =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.InterlockedInt64OverloadsKernel)}")
@@ -236,7 +236,7 @@ public class AtomicsInterlockedDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_interlockedUInt64Overloads =
+    internal static readonly DifferentialCase s_interlockedUInt64Overloads =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.InterlockedUInt64OverloadsKernel)}")
@@ -304,7 +304,7 @@ public class AtomicsInterlockedDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_interlockedReturnExpression =
+    internal static readonly DifferentialCase s_interlockedReturnExpression =
         new(
             $"{nameof(AtomicsDifferentialKernels)}." +
             $"{nameof(AtomicsDifferentialKernels.InterlockedReturnExpressionKernel)}")
