@@ -23,7 +23,7 @@ public class HoistedSymbolConsistencyTests
     [Scenario(TestScenario.SadPath)]
     public void LoweredBodies_AllGpuMethods_MaintainHoistedDeclarationIdentityConsistency()
     {
-        var compilation = MegaCompilationCache.Compilation;
+        var compilation = RoslynTestUtility.SharedCompilation;
         var dialect = new StandardCppDialect();
         var violations = new List<string>();
         var loweredCount = 0;
