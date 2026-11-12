@@ -520,12 +520,6 @@ tree 39:
     i5 disposed
 tree 40:
   Or(GreaterThan(zip-(zip-(Where(i0, Equal(i1, s2=0)), zip-(i3, i4)), Take4(Take4(i5))), zip+(*s8=2(-s7=1(i6)), +s10=1(Take6(i9)))), NotEqual(-s12=1(Take6(i11)), s13=2))
-  i1 0+all
-  s2=0
-  i0 0+all
-  i3 0+6
-  i4 0+6
-  i5 0+4
   ! ArgumentException: Vector lengths must match for Zip operations.
   dispose:
     i0 disposed
@@ -561,8 +555,6 @@ tree 43:
   And(Or(Or(LessThan(-s1=0(i0), zip-(i2, Take2(i3))), LessThanOrEqual(Take6(i4), -s6=1(i5))), NotEqual(-s10=0(Where(i7, LessThanOrEqual(i8, s9=2))), /1(*s12=0(i11)))), Equal(zip+(Where(zip-(i13, i14), GreaterThan(i15, s16=2)), -s19=2(+s18=2(i17))), zip-(Take7(Take6(i20)), -s22=0(Take7(i21)))))
   i0 0+6
   s1=0
-  i2 0+6
-  i3 0+2
   ! ArgumentException: Vector lengths must match for Zip operations.
   dispose:
     i0 disposed

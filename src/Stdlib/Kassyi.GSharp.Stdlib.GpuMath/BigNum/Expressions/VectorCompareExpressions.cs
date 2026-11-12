@@ -7,6 +7,10 @@ internal class VectorCompareScalarExpression(
 {
     private readonly VectorShape _shape = VectorShape.Of(vector);
 
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(vector) || VectorEffects.MayThrow(scalar);
+
+    public bool MayThrow => _inputsMayThrow;
+
     // The flags, allocated at the first evaluation
     private readonly VectorFlags _flags = new();
 
@@ -74,6 +78,11 @@ internal class VectorCompareVectorExpression(
 
     // The capacity of the right input, for the length check before anything is evaluated
     private readonly int _rightCapacity = right.Capacity;
+
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(left) || VectorEffects.MayThrow(right);
+
+    // Inputs of different lengths are rejected
+    public bool MayThrow => _inputsMayThrow || Capacity != _rightCapacity;
 
     // The flags, allocated at the first evaluation
     private readonly VectorFlags _flags = new();

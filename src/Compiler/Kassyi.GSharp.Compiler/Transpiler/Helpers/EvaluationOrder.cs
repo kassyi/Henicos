@@ -260,14 +260,13 @@ internal static class EvaluationOrder
         Span<int> temps)
     {
         var receiverTemp = -1;
-        var hasExtensionReceiver = extensionReceiver != null;
-        if (hasExtensionReceiver && !effects[0].IsEmpty)
+        if (extensionReceiver is not null && !effects[0].IsEmpty)
         {
             receiverTemp = DeclareReceiver(ref context, extensionReceiver, receiverParameter, receiverByReference);
         }
 
-        var offset = hasExtensionReceiver ? 1 : 0;
-        var maxArgIndex = hasExtensionReceiver ? last - 1 : last;
+        var offset = extensionReceiver is null ? 0 : 1;
+        var maxArgIndex = last - offset;
         for (var i = 0; i <= maxArgIndex && i < arguments.Count; i++)
         {
             if (spillAll || !effects[i + offset].IsEmpty)

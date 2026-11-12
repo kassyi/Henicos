@@ -21,6 +21,8 @@ public enum NativeSanitizers
 /// </summary>
 public static class NativeSanitizerParser
 {
+    private static readonly char[] s_separators = [';', ','];
+
     /// <summary>
     /// Parses a semicolon- or comma-separated list of sanitizer names (<c>address</c>, <c>undefined</c>).
     /// </summary>
@@ -33,35 +35,45 @@ public static class NativeSanitizerParser
         sanitizers = NativeSanitizers.None;
         invalidToken = null;
 
-        if (string.IsNullOrWhiteSpace(value))
+        if (value is null || string.IsNullOrWhiteSpace(value))
         {
             return true;
         }
 
-        foreach (var part in value.Split([';', ','], StringSplitOptions.RemoveEmptyEntries))
+        for (var start = 0; start <= value.Length;)
         {
-            var name = part.Trim();
+            var end = value.IndexOfAny(s_separators, start);
+            if (end < 0)
+            {
+                end = value.Length;
+            }
+
+            var name = value.AsSpan(start, end - start).Trim();
+            start = end + 1;
             if (name.Length == 0)
             {
                 continue;
             }
 
-            if (string.Equals(name, "address", StringComparison.OrdinalIgnoreCase))
-            {
-                sanitizers |= NativeSanitizers.Address;
-            }
-            else if (string.Equals(name, "undefined", StringComparison.OrdinalIgnoreCase))
-            {
-                sanitizers |= NativeSanitizers.Undefined;
-            }
-            else
+            if (!TryParseName(name, out var sanitizer))
             {
                 sanitizers = NativeSanitizers.None;
-                invalidToken = name;
+                invalidToken = name.ToString();
                 return false;
             }
+
+            sanitizers |= sanitizer;
         }
 
         return true;
+    }
+
+    // One name of the list, address or undefined in any case
+    private static bool TryParseName(ReadOnlySpan<char> name, out NativeSanitizers sanitizer)
+    {
+        sanitizer = name.Equals("address".AsSpan(), StringComparison.OrdinalIgnoreCase) ? NativeSanitizers.Address
+            : name.Equals("undefined".AsSpan(), StringComparison.OrdinalIgnoreCase) ? NativeSanitizers.Undefined
+            : NativeSanitizers.None;
+        return sanitizer != NativeSanitizers.None;
     }
 }

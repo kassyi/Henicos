@@ -77,7 +77,7 @@ internal sealed class DeviceExportTable
     /// The record of <paramref name="symbol"/> (a device function, a struct, or a struct constructor, conversion or
     /// truth operator) in the assembly that declares it. A constructor's is the record of its struct as constructed
     /// (<c>Box&lt;float&gt;</c>, not <c>Box&lt;int&gt;</c>), when that record lists the constructor
-    /// (<see cref="DeviceExportRecord.DefinedIds"/>).
+    /// (<see cref="DeviceExportRecord.ExportNames.DefinedIds"/>).
     /// </summary>
     public static bool TryFind(ISymbol symbol, out ImportedDeviceRecord imported)
     {

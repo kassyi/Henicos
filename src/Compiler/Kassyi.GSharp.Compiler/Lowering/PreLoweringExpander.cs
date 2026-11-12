@@ -21,7 +21,7 @@ public sealed class PreLoweringExpander(SemanticModel? semanticModel = null) : C
 
     /// <summary>Expands barrier-containing macro statements within <paramref name="block"/>.</summary>
     public BlockSyntax Expand(BlockSyntax block) =>
-        MacroExpansionSyntax.ContainsBarrier(block) ? (BlockSyntax)Visit(block) : block;
+        BarrierHelper.ContainsPhaseBarrier(block) ? (BlockSyntax)Visit(block) : block;
 
     public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node) =>
         // Top-down expansion: nested macros in the expansion (in loops, ForUnroll bodies) are expanded in turn and

@@ -2324,7 +2324,7 @@ var resource = new global::Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder
 Log = log,
 Id = 1
 };
-using (resource)
+using (var __gsharp_using_resource_0 = resource)
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.UsingDisposalKernels.Note(log, 10);
 }

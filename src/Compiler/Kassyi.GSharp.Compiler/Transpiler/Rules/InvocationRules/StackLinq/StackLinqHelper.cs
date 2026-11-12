@@ -54,12 +54,16 @@ internal static class StackLinqHelper
         {
             case "Sum" or "SumSequential" when !symbol.ReturnType.SpecialType.IsArithmetic():
                 failure =
-                    $"Sum over '{symbol.ReturnType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}' (only built-in numeric types are summed in GPU code; use Aggregate with a [GpuDeviceFunction] that adds two values)";
+                    $"Sum over '{IteratorTypeResolver.FormatType(symbol.ReturnType)}' " +
+                    "(only built-in numeric types are summed in GPU code; " +
+                    "use Aggregate with a [GpuDeviceFunction] that adds two values)";
                 return true;
             case "Contains" when symbol.Parameters[^1].Type is var value &&
                                  !value.SpecialType.IsPrimitiveValue() && value.TypeKind != TypeKind.Enum:
                 failure =
-                    $"Contains over '{value.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}' (only built-in types and enums are compared in GPU code; use Any with a [GpuDeviceFunction] that compares two values)";
+                    $"Contains over '{IteratorTypeResolver.FormatType(value)}' " +
+                    "(only built-in types and enums are compared in GPU code; " +
+                    "use Any with a [GpuDeviceFunction] that compares two values)";
                 return true;
             default:
                 failure = null;

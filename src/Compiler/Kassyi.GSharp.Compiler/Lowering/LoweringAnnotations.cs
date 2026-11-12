@@ -150,6 +150,14 @@ public static class LoweringAnnotations
     public const string SpilledTypeSpanAnnotationKind = "GSharp.SpilledTypeSpan";
 
     /// <summary>
+    /// Copies the <see cref="OriginalSpanAnnotationKind"/> annotations of <paramref name="original"/>, the node that
+    /// <paramref name="node"/> replaces, onto <paramref name="node"/>, so that a diagnostic on it is reported at the
+    /// user's source.
+    /// </summary>
+    public static TNode WithOriginalSpanFrom<TNode>(this TNode node, SyntaxNode original) where TNode : SyntaxNode =>
+        node.WithAdditionalAnnotations(original.GetAnnotations(OriginalSpanAnnotationKind));
+
+    /// <summary>
     /// Attaches a <see cref="SpilledTypeSpanAnnotationKind"/> annotation to <paramref name="node"/> carrying the original
     /// span of <paramref name="original"/> (from its existing <see cref="SpilledTypeSpanAnnotationKind"/>, its
     /// <see cref="OriginalSpanAnnotationKind"/>, or its current syntax span).

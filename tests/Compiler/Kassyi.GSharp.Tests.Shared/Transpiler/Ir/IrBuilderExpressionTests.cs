@@ -48,7 +48,7 @@ public class IrBuilderExpressionTests
     [Scenario(TestScenario.HappyPath)]
     public void ConstantExpression_KeepsItsStructureAndValue()
     {
-        var binary = Assert.IsType<IrBinary>(IrTestCases.Result(IrTestCases.BuildCase("ConstantExpression")));
+        var binary = Assert.IsType<IrBinary>(IrTestCases.CaseResult("ConstantExpression"));
 
         Assert.Equal(BinaryOperatorKind.Add, binary.Operator.Kind);
         Assert.Equal(3, binary.ConstantValue.Value);
@@ -70,29 +70,32 @@ public class IrBuilderExpressionTests
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void UserDefinedEquality_IsNotANullTest() =>
-        Assert.IsType<IrBinary>(IrTestCases.Result(IrTestCases.BuildCase("UserEquals")));
+        Assert.IsType<IrBinary>(IrTestCases.CaseResult("UserEquals"));
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("Invalid", nameof(IrOpaqueReason.Invalid), "opaque:Invalid(Missing(1))")]
-    [InlineData("Lambda", nameof(IrOpaqueReason.UnsupportedOperation), "opaque:UnsupportedOperation(v => v + x)")]
+    [InlineData("Invalid", nameof(IrOpaqueReason.Invalid), "opaque:Invalid(InvocationExpression)")]
+    [InlineData("Lambda", nameof(IrOpaqueReason.UnsupportedOperation),
+        "opaque:UnsupportedOperation(SimpleLambdaExpression)")]
     [InlineData("SwitchExpression", nameof(IrOpaqueReason.UnsupportedOperation),
-        "opaque:UnsupportedOperation(x switch { 0 => 1, _ => 2 })")]
-    [InlineData("With", nameof(IrOpaqueReason.UnsupportedOperation),
-        "opaque:UnsupportedOperation(cell with { F = 1 })")]
-    [InlineData("Dereference", nameof(IrOpaqueReason.UnsupportedOperation), "opaque:UnsupportedOperation(*p)")]
+        "opaque:UnsupportedOperation(SwitchExpression)")]
+    [InlineData("With", nameof(IrOpaqueReason.UnsupportedOperation), "opaque:UnsupportedOperation(WithExpression)")]
+    [InlineData("Dereference", nameof(IrOpaqueReason.UnsupportedOperation),
+        "opaque:UnsupportedOperation(PointerIndirectionExpression)")]
     [InlineData("Stackalloc", nameof(IrOpaqueReason.UnsupportedOperation),
-        "opaque:UnsupportedOperation(stackalloc int[4])")]
-    [InlineData("LiftedAdd", nameof(IrOpaqueReason.UnsupportedShape), "opaque:UnsupportedShape(a + b)")]
-    [InlineData("MultiDimensional", nameof(IrOpaqueReason.UnsupportedShape), "opaque:UnsupportedShape(new int[2, 2])")]
+        "opaque:UnsupportedOperation(StackAllocArrayCreationExpression)")]
+    [InlineData("LiftedAdd", nameof(IrOpaqueReason.UnsupportedShape), "opaque:UnsupportedShape(AddExpression)")]
+    [InlineData("MultiDimensional", nameof(IrOpaqueReason.UnsupportedShape),
+        "opaque:UnsupportedShape(ArrayCreationExpression)")]
     [InlineData("MultiDimensionalElement", nameof(IrOpaqueReason.UnsupportedShape),
-        "opaque:UnsupportedShape(grid[0, 1])")]
-    [InlineData("DelegateInvoke", nameof(IrOpaqueReason.UnsupportedShape), "opaque:UnsupportedShape(f(1))")]
+        "opaque:UnsupportedShape(ElementAccessExpression)")]
+    [InlineData("DelegateInvoke", nameof(IrOpaqueReason.UnsupportedShape),
+        "opaque:UnsupportedShape(InvocationExpression)")]
     [InlineData("NestedInitializer", nameof(IrOpaqueReason.UnsupportedShape),
-        "opaque:UnsupportedShape(new Outer { Inner = { F = j } })")]
+        "opaque:UnsupportedShape(ObjectCreationExpression)")]
     public void UnsupportedExpression_IsAnOpaqueLeaf(string method, string reason, string expected)
     {
-        var result = IrTestCases.Result(IrTestCases.BuildCase(method));
+        var result = IrTestCases.CaseResult(method);
 
         var opaque = Assert.IsType<IrOpaqueExpression>(result);
         Assert.Equal(Enum.Parse<IrOpaqueReason>(reason), opaque.Reason);
@@ -104,7 +107,7 @@ public class IrBuilderExpressionTests
     [Scenario(TestScenario.Boundary)]
     public void ThrowExpression_IsAnUnsupportedOperationInsideItsParent()
     {
-        var coalesce = Assert.IsType<IrCoalesce>(IrTestCases.Result(IrTestCases.BuildCase("Throw")));
+        var coalesce = Assert.IsType<IrCoalesce>(IrTestCases.CaseResult("Throw"));
         var conversion = Assert.IsType<IrConversion>(coalesce.WhenNull);
 
         Assert.Equal(IrOpaqueReason.UnsupportedOperation, Assert.IsType<IrOpaqueExpression>(conversion.Operand).Reason);

@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
@@ -21,10 +22,11 @@ public class GeneratorDiagnosticsTests : TranspilerTestBase
                                             .GetDriverAsync();
 
         // The hash of the preludes and the internal names changes with every edit of a prelude, the format version with
-        // every change of the record layout
-        await Verify(driver).ScrubLinesWithReplace(static line =>
-            System.Text.RegularExpressions.Regex.Replace(line, "GpuDeviceExportAttribute\\([0-9]+, @\"[0-9a-f]{16}\"",
-                "GpuDeviceExportAttribute({FormatVersion}, @\"{PreludeHash}\""));
+        // every change of the record layout, so the values this compiler writes become placeholders
+        await Verify(driver).ScrubLinesWithReplace(static line => line.Replace(
+            $"GpuDeviceExportAttribute({DeviceExportRecord.CurrentFormatVersion}, @\"{DeviceExportRecord.CurrentPreludeHash}\"",
+            "GpuDeviceExportAttribute({FormatVersion}, @\"{PreludeHash}\"",
+            StringComparison.Ordinal));
     }
 
     [Fact]

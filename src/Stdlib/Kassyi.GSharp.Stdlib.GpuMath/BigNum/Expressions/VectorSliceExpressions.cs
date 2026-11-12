@@ -5,6 +5,11 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
 {
     private readonly VectorShape _source = VectorShape.Of(source);
 
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(source);
+
+    // A slice adds no check; a projection outside it is not evaluated, as System.Linq
+    public bool MayThrow => _inputsMayThrow;
+
     public int Length => DeviceCounted.KnownLength(this);
 
     public int Capacity => Math.Min(_source.Capacity, count);
@@ -89,6 +94,11 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
 
     // Skipping past the capacity skips everything; a device count below the skip gives 0 through SkipFirst
     private readonly int _skipCount = Math.Min(count, source.Capacity);
+
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(source);
+
+    // A slice adds no check; a projection outside it is not evaluated, as System.Linq
+    public bool MayThrow => _inputsMayThrow;
 
     public int Length => DeviceCounted.KnownLength(this);
 

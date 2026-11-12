@@ -1,3 +1,4 @@
+#nullable enable
 using Kassyi.GSharp.Tests.Generators;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;

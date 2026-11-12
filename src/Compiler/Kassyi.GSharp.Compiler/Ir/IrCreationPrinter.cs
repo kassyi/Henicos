@@ -103,7 +103,7 @@ internal static class IrCreationPrinter
         writer.Append($"opaque:{IrPrintText.Reason(opaque.Reason)}");
         using (writer.Parentheses())
         {
-            writer.Append(IrPrintText.FirstLine(opaque.Syntax));
+            writer.Append(IrPrintText.SyntaxKindName(opaque.Syntax));
         }
     }
 

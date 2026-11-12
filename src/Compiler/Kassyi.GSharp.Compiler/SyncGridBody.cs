@@ -311,7 +311,7 @@ internal static class SyncGridBody
                     var designation = (SingleVariableDesignationSyntax)original.Designation;
                     return SyntaxFactory.IdentifierName(designation.Identifier.WithoutTrivia())
                         .WithTriviaFrom(original)
-                        .WithAdditionalAnnotations(designation.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+                        .WithOriginalSpanFrom(designation);
                 });
 
     /// <summary>
@@ -469,8 +469,7 @@ internal static class SyncGridBody
                 )
             ).WithAdditionalAnnotations(annotations);
             // goto <label>;
-            var jump = SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(labelName))
-                .WithAdditionalAnnotations(annotations);
+            var jump = LoweringSyntax.Goto(labelName).WithAdditionalAnnotations(annotations);
             return SyntaxFactory.Block(setFlag, jump).WithAdditionalAnnotations(annotations);
         }
     }

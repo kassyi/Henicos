@@ -12,6 +12,14 @@ internal sealed class FloatVectorWhereExpression(
 
     public int Capacity { get; } = source.Capacity;
 
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(source) || VectorEffects.MayThrow(predicate);
+
+    // The capacity of the predicate, for the check of a predicate of another length
+    private readonly int _predicateCapacity = predicate.Capacity;
+
+    // A predicate of another length is rejected
+    public bool MayThrow => _inputsMayThrow || _predicateCapacity != Capacity;
+
     public int WordsPerElement { get; } = source.WordsPerElement;
 
     // The selected elements, the scan of the predicates, the count word and the block sums of the scan: owned here and

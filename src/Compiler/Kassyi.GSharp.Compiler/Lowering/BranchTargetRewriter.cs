@@ -23,11 +23,7 @@ internal sealed class BranchTargetRewriter(string endLabel, string nextLabel) : 
         }
 
         // goto <endLabel>;
-        return SyntaxFactory.GotoStatement(
-                SyntaxKind.GotoStatement,
-                SyntaxFactory.IdentifierName(endLabel)
-            )
-            .WithAdditionalAnnotations(node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+        return LoweringSyntax.Goto(endLabel).WithOriginalSpanFrom(node);
     }
 
     public override SyntaxNode? VisitContinueStatement(ContinueStatementSyntax node)
@@ -38,11 +34,7 @@ internal sealed class BranchTargetRewriter(string endLabel, string nextLabel) : 
         }
 
         // goto <nextLabel>;
-        return SyntaxFactory.GotoStatement(
-                SyntaxKind.GotoStatement,
-                SyntaxFactory.IdentifierName(nextLabel)
-            )
-            .WithAdditionalAnnotations(node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+        return LoweringSyntax.Goto(nextLabel).WithOriginalSpanFrom(node);
     }
 
     public override SyntaxNode? VisitWhileStatement(WhileStatementSyntax node) =>
