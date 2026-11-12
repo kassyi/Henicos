@@ -12,7 +12,7 @@ public class LocalDisposableOwnershipAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task DiscardedAllocation_UnassignedDisposableInstantiation_ReportsGSH0067AtStatement()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/LocalOwnership/DiscardedAllocation.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/LocalOwnership/DiscardedAllocation.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         // The expression statements of a class, a discard assignment and a struct; the type without IDisposable is silent
@@ -25,7 +25,7 @@ public class LocalDisposableOwnershipAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task UndisposedLocal_LocalWithoutDisposal_ReportsGSH0068AtDeclarator()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/LocalOwnership/UndisposedLocal.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/LocalOwnership/UndisposedLocal.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         // Never used, used without disposal, target-typed new, and a callee that only borrows the resource
@@ -41,7 +41,7 @@ public class LocalDisposableOwnershipAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task DisposedOrMovedLocals_ProperDisposalOrTransfer_ProducesNoDiagnostics()
     {
-        await RoslynTestUtility.TestAnalyzer("Analyzers/LocalOwnership/LocalOwnershipValid.cs", s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer("Analyzers/LocalOwnership/LocalOwnershipValid.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();
     }
 

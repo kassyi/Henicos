@@ -28,7 +28,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         var source = RoslynTestUtility.ReadTestCase(
             "Transpiler/PendingBugs/GpuConstantManagedKernels.cu.cs");
 
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         var runResult = driver.GetRunResult();
         var generatedSources = runResult.GeneratedTrees
             .Where(t => t.FilePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
@@ -119,7 +119,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         var source = RoslynTestUtility.ReadTestCase(
             "Transpiler/PendingBugs/SharedMemorySiblingScopeHoistKernels.cu.cs");
 
-        var (_, outputCompilation, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (_, outputCompilation, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         var compilerErrors = outputCompilation.GetDiagnostics()
             .Where(d => d.Severity == DiagnosticSeverity.Error && d.Id == "CS0136")
             .ToArray();

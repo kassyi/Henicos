@@ -1,10 +1,9 @@
 #nullable enable
-using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 /// <summary>
-/// Provides utility methods and fluent helpers for Roslyn compilation, generator, analyzer, and transpiler testing.
+/// Provides the compilations, syntax trees and symbols of test sources for Roslyn-based tests.
 /// </summary>
 /// <remarks>
 /// The one place that parses test sources: every compilation a test uses starts from <see cref="BaseCompilation"/>
@@ -242,119 +241,19 @@ public static class RoslynTestUtility
         return (model, methodSymbol);
     }
 
-    /// <summary>Transpiles a method declared in the mega compilation by type and method name into target dialect C++ source.</summary>
-    public static (string CudaSource, List<TranspileFailure> Failures) TranspileMethod(
-        string typeName,
-        string methodName,
-        bool isDevice = true,
-        ITranspilerDialect? dialect = null)
-    {
-        var (semanticModel, methodSymbol) = MegaCompilationCache.GetMethodContext(typeName, methodName);
-        var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
+    /// <summary>Retrieves the semantic model and method symbol for a method of a type of the shared compilation.</summary>
+    internal static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext(string typeName, string methodName) =>
+        MegaCompilationCache.GetMethodContext(typeName, methodName);
 
-        var diagnostics = new List<TranspileFailure>();
-        dialect ??= new GSharpCudaDialect();
-        var cudaSource =
-            MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice,
-                dialect, out _);
-        return (cudaSource, diagnostics);
-    }
-
-    /// <summary>Transpiles a method from dynamic compilation inferred from the caller file into target dialect C++ source.</summary>
-    public static (string CudaSource, List<TranspileFailure> Failures) TranspileMethod(
+    /// <summary>
+    /// Retrieves the semantic model and method symbol for a method of <paramref name="targetType"/>, declared in the first
+    /// of <paramref name="sourceFilePaths"/> that declares the type.
+    /// </summary>
+    internal static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext(
         Type targetType,
         string methodName,
-        [CallerFilePath] string callerFilePath = "",
-        bool isDevice = true,
-        ITranspilerDialect? dialect = null)
-    {
-        var pathList = new List<string> { callerFilePath };
-        if (TryResolveKernelFilePath(callerFilePath, out var kernelFile) && kernelFile != null)
-        {
-            pathList.Add(kernelFile);
-        }
-
-        var dir = Path.GetDirectoryName(callerFilePath);
-        if (dir != null)
-        {
-            var targetTypeKernelFile = Path.Combine(dir, $"{targetType.Name}.cu.cs");
-            if (File.Exists(targetTypeKernelFile) && !pathList.Contains(targetTypeKernelFile))
-            {
-                pathList.Add(targetTypeKernelFile);
-            }
-        }
-
-        var (semanticModel, methodSymbol) =
-            MegaCompilationCache.GetMethodContext(targetType, methodName, pathList.ToArray());
-        var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
-
-        var diagnostics = new List<TranspileFailure>();
-        dialect ??= new GSharpCudaDialect();
-        var cudaSource =
-            MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice,
-                dialect, out _);
-        return (cudaSource, diagnostics);
-    }
-
-    /// <summary>Transpiles a method declared on <typeparamref name="TTarget"/> into target dialect C++ source with type safety.</summary>
-    public static (string CudaSource, List<TranspileFailure> Failures) TranspileMethod<TTarget>(
-        string methodName,
-        [CallerFilePath] string callerFilePath = "",
-        bool isDevice = true,
-        ITranspilerDialect? dialect = null)
-    {
-        return TranspileMethod(typeof(TTarget), methodName, callerFilePath, isDevice, dialect);
-    }
-
-    /// <summary>Runs a DiagnosticAnalyzer on the given source text and returns reported diagnostics.</summary>
-    public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source,
-        DiagnosticAnalyzer analyzer, string targetDialect = "Cuda")
-    {
-        var compilation = CreateCompilation(source);
-        var analyzerOptions =
-            new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty,
-                new TestAnalyzerConfigOptionsProvider(targetDialect));
-        var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer), analyzerOptions);
-        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
-    }
-
-    /// <summary>Executes the GpuKernelGenerator on the given source text and produces the output compilation and diagnostics.</summary>
-    public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics)
-        RunGenerator(string source, string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null) =>
-        RunGenerator(CreateCompilation(source), targetDialect, additionalOptions);
-
-    /// <summary>Executes the GpuKernelGenerator on the given compilation and produces the output compilation and diagnostics.</summary>
-    public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics)
-        RunGenerator(Compilation compilation, string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null)
-    {
-        var generator = new GpuKernelGenerator();
-
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(
-            generators: new[] { generator.AsSourceGenerator() },
-            additionalTexts: null,
-            parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
-            optionsProvider: new TestAnalyzerConfigOptionsProvider(targetDialect, additionalOptions));
-
-        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
-        return (driver, outputCompilation, diagnostics);
-    }
-
-    /// <summary>Initiates a fluent test assertion builder for Source Generator verification on a test case file.</summary>
-    public static GeneratorTestConfig TestGenerator(string relativePathToTestCases,
-        [CallerFilePath] string callerFilePath = "")
-    {
-        var testCasesDir = GetTestCasesDirectory(callerFilePath);
-        return new GeneratorTestConfig(Path.Combine(testCasesDir, relativePathToTestCases));
-    }
-
-    /// <summary>Initiates a fluent test assertion builder for Diagnostic Analyzer verification on a test case file.</summary>
-    public static AnalyzerTestConfig TestAnalyzer(string relativePathToTestCases, DiagnosticAnalyzer analyzer,
-        [CallerFilePath] string callerFilePath = "")
-    {
-        var testCasesDir = GetTestCasesDirectory(callerFilePath);
-        return new AnalyzerTestConfig(Path.Combine(testCasesDir, relativePathToTestCases), analyzer);
-    }
-
+        params string[] sourceFilePaths) =>
+        MegaCompilationCache.GetMethodContext(targetType, methodName, sourceFilePaths);
     /// <summary>
     /// Process-wide Roslyn compilations for transpiler tests, parsed once up front instead of growing per test.
     /// </summary>

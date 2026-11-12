@@ -13,7 +13,7 @@ public class KeywordTypeNameGeneratorTests
 {
     private static readonly Lazy<(GeneratorDriver Driver, Compilation Output, ImmutableArray<Diagnostic> Diagnostics)>
         s_run = new(static () =>
-            RoslynTestUtility.RunGenerator(RoslynTestUtility.ReadTestCase("Generators/KeywordTypeNames.cs"), "Cpu"));
+            GeneratorTestRunner.RunGenerator(RoslynTestUtility.ReadTestCase("Generators/KeywordTypeNames.cs"), "Cpu"));
 
     [Fact]
     [Scenario(TestScenario.Boundary)]

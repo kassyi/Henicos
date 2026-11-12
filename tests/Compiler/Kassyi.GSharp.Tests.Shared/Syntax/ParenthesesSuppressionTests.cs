@@ -35,7 +35,7 @@ public partial class ParenthesesSuppressionTests
     public void TranspileMethod_RedundantParenthesesInIfCondition_SuppressesRedundantParentheses()
     {
         var (cudaSource, diagnostics) =
-            RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition));
+            TranspileTestRunner.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition));
 
         Assert.Empty(diagnostics);
         Assert.Matches(IfConditionRegex(), cudaSource.WithCSharpNames());
@@ -46,7 +46,7 @@ public partial class ParenthesesSuppressionTests
     public void TranspileMethod_PrecedenceAndMixedOperators_PreservesNecessaryParentheses()
     {
         var (cudaSource, diagnostics) =
-            RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators));
+            TranspileTestRunner.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators));
 
         Assert.Empty(diagnostics);
         Assert.Matches(BoolAssignmentRegex(), cudaSource.WithCSharpNames());

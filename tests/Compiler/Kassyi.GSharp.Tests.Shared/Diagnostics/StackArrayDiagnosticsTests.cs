@@ -219,7 +219,7 @@ public class StackArrayDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     public void MultidimensionalElementAccess_ElementAccess_FailsWithoutEmittingCommaOperator(string dialect)
     {
-        var (_, output, _) = RoslynTestUtility.RunGenerator(
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(
             RoslynTestUtility.ReadTestCase(MultidimensionalParameters),
             dialect);
 

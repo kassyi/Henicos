@@ -18,7 +18,7 @@ public class GeneratorHintNameTests
     [InlineData("Cuda")]
     public void HintName_SameNamedKernelClassesInDifferentNamespaces_ProducesDistinctHintNames(string dialect)
     {
-        var (driver, output, diagnostics) = RoslynTestUtility.RunGenerator(s_sameNamedKernelClasses, dialect);
+        var (driver, output, diagnostics) = GeneratorTestRunner.RunGenerator(s_sameNamedKernelClasses, dialect);
         var result = driver.GetRunResult().Results.Single();
 
         Assert.Null(result.Exception);
@@ -34,7 +34,7 @@ public class GeneratorHintNameTests
     {
         var source = RoslynTestUtility.ReadTestCase("Generator/HintName_GlobalNamespaceKernelClass.cu.cs");
 
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
 
         Assert.Contains(driver.GetRunResult().Results.Single().GeneratedSources,
             s => s.HintName == "TopLevel_uKernels.g.cs");

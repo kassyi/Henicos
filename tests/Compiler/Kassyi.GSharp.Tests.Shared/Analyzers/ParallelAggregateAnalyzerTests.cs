@@ -13,7 +13,7 @@ public class ParallelAggregateAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task PerThreadAggregates_ReportGSH0099WithTheirReason()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
@@ -83,7 +83,7 @@ public class ParallelAggregateAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task GridUniformAggregateInNonCooperativeKernel_ReportsGSH0100()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", s_analyzer)
             .GetDiagnosticsAsync();
 

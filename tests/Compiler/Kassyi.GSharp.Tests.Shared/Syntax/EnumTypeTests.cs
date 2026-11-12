@@ -7,7 +7,7 @@ public class EnumTypeTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void Transpile_EnumStructFieldAndParameter_EmitsUnderlyingTypes()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod(
             typeof(EnumTypeKernels), nameof(EnumTypeKernels.EvaluatePacketsKernel), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

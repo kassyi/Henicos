@@ -18,7 +18,7 @@ public class StackLinqStateOverloadTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task StateOverload_InKernel_ReportsGSH0003Once()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/StackLinqState/StackLinqStateOverloadKernels.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/StackLinqState/StackLinqStateOverloadKernels.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var diag = Assert.Single(diagnostics);
         Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);
@@ -30,7 +30,7 @@ public class StackLinqStateOverloadTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task HostOnlyOperator_InKernel_ReportsGSH0003Once()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/StackLinqState/StackLinqHostOnlyOperatorKernels.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/StackLinqState/StackLinqHostOnlyOperatorKernels.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var diag = Assert.Single(diagnostics);
         Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);
@@ -42,7 +42,7 @@ public class StackLinqStateOverloadTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task OfType_InKernel_ReportsGSH0003Once()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/StackLinqState/StackLinqOfTypeKernels.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/StackLinqState/StackLinqOfTypeKernels.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var diag = Assert.Single(diagnostics);
         Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);
@@ -56,7 +56,7 @@ public class StackLinqStateOverloadTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task SumOverUserStruct_InKernel_ReportsGSH0003AtEachSum()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/StackLinqState/StackLinqStructSumKernels.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/StackLinqState/StackLinqStructSumKernels.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var errors = diagnostics
             .Where(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id)
@@ -77,7 +77,7 @@ public class StackLinqStateOverloadTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task ContainsOverUserStruct_InKernel_ReportsGSH0003AtEachContains()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/StackLinqState/StackLinqStructContainsKernels.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/StackLinqState/StackLinqStructContainsKernels.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var errors = diagnostics
             .Where(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id)
@@ -97,7 +97,7 @@ public class StackLinqStateOverloadTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task CopyTo_InKernel_ReportsGSH0003Once()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/StackLinqState/StackLinqCopyToKernels.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/StackLinqState/StackLinqCopyToKernels.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var diag = Assert.Single(diagnostics);
         Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);

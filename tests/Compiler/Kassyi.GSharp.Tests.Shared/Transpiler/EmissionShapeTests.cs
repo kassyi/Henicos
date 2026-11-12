@@ -475,7 +475,7 @@ public partial class EmissionShapeTests
         var compilation = withPath
             ? RoslynTestUtility.CreateCompilationAt($"{testCase}.cu.cs", text)
             : RoslynTestUtility.CreateCompilation(text);
-        var (driver, output, diagnostics) = RoslynTestUtility.RunGenerator(compilation, dialect);
+        var (driver, output, diagnostics) = GeneratorTestRunner.RunGenerator(compilation, dialect);
         var errors = diagnostics
             .Concat(output.GetDiagnostics())
             .Where(static d => d.Severity == DiagnosticSeverity.Error)

@@ -16,7 +16,7 @@ public class LoopsAndJumpsTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_SwitchGotoCase_EmitsValidCudaSourceWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<LoopsAndJumpsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<LoopsAndJumpsTarget>(
             nameof(LoopsAndJumpsTarget.SwitchGotoCase), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -41,7 +41,7 @@ public class LoopsAndJumpsTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_NamedBreakGoto_EmitsValidCudaSourceWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<LoopsAndJumpsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<LoopsAndJumpsTarget>(
             nameof(LoopsAndJumpsTarget.NamedBreakGoto), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

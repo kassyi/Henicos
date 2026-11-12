@@ -18,7 +18,7 @@ public class HostLoopAnalyzerTests : TranspilerTestBase
         string testCasePath,
         string expectedErrorId)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsDiagnosticsAsync(expectedErrorId);
     }
 
@@ -27,7 +27,7 @@ public class HostLoopAnalyzerTests : TranspilerTestBase
     [InlineData("GSH-10", "Analyzers/HostLoop/AutoAllocateReturn_SafePath.cs")]
     public async Task HostLoopAnalyzer_ValidLoop_ReportsNoWarnings(string featureId, string testCasePath)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsNoDiagnosticsAsync();
     }
 }

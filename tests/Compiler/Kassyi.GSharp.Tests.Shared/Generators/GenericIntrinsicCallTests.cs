@@ -18,7 +18,7 @@ public class GenericIntrinsicCallTests
     {
         var compilation = NativeApiIntrinsicsEmitterTests.CreateGenericIntrinsicsCompilation();
 
-        var (driver, output, diagnostics) = RoslynTestUtility.RunGenerator(compilation, dialect);
+        var (driver, output, diagnostics) = GeneratorTestRunner.RunGenerator(compilation, dialect);
 
         Assert.Empty(diagnostics.Select(d => d.ToString()));
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);

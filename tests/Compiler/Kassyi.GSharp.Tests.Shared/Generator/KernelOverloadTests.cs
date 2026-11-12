@@ -24,7 +24,7 @@ public class KernelOverloadTests
     [InlineData("Cuda")]
     public void OverloadedKernels_ValidOverloads_GeneratesCompilableWrappers(string dialect)
     {
-        var (_, output, diagnostics) = RoslynTestUtility.RunGenerator(s_overloadedKernels, dialect);
+        var (_, output, diagnostics) = GeneratorTestRunner.RunGenerator(s_overloadedKernels, dialect);
 
         Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
@@ -34,7 +34,7 @@ public class KernelOverloadTests
     [Scenario(TestScenario.HappyPath)]
     public void OverloadedKernels_DistinctSignatures_LoadsDistinctEntryPoints()
     {
-        var (_, output, _) = RoslynTestUtility.RunGenerator(s_overloadedKernels, "Cuda");
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(s_overloadedKernels, "Cuda");
         var wrapper = output.SyntaxTrees.Single(t => t.FilePath.EndsWith("K.g.cs", StringComparison.Ordinal)).ToString();
 
         Assert.Contains("\"__gsharp_k_OverloadTest__K__Run_o0\"", wrapper);
@@ -55,7 +55,7 @@ public class KernelOverloadTests
             [(DiagnosticOrigin.Analyzer, 12, 28, 12, 31)],
             diagnostics.Ranges(GSharpDiagnostics.IndistinguishableKernelOverloads.Id));
 
-        var (_, output, _) = RoslynTestUtility.RunGenerator(s_indistinguishableKernels, dialect);
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(s_indistinguishableKernels, dialect);
         // The reported overload gets no wrappers, so the generated code itself stays valid.
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
     }
@@ -75,7 +75,7 @@ public class KernelOverloadTests
         Assert.Contains("LaunchRun", reported.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("LaunchRunPtr", reported.Message, StringComparison.Ordinal);
 
-        var (_, output, _) = RoslynTestUtility.RunGenerator(s_inModifierKernels, dialect);
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(s_inModifierKernels, dialect);
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
     }
 }

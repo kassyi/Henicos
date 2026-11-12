@@ -105,7 +105,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_WarpReductionKernel_EmitsShuffleDownSync()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod(
             typeof(WarpShuffleKernels), nameof(WarpShuffleKernels.WarpReductionKernel), isDevice: false, dialect: new GSharpCudaDialect());
 
         Assert.Empty(diagnostics);
@@ -116,7 +116,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_CooperativeGroups_EmitsGridSync()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ConcurrencyAndWarpTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ConcurrencyAndWarpTarget>(
             nameof(ConcurrencyAndWarpTarget.CooperativeGroups), dialect: new GSharpCudaDialect());
 
         Assert.Empty(diagnostics);
@@ -127,7 +127,7 @@ public class ConcurrencyAndWarpTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_AsyncCopyTma_EmitsAsyncPtxIntrinsics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ConcurrencyAndWarpTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ConcurrencyAndWarpTarget>(
             nameof(ConcurrencyAndWarpTarget.AsyncCopyTma), dialect: new GSharpCudaDialect());
 
         Assert.Empty(diagnostics);

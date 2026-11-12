@@ -54,7 +54,7 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task LaunchDependentDivergentBarrier_BlockCondition_ReportsWarning()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/BarrierUsage/InterproceduralUniformityKernels.cu.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
@@ -93,7 +93,7 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath)
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
 
         return diagnostics
             .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))

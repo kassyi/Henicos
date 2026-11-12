@@ -34,7 +34,7 @@ public class LanguageFeaturesPendingBugsTests
     public void GenericDeviceFunction_TypeParameters_EmitsTemplateHeaderAndCallTypeArgs()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/GenericDeviceFunctionCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver);
 
         Assert.DoesNotContain("unsubstituted type parameter", code, StringComparison.Ordinal);
@@ -47,7 +47,7 @@ public class LanguageFeaturesPendingBugsTests
     public void StackLinqIndexedOverloads_PredicateWithIndex_EmitsIndexedCalls()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/IndexedStackLinqCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "IndexedStackLinqCase");
 
         Assert.DoesNotContain(")(__gsharp_val_0))", code, StringComparison.Ordinal);
@@ -60,7 +60,7 @@ public class LanguageFeaturesPendingBugsTests
     public void StackLinqAggregate_NamedArguments_BindsSeedAndAccumulatorCorrectly()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/AggregateBindingCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "AggregateBindingCase");
 
         Assert.DoesNotContain("(10)(", code, StringComparison.Ordinal);
@@ -72,7 +72,7 @@ public class LanguageFeaturesPendingBugsTests
     public void StackLinqTakeLast_UnfusedTerminalOperator_EmitsValidCpp()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/TakeLastUnfusedCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "TakeLastUnfusedCase");
 
         Assert.Contains("StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::TakeLast(", code, StringComparison.Ordinal);    }
@@ -81,7 +81,7 @@ public class LanguageFeaturesPendingBugsTests
     public void UserDefinedInlinePtxMethod_DeviceInvocation_DoesNotRewriteToThrow()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/UserInlinePtxCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "UserInlinePtxCase");
 
         Assert.DoesNotContain("Gpu.InlinePtx is not supported", code, StringComparison.Ordinal);
@@ -92,7 +92,7 @@ public class LanguageFeaturesPendingBugsTests
     public void OperatorMacroInsideStructDispose_ManagedDisposeCall_RewritesManagedStructDispose()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/OperatorMacroInsideStructDisposeCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "MacroKernelHolder");
 
         Assert.Contains("__gsharp_managed_Dispose", code, StringComparison.Ordinal);
@@ -103,7 +103,7 @@ public class LanguageFeaturesPendingBugsTests
     public void MutatingStructPropertyGetter_StateMutation_OmitsConstQualifier()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/MutatingStructPropertyGetterCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver);
 
         Assert.DoesNotContain("__device__ inline int __gsharp_mb_StepState() const", code, StringComparison.Ordinal);
@@ -114,7 +114,7 @@ public class LanguageFeaturesPendingBugsTests
     public void NestedStructInsideGenericOuterType_OuterTypeParameters_SubstitutesOuterTypeParameters()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/NestedStructInsideGenericOuterCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "GenericOuterKernelHolder");
 
         Assert.DoesNotContain("GSH0003:", code, StringComparison.Ordinal);
@@ -125,7 +125,7 @@ public class LanguageFeaturesPendingBugsTests
     public void SpanSort_GenericMethodGroupComparison_CompilesWithoutGSH0003()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/GenericSortMethodGroupCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "GenericSortComparisonCase");
 
         Assert.DoesNotContain("GSH0003:", code, StringComparison.Ordinal);
@@ -135,7 +135,7 @@ public class LanguageFeaturesPendingBugsTests
     public void ExplicitConversionAndCustomIndexer_StructDeclaration_EmitsOperatorsInCppStruct()
     {
         string source = RoslynTestUtility.ReadTestCase("Transpiler/LanguageFeaturesPending/ExplicitConversionAndCustomIndexerCase.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
         string code = GetGeneratedDeviceCode(driver, "ExplicitAndIndexedKernelHolder");
 
         Assert.DoesNotContain("(__gsharp_ty_ExplicitAndIndexedStruct)__gsharp_id_2_x", code, StringComparison.Ordinal);

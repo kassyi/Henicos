@@ -16,7 +16,7 @@ public class DisposeHelperReleaseTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task UnreleasedFields_ReportGSH0022AtDispose()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer(TestCasePath, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer(TestCasePath, s_analyzer).GetDiagnosticsAsync();
 
         // (0-based line of the Dispose identifier, field): RefHelper, ConditionalAccess, NestedHelper, LocalAndValueHelpers,
         // Escaped, DeepChain, LocalCallsLocal, LocalDirect and EscapedThis have none
@@ -56,7 +56,7 @@ public class DisposeHelperReleaseTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task BorrowedFieldsReleasedThroughHelpers_ReportGSH0027()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer(TestCasePath, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer(TestCasePath, s_analyzer).GetDiagnosticsAsync();
 
         // BorrowedThroughHelper: _c is released through the helper; _d is only passed to Logger.Log, which the analysis
         // cannot see (not a release, so no second report). ShallowerPathAfterDeep and ShallowPathOnly release the

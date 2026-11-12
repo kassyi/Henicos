@@ -118,7 +118,7 @@ public class RefLocalAcrossSplitTests
     // stop the managed build
     private static Assembly CompileManagedAssembly(string testCase)
     {
-        var (_, output, _) = RoslynTestUtility.RunGenerator(RoslynTestUtility.ReadTestCase(testCase), "Cpu");
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(RoslynTestUtility.ReadTestCase(testCase), "Cpu");
         using var stream = new MemoryStream();
         var result = output.Emit(stream);
         Assert.True(

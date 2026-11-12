@@ -15,7 +15,7 @@ public class AotConfigurationTests
     public void AotConfiguration_MyKernelSource_AlwaysProducesAotWrapper()
     {
         var sourceCode = RoslynTestUtility.ReadTestCase("Generator/AotConfiguration_MyKernel.cu.cs");
-        var (_, outputCompilation, _) = RoslynTestUtility.RunGenerator(sourceCode);
+        var (_, outputCompilation, _) = GeneratorTestRunner.RunGenerator(sourceCode);
         var generatedTrees = outputCompilation.SyntaxTrees.Where(t => t.FilePath.EndsWith(".g.cs")).ToList();
 
         // Ensure wrapper is generated
@@ -44,7 +44,7 @@ public class AotConfigurationTests
                 { "build_property.MSBuildProjectDirectory", tempDir }
             };
 
-            var (_, _, _) = RoslynTestUtility.RunGenerator(sourceCode, "Cuda", additionalOptions);
+            var (_, _, _) = GeneratorTestRunner.RunGenerator(sourceCode, "Cuda", additionalOptions);
 
             var expectedArtifact = System.IO.Path.Combine(tempDir, "Kassyi.GSharp.Kernels_MegaTestCompilationBase.g.cu");
             Assert.True(System.IO.File.Exists(expectedArtifact),
@@ -79,7 +79,7 @@ public class AotConfigurationTests
                 { "build_property.MSBuildProjectDirectory", tempDir }
             };
 
-            var (_, _, _) = RoslynTestUtility.RunGenerator(sourceCode, "Cuda", additionalOptions);
+            var (_, _, _) = GeneratorTestRunner.RunGenerator(sourceCode, "Cuda", additionalOptions);
 
             var cuArtifact = System.IO.Path.Combine(tempDir, "Kassyi.GSharp.Kernels_MegaTestCompilationBase.g.cu");
             var gsymArtifact = cuArtifact + ".gsym.json";

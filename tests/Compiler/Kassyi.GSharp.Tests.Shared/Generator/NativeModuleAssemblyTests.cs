@@ -77,7 +77,7 @@ public class NativeModuleAssemblyTests
                 { "build_property.MSBuildProjectDirectory", tempDir }
             };
 
-            var (_, _, diagnostics) = RoslynTestUtility.RunGenerator(s_source, "Cuda", options);
+            var (_, _, diagnostics) = GeneratorTestRunner.RunGenerator(s_source, "Cuda", options);
 
             var failures = diagnostics.Where(static d => d.Id == GSharpDiagnostics.AotArtifactWriteFailed.Id).ToList();
             var failure = Assert.Single(failures);
@@ -91,7 +91,7 @@ public class NativeModuleAssemblyTests
 
     private static string GetSharedDeviceCode(string dialect)
     {
-        var (_, outputCompilation, _) = RoslynTestUtility.RunGenerator(s_source, dialect);
+        var (_, outputCompilation, _) = GeneratorTestRunner.RunGenerator(s_source, dialect);
         var tree = outputCompilation.SyntaxTrees.Single(t => t.FilePath.EndsWith($"GSharpShared{dialect}DeviceCode.g.cs", StringComparison.Ordinal));
         return tree.ToString();
     }
@@ -106,7 +106,7 @@ public class NativeModuleAssemblyTests
                 { "build_property.IntermediateOutputPath", "." },
                 { "build_property.MSBuildProjectDirectory", tempDir }
             };
-            RoslynTestUtility.RunGenerator(s_source, dialect, options);
+            GeneratorTestRunner.RunGenerator(s_source, dialect, options);
             return File.ReadAllText(Path.Combine(tempDir, $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{extension}"));
         }
         finally

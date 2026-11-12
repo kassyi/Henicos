@@ -34,7 +34,7 @@ public class AotContextNameTests
             diagnostics.Ranges(GSharpDiagnostics.DuplicateAotContextName.Id));
 
         // The second struct gets no helper, so the generated code does not add CS0102 on top of the report.
-        var (_, output, _) = RoslynTestUtility.RunGenerator(source, dialect);
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(source, dialect);
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Id == "CS0102");
     }
 

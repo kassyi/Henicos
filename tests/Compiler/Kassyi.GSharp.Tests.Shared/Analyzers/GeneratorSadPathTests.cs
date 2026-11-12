@@ -12,7 +12,7 @@ public class GeneratorSadPathTests
         string testCasePath,
         string expectedErrorId)
     {
-        await RoslynTestUtility.TestGenerator(testCasePath)
+        await GeneratorTestRunner.TestGenerator(testCasePath)
                                .ReportsErrorsAsync(expectedErrorId);
     }
 
@@ -46,7 +46,7 @@ public class GeneratorSadPathTests
         string testCasePath,
         string expectedDiagnosticId)
     {
-        await RoslynTestUtility.TestGenerator(testCasePath)
+        await GeneratorTestRunner.TestGenerator(testCasePath)
                                .ReportsDiagnosticsAsync(expectedDiagnosticId);
     }
 
@@ -76,7 +76,7 @@ public class GeneratorSadPathTests
     [InlineData("GEN-17", "Analyzers/RefOutReassignmentSadPath.cs")]
     public async Task Generator_ValidConstruct_HasNoErrors(string featureId, string testCasePath)
     {
-        await RoslynTestUtility.TestGenerator(testCasePath)
+        await GeneratorTestRunner.TestGenerator(testCasePath)
                                .HasNoErrorsAsync();
     }
 
@@ -84,7 +84,7 @@ public class GeneratorSadPathTests
     [Scenario(TestScenario.SadPath)]
     public async Task LocalFunctionCapture_CapturedVariablesInKernel_ReportsExpectedDiagnostic()
     {
-        await RoslynTestUtility.TestGenerator("Analyzers/LocalFunctionCaptureSadPath.cs")
+        await GeneratorTestRunner.TestGenerator("Analyzers/LocalFunctionCaptureSadPath.cs")
                                .ReportsErrorsAsync("CS8421");
     }
 }
