@@ -95,4 +95,14 @@ public static partial class ArrayNullCheckShapeKernels
 
         return s;
     }
+
+    // Gpu.NotNull checks its array once; the local it initializes is proven, so its reads and the call that passes it
+    // are not checked, and Gpu.NotNull of an array that is already proven checks nothing
+    [GpuKernel]
+    public static void NotNullKernel(NullCheckHolder h, int[] values, int[] o)
+    {
+        int[] data = Gpu.NotNull(h.Data);
+        o[0] = data.Length + data[0] + ReadFirst(data);
+        o[1] = Gpu.NotNull(values).Length;
+    }
 }

@@ -17,8 +17,9 @@ internal static class DeviceIntrinsicEffects
         method.ContainingType is { Name: TypeConstants.WarpType } warp && warp.ContainingNamespace.IsCoreNamespace();
 #pragma warning restore HNT0003
 
-    // The math of System (Math, MathF, the methods of the primitive types), System.Numerics, FastMath, and the
-    // constructors of value types that have no body (the vector types, Nullable<T>, spans)
+    // The math of System (Math, MathF, the methods of the primitive types), System.Numerics, FastMath, Gpu.NotNull
+    // (which returns its argument or throws), and the constructors of value types that have no body (the vector types,
+    // Nullable<T>, spans)
 #pragma warning disable HNT0003 // The types are checked with their namespaces
     internal static bool IsPureIntrinsic(IMethodSymbol method)
     {
@@ -42,6 +43,7 @@ internal static class DeviceIntrinsicEffects
         var ns = type.ContainingNamespace;
         return (type.SpecialType != SpecialType.None && type.SpecialType != SpecialType.System_Array) ||
                SpanWriteClassifier.IsPureViewMethod(method) ||
+               GpuMacroClassifier.Classify(method).Kind == GpuMacroKind.NotNull ||
                (ns.IsSystemNamespace() && type.Name is TypeConstants.MathType or TypeConstants.MathFType) ||
                (ns.IsSystemOrNumerics() && !ns.IsSystemNamespace()) ||
                (ns.IsCoreNamespace() && type.Name == FastMathType);
