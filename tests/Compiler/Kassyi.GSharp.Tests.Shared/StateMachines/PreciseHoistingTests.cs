@@ -36,7 +36,7 @@ public class PreciseHoistingTests
         var localDeclaration = Assert.Single(
             lowered.LoweredBody.DescendantNodes().OfType<VariableDeclaratorSyntax>(),
             static d => d.Identifier.ValueText == "y");
-        Assert.Equal("1", localDeclaration.Initializer?.Value.ToString());
+        Assert.True(localDeclaration.Initializer?.Value is LiteralExpressionSyntax lit && lit.Token.ValueText == "1");
 
         var plainReferences = lowered.LoweredBody.DescendantNodes()
             .OfType<IdentifierNameSyntax>()
