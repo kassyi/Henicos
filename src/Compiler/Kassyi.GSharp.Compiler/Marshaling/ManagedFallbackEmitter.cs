@@ -10,11 +10,18 @@ using static GSharpInternalNames.Launcher;
 /// The managed launcher has the shape of the native one (HostLauncherTranspiler), one method per generated loop:
 /// WriteManagedGridLoop (grid phases) &gt; WriteManagedGridPhase (blocks) &gt; WriteManagedBlock &gt;
 /// WriteManagedBarrierRounds (rounds between barriers) &gt; WriteManagedThreadStep (one thread).
+/// <para>
+/// An exception ends the step of its thread only: the thread has finished, the other threads of the launch run on, as
+/// on the GPU, where the failing thread exits, and the launch throws the first exception at its end. A cooperative
+/// launch ends at the grid sync after the exception, as the GPU lets the waiters leave its grid barrier.
+/// </para>
 /// </remarks>
 internal static class ManagedFallbackEmitter
 {
     // The pointer to the context array that an unsafe context's launch pins once for the whole grid
     private const string PinnedContexts = "__gsharp_pinned_contexts";
+
+    private const string ExceptionDispatchInfo = "global::System.Runtime.ExceptionServices.ExceptionDispatchInfo";
 
     // The managed launcher's context slot for the thread currently being stepped.
     private const string LinearContext =
@@ -105,9 +112,12 @@ internal static class ManagedFallbackEmitter
         }
     }
 
-    // bool __gsharp_any_grid_active = true; try { while (__gsharp_any_grid_active) { <grid phase> } } finally { EndGrid(); }
+    // ExceptionDispatchInfo? __gsharp_first_failure = null; bool __gsharp_any_grid_active = true; try { while
+    // (__gsharp_any_grid_active) { <grid phase> } } catch (Exception) when (<a thread failed>) { <throw the first> }
+    // finally { EndGrid(); } __gsharp_first_failure?.Throw();
     private static void WriteManagedGridLoopBody(SourceWriter writer, in KernelHostModel kernel)
     {
+        writer.AppendLine($"{ExceptionDispatchInfo}? {FirstFailure} = null;");
         writer.AppendLine($"bool {AnyGridActive} = true;");
         // The dynamic shared memory of the blocks lives for one grid (#544), also when a step throws
         writer.AppendLine("try");
@@ -121,11 +131,21 @@ internal static class ManagedFallbackEmitter
             }
         }
 
+        // A failure of the launch itself after a thread failed (a stall, a block that finished at a grid sync) does not
+        // replace the first failure
+        writer.AppendLine($"catch (global::System.Exception) when ({FirstFailure} is not null)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{FirstFailure}.Throw();");
+        }
+
         writer.AppendLine("finally");
         using (writer.Scope())
         {
             writer.AppendLine($"{ManagedNames.Context}.EndGrid();");
         }
+
+        writer.AppendLine($"{FirstFailure}?.Throw();");
     }
 
     // One grid phase: every block in turn, then (cooperative) the check that no block finished while others wait
@@ -146,6 +166,13 @@ internal static class ManagedFallbackEmitter
 
         if (kernel.IsCooperative)
         {
+            // After a thread failed, the launch ends at the grid sync
+            writer.AppendLine($"if ({FirstFailure} is not null)");
+            using (writer.Scope())
+            {
+                writer.AppendLine("break;");
+            }
+
             // A block that finished while others wait never arrives at the grid sync of the GPU
             writer.AppendLine($"if ({AnyBlockAtGridSync} && {FirstFinishedBlock} >= 0)");
             using (writer.Scope())
@@ -298,10 +325,12 @@ internal static class ManagedFallbackEmitter
         writer.AppendLine($"if ({BlockAtGridSyncFlag})");
         using (writer.Scope())
         {
-            // The grid sync of the GPU waits for thread 0 of every block
+            // The grid sync of the GPU waits for thread 0 of every block. After a thread failed, the launch ends at the
+            // grid sync instead (the other blocks still run to it)
             var contextSlot = kernel.IsUnsafeContext ? PinnedContexts : Contexts;
+            var representative = $"{contextSlot}[{BlockLoopIndex} * {ThreadsPerBlock}]";
             writer.AppendLine(
-                $"if ({contextSlot}[{BlockLoopIndex} * {ThreadsPerBlock}].{GSharpInternalNames.StateMachine.State} == -1)");
+                $"if ({FirstFailure} is null && {representative}.{GSharpInternalNames.StateMachine.State} == -1)");
             using (writer.Scope())
             {
                 var messageName = SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true);
@@ -345,12 +374,18 @@ internal static class ManagedFallbackEmitter
             using (kernel.ReachesWarpShuffle ? writer.Scope() : default)
             {
                 writer.AppendLineIf(kernel.ReachesWarpShuffle, $"{Stepped} = true;");
+                writer.AppendLine("try");
+                using (writer.Scope())
+                {
                 // The state machines of the kernel and of the device functions it calls request a grid sync (#665) and report
                 // a block barrier through thread-static flags; the launcher steps one GPU thread at a time on this host thread
-                writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.GridSyncRequestedName} = false;");
-                writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.BlockBarrierRequestedName} = false;");
-                WriteStateMachineCall(writer, kernel);
-                WriteManagedWaits(writer, kernel);
+                    writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.GridSyncRequestedName} = false;");
+                    writer.AppendLine($"{ManagedNames.Context}.{ManagedNames.BlockBarrierRequestedName} = false;");
+                    WriteStateMachineCall(writer, kernel);
+                    WriteManagedWaits(writer, kernel);
+                }
+
+                WriteManagedThreadFailureCatch(writer, kernel);
                 if (kernel.ReachesWarpShuffle)
                 {
                     WriteManagedExitCheck(writer, kernel);
@@ -363,6 +398,26 @@ internal static class ManagedFallbackEmitter
             using (writer.Scope())
             {
                 writer.AppendLine($"{AnyBlockActive} = true;");
+            }
+        }
+    }
+
+    // The exception ends the step of the thread, which has finished and waits nowhere; the first one is thrown at the
+    // end of the launch.
+    // catch (Exception __gsharp_failure) { __gsharp_first_failure ??= ExceptionDispatchInfo.Capture(__gsharp_failure);
+    // <context>.__gsharp_state = -1; <its waits> = false; }
+    private static void WriteManagedThreadFailureCatch(SourceWriter writer, in KernelHostModel kernel)
+    {
+        writer.AppendLine($"catch (global::System.Exception {Failure})");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{FirstFailure} ??= {ExceptionDispatchInfo}.Capture({Failure});");
+            var contextSlot = kernel.IsUnsafeContext ? PinnedLinearContext : LinearContext;
+            writer.AppendLine($"{contextSlot}.{GSharpInternalNames.StateMachine.State} = -1;");
+            writer.AppendLine($"{ThreadAtBlockBarrier}[{LinearThreadIndex}] = false;");
+            if (kernel.IsCooperative)
+            {
+                writer.AppendLine($"{ThreadAtGridSync}[{LinearThreadIndex}] = false;");
             }
         }
     }

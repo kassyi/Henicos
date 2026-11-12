@@ -24,6 +24,11 @@ using static GSharpInternalNames.Prelude;
 /// finishes while the others wait is an error, and so is a grid sync in a kernel that is not cooperative: the GPU never
 /// completes such a grid sync, or leaves it undefined.
 /// </para>
+/// <para>
+/// A failed C# check ends the step of its thread (<c>__gsharp_step_abort</c>, ErrorChannel.hpp), which the launcher
+/// catches around the step: the thread stops there and the other threads of the launch run on, as on the GPU, where the
+/// failing thread exits. The launch reports the first failure.
+/// </para>
 /// </remarks>
 internal static class HostLauncherTranspiler
 {
@@ -120,9 +125,8 @@ internal static class HostLauncherTranspiler
             $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
-            // The whole block runs in a try inside the iteration: a step that cannot go on, or memory that cannot be
-            // allocated (also the contexts of a large block), ends the block there and never leaves the OpenMP loop
+            // The whole block runs in a try inside the iteration: memory that cannot be allocated (also the contexts of
+            // a large block) or a stall of its warps ends the block there and never leaves the OpenMP loop
             context.Emitter.Writer.AppendLine("try");
             using (context.Emitter.Writer.Scope())
             {
@@ -140,7 +144,7 @@ internal static class HostLauncherTranspiler
                     context.Emitter.Writer.AppendLine("}");
                     context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
                     WriteRoundDeclaration(step, ref context);
-                    context.Emitter.Writer.AppendLine($"while ({AnyActive} && !{Error}.HasError())");
+                    context.Emitter.Writer.AppendLine($"while ({AnyActive})");
                     using (context.Emitter.Writer.Scope())
                     {
                         context.Emitter.Writer.AppendLine($"{AnyActive} = false;");
@@ -293,7 +297,6 @@ internal static class HostLauncherTranspiler
             $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
             context.Emitter.Writer.AppendLine("try");
             using (context.Emitter.Writer.Scope())
             {
@@ -311,10 +314,12 @@ internal static class HostLauncherTranspiler
                 context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
                 context.Emitter.Writer.AppendLine($"bool {GridSyncReached} = false;");
                 WriteRoundDeclaration(step, ref context);
-                // [WHY] A thread that reached the grid sync waits there while the other threads of the block go on to it:
-                // they may need more steps (a shuffle or a block barrier before it). The block's part of the phase ends
-                // when no thread can run
-                context.Emitter.Writer.AppendLine($"while ({AnyActive} && !{Error}.HasError())");
+                // [WHY] A thread that reached the grid sync waits there while the other threads of the block go on to
+                // it: they may need more steps (a shuffle or a block barrier before it). The block's part of the phase
+                // ends when no thread can run. A thread that failed has finished; the phase still runs to the grid
+                // sync, where the launch then ends (__gsharp_end_grid_phase), as the GPU lets the waiters leave its
+                // grid barrier
+                context.Emitter.Writer.AppendLine($"while ({AnyActive})");
                 using (context.Emitter.Writer.Scope())
                 {
                     context.Emitter.Writer.AppendLine($"{AnyActive} = false;");
@@ -372,7 +377,6 @@ internal static class HostLauncherTranspiler
             $"for (int32_t {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
             context.Emitter.Writer.AppendLine($"{ActiveErrorSlot} = &{Error};");
             context.Emitter.Writer.AppendLine($"int32_t {ThreadX} = {ThreadLoopIndex} % {BlockDimX};");
             context.Emitter.Writer.AppendLine(
@@ -439,9 +443,18 @@ internal static class HostLauncherTranspiler
         }
     }
 
+    // __gsharp_set_thread_idx(<thread>, <block>, <block dimensions>, <grid dimensions>);
+    private const string SetThreadIndexCall =
+        $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, " +
+        $"{BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});";
+
+    // The context of the thread being stepped
+    private const string ThreadContext = $"{Contexts}[{ContextThreadIndex}]";
+
     // <thread>.__gsharp_state != -1 && !<thread>.__gsharp_yielded_for_block_barrier && !<thread>.__gsharp_yielded_for_grid_sync
     private const string RunnableCondition =
-        $"{Contexts}[{ContextThreadIndex}].{State} != -1 && !{Contexts}[{ContextThreadIndex}].{YieldedForBlockBarrier} && !{Contexts}[{ContextThreadIndex}].{YieldedForGridSync}";
+        $"{ThreadContext}.{State} != -1 && !{ThreadContext}.{YieldedForBlockBarrier} && " +
+        $"!{ThreadContext}.{YieldedForGridSync}";
 
     private static void WriteSteppedThread(in KernelStep step, ref TranspileContext context)
     {
@@ -455,13 +468,39 @@ internal static class HostLauncherTranspiler
         using (step.ReachesWarpShuffle ? context.Emitter.Writer.Scope() : default)
         {
             context.Emitter.Writer.AppendLineIf(step.ReachesWarpShuffle, $"{Stepped} = true;");
-            context.Emitter.Writer.AppendLine(
-                $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, {BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});");
-            WriteKernelCall(step, ref context);
-            if (step.HasContext)
+            context.Emitter.Writer.AppendLine("try");
+            using (context.Emitter.Writer.Scope())
             {
-                WriteGridSyncCheck(step, ref context);
+                context.Emitter.Writer.AppendLine(SetThreadIndexCall);
+                WriteKernelCall(step, ref context);
+                if (step.HasContext)
+                {
+                    WriteGridSyncCheck(step, ref context);
+                }
             }
+
+            WriteThreadFailureCatch(step, ref context);
+        }
+    }
+
+    // [WHY] A failed check ends the step of its thread with __gsharp_step_abort after recording the failure: the thread
+    // stops there, as the thread of the GPU exits, and the other threads of the launch run on. A thread with a context
+    // has finished and waits nowhere, so the block barrier and the warp collectives no longer count it (an exited lane
+    // on the GPU). catch (const __gsharp_step_abort&) { [<context>.__gsharp_state = -1; <its waits> = false;] }
+    private static void WriteThreadFailureCatch(in KernelStep step, ref TranspileContext context)
+    {
+        if (!step.HasContext)
+        {
+            context.Emitter.Writer.AppendLine($"catch (const {StepAbort}&) {{}}");
+            return;
+        }
+
+        context.Emitter.Writer.AppendLine($"catch (const {StepAbort}&)");
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.AppendLine($"{ThreadContext}.{State} = -1;");
+            context.Emitter.Writer.AppendLine($"{ThreadContext}.{YieldedForBlockBarrier} = false;");
+            context.Emitter.Writer.AppendLine($"{ThreadContext}.{YieldedForGridSync} = false;");
         }
     }
 
@@ -548,9 +587,9 @@ internal static class HostLauncherTranspiler
         }
     }
 
-    // A step that cannot go on (__gsharp_trap_abort, or memory that cannot be allocated) ends with an exception, which stops
-    // at the try of the block, inside the iteration of the OpenMP loop; the error slot then stops the launch:
-    // catch (const __gsharp_step_abort&) {} catch (const std::bad_alloc&) { <report> }
+    // A failure of the launcher itself (a stall of the warps of the block) or memory that cannot be allocated ends the
+    // block with an exception, which stops at the try of the block, inside the iteration of the OpenMP loop: catch
+    // (const __gsharp_step_abort&) {} catch (const std::bad_alloc&) { <report> }
     private static void WriteStepAbortCatches(ref TranspileContext context)
     {
         // The failure was reported before the throw

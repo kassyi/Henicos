@@ -19,7 +19,9 @@ enum class GSharpErrorCode : int32_t {
     DataRace = 9,
     SwitchExpression = 10
 };
-inline void __gsharp_trap(GSharpErrorCode code, const char* message);
+// A failed C# check: records the error and ends the thread's kernel step (ErrorChannel.hpp). The attribute belongs on
+// the first declaration, so that every check below already knows that the call does not return
+[[noreturn]] __GSHARP_COLD void __gsharp_trap(GSharpErrorCode code, const char* message);
 
 template <GSharpErrorCode ErrorCode>
 inline const char* __gsharp_range_message() {
@@ -53,7 +55,6 @@ struct GSharpArray {
     inline GSharpArray<T> Slice(int start, const char* message = nullptr) const {
         if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
             __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
-            return GSharpArray<T>();
         }
         return GSharpArray<T>(data + start, length - start);
     }
@@ -62,7 +63,6 @@ struct GSharpArray {
         if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
             static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
             __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
-            return GSharpArray<T>();
         }
         return GSharpArray<T>(data + start, count);
     }

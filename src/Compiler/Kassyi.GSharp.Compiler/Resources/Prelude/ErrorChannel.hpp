@@ -50,36 +50,53 @@ struct GSharpErrorSlot {
         block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
     }
 
-    inline void Report(GSharpErrorCode errCode, const char* msg, uint32_t siteId = 0) noexcept {
+    // Records the error when the slot has none yet (the first report of a launch wins); true when it did
+    inline bool Report(GSharpErrorCode errCode, const char* msg, uint32_t siteId = 0) noexcept {
         int32_t expected = 0;
-        if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
-                                         std::memory_order_acq_rel,
-                                         std::memory_order_relaxed)) {
-            if (current_launch_slot != nullptr && current_launch_slot != this && current_launch_slot->HasError()) {
-                site_id = current_launch_slot->site_id;
-                thread_linear = current_launch_slot->thread_linear;
-                block_x = current_launch_slot->block_x;
-                block_yz = current_launch_slot->block_yz;
-            } else {
-                site_id = siteId;
-                CaptureCoordinates();
-            }
-            if (msg == nullptr) {
-                message = nullptr;
-                return;
-            }
-            size_t length = std::strlen(msg);
-            if (length >= sizeof(text)) {
-                length = sizeof(text) - 1;
-                // msg[length] is the first byte left out; while it continues a UTF-8 character, leave that character out
-                while (length > 0 && (static_cast<unsigned char>(msg[length]) & 0xC0u) == 0x80u) {
-                    --length;
-                }
-            }
-            std::memcpy(text, msg, length);
-            text[length] = '\0';
-            message = text;
+        if (!code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
+                                          std::memory_order_acq_rel,
+                                          std::memory_order_relaxed)) {
+            return false;
         }
+        if (current_launch_slot != nullptr && current_launch_slot != this && current_launch_slot->HasError()) {
+            site_id = current_launch_slot->site_id;
+            thread_linear = current_launch_slot->thread_linear;
+            block_x = current_launch_slot->block_x;
+            block_yz = current_launch_slot->block_yz;
+        } else {
+            site_id = siteId;
+            CaptureCoordinates();
+        }
+        CopyMessage(msg);
+        return true;
+    }
+
+    // Replaces the error that the calling thread reported before: the failure of a Dispose that runs while an earlier
+    // failure of the same thread leaves the using, as C# replaces the exception (__gsharp_dispose_unwinding)
+    inline void Replace(GSharpErrorCode errCode, const char* msg, uint32_t siteId) noexcept {
+        site_id = siteId;
+        CaptureCoordinates();
+        CopyMessage(msg);
+        code.store(static_cast<int32_t>(errCode), std::memory_order_release);
+    }
+
+private:
+    inline void CopyMessage(const char* msg) noexcept {
+        if (msg == nullptr) {
+            message = nullptr;
+            return;
+        }
+        size_t length = std::strlen(msg);
+        if (length >= sizeof(text)) {
+            length = sizeof(text) - 1;
+                // msg[length] is the first byte left out; while it continues a UTF-8 character, leave that character out
+            while (length > 0 && (static_cast<unsigned char>(msg[length]) & 0xC0u) == 0x80u) {
+                --length;
+            }
+        }
+        std::memcpy(text, msg, length);
+        text[length] = '\0';
+        message = text;
     }
 };
 
@@ -125,92 +142,115 @@ extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error_details(
     return c;
 }
 
-// Records a runtime failure for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
-// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
-inline void __gsharp_unsupported(const char* message)
-{
-    if (__gsharp_active_error_slot != nullptr) {
-        __gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
-    } else {
-        __gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
-    }
-}
+// Thrown by a failed check (__gsharp_trap and the functions below) to end the kernel step of the calling thread there,
+// as the thread of the GPU exits: the launcher catches it around the step, and the thread does not run again while the
+// other threads of the launch run on. The failure was recorded before the throw
+struct __gsharp_step_abort {};
 
 // The depth of the comparisons of MemoryExtensions.Sort that the thread is running (Sort.hpp).
 inline thread_local int __gsharp_sort_compare_depth = 0;
+// The failures the calling OpenMP thread has recorded, and whether the last one is the one its launch reports: a using
+// that disposes its resource while a failure unwinds the step (__gsharp_dispose_unwinding) reads both
+inline thread_local uint32_t __gsharp_failures = 0;
+inline thread_local bool __gsharp_failure_reported = false;
+// Set while such a Dispose runs after a failure of this thread that its launch reports: a failure of the Dispose then
+// replaces it, as C# replaces the exception
+inline thread_local bool __gsharp_failure_replaces = false;
 
-// Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
-// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline uint32_t __gsharp_failure_mark() noexcept { return __gsharp_failures; }
+
+// Records a failure of the calling thread into the slot of its launch (the host slot outside a launch). The first
+// failure of a launch wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline void __gsharp_record_failure(GSharpErrorCode code, const char* message, uint32_t site_id) noexcept
+{
+    GSharpErrorSlot& slot =
+        __gsharp_active_error_slot != nullptr ? *__gsharp_active_error_slot : __gsharp_host_last_error;
+    __gsharp_failures++;
+    if (__gsharp_failure_replaces) {
+        slot.Replace(code, message, site_id);
+        return;
+    }
+    __gsharp_failure_reported = slot.Report(code, message, site_id);
+}
+
 // [WHY] .NET wraps an exception thrown by the comparison of a sort: IndexOutOfRangeException becomes ArgumentException
 // (the comparer is inconsistent) and any other InvalidOperationException (ArraySortHelper.Sort).
-inline void __gsharp_trap(GSharpErrorCode code, const char* message)
+inline void __gsharp_translate_sort_failure(GSharpErrorCode& code, const char*& message) noexcept
 {
-    if (__gsharp_sort_compare_depth > 0)
-    {
-        if (code == GSharpErrorCode::IndexOutOfRange)
-        {
-            code = GSharpErrorCode::Argument;
-            message = "Unable to sort because the IComparer.Compare() method returns inconsistent results.";
-        }
-        else
-        {
-            code = GSharpErrorCode::InvalidOperation;
-            message = "Failed to compare two elements in the array.";
-        }
+    if (__gsharp_sort_compare_depth <= 0) {
+        return;
     }
-
-    if (__gsharp_active_error_slot != nullptr) {
-        __gsharp_active_error_slot->Report(code, message);
+    if (code == GSharpErrorCode::IndexOutOfRange) {
+        code = GSharpErrorCode::Argument;
+        message = "Unable to sort because the IComparer.Compare() method returns inconsistent results.";
     } else {
-        __gsharp_host_last_error.Report(code, message);
+        code = GSharpErrorCode::InvalidOperation;
+        message = "Failed to compare two elements in the array.";
     }
 }
 
-inline void __gsharp_trap_site(GSharpErrorCode code, uint32_t site_id)
+// A construct the CPU dialect cannot execute (e.g. Gpu.InlinePtx): fails with NotSupportedException
+[[noreturn]] __GSHARP_COLD void __gsharp_unsupported(const char* message)
+{
+    __gsharp_record_failure(GSharpErrorCode::NotSupported, message, 0u);
+    throw __gsharp_step_abort{};
+}
+
+// A failed check (e.g. an empty sequence or an index out of range in StackLinq): records the failure and ends the step.
+// Declared in Types.hpp, so that GSharpArray<T> can report its argument errors.
+[[noreturn]] __GSHARP_COLD void __gsharp_trap(GSharpErrorCode code, const char* message)
+{
+    __gsharp_translate_sort_failure(code, message);
+    __gsharp_record_failure(code, message, 0u);
+    throw __gsharp_step_abort{};
+}
+
+// The same, with the place of the check in the kernel's error site table
+[[noreturn]] __GSHARP_COLD void __gsharp_trap_site(GSharpErrorCode code, uint32_t site_id)
 {
     const char* message = nullptr;
-    if (__gsharp_sort_compare_depth > 0)
-    {
-        if (code == GSharpErrorCode::IndexOutOfRange)
-        {
-            code = GSharpErrorCode::Argument;
-            message = "Unable to sort because the IComparer.Compare() method returns inconsistent results.";
-        }
-        else
-        {
-            code = GSharpErrorCode::InvalidOperation;
-            message = "Failed to compare two elements in the array.";
-        }
-    }
-
-    if (__gsharp_active_error_slot != nullptr) {
-        __gsharp_active_error_slot->Report(code, message, site_id);
-    } else {
-        __gsharp_host_last_error.Report(code, message, site_id);
-    }
+    __gsharp_translate_sort_failure(code, message);
+    __gsharp_record_failure(code, message, site_id);
+    throw __gsharp_step_abort{};
 }
 
-inline void __gsharp_trap(GSharpErrorCode code, uint32_t site_id)
+[[noreturn]] inline void __gsharp_trap(GSharpErrorCode code, uint32_t site_id)
 {
     __gsharp_trap_site(code, site_id);
 }
 
-// Thrown by __gsharp_trap_abort to end the kernel step of the current thread; the launcher catches it around the kernel
-// call, inside its OpenMP loop, and stops the launch through the error slot.
-struct __gsharp_step_abort {};
-
-// Records a failure after which the step cannot go on (a shared memory placement that fails: there is no memory to hand
-// out), then ends the step. The launcher stops the launch, and the host throws the exception of the code.
+// A failure after which the step cannot go on (a shared memory placement that fails, no arm of a switch expression
+// matches, a null array read). Every failed check ends the step, so this is __gsharp_trap under the name that the CUDA
+// prelude shares
 [[noreturn]] inline void __gsharp_trap_abort(GSharpErrorCode code, const char* message)
 {
     __gsharp_trap(code, message);
-    throw __gsharp_step_abort{};
 }
 
 [[noreturn]] inline void __gsharp_trap_abort(GSharpErrorCode code, uint32_t site_id)
 {
     __gsharp_trap_site(code, site_id);
-    throw __gsharp_step_abort{};
+}
+
+// Disposes the resource of a using while a failure of the thread leaves the using (StandardTypes.hpp), as C# runs
+// Dispose in a finally. [WHY] A destructor that runs while an exception unwinds must not throw, so a failure of the
+// Dispose ends here: when the failure being unwound began inside the using (failureMark) and is the one its launch
+// reports, the new failure replaces it, as the exception of a finally replaces the one in flight in C#. The unwinding
+// then goes on.
+template <typename T>
+inline void __gsharp_dispose_unwinding(T& resource, uint32_t failureMark) noexcept
+{
+    bool outer = __gsharp_failure_replaces;
+    __gsharp_failure_replaces = __gsharp_failures != failureMark && __gsharp_failure_reported;
+    try {
+        resource.__gsharp_dispose();
+    } catch (const __gsharp_step_abort&) {
+        // Recorded (or replaced) before the throw
+    } catch (const std::bad_alloc&) {
+        __gsharp_record_failure(GSharpErrorCode::InvalidOperation,
+                                "G#: the native CPU path could not allocate memory for a kernel step", 0u);
+    }
+    __gsharp_failure_replaces = outer;
 }
 
 // GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
