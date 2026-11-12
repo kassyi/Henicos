@@ -130,48 +130,44 @@ public partial class EmissionShapeTests
         Assert.DoesNotContain("ArgumentNullException", launcher, StringComparison.Ordinal);
     }
 
-    // The nullable annotation is the contract (#1409): a non-nullable field of a struct argument is read unchecked, a call
-    // checks what it passes to a non-nullable parameter unless it is proven, and the callee reads its parameter unchecked
+    // The nullable annotation is the contract of a device function (#1409): a call checks what it passes to a
+    // non-nullable parameter unless it is proven, and the callee reads its parameter unchecked. A field of a struct
+    // argument of the kernel may be null, as in a C# call, so the kernel checks it
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public void ArrayNullCheck_NonNullableAnnotation_IsCheckedAtKernelEntryOnly(string dialect)
+    public void ArrayNullCheck_NonNullableAnnotation_IsTheContractOfADeviceFunction(string dialect)
     {
         var generated = Generate("ArrayNullCheckShapeKernels", dialect);
         var kernel = KernelSource(generated, "BoundaryKernel");
 
-        Assert.DoesNotContain(ArrayAt + "__gsharp_id_0_p.", kernel, StringComparison.Ordinal);
+        Assert.Contains(ArrayAt + "__gsharp_id_0_p.__gsharp_mb_Data, ", kernel, StringComparison.Ordinal);
         Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayRef + "__gsharp_id_1_h.__gsharp_mb_Data, ")));
-        Assert.Contains("ReadFirst(__gsharp_id_0_p.__gsharp_mb_Data)", kernel, StringComparison.Ordinal);
-        Assert.Single(Regex.Matches(kernel, @"__gsharp_struct_ref\(__gsharp_id_\d+_made, [^,]+, \[\]\(const auto& s\) -> decltype\(auto\) \{ return \(s\.__gsharp_mb_Data\); \}\)"));
-        Assert.Contains("ReadHolder(__gsharp_id_0_p)", kernel, StringComparison.Ordinal);
+        Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayRef + "__gsharp_id_0_p.__gsharp_mb_Data, ")));
+        var structRef = @"__gsharp_struct_ref\(__gsharp_id_\d+_(made|p), [^,]+, " +
+            @"\[\]\(const auto& s\) -> decltype\(auto\) \{ return \(s\.__gsharp_mb_Data\); \}\)";
+        Assert.Equal(2, Regex.Matches(kernel, structRef).Count);
 
         var readFirst = generated[generated.LastIndexOf("ReadFirst(GSharpArray", StringComparison.Ordinal)..];
         readFirst = readFirst[..readFirst.IndexOf('}', StringComparison.Ordinal)];
         Assert.DoesNotContain(ArrayAt, readFirst, StringComparison.Ordinal);
     }
 
-    // The launchers enforce the contract of a non-nullable array field of a struct argument; a nullable one is not
-    // checked (#1409)
+    // The launchers pass a null in a non-nullable array field of a struct argument, as a C# call passes it
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("LaunchBoundaryKernel(global::", "p.Data is null")]
-    [InlineData("LaunchBoundaryKernelPtr(", "p.Data.Data == global::System.IntPtr.Zero")]
-    public void ArrayNullCheck_Launchers_RejectANullNonNullableField(string launcherStart, string test)
+    [InlineData("LaunchBoundaryKernel(global::")]
+    [InlineData("LaunchBoundaryKernelPtr(")]
+    public void ArrayNullCheck_Launchers_PassANullNonNullableField(string launcherStart)
     {
         var generated = Generate("ArrayNullCheckShapeKernels", "Cuda");
         var start = generated.IndexOf("public static unsafe void " + launcherStart, StringComparison.Ordinal);
         Assert.True(start >= 0, $"The launcher {launcherStart} is not generated.");
         var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
 
-        Assert.Contains($"if ({test})", launcher, StringComparison.Ordinal);
-        Assert.Contains(
-            "throw new global::System.ArgumentNullException(\"p\", " +
-            "\"p.Data is null, but the field is not nullable.\");",
-            launcher,
-            StringComparison.Ordinal);
-        Assert.DoesNotContain("h.Data", launcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("ArgumentNullException", launcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("p.Data is null", launcher, StringComparison.Ordinal);
     }
 
     // A call through a delegate could not check the argument that the callee reads unchecked (#1409)

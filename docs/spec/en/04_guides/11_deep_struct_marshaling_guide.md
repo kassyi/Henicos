@@ -419,18 +419,15 @@ G# natively handles `null` array members:
 - An empty array (`new float[0]`, `[]`) is not `null`: it has no allocation either, but its device pointer is
   `GSharpArrayProxy.EmptyArrayData`, a non-null address that is never dereferenced (the native CPU build passes the
   pinned address of the empty array). On every path `ctx.DebugTelemetry is null` is false for it and `Length` is 0.
-- The nullable annotation of the field is a contract that the launch enforces. A non-nullable field (`float[]`
-  in a `#nullable enable` context) must hold an array: the launcher throws `ArgumentNullException` before the launch
-  when it is `null` (the message names the field, as in `ctx.Solution is null, but the field is not nullable.`), and
-  the kernel reads it without a null check, so it costs nothing on the GPU. This covers the array fields that a
-  by-value struct argument reaches through struct fields; the elements of an array of structs and `ref` arguments are
-  not checked at the launch. A nullable field (`float[]?`) or one declared without annotations (`#nullable disable`)
-  may be `null`, and a kernel that does not read it runs normally.
+- The launch passes a struct argument as a C# call passes it, whatever the nullable annotation of its fields: a
+  `null` in a non-nullable field (`float[]` in a `#nullable enable` context) reaches the kernel, which throws
+  `NullReferenceException` where it reads the field, as C# does, and a kernel that does not read it runs normally. The
+  same holds for array arguments, so a field and an argument follow one rule.
 - A device function parameter follows the same contract: when a call passes an array that may be `null` to a
   non-nullable array parameter (or a struct whose non-nullable array fields may be `null`), the call checks it once and
   throws `NullReferenceException` there, and the function reads the parameter without a check. A nullable parameter
   (`float[]?`) is checked where it is read. In C# a `null` in a non-nullable place throws only when it is read; in G# it
-  throws at the launch or at the call, earlier, and only for a `null` in a non-nullable place.
+  throws at the call, earlier, and only for a `null` in a non-nullable parameter.
 - To read a nullable field many times without a check per read, read it once through
   [`Gpu.NotNull`](../03_bcl_api/gpu_class/NotNull.md) into a local:
   `float[] telemetry = Gpu.NotNull(ctx.DebugTelemetry);` throws `NullReferenceException` at that call when the field

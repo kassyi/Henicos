@@ -642,8 +642,8 @@ public static partial class BoundsAndMemoryDifferentialKernels
     public static int ReadAt(int[] data, int index) => data[index] + 1;
 
     /// <summary>
-    /// Reads a non-nullable array field of a struct argument without a check (#1409); the launchers reject a null in
-    /// it with <see cref="ArgumentNullException"/> before the launch.
+    /// Reads a non-nullable array field of a struct argument, which may be null as in a C# call: the read throws
+    /// <see cref="NullReferenceException"/> where C# throws it.
     /// </summary>
     [GpuKernel]
     public static void NonNullableFieldKernel(DiffNonNullableHolder holder, int[] dst, int rows)

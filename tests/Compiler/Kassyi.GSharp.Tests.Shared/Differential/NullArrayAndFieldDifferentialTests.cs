@@ -271,24 +271,23 @@ public class NullArrayAndFieldDifferentialTests
                 s.Rows),
         });
 
-    // The launchers reject a null in a non-nullable array field of a struct argument before the launch (#1409); a
-    // non-null one runs as the oracle
+    // A null in a non-nullable array field of a struct argument reaches the kernel, as in a C# call, and throws where
+    // the kernel reads it (holder.Data.Length in the index, evaluated before the element); a non-null one runs as the
+    // oracle
     [SkippableFact]
-    public void NullValidation_NonNullableField_NullIsRejectedAtTheLaunch() =>
+    public void NullValidation_NonNullableField_NullThrowsAtTheRead() =>
         DifferentialRunner.Run(new DifferentialCase(
             KernelName(nameof(BoundsAndMemoryDifferentialKernels.NonNullableFieldKernel)))
         {
             Shape = LaunchShapes.Linear(DefaultRows, 32),
             Seeds = [0, 1],
-            ExpectedException = static (rng, _) => rng.Seed == 1
-                ? new ExceptionPolicy(typeof(ArgumentNullException), DiffPaths.CheckedPaths()) { ParamName = "holder" }
-                : null,
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayRead(657, 34) : null,
             Inputs = static (rng, shape) => new DiffBuffers()
                 .InDeepScalar(
                     "holder",
                     new DiffNonNullableHolder
                     {
-                        // Deliberately null in a non-nullable field for seed 1: the launch rejects it
+                        // Deliberately null in a non-nullable field for seed 1: the kernel's read throws
                         Data = rng.Seed == 1 ? null! : DiffValues.Int32(rng, 8),
                         Offset = 3,
                     },

@@ -31,7 +31,6 @@ internal static class CudaHostLaunchEmitter
             {
                 WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
                 WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
-                WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             }
             else
             {
