@@ -17,6 +17,23 @@ internal static class FuzzSyntaxHelpers
     internal static CompilationUnitSyntax ParseRoot(string source) =>
         (CompilationUnitSyntax)CSharpSyntaxTree.ParseText(source, ParseOptions).GetRoot();
 
+    /// <summary>
+    /// Parses <paramref name="source"/> and returns its first method declaration, or <see langword="null"/> when it
+    /// declares none.
+    /// </summary>
+    internal static MethodDeclarationSyntax? ParseFirstMethod(string source)
+    {
+        foreach (var node in ParseRoot(source).DescendantNodes())
+        {
+            if (node is MethodDeclarationSyntax method)
+            {
+                return method;
+            }
+        }
+
+        return null;
+    }
+
     internal static string RenderFullNode(SyntaxNode node)
     {
         using var writer = new StringWriter(CultureInfo.InvariantCulture);

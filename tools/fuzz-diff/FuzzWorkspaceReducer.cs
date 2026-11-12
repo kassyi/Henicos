@@ -202,7 +202,7 @@ internal static class FuzzWorkspaceReducer
         return !timedOut && code == 0;
     }
 
-    private static string ReplaceKernelMethodInUnit(string unitSource, string newMethodSource)
+    internal static string ReplaceKernelMethodInUnit(string unitSource, string newMethodSource)
     {
         var root = FuzzReducer.ParseRoot(unitSource);
         var kernels = FuzzReducer.GetKernelMethods(root);

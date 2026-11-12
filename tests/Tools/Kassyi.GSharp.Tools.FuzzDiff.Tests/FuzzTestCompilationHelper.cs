@@ -5,10 +5,10 @@ using System.Reflection;
 using System.Runtime.Loader;
 using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Diagnostics.Kernel;
-using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Shared.Differential;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Compiler.Marshaling
@@ -42,12 +42,6 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
     /// </summary>
     internal static class FuzzTestCompilationHelper
     {
-        private static readonly Lazy<IReadOnlyList<MetadataReference>> s_baseReferences = new(CreateBaseReferences);
-
-        internal static CSharpParseOptions ParseOptions { get; } = new(LanguageVersion.Preview);
-
-        internal static IReadOnlyList<MetadataReference> BaseReferences => s_baseReferences.Value;
-
         internal static ImmutableArray<DiagnosticAnalyzer> KernelAnalyzers { get; } =
         [
             new GpuKernelAnalyzer(),
@@ -111,19 +105,28 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
             return sw.ToString();
         }
 
+        /// <summary>
+        /// Compiles <paramref name="source"/> with the parse options and references of the tool
+        /// (<see cref="MetamorphicTypeResolver.CreateCompilation"/>), under <paramref name="assemblyName"/>.
+        /// </summary>
+        internal static CSharpCompilation CreateCompilation(
+            string source,
+            string assemblyName,
+            OptimizationLevel optimizationLevel,
+            out CompilationUnitSyntax root)
+        {
+            var compilation = MetamorphicTypeResolver.CreateCompilation(source, out root, out _);
+            return compilation
+                .WithAssemblyName(assemblyName)
+                .WithOptions(compilation.Options.WithOptimizationLevel(optimizationLevel));
+        }
+
         internal static Assembly CompileToInMemoryAssembly(
             string assemblyName,
             string source,
             OptimizationLevel optimizationLevel = OptimizationLevel.Release)
         {
-            var tree = CSharpSyntaxTree.ParseText(source, ParseOptions, path: $"{assemblyName}.cu.cs");
-            var compilation = CSharpCompilation.Create(
-                assemblyName,
-                [tree],
-                BaseReferences,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                    .WithAllowUnsafe(true)
-                    .WithOptimizationLevel(optimizationLevel));
+            var compilation = CreateCompilation(source, assemblyName, optimizationLevel, out _);
 
             using var peStream = new MemoryStream();
             var emitResult = compilation.Emit(peStream);
@@ -152,9 +155,10 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
         internal static TDelegate CreateStaticDelegate<TDelegate>(Type type, string methodName)
             where TDelegate : Delegate
         {
-            var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
-                ?? throw new InvalidOperationException($"Missing method {methodName}.");
-            return method.CreateDelegate<TDelegate>();
+#pragma warning disable RS0030 // Invokes a method of an assembly compiled at run time; no symbol exists to reference it
+            return (type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static)
+                ?? throw new InvalidOperationException($"Missing method {methodName}.")).CreateDelegate<TDelegate>();
+#pragma warning restore RS0030
         }
 
         internal static bool EvaluatesToMismatch(
@@ -191,52 +195,6 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
                 checkStale: false);
 
             return report.UnexpectedMismatches.Count > 0;
-        }
-
-        private static IReadOnlyList<MetadataReference> CreateBaseReferences()
-        {
-            string baseDir = AppContext.BaseDirectory;
-            string trusted = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? string.Empty;
-            var list = new List<MetadataReference>();
-            int start = 0;
-            for (int i = 0; i <= trusted.Length; i++)
-            {
-                if (i == trusted.Length || trusted[i] == Path.PathSeparator)
-                {
-                    if (i > start)
-                    {
-                        string path = trusted[start..i];
-                        if (path.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
-                        {
-                            list.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(path)));
-                        }
-                        else
-                        {
-                            list.Add(MetadataReference.CreateFromFile(path));
-                        }
-                    }
-
-                    start = i + 1;
-                }
-            }
-
-            string corePath = typeof(Gpu).Assembly.Location;
-            bool hasCore = false;
-            foreach (var r in list)
-            {
-                if (string.Equals(r.Display, corePath, StringComparison.OrdinalIgnoreCase))
-                {
-                    hasCore = true;
-                    break;
-                }
-            }
-
-            if (!hasCore)
-            {
-                list.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(corePath)));
-            }
-
-            return list;
         }
 
         internal sealed class FuzzTestAnalyzerConfigOptionsProvider(string dialect) : AnalyzerConfigOptionsProvider

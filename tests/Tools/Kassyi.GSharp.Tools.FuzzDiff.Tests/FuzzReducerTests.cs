@@ -64,7 +64,7 @@ public class FuzzReducerTests
             specBatch,
             cand =>
             {
-                string singleUnit = ReplaceKernelInSyntheticUnit(synthetic100LineSource, cand.CandidateKernelMethodSource, "SyntheticBugKernel");
+                string singleUnit = FuzzWorkspaceReducer.ReplaceKernelMethodInUnit(synthetic100LineSource, cand.CandidateKernelMethodSource);
                 return IsInteresting(singleUnit);
             });
 
@@ -280,42 +280,6 @@ public class FuzzReducerTests
         return writer.ToString();
     }
 
-    private static string ReplaceKernelInSyntheticUnit(string baseUnit, string candidateMethodSource, string targetKernelName)
-    {
-        var root = (CompilationUnitSyntax)CSharpSyntaxTree.ParseText(baseUnit, FuzzTestCompilationHelper.ParseOptions).GetRoot();
-        MethodDeclarationSyntax? oldKernel = null;
-        foreach (var node in root.DescendantNodes())
-        {
-            if (node is MethodDeclarationSyntax m && string.Equals(m.Identifier.ValueText, targetKernelName, StringComparison.Ordinal))
-            {
-                oldKernel = m;
-                break;
-            }
-        }
-
-        if (oldKernel is null)
-        {
-            return baseUnit;
-        }
-
-        MethodDeclarationSyntax? newKernel = null;
-        foreach (var node in CSharpSyntaxTree.ParseText($"class __W {{ {candidateMethodSource} }}", FuzzTestCompilationHelper.ParseOptions).GetRoot().DescendantNodes())
-        {
-            if (node is MethodDeclarationSyntax m)
-            {
-                newKernel = m.WithIdentifier(SyntaxFactory.Identifier(targetKernelName));
-                break;
-            }
-        }
-
-        if (newKernel is null)
-        {
-            return baseUnit;
-        }
-
-        return FuzzTestCompilationHelper.RenderNode(root.ReplaceNode(oldKernel, newKernel));
-    }
-
     private static bool CompilesWithZeroDiagnosticsAndSimulateShiftMismatch(
         string candidateSource,
         out bool mismatchReproduced,
@@ -324,20 +288,17 @@ public class FuzzReducerTests
         mismatchReproduced = false;
         gshDiagnostics = [];
 
-        var oracleTree = CSharpSyntaxTree.ParseText(candidateSource, FuzzTestCompilationHelper.ParseOptions, path: "ReduceCheck.cu.cs");
-        var compilation = CSharpCompilation.Create(
+        var compilation = FuzzTestCompilationHelper.CreateCompilation(
+            candidateSource,
             "ReduceCheckAssembly",
-            [oracleTree],
-            FuzzTestCompilationHelper.BaseReferences,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                .WithAllowUnsafe(true)
-                .WithOptimizationLevel(OptimizationLevel.Debug));
+            OptimizationLevel.Debug,
+            out var oracleRoot);
 
         var configProvider = new FuzzTestCompilationHelper.FuzzTestAnalyzerConfigOptionsProvider("Cpu");
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: [new GpuKernelGenerator().AsSourceGenerator()],
             additionalTexts: null,
-            parseOptions: FuzzTestCompilationHelper.ParseOptions,
+            parseOptions: FuzzSyntaxHelpers.ParseOptions,
             optionsProvider: configProvider);
         driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiags);
 
@@ -376,7 +337,6 @@ public class FuzzReducerTests
             return false;
         }
 
-        var oracleRoot = (CompilationUnitSyntax)oracleTree.GetRoot();
         ClassDeclarationSyntax? oracleClass = null;
         foreach (var node in oracleRoot.DescendantNodes())
         {
@@ -396,14 +356,11 @@ public class FuzzReducerTests
         var combinedRoot = oracleRoot.AddMembers(brokenClass);
         string combinedSource = FuzzTestCompilationHelper.RenderNode(combinedRoot);
 
-        var execTree = CSharpSyntaxTree.ParseText(combinedSource, FuzzTestCompilationHelper.ParseOptions, path: "ReduceExec.cu.cs");
-        var execCompilation = CSharpCompilation.Create(
+        var execCompilation = FuzzTestCompilationHelper.CreateCompilation(
+            combinedSource,
             "ReduceExecAssembly",
-            [execTree],
-            FuzzTestCompilationHelper.BaseReferences,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                .WithAllowUnsafe(true)
-                .WithOptimizationLevel(OptimizationLevel.Debug));
+            OptimizationLevel.Debug,
+            out _);
 
         using var peStream = new MemoryStream();
         var emitRes = execCompilation.Emit(peStream);
