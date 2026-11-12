@@ -130,9 +130,9 @@ public static partial class Gpu
     /// for (int i = 0; i &lt; data.Length; i++) { sum += data[i]; }
     /// </code>
     /// <para>
-    /// The method works in kernels, in device functions and on the host. A <see langword="null"/> optional kernel
-    /// argument, which reads as an empty array, is still <see langword="null"/> here and throws, and so does an empty
-    /// one, which the launchers pass as <see langword="null"/>.
+    /// The method works in kernels, in device functions and on the host. A <see langword="null"/> kernel argument,
+    /// nullable or not, is <see langword="null"/> here and throws, as in a C# call; an empty array is an array and
+    /// passes.
     /// </para>
     /// </remarks>
     /// <exception cref="NullReferenceException">
