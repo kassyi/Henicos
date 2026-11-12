@@ -70,10 +70,12 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
 
         Assert.Empty(failures1);
         Assert.Empty(failures2);
+#pragma warning disable RS0030 // Generated C++ has no syntax tree; the StackLinq functions it calls are matched against DeviceOperators
         var called = Regex.Matches(cppTakeLast + cppUnfusedSelector, @"StackLinq::(\w+)\(")
             .Select(static m => m.Groups[1].Value)
             .Distinct()
             .ToArray();
+#pragma warning restore RS0030
         Assert.Contains("TakeLast", called);
         Assert.Contains("SkipLast", called);
         Assert.Contains("Sum", called);
@@ -187,9 +189,11 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
 
         Assert.Empty(failures);
 
+#pragma warning disable RS0030 // Generated C++ has no syntax tree; the hash site keys of two allocations are compared with each other
         var siteKeys = Regex.Matches(cppSource, @"__gsharp_allocate_smem_static\((0x[0-9a-fA-F]+ull)")
             .Select(m => m.Groups[1].Value)
             .ToArray();
+#pragma warning restore RS0030
 
         Assert.Equal(2, siteKeys.Length);
         Assert.NotEqual(siteKeys[0], siteKeys[1]);
@@ -214,9 +218,11 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
 
         Assert.Empty(failures1);
 
+#pragma warning disable RS0030 // Generated C++ has no syntax tree; the hash site keys of two allocations are compared with each other
         var ctorAndOpKeys = Regex.Matches(cppCtorAndOp, @"__gsharp_allocate_smem_static\((0x[0-9a-fA-F]+ull)")
             .Select(m => m.Groups[1].Value)
             .ToArray();
+#pragma warning restore RS0030
 
         Assert.Equal(2, ctorAndOpKeys.Length);
         Assert.Equal(2, ctorAndOpKeys.Distinct(StringComparer.Ordinal).Count());

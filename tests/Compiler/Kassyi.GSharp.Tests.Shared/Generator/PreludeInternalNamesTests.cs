@@ -12,8 +12,10 @@ public partial class PreludeInternalNamesTests
     [GeneratedRegex(@"(?<![A-Za-z0-9_])_(ctx|state|yieldedForGridSync|warpExchange|all_contexts)(?![A-Za-z0-9_])")]
     private static partial Regex LegacyInternalNameRegex();
 
+#pragma warning disable RS0030 // The C++ prelude has no syntax tree; a name of InternalNames.yml must appear in it as a whole identifier
     private static bool ContainsIdentifier(string source, string identifier) =>
         Regex.IsMatch(source, $"(?<![A-Za-z0-9_]){Regex.Escape(identifier)}(?![A-Za-z0-9_])");
+#pragma warning restore RS0030
 
     // The names that InternalNames.yml marks as declared by the Prelude.
     public static TheoryData<string, string> PreludeDeclaredNames()

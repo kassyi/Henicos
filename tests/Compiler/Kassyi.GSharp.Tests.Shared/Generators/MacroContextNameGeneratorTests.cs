@@ -36,6 +36,8 @@ public class MacroContextNameGeneratorTests
         var text = Generate(dialect);
 
         // The target is declared as __gsharp_fn_<namespace>__<type>__MacroCtxAdd; a bare MacroCtxAdd( call has no declaration.
+#pragma warning disable RS0030 // Generated C++ has no syntax tree; no call anywhere in it may name the undeclared bare function
         Assert.DoesNotMatch(new Regex(@"(?<![A-Za-z0-9_])MacroCtxAdd\(&"), text);
+#pragma warning restore RS0030
     }
 }

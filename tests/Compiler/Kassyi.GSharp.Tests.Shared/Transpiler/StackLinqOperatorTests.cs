@@ -106,9 +106,11 @@ public class StackLinqOperatorTests
         // mutant: StackLinq.cuh without TakeLast
         var header = File.ReadAllText(
             RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler", "Resources", "StackLinq.cuh"));
+#pragma warning disable RS0030 // StackLinq.cuh is a C++ resource with no syntax tree; its definitions are matched against DeviceOperators
         var defined = Regex.Matches(header, @"__device__ static inline [\w:<>]+ (\w+)\(")
             .Select(static m => m.Groups[1].Value)
             .ToHashSet(StringComparer.Ordinal);
+#pragma warning restore RS0030
 
         Assert.All(StackLinqTranspilerRule.DeviceOperators, name => Assert.Contains(name, defined));
     }
