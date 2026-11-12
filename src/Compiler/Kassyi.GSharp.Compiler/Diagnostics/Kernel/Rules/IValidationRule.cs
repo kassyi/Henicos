@@ -8,7 +8,3 @@ internal interface IValidationRule
     }
 }
 
-internal interface ISyntaxValidationRule<in TSyntax> : IValidationRule where TSyntax : SyntaxNode
-{
-    void Analyze(TSyntax node, ref ValidationContext context);
-}
