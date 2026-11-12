@@ -31,6 +31,31 @@ public sealed class ConstantStringIndexDifferentialTests
         Oracle = static (b, _) => StringIndexKernel(b.Get<int>("index"), b.Get<int>("dst")),
     };
 
+    internal static readonly DifferentialCase s_constantIndexOutside = new(
+        $"{nameof(ConstantStringIndexDifferentialKernels)}.{nameof(ConstantIndexOutsideKernel)}")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        // 0: only the branch that never runs indexes outside; 1: the constant index outside runs
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, _) => new DiffBuffers()
+            .In("mode", new[] { rng.Seed }, readOnly: true)
+            .Out<int>("dst", 3, OutputPolicy.Exact),
+        Launch = static (b, s) => LaunchConstantIndexOutsideKernel(b.Get<int>("mode"), b.Get<int>("dst"),
+            gridDimX: s.GridX, blockDimX: s.BlockX),
+        Oracle = static (b, _) => ConstantIndexOutsideKernel(b.Get<int>("mode"), b.Get<int>("dst")),
+    };
+
+    internal static readonly DifferentialCase s_forEach = new(
+        $"{nameof(ConstantStringIndexDifferentialKernels)}.{nameof(ForEachKernel)}")
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers().Out<int>("dst", ForEachColumns, OutputPolicy.Exact),
+        Launch = static (b, s) => LaunchForEachKernel(b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
+        Oracle = static (b, _) => ForEachKernel(b.Get<int>("dst")),
+    };
+
     // index[0] into Text, index[1] into a three-element string
     private static int[] IndexOf(int seed) => seed switch
     {
@@ -42,4 +67,24 @@ public sealed class ConstantStringIndexDifferentialTests
     [SkippableFact]
     public void Index_NonAsciiConstantString_ReadsTheUtf16CodeUnitOnEveryPath() =>
         DifferentialRunner.Run(s_stringIndex);
+
+    [SkippableFact]
+    public void Index_ConstantOutsideTheString_ThrowsOnlyWhereItRuns() =>
+        DifferentialRunner.Run(s_constantIndexOutside);
+
+    [SkippableFact]
+    public void ForEach_ConstantString_ReadsEachUtf16CodeUnitOnEveryPath() =>
+        DifferentialRunner.Run(s_forEach);
+
+    // Text has 11 code units; the literals add 2 and 2, then dst[15] = 115 and dst[16] stays 0
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ForEach_ConstantString_WritesTheCodeUnitsAndNoTerminatingZero()
+    {
+        var dst = new int[ForEachColumns];
+
+        LaunchForEachKernel(dst);
+
+        Assert.Equal([97, 233, 0xd83d, 0xde00, 0, 34, 92, 63, 233, 102, 57, 120, 233, 0xe9, 0x41, 115, 0], dst);
+    }
 }

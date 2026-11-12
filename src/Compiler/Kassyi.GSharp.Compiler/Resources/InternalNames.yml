@@ -118,6 +118,9 @@ Lowering:
     # The raw element of a C++ range-for whose loop variable converts it with a .NET conversion helper (#995):
     # for (auto __gsharp_foreach_e_<n> : <source>) { int x = __gsharp_to_i32(__gsharp_foreach_e_<n>); ... }
     ForEachElementPrefix: __gsharp_foreach_e_
+    # The index of a foreach over a constant string, which reads each UTF-16 code unit (ConstantStringForEach):
+    # for(int __gsharp_foreach_s_<n> = 0; ...) { char c = __gsharp_string_char(u"...", __gsharp_foreach_s_<n>); ... }
+    ForEachStringIndexPrefix: __gsharp_foreach_s_
     UnrollIndexPrefix: __gsharp_unroll_
     # The unsigned index of a Gpu.GridStrideLoop and its count and step, each read once before the loop (__gsharp_gsl_<n>,
     # __gsharp_gsl_n_<n>, __gsharp_gsl_s_<n>); the C++ emitter and the managed rewrite both spell them
@@ -379,8 +382,8 @@ Prelude:
     StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
     # The zero fill of a stackalloc outside a declaration (StackAllocEmitter). Declared by Types.hpp and by the CUDA prelude.
     StackAllocZero: { Value: __gsharp_stackalloc_zero, Prelude: Types.hpp }
-    # The UTF-16 code unit at a run-time index of a constant string (ConstantStringElement). Declared by Types.hpp and
-    # by the CUDA prelude.
+    # The UTF-16 code unit at a run-time index of a constant string (ConstantStringElement, ConstantStringForEach).
+    # Declared by Types.hpp and by the CUDA prelude.
     StringChar: { Value: __gsharp_string_char, Prelude: Types.hpp }
     # NaN and infinity of float and double, which have no C++ literal (ConstexprLiteral). Declared by Platform.hpp for
     # the CPU dialects and by the CUDA prelude (../Prelude.cu).

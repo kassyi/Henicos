@@ -8,18 +8,15 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// non-ASCII character would read as one of its bytes (<c>"\u00e9"[0]</c> as -61).
 /// </summary>
 /// <remarks>
-/// A constant index outside the string, or any index of a constant that is <see langword="null"/>, throws in C# for
-/// certain, which is known at compile time: a failure (GSH0003, as the semantics charter treats certain undefined
-/// behavior), as <see cref="ConstantStringLength"/> does for <c>Length</c>.
+/// A constant index outside the string takes the run-time path and throws where it runs: the access may sit in a
+/// branch that never runs (<c>if (T.Length &gt; 10) r[0] = T[10];</c>, where <c>T.Length</c> is not a C# constant),
+/// which is correct C#. Any index of a constant that is <see langword="null"/> is a failure (GSH0003), as
+/// <see cref="ConstantStringLength"/> reports for <c>Length</c>.
 /// </remarks>
 internal static class ConstantStringElement
 {
     /// <summary>The GSH0003 text for an element of a constant string that is <see langword="null"/>.</summary>
     public const string NullConstant = "Element of a null constant string (it throws NullReferenceException)";
-
-    /// <summary>The GSH0003 text for a constant index outside a constant string.</summary>
-    public const string IndexOutsideConstant =
-        "Constant index outside a constant string (it throws IndexOutOfRangeException)";
 
     private enum Shape : byte
     {
@@ -29,13 +26,10 @@ internal static class ConstantStringElement
         /// <summary>The constant is <see langword="null"/>.</summary>
         NullConstant,
 
-        /// <summary>A constant index outside the string.</summary>
-        IndexOutside,
-
         /// <summary>A constant index: the code unit <see cref="Plan.Value"/>.</summary>
         ConstantElement,
 
-        /// <summary>A run-time index into <see cref="Plan.Text"/>.</summary>
+        /// <summary>A run-time index into <see cref="Plan.Text"/>, or a constant one outside it.</summary>
         RuntimeIndex,
     }
 
@@ -57,10 +51,6 @@ internal static class ConstantStringElement
                 return false;
             case Shape.NullConstant:
                 context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, NullConstant);
-                context.Visitor.AppendUnsupportedPlaceholder(node);
-                return true;
-            case Shape.IndexOutside:
-                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, IndexOutsideConstant);
                 context.Visitor.AppendUnsupportedPlaceholder(node);
                 return true;
             case Shape.ConstantElement:
@@ -110,6 +100,6 @@ internal static class ConstantStringElement
         var position = Convert.ToInt64(index, System.Globalization.CultureInfo.InvariantCulture);
         return position >= 0 && position < text.Length
             ? new Plan(Shape.ConstantElement, Value: text[(int)position])
-            : new Plan(Shape.IndexOutside);
+            : new Plan(Shape.RuntimeIndex, text, Index: argument.Expression);
     }
 }

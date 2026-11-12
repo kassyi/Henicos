@@ -107,4 +107,11 @@ public static partial class ArrayViewDefaultDifferentialKernels
         // s.Value.Length reads the length of the view, not a member function of a user struct
         dst[1] = s.HasValue ? 10 + s.Value.Length : 2;
     }
+
+    [GpuKernel]
+    public static void NullableImmutableHasValueKernel(ImmutableArray<int>? s, int[] dst)
+    {
+        dst[0] = 1;
+        dst[1] = s.HasValue ? 10 : 2;
+    }
 }

@@ -25,4 +25,55 @@ public static partial class ConstantStringIndexDifferentialKernels
         dst[4] = "x\u00e91"[index[1]];
         dst[5] = nameof(StringIndexKernel)[0] + nameof(StringIndexKernel)[index[1]];
     }
+
+    /// <summary>
+    /// A constant index outside a constant string is correct C#: in a branch that never runs it does nothing, and
+    /// where it runs it throws <see cref="System.IndexOutOfRangeException"/>. <c>mode[0]</c>: 1 reads one past the
+    /// end of a three-element string.
+    /// </summary>
+    [GpuKernel]
+    public static void ConstantIndexOutsideKernel(int[] mode, int[] dst)
+    {
+        dst[0] = 1;
+        if (Text.Length > 20)
+        {
+            dst[1] = Text[20];
+        }
+
+        if (mode[0] == 1)
+        {
+            dst[1] = "abc"[3];
+        }
+
+        dst[2] = 100;
+    }
+
+    /// <summary>The length of <c>dst</c> of <see cref="ForEachKernel"/>: one more than it writes.</summary>
+    public const int ForEachColumns = 17;
+
+    /// <summary>
+    /// <c>foreach</c> over a constant string reads its UTF-16 code units, the surrogates and the embedded zero
+    /// included, and nothing after the last one; an explicit element conversion keeps the low byte.
+    /// </summary>
+    [GpuKernel]
+    public static void ForEachKernel(int[] dst)
+    {
+        int i = 0;
+        foreach (char c in Text)
+        {
+            dst[i++] = c;
+        }
+
+        foreach (var c in "x\u00e9")
+        {
+            dst[i++] = c;
+        }
+
+        foreach (byte b in "\u00e9\u0141")
+        {
+            dst[i++] = b;
+        }
+
+        dst[i] = 100 + i;
+    }
 }

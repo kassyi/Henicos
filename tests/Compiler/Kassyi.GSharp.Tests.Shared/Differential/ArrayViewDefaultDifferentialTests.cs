@@ -54,20 +54,20 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
     {
         Shape = LaunchShapes.SingleThread(),
         // 0: a segment into a long enough array; 1: a default segment; 2: a segment into null; 3: an empty slice into
-        // null; 4: a segment into a short array
-        Seeds = [0, 1, 2, 3, 4],
+        // null; 4: a segment into a short array; 5: a default segment into null (the receiver is checked first)
+        Seeds = [0, 1, 2, 3, 4, 5],
         OracleExceptions = OracleExceptionMode.MatchOracle,
         Inputs = static (rng, _) =>
         {
             var receiver = rng.Seed switch
             {
-                1 => ReceiverDefault,
+                1 or 5 => ReceiverDefault,
                 3 => ReceiverEmpty,
                 _ => ReceiverArgument,
             };
             int[]? target = rng.Seed switch
             {
-                2 or 3 => null,
+                2 or 3 or 5 => null,
                 4 => new int[2],
                 _ => new int[4],
             };
@@ -99,18 +99,18 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
     {
         Shape = LaunchShapes.SingleThread(),
         // 0: an immutable array into a long enough array; 1: a default immutable array; 2: into null; 3: into a short
-        // array
-        Seeds = [0, 1, 2, 3],
+        // array; 4: a default immutable array into null (the receiver is checked first)
+        Seeds = [0, 1, 2, 3, 4],
         OracleExceptions = OracleExceptionMode.MatchOracle,
         Inputs = static (rng, _) =>
         {
             int[]? target = rng.Seed switch
             {
-                2 => null,
+                2 or 4 => null,
                 3 => new int[1],
                 _ => new int[3],
             };
-            return Buffers(Mode(rng.Seed == 1 ? ReceiverDefault : ReceiverArgument))
+            return Buffers(Mode(rng.Seed is 1 or 4 ? ReceiverDefault : ReceiverArgument))
                 .InNullable("target", target, OutputPolicy.Exact);
         },
         Launch = static (b, s) => LaunchImmutableCopyToKernel(ImmutableArray.Create(4, 5, 6), b.Get<int>("mode"),
@@ -224,20 +224,53 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         Assert.Equal([1, 13], dst);
     }
 
-    // An empty optional view is passed as null, as an empty optional array is, on every path (#860 (Array arguments
-    // treat null as empty without a marker) decides whether that stays); the launchers no longer throw
+    // The launchers no longer throw for an empty or a default ImmutableArray<T>? argument. Whether the kernel then sees
+    // the value C# passes is the question of #860 (Array arguments treat null as empty without a marker): an empty one
+    // reads as null on every path today, a default one on the native and CUDA paths
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Launch_EmptyImmutableArrayArgument_ReadsAsNullWithoutThrowing(bool forceManaged)
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void Launch_EmptyOrDefaultImmutableArrayArgument_DoesNotThrowInTheLauncher(bool isDefault, bool forceManaged)
     {
         var dst = new int[2];
 
-        Run(forceManaged, () => LaunchNullableImmutableKernel(ImmutableArray<int>.Empty, dst));
+        Run(forceManaged, () => LaunchNullableImmutableHasValueKernel(EmptyOrDefault(isDefault), dst));
 
-        Assert.Equal([1, 2], dst);
+        Assert.Equal(1, dst[0]);
     }
+
+    // C# passes a value (HasValue is true) for both
+    [SkippableTheory(Skip = "An empty or default optional view reads as null until #860 (Array arguments treat null " +
+                            "as empty without a marker) is decided")]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    public void Launch_EmptyOrDefaultImmutableArrayArgument_HasAValueAsInCSharp(bool isDefault, bool forceManaged)
+    {
+        var dst = new int[2];
+
+        Run(forceManaged, () => LaunchNullableImmutableHasValueKernel(EmptyOrDefault(isDefault), dst));
+
+        Assert.Equal([1, 10], dst);
+    }
+
+    // The managed path passes the default value on: the kernel reads s.Value.Length, whose Length throws in C#
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Launch_DefaultImmutableArrayArgumentReadThroughValue_ThrowsNullReferenceInTheKernel()
+    {
+        var dst = new int[2];
+
+        Assert.Throws<NullReferenceException>(() =>
+            Run(forceManaged: true, () => LaunchNullableImmutableKernel(default(ImmutableArray<int>), dst)));
+        Assert.Equal([1, 0], dst);
+    }
+
+    private static ImmutableArray<int>? EmptyOrDefault(bool isDefault) =>
+        isDefault ? default(ImmutableArray<int>) : ImmutableArray<int>.Empty;
 
     private TException AssertStopsWith<TException>(bool forceManaged, int[] dst, Action launch)
         where TException : Exception
