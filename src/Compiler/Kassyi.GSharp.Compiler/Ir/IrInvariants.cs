@@ -44,7 +44,7 @@ internal sealed class IrInvariants
     public static ImmutableArray<string> VerifyClassified(IrMethod method)
     {
         var violations = ImmutableArray.CreateBuilder<string>();
-        IrNodeChildren.Visit(method.Body, node =>
+        foreach (var node in IrNodeChildren.DescendantsAndSelf(method.Body))
         {
             var (number, text) = node switch
             {
@@ -59,17 +59,14 @@ internal sealed class IrInvariants
                 var start = node.Source.Start;
                 violations.Add($"{number} at {start}..{start + node.Source.Length}: {text}");
             }
-        });
+        }
+
         return violations.ToImmutable();
     }
 
     /// <summary>Whether <paramref name="node"/> is or holds an opaque statement or expression anywhere.</summary>
-    public static bool ContainsOpaque(IrNode node)
-    {
-        var found = false;
-        IrNodeChildren.Visit(node, child => found |= child is IrOpaqueExpression or IrOpaqueStatement);
-        return found;
-    }
+    public static bool ContainsOpaque(IrNode node) =>
+        IrNodeChildren.Exists(node, static child => child is IrOpaqueExpression or IrOpaqueStatement);
 
     // <scopes>: the locals of the blocks and sequences that enclose <node>, the innermost on top
     private void Node(IrNode node, IrNode? parent, ImmutableStack<ImmutableArray<IrVariable>> scopes)

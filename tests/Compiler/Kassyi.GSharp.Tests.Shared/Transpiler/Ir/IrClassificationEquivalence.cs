@@ -95,7 +95,7 @@ internal sealed class IrClassificationEquivalence
     {
         var calls = new Dictionary<TextSpan, IrCall>();
         var opaque = new List<(TextSpan Span, IrOpaqueSplit Split)>();
-        IrNodeChildren.Visit(method.Body, node =>
+        foreach (var node in IrNodeChildren.DescendantsAndSelf(method.Body))
         {
             switch (node)
             {
@@ -109,7 +109,7 @@ internal sealed class IrClassificationEquivalence
                     opaque.Add((statement.Syntax.Span, statement.Split));
                     break;
             }
-        });
+        }
 
         var model = compilation.GetSemanticModel(body.SyntaxTree);
         var matched = 0;
@@ -181,20 +181,20 @@ internal sealed class IrClassificationEquivalence
         var root = tree.GetRoot();
         var seen = new HashSet<TextSpan>();
         var found = new List<EffectDifference>();
-        IrNodeChildren.Visit(method.Body, node =>
+        foreach (var node in IrNodeChildren.DescendantsAndSelf(method.Body))
         {
             if (node is not IrExpression expression ||
                 (expression.Source.Synthesized && expression is not IrConversion) ||
                 !seen.Add(expression.Source.Span) ||
                 FindExpression(root, expression.Source.Span) is not { } syntax)
             {
-                return;
+                continue;
             }
 
             if (IrInvariants.ContainsOpaque(expression))
             {
                 Interlocked.Increment(ref _expressionsWithOpaque);
-                return;
+                continue;
             }
 
             Interlocked.Increment(ref _expressionsCompared);
@@ -207,7 +207,7 @@ internal sealed class IrClassificationEquivalence
                     $"{where}: {syntax} ({(isLocation ? "location" : "value")}): " +
                     $"syntax reads {old.Reads} writes {old.Writes}, IR reads {ir.Reads} writes {ir.Writes}"));
             }
-        });
+        }
 
         Report(found, compilation);
     }
@@ -233,22 +233,13 @@ internal sealed class IrClassificationEquivalence
     }
 
     // The differences of the nodes below node
-    private static List<EffectDifference> InnerDifferences(IrNode node, Dictionary<IrNode, EffectDifference> differing)
-    {
-        var inner = new List<EffectDifference>();
-        foreach (var child in IrNodeChildren.Of(node))
-        {
-            IrNodeChildren.Visit(child, descendant =>
-            {
-                if (differing.TryGetValue(descendant, out var difference))
-                {
-                    inner.Add(difference);
-                }
-            });
-        }
-
-        return inner;
-    }
+    private static List<EffectDifference> InnerDifferences(IrNode node,
+        Dictionary<IrNode, EffectDifference> differing) =>
+        IrNodeChildren.Of(node)
+            .SelectMany(static child => IrNodeChildren.DescendantsAndSelf(child))
+            .Where(differing.ContainsKey)
+            .Select(descendant => differing[descendant])
+            .ToList();
 
     // Whether what the outer node adds over the syntax walk (or misses) is what its operands add (or miss): the IR's
     // outer effects lie within the syntax's plus the IR's inner ones, and the syntax's within the IR's plus the
@@ -263,11 +254,9 @@ internal sealed class IrClassificationEquivalence
             oldInner = oldInner.Union(difference.Old);
         }
 
-        return IsWithin(outer.Ir, outer.Old.Union(irInner)) && IsWithin(outer.Old, outer.Ir.Union(oldInner));
+        return IrEffectDifferences.IsWithin(outer.Ir, outer.Old.Union(irInner)) &&
+               IrEffectDifferences.IsWithin(outer.Old, outer.Ir.Union(oldInner));
     }
-
-    private static bool IsWithin(ExpressionEffects effects, ExpressionEffects bound) =>
-        effects.Reads.IsSubsetOf(bound.Reads) && effects.Writes.IsSubsetOf(bound.Writes);
 
     // The outermost expression whose span is span
     private static ExpressionSyntax? FindExpression(SyntaxNode root, TextSpan span)
@@ -286,18 +275,14 @@ internal sealed class IrClassificationEquivalence
         return expression;
     }
 
-    private static string? Kind(ExpressionEffects old, ExpressionEffects ir)
-    {
-        var irInOld = ir.Reads.IsSubsetOf(old.Reads) && ir.Writes.IsSubsetOf(old.Writes);
-        var oldInIr = old.Reads.IsSubsetOf(ir.Reads) && old.Writes.IsSubsetOf(ir.Writes);
-        return (irInOld, oldInIr) switch
+    private static string? Kind(ExpressionEffects old, ExpressionEffects ir) =>
+        (IrEffectDifferences.IsWithin(ir, old), IrEffectDifferences.IsWithin(old, ir)) switch
         {
             (true, true) => null,
             (true, false) => "IR finds less",
             (false, true) => "IR finds more",
             _ => "IR finds other"
         };
-    }
 
     private static string Describe(SyntaxAnnotation? annotation) =>
         annotation is null ? "none" : annotation.Kind + ":" + (annotation.Data ?? "");
