@@ -41,14 +41,14 @@ internal static class CSharpExecutionEmitter
         }
     }
 
-    // [var __gsharp_csharp_result = __gsharp_auto_result;]
+    // [<return type>[] __gsharp_csharp_result = __gsharp_auto_result;]
     // <type> __gsharp_csharp_arg_<n> = <parameter>;   (value, in, ref)
     // <type> __gsharp_csharp_arg_<n> = default;       (out)
     // [WHY] The lambda captures only locals of the branch: a captured local of the whole launcher (the auto result)
     // would make C# allocate the closure when the launcher starts, on every path
     private static void WriteCopies(SourceWriter writer, in CSharpExecutionPlan plan)
     {
-        writer.AppendLineIf(plan.ReturnsValue, $"var {Result} = {AutoResult};");
+        writer.AppendLineIf(plan.ReturnsValue, $"{plan.ReturnTypeName}[] {Result} = {AutoResult};");
         foreach (var argument in plan.Arguments)
         {
             if (!IsSpan(argument))

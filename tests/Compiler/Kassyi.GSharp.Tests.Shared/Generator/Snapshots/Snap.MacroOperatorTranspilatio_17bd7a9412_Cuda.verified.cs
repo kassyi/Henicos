@@ -17,10 +17,11 @@ private static byte[]? s_fatbin;
 /// </summary>
 public static byte[] GetFatbin()
 {
-var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
 if (fatbin is not null) return fatbin;
-var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location)
+?? global::System.AppContext.BaseDirectory;
+string fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
 {
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
@@ -205,29 +206,29 @@ if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System
 __gsharp_layout_checked_MacroKernel = true;
 }
 if (dA is null){
-throw new global::System.ArgumentNullException(nameof(dA));
+throw new global::System.ArgumentNullException("dA");
 }
 if (dA.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dA));
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "dA");
 }
 if (dB is null){
-throw new global::System.ArgumentNullException(nameof(dB));
+throw new global::System.ArgumentNullException("dB");
 }
 if (dB.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dB));
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "dB");
 }
 if (dResult is null){
-throw new global::System.ArgumentNullException(nameof(dResult));
+throw new global::System.ArgumentNullException("dResult");
 }
 if (dResult.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dResult));
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "dResult");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "TestKernels.MacroKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("TestKernels.MacroKernel", "it reaches an operator macro ([GpuOperatorMacro]), which only the generated code expands");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::TestNamespace.TestKernels.__gsharp_hfunc_MacroKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernels.MacroKernel");
@@ -365,38 +366,38 @@ if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_1 &
 public static unsafe void LaunchMacroKernelPtr(global::TestNamespace.TestKernels.AotContexts.Dummy ctx, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dA, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dB, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (dA.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(dA), dA.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("dA", dA.Length, "The array length must not be negative.");
 }
 if (dA.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(dA));
+throw new global::System.ArgumentNullException("dA");
 }
 if (dA.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dA));
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "dA");
 }
 if (dB.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(dB), dB.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("dB", dB.Length, "The array length must not be negative.");
 }
 if (dB.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(dB));
+throw new global::System.ArgumentNullException("dB");
 }
 if (dB.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dB));
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "dB");
 }
 if (dResult.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(dResult), dResult.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("dResult", dResult.Length, "The array length must not be negative.");
 }
 if (dResult.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(dResult));
+throw new global::System.ArgumentNullException("dResult");
 }
 if (dResult.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dResult));
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "dResult");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "TestKernels.MacroKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("TestKernels.MacroKernel", "LaunchMacroKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMacroKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::TestNamespace.TestKernels.__gsharp_hfunc_MacroKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "TestKernels.MacroKernel");

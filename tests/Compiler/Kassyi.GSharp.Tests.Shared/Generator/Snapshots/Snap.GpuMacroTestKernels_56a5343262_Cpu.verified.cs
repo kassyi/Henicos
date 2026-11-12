@@ -268,32 +268,32 @@ private unsafe delegate void __gsharp_delegate_Kernel_MacroTest_FillAndSingle(ui
 public static unsafe void LaunchKernel_MacroTest_FillAndSingle(global::System.UInt32[] outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (outputBuffer is null){
-throw new global::System.ArgumentNullException(nameof(outputBuffer));
+throw new global::System.ArgumentNullException("outputBuffer");
 }
 if (outputBuffer.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputBuffer));
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "outputBuffer");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle", "it reaches Gpu.SyncGrid(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "GpuMacroTestKernels.Kernel_MacroTest_FillAndSingle");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, true);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
-var __gsharp_thread_at_grid_sync = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_grid_sync = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -398,7 +398,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_Kernel_MacroTest_FillAndSingle>("__gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle", __gsharp_dll_path);
+__gsharp_delegate_Kernel_MacroTest_FillAndSingle __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_Kernel_MacroTest_FillAndSingle>("__gsharp_launch_Kassyi__GSharp__Stdlib__GpuMath__Tests__Kernels__GpuMacroTestKernels__Kernel_uMacroTest_uFillAndSingle", __gsharp_dll_path);
 fixed (global::System.UInt32* __gsharp_p_0 = outputBuffer)
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = outputBuffer.Length }, length, fillValue, singleValue);
