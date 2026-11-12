@@ -188,7 +188,8 @@ internal static class CudaHostLaunchEmitter
     public static string GenerateModuleContextClass(string moduleName,
         EquatableArray<KernelWarmup> warmups)
     {
-        var fileStem = AotModuleNames.GetArtifactFileStem(moduleName);
+        var fatbinLiteral = SymbolDisplay.FormatLiteral(AotModuleNames.GetArtifactFileStem(moduleName) + ".gfatbin",
+            quote: true);
         var moduleContextName = AotModuleNames.GetModuleContextName(moduleName);
 
         var writer = new SourceWriter();
@@ -214,7 +215,7 @@ internal static class CudaHostLaunchEmitter
             var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
             if (fatbin is not null) return fatbin;
             var baseDir = global::System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-            var fatbinPath = global::System.IO.Path.Combine(baseDir, "{{fileStem}}.gfatbin");
+            var fatbinPath = global::System.IO.Path.Combine(baseDir, {{fatbinLiteral}});
             if (!global::System.IO.File.Exists(fatbinPath))
             {
             throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");

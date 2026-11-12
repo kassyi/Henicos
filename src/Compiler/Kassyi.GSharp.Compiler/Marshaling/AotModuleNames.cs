@@ -32,15 +32,18 @@ internal static class AotModuleNames
 
     /// <summary>
     /// The name of the module context class of a module: <c>GSharpModuleContext_</c> and the module name with every
-    /// character other than <c>[A-Za-z0-9_]</c> replaced by <c>_</c>, so that any assembly name gives an identifier.
+    /// character that a C# identifier cannot hold replaced by <c>_</c> (letters of any script stay), so that any
+    /// assembly name gives an identifier.
     /// </summary>
     public static string GetModuleContextName(string moduleName) => ModuleContextPrefix + ToIdentifierPart(moduleName);
 
     /// <summary>
-    /// Returns <paramref name="name"/> with every character other than <c>[A-Za-z0-9_]</c> replaced by <c>_</c>, for an
-    /// identifier that a fixed prefix starts; the input itself when it has no such character.
+    /// Returns <paramref name="name"/> with every character that cannot be part of a C# identifier replaced by
+    /// <c>_</c>, for an identifier that a fixed prefix starts (so a first character that only a part may be, such as a
+    /// digit, is kept); the input itself when it has no such character.
     /// </summary>
-    public static string ToIdentifierPart(string name) => ReplaceWithUnderscore(name, IsIdentifierPartChar);
+    public static string ToIdentifierPart(string name) =>
+        ReplaceWithUnderscore(name, SyntaxFacts.IsIdentifierPartCharacter);
 
     // <name> with each character that keeps rejects replaced by '_'; the input itself when keeps accepts them all
     private static string ReplaceWithUnderscore(string name, Func<char, bool> keeps)
@@ -67,7 +70,4 @@ internal static class AotModuleNames
 
         return new string(chars);
     }
-
-    private static bool IsIdentifierPartChar(char c) =>
-        c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '_';
 }
