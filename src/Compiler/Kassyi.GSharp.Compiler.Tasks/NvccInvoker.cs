@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Tasks;
 internal static class NvccInvoker
 {
     // Everything on the nvcc command line except the output and the sources.
-    public static string BuildOptions(string[] architectures, bool isWindows)
+    public static string BuildOptions(IReadOnlyList<NvccGencode> gencodes, bool isWindows)
     {
         var args = new StringBuilder();
         args.Append("--fatbin ");
@@ -26,13 +26,9 @@ internal static class NvccInvoker
         }
 
         args.Append("--ptxas-options=-v,--warn-on-spills ");
-        foreach (var arch in architectures)
+        foreach (var gencode in gencodes)
         {
-            var commaIdx = arch.IndexOf(',');
-            if (commaIdx > 0)
-            {
-                args.Append($"-gencode arch={arch[..commaIdx]},code={arch[(commaIdx + 1)..]} ");
-            }
+            args.Append($"-gencode arch={gencode.Arch},code={gencode.Code} ");
         }
 
         return args.ToString();

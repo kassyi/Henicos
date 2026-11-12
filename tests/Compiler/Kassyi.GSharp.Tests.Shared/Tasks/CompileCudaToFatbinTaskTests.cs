@@ -60,7 +60,7 @@ public class CompileCudaToFatbinTaskTests
 
     [Theory]
     [InlineData(new[] { "kernel1.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
-    [InlineData(new[] { "kernel.cu" }, "sm_86,compute_86;sm_89,compute_89", "combined_fatbin")]
+    [InlineData(new[] { "kernel.cu" }, "compute_86,sm_86;compute_89,sm_89", "combined_fatbin")]
     [InlineData(new[] { "combined_fatbin_bundle.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
     public void CompileCudaToFatbinTask_CombinedFatbinName_SuccessCases(string[] sources, string targetArch,
         string combinedName)
