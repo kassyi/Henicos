@@ -28,16 +28,7 @@ public abstract class StateMachineTestBase
         // No semantic model binds the block: its barriers and shuffles are annotated by spelling (TestSyncAnnotator)
         var block = TestSyncAnnotator.Annotate((BlockSyntax)lambda.Body);
         var transformed = transform(block);
-        var formatted = transformed.NormalizeWhitespace().ToFullString();
-
-        var wrapped = $$"""
-            public class {{methodName}}_Snapshot
-            {
-                public void LoweredMethod()
-            {{formatted}}
-            }
-            """;
-        return Verifier.Verify(wrapped, "cs").UseFastHashSnapshotName(methodName);
+        return Verifier.Verify(SnapshotSource(methodName, null, transformed), "cs").UseFastHashSnapshotName(methodName);
     }
 
     protected static Task VerifyPipelineLowerFromTestCase(
@@ -60,17 +51,8 @@ public abstract class StateMachineTestBase
                 var cppName = CppNameResolver.Resolve(symbol, f.Identifier.ValueText, dialect, region);
                 return $"    // {f.Identifier.ValueText} -> {cppName}";
             }));
-        var formatted = lowered.LoweredBody.NormalizeWhitespace().ToFullString();
-
-        var wrapped = $$"""
-            public class {{methodName}}_Snapshot
-            {
-            {{fieldsComment}}
-                public void LoweredMethod()
-            {{formatted}}
-            }
-            """;
-        return Verifier.Verify(wrapped, "cs").UseFastHashSnapshotName(methodName);
+        return Verifier.Verify(SnapshotSource(methodName, fieldsComment, lowered.LoweredBody), "cs")
+            .UseFastHashSnapshotName(methodName);
     }
 
     /// <summary>
@@ -103,17 +85,25 @@ public abstract class StateMachineTestBase
         var fieldsComment = string.Join(
             Environment.NewLine,
             fields.Select(static f => $"    // {f.Declarator.Identifier.ValueText} -> {f.Name}"));
-        var formatted = rewritten.NormalizeWhitespace().ToFullString();
+        return Verifier.Verify(SnapshotSource(methodName, fieldsComment, rewritten), "cs")
+            .UseFastHashSnapshotName(methodName);
+    }
 
-        var wrapped = $$"""
+    // The snapshot text: public class <method>_Snapshot { <field comments> public void LoweredMethod() <body> }
+    private static string SnapshotSource(string methodName, string? fieldsComment, SyntaxNode body)
+    {
+#pragma warning disable RS0030 // The .verified.cs snapshot is the text of the lowered tree
+        var formatted = body.NormalizeWhitespace().ToFullString();
+#pragma warning restore RS0030
+        var fieldLines = fieldsComment is null ? "" : fieldsComment + Environment.NewLine;
+
+        return $$"""
             public class {{methodName}}_Snapshot
             {
-            {{fieldsComment}}
-                public void LoweredMethod()
+            {{fieldLines}}    public void LoweredMethod()
             {{formatted}}
             }
             """;
-        return Verifier.Verify(wrapped, "cs").UseFastHashSnapshotName(methodName);
     }
 
     private static (LoweredStateMachine Lowered, SemanticModel Model) LowerTestCase(

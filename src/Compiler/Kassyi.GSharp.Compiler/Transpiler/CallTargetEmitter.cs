@@ -2,9 +2,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
 /// Writes a call or a method group whose target <see cref="CallTargetClassifier"/> does not let the standard emission
-/// name: a target that cannot be emitted reports the diagnostic of the plan (GSH0107 or GSH0109) and writes the
-/// placeholder, and a call of an intrinsic the dialect does not implement becomes a runtime failure (GSH0054, which the
-/// analyzer reports), so the device code never names a function that nothing defines.
+/// name, and a user-defined operator without a device definition (<see cref="GpuCodeConstraints.GetOperatorProblem"/>):
+/// a target that cannot be emitted reports its diagnostic (GSH0107, GSH0109 or GSH0060) and writes the placeholder,
+/// and a call of an intrinsic the dialect does not implement becomes a runtime failure (GSH0054, which the analyzer
+/// reports), so the device code never names a function or an operator that nothing defines.
 /// </summary>
 internal static class CallTargetEmitter
 {
@@ -40,6 +41,30 @@ internal static class CallTargetEmitter
             ref context
         );
 
+    /// <summary>
+    /// Reports GSH0060 at the operator and writes the placeholder when <paramref name="node"/>, a binary, unary,
+    /// increment or decrement expression or a compound assignment, calls a user-defined operator that device code has
+    /// no definition of.
+    /// </summary>
+    /// <returns>Whether it reported and wrote the placeholder.</returns>
+    public static bool TryFailOperator(ExpressionSyntax node, ref TranspileContext context)
+    {
+        // The operator token of the user's expression, which the analyzer reports, also for a node of a lowered tree
+        if (GpuCodeConstraints.GetUserDefinedOperator(node, context.Query.SemanticModel) is not var (method, written) ||
+            GpuCodeConstraints.GetOperatorProblem(method, context.Emitter.Dialect) is not var (name, type))
+        {
+            return false;
+        }
+
+        context.Reporter.Fail(
+            GSharpDiagnostics.UserDefinedOperatorNotSupported,
+            GetOperatorToken(written).GetLocation(),
+            name,
+            type);
+        context.Visitor.AppendUnsupportedPlaceholder(node);
+        return true;
+    }
+
     private static bool TryFail(SyntaxNode node, CallTargetPlan plan, ref TranspileContext context)
     {
         if (!plan.IsFailure)
@@ -73,4 +98,13 @@ internal static class CallTargetEmitter
             writer.Append("{}");
         }
     }
+
+    private static SyntaxToken GetOperatorToken(ExpressionSyntax node) => node switch
+    {
+        BinaryExpressionSyntax binary => binary.OperatorToken,
+        AssignmentExpressionSyntax assignment => assignment.OperatorToken,
+        PrefixUnaryExpressionSyntax prefix => prefix.OperatorToken,
+        PostfixUnaryExpressionSyntax postfix => postfix.OperatorToken,
+        _ => throw new ArgumentException($"{node.Kind()} is not an operator expression.", nameof(node))
+    };
 }

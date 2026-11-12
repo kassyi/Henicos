@@ -1,12 +1,14 @@
-using Microsoft.CodeAnalysis.Operations;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
-/// Rejects user-defined operators in GPU code unless mapped via <c>[GpuOperatorMacro]</c>.
+/// Rejects a user-defined operator in GPU code that has no device definition
+/// (<see cref="GpuCodeConstraints.GetOperatorProblem"/>), whatever the namespace of its type, and a
+/// <c>[GpuOperatorMacro]</c> operator where it is not expanded.
 /// </summary>
 /// <remarks>
-/// Direct support for user-defined operators in GPU code depends on #402 (emitting operators as named device functions called with the C#-resolved overload).
+/// Direct support for user-defined operators in GPU code depends on #402 (emitting operators as named device functions
+/// called with the C#-resolved overload). The transpiler fails the same operators from the same decision, and
+/// <see cref="TranspilerFailureCheck"/> drops its GSH0060 in the method this rule walks.
 /// </remarks>
 internal sealed class UserDefinedOperatorRule :
     ISyntaxValidationRule<BinaryExpressionSyntax>,
@@ -37,16 +39,17 @@ internal sealed class UserDefinedOperatorRule :
 
     private static void CheckOperator(ExpressionSyntax node, SyntaxToken operatorToken, ref ValidationContext context)
     {
-        var methodSymbol = GetOperatorMethodSymbol(node, context.SemanticModel);
-        if (methodSymbol is not { MethodKind: MethodKind.UserDefinedOperator })
+        var model = context.SemanticModel;
+        if (GpuCodeConstraints.GetUserDefinedOperator(node, model) is not var (method, _) ||
+            RemovedCalls.IsInRemovedCall(node, model))
         {
             return;
         }
 
-        if (methodSymbol.HasAttribute(KnownAttributes.GpuOperatorMacro))
+        if (method.HasAttribute(KnownAttributes.GpuOperatorMacro))
         {
             // Expanded only where GpuOperatorMacroTranspiler reaches it; elsewhere it would be a C++ struct operator
-            if (OperatorMacroPosition.GetPositionFailure(node, context.SemanticModel) is { } failure)
+            if (OperatorMacroPosition.GetPositionFailure(node, model) is { } failure)
             {
                 context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, failure);
             }
@@ -54,34 +57,13 @@ internal sealed class UserDefinedOperatorRule :
             return;
         }
 
-        var ns = methodSymbol.ContainingType?.ContainingNamespace;
-        if (ns.IsSystemOrNumerics() || ns.IsCoreNamespace())
+        if (GpuCodeConstraints.GetOperatorProblem(method, context.Dialect) is var (name, type))
         {
-            return;
+            context.ReportDiagnostic(
+                GSharpDiagnostics.UserDefinedOperatorNotSupported,
+                operatorToken.GetLocation(),
+                name,
+                type);
         }
-
-        var containingTypeName = methodSymbol.ContainingType?.Name ?? string.Empty;
-        context.ReportDiagnostic(
-            GSharpDiagnostics.UserDefinedOperatorNotSupported,
-            operatorToken.GetLocation(),
-            methodSymbol.Name,
-            containingTypeName);
-    }
-
-    private static IMethodSymbol? GetOperatorMethodSymbol(ExpressionSyntax node, SemanticModel semanticModel)
-    {
-        if (semanticModel.GetSymbol(node) is IMethodSymbol symbol)
-        {
-            return symbol;
-        }
-
-        return semanticModel.GetSafeOperation(node) switch
-        {
-            IIncrementOrDecrementOperation incDec => incDec.OperatorMethod,
-            ICompoundAssignmentOperation compound => compound.OperatorMethod,
-            IUnaryOperation unary => unary.OperatorMethod,
-            IBinaryOperation binary => binary.OperatorMethod,
-            _ => null
-        };
     }
 }

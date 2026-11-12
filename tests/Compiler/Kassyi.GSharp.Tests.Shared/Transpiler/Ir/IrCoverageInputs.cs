@@ -49,10 +49,10 @@ internal static class IrCoverageInputs
             var tree = CSharpSyntaxTree.ParseText(File.ReadAllText(path),
                 new CSharpParseOptions(LanguageVersion.Preview), path: path);
 #pragma warning restore RS0030
-            visit(MegaCompilationCache.BaseCompilation.AddSyntaxTrees(s_globalUsings, tree), [tree]);
+            visit(RoslynTestUtility.BaseCompilation.AddSyntaxTrees(s_globalUsings, tree), [tree]);
         });
 
-        var shared = MegaCompilationCache.Compilation;
+        var shared = RoslynTestUtility.SharedCompilation;
         var differential = shared.SyntaxTrees
             .Where(tree => everyKernelFile
                 ? tree.FilePath.EndsWith(".cu.cs", StringComparison.Ordinal)

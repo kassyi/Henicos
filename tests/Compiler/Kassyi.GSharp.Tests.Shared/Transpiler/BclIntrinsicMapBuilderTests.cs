@@ -8,6 +8,7 @@ using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Dialects;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Shared.Helpers;
+using Mapping = (Microsoft.CodeAnalysis.IMethodSymbol Method, string CudaIntrinsicName, string CastFirstArgumentTo);
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
@@ -42,7 +43,7 @@ public class BclIntrinsicMapBuilderTests
     [MemberData(nameof(NativeSizedOperations))]
     public void NativeSizedOverload_MapsLikeTheFixedSizeOverloadOfThePlatform(string methodName, Platform platform)
     {
-        var baseCompilation = MegaCompilationCache.BaseCompilation;
+        var baseCompilation = RoslynTestUtility.BaseCompilation;
         var compilation = baseCompilation.WithOptions(baseCompilation.Options.WithPlatform(platform));
         var map = BclIntrinsicMapBuilder.GetOrBuildMap(compilation);
 
@@ -63,7 +64,7 @@ public class BclIntrinsicMapBuilderTests
     [InlineData(Platform.X64)]
     public void GSharpMappingTargets_AreDeclaredByThePrelude(Platform platform)
     {
-        var baseCompilation = MegaCompilationCache.BaseCompilation;
+        var baseCompilation = RoslynTestUtility.BaseCompilation;
         var map = BclIntrinsicMapBuilder.GetOrBuildMap(baseCompilation.WithOptions(baseCompilation.Options.WithPlatform(platform)));
         Assert.NotEmpty(map);
 
@@ -101,16 +102,21 @@ public class BclIntrinsicMapBuilderTests
         var userMappings = map
             .Where(static entry => entry.Value.CudaIntrinsicName.StartsWith("user_", StringComparison.Ordinal) ||
                                    entry.Value.CudaIntrinsicName.StartsWith("fake_", StringComparison.Ordinal))
-            .Select(static entry => $"{entry.Key.ToDisplayString()} => {entry.Value.CudaIntrinsicName} ({entry.Value.CastFirstArgumentTo ?? "-"})")
-            .OrderBy(static line => line, StringComparer.Ordinal)
+            .Select(static entry => (Method: entry.Key, entry.Value.CudaIntrinsicName, entry.Value.CastFirstArgumentTo))
+            .OrderBy(static mapping => mapping.CudaIntrinsicName, StringComparer.Ordinal)
             .ToArray();
         Assert.Equal(
             [
-                "System.Math.Abs(double) => user_fabs (-)",
-                "System.Math.Round(double) => user_round (-)",
-                $"System.Numerics.BitOperations.IsPow2(nint) => user_ispow2_nint ({nativeSizedCast})"
+                (FindMethod(compilation, typeof(Math), nameof(Math.Abs), SpecialType.System_Double), "user_fabs", null),
+                (
+                    FindMethod(compilation, typeof(BitOperations), nameof(BitOperations.IsPow2), SpecialType.System_IntPtr),
+                    "user_ispow2_nint",
+                    nativeSizedCast
+                ),
+                (FindMethod(compilation, typeof(Math), nameof(Math.Round), SpecialType.System_Double), "user_round", null)
             ],
-            userMappings);
+            userMappings,
+            s_mappingComparer);
     }
 
     [Fact]
@@ -145,8 +151,40 @@ public class BclIntrinsicMapBuilderTests
         Assert.DoesNotContain(",)", trailingCuda);
     }
 
-    private static bool DeclaresIdentifier(string source, string identifier) =>
-        Regex.IsMatch(source, $"(?<![A-Za-z0-9_]){Regex.Escape(identifier)}(?![A-Za-z0-9_])");
+    // The same method, intrinsic and cast
+    private static readonly IEqualityComparer<Mapping> s_mappingComparer = EqualityComparer<Mapping>.Create(
+        static (x, y) => SymbolEqualityComparer.Default.Equals(x.Method, y.Method) &&
+                         x.CudaIntrinsicName == y.CudaIntrinsicName &&
+                         x.CastFirstArgumentTo == y.CastFirstArgumentTo,
+        static mapping => SymbolEqualityComparer.Default.GetHashCode(mapping.Method)
+    );
+
+    private static bool DeclaresIdentifier(string source, string identifier)
+    {
+#pragma warning disable RS0030 // The prelude is a hand-written C++ resource with no C++ syntax tree, and a snapshot cannot state that it declares this name
+        return Regex.IsMatch(source, $"(?<![A-Za-z0-9_]){Regex.Escape(identifier)}(?![A-Za-z0-9_])");
+#pragma warning restore RS0030
+    }
+
+    // The overload of type.methodName whose parameter types are exactly parameterTypes
+    private static IMethodSymbol FindMethod(
+        Compilation compilation,
+        Type type,
+        string methodName,
+        params SpecialType[] parameterTypes)
+    {
+        var containingType = compilation.GetTypeByMetadataName(type.FullName ?? type.Name)
+            ?? throw new InvalidOperationException($"{type.FullName} is not referenced.");
+
+        return containingType.GetMembers(methodName)
+                   .OfType<IMethodSymbol>()
+                   .SingleOrDefault(method => method.Parameters
+                       .Select(static parameter => parameter.Type.SpecialType)
+                       .SequenceEqual(parameterTypes)
+                   ) ?? throw new InvalidOperationException(
+                       $"{type.Name}.{methodName} has no overload taking {string.Join(", ", parameterTypes)}."
+                   );
+    }
 
     private static IMethodSymbol FindOverload(Compilation compilation, string methodName, SpecialType firstParameter)
     {

@@ -275,7 +275,15 @@ The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOpt
 
 ### 1.5.1 Target GPU Architectures (`GSharpTargetArchitectures`)
 
-`GSharpTargetArchitectures` selects the GPU code that nvcc puts into the fatbin. It is read by the `GSharpCompileCuda` target (not by the generator) and is a list of `arch,code` pairs separated by `;`. Each pair becomes one `-gencode arch=<arch>,code=<code>` option: `code=sm_XY` adds native code (SASS) for compute capability X.Y, and `code=compute_XY` adds PTX that the driver compiles (JIT) for the GPU at load time.
+`GSharpTargetArchitectures` selects the GPU code that nvcc puts into the fatbin. It is read by the `GSharpCompileCuda` target (not by the generator) and is a list of entries separated by `;`. Each entry takes one of the forms below; `code=sm_XY` adds native code (SASS) for compute capability X.Y, and `code=compute_XY` adds PTX that the driver compiles (JIT) for the GPU at load time. `XY` is the compute capability without the dot (`89`, `100`), optionally followed by `a` or `f` (`sm_90a`, which keeps the suffix on the PTX as well).
+
+| Entry | nvcc options |
+| :- | :- |
+| `compute_XY,sm_XY` / `compute_XY,compute_XY` | `-gencode arch=compute_XY,code=sm_XY` / `code=compute_XY` |
+| `sm_XY` | `-gencode arch=compute_XY,code=sm_XY -gencode arch=compute_XY,code=compute_XY` (what `nvcc -arch=sm_XY` means) |
+| `compute_XY` | `-gencode arch=compute_XY,code=compute_XY` |
+
+Any other entry (a typo, an `arch,code` pair whose `arch` is an `sm_` architecture, a missing half) stops the build with error `GS0004`, which names the entry. The `GSharpValidateCudaArchitectures` target checks the entries in every build that sets the property, also when the CUDA compilation is skipped (no nvcc, `GSharpSkipCudaCompilation`, a project without kernels); it does not run nvcc.
 
 When the property is empty, the default is `compute_86,sm_86;compute_86,compute_86` (`CompileCudaToFatbinTask.DefaultTargetArchitectures`):
 

@@ -114,7 +114,7 @@ public class KernelDiagnosticsLeakTests
         }
 
         // The base compilation references the built library (twice: from the test output and explicitly)
-        var references = MegaCompilationCache.BaseCompilation.References
+        var references = RoslynTestUtility.BaseCompilation.References
             .Where(static r => r is not PortableExecutableReference pe ||
                                pe.GetMetadata() is not AssemblyMetadata metadata ||
                                metadata.GetModules()[0].Name != "Kassyi.GSharp.Stdlib.GpuMath.dll");

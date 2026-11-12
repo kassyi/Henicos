@@ -21,7 +21,7 @@ public class CallTargetClassifierTests
         string methodName,
         [CallerFilePath] string callerFilePath = "")
     {
-        var (compilation, tree) = MegaCompilationCache.GetSourceContext(callerFilePath);
+        var (compilation, tree) = RoslynTestUtility.GetCallerSourceContext(callerFilePath);
         var model = compilation.GetSemanticModel(tree);
         var call = tree.GetRoot()
             .DescendantNodes()
