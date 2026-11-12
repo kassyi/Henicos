@@ -970,6 +970,17 @@ __gsharp_null_read_trap(__gsharp_null_read_site(site));
 }
 return array[index];
 }
+// The array of Gpu.NotNull(array): a null array fails as the C# method throws NullReferenceException. Unlike
+// __gsharp_array_ref, a null optional kernel argument fails too: it reads as an empty array, but it is null
+template <typename A, typename S>
+__device__ __forceinline__ A __gsharp_array_not_null(A&& array, S site)
+{
+if (array.data == nullptr)
+{
+__gsharp_null_read_trap(__gsharp_null_read_site(site));
+}
+return static_cast<A&&>(array);
+}
 // A by-value struct argument of a device function whose parameter reaches non-nullable array fields (#1409): each field
 // that a getter names is checked as __gsharp_array_ref checks an array, at the call, and the struct is passed on
 template <typename T, typename S, typename... Get>
