@@ -120,7 +120,7 @@ public class GpuExecutionTests
         Assert.Equal(KernelExecution.Default, GpuExecution.Current);
     }
 
-    // The selection that replaced CpuKernelLoader.ForceManagedExecution: the managed path although the library exists
+    // The managed selection: the managed path although the library exists
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void ShouldUseManagedExecution_ManagedScope_IsTrueForAnExistingLibrary()
