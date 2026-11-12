@@ -35,7 +35,9 @@ internal static class GeneratorRun
     /// <summary>Parses generated C# and fails with the syntax errors, if any.</summary>
     public static CompilationUnitSyntax ParseWithoutErrors(string source)
     {
+#pragma warning disable RS0030 // Category 8: Test tooling parses external generated C# source file
         var tree = CSharpSyntaxTree.ParseText(source);
+#pragma warning restore RS0030
         var errors = tree.GetDiagnostics()
             .Where(static d => d.Severity == DiagnosticSeverity.Error)
             .Select(static d => d.ToString())

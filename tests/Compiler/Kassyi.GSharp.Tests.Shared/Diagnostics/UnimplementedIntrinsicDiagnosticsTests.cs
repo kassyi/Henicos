@@ -1,3 +1,5 @@
+using System.Text;
+using Kassyi.GSharp.Compiler.Models;
 using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
@@ -65,10 +67,9 @@ public class UnimplementedIntrinsicDiagnosticsTests
     {
         var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(TestCase));
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
-        var generated = string.Concat(run.Output.SyntaxTrees
+        var cpuOnly = string.Concat(run.Output.SyntaxTrees
             .Where(tree => !compilation.SyntaxTrees.Contains(tree))
-            .Select(static tree => tree.ToString()));
-        var cpuOnly = s_cudaBody.Replace(generated, string.Empty);
+            .Select(WithoutCudaBodies));
 
         Assert.Contains(
             "__gsharp_unsupported(\"\"Gpu.MBarrierInit is not implemented by the StandardCppDialect dialect\"\")",
@@ -84,6 +85,20 @@ public class UnimplementedIntrinsicDiagnosticsTests
         Assert.DoesNotContain("__gsharp_wmma_store", cpuOnly);
     }
 
-    // CudaBody = @"<verbatim string>" of a device export attribute
-    private static readonly Regex s_cudaBody = new("CudaBody = @\"(?:[^\"]|\"\")*\"", RegexOptions.Compiled);
+    // The text of the tree without the CudaBody = @"<CUDA definition>" arguments of its device export attributes
+    private static string WithoutCudaBodies(SyntaxTree tree)
+    {
+        var text = tree.ToString();
+        var kept = new StringBuilder(text.Length);
+        var start = 0;
+        foreach (var body in tree.GetRoot().DescendantNodes().OfType<AttributeArgumentSyntax>()
+                     .Where(static argument =>
+                         argument.NameEquals?.Name.Identifier.ValueText == DeviceExportAttributeNames.Cuda.Body))
+        {
+            kept.Append(text.AsSpan(start, body.SpanStart - start));
+            start = body.Span.End;
+        }
+
+        return kept.Append(text.AsSpan(start)).ToString();
+    }
 }

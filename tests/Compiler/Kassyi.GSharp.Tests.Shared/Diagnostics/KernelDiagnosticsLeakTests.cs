@@ -91,14 +91,11 @@ public class KernelDiagnosticsLeakTests
     private static Compilation CreateStdlibCompilation()
     {
         var projectDir = RepositoryPaths.Combine("src", "Stdlib", "Kassyi.GSharp.Stdlib.GpuMath");
-        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
-        var trees = new List<SyntaxTree>
+        var files = new List<(string Path, string Source)>
         {
-            CSharpSyntaxTree.ParseText(
+            ("ImplicitUsings.g.cs",
                 "global using System; global using System.Collections.Generic; global using System.IO; " +
-                "global using System.Net.Http; global using System.Threading; global using System.Threading.Tasks;",
-                parseOptions,
-                path: "ImplicitUsings.g.cs")
+                "global using System.Net.Http; global using System.Threading; global using System.Threading.Tasks;")
         };
 
         var sources = Directory.EnumerateFiles(projectDir, "*.cs", SearchOption.AllDirectories)
@@ -109,22 +106,25 @@ public class KernelDiagnosticsLeakTests
             .SelectMany(static d => Directory.EnumerateFiles(d, "*.cs", SearchOption.AllDirectories));
         foreach (var file in sources.Concat(generated).Order(StringComparer.Ordinal))
         {
+#pragma warning disable RS0030 // Category 3: the tree paths use / on every OS, so the output does not depend on it
             var path = Path.GetRelativePath(projectDir, file).Replace('\\', '/');
-            trees.Add(CSharpSyntaxTree.ParseText(File.ReadAllText(file), parseOptions, path: path));
+#pragma warning restore RS0030
+            files.Add((path, File.ReadAllText(file)));
         }
 
+        var compilation = RoslynTestUtility.CreateCompilationAt(files.ToArray());
+        compilation = compilation
+            .WithAssemblyName("Kassyi.GSharp.Stdlib.GpuMath")
+            .WithOptions(compilation.Options.WithNullableContextOptions(NullableContextOptions.Enable));
+
         // The base compilation references the built library (twice: from the test output and explicitly)
-        var references = RoslynTestUtility.BaseCompilation.References
-            .Where(static r => r is not PortableExecutableReference pe ||
-                               pe.GetMetadata() is not AssemblyMetadata metadata ||
-                               metadata.GetModules()[0].Name != "Kassyi.GSharp.Stdlib.GpuMath.dll");
-        return CSharpCompilation.Create(
-            "Kassyi.GSharp.Stdlib.GpuMath",
-            trees,
-            references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                .WithAllowUnsafe(true)
-                .WithNullableContextOptions(NullableContextOptions.Enable));
+        var referencesToRemove = compilation.References
+            .Where(static r => r is PortableExecutableReference pe &&
+                               pe.GetMetadata() is AssemblyMetadata metadata &&
+                               metadata.GetModules()[0].Name == "Kassyi.GSharp.Stdlib.GpuMath.dll")
+            .ToArray();
+
+        return compilation.RemoveReferences(referencesToRemove);
     }
 
     private static bool IsBuildOutput(string file)

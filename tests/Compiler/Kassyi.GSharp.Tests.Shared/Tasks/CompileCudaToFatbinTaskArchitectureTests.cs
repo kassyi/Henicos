@@ -1,6 +1,7 @@
 #nullable enable
-using Kassyi.GSharp.Compiler.Tasks;
 using System.Diagnostics;
+using System.Text;
+using Kassyi.GSharp.Compiler.Tasks;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
@@ -79,7 +80,7 @@ public class CompileCudaToFatbinTaskArchitectureTests
         Assert.Equal(InvalidArchitectureErrorCode, code);
         var message = Assert.Single(ctx.BuildEngine.LoggedErrors);
         Assert.Equal(
-            $"GSharpTargetArchitectures entry '{entry.Trim()}' is not a GPU architecture nvcc accepts. " +
+            $"GSharpTargetArchitectures entry '{entry.AsSpan().Trim()}' is not a GPU architecture nvcc accepts. " +
             "Write 'compute_XY,sm_XY' (SASS for X.Y), 'compute_XY,compute_XY' (PTX for X.Y), " +
             "'sm_XY' (SASS and PTX for X.Y, as nvcc -arch=sm_XY) or 'compute_XY' (PTX for X.Y); " +
             "an architecture may end in 'a' or 'f'.",
@@ -170,17 +171,29 @@ public class CompileCudaToFatbinTaskArchitectureTests
     // The -gencode options, in order, each followed by one space.
     private static string GetGencodes(string arguments)
     {
-        var parts = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var gencodes = "";
-        for (var i = 0; i < parts.Length - 1; i++)
+        var sb = new StringBuilder();
+        var enumerator = arguments.AsSpan().Split(' ');
+        var previousWasGencode = false;
+        foreach (var range in enumerator)
         {
-            if (parts[i] == "-gencode")
+            var token = arguments.AsSpan(range);
+            if (token.IsEmpty)
             {
-                gencodes += $"-gencode {parts[i + 1]} ";
+                continue;
+            }
+
+            if (previousWasGencode)
+            {
+                sb.Append("-gencode ").Append(token).Append(' ');
+                previousWasGencode = false;
+            }
+            else if (token.SequenceEqual("-gencode"))
+            {
+                previousWasGencode = true;
             }
         }
 
-        return gencodes;
+        return sb.ToString();
     }
 
     private static bool IsNvccFatbinRun(ProcessStartInfo i) =>

@@ -134,7 +134,9 @@ public class HostIntrinsicAnalyzerTests
         var span = diagnostic.Location.GetLineSpan();
         var start = span.StartLinePosition;
         var end = span.EndLinePosition;
+#pragma warning disable RS0030 // Category 4: reads the member that the diagnostic message quotes for a person
         var member = diagnostic.GetMessage().Split('\'')[1];
+#pragma warning restore RS0030
         return $"({start.Line + 1},{start.Character + 1})-({end.Line + 1},{end.Character + 1}) {member}";
     }
 }

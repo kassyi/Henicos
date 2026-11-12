@@ -11,17 +11,9 @@ public abstract class AnalyzerTestBase
     protected async Task VerifyAnalyzerFromFileAsync(string relativeFilePath, DiagnosticAnalyzer analyzer,
         string testName, string assemblyName = "TestAssembly")
     {
-        var basePath = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "TestCases", "Analyzers");
-        var sourcePath = Path.Combine(basePath, relativeFilePath);
-        var source = await File.ReadAllTextAsync(sourcePath);
-
-        var syntaxTree = CSharpSyntaxTree.ParseText(source);
-        var references = RoslynTestUtility.BaseCompilation.References;
-
-        var compilation = CSharpCompilation.Create(assemblyName)
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddReferences(references)
-            .AddSyntaxTrees(syntaxTree);
+        var compilation = RoslynTestUtility.GetTestCaseContext("Analyzers/" + relativeFilePath)
+            .Compilation
+            .WithAssemblyName(assemblyName);
 
         var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer));
         var diagnostics = await compilationWithAnalyzers.GetAllDiagnosticsAsync();
