@@ -4634,7 +4634,7 @@ if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.
 return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
-public const string MultiRefScalarAndRawPointerKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel(int __gsharp_id_0_inScalar, int* __gsharp_id_1_refA, int* __gsharp_id_2_refB, float* __gsharp_id_3_refF, int* __gsharp_id_4_outSum, int* __restrict__ __gsharp_id_5_pValid, int* __restrict__ __gsharp_id_6_pNull, int __gsharp_id_7_constFactor, GSharpArray<const int> __gsharp_id_8_roTable, GSharpArray<int> __gsharp_id_9_probe, unsigned int __gsharp_epoch){
+public const string MultiRefScalarAndRawPointerKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel(int __gsharp_id_0_inScalar, int* __gsharp_id_1_refA, int* __gsharp_id_2_refB, float* __gsharp_id_3_refF, int* __gsharp_id_4_outSum, int* __gsharp_id_5_pValid, int* __gsharp_id_6_pNull, int __gsharp_id_7_constFactor, GSharpArray<const int> __gsharp_id_8_roTable, GSharpArray<int> __gsharp_id_9_probe, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_10_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 (*__gsharp_id_4_outSum)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_inScalar,__gsharp_id_7_constFactor),11);

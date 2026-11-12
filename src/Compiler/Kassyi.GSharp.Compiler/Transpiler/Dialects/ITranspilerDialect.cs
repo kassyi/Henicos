@@ -60,15 +60,8 @@ public interface ITranspilerDialect
     /// <param name="p">The syntax node defining the method parameter.</param>
     /// <param name="typeSymbol">The resolved semantic type symbol for the parameter, or <see langword="null"/> if unresolvable.</param>
     /// <param name="parameterSymbol">The resolved parameter symbol, or <see langword="null"/> if unresolvable.</param>
-    /// <returns>
-    /// A tuple containing:
-    /// <list type="bullet">
-    /// <item><term><c>IsRefPointer</c></term><description><see langword="true"/> if the parameter is passed by reference as a pointer.</description></item>
-    /// <item><term><c>IsPointerType</c></term><description><see langword="true"/> if the parameter represents an unmanaged raw pointer.</description></item>
-    /// <item><term><c>HasRestrict</c></term><description><see langword="true"/> if this method has already emitted the C++ <c>__restrict__</c> qualifier for the parameter.</description></item>
-    /// </list>
-    /// </returns>
-    (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol);
+    void AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol,
+        IParameterSymbol? parameterSymbol);
 
     /// <summary>
     /// Attempts to map an invocation of a C# method to a target-specific intrinsic or macro expression.
