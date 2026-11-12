@@ -30,7 +30,7 @@ public class IntrinsicBitDifferentialTests
     // heap a block
     private static readonly int[] s_mallocSizes = [1, 2, 3, 4, 7, 8, 16, 31, 32, 33, 63, 64, 5];
 
-    private static readonly DifferentialCase s_bits32 =
+    internal static readonly DifferentialCase s_bits32 =
         new(KernelName(nameof(IntrinsicDifferentialKernels.Bits32Kernel)))
     {
         Shape = LaunchShapes.Linear(Rows, 32),
@@ -83,7 +83,7 @@ public class IntrinsicBitDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_bits64 =
+    internal static readonly DifferentialCase s_bits64 =
         new(KernelName(nameof(IntrinsicDifferentialKernels.Bits64Kernel)))
     {
         Shape = LaunchShapes.Linear(Rows, 32),
@@ -123,7 +123,7 @@ public class IntrinsicBitDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_carryChain =
+    internal static readonly DifferentialCase s_carryChain =
         new(KernelName(nameof(IntrinsicDifferentialKernels.CarryChainKernel)))
         {
             Shape = LaunchShapes.Linear(Rows, 32),
@@ -164,7 +164,7 @@ public class IntrinsicBitDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_copyAsyncAndSleep =
+    internal static readonly DifferentialCase s_copyAsyncAndSleep =
         new(KernelName(nameof(IntrinsicDifferentialKernels.CopyAsyncAndSleepKernel)))
         {
             Shape = LaunchShapes.Linear(64, 32),
@@ -191,7 +191,7 @@ public class IntrinsicBitDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_malloc =
+    internal static readonly DifferentialCase s_malloc =
         new(KernelName(nameof(IntrinsicDifferentialKernels.MallocKernel)))
     {
         Shape = LaunchShapes.Linear(Rows, 32),
