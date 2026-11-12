@@ -1,4 +1,6 @@
 #nullable enable
+using System;
+using System.Collections.Immutable;
 using Kassyi.GSharp.Runtime;
 using Xunit;
 
@@ -53,5 +55,50 @@ public sealed class ArrayArgumentCSharpExecutionTests
         }
 
         Assert.Equal([0], o);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CSharpExecution_DefaultSpan_ReachesTheBodyAsNull()
+    {
+        int[] o = [-1];
+
+        using (GpuExecution.Use(KernelExecution.CSharp))
+        {
+            ArrayArgumentNullEmptyDifferentialKernels.LaunchSpanKernel(default, ArrayArgumentReads.IsNull, o);
+        }
+
+        Assert.Equal([1], o);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CSharpExecution_EmptyImmutableArray_ReadsLengthZero()
+    {
+        int[] o = [-1];
+
+        using (GpuExecution.Use(KernelExecution.CSharp))
+        {
+            ArrayArgumentNullEmptyDifferentialKernels.LaunchImmutableKernel(
+                ImmutableArray<int>.Empty, ArrayArgumentReads.Length, o);
+        }
+
+        Assert.Equal([0], o);
+    }
+
+    // An empty Memory<int>? keeps its value: HasValue is true and the span is not over a null array
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CSharpExecution_EmptyNullableMemory_KeepsItsValue()
+    {
+        int[] o = [-1];
+
+        using (GpuExecution.Use(KernelExecution.CSharp))
+        {
+            ArrayArgumentNullEmptyDifferentialKernels.LaunchNullableMemoryKernel(
+                new Memory<int>([]), ArrayArgumentReads.IsNull, o);
+        }
+
+        Assert.Equal([1], o);
     }
 }

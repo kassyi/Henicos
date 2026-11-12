@@ -40,13 +40,28 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                 }
             }
 
-            // ImmutableArray<T>.Length has no device form yet: the element and foreach reads stand for it
-            foreach (int read in (int[])[R.IsNull, R.Element, R.ForEach])
+            foreach (int read in (int[])[R.IsNull, R.Length, R.Element, R.ForEach])
             {
                 yield return Create(nameof(K.ImmutableKernel), valueName, read,
                     (o, s) => K.LaunchImmutableKernel(
                         Immutable(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
                     o => K.ImmutableKernel(Immutable(Array()), read, o));
+            }
+
+            foreach (int read in (int[])[R.IsNull, R.Length, R.ForEach, R.InNullableFunction])
+            {
+                yield return Create(nameof(K.ReadOnlySpanKernel), valueName, read,
+                    (o, s) => K.LaunchReadOnlySpanKernel(
+                        new ReadOnlySpan<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
+                    o => K.ReadOnlySpanKernel(new ReadOnlySpan<int>(Array()), read, o));
+            }
+
+            foreach (int read in (int[])[R.IsNull, R.Length])
+            {
+                yield return Create(nameof(K.ReadOnlyMemoryKernel), valueName, read,
+                    (o, s) => K.LaunchReadOnlyMemoryKernel(
+                        new ReadOnlyMemory<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
+                    o => K.ReadOnlyMemoryKernel(new ReadOnlyMemory<int>(Array()), read, o));
             }
         }
 
@@ -65,6 +80,54 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                         create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
                     o => K.NullableMemoryKernel(create(), read, o));
             }
+        }
+    }
+
+    // The nullable views: null, a default value, a value over an empty array, a value over an array with elements
+    private static IEnumerable<DifferentialCase> CreateNullableViewCases()
+    {
+        foreach (var (valueName, create) in ((string, Func<ArraySegment<int>?>)[])
+                 [
+                     ("Null", static () => null),
+                     ("DefaultValue", static () => default(ArraySegment<int>)),
+                     ("EmptyArrayValue", static () => ArraySegment<int>.Empty),
+                     ("One", static () => new ArraySegment<int>([7])),
+                 ])
+        {
+            yield return Create(nameof(K.NullableSegmentKernel), valueName, R.Length,
+                (o, s) => K.LaunchNullableSegmentKernel(create(), o, gridDimX: s.GridX, blockDimX: s.BlockX),
+                o => K.NullableSegmentKernel(create(), o));
+        }
+
+        foreach (var (valueName, create) in ((string, Func<ImmutableArray<int>?>)[])
+                 [
+                     ("Null", static () => null),
+                     ("DefaultValue", static () => default(ImmutableArray<int>)),
+                     ("EmptyArrayValue", static () => ImmutableArray<int>.Empty),
+                     ("One", static () => ImmutableArray.Create(7)),
+                 ])
+        {
+            yield return Create(nameof(K.NullableImmutableKernel), valueName, R.Length,
+                (o, s) => K.LaunchNullableImmutableKernel(create(), o, gridDimX: s.GridX, blockDimX: s.BlockX),
+                o => K.NullableImmutableKernel(create(), o));
+        }
+
+        // Each of the two arguments in turn; the other holds a value of length 1 or is null
+        foreach (var (valueName, create) in ((string, Func<Memory<int>?>)[])
+                 [
+                     ("Null", static () => null),
+                     ("DefaultValue", static () => default(Memory<int>)),
+                     ("Two", static () => new Memory<int>([7, 8])),
+                 ])
+        {
+            yield return Create(nameof(K.TwoNullableMemoryKernel), "First" + valueName, R.Length,
+                (o, s) => K.LaunchTwoNullableMemoryKernel(
+                    create(), new Memory<int>([1]), o, gridDimX: s.GridX, blockDimX: s.BlockX),
+                o => K.TwoNullableMemoryKernel(create(), new Memory<int>([1]), o));
+            yield return Create(nameof(K.TwoNullableMemoryKernel), "Second" + valueName, R.Length,
+                (o, s) => K.LaunchTwoNullableMemoryKernel(
+                    null, create(), o, gridDimX: s.GridX, blockDimX: s.BlockX),
+                o => K.TwoNullableMemoryKernel(null, create(), o));
         }
     }
 

@@ -355,9 +355,12 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"{KernelParams}[{paramIndex}] = {GetArgumentPointer(shape)};");
     }
 
-    // IntPtr* __gsharp_proxy_<ord> = stackalloc IntPtr[2];                         (an array-like argument) IntPtr*
-    // __gsharp_nullable_<ord> = stackalloc IntPtr[3];                      (a Nullable<array-like>: Memory<T>?)
-    // __gsharp_nullable_<ord>[0] = <name>.HasValue ? 1 : 0; IntPtr* __gsharp_proxy_<ord> = __gsharp_nullable_<ord> + 1;
+    // An array-like argument:
+    // IntPtr* __gsharp_proxy_<ord> = stackalloc IntPtr[2];
+    // A Nullable<array-like> (Memory<T>?):
+    // IntPtr* __gsharp_nullable_<ord> = stackalloc IntPtr[3];
+    // __gsharp_nullable_<ord>[0] = <name>.HasValue ? 1 : 0;
+    // IntPtr* __gsharp_proxy_<ord> = __gsharp_nullable_<ord> + 1;
     // [WHY] The device takes a Memory<T>? as System_Nullable<GSharpArray<T>>, HasValue in its first byte and the array
     // at byte 8, as it takes every other Nullable<T>; the value of a default Memory<T> is a null array that has a value
     private static void WriteProxyDeclaration(SourceWriter writer, in KernelParameterShape shape)
