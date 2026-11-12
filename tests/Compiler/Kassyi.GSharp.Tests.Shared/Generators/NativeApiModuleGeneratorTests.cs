@@ -106,7 +106,10 @@ public class NativeApiModuleGeneratorTests
         Assert.True(problems.Length == 0, string.Join(Environment.NewLine, problems));
         var source = Assert.Single(output.SyntaxTrees, t => t.FilePath.EndsWith("StagedKernels.NativeApi.g.cs"))
             .ToString();
-        Assert.Contains("result = default;", source);
+        Assert.Contains("var h_result = default(double);", source);
+        Assert.Contains("d_result.CopyToHost(new global::System.Span<double>(ref h_result));", source);
+        Assert.Contains("result = h_result;", source);
+        Assert.DoesNotContain("result = default;", source);
         Assert.Contains("d_total.CopyToHost(new global::System.Span<int>(ref total));", source);
         Assert.DoesNotContain("d_seed.CopyToHost", source);
         Assert.DoesNotContain("d_limit.CopyToHost", source);

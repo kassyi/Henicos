@@ -37,6 +37,12 @@ methods:
       - { name: total, type: ref int }
       - { name: seed, type: in int }
       - { name: result, type: out int }
+  - name: UpdateByReferenceBounded
+    parameters:
+      - { name: total, type: ref int }
+      - { name: seed, type: in int }
+      - { name: result, type: out int }
+      - { name: blockDimX, type: uint }
   - name: ShiftMatrix
     parameters:
       - { name: x, type: "float[,]" }

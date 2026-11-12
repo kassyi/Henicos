@@ -212,10 +212,12 @@ internal static class ModuleKernelLaunchEmitter
     // Array: using var d_<name> = new GpuBuffer<<element>>(<name>.Length); d_<name>.CopyToDevice(<elements of name>);
     // Nullable array: using var d_<name> = <name> is null ? null : new GpuBuffer<<element>>(<name>.Length);
     //                 d_<name>?.CopyToDevice(<elements of name>);
-    // By reference: [<name> = default;] using var d_<name> = new GpuBuffer<<type>>(1);
-    //               d_<name>.CopyToDevice(new ReadOnlySpan<<type>>(in <name>));
-    // [WHY] A null nullable array is passed as a null pointer. An 'out' value is set to default first: C# cannot read
-    // it before, and the kernel then starts from a known value instead of what the device memory held.
+    // By reference: [var h_<name> = default(<type>);] using var d_<name> = new GpuBuffer<<type>>(1);
+    //               d_<name>.CopyToDevice(new ReadOnlySpan<<type>>(in <name> or h_<name>));
+    // [WHY] A null nullable array is passed as a null pointer. An 'out' value sends default from a local of the
+    // launcher (h_<name>): C# cannot read the parameter before it is assigned, the kernel starts from a known value
+    // instead of what the device memory held, and the caller's variable changes only in the write-back, so a launch
+    // that throws leaves it as it was and a 'ref' parameter that aliases it is copied in with the caller's value.
     private static void EmitBufferAllocations(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
     {
         foreach (var argument in arguments)
@@ -237,10 +239,11 @@ internal static class ModuleKernelLaunchEmitter
 
                     break;
                 case ModuleKernelParameterKind.ByReference:
-                    writer.AppendLineIf(!argument.CopyIn, $"{name} = default;");
+                    var host = GetHostValue(argument);
+                    writer.AppendLineIf(!argument.CopyIn, $"var {host} = default({argument.TypeName});");
                     writer.AppendLine($"using var d_{name} = new {buffer}(1);");
                     writer.AppendLine(
-                        $"d_{name}.CopyToDevice(new {HostTypeNames.ReadOnlySpan}<{argument.TypeName}>(in {name}));");
+                        $"d_{name}.CopyToDevice(new {HostTypeNames.ReadOnlySpan}<{argument.TypeName}>(in {host}));");
                     break;
             }
         }
@@ -258,6 +261,10 @@ internal static class ModuleKernelLaunchEmitter
     private static string GetDevicePointer(ModuleKernelArgument argument) => argument.AllowsNull
         ? $"d_{argument.Name}?.DevicePointer ?? {Zero}"
         : $"d_{argument.Name}.DevicePointer";
+
+    // The host storage of a value passed by reference: the parameter, or the launcher local h_<name> of an 'out' value
+    private static string GetHostValue(ModuleKernelArgument argument) =>
+        argument.CopyIn ? argument.Name : $"h_{argument.Name}";
 
     // The member access on the buffer of <argument>: '?.' when a nullable array leaves it null
     private static string GetAccess(ModuleKernelArgument argument) => argument.AllowsNull ? "?." : ".";
@@ -359,8 +366,8 @@ internal static class ModuleKernelLaunchEmitter
             : $"{ThrowIfError}({HostTypeNames.CudaDriverApi}.cuCtxSynchronize());");
     }
 
-    // d_<name>[?].CopyToHost(<elements of name>); for an array, d_<name>.CopyToHost(new Span<<type>>(ref <name>)); for
-    // a value passed by reference
+    // Array: d_<name>[?].CopyToHost(<elements of name>);
+    // By reference: d_<name>.CopyToHost(new Span<<type>>(ref <name> or h_<name>)); [<name> = h_<name>;]
     private static void EmitBufferOutputs(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
     {
         foreach (var argument in arguments)
@@ -379,7 +386,9 @@ internal static class ModuleKernelLaunchEmitter
             }
             else
             {
-                writer.AppendLine($"d_{name}.CopyToHost(new {HostTypeNames.Span}<{argument.TypeName}>(ref {name}));");
+                var host = GetHostValue(argument);
+                writer.AppendLine($"d_{name}.CopyToHost(new {HostTypeNames.Span}<{argument.TypeName}>(ref {host}));");
+                writer.AppendLineIf(!argument.CopyIn, $"{name} = {host};");
             }
         }
     }

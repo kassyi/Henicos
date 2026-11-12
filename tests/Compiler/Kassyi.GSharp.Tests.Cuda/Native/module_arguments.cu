@@ -47,12 +47,24 @@ extern "C" __global__ void RecordAddress(float* data, unsigned long long* seen)
 
 // The 'ref' total becomes total * 3 + seed, the 'out' result becomes its value at the launch (default) + seed + 7, and
 // the 'in' seed is overwritten on the device, which must not reach the caller.
-extern "C" __global__ void UpdateByReference(int* total, int* seed, int* result)
+static __device__ void UpdateValues(int* total, int* seed, int* result)
 {
     int s = *seed;
     *total = *total * 3 + s;
     *result = *result + s + 7;
     *seed = -1;
+}
+
+extern "C" __global__ void UpdateByReference(int* total, int* seed, int* result)
+{
+    UpdateValues(total, seed, result);
+}
+
+// The same update in a kernel limited to 32 threads per block: the driver rejects a launch of more threads after the
+// launcher has staged the arguments, so a test can tell what the launcher wrote to the caller before the launch.
+extern "C" __global__ void __launch_bounds__(32) UpdateByReferenceBounded(int* total, int* seed, int* result)
+{
+    UpdateValues(total, seed, result);
 }
 
 // x[r * cols + c] += r - c for a row-major rows x cols matrix: the result differs between rows and columns, so a

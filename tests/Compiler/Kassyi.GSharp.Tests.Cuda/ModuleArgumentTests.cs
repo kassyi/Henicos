@@ -181,6 +181,33 @@ public class ModuleArgumentTests
         Assert.Equal(4 + 7, result);
     }
 
+    // The launcher keeps the default it sends for an 'out' value in a local of its own: the caller's variables change
+    // only in the write-back after the launch. A launch the driver rejects (64 threads for a kernel bounded to 32)
+    // throws after the arguments were staged and leaves them as they were; 32 threads run it as the control.
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(Binding.Yaml)]
+    [InlineData(Binding.Import)]
+    public void Launch_RejectedAfterStaging_LeavesOutAndRefVariablesUnchanged(Binding binding)
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var total = 5;
+        var seed = 4;
+        var result = 99;
+
+        Assert.Throws<CudaException>(() => UpdateBounded(binding, ref total, seed, out result, 64));
+
+        Assert.Equal(5, total);
+        Assert.Equal(99, result);
+
+        UpdateBounded(binding, ref total, seed, out result, 32);
+
+        Assert.Equal(5 * 3 + 4, total);
+        Assert.Equal(4 + 7, result);
+    }
+
     // Element [i, j] of a 3 x 5 matrix starts as 100 * i + j and the kernel adds i - j at index i * 5 + j: a
     // column-major or transposed copy would add j - i, or the values of other elements, so the result differs
     [SkippableTheory]
@@ -226,6 +253,18 @@ public class ModuleArgumentTests
         Yaml,
         Import,
         ImportReadOnly,
+    }
+
+    private static void UpdateBounded(Binding binding, ref int total, int seed, out int result, uint blockDimX)
+    {
+        if (binding == Binding.Yaml)
+        {
+            ModuleArgumentKernels.UpdateByReferenceBounded(ref total, in seed, out result, blockDimX);
+        }
+        else
+        {
+            ModuleArgumentImports.UpdateByReferenceBounded(ref total, in seed, out result, blockDimX);
+        }
     }
 
     private static void RecordAddress(Binding binding, float[]? data, ulong[] seen)

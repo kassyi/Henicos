@@ -25,5 +25,8 @@ public static partial class ModuleArgumentImports
     public static partial void UpdateByReadOnlyReference(ref int total, ref readonly int seed, out int result);
 
     [CudaImport(Module)]
+    public static partial void UpdateByReferenceBounded(ref int total, in int seed, out int result, uint blockDimX);
+
+    [CudaImport(Module)]
     public static partial void ShiftMatrix(float[,] x, int rows, int cols, uint blockDimX);
 }

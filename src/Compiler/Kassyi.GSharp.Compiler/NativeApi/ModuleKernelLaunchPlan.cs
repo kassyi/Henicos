@@ -8,8 +8,9 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// the referenced type of a <c>ref</c>, <c>out</c> or <c>in</c> parameter.
 /// </param>
 /// <param name="CopyIn">
-/// Whether an array or a value passed by reference is copied to the device before the launch; a value passed by
-/// reference that is not (<c>out</c>) is set to <see langword="default"/> first, and that is copied.
+/// Whether an array or a value passed by reference is copied to the device before the launch; for a value passed by
+/// reference that is not (<c>out</c>), <see langword="default"/> is copied from a local of the launcher, and the
+/// parameter is assigned only in the write-back.
 /// </param>
 /// <param name="CopyOut">
 /// Whether an array or a value passed by reference is copied back to the host after the launch.
