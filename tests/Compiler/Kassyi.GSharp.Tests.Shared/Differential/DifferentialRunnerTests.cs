@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Kassyi.GSharp.Core;
 using Xunit;
@@ -99,15 +100,9 @@ public class DifferentialRunnerTests
         var report = FakeCase(DiffPath.Native, CorruptSums).Evaluate([1]);
 
         Assert.Equal(5, report.UnexpectedMismatches.Count);
-        int differsCount = 0;
-        foreach (var line in report.ToString().AsSpan().EnumerateLines())
-        {
-            if (line.Contains("<- differs", StringComparison.Ordinal))
-            {
-                differsCount++;
-            }
-        }
-        Assert.Equal(5, differsCount);
+#pragma warning disable RS0030 // Counts the "<- differs" rows of the mismatch report a person reads
+        Assert.Equal(5, Regex.Matches(report.ToString(), "<- differs").Count);
+#pragma warning restore RS0030
     }
 
     [Fact]

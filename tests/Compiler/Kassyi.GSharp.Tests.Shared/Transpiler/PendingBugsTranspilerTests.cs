@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 using Kassyi.GSharp.Tests.Shared.Helpers;
@@ -69,7 +70,10 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
 
         Assert.Empty(failures1);
         Assert.Empty(failures2);
-        var called = ExtractCalledStackLinqOperators(cppTakeLast + cppUnfusedSelector);
+        var called = Regex.Matches(cppTakeLast + cppUnfusedSelector, @"StackLinq::(\w+)\(")
+            .Select(static m => m.Groups[1].Value)
+            .Distinct()
+            .ToArray();
         Assert.Contains("TakeLast", called);
         Assert.Contains("SkipLast", called);
         Assert.Contains("Sum", called);
@@ -183,7 +187,9 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
 
         Assert.Empty(failures);
 
-        var siteKeys = ExtractStaticSmemKeys(cppSource);
+        var siteKeys = Regex.Matches(cppSource, @"__gsharp_allocate_smem_static\((0x[0-9a-fA-F]+ull)")
+            .Select(m => m.Groups[1].Value)
+            .ToArray();
 
         Assert.Equal(2, siteKeys.Length);
         Assert.NotEqual(siteKeys[0], siteKeys[1]);
@@ -208,7 +214,9 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
 
         Assert.Empty(failures1);
 
-        var ctorAndOpKeys = ExtractStaticSmemKeys(cppCtorAndOp);
+        var ctorAndOpKeys = Regex.Matches(cppCtorAndOp, @"__gsharp_allocate_smem_static\((0x[0-9a-fA-F]+ull)")
+            .Select(m => m.Groups[1].Value)
+            .ToArray();
 
         Assert.Equal(2, ctorAndOpKeys.Length);
         Assert.Equal(2, ctorAndOpKeys.Distinct(StringComparer.Ordinal).Count());
@@ -222,65 +230,5 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         var cppComputedProp = MethodTranspiler.GenerateCudaSource(
             computedPropMethod, model, failures2.Add, isDevice: false, new StandardCppDialect(), out _);
         Assert.NotNull(cppComputedProp);
-    }
-
-    private static string[] ExtractCalledStackLinqOperators(string source)
-    {
-        const string Marker = "StackLinq::";
-        var called = new HashSet<string>();
-        int pos = 0;
-        while (true)
-        {
-            int idx = source.IndexOf(Marker, pos, StringComparison.Ordinal);
-            if (idx < 0)
-            {
-                break;
-            }
-
-            int start = idx + Marker.Length;
-            int openParen = source.IndexOf('(', start);
-            if (openParen > start)
-            {
-                var op = source[start..openParen];
-                if (op.All(char.IsAsciiLetterOrDigit))
-                {
-                    called.Add(op);
-                }
-            }
-
-            pos = start;
-        }
-
-        return called.ToArray();
-    }
-
-    private static string[] ExtractStaticSmemKeys(string cppSource)
-    {
-        const string Marker = "__gsharp_allocate_smem_static(";
-        var keys = new List<string>();
-        int pos = 0;
-        while (true)
-        {
-            int idx = cppSource.IndexOf(Marker, pos, StringComparison.Ordinal);
-            if (idx < 0)
-            {
-                break;
-            }
-
-            int start = idx + Marker.Length;
-            int end = cppSource.IndexOfAny([',', ')'], start);
-            if (end > start)
-            {
-                var keySpan = cppSource.AsSpan(start, end - start).Trim();
-                if (keySpan.StartsWith("0x", StringComparison.Ordinal) && keySpan.EndsWith("ull", StringComparison.Ordinal))
-                {
-                    keys.Add(keySpan.ToString());
-                }
-            }
-
-            pos = start;
-        }
-
-        return keys.ToArray();
     }
 }

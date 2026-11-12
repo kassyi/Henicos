@@ -139,21 +139,8 @@ public partial class MethodAttributesTests
         Assert.Empty(diagnostics);
         Assert.Matches(MultipleAttributesRegex(), cudaSource);
 
-        int forceinlineCount = 0;
-        var span = cudaSource.AsSpan();
-        while (true)
-        {
-            var idx = span.IndexOf(ForceinlineModifier, StringComparison.Ordinal);
-            if (idx < 0)
-            {
-                break;
-            }
-
-            forceinlineCount++;
-            span = span[(idx + ForceinlineModifier.Length)..];
-        }
-
-        Assert.Equal(1, forceinlineCount);
+        var matches = Regex.Matches(cudaSource, ForceinlineModifier);
+        Assert.Single(matches);
     }
 
     [SkippableFact]
