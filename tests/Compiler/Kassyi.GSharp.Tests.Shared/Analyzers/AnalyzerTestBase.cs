@@ -16,7 +16,7 @@ public abstract class AnalyzerTestBase
         var source = await File.ReadAllTextAsync(sourcePath);
 
         var syntaxTree = CSharpSyntaxTree.ParseText(source);
-        var references = Kassyi.GSharp.Tests.Shared.Helpers.MegaCompilationCache.BaseCompilation.References;
+        var references = RoslynTestUtility.BaseCompilation.References;
 
         var compilation = CSharpCompilation.Create(assemblyName)
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))

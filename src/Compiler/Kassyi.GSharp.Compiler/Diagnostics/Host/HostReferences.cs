@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Host;
 
 /// <summary>
 /// Decides whether an operation is a reference that host code makes and C# runs, the common condition of the host rules
-/// (GSH0018).
+/// (GSH0018, GSH0031).
 /// </summary>
 internal static class HostReferences
 {

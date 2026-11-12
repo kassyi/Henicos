@@ -47,7 +47,7 @@ public partial class NamingArchitectureTests
     public void Emitters_SourceEmission_DoesNotAppendRawUserIdentifiers()
     {
         var violations = new List<string>();
-        foreach (var (fileName, root) in ParseEmitterSources())
+        foreach (var (fileName, root) in EmitterSources())
         {
             foreach (var expression in EnumerateEmittedExpressions(root))
             {
@@ -76,7 +76,7 @@ public partial class NamingArchitectureTests
     public void Emitters_InternalIdentEmission_PrefixesInternalNamesWithGSharp()
     {
         var violations = new List<string>();
-        foreach (var (fileName, root) in ParseEmitterSources())
+        foreach (var (fileName, root) in EmitterSources())
         {
             foreach (var token in root.DescendantTokens())
             {
@@ -92,10 +92,14 @@ public partial class NamingArchitectureTests
                     continue;
                 }
 
+#pragma warning disable RS0030 // The C++ fragments in compiler string literals have no C++ syntax tree, and a snapshot cannot state that every __ name in them is __gsharp_ or a CUDA spelling
                 foreach (Match match in DoubleUnderscoreIdentifierRegex().Matches(text))
+#pragma warning restore RS0030
                 {
+#pragma warning disable RS0030 // The C++ name matched in a compiler string literal has no C++ syntax tree; it is checked against the CUDA spellings that may start with __
                     if (match.Value.StartsWith("__gsharp_", StringComparison.Ordinal) ||
                         AllowedDoubleUnderscoreRegex().IsMatch(match.Value))
+#pragma warning restore RS0030
                     {
                         continue;
                     }
@@ -148,7 +152,7 @@ public partial class NamingArchitectureTests
         Assert.NotEmpty(names);
 
         var violations = new List<string>();
-        foreach (var (path, root) in ParseCompilerSources())
+        foreach (var (path, root) in CompilerSources())
         {
             if (Path.GetFileName(path) == "GSharpInternalNames.cs")
             {
@@ -176,7 +180,7 @@ public partial class NamingArchitectureTests
     public void Compiler_StringLiterals_DoesNotUseRenamedFamilyPrefixes()
     {
         var violations = new List<string>();
-        foreach (var (path, root) in ParseCompilerSources())
+        foreach (var (path, root) in CompilerSources())
         {
             // These files encode and decode the renamed families themselves.
             if (Path.GetFileName(path) is "CppNameResolver.cs" or "GSharpInternalNames.cs")
@@ -252,47 +256,31 @@ public partial class NamingArchitectureTests
         }
     }
 
-    private static SyntaxNode ParseCompilerSource(string path) => CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
+    // Every source file of the compiler project, parsed once for the test run
+    private static IEnumerable<(string Path, SyntaxNode Root)> CompilerSources() =>
+        RoslynTestUtility.CompilerSourceCompilation.SyntaxTrees.Select(static tree => (tree.FilePath, tree.GetRoot()));
 
-    private static IEnumerable<(string Path, SyntaxNode Root)> ParseCompilerSources()
+    private static IEnumerable<(string FileName, SyntaxNode Root)> EmitterSources()
     {
         var compilerRoot = RepositoryPaths.CompilerProject;
-        foreach (var path in Directory.EnumerateFiles(compilerRoot, "*.cs", SearchOption.AllDirectories))
+
+        // Transpiler/Managed emits C#, not C++.
+        var managed = Directory.EnumerateFiles(Path.Combine(compilerRoot, "Transpiler", "Managed"), "*.cs",
+            SearchOption.AllDirectories);
+        var emitterPaths = s_emitterDirectories
+            .SelectMany(directory => Directory.EnumerateFiles(Path.Combine(compilerRoot, directory), "*.cs",
+                SearchOption.AllDirectories)
+            ).Except(managed, StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (path, root) in CompilerSources())
         {
-            var relative = Path.GetRelativePath(compilerRoot, path);
-            var firstSegment = relative.Split(Path.DirectorySeparatorChar)[0];
-            if (firstSegment is "obj" or "bin")
+            // The naming layer itself is exempt.
+            var fileName = Path.GetFileName(path);
+            if (emitterPaths.Contains(path) &&
+                fileName is not ("CppNameResolver.cs" or "CppNameFormatter.cs" or "GlobalCppNames.cs"))
             {
-                continue;
-            }
-
-            yield return (path, ParseCompilerSource(path));
-        }
-    }
-
-    private static IEnumerable<(string FileName, SyntaxNode Root)> ParseEmitterSources()
-    {
-        var compilerRoot = RepositoryPaths.CompilerProject;
-        foreach (var directory in s_emitterDirectories)
-        {
-            foreach (var path in Directory.EnumerateFiles(Path.Combine(compilerRoot, directory), "*.cs",
-                         SearchOption.AllDirectories))
-            {
-                // Transpiler/Managed emits C#, not C++.
-                var relative = Path.GetRelativePath(compilerRoot, path).Replace('\\', '/');
-                if (relative.StartsWith("Transpiler/Managed/", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                // The naming layer itself is exempt.
-                var fileName = Path.GetFileName(path);
-                if (fileName is "CppNameResolver.cs" or "CppNameFormatter.cs" or "GlobalCppNames.cs")
-                {
-                    continue;
-                }
-
-                yield return (fileName, CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot());
+                yield return (fileName, root);
             }
         }
     }
