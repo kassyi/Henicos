@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime;
 using Xunit;
 using static Kassyi.GSharp.Tests.Shared.Differential.DifferentialHarnessFakes;
 
@@ -38,7 +39,7 @@ public class DifferentialRunnerTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => HarnessProbeKernels.UInt32AddMatrixKernel(b.Get<uint>("a"), b.Get<uint>("b"), b.Get<uint>("r")),
+        OracleIsLaunch = true,
     };
 
     // ---- The runner ----
@@ -135,7 +136,11 @@ public class DifferentialRunnerTests
             Shape = LaunchShape.ForRows(8, blockX: 4),
             Inputs = static (_, _) => new DiffBuffers().Out<int>("r", 1, OutputPolicy.Exact),
             Launch = static (_, _) => throw new InvalidOperationException("no path may run after the order check fails"),
-            Oracle = static (b, _) => HarnessProbeKernels.LastWriterKernel(b.Get<int>("r")),
+            Oracle = static (b, s) => HarnessProbeKernels.LaunchLastWriterKernel(
+                b.Get<int>("r"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
         };
 
         var ex = Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(racing, [0], NativeOnly, NoEntries));
@@ -210,6 +215,108 @@ public class DifferentialRunnerTests
         var ex = Assert.Throws<DifferentialHarnessException>(() => DifferentialRunner.Evaluate(throwing, [4], NativeOnly, NoEntries));
         Assert.Contains("threw for seed 4", ex.Message);
         Assert.IsType<DivideByZeroException>(ex.InnerException);
+
+        // An oracle and OracleIsLaunch at once: two definitions of the result
+        // mutant: DifferentialRunner.cs ValidateCase `Oracle is not null && OracleIsLaunch` check removed
+        var both = throwing with { OracleIsLaunch = true };
+        var bothEx = Assert.Throws<DifferentialHarnessException>(
+            () => DifferentialRunner.Evaluate(both, [0], NativeOnly, NoEntries)
+        );
+        Assert.Equal($"{FakeCaseName}: set at most one of Oracle and OracleIsLaunch", bothEx.Message);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void DifferentialRunner_OracleIsLaunch_RunsTheLaunchAsCSharp()
+    {
+        // The launch is the oracle, run under KernelExecution.CSharp; the path runs it under its caller's selection
+        // mutant: SequentialOracle.cs Run `Use(KernelExecution.CSharp)` -> `Use(KernelExecution.Default)`
+        // mutant: DifferentialCase.cs EffectiveOracle `(OracleIsLaunch ? Launch : null)` -> `null` (harness error)
+        var testCase = new DifferentialCase(FakeCaseName)
+        {
+            Shape = FakeShape,
+            Inputs = static (_, _) => new DiffBuffers().Out<int>("r", 1, OutputPolicy.Exact),
+            Launch = static (b, _) => b.Get<int>("r")[0] = (int)GpuExecution.Current,
+            OracleIsLaunch = true,
+        };
+
+        var asCSharp = new DiffPathRunner(DiffPath.Native, static launch =>
+        {
+            using (GpuExecution.Use(KernelExecution.CSharp))
+            {
+                launch();
+            }
+        });
+        Assert.False(DifferentialRunner.Evaluate(testCase, [0], [asCSharp], NoEntries).HasFailures);
+
+        var report = DifferentialRunner.Evaluate(testCase, [0], NativeOnly, NoEntries);
+        var mismatch = Assert.Single(report.Mismatches);
+        Assert.StartsWith($"{(int)KernelExecution.CSharp} ", mismatch.Expected);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void DifferentialRunner_OracleLaunchOtherThanTheShape_ReportsHarnessError()
+    {
+        // A launch with fewer threads than the shape would give the oracle threads other coordinates than the paths see
+        // mutant: SequentialOracle.cs Enumerate `count == shape.ThreadCount` -> `true` (an order of the wrong length)
+        var shortLaunch = new DifferentialCase("HarnessProbeKernels.UInt32AddMatrixKernel")
+        {
+            Shape = LaunchShape.ForRows(8, blockX: 4),
+            Inputs = static (_, rows) => new DiffBuffers()
+                .In("a", new uint[rows])
+                .In("b", new uint[rows])
+                .Out<uint>("r", rows, HarnessProbeKernels.UInt32AddColumns, OutputPolicy.Exact),
+            Launch = static (_, _) => throw new InvalidOperationException("no path may run after the oracle fails"),
+            Oracle = static (b, s) => HarnessProbeKernels.LaunchUInt32AddMatrixKernel(
+                b.Get<uint>("a"),
+                b.Get<uint>("b"),
+                b.Get<uint>("r"),
+                gridDimX: s.GridX - 1,
+                blockDimX: s.BlockX
+            ),
+        };
+
+        var ex = Assert.Throws<DifferentialHarnessException>(
+            () => DifferentialRunner.Evaluate(shortLaunch, [0], NativeOnly, NoEntries)
+        );
+        Assert.Equal(
+            "the oracle launched 4 threads, but the launch shape grid=(2,1,1) block=(4,1,1) has 8",
+            ex.Message
+        );
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void DifferentialRunner_OracleReachesABarrier_ReportsHarnessError()
+    {
+        // One thread at a time cannot meet a barrier: the launcher throws before any thread runs, and the harness
+        // reports the oracle, not a path divergence
+        // mutant: SequentialOracle.cs Run without `GpuExecution.Use(KernelExecution.CSharp)` (the oracle runs a path)
+        var barrier = new DifferentialCase("CSharpExecutionKernels.BarrierKernel")
+        {
+            Shape = LaunchShape.ForRows(4, blockX: 4),
+            Inputs = static (_, rows) => new DiffBuffers().Out<int>("data", rows, OutputPolicy.Exact),
+            Launch = static (_, _) => throw new InvalidOperationException("no path may run after the oracle fails"),
+            Oracle = static (b, s) => Kassyi.GSharp.Tests.Shared.Runtime.CSharpExecutionKernels.LaunchBarrierKernel(
+                b.Get<int>("data"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+        };
+
+        var ex = Assert.Throws<DifferentialHarnessException>(
+            () => DifferentialRunner.Evaluate(barrier, [0], NativeOnly, NoEntries)
+        );
+        Assert.Contains("the oracle (forward) threw for seed 0", ex.Message);
+        var inner = Assert.IsType<InvalidOperationException>(ex.InnerException);
+        Assert.Contains("cannot run under KernelExecution.CSharp: it reaches Gpu.SyncThreads()", inner.Message);
     }
 
     [Fact]
@@ -297,7 +404,7 @@ public class DifferentialRunnerTests
                     blockDimX: s.BlockX
                 );
             },
-            Oracle = static (b, _) => HarnessProbeKernels.LastWriterKernel(b.Get<int>("r")),
+            OracleIsLaunch = true,
         };
 
         var cudaReport = DifferentialRunner.Evaluate(cudaPtrCase, [0], DiffPaths.Available, NoEntries);
@@ -314,7 +421,11 @@ public class DifferentialRunnerTests
                 int* ptr = (int*)scope.Get("r");
                 ptr[0] = 0;
             },
-            Oracle = static (b, _) => HarnessProbeKernels.LastWriterKernel(b.Get<int>("r")),
+            Oracle = static (b, s) => HarnessProbeKernels.LaunchLastWriterKernel(
+                b.Get<int>("r"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
         };
 
         var simReport = DifferentialRunner.Evaluate(

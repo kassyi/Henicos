@@ -44,7 +44,11 @@ public class FuzzSplitOracleTests
             foreach (var order in new[] { ThreadOrder.Forward, ThreadOrder.Reverse, ThreadOrder.Permutation(7) })
             {
                 ulong[] checksum = new ulong[Rows];
-                SequentialOracle.Run(shape, order, () => twin(new int[Rows], new int[Rows], new int[Rows], checksum));
+                SequentialOracle.RunEachThread(
+                    shape,
+                    order,
+                    () => twin(new int[Rows], new int[Rows], new int[Rows], checksum)
+                );
 
                 // The twin replaces each self-lane shuffle by its value and drops each barrier; per thread that is the
                 // GPU definition, so it must give the values worked out by hand in the comments of the kernels.

@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -36,7 +37,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1, -1, -1];
         int[] expected = [-1, -1, -1];
-        ZeroInitKernels.NewArrayKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchNewArrayKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchNewArrayKernel(output, blockDimX: 1);
 
@@ -51,7 +52,7 @@ public class ZeroInitTests : TranspilerTestBase
         int[] output = [-1, -1, -1, -1, -1, -1];
         int[] sink = [0];
         int[] expected = [-1, -1, -1, -1, -1, -1];
-        ZeroInitKernels.ElementTypesKernel(expected, [0]);
+        RunAsCSharp(() => ZeroInitKernels.LaunchElementTypesKernel(expected, [0], blockDimX: 1));
 
         ZeroInitKernels.LaunchElementTypesKernel(output, sink, blockDimX: 1);
 
@@ -65,7 +66,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1, -1, -1, -1];
         int[] expected = [-1, -1, -1, -1];
-        ZeroInitKernels.StackAllocInLoopKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackAllocInLoopKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackAllocInLoopKernel(output, blockDimX: 1);
 
@@ -83,7 +84,7 @@ public class ZeroInitTests : TranspilerTestBase
         float[] floats = [-1f];
         int[] expected = [-1, -1, -1, -1];
         float[] expectedFloats = [-1f];
-        ZeroInitKernels.GenericStackAllocKernel(expected, expectedFloats, index);
+        RunAsCSharp(() => ZeroInitKernels.LaunchGenericStackAllocKernel(expected, expectedFloats, index, blockDimX: 1));
 
         ZeroInitKernels.LaunchGenericStackAllocKernel(output, floats, index, blockDimX: 1);
 
@@ -99,7 +100,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1, -1];
         int[] expected = [-1, -1];
-        ZeroInitKernels.ReadOnlyStackAllocKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchReadOnlyStackAllocKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchReadOnlyStackAllocKernel(output, blockDimX: 1);
 
@@ -126,7 +127,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = Enumerable.Repeat(-1, 6).ToArray();
         int[] expected = Enumerable.Repeat(-1, 6).ToArray();
-        ZeroInitKernels.StackArrayArgumentKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackArrayArgumentKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackArrayArgumentKernel(output, blockDimX: 1);
 
@@ -140,7 +141,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = Enumerable.Repeat(-1, 6).ToArray();
         int[] expected = Enumerable.Repeat(-1, 6).ToArray();
-        ZeroInitKernels.StackArrayNullTestKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackArrayNullTestKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackArrayNullTestKernel(output, blockDimX: 1);
 
@@ -155,7 +156,7 @@ public class ZeroInitTests : TranspilerTestBase
         int[] input = [5];
         int[] output = [-1, -1];
         int[] expected = [-1, -1];
-        ZeroInitKernels.CastNullTestKernel(input, expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchCastNullTestKernel(input, expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchCastNullTestKernel(input, output, blockDimX: 1);
 
@@ -169,7 +170,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = Enumerable.Repeat(-1, 5).ToArray();
         int[] expected = Enumerable.Repeat(-1, 5).ToArray();
-        ZeroInitKernels.StackArrayMembersKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackArrayMembersKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackArrayMembersKernel(output, blockDimX: 1);
 
@@ -186,7 +187,7 @@ public class ZeroInitTests : TranspilerTestBase
         int[] seed = [100];
         int[] output = [-1, -1];
         int[] expected = [-1, -1];
-        ZeroInitKernels.StackArrayAliasKernel(expected, seed);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackArrayAliasKernel(expected, seed, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackArrayAliasKernel(output, seed, blockDimX: 1);
 
@@ -200,7 +201,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = Enumerable.Repeat(-1, 11).ToArray();
         int[] expected = Enumerable.Repeat(-1, 11).ToArray();
-        ZeroInitKernels.SkipLocalsInitInitializersKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchSkipLocalsInitInitializersKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchSkipLocalsInitInitializersKernel(output, blockDimX: 1);
 
@@ -216,7 +217,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1, -1];
         int[] expected = [-1, -1];
-        ZeroInitKernels.SkipLocalsInitDefaultKernel(expected, index);
+        RunAsCSharp(() => ZeroInitKernels.LaunchSkipLocalsInitDefaultKernel(expected, index, blockDimX: 1));
 
         ZeroInitKernels.LaunchSkipLocalsInitDefaultKernel(output, index, blockDimX: 1);
 
@@ -230,7 +231,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = Enumerable.Repeat(-1, 8).ToArray();
         int[] expected = Enumerable.Repeat(-1, 8).ToArray();
-        ZeroInitKernels.StackAllocArgumentKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackAllocArgumentKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackAllocArgumentKernel(output, blockDimX: 1);
 
@@ -244,7 +245,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1, -1];
         int[] expected = [-1, -1];
-        ZeroInitKernels.StackAllocInitializerOrderKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackAllocInitializerOrderKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackAllocInitializerOrderKernel(output, blockDimX: 1);
 
@@ -258,7 +259,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1, -1];
         int[] expected = [-1, -1];
-        ZeroInitKernels.StackAllocPointerKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackAllocPointerKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackAllocPointerKernel(output, blockDimX: 1);
 
@@ -274,7 +275,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1];
         int[] expected = [-1];
-        ZeroInitKernels.LargeStackAllocKernel(expected, index);
+        RunAsCSharp(() => ZeroInitKernels.LaunchLargeStackAllocKernel(expected, index, blockDimX: 1));
 
         ZeroInitKernels.LaunchLargeStackAllocKernel(output, index, blockDimX: 1);
 
@@ -288,7 +289,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1];
         int[] expected = [-1];
-        ZeroInitKernels.StackAllocArgumentInLoopKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackAllocArgumentInLoopKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackAllocArgumentInLoopKernel(output, blockDimX: 1);
 
@@ -302,7 +303,7 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1, -1, -1];
         int[] expected = [-1, -1, -1];
-        ZeroInitKernels.StackAllocInLoopHeadersKernel(expected);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackAllocInLoopHeadersKernel(expected, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackAllocInLoopHeadersKernel(output, blockDimX: 1);
 
@@ -318,11 +319,20 @@ public class ZeroInitTests : TranspilerTestBase
     {
         int[] output = [-1];
         int[] expected = [-1];
-        ZeroInitKernels.StackAllocConditionalKernel(expected, c);
+        RunAsCSharp(() => ZeroInitKernels.LaunchStackAllocConditionalKernel(expected, c, blockDimX: 1));
 
         ZeroInitKernels.LaunchStackAllocConditionalKernel(output, c, blockDimX: 1);
 
         Assert.Equal([length], expected);
         Assert.Equal(expected, output);
+    }
+
+    // The C# value of a kernel: the launcher runs the kernel's own method under KernelExecution.CSharp
+    private static void RunAsCSharp(Action launch)
+    {
+        using (GpuExecution.Use(KernelExecution.CSharp))
+        {
+            launch();
+        }
     }
 }

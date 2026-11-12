@@ -207,7 +207,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.MathOfSingleMatrixKernel(b.Get<float>("f"), b.Get<double>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_singleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel)}")
@@ -222,7 +222,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel(b.Get<float>("f"), b.Get<float>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_doubleRoundingAndUnary = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel)}")
@@ -237,7 +237,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel(b.Get<double>("d"), b.Get<double>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_singleMaxMinClamp = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleMaxMinClampMatrixKernel)}")
@@ -263,13 +263,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.SingleMaxMinClampMatrixKernel(
-            b.Get<float>("a"),
-            b.Get<float>("b"),
-            b.Get<float>("min"),
-            b.Get<float>("max"),
-            b.Get<float>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_doubleMaxMinClamp = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleMaxMinClampMatrixKernel)}")
@@ -295,13 +289,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.DoubleMaxMinClampMatrixKernel(
-            b.Get<double>("a"),
-            b.Get<double>("b"),
-            b.Get<double>("min"),
-            b.Get<double>("max"),
-            b.Get<double>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_mixedFloatMaxMin = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MixedFloatMaxMinMatrixKernel)}")
@@ -327,13 +315,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.MixedFloatMaxMinMatrixKernel(
-            b.Get<float>("f"),
-            b.Get<double>("d"),
-            b.Get<int>("i"),
-            b.Get<float>("rf"),
-            b.Get<double>("rd")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_int32Math = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.Int32MathMatrixKernel)}")
@@ -365,15 +347,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.Int32MathMatrixKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<short>("s"),
-            b.Get<sbyte>("sb"),
-            b.Get<int>("min"),
-            b.Get<int>("max"),
-            b.Get<int>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_mathFIntArgument = new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathFIntArgumentMatrixKernel)}")
@@ -397,12 +371,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.MathFIntArgumentMatrixKernel(
-            b.Get<int>("v"),
-            b.Get<int>("min"),
-            b.Get<int>("max"),
-            b.Get<float>("rf")
-        ),
+        OracleIsLaunch = true,
     };
 
     // Subnormal IEEE 754 0-ulp arithmetic and Sqrt without FTZ
@@ -431,14 +400,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.SubnormalIeeeExactMatrixKernel(
-            b.Get<float>("fa"),
-            b.Get<float>("fb"),
-            b.Get<double>("da"),
-            b.Get<double>("db"),
-            b.Get<float>("rf"),
-            b.Get<double>("rd")
-        ),
+        OracleIsLaunch = true,
     };
 
     // Transcendental and Pow special values / fixed points (Bitwise)
@@ -497,18 +459,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.TranscendentalSpecialValuesKernel(
-            b.Get<float>("fx"),
-            b.Get<float>("logF"),
-            b.Get<float>("powBaseF"),
-            b.Get<float>("powExpF"),
-            b.Get<double>("dx"),
-            b.Get<double>("logD"),
-            b.Get<double>("powBaseD"),
-            b.Get<double>("powExpD"),
-            b.Get<float>("rf"),
-            b.Get<double>("rd")
-        ),
+        OracleIsLaunch = true,
     };
 
     // System.Numerics.BitOperations all 18 mapped overloads + shift count masking + named arguments
@@ -567,12 +518,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.BitOperationsMatrixKernel(
-            b.Get<uint>("u32"),
-            b.Get<ulong>("u64"),
-            b.Get<int>("offsets"),
-            b.Get<ulong>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     // IEEE 754 unordered comparisons and large-exponent Round ties
@@ -622,15 +568,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.FloatComparisonAndLargeTieMatrixKernel(
-            b.Get<float>("fa"),
-            b.Get<float>("fb"),
-            b.Get<double>("da"),
-            b.Get<double>("db"),
-            b.Get<int>("ia"),
-            b.Get<byte>("rCmp"),
-            b.Get<double>("rRound")
-        ),
+        OracleIsLaunch = true,
     };
 
     // Mul-Add exact inputs (Bitwise) and FMA contraction witness (Verify)
@@ -678,13 +616,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.MulAddExactAndContractionKernel(
-            b.Get<float>("fa"),
-            b.Get<float>("fb"),
-            b.Get<float>("fc"),
-            b.Get<float>("rExact"),
-            b.Get<float>("rContract")
-        ),
+        OracleIsLaunch = true,
         Verify = static (b, s) =>
         {
             var fa = b.Get<float>("fa");
@@ -765,14 +697,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.SingleTranscendentalMatrixKernel(
-            b.Get<float>("trigX"),
-            b.Get<float>("expX"),
-            b.Get<float>("logX"),
-            b.Get<float>("powBase"),
-            b.Get<float>("powExp"),
-            b.Get<float>("r")
-        ),
+        OracleIsLaunch = true,
         Verify = static (b, s) =>
         {
             var logX = b.Get<float>("logX");
@@ -855,16 +780,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.DoubleAndPromotedSingleTranscendentalMatrixKernel(
-            b.Get<double>("trigD"),
-            b.Get<double>("expD"),
-            b.Get<double>("logD"),
-            b.Get<double>("powBaseD"),
-            b.Get<double>("powExpD"),
-            b.Get<float>("fArg"),
-            b.Get<float>("fExp"),
-            b.Get<double>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     // FastMath (Sqrt, Abs, Exp, Log)
@@ -912,13 +828,7 @@ public class MathDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => MathDifferentialKernels.FastMathMatrixKernel(
-            b.Get<float>("x"),
-            b.Get<float>("expX"),
-            b.Get<float>("logUnitX"),
-            b.Get<float>("logWideX"),
-            b.Get<float>("r")
-        ),
+        OracleIsLaunch = true,
         Verify = static (b, s) =>
         {
             var logUnitX = b.Get<float>("logUnitX");

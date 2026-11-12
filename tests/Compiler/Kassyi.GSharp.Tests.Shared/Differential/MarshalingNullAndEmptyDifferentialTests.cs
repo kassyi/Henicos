@@ -108,28 +108,26 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
                     bagComparer,
                     readOnly: true)
                 .Out<int>("output", 6, OutputPolicy.Exact),
-            Oracle = static (b, _) =>
+            // The one thread of the launch
+            Reference = static (b, _) =>
             {
                 int[]? optPrim = b.GetNullable<int>("optPrim");
                 DiffDeepBag[]? optDeep = b.GetNullable<DiffDeepBag>("optDeep");
                 int[] output = b.Get<int>("output");
-                int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-                if (tid == 0)
-                {
-                    // Per G# top-level nullable array contract (#806, #838),
-                    // both null and Length == 0 normalize to the null/empty slice (data == null, length == 0)
-                    bool primNullOrEmpty = optPrim is null || optPrim.Length == 0;
-                    bool deepNullOrEmpty = optDeep is null || optDeep.Length == 0;
-                    output[0] = primNullOrEmpty ? -1 : 1;
-                    output[1] = primNullOrEmpty ? -1 : 1;
-                    output[2] = optPrim?.Length ?? 0;
-                    output[3] = deepNullOrEmpty ? -1 : 1;
-                    output[4] = optDeep?.Length ?? 0;
-                    output[5] = (optDeep is not null && optDeep.Length > 0 &&
-                                 optDeep[0].Data is not null && optDeep[0].Data.Length > 0)
-                        ? optDeep[0].Data[0] + optDeep[0].Tag
-                        : -99;
-                }
+
+                // Per G# top-level nullable array contract (#806, #838),
+                // both null and Length == 0 normalize to the null/empty slice (data == null, length == 0)
+                bool primNullOrEmpty = optPrim is null || optPrim.Length == 0;
+                bool deepNullOrEmpty = optDeep is null || optDeep.Length == 0;
+                output[0] = primNullOrEmpty ? -1 : 1;
+                output[1] = primNullOrEmpty ? -1 : 1;
+                output[2] = optPrim?.Length ?? 0;
+                output[3] = deepNullOrEmpty ? -1 : 1;
+                output[4] = optDeep?.Length ?? 0;
+                output[5] = (optDeep is not null && optDeep.Length > 0 &&
+                             optDeep[0].Data is not null && optDeep[0].Data.Length > 0)
+                    ? optDeep[0].Data[0] + optDeep[0].Tag
+                    : -99;
             },
             Launch = static (b, s) =>
             {
@@ -207,14 +205,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
                     CloneNullableBag,
                     CompareNullableBag)
                 .Out<int>("output", 5, OutputPolicy.Exact),
-            Oracle = static (b, _) =>
-            {
-                DiffNullableDeepBag bagByVal = b.GetScalar<DiffNullableDeepBag>("bagByVal");
-                ref DiffNullableDeepBag bagByRef = ref b.GetScalarRef<DiffNullableDeepBag>("bagByRef");
-                int[] output = b.Get<int>("output");
-                MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel(
-                    bagByVal, ref bagByRef, output);
-            },
+            OracleIsLaunch = true,
             Launch = static (b, s) =>
             {
                 DiffNullableDeepBag bagByVal = b.GetScalar<DiffNullableDeepBag>("bagByVal");

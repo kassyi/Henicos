@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -41,8 +42,50 @@ public class StackLinqUnfusedDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => StackLinqUnfusedDifferentialKernels.UnfusedOperatorKernel(b.Get<int>("xs"), b.Get<long>("r")),
+        Reference = static (b, _) => UnfusedOperatorReference(b.Get<int>("xs"), b.Get<long>("r")),
     };
+
+    // The kernel's body on the host, row by row: its double Sum stops the C# run of the launcher (an analysis cannot
+    // tell that a sum of four ints does not depend on the order), so the reference repeats the C# of each column
+    private static void UnfusedOperatorReference(int[] xs, long[] r)
+    {
+        for (int t = 0; (t + 1) * SliceLen <= xs.Length; t++)
+        {
+            var slice = xs.AsSpan(t * SliceLen, SliceLen);
+            int x0 = slice[0];
+            int o = t * 24;
+            r[o] = slice.AsStackEnumerable().TakeLast(2).ElementAtOrDefault(0);
+            r[o + 1] = slice.AsStackEnumerable().TakeLast(0).ElementAtOrDefault(0);
+            r[o + 2] = slice.AsStackEnumerable().TakeLast(-1).ElementAtOrDefault(0);
+            r[o + 3] = slice.AsStackEnumerable().TakeLast(10).ElementAtOrDefault(3);
+            r[o + 4] = slice.AsStackEnumerable().TakeLast(3).SkipLast(1).ElementAtOrDefault(1);
+            r[o + 5] = slice.AsStackEnumerable().TakeLast(3).SkipLast(1).ElementAtOrDefault(2);
+            r[o + 6] = slice.AsStackEnumerable().SkipLast(3).SingleOrDefault();
+            r[o + 7] = slice.AsStackEnumerable().SkipLast(4).SingleOrDefault();
+            r[o + 8] = slice.AsStackEnumerable().SkipLast(-1).ElementAtOrDefault(3);
+            r[o + 9] = slice.AsStackEnumerable().SkipLast(2).ElementAtOrDefault(1);
+            r[o + 10] = slice.AsStackEnumerable().SkipLast(2).ElementAtOrDefault(2);
+            r[o + 11] = StackLinqExtensions.TakeLast(slice.AsStackEnumerable(), 1).ElementAt(0);
+
+            var local = slice.AsStackEnumerable();
+            r[o + 12] = local.Sum(x => x * 2);
+            r[o + 13] = (long)local.Sum(x => (double)x);
+            r[o + 14] = local.LastOrDefault(x => x > 0);
+            r[o + 15] = local.LastOrDefault(x => x > 0 && x < 0);
+            r[o + 16] = local.Last(x => x >= int.MinValue);
+            r[o + 17] = local.Last(x => x <= x0);
+            r[o + 18] = (long)slice.AsStackEnumerable().Select(x => (double)x).SumSequential();
+            r[o + 19] = (long)slice.AsStackEnumerable().SumSequential(x => (double)x);
+            r[o + 20] = slice.AsStackEnumerable().AsParallel().Sum();
+            r[o + 21] = slice.AsStackEnumerable().Aggregate(func: (a, b) => a + b, seed: 10L);
+            r[o + 22] = local.Aggregate(func: (a, b) => a - b, seed: 7L);
+            r[o + 23] = StackLinqExtensions.Aggregate(
+                func: (a, b) => a * 3 + b,
+                seed: 5L,
+                source: slice.AsStackEnumerable()
+            );
+        }
+    }
 
     internal static readonly DifferentialCase s_indexedLambdas = new(
         $"{nameof(StackLinqUnfusedDifferentialKernels)}.{nameof(StackLinqUnfusedDifferentialKernels.IndexedLambdaKernel)}")
@@ -57,7 +100,7 @@ public class StackLinqUnfusedDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => StackLinqUnfusedDifferentialKernels.IndexedLambdaKernel(b.Get<int>("xs"), b.Get<long>("r")),
+        OracleIsLaunch = true,
     };
 
     // Seed 1 gives row 3 a threshold above every element: Last(predicate) finds no match and throws the message of
@@ -65,20 +108,16 @@ public class StackLinqUnfusedDifferentialTests
     internal static readonly DifferentialCase s_fusedLastNoMatch = LastPredicateCase(
         nameof(StackLinqUnfusedDifferentialKernels.LastPredicateNoMatchKernel),
         static (x, t, d, s) => StackLinqUnfusedDifferentialKernels.LaunchLastPredicateNoMatchKernel(
-            x, t, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
-        StackLinqUnfusedDifferentialKernels.LastPredicateNoMatchKernel);
+            x, t, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
 
     internal static readonly DifferentialCase s_unfusedLastNoMatch = LastPredicateCase(
         nameof(StackLinqUnfusedDifferentialKernels.UnfusedLastPredicateNoMatchKernel),
         static (x, t, d, s) => StackLinqUnfusedDifferentialKernels.LaunchUnfusedLastPredicateNoMatchKernel(
-            x, t, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
-        StackLinqUnfusedDifferentialKernels.UnfusedLastPredicateNoMatchKernel);
+            x, t, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
 
     private delegate void LastLaunch(int[] xs, int[] thresholds, int[] dst, LaunchShape shape);
 
-    private delegate void LastKernel(int[] xs, int[] thresholds, int[] dst, int rows);
-
-    private static DifferentialCase LastPredicateCase(string kernel, LastLaunch launch, LastKernel oracle) =>
+    private static DifferentialCase LastPredicateCase(string kernel, LastLaunch launch) =>
         new($"{nameof(StackLinqUnfusedDifferentialKernels)}.{kernel}")
         {
             Shape = LaunchShapes.Linear(TrapRows, 32),
@@ -112,7 +151,7 @@ public class StackLinqUnfusedDifferentialTests
                     .Out<int>("dst", rows, StackLinqUnfusedDifferentialKernels.LastPredicateColumns, OutputPolicy.Exact);
             },
             Launch = (b, s) => launch(b.Get<int>("xs"), b.Get<int>("thresholds"), b.Get<int>("dst"), s),
-            Oracle = (b, s) => oracle(b.Get<int>("xs"), b.Get<int>("thresholds"), b.Get<int>("dst"), s.Rows),
+            OracleIsLaunch = true,
         };
 
     [SkippableFact]
