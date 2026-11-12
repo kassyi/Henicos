@@ -355,7 +355,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ScopedSpanBeforeBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__ScopedSpanBeforeBarrierKernel(int* __restrict__ __gsharp_id_0_buffer, unsigned int __gsharp_epoch){
+public const string ScopedSpanBeforeBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__ScopedSpanBeforeBarrierKernel(int* __gsharp_id_0_buffer, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 GSharpArray<int> __gsharp_id_1_localSpan = GSharpArray<int>{__gsharp_id_0_buffer, 10};
 __gsharp_id_1_localSpan[0]=100;

@@ -243,7 +243,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
         return true;
     }
 
-    public virtual (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(
+    public virtual void AppendParameter(
         ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol)
     {
         var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
@@ -254,7 +254,6 @@ public abstract class YamlDialectBase : ITranspilerDialect
             : p.Modifiers.Any(SyntaxKind.RefKeyword) ||
               p.Modifiers.Any(SyntaxKind.OutKeyword) ||
               (!isKernel && p.Modifiers.Any(SyntaxKind.InKeyword));
-        var isPointerType = typeSymbol is IPointerTypeSymbol;
 
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isArray = typeSymbol.TryGetArrayLikeElementType(out var elementType);
@@ -263,7 +262,6 @@ public abstract class YamlDialectBase : ITranspilerDialect
         {
             AppendType(ref context, namedType.TypeArguments[0]);
             context.Emitter.Writer.Append("*");
-            isPointerType = true;
         }
         else if (isArray)
         {
@@ -285,7 +283,5 @@ public abstract class YamlDialectBase : ITranspilerDialect
         {
             context.Emitter.Writer.Append("*");
         }
-
-        return (isRefPointer, isPointerType, false);
     }
 }
