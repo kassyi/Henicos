@@ -28,8 +28,7 @@ internal static class ModuleKernelLaunchEmitter
         writer.Append("private static readonly Lazy<byte[]> s_fatbin_");
         writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
         writer.Append(" = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, ");
-        AppendStringLiteral(writer, moduleName);
-        writer.AppendLine(")));");
+        writer.AppendLine($"{Literal(moduleName)})));");
         writer.AppendLine();
     }
 
@@ -42,8 +41,8 @@ internal static class ModuleKernelLaunchEmitter
             foreach (var argument in plan.Arguments)
             {
                 writer.AppendLine(argument.IsStaged
-                    ? $"public {HostTypeNames.IntPtr} {argument.Name};"
-                    : $"public {argument.TypeName} {argument.Name};");
+                    ? $"public {HostTypeNames.IntPtr} {Identifier(argument)};"
+                    : $"public {argument.TypeName} {Identifier(argument)};");
             }
         }
 
@@ -80,19 +79,15 @@ internal static class ModuleKernelLaunchEmitter
         writer.AppendLine($"using var scope = new {HostTypeNames.GpuKernelLoader}.CudaContextScope();");
         writer.Append($"var kernel = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(s_fatbin_");
         writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
-        writer.Append(".Value, ");
-        AppendStringLiteral(writer, entryPoint);
-        writer.AppendLine(");");
+        writer.AppendLine($".Value, {Literal(entryPoint)});");
 
         // [WHY] sharedMemBytes above 48 KB needs the function's opt-in, and a request the device cannot hold is
         // rejected with the launcher's name instead of the driver's bare CUDA_ERROR_INVALID_VALUE, as in
         // CudaHostLaunchEmitter (#545, #820). Without the parameter the launch requests no dynamic shared memory.
         if (launch.SharedMemBytes is { } sharedMemBytes)
         {
-            writer.Append(
-                $"global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(kernel, {sharedMemBytes}, ");
-            AppendStringLiteral(writer, launcherName);
-            writer.AppendLine(");");
+            writer.Append("global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare");
+            writer.AppendLine($"(kernel, {sharedMemBytes}, {Literal(launcherName)});");
         }
 
         writer.AppendLine();
@@ -114,7 +109,7 @@ internal static class ModuleKernelLaunchEmitter
     // throw new global::System.NotSupportedException("<message>");
     public static void EmitUnavailableBody(SourceWriter writer, string message) =>
         writer.AppendLine(
-            $"throw new global::System.NotSupportedException({SymbolDisplay.FormatLiteral(message, quote: true)});");
+            $"throw new global::System.NotSupportedException({Literal(message)});");
 
     // if (<name> is null) { throw new global::System.ArgumentNullException(nameof(<name>)); }
     // [WHY] Only an array declared nullable (T[]?, T[,]?) reaches the kernel as a null pointer; null for another array
@@ -131,12 +126,12 @@ internal static class ModuleKernelLaunchEmitter
             writer.Append("if ");
             using (writer.Parentheses())
             {
-                writer.Append($"{argument.Name} is null");
+                writer.Append($"{Identifier(argument)} is null");
             }
 
             using (writer.Scope())
             {
-                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({argument.Name}));");
+                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({Identifier(argument)}));");
             }
         }
     }
@@ -158,48 +153,17 @@ internal static class ModuleKernelLaunchEmitter
         {
             writer.Append($"{launch.GridDimX ?? "1"}, {launch.GridDimY ?? "1"}, {launch.GridDimZ ?? "1"}, ");
             writer.Append($"{launch.BlockDimX ?? "1"}, {launch.BlockDimY ?? "1"}, {launch.BlockDimZ ?? "1"}, ");
-            AppendStringLiteral(writer, launcherName);
+            writer.Append(Literal(launcherName));
         }
 
         writer.AppendLine(";");
     }
 
-    /// <summary>
-    /// Appends <paramref name="value"/> as an escaped C# regular string literal, including the quotes.
-    /// </summary>
-    public static void AppendStringLiteral(SourceWriter writer, string value)
-    {
-        writer.Append('"');
-        foreach (var c in value)
-        {
-            switch (c)
-            {
-                case '"':
-                    writer.Append("\\\"");
-                    break;
-                case '\\':
-                    writer.Append("\\\\");
-                    break;
-                case '\n':
-                    writer.Append("\\n");
-                    break;
-                case '\r':
-                    writer.Append("\\r");
-                    break;
-                case '\t':
-                    writer.Append("\\t");
-                    break;
-                case '\0':
-                    writer.Append("\\0");
-                    break;
-                default:
-                    writer.Append(c);
-                    break;
-            }
-        }
+    // <value> as a C# string literal, every character a regular literal cannot hold escaped
+    private static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
 
-        writer.Append('"');
-    }
+    // The parameter as C# source names it (@in for 'in'); the launcher locals derived from it (d_in) need no escape
+    private static string Identifier(ModuleKernelArgument argument) => argument.Name.ToCSharpIdentifier();
 
     // Array: using var d_<name> = new GpuBuffer<<element>>(<name>.Length); d_<name>.CopyToDevice(<elements of name>);
     // Nullable array: using var d_<name> = <name> is null ? null : new GpuBuffer<<element>>(<name>.Length);
@@ -215,13 +179,14 @@ internal static class ModuleKernelLaunchEmitter
         foreach (var argument in arguments)
         {
             var name = argument.Name;
+            var value = Identifier(argument);
             var buffer = $"{HostTypeNames.GpuBuffer}<{argument.TypeName}>";
             switch (argument.Kind)
             {
                 case ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray:
                     writer.AppendLine(argument.AllowsNull
-                        ? $"using var d_{name} = {name} is null ? null : new {buffer}({name}.Length);"
-                        : $"using var d_{name} = new {buffer}({name}.Length);");
+                        ? $"using var d_{name} = {value} is null ? null : new {buffer}({value}.Length);"
+                        : $"using var d_{name} = new {buffer}({value}.Length);");
                     if (argument.CopyIn)
                     {
                         writer.Append($"d_{name}{GetAccess(argument)}CopyToDevice(");
@@ -246,8 +211,8 @@ internal static class ModuleKernelLaunchEmitter
     // <name>, or ModuleKernelArguments.Flatten<<element>>(<name>): the elements of an array as one span
     private static void WriteHostElements(SourceWriter writer, ModuleKernelArgument argument) =>
         writer.Append(argument.Kind == ModuleKernelParameterKind.MultidimensionalArray
-            ? $"{ModuleKernelArguments}.Flatten<{argument.TypeName}>({argument.Name})"
-            : argument.Name);
+            ? $"{ModuleKernelArguments}.Flatten<{argument.TypeName}>({Identifier(argument)})"
+            : Identifier(argument));
 
     // d_<name>?.DevicePointer ?? IntPtr.Zero for a nullable array, d_<name>.DevicePointer otherwise
     private static string GetDevicePointer(ModuleKernelArgument argument) => argument.AllowsNull
@@ -256,7 +221,7 @@ internal static class ModuleKernelLaunchEmitter
 
     // The host storage of a value passed by reference: the parameter, or the launcher local h_<name> of an 'out' value
     private static string GetHostValue(ModuleKernelArgument argument) =>
-        argument.CopyIn ? argument.Name : $"h_{argument.Name}";
+        argument.CopyIn ? Identifier(argument) : $"h_{argument.Name}";
 
     // The member access on the buffer of <argument>: '?.' when a nullable array leaves it null
     private static string GetAccess(ModuleKernelArgument argument) => argument.AllowsNull ? "?." : ".";
@@ -271,8 +236,8 @@ internal static class ModuleKernelLaunchEmitter
             {
                 var argument = arguments[i];
                 writer.Append(argument.IsStaged
-                    ? $"{argument.Name} = {GetDevicePointer(argument)}"
-                    : $"{argument.Name} = {argument.Name}");
+                    ? $"{Identifier(argument)} = {GetDevicePointer(argument)}"
+                    : $"{Identifier(argument)} = {Identifier(argument)}");
                 writer.AppendLine(i < arguments.Length - 1 ? "," : string.Empty);
             }
         }
@@ -316,7 +281,7 @@ internal static class ModuleKernelLaunchEmitter
         {
             writer.AppendLine(argument.IsStaged
                 ? $"var p_{argument.Name} = {GetDevicePointer(argument)};"
-                : $"var p_{argument.Name} = {argument.Name};");
+                : $"var p_{argument.Name} = {Identifier(argument)};");
         }
 
         if (arguments.Length == 0)
@@ -380,7 +345,7 @@ internal static class ModuleKernelLaunchEmitter
             {
                 var host = GetHostValue(argument);
                 writer.AppendLine($"d_{name}.CopyToHost(new {HostTypeNames.Span}<{argument.TypeName}>(ref {host}));");
-                writer.AppendLineIf(!argument.CopyIn, $"{name} = {host};");
+                writer.AppendLineIf(!argument.CopyIn, $"{Identifier(argument)} = {host};");
             }
         }
     }

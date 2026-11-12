@@ -6,6 +6,9 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// <param name="ClassKey">The qualified lookup key for the containing class (e.g. namespace and name).</param>
 /// <param name="NamespaceName">The namespace name containing the method, or empty for global namespace.</param>
 /// <param name="ClassHeader">The pre-rendered class declaration header string.</param>
+/// <param name="TopLevelTypeName">
+/// The metadata name of the containing class when a YAML binding can extend it too (not nested, not generic).
+/// </param>
 /// <param name="MethodName">The name of the partial import method.</param>
 /// <param name="MessageName">The method as messages name it (<c>Type.Method</c>).</param>
 /// <param name="ModuleName">The fatbin module name specified in the attribute.</param>
@@ -17,6 +20,7 @@ internal readonly record struct CudaImportMethodModel(
     string ClassKey,
     string NamespaceName,
     string ClassHeader,
+    string? TopLevelTypeName,
     string MethodName,
     string MessageName,
     string ModuleName,
@@ -31,9 +35,11 @@ internal readonly record struct CudaImportMethodModel(
 /// <param name="NamespaceName">The namespace containing the class declaration.</param>
 /// <param name="ClassName">The name of the class holding the import methods.</param>
 /// <param name="ClassHeader">The pre-rendered class declaration header string.</param>
+/// <param name="TopLevelTypeName">The metadata name of the class when a YAML binding can extend it too.</param>
 /// <param name="Methods">The collection of import methods contained within this class.</param>
 internal readonly record struct CudaImportClassModel(
     string NamespaceName,
     string ClassName,
     string ClassHeader,
+    string? TopLevelTypeName,
     EquatableArray<CudaImportMethodModel> Methods);

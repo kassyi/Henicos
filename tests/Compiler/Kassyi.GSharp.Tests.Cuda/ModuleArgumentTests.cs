@@ -80,6 +80,38 @@ public class ModuleArgumentTests
         Assert.Equal(3f * n + 1, data[n]);
     }
 
+    // A YAML binding in the class of the [CudaImport] methods of the same module (Native/module_argument_imports.yml),
+    // with parameters named by C# keywords: both kinds of binding launch from the module field they share
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Launch_YamlAndImportInOneClass_BothLaunchFromTheSharedModule()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        const int n = 100;
+        const uint blockSize = 64;
+        var data = new float[n];
+        for (var i = 0; i < n; i++)
+        {
+            data[i] = i - 7;
+        }
+
+        var total = 5;
+        var seed = 4;
+
+        ModuleArgumentImports.ScaleWithKeywordNames(data, n, 3f, (n + blockSize - 1) / blockSize, blockSize);
+        ModuleArgumentImports.UpdateByReference(ref total, in seed, out var result);
+
+        for (var i = 0; i < n; i++)
+        {
+            Assert.Equal(3f * (i - 7) + i, data[i]);
+        }
+
+        Assert.Equal(5 * 3 + 4, total);
+        Assert.Equal(4 + 7, result);
+    }
+
     // Null for an array declared nullable (float[]?) reaches the kernel as a null pointer instead of failing on its
     // length; the non-null control shows that the kernel ran and wrote the slot
     [SkippableTheory]

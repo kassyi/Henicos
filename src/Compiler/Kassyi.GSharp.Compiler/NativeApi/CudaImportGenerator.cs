@@ -27,7 +27,12 @@ public class CudaImportGenerator : IIncrementalGenerator
             .Collect()
             .SelectMany(static (items, _) => GroupByClass(items));
 
-        context.RegisterSourceOutput(classGroups, GenerateCudaImportForClass);
+        // [WHY] A YAML module binding into the same class declares the field of its module; the methods of that
+        // module use it instead of declaring a second one (CS0102)
+        var yamlModuleClasses = NativeApiGenerator.GetSourceFiles(context)
+            .Select(NativeApiGenerator.GetModuleClasses);
+
+        context.RegisterSourceOutput(classGroups.Combine(yamlModuleClasses), GenerateCudaImportForClass);
     }
 
     // One model per containing class, in the order the classes first appear, each with its methods in input order
@@ -59,6 +64,7 @@ public class CudaImportGenerator : IIncrementalGenerator
                 first.NamespaceName,
                 className,
                 first.ClassHeader,
+                first.TopLevelTypeName,
                 builder.ToImmutable().AsEquatableArray()));
         }
 
@@ -106,6 +112,7 @@ public class CudaImportGenerator : IIncrementalGenerator
             classKey,
             namespaceName,
             classHeader,
+            GetTopLevelTypeName(containingClass),
             methodSymbol.Name,
             CudaImportPlanner.GetMessageName(methodSymbol),
             moduleName,
@@ -117,6 +124,12 @@ public class CudaImportGenerator : IIncrementalGenerator
 
     private static string GetNamespaceName(INamedTypeSymbol containingClass) =>
         containingClass.ContainingNamespace.GetCsharpNamespaceName();
+
+    // <namespace>.<name> of a class that a YAML binding can also extend (not nested, not generic), keywords not escaped
+    private static string? GetTopLevelTypeName(INamedTypeSymbol containingClass) =>
+        containingClass is { ContainingType: null, TypeParameters.IsEmpty: true }
+            ? containingClass.ContainingNamespace.GetMetadataNamespaceName() + "." + containingClass.Name
+            : null;
 
     private static string RenderClassHeader(INamedTypeSymbol containingClass)
     {
@@ -132,8 +145,10 @@ public class CudaImportGenerator : IIncrementalGenerator
         return sigWriter.ToString();
     }
 
-    private static void GenerateCudaImportForClass(SourceProductionContext context, CudaImportClassModel classGroup)
+    private static void GenerateCudaImportForClass(SourceProductionContext context,
+        (CudaImportClassModel Class, EquatableArray<YamlModuleClass> YamlModuleClasses) input)
     {
+        var (classGroup, yamlModuleClasses) = input;
         using var writer = new SourceWriter();
         EmitFileHeader(writer);
 
@@ -146,7 +161,8 @@ public class CudaImportGenerator : IIncrementalGenerator
 
             foreach (var method in classGroup.Methods)
             {
-                if (generatedFatbins.Add(method.ModuleName))
+                if (generatedFatbins.Add(method.ModuleName) &&
+                    !IsDeclaredByYaml(yamlModuleClasses, classGroup.TopLevelTypeName, method.ModuleName))
                 {
                     ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, method.ModuleName);
                 }
@@ -160,6 +176,14 @@ public class CudaImportGenerator : IIncrementalGenerator
 
         context.AddSource($"{classGroup.ClassName}_CudaImport.g.cs", writer.ToString());
     }
+
+    // Whether a YAML module binding declares the field of <moduleName> in the class <typeName>
+    private static bool IsDeclaredByYaml(EquatableArray<YamlModuleClass> yamlModuleClasses, string? typeName,
+        string moduleName) =>
+        typeName is not null &&
+        yamlModuleClasses
+            .AsStackEnumerable()
+            .Any(new YamlModuleClass(typeName, moduleName), static (c, key) => c == key);
 
     // A method whose parameters the launcher cannot pass gets a body that throws the GSH0110 message, so the partial
     // method stays implemented and the build shows the diagnostic instead of CS8795
