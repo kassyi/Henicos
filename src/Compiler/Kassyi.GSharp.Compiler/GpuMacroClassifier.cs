@@ -45,6 +45,7 @@ internal static class GpuMacroClassifier
                 : new GpuMacroCall(GpuMacroKind.SyncGrid, symbol),
             TypeConstants.GpuMacros.InlinePtx => new GpuMacroCall(GpuMacroKind.InlinePtx, symbol),
             TypeConstants.GpuMacros.Constant => new GpuMacroCall(GpuMacroKind.Constant, symbol),
+            TypeConstants.GpuMacros.NotNull => new GpuMacroCall(GpuMacroKind.NotNull, symbol),
             _ => default
         };
     }

@@ -196,7 +196,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private StatementSyntax RewriteLoop(StatementSyntax loop)
     {
         var body = GetLoopBody(loop);
-        var bodyRegion = ContainsSplitPoint(body) && HasContinue(loop) ? OpenRegion(body) : null;
+        var bodyRegion = BarrierHelper.ContainsPhaseBarrier(body) && HasContinue(loop) ? OpenRegion(body) : null;
         var continueLabel = bodyRegion != null
             ? $"{GSharpInternalNames.Lowering.ReconvergeContinueLabelPrefix}{bodyRegion.Site}"
             : null;
@@ -210,7 +210,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             statements.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionEnter, bodyRegion.Site));
             var bodyStatements = body is BlockSyntax block ? block.Statements : SyntaxFactory.SingletonList(body);
             statements.AddRange(RewriteList(bodyStatements, isKernelBody: false));
-            statements.Add(SyntaxFactory.LabeledStatement(continueLabel, SyntaxFactory.EmptyStatement()));
+            statements.Add(LoweringSyntax.EmptyLabel(continueLabel));
             statements.Add(CreateArrive(bodyRegion.Site, loop));
             _open.RemoveAt(_open.Count - 1);
             rewrittenBody = body is BlockSyntax bodyBlock
@@ -258,10 +258,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 if (target.ContinueLabel != null)
                 {
                     // goto __gsharp_ReconvergeContinue_<n>;
-                    jump = SyntaxFactory.GotoStatement(
-                        SyntaxKind.GotoStatement,
-                        SyntaxFactory.IdentifierName(target.ContinueLabel)
-                    ).WithTriviaFrom(statement);
+                    jump = LoweringSyntax.Goto(target.ContinueLabel).WithTriviaFrom(statement);
                 }
 
                 break;
@@ -347,22 +344,26 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         {
             ExpressionStatementSyntax or LocalDeclarationStatementSyntax => CallsSuspendingFunction(statement),
             IfStatementSyntax ifStatement =>
-                (ContainsSplitPoint(ifStatement.Statement) || (ifStatement.Else is { } elseClause && ContainsSplitPoint(elseClause))) &&
+                (BarrierHelper.ContainsPhaseBarrier(ifStatement.Statement) ||
+                 (ifStatement.Else is { } elseClause && BarrierHelper.ContainsPhaseBarrier(elseClause))) &&
                 IsThreadVariant(ifStatement.Condition),
             SwitchStatementSyntax switchStatement =>
                 switchStatement.Sections
                     .AsStackEnumerable()
-                    .Any(static section => ContainsSplitPoint(section)) &&
+                    .Any(BarrierHelper.ContainsPhaseBarrier) &&
                 (IsThreadVariant(switchStatement.Expression) || HasWhenClause(switchStatement)),
             WhileStatementSyntax whileStatement =>
-                ContainsSplitPoint(whileStatement) && (IsThreadVariant(whileStatement.Condition) || HasExit(whileStatement)),
+                BarrierHelper.ContainsPhaseBarrier(whileStatement) &&
+                (IsThreadVariant(whileStatement.Condition) || HasExit(whileStatement)),
             DoStatementSyntax doStatement =>
-                ContainsSplitPoint(doStatement) && (IsThreadVariant(doStatement.Condition) || HasExit(doStatement)),
+                BarrierHelper.ContainsPhaseBarrier(doStatement) &&
+                (IsThreadVariant(doStatement.Condition) || HasExit(doStatement)),
             ForStatementSyntax forStatement =>
-                ContainsSplitPoint(forStatement.Statement) &&
+                BarrierHelper.ContainsPhaseBarrier(forStatement.Statement) &&
                 ((forStatement.Condition is { } condition && IsThreadVariant(condition)) || HasExit(forStatement)),
             CommonForEachStatementSyntax forEach =>
-                ContainsSplitPoint(forEach.Statement) && (IsThreadVariant(forEach.Expression) || HasExit(forEach)),
+                BarrierHelper.ContainsPhaseBarrier(forEach.Statement) &&
+                (IsThreadVariant(forEach.Expression) || HasExit(forEach)),
             _ => false
         };
 
@@ -396,11 +397,6 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         statement.DescendantNodes(static n => n is not AnonymousFunctionExpressionSyntax)
             .AsStackEnumerable()
             .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsSuspendingCall(inv));
-
-    private static bool ContainsSplitPoint(SyntaxNode node) =>
-        node.DescendantNodesAndSelf()
-            .AsStackEnumerable()
-            .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv));
 
     // Whether the condition may differ between the threads of a block. One that the analysis cannot map back to a node of
     // the method (a copy of another method's code, a node lowering built) counts as thread-dependent

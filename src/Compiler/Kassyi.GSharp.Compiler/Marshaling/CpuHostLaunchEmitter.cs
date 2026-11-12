@@ -25,7 +25,7 @@ internal static class CpuHostLaunchEmitter
 
     private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel, string assemblyName)
     {
-        writer.AppendLine("#pragma warning disable CS8500");
+        using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id);
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false);
         using (writer.Scope())
         {
@@ -43,8 +43,6 @@ internal static class CpuHostLaunchEmitter
             WriteCpuDelegateGetOrCompile(writer, kernel);
             WriteCpuFixedBlocksAndInvoke(writer, kernel.Host, sharing);
         }
-
-        writer.AppendLine("#pragma warning restore CS8500");
     }
 
     private static void WriteCpuDelegateDeclaration(SourceWriter writer, in KernelEmission kernel)

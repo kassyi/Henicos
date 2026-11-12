@@ -15,16 +15,16 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </para>
 /// <para>
 /// A device function of another assembly has no body in the compilation; its assembly recorded whether it emitted a
-/// managed version (<see cref="Models.DeviceExportRecord.ManagedVersion"/>).
+/// managed version (<see cref="Models.DeviceExportRecord.FunctionTraits.ManagedVersion"/>).
 /// </para>
 /// </remarks>
 internal static class ManagedVersionAnalysis
 {
     // [WHY] Only the queried function is cached, as in SuspensionAnalysis: a depth-first walk that stops at an already
     // visited function would record a wrong 'false' for the functions inside a cycle.
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_needs = new();
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, bool> s_needs = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_direct = new();
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, bool> s_direct = new();
 
     /// <summary>
     /// Whether <paramref name="method"/> is a device function that needs a managed version: one that does not suspend
@@ -39,8 +39,7 @@ internal static class ManagedVersionAnalysis
             return IsImportedWithManagedVersion(definition, compilation);
         }
 
-        var cache = s_needs.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
+        var cache = s_needs.For(compilation);
         return cache.GetOrAdd(definition,
             m => Reaches(m, compilation, cache, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
     }
@@ -76,8 +75,7 @@ internal static class ManagedVersionAnalysis
     /// </summary>
     public static bool HasDirectRewrite(IMethodSymbol method, MethodDeclarationSyntax declaration, Compilation compilation)
     {
-        var cache = s_direct.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
+        var cache = s_direct.For(compilation);
         var definition = GetDefinition(method);
         if (cache.TryGetValue(definition, out var known))
         {

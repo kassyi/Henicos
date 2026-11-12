@@ -44,7 +44,7 @@ internal static class IrStayInPlace
         var read = IrEffects.Of(reference, compilation);
         return variable.IsRefLike
             ? !read.InterferesWith(later)
-            : IsUnaliased(variable, compilation) && !read.InterferesWith(others);
+            : IrEffectWalker.IsUnaliased(variable, compilation) && !read.InterferesWith(others);
     }
 
     /// <summary>
@@ -104,14 +104,4 @@ internal static class IrStayInPlace
     public static bool IsStackArray(IrExpression receiver) =>
         WithoutBuiltInImplicitConversions(receiver) is IrVariableReference { Variable.Symbol: ILocalSymbol local } &&
         StackArrayLocals.IsStackArray(local, out _);
-
-    // A local or by-value parameter that no other name reaches; a temporary of a pass has none
-    private static bool IsUnaliased(IrVariable variable, Compilation compilation) => variable.Kind switch
-    {
-        IrVariableKind.Temporary => true,
-        IrVariableKind.Local or IrVariableKind.Parameter when variable.RefKind == RefKind.None &&
-                                                              variable.Symbol is { } symbol =>
-            !AliasedVariables.Contains(symbol, compilation),
-        _ => false
-    };
 }

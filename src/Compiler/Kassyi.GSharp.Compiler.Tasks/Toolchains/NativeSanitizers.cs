@@ -35,7 +35,7 @@ public static class NativeSanitizerParser
         sanitizers = NativeSanitizers.None;
         invalidToken = null;
 
-        if (string.IsNullOrWhiteSpace(value))
+        if (value is null || string.IsNullOrWhiteSpace(value))
         {
             return true;
         }
@@ -55,22 +55,25 @@ public static class NativeSanitizerParser
                 continue;
             }
 
-            if (name.Equals("address".AsSpan(), StringComparison.OrdinalIgnoreCase))
-            {
-                sanitizers |= NativeSanitizers.Address;
-            }
-            else if (name.Equals("undefined".AsSpan(), StringComparison.OrdinalIgnoreCase))
-            {
-                sanitizers |= NativeSanitizers.Undefined;
-            }
-            else
+            if (!TryParseName(name, out var sanitizer))
             {
                 sanitizers = NativeSanitizers.None;
                 invalidToken = name.ToString();
                 return false;
             }
+
+            sanitizers |= sanitizer;
         }
 
         return true;
+    }
+
+    // One name of the list, address or undefined in any case
+    private static bool TryParseName(ReadOnlySpan<char> name, out NativeSanitizers sanitizer)
+    {
+        sanitizer = name.Equals("address".AsSpan(), StringComparison.OrdinalIgnoreCase) ? NativeSanitizers.Address
+            : name.Equals("undefined".AsSpan(), StringComparison.OrdinalIgnoreCase) ? NativeSanitizers.Undefined
+            : NativeSanitizers.None;
+        return sanitizer != NativeSanitizers.None;
     }
 }

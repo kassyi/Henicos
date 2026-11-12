@@ -10,5 +10,6 @@ internal enum GpuMacroKind
     SyncGrid,
     InlinePtx,
     Constant,
-    HintUnroll
+    HintUnroll,
+    NotNull
 }

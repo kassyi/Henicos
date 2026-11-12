@@ -68,6 +68,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     /// field: the kernel sees an array of <see cref="Length"/> elements.
     /// </summary>
     /// <remarks>An empty buffer becomes an empty array, not a null one, as an empty C# array does.</remarks>
+    /// <returns>The device pointer and the length of the buffer.</returns>
     /// <exception cref="ObjectDisposedException">The buffer has been disposed.</exception>
     public GSharpArrayProxy ToProxy()
     {

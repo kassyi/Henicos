@@ -25,18 +25,19 @@ internal sealed class NullableGetValueOrDefaultRule : IInvocationTranspilerRule
         bool IsSequenced
     );
 
+    /// <summary>
+    /// Whether <paramref name="node"/>, a call of <paramref name="symbol"/>, is a call of
+    /// <c>GetValueOrDefault</c> on a receiver that this rule writes.
+    /// </summary>
+    public static bool Claims(InvocationExpressionSyntax node, IMethodSymbol symbol) =>
+        symbol is { Name: MethodName, ContainingType.OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } &&
+        node.Expression is MemberAccessExpressionSyntax;
+
     /// <inheritdoc />
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (symbol is not
-            {
-                Name: MethodName,
-                ContainingType:
-                {
-                    OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
-                    TypeArguments: [var valueType]
-                }
-            } ||
+        if (!Claims(node, symbol) ||
+            symbol.ContainingType is not { TypeArguments: [var valueType] } ||
             node.Expression is not MemberAccessExpressionSyntax { Expression: var receiver })
         {
             return false;
