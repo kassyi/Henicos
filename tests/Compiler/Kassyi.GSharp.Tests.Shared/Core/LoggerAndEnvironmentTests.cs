@@ -224,15 +224,10 @@ public class LoggerAndEnvironmentTests
             Assert.All(threadProcessed, static done => Assert.Equal(1, done));
 
             var output = sw.ToString();
-            var lineCount = 0;
-            foreach (var line in output.AsSpan().EnumerateLines())
-            {
-                if (!line.IsEmpty)
-                {
-                    lineCount++;
-                }
-            }
-            Assert.Equal(IterationCount + 1, lineCount);
+#pragma warning disable RS0030 // Counts the lines of the logger's console text: one per interval plus the summary
+            var lines = output.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+#pragma warning restore RS0030
+            Assert.Equal(IterationCount + 1, lines.Length);
             Assert.Contains("Summary [", output);
             Assert.Contains("Task_0: 12250 ms", output);
         }

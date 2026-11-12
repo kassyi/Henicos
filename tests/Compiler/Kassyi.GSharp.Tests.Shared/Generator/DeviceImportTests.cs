@@ -140,22 +140,11 @@ public class DeviceImportTests
     public void DeviceImport_MemoryWritingEffect_SequencesOnlyMemoryWritingCall(string dialect)
     {
         var (_, kernels) = Generate(dialect);
-        string? readAndClear = null;
-        string? takeOne = null;
-        foreach (var line in kernels.AsSpan().EnumerateLines())
-        {
-            if (line.Contains("__gsharp_fn_DeviceExportCase__LibMath__ReadAndClear(", StringComparison.Ordinal))
-            {
-                readAndClear = line.ToString();
-            }
-            if (line.Contains("__gsharp_fn_DeviceExportCase__LibMath__TakeOne(", StringComparison.Ordinal))
-            {
-                takeOne = line.ToString();
-            }
-        }
+        var lines = kernels.Split('\n');
 
-        Assert.NotNull(readAndClear);
-        Assert.NotNull(takeOne);
+        // The C++ lines (the CPU wrapper also holds the managed body)
+        var readAndClear = lines.Single(static l => l.Contains("__gsharp_fn_DeviceExportCase__LibMath__ReadAndClear(", StringComparison.Ordinal));
+        var takeOne = lines.Single(static l => l.Contains("__gsharp_fn_DeviceExportCase__LibMath__TakeOne(", StringComparison.Ordinal));
         Assert.Contains("__gsharp_seq_", readAndClear, StringComparison.Ordinal);
         Assert.DoesNotContain("__gsharp_seq_", takeOne, StringComparison.Ordinal);
     }
@@ -269,16 +258,8 @@ public class DeviceImportTests
     {
         var (_, kernels) = GenerateStructs(dialect);
 
-        string? line = null;
-        foreach (var l in kernels.AsSpan().EnumerateLines())
-        {
-            if (l.Contains("__gsharp_ctor_DeviceImportStructsCase__Recorder(", StringComparison.Ordinal))
-            {
-                line = l.ToString();
-                break;
-            }
-        }
-        Assert.NotNull(line);
+        var line = kernels.Split('\n')
+            .Single(static l => l.Contains("__gsharp_ctor_DeviceImportStructsCase__Recorder(", StringComparison.Ordinal));
         Assert.Contains("__gsharp_seq_", line, StringComparison.Ordinal);
     }
 

@@ -19,8 +19,12 @@ public class CppReservedIdentifierAnalyzerTests : TranspilerTestBase
 
         Assert.All(reported, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
         Assert.Equal(
-            new[] { "GSH_57_ReservedFieldStruct.__gsharp_value", "__Helper", "__gsharp_state", "__tmp", "a__b" },
-            reported.Select(GetIdentifier).Order(StringComparer.Ordinal).ToArray());
+            new[] { "__Helper", "__gsharp_state", "__tmp", "a__b", "items" },
+            reported.Select(d => GetReportedIdentifier(d).ValueText).Order(StringComparer.Ordinal).ToArray());
+        // The parameter items is reported for the reserved field of its element struct, which the message names
+        Assert.Contains(
+            "GSH_57_ReservedFieldStruct.__gsharp_value",
+            reported.Single(d => GetReportedIdentifier(d).ValueText == "items").GetMessage());
         Assert.DoesNotContain(diagnostics, d => d.Id == RetiredCppKeywordId);
     }
 
@@ -50,11 +54,14 @@ public class CppReservedIdentifierAnalyzerTests : TranspilerTestBase
         Assert.DoesNotContain(diagnostics, d => d.Id is DoubleUnderscoreId or RetiredCppKeywordId);
     }
 
-    private static string GetIdentifier(Diagnostic diagnostic)
+    // The identifier token of the declaration the diagnostic is reported on; its span must be the diagnostic's span.
+    private static SyntaxToken GetReportedIdentifier(Diagnostic diagnostic)
     {
-        var message = diagnostic.GetMessage();
-        var start = message.IndexOf('\'') + 1;
-        var end = message.IndexOf('\'', start);
-        return message[start..end];
+        var tree = diagnostic.Location.SourceTree
+            ?? throw new InvalidOperationException($"{diagnostic.Id} has no source location.");
+        var token = tree.GetRoot().FindToken(diagnostic.Location.SourceSpan.Start);
+        Assert.Equal(SyntaxKind.IdentifierToken, token.Kind());
+        Assert.Equal(diagnostic.Location.SourceSpan, token.Span);
+        return token;
     }
 }

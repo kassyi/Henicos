@@ -54,57 +54,20 @@ public class ConstantLiteralCultureTests
     // The line where the two texts part, so that the failure shows the literal instead of the whole file
     private static string FirstDifference(string expected, string actual)
     {
-        var expectedEnum = expected.AsSpan().EnumerateLines();
-        var actualEnum = actual.AsSpan().EnumerateLines();
-        var lineIndex = 0;
-        var expectedLinesCount = 0;
-        var actualLinesCount = 0;
-
-        while (true)
+#pragma warning disable RS0030 // Splits the outputs into lines only to format a readable failure report
+        var expectedLines = expected.Split('\n');
+        var actualLines = actual.Split('\n');
+#pragma warning restore RS0030
+        for (var i = 0; i < Math.Min(expectedLines.Length, actualLines.Length); i++)
         {
-            var hasExpected = expectedEnum.MoveNext();
-            var hasActual = actualEnum.MoveNext();
-
-            if (hasExpected)
+            if (expectedLines[i] != actualLines[i])
             {
-                expectedLinesCount++;
-            }
-
-            if (hasActual)
-            {
-                actualLinesCount++;
-            }
-
-            if (!hasExpected || !hasActual)
-            {
-                if (!hasExpected && !hasActual)
-                {
-                    break;
-                }
-
-                while (expectedEnum.MoveNext())
-                {
-                    expectedLinesCount++;
-                }
-
-                while (actualEnum.MoveNext())
-                {
-                    actualLinesCount++;
-                }
-
-                return $"lengths differ: {expectedLinesCount} and {actualLinesCount} lines";
-            }
-
-            lineIndex++;
-            var expectedLine = expectedEnum.Current;
-            var actualLine = actualEnum.Current;
-
-            if (!expectedLine.SequenceEqual(actualLine))
-            {
-                return $"line {lineIndex}{Environment.NewLine}expected: {expectedLine.Trim().ToString()}{Environment.NewLine}actual:   {actualLine.Trim().ToString()}";
+#pragma warning disable RS0030 // Trims the two differing lines for the readable failure report
+                return $"line {i + 1}{Environment.NewLine}expected: {expectedLines[i].Trim()}{Environment.NewLine}actual:   {actualLines[i].Trim()}";
+#pragma warning restore RS0030
             }
         }
 
-        return "no difference";
+        return $"lengths differ: {expectedLines.Length} and {actualLines.Length} lines";
     }
 }

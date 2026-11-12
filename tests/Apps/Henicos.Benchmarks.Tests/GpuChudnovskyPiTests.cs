@@ -15,12 +15,8 @@ public class GpuChudnovskyPiTests
 
         ChudnovskyAlgorithm.ComputePi(targetDigits, sw, thresholdTerms: 8, asHex: false);
 
-        var rawResult = sw.ToString();
-        Assert.False(rawResult.AsSpan().Trim().IsEmpty);
-
-        var cleanResult = sw.GetStringBuilder().Replace(".", "").ToString();
-        Assert.Equal(targetDigits + 1, cleanResult.Length);
-        Assert.Equal("314159265358979323846264338327950288419716939937510", cleanResult);
+        // The integer part, the point and exactly targetDigits fraction digits, with nothing around them
+        Assert.Equal("3.14159265358979323846264338327950288419716939937510", sw.ToString());
     }
 
     [SkippableFact]
@@ -34,13 +30,10 @@ public class GpuChudnovskyPiTests
 
         ChudnovskyAlgorithm.ComputePi(targetDigits, sw, thresholdTerms: 8, asHex: true);
 
-        var rawResult = sw.ToString();
-        Assert.False(rawResult.AsSpan().Trim().IsEmpty);
-
-        var cleanResult = sw.GetStringBuilder().Replace(".", "").ToString();
-        // 3. followed by 50 hex digits of Pi: 243F6A8885A308D313198A2E03707344A4093822299F31D008
-        Assert.True(cleanResult.Length >= 51, $"Expected at least 51 hex characters, got {cleanResult.Length}");
-        Assert.StartsWith("3243F6A8885A308D313198A2E03707344A4093822299F31D008", cleanResult, StringComparison.OrdinalIgnoreCase);
+        var result = sw.ToString();
+        // "3." and targetDigits uppercase hex digits, first 50: 243F6A8885A308D313198A2E03707344A4093822299F31D008
+        Assert.Equal(targetDigits + 2, result.Length);
+        Assert.StartsWith("3.243F6A8885A308D313198A2E03707344A4093822299F31D008", result);
     }
 
     [Fact]

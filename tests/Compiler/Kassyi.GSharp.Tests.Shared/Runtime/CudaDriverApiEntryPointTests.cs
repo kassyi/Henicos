@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Compiler.NativeApi;
 using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
@@ -187,56 +186,33 @@ public class CudaDriverApiEntryPointTests
     // The redirects of cuda.h without CUDA_API_PER_THREAD_DEFAULT_STREAM, where __CUDA_API_PTDS(api) and
     // __CUDA_API_PTSZ(api) expand to api: "#define <name> <target>" with two identifiers starting with "cu".
     // Identity mappings (cuMemcpyAsync to itself) are not redirects.
-    private static Dictionary<string, string> ReadHeaderRedirects(string header)
-    {
-        var redirects = new Dictionary<string, string>();
-        foreach (var rawLine in header.AsSpan().EnumerateLines())
-        {
-            var line = rawLine.Trim();
-            if (!line.StartsWith("#define ", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var rest = line["#define ".Length..].TrimStart();
-            var spaceIndex = rest.IndexOf(' ');
-            if (spaceIndex < 0)
-            {
-                continue;
-            }
-
-            var nameSpan = rest[..spaceIndex];
-            var targetSpan = rest[spaceIndex..].Trim();
-
-            if (targetSpan.IndexOf(' ') >= 0)
-            {
-                continue;
-            }
-
-            if (!nameSpan.StartsWith("cu", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var name = nameSpan.ToString();
-            var target = StripPerThreadMacro(targetSpan.ToString());
-            if (!target.StartsWith("cu", StringComparison.Ordinal) || name == target)
-            {
-                continue;
-            }
-
-            redirects.TryAdd(name, target);
-        }
-
-        return redirects;
-    }
+    private static Dictionary<string, string> ReadHeaderRedirects(string header) =>
+#pragma warning disable RS0030 // cuda.h is an external C header read as text; its #define lines have no tree
+        header.Split('\n')
+            .Select(static line => line.Trim())
+            .Where(static line => line.StartsWith("#define ", StringComparison.Ordinal))
+            .Select(static line => line["#define ".Length..].Split(' ', StringSplitOptions.RemoveEmptyEntries))
+#pragma warning restore RS0030
+            .Where(static parts => parts.Length == 2)
+            .Select(static parts => (Name: parts[0], Target: StripPerThreadMacro(parts[1])))
+            .Where(static m => m.Name.StartsWith("cu", StringComparison.Ordinal)
+                && m.Target.StartsWith("cu", StringComparison.Ordinal)
+                && m.Name != m.Target)
+            .GroupBy(static m => m.Name)
+            .ToDictionary(static g => g.Key, static g => g.First().Target);
 
     private static readonly string[] s_perThreadMacros = ["__CUDA_API_PTDS(", "__CUDA_API_PTSZ("];
 
     private static string StripPerThreadMacro(string target)
     {
-        var matchedMacro = s_perThreadMacros.AsStackEnumerable()
-            .FirstOrDefault(macro => target.StartsWith(macro, StringComparison.Ordinal) && target.EndsWith(')'));
-        return matchedMacro is not null ? target[matchedMacro.Length..^1] : target;
+        foreach (var macro in s_perThreadMacros)
+        {
+            if (target.StartsWith(macro, StringComparison.Ordinal) && target.EndsWith(')'))
+            {
+                return target[macro.Length..^1];
+            }
+        }
+
+        return target;
     }
 }
