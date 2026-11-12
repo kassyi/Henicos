@@ -48,7 +48,7 @@ public class IrBuilderExpressionTests
     [Scenario(TestScenario.HappyPath)]
     public void ConstantExpression_KeepsItsStructureAndValue()
     {
-        var binary = Assert.IsType<IrBinary>(IrTestCases.Result(IrTestCases.BuildCase("ConstantExpression")));
+        var binary = Assert.IsType<IrBinary>(IrTestCases.CaseResult("ConstantExpression"));
 
         Assert.Equal(BinaryOperatorKind.Add, binary.Operator.Kind);
         Assert.Equal(3, binary.ConstantValue.Value);
@@ -70,7 +70,7 @@ public class IrBuilderExpressionTests
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void UserDefinedEquality_IsNotANullTest() =>
-        Assert.IsType<IrBinary>(IrTestCases.Result(IrTestCases.BuildCase("UserEquals")));
+        Assert.IsType<IrBinary>(IrTestCases.CaseResult("UserEquals"));
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
@@ -95,7 +95,7 @@ public class IrBuilderExpressionTests
         "opaque:UnsupportedShape(ObjectCreationExpression)")]
     public void UnsupportedExpression_IsAnOpaqueLeaf(string method, string reason, string expected)
     {
-        var result = IrTestCases.Result(IrTestCases.BuildCase(method));
+        var result = IrTestCases.CaseResult(method);
 
         var opaque = Assert.IsType<IrOpaqueExpression>(result);
         Assert.Equal(Enum.Parse<IrOpaqueReason>(reason), opaque.Reason);
@@ -107,7 +107,7 @@ public class IrBuilderExpressionTests
     [Scenario(TestScenario.Boundary)]
     public void ThrowExpression_IsAnUnsupportedOperationInsideItsParent()
     {
-        var coalesce = Assert.IsType<IrCoalesce>(IrTestCases.Result(IrTestCases.BuildCase("Throw")));
+        var coalesce = Assert.IsType<IrCoalesce>(IrTestCases.CaseResult("Throw"));
         var conversion = Assert.IsType<IrConversion>(coalesce.WhenNull);
 
         Assert.Equal(IrOpaqueReason.UnsupportedOperation, Assert.IsType<IrOpaqueExpression>(conversion.Operand).Reason);

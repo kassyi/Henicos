@@ -38,7 +38,7 @@ internal enum SpanMemberKind
     /// <summary><c>Span&lt;T&gt;.Slice(int, int)</c> or <c>ReadOnlySpan&lt;T&gt;.Slice(int, int)</c>.</summary>
     Slice2,
 
-    /// <summary><c>MemoryExtensions.AsSpan&lt;T&gt;(T[])</c>.</summary>
+    /// <summary><c>MemoryExtensions.AsSpan&lt;T&gt;(T[])</c> or <c>ImmutableArray&lt;T&gt;.AsSpan()</c>.</summary>
     AsSpan0,
 
     /// <summary><c>MemoryExtensions.AsSpan&lt;T&gt;(T[], int)</c>.</summary>
@@ -149,6 +149,15 @@ internal static class SpanWriteClassifier
         if (owner.SpecialType == SpecialType.System_Array)
         {
             return SystemArrayMethods.Classify(original);
+        }
+
+        // [WHY] ImmutableArray<T> is an array view in device code, like an array; its AsSpan() is the view itself.
+        // Its other members have no device form and are reported as calls the dialect does not implement (GSH0109)
+        if (IsImmutableArray(owner))
+        {
+            return original is { Name: "AsSpan", IsStatic: false, Parameters.Length: 0 }
+                ? SpanMemberKind.AsSpan0
+                : SpanMemberKind.None;
         }
 
         return SpanMemberKind.None;
@@ -321,6 +330,10 @@ internal static class SpanWriteClassifier
     private static bool IsInt32Value(IParameterSymbol parameter) =>
         parameter.RefKind == RefKind.None &&
         parameter.Type.SpecialType == SpecialType.System_Int32;
+
+    private static bool IsImmutableArray(INamedTypeSymbol type) =>
+        type is { IsGenericType: true, Name: "ImmutableArray" } &&
+        type.ContainingNamespace.IsSystemCollectionsImmutable();
 
     private static bool IsRank1Array(ITypeSymbol type) =>
         type is IArrayTypeSymbol { Rank: 1 };
