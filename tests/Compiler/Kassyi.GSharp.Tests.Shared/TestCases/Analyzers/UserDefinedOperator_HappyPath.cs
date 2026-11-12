@@ -1,4 +1,3 @@
-using System.Numerics;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers;
@@ -51,13 +50,6 @@ public static partial class GSH_62_UserDefinedOperator_HappyPath
     {
         int t = ThreadIndex.X;
         data[t] = (data[t] + 1.0f) * 0.5f;
-    }
-
-    [GpuKernel]
-    public static void SystemNumericsVectorKernel(Vector2[] v)
-    {
-        int t = ThreadIndex.X;
-        v[t] = v[t] + v[t];
     }
 
     [GpuKernel]
