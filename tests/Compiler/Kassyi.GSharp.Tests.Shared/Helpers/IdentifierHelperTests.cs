@@ -17,13 +17,17 @@ public class IdentifierHelperTests
     public void GetArtifactFileStem_ModuleName_ReplacesOnlyDots(string input, string expected) =>
         Assert.Equal(expected, AotModuleNames.GetArtifactFileStem(input));
 
-    // The module context name is a C# identifier for any assembly name; a name with only '.' keeps its earlier spelling
+    // The module context name is a C# identifier for any assembly name; a name that was one already after replacing '.'
+    // (letters of any script included) keeps its earlier spelling
     [Theory]
     [InlineData("Kassyi.GSharp.Tests.Cuda", "GSharpModuleContext_Kassyi_GSharp_Tests_Cuda")]
     [InlineData("my-lib", "GSharpModuleContext_my_lib")]
     [InlineData("1lib", "GSharpModuleContext_1lib")]
     [InlineData("a b+c", "GSharpModuleContext_a_b_c")]
-    [InlineData("\u00e9t\u00e9", "GSharpModuleContext__t_")]
+    [InlineData("a{b}\"c", "GSharpModuleContext_a_b__c")]
+    [InlineData("\u00e9t\u00e9", "GSharpModuleContext_\u00e9t\u00e9")]
+    [InlineData("\u65e5\u672c", "GSharpModuleContext_\u65e5\u672c")]
+    [InlineData("\u4e2d\u56fd", "GSharpModuleContext_\u4e2d\u56fd")]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
     public void GetModuleContextName_ModuleName_KeepsOnlyIdentifierCharacters(string input, string expected) =>

@@ -88,10 +88,26 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine(
             $"var {ArchSuffix} = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==" +
             $" global::System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
-        writer.AppendLine(
-            $"var {DllName} = $\"{fileStem}{{{ArchSuffix}}}.dll\";");
+        // [WHY] The name goes into an interpolated string: a quote or backslash is escaped, a brace doubled
+        writer.Append($"var {DllName} = $\"");
+        AppendInterpolatedStringText(writer, fileStem);
+        writer.AppendLine($"{{{ArchSuffix}}}.dll\";");
         writer.AppendLine(
             $"var {DllPath} = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, {DllName});");
+    }
+
+    // <text> as the text of a regular interpolated string: escaped as a string literal, each brace doubled.
+    // [WHY] FormatLiteral escapes a double quote only when it writes the quotes, so the quoted form is written without
+    // its first and last character
+    private static void AppendInterpolatedStringText(SourceWriter writer, string text)
+    {
+        var literal = SymbolDisplay.FormatLiteral(text, quote: true);
+        for (var i = 1; i < literal.Length - 1; i++)
+        {
+            var c = literal[i];
+            writer.Append(c);
+            writer.AppendIf(c == '{', "{").AppendIf(c == '}', "}");
+        }
     }
 
     private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, in KernelEmission kernel)
