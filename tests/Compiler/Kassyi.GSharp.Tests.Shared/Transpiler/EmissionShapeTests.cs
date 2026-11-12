@@ -177,19 +177,21 @@ public partial class EmissionShapeTests
         var cuda = Generate("StatementShapeKernels", "Cuda");
         var cpu = Generate("StatementShapeKernels", "Cpu");
 
+        // A foreach over a kernel parameter checks its source, which may be null
+        Assert.Matches(@"for\(int __gsharp_id_5_typed : __gsharp_array_ref\(__gsharp_id_0_data, \d+u\)\)\r?\n\{\r?\n" +
+            @"__gsharp_id_4_sum=__gsharp_add_i32\(__gsharp_id_4_sum,__gsharp_id_5_typed\);\r?\n\}", cuda);
         AssertContainsLines(cuda,
-            "for(int __gsharp_id_5_typed : __gsharp_id_0_data)",
-            "{",
-            "__gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum,__gsharp_id_5_typed);",
-            "}",
             "int __gsharp_id_6_i;",
             "int __gsharp_id_7_j;",
             "for(__gsharp_id_6_i=0,__gsharp_id_7_j=__gsharp_id_2_n;__gsharp_id_6_i<__gsharp_id_7_j;__gsharp_id_6_i++,__gsharp_id_7_j--)",
             "{",
             "__gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum,__gsharp_mul_i32(__gsharp_id_6_i,__gsharp_id_7_j));",
             "}",
-            "int __gsharp_id_9_first;",
-            $"for(auto __gsharp_id_8_picked : ({Statements}TryGet(__gsharp_id_0_data,&__gsharp_id_9_first)?__gsharp_id_0_data:__gsharp_id_1_output))");
+            "int __gsharp_id_9_first;");
+        Assert.Contains(
+            $"for(auto __gsharp_id_8_picked : __gsharp_array_ref(({Statements}TryGet(__gsharp_id_0_data,&__gsharp_id_9_first)?__gsharp_id_0_data:__gsharp_id_1_output), ",
+            cuda,
+            StringComparison.Ordinal);
         AssertContainsLines(cuda,
             $"inline __device__ int {Statements}ReturnWithOutVar(GSharpArray<int> __gsharp_id_0_data){{",
             "int __gsharp_id_1_v;",

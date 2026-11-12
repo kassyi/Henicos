@@ -18,12 +18,6 @@ public struct GSharpArrayProxy
     /// </summary>
     public const nint EmptyArrayData = 256;
 
-    /// <summary>
-    /// The <see cref="Flags"/> bit that the launchers set for a null optional kernel argument (<c>T[]?</c>): the device
-    /// reads it as an empty array instead of failing as a null array read does.
-    /// </summary>
-    public const int NullReadsAsEmpty = 1;
-
     [FieldOffset(0)]
     public IntPtr Data;
 
@@ -31,15 +25,14 @@ public struct GSharpArrayProxy
     public int Length;
 
     /// <summary>
-    /// Bit flags in the 4 bytes after <see cref="Length"/> (<c>GSharpArray::flags</c> on the device):
-    /// <see cref="NullReadsAsEmpty"/>.
+    /// Reserved: the 4 bytes after <see cref="Length"/> (<c>GSharpArray::flags</c> on the device), which the launchers
+    /// write as 0 and the device does not read.
     /// </summary>
     [FieldOffset(12)]
     public int Flags;
 
     /// <summary>
-    /// Initializes a proxy for <paramref name="length"/> elements at <paramref name="data"/>, with no
-    /// <see cref="Flags"/>.
+    /// Initializes a proxy for <paramref name="length"/> elements at <paramref name="data"/>, with <see cref="Flags"/> 0.
     /// </summary>
     /// <param name="data">The address of the first element, or <see cref="IntPtr.Zero"/> for a null array.</param>
     /// <param name="length">The number of elements the kernel sees as the array's <c>Length</c>.</param>

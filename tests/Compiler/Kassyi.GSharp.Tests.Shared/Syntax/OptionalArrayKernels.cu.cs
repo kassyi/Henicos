@@ -27,9 +27,18 @@ public static partial class OptionalArrayKernels
     {
         if (ThreadIndex.X == 0)
         {
-#pragma warning disable CS8602 // The device reads a null array as one of length 0
+#pragma warning disable CS8602 // C#: NullReferenceException on a null array, which the test checks
             o[0] = bias.Length;
 #pragma warning restore CS8602
+        }
+    }
+
+    [GpuKernel]
+    public static void IsNullOptionalKernel(int[] o, float[]? bias)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = bias is null ? 1 : 0;
         }
     }
 

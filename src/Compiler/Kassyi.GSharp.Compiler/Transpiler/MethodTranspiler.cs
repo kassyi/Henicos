@@ -580,8 +580,7 @@ public static class MethodTranspiler
             context.Emitter.Dialect.AppendType(ref context, parameter.Type);
             context.Emitter.Writer.Append(' ').AppendCppName(paramName)
                 .Append($" = {GSharpInternalNames.Kernel.RawArgumentPrefix}").AppendCppName(paramName)
-                .Append($".data != nullptr && ({GSharpInternalNames.Kernel.RawArgumentPrefix}").AppendCppName(paramName)
-                .Append($".flags & {GSharpInternalNames.Prelude.ArrayNullReadsEmpty}) == 0 ? ");
+                .Append(".data != nullptr ? ");
             context.Emitter.Dialect.AppendType(ref context, parameter.Type);
             context.Emitter.Writer.Append($"({GSharpInternalNames.Kernel.RawArgumentPrefix}").AppendCppName(paramName).Append(") : ");
             context.Emitter.Dialect.AppendType(ref context, parameter.Type);

@@ -77,9 +77,7 @@ public static partial class StructConvertTransferKernels
     {
         if (ThreadIndex.X == 0)
         {
-#pragma warning disable CS8602 // The device reads a null array as one of length 0
-            o[0] = items.Length;
-#pragma warning restore CS8602
+            o[0] = items is null ? -2 : items.Length;
         }
     }
 

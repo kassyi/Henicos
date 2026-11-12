@@ -69,10 +69,11 @@ internal static class CSharpExecutionEmitter
         }
     }
 
-    // fixed (<element>* __gsharp_csharp_pin_<n> = <span>) ... { <element>* __gsharp_csharp_arg_<n> = <pin>;
-    //   int __gsharp_csharp_len_<n> = <span>.Length; ... <run> }
+    // fixed (<element>* __gsharp_csharp_pin_<n> = &ArrayPinning.GetPinnableReference(<span>)) ... {
+    //   <element>* __gsharp_csharp_arg_<n> = <pin>; int __gsharp_csharp_len_<n> = <span>.Length; ... <run> }
     // [WHY] A lambda can capture neither a span nor a fixed local; it captures a copy of the pointer, which stays valid
-    // while the caller waits in the fixed statement for the run to end
+    // while the caller waits in the fixed statement for the run to end. The pinned reference is null only for a span
+    // over no array, so a span over an empty array stays one (fixed (T* p = <span>) would make it default)
     private static void WritePinnedRun(SourceWriter writer, in CSharpExecutionPlan plan)
     {
         var pins = 0;
@@ -80,7 +81,8 @@ internal static class CSharpExecutionEmitter
         {
             if (IsSpan(argument))
             {
-                writer.AppendLine($"fixed ({argument.TypeName}* {argument.Pinned} = {argument.Identifier})");
+                writer.Append($"fixed ({argument.TypeName}* {argument.Pinned} = ");
+                writer.AppendLine($"&{HostTypeNames.ArrayPinning}.GetPinnableReference({argument.Identifier}))");
                 pins++;
             }
         }

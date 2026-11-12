@@ -127,8 +127,7 @@ return ""Index was out of range."";
 }
 
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
-// exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
-// (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
+// exists, also an empty one (#706). flags is the reserved padding after length (16 bytes), always 0
 template <typename T>
 struct GSharpArray {
 T* data;
@@ -769,17 +768,15 @@ __gsharp_trap_site(code, site_id);
 throw __gsharp_step_abort{};
 }
 
-// GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
-#define __gsharp_array_null_reads_empty 1
 // The array that an array-typed C# expression reads (Length, an element, foreach): a null array ends the step with
-// NullReferenceException, as C# throws (#706), and a null optional kernel argument reads as an empty array. The step
+// NullReferenceException, as C# throws (#706). The step
 // ends (__gsharp_trap_abort) because the read would dereference nullptr next. An rvalue is returned by value, so that a
 // range-based for over it does not keep a reference to a destroyed temporary. The place is the site of the kernel's
 // error site table (uint32_t) or, in a device function, a message that names it (const char*)
 template <typename A, typename S>
 inline A __gsharp_array_ref(A&& array, S site)
 {
-if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+if (array.data == nullptr)
 {
 __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
 }
@@ -791,15 +788,14 @@ return static_cast<A&&>(array);
 template <typename A, typename I, typename S>
 inline decltype(auto) __gsharp_array_at(A&& array, I index, S site)
 {
-if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+if (array.data == nullptr)
 {
 __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
 }
 return array[index];
 }
 
-// The array of Gpu.NotNull(array): a null array ends the step with NullReferenceException, as the C# method throws.
-// Unlike __gsharp_array_ref, a null optional kernel argument fails too: it reads as an empty array, but it is null
+// The array of Gpu.NotNull(array): a null array ends the step with NullReferenceException, as the C# method throws
 template <typename A, typename S>
 inline A __gsharp_array_not_null(A&& array, S site)
 {

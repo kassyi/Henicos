@@ -424,7 +424,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- Non-nullable vs Nullable top-level array null / empty (#806, #838) ---
+    // --- Non-nullable vs Nullable top-level array null / empty: each as C# passes it ---
     [GpuKernel]
     public static void NonNullableArrayKernel(int[] input, [Out] int[] output)
     {

@@ -8,18 +8,31 @@ public partial class EmissionShapeTests
     private const string ArrayRef = "__gsharp_array_ref(";
     private const string ArrayAt = "__gsharp_array_at(";
 
-    // A kernel array parameter that the kernel never writes (optional or not), a stack array local, a foreach over such a
-    // parameter and a conditional between two of them are never null, so no read of them is checked
+    // A stack array local is never null, so no read of it is checked
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public void ArrayNullCheck_ProvenNonNullReceivers_AreNotChecked(string dialect)
+    public void ArrayNullCheck_StackArrayLocal_IsNotChecked(string dialect)
     {
         var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect), "ElidedKernel");
 
-        Assert.DoesNotContain(ArrayRef, kernel, StringComparison.Ordinal);
-        Assert.DoesNotContain(ArrayAt, kernel, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"__gsharp_array_(ref|at)\(__gsharp_id_\d+_local\b", kernel);
+    }
+
+    // A kernel array parameter may be null whatever its annotation, as in a C# call, so its reads are checked, also when
+    // the kernel never writes it
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public void ArrayNullCheck_UnwrittenKernelParameters_AreChecked(string dialect)
+    {
+        var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect), "ElidedKernel");
+
+        Assert.Matches(Regex.Escape(ArrayRef) + @"__gsharp_id_\d+_values, ", kernel);
+        Assert.Matches(Regex.Escape(ArrayAt) + @"__gsharp_id_\d+_values, ", kernel);
+        Assert.Matches(Regex.Escape(ArrayRef) + @"__gsharp_id_\d+_bias, ", kernel);
     }
 
     // A field, a written kernel parameter, a local and a conditional with a null branch are checked once per read; a
@@ -33,7 +46,9 @@ public partial class EmissionShapeTests
         var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect), "CheckedKernel");
 
         Assert.Equal(6, Regex.Matches(kernel, Regex.Escape(ArrayRef)).Count);
-        Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayAt)));
+        // written[0], and the reads and writes of the parameter o, which may be null as well
+        Assert.Equal(9, Regex.Matches(kernel, Regex.Escape(ArrayAt)).Count);
+        Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayAt + "__gsharp_id_1_written, ")));
         Assert.Contains(ArrayRef + "__gsharp_id_0_h.__gsharp_mb_Data, ", kernel, StringComparison.Ordinal);
         Assert.Contains(ArrayAt + "__gsharp_id_1_written, ", kernel, StringComparison.Ordinal);
         Assert.Matches(Regex.Escape(ArrayRef) + @"__gsharp_id_\d+_copy, ", kernel);
@@ -53,25 +68,28 @@ public partial class EmissionShapeTests
         Assert.Contains(ArrayRef + "__gsharp_id_5_fnWritten, ", kernel, StringComparison.Ordinal);
     }
 
-    // The array launcher writes the flags word of every array argument, as the Ptr launcher does: 0 for a non-optional
-    // array, whose stackalloc'd proxy would otherwise hold garbage under [SkipLocalsInit], and the null test for an
-    // optional one
+    // The array launcher writes 0 into the reserved word of every array argument, whose stackalloc'd proxy would
+    // otherwise hold garbage under [SkipLocalsInit], and passes an empty array as a non-null one
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void ArrayNullCheck_ArrayLauncher_WritesTheFlagsWordOfEveryArray()
+    public void ArrayNullCheck_ArrayLauncher_ZeroesTheReservedWordAndPassesEmptyAsNonNull()
     {
         var generated = Generate("ArrayNullCheckShapeKernels", "Cuda");
         var start = generated.IndexOf("public static unsafe void LaunchElidedKernel(global::", StringComparison.Ordinal);
         Assert.True(start >= 0, "The array launcher of ElidedKernel is not generated.");
         var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
 
-        Assert.Contains("((int*)(__gsharp_proxy_0 + 1))[1] = 0;", launcher, StringComparison.Ordinal);
-        Assert.Contains("((int*)(__gsharp_proxy_2 + 1))[1] = 0;", launcher, StringComparison.Ordinal);
+        foreach (var ordinal in (int[])[0, 1, 2])
+        {
+            Assert.Contains($"((int*)(__gsharp_proxy_{ordinal} + 1))[1] = 0;", launcher, StringComparison.Ordinal);
+        }
+
         Assert.Contains(
-            "((int*)(__gsharp_proxy_1 + 1))[1] = bias is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;",
+            "__gsharp_proxy_1[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(bias) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;",
             launcher,
             StringComparison.Ordinal
         );
+        Assert.DoesNotContain("NullReadsAsEmpty", launcher, StringComparison.Ordinal);
     }
 
     // A check in a kernel body reports a site of the kernel's error site table, which holds the place of the receiver, so
@@ -97,22 +115,19 @@ public partial class EmissionShapeTests
             entry.Value);
     }
 
-    // The Ptr launcher rejects IntPtr.Zero for an array that is not optional, as the array launcher rejects null: the
-    // kernel leaves out the check of an array parameter it never writes on that promise. An optional one is not rejected
-    // and reads as empty (#1409)
+    // The Ptr launcher passes IntPtr.Zero as a null array, optional or not, as the array launcher passes null; only a
+    // proxy without data that claims elements is rejected
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void ArrayNullCheck_PtrLauncher_RejectsANullArrayThatIsNotOptional()
+    public void ArrayNullCheck_PtrLauncher_PassesANullArray()
     {
         var generated = Generate("ArrayNullCheckShapeKernels", "Cuda");
         var start = generated.IndexOf("public static unsafe void LaunchElidedKernelPtr(", StringComparison.Ordinal);
         Assert.True(start >= 0, "The Ptr launcher of ElidedKernel is not generated.");
         var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
 
-        Assert.Contains("if (values.Data == global::System.IntPtr.Zero)", launcher, StringComparison.Ordinal);
-        Assert.Contains("throw new global::System.ArgumentNullException(nameof(values));", launcher, StringComparison.Ordinal);
-        Assert.Contains("throw new global::System.ArgumentNullException(nameof(o));", launcher, StringComparison.Ordinal);
-        Assert.DoesNotContain("ArgumentNullException(nameof(bias))", launcher, StringComparison.Ordinal);
+        Assert.Contains("if (values.Data == global::System.IntPtr.Zero && values.Length != 0)", launcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("ArgumentNullException", launcher, StringComparison.Ordinal);
     }
 
     // The nullable annotation is the contract (#1409): a non-nullable field of a struct argument is read unchecked, a call
@@ -126,7 +141,7 @@ public partial class EmissionShapeTests
         var generated = Generate("ArrayNullCheckShapeKernels", dialect);
         var kernel = KernelSource(generated, "BoundaryKernel");
 
-        Assert.DoesNotContain(ArrayAt, kernel, StringComparison.Ordinal);
+        Assert.DoesNotContain(ArrayAt + "__gsharp_id_0_p.", kernel, StringComparison.Ordinal);
         Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayRef + "__gsharp_id_1_h.__gsharp_mb_Data, ")));
         Assert.Contains("ReadFirst(__gsharp_id_0_p.__gsharp_mb_Data)", kernel, StringComparison.Ordinal);
         Assert.Single(Regex.Matches(kernel, @"__gsharp_struct_ref\(__gsharp_id_\d+_made, [^,]+, \[\]\(const auto& s\) -> decltype\(auto\) \{ return \(s\.__gsharp_mb_Data\); \}\)"));
@@ -186,15 +201,13 @@ public partial class EmissionShapeTests
     {
         var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect), "NotNullKernel");
 
-        // Exactly one check: the first occurrence is also the last
-        var first = kernel.IndexOf("__gsharp_array_not_null(", StringComparison.Ordinal);
-        Assert.True(first >= 0, "Gpu.NotNull of the field is not checked.");
-        Assert.Equal(first, kernel.LastIndexOf("__gsharp_array_not_null(", StringComparison.Ordinal));
+        // One check per call: the field and the kernel parameter, which may be null as well
+        Assert.Equal(2, Regex.Matches(kernel, Regex.Escape("__gsharp_array_not_null(")).Count);
         Assert.Contains("__gsharp_array_not_null(__gsharp_id_0_h.__gsharp_mb_Data, ", kernel, StringComparison.Ordinal);
-        Assert.DoesNotContain(ArrayRef, kernel, StringComparison.Ordinal);
-        Assert.DoesNotContain(ArrayAt, kernel, StringComparison.Ordinal);
+        Assert.Contains("__gsharp_array_not_null(__gsharp_id_1_values, ", kernel, StringComparison.Ordinal);
+        // The local the call initializes is proven: neither its reads nor the call that passes it are checked
+        Assert.DoesNotMatch(@"__gsharp_array_(ref|at)\(__gsharp_id_\d+_data\b", kernel);
         Assert.Matches(@"ReadFirst\(__gsharp_id_\d+_data\)", kernel);
-        Assert.Matches(@"\(__gsharp_id_1_values\)\.length", kernel);
     }
 
     // A device function parameter may be null: the foreach over it checks its source once, at the loop entry

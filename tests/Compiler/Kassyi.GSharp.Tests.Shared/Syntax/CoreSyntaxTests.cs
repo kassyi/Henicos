@@ -47,13 +47,12 @@ public class CoreSyntaxTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Struct_SingleAndMultipleVectors_ProducesExpectedValuesOrThrowsOnEmpty()
+    public void Struct_EmptySingleAndMultipleVectors_ProducesExpectedValues()
     {
-        // Empty array edge case: the launcher rejects it instead of skipping the launch
+        // Empty array edge case: the launcher passes it as one, as a C# call does
         Vector2[] emptyVectors = [];
-        var emptyException = Assert.Throws<ArgumentException>(() =>
-            CoreSyntaxKernels.LaunchStructKernel(emptyVectors, 0, blockDimX: 1));
-        Assert.Equal("vectors", emptyException.ParamName);
+        CoreSyntaxKernels.LaunchStructKernel(emptyVectors, 0, blockDimX: 1);
+        Assert.Empty(emptyVectors);
 
         // Single-element edge case
         Vector2[] singleVector = [new Vector2 { X = 5.0f, Y = 10.0f }];
@@ -78,13 +77,12 @@ public class CoreSyntaxTests
     [SkippableFact]
     [Category(TestCategory.Alignment)]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Struct_MixedPaddingAndAlignment_PreservesFieldOffsetsOrThrowsOnEmpty()
+    public void Struct_MixedPaddingAndAlignment_PreservesFieldOffsetsAlsoWhenEmpty()
     {
-        // Empty array edge case: the launcher rejects it instead of skipping the launch
+        // Empty array edge case: the launcher passes it as one, as a C# call does
         MixedPaddingStruct[] emptyItems = [];
-        var emptyException = Assert.Throws<ArgumentException>(() =>
-            CoreSyntaxKernels.LaunchPaddedStructKernel(emptyItems, 0, blockDimX: 1));
-        Assert.Equal("items", emptyException.ParamName);
+        CoreSyntaxKernels.LaunchPaddedStructKernel(emptyItems, 0, blockDimX: 1);
+        Assert.Empty(emptyItems);
 
         // Single-element edge case
         MixedPaddingStruct[] singleItem = [

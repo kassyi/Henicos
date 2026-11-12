@@ -164,7 +164,15 @@ public static class Reads
         return read.Length;
     }
 
-    // Gpu.NotNull of a non-nullable kernel parameter that the launch checked: nothing left to check
+    // A non-nullable kernel parameter: the launcher passes a null as a C# call does, so nothing proves it
+    [GpuKernel]
+    public static void KernelParameter(int[] data, int[] output)
+    {
+        var read = data;
+        output[0] = read.Length;
+    }
+
+    // Gpu.NotNull of a non-nullable kernel parameter, which may be null: the call checks it
     [GpuKernel]
     public static void KernelNotNullOfParameter(int[] data, int[] output)
     {

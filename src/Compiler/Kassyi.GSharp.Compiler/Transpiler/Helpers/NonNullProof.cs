@@ -2,24 +2,25 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 /// <summary>
 /// The arrays that device code may read without a null check because a boundary has already checked them (#1409): the
-/// C# nullable annotation of a parameter or field is the contract, and the launcher (for kernel arguments) or the caller
-/// (for device function arguments) enforces it before the value reaches the code that reads it.
+/// C# nullable annotation of a parameter or field is the contract, and the launcher (for the array fields of a by-value
+/// struct kernel argument) or the caller (for device function arguments) enforces it before the value reaches the code
+/// that reads it. A kernel array parameter is never proven: the launcher passes a null array as a C# call does.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The contract: an array declared non-nullable (<c>T[]</c>,
 /// <see cref="Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated"/>) holds an array. A nullable (<c>T[]?</c>) or
-/// oblivious (<c>#nullable disable</c>) one may hold null. The launchers reject a null in a non-nullable kernel array
-/// parameter and in a non-nullable array field that a by-value struct argument reaches through struct fields
-/// (<see cref="GetNonNullableArrayFields"/>); a call of a device function checks such an argument once, at the call,
-/// when the caller has not proved it (<see cref="NeedsBoundaryCheck"/>). C# throws only when such a null is read; G#
-/// throws at the boundary, earlier, and only for a null in a non-nullable place.
+/// oblivious (<c>#nullable disable</c>) one may hold null. The launchers reject a null in a non-nullable array field
+/// that a by-value struct argument reaches through struct fields (<see cref="GetNonNullableArrayFields"/>); a call of a
+/// device function checks a non-nullable array argument, or such a struct, once, at the call, when the caller has not
+/// proved it (<see cref="NeedsBoundaryCheck"/>). C# throws only when such a null is read; G# throws at the boundary,
+/// earlier, and only for a null in a non-nullable place.
 /// </para>
 /// <para>
 /// The proof (<see cref="IsProvenNonNull"/>): an array is non-null when it is a stack array (a local array of a
-/// constant size), a parameter of that kind that nothing in its method writes, a non-nullable array field of a proven
-/// struct, a <c>Gpu.NotNull</c> call (which throws on null), or a local that nothing writes after an initializer
-/// that is proven: <c>int[] data = Gpu.NotNull(ctx.Data);</c> proves every later read of <c>data</c>. A proven struct
+/// constant size), a device function parameter of that kind that nothing in its method writes, a non-nullable array
+/// field of a proven struct, a <c>Gpu.NotNull</c> call (which throws on null), or a local that nothing writes after an
+/// initializer that is proven: <c>int[] data = Gpu.NotNull(ctx.Data);</c> proves every later read of <c>data</c>. A proven struct
 /// is a by-value struct parameter that nothing writes, a struct field of a proven struct, or a local that nothing
 /// writes after an initializer that is a proven struct. An element of an array is never proven: the launchers do not
 /// walk the elements.
@@ -67,7 +68,7 @@ internal static class NonNullProof
         model.GetSymbol(identifier) switch
         {
             IParameterSymbol parameter => IsNonNullableArray(parameter.Type, parameter.NullableAnnotation) &&
-                                          IsCheckedParameter(parameter, model.Compilation),
+                                          IsCheckedParameter(parameter, model.Compilation, kernelProves: false),
             ILocalSymbol local => IsUnwrittenLocal(local, model.Compilation, out var initializer,
                                       out var initializerModel) &&
                                   IsProvenNonNull(initializer, initializerModel),
@@ -89,7 +90,8 @@ internal static class NonNullProof
             case IdentifierNameSyntax identifier:
                 return model.GetSymbol(identifier) switch
                 {
-                    IParameterSymbol { Type.IsValueType: true } parameter => IsCheckedParameter(parameter, model.Compilation),
+                    IParameterSymbol { Type.IsValueType: true } parameter =>
+                        IsCheckedParameter(parameter, model.Compilation, kernelProves: true),
                     ILocalSymbol { Type.IsValueType: true } local =>
                         IsUnwrittenLocal(local, model.Compilation, out var initializer, out var initializerModel) &&
                         IsProvenStruct(initializer, initializerModel),
@@ -195,10 +197,11 @@ internal static class NonNullProof
         return false;
     }
 
-    // A by-value parameter that nothing in its method writes, of a kernel (the launcher checked it) or of a device
-    // function whose calls all check it: an emitted device function that is not an extension method (a method group of
-    // one with such a parameter is rejected; a suspending call checks its arguments in the lowered resume call too)
-    private static bool IsCheckedParameter(IParameterSymbol parameter, Compilation compilation)
+    // A by-value parameter that nothing in its method writes, of a device function whose calls all check it: an emitted
+    // device function that is not an extension method (a method group of one with such a parameter is rejected; a
+    // suspending call checks its arguments in the lowered resume call too), or, with kernelProves, of a kernel (the
+    // launcher checks the array fields of a struct argument)
+    private static bool IsCheckedParameter(IParameterSymbol parameter, Compilation compilation, bool kernelProves)
     {
         // A parameter with a default value takes it when the call omits the argument, unchecked
         if (parameter is not { RefKind: RefKind.None, HasExplicitDefaultValue: false, ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Ordinary, IsStatic: true } method })
@@ -207,6 +210,11 @@ internal static class NonNullProof
         }
 
         var isKernel = method.HasAttribute(KnownAttributes.GpuKernel);
+        if (isKernel && !kernelProves)
+        {
+            return false;
+        }
+
         var isDeviceFunction = !isKernel &&
                                method.OriginalDefinition.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
                                !method.IsExtensionMethod;

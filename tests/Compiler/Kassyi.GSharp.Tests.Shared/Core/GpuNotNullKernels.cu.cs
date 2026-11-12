@@ -35,7 +35,7 @@ public static partial class GpuNotNullKernels
         o[0] = FirstOf(h);
     }
 
-    // A null optional kernel argument reads as an empty array, but it is null: Gpu.NotNull throws for it
+    // A null kernel argument is null, as in a C# call: Gpu.NotNull throws for it
     [GpuKernel]
     public static void OptionalKernel(int[] o, int[]? bias)
     {

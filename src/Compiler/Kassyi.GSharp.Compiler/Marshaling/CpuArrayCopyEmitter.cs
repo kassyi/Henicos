@@ -9,7 +9,7 @@ internal static class CpuArrayCopyEmitter
 {
     private const string ReferenceEqualsMethod = ArraySharingPlan.ReferenceEqualsMethod;
 
-    // if (<name> != null) {                                                       (an optional argument only)
+    // if (<name> != null) {                                          (if (<length> > 0) for a span-like value)
     //   <name> = (<array type>)<name>.Clone();                         (<span>.ToArray() for the other containers)
     // or, for elements that hold arrays:
     //   var <name>_copy = <the same copy>; for (...) CopyArrays_<E>(ref <name>_copy[<name>_copyIndex]);
@@ -33,15 +33,12 @@ internal static class CpuArrayCopyEmitter
             // var __gsharp_source_<ord> = <name>;             (an [In] T[] that a later [In] T[] may hold as well)
             writer.AppendLineIf(plan.KeepsSource(i), $"var {KernelHostNames.GetLocal(LauncherLocal.CopySource, shape)} = {shape.Identifier};");
 
-            if (shape.IsOptional)
-            {
-                writer.AppendLine(shape.IsNullableValue ? $"if ({shape.Identifier}.HasValue)" : $"if ({shape.Identifier} != null)");
-                using (writer.Scope())
-                {
-                    WriteKernelCopyOrShare(writer, plan, i);
-                }
-            }
-            else
+            // if (<name> != null) for an array, if (<length> > 0) for a span-like value: a null array has nothing to copy,
+            // and a copy of an empty span-like value would be one over an array where the argument may have none
+            writer.AppendLine(shape.Container == ArrayContainerKind.Array
+                ? $"if ({shape.Identifier} != null)"
+                : $"if ({shape.LengthExpression} > 0)");
+            using (writer.Scope())
             {
                 WriteKernelCopyOrShare(writer, plan, i);
             }

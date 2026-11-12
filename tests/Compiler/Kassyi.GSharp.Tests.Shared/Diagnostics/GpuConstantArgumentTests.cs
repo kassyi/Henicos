@@ -24,13 +24,14 @@ public class GpuConstantArgumentTests
 
         var inputTrees = run.Input.SyntaxTrees.ToHashSet();
         var generated = string.Concat(run.Output.SyntaxTrees.Where(tree => !inputTrees.Contains(tree)));
-        Assert.Contains("[0]=GpuConstantMacroNames;", generated, StringComparison.Ordinal);
-        Assert.Contains("[1]=FOO_MACRO;", generated, StringComparison.Ordinal);
-        Assert.Contains("[2]=WIDTH_MACRO;", generated, StringComparison.Ordinal);
-        Assert.Contains("[3]=AB;", generated, StringComparison.Ordinal);
-        Assert.Contains("[4]=LITERAL_MACRO;", generated, StringComparison.Ordinal);
-        Assert.DoesNotContain("]=;", generated, StringComparison.Ordinal);
-        Assert.DoesNotContain("]=Macro;", generated, StringComparison.Ordinal);
+        // The element writes go through the null check of the kernel's array parameter: __gsharp_array_at(<array>, <i>, <site>u)
+        Assert.Matches(@", 0, \d+u\)=GpuConstantMacroNames;", generated);
+        Assert.Matches(@", 1, \d+u\)=FOO_MACRO;", generated);
+        Assert.Matches(@", 2, \d+u\)=WIDTH_MACRO;", generated);
+        Assert.Matches(@", 3, \d+u\)=AB;", generated);
+        Assert.Matches(@", 4, \d+u\)=LITERAL_MACRO;", generated);
+        Assert.DoesNotContain("u)=;", generated, StringComparison.Ordinal);
+        Assert.DoesNotContain("u)=Macro;", generated, StringComparison.Ordinal);
     }
 
     // Gpu.Constant(which == 0 ? "A" : "B") on line 30

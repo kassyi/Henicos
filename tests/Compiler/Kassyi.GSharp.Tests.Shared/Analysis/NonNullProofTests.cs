@@ -5,8 +5,9 @@ namespace Kassyi.GSharp.Tests.Shared.Analysis;
 
 /// <summary>
 /// Verifies which array reads <see cref="NonNullProof"/> proves non-null (#1409 (Reading an element of a null array in a
-/// CUDA kernel fails the launch instead of throwing NullReferenceException)): a non-nullable array that a launch or a
-/// call has checked and that nothing in its method can change, and a <c>Gpu.NotNull</c> call, which throws on null.
+/// CUDA kernel fails the launch instead of throwing NullReferenceException)): a non-nullable array that a call (or, for a
+/// struct field, a launch) has checked and that nothing in its method can change, and a <c>Gpu.NotNull</c> call, which
+/// throws on null.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class NonNullProofTests
@@ -26,9 +27,11 @@ public class NonNullProofTests
     public void IsProvenNonNull_CheckedNonNullableArray_IsTrue(string method) =>
         Assert.True(IsProven(method));
 
-    // A nullable or oblivious annotation, a write the method makes, a default value, an element, an extension method
+    // A nullable or oblivious annotation, a write the method makes, a default value, an element, an extension method, a
+    // kernel parameter (a C# call passes a null to it)
     [Theory]
     [Scenario(TestScenario.SadPath)]
+    [InlineData("KernelParameter")]
     [InlineData("KernelNullableField")]
     [InlineData("KernelWrittenStruct")]
     [InlineData("KernelObliviousField")]

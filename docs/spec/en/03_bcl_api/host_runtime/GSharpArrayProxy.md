@@ -33,7 +33,7 @@ A `null` array is `Data == IntPtr.Zero`. An empty array has a non-null `Data` th
 
 ## GSharpArrayProxy(IntPtr, int)
 
-Initializes a proxy for `length` elements at `data`, with no [Flags](#flags).
+Initializes a proxy for `length` elements at `data`, with [Flags](#flags) `0`.
 
 ```csharp
 public GSharpArrayProxy(IntPtr data, int length);
@@ -61,9 +61,8 @@ The number of elements the kernel sees as the array's `Length`.
 | --- | --- |
 | [Data](#data) | The raw device pointer (`IntPtr`) at byte offset `0`. |
 | [Length](#length) | The element count (`int`) at byte offset `8`. |
-| [Flags](#flags) | Bit flags (`int`) at byte offset `12`. |
+| [Flags](#flags) | Reserved (`int`) at byte offset `12`, always `0`. |
 | [EmptyArrayData](#emptyarraydata) | The `Data` of an empty array on CUDA. |
-| [NullReadsAsEmpty](#nullreadsasempty) | The `Flags` bit of a `null` optional kernel argument. |
 
 ## Data
 
@@ -85,8 +84,8 @@ public int Length;
 
 ## Flags
 
-Bit flags (`int`) at byte offset `12`, `GSharpArray<T>::flags` on the device. The launchers set
-[NullReadsAsEmpty](#nullreadsasempty) for a `null` optional kernel argument; every other value has `0`.
+Reserved (`int`) at byte offset `12`, `GSharpArray<T>::flags` on the device. The launchers write `0` and the device
+does not read it; the caller's value never reaches the device.
 
 ```csharp
 [FieldOffset(12)]
@@ -102,26 +101,16 @@ type. No allocation returns it (`cuMemAlloc` rejects zero bytes).
 public const nint EmptyArrayData = 256;
 ```
 
-## NullReadsAsEmpty
-
-The [Flags](#flags) bit (`1`) that the launchers set for a `null` optional kernel argument (`T[]?`). The device reads such
-an argument as an array of length 0, also through a local or a device function, while reading any other `null` array
-throws `NullReferenceException`.
-
-```csharp
-public const int NullReadsAsEmpty = 1;
-```
-
 ## Remarks
 
 There is no conversion from `IntPtr`: a pointer alone has no length, and a proxy made from one would let the kernel see
 `Length == 0`. Build a proxy with the [constructor](#gsharparrayproxyintptr-int), or with
 [GpuBuffer\<T\>.ToProxy](GpuBuffer.md#toproxy) for a device buffer.
 
-The `Launch{Kernel}Ptr` launchers check an array argument as the array launchers check an array: a non-optional
-parameter rejects a `null` proxy (`ArgumentNullException`) and an empty one (`ArgumentException`), an optional one
-(`T[]?`) takes an empty proxy as `null`, and a negative `Length` is rejected (`ArgumentOutOfRangeException`), all before
-the launch. The launcher sets the [Flags](#flags) itself; the caller's value never reaches the device.
+The `Launch{Kernel}Ptr` launchers pass an array argument as a C# call passes an array: a `null` proxy
+(`Data == IntPtr.Zero`) is a `null` array and an empty one (`EmptyArrayData`, length `0`) an empty array, whatever the
+nullable annotation of the parameter. They reject only a proxy that describes no array, before the launch: a negative
+`Length` (`ArgumentOutOfRangeException`), and `Data == IntPtr.Zero` with a `Length` other than `0` (`ArgumentException`).
 
 ## Examples
 

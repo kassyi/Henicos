@@ -12,6 +12,7 @@ internal static class HostTypeNames
     public const string LaunchErrorRecords = "global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords";
     public const string IntPtr = "global::System.IntPtr";
     public const string ArrayProxy = "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy";
+    public const string ArrayPinning = "global::Kassyi.GSharp.Runtime.Interop.ArrayPinning";
     public const string Unsafe = "global::System.Runtime.CompilerServices.Unsafe";
     public const string GCHandle = "global::System.Runtime.InteropServices.GCHandle";
     public const string GCHandleType = "global::System.Runtime.InteropServices.GCHandleType";

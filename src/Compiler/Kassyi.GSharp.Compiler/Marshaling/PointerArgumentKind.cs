@@ -11,13 +11,13 @@ internal enum PointerArgumentKind
 
     /// <summary>
     /// A non-optional array-like parameter, taken as a <c>GSharpArrayProxy</c> that carries the length the kernel sees;
-    /// a null, empty or negative-length proxy is rejected as the array launcher rejects a null or empty array.
+    /// a null or empty proxy is passed as a null or empty array, as the array launcher passes one.
     /// </summary>
     Array,
 
     /// <summary>
-    /// An optional array-like parameter (<c>T[]?</c>, <c>Memory&lt;T&gt;?</c>), taken as a <c>GSharpArrayProxy</c>; a null
-    /// or empty proxy is passed as a null array, as the array launcher passes an empty optional array.
+    /// An optional array-like parameter (<c>T[]?</c>, <c>Memory&lt;T&gt;?</c>), taken as a <c>GSharpArrayProxy</c> like
+    /// <see cref="Array"/>, whose typed buffer may be null.
     /// </summary>
     OptionalArray,
 

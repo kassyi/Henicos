@@ -94,12 +94,12 @@ public static partial class NullArrayFieldKernels
         }
     }
 
-    // A null optional argument reads as an empty array, also through a device function (#838)
+    // A null optional argument is null, also in a device function: its Length throws there
 #nullable enable
     [GpuKernel]
     public static void OptionalToDeviceFunctionKernel(int[] o, int[]? bias)
     {
-#pragma warning disable CS8604 // The device reads a null optional array as one of length 0
+#pragma warning disable CS8604 // C#: NullReferenceException in Len, which the test checks
         o[0] = Len(bias);
 #pragma warning restore CS8604
     }
@@ -171,14 +171,14 @@ public static partial class NullArrayFieldKernels
 #pragma warning restore CS8602
     }
 
-    // An unwritten optional parameter in a state machine reads as empty, also through a device function
+    // An unwritten optional parameter in a state machine is read as C# reads it, also through a device function
     [GpuKernel]
     public static void OptionalWithBarrierKernel(int[] o, int[]? bias)
     {
         Gpu.SyncThreads();
-#pragma warning disable CS8602, CS8604 // The device reads a null optional array as one of length 0
-        o[0] = Len(bias) + bias.Length;
-#pragma warning restore CS8602, CS8604
+        // C#: NullReferenceException in Len for a null bias, which the test checks (the call is the only read, so
+        // the place of the exception does not depend on the order of evaluation)
+        o[0] = Len(bias);
     }
 #nullable restore
 

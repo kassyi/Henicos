@@ -33,8 +33,7 @@ inline const char* __gsharp_range_message() {
 }
 
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
-// exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
-// (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
+// exists, also an empty one (#706). flags is the reserved padding after length (16 bytes), always 0
 template <typename T>
 struct GSharpArray {
     T* data;

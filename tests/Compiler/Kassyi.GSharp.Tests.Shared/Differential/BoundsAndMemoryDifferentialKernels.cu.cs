@@ -291,7 +291,7 @@ public static partial class BoundsAndMemoryDifferentialKernels
     }
 
     /// <summary>
-    /// Optional <c>int[]? opt = null</c> parameter with null or non-null argument (#838).
+    /// Optional <c>int[]? opt = null</c> parameter with null or non-null argument, tested before it is read.
     /// </summary>
     [GpuKernel]
     public static void NullArrayOptionalValidKernel(

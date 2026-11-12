@@ -15,8 +15,8 @@ public struct ProvenHolder
     public int[] Data;
 }
 
-// Which array reads get the null check (__gsharp_array_ref, #706): a receiver that may be null does; a kernel array
-// parameter that the kernel never writes, a stack array local and a span do not
+// Which array reads get the null check (__gsharp_array_ref, #706): a receiver that may be null does, a kernel array
+// parameter included; a stack array local and a span do not
 [SkipSnapshotConsistency("Array null checks checked by EmissionShapeTests")]
 public static partial class ArrayNullCheckShapeKernels
 {

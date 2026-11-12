@@ -29,6 +29,15 @@ namespace Kassyi.GSharp.Tests.Runtime
 {
 public partial class NestedVectorAlignmentKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(622973977u, "NestedVectorAlignmentKernels.cs", 33, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1710502285u, "NestedVectorAlignmentKernels.cs", 34, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1370584833u, "NestedVectorAlignmentKernels.cs", 35, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(70306197u, "NestedVectorAlignmentKernels.cs", 36, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1164300369u, "NestedVectorAlignmentKernels.cs", 37, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(131768577u, "NestedVectorAlignmentKernels.cs", 40, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -144,12 +153,12 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct __gsharp_id_1_s = {};
 unsigned char* __gsharp_id_2_basePtr = (unsigned char*)&__gsharp_id_1_s;
-__gsharp_id_0_offsets[0]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field1_Byte-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[1]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field2_Float2-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[2]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field3_Float4-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[3]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field4_Short-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[4]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field5_Double2-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[5]=64;
+__gsharp_array_at(__gsharp_id_0_offsets, 0, 622973977u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field1_Byte-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 1, 1710502285u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field2_Float2-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 2, 1370584833u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field3_Float4-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 3, 70306197u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field4_Short-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 4, 1164300369u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field5_Double2-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 5, 131768577u)=64;
 }
 __gsharp_state=-1;
 return;
@@ -281,12 +290,6 @@ private unsafe delegate void __gsharp_delegate_WriteExpectedOffsetsKernel(uint g
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchWriteExpectedOffsetsKernel(global::System.Int32[] offsets, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (offsets is null){
-throw new global::System.ArgumentNullException(nameof(offsets));
-}
-if (offsets.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(offsets));
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -392,9 +395,13 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_WriteExpectedOffsetsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = offsets)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = offsets.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(offsets))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (offsets?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
