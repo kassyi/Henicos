@@ -70,6 +70,11 @@ internal static class LoopStatementTranspilers
             return;
         }
 
+        if (ConstantStringForEach.TryTranspile(node, ref context))
+        {
+            return;
+        }
+
         TranspileRangeForEach(node, ref context);
     }
 

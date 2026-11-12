@@ -111,7 +111,8 @@ NullReference = 6,
 DivideByZero = 7,
 Overflow = 8,
 DataRace = 9,
-SwitchExpression = 10
+SwitchExpression = 10,
+ArgumentNull = 11
 };
 inline void __gsharp_trap(GSharpErrorCode code, const char* message);
 
@@ -124,6 +125,29 @@ if (ErrorCode == GSharpErrorCode::Argument) {
 return ""Offset and length were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection."";
 }
 return ""Index was out of range."";
+}
+
+// The message of a view without an array (CheckedSlice, CheckedCopyTo), as .NET words it
+template <GSharpErrorCode ErrorCode>
+inline const char* __gsharp_view_message() {
+if (ErrorCode == GSharpErrorCode::InvalidOperation) {
+return ""The underlying array is null."";
+}
+if (ErrorCode == GSharpErrorCode::ArgumentNull) {
+return ""Value cannot be null. (Parameter 'destinationArray')"";
+}
+return ""Object reference not set to an instance of an object."";
+}
+
+// text[index] of a constant C# string, written as a UTF-16 literal (u""...""): the code unit C# reads, and
+// IndexOutOfRangeException outside the string. N counts the terminating zero, which C# does not have
+template <int N>
+inline char16_t __gsharp_string_char(const char16_t (&text)[N], int index) {
+if (static_cast<unsigned int>(index) >= static_cast<unsigned int>(N - 1)) {
+__gsharp_trap(GSharpErrorCode::IndexOutOfRange, ""Index was outside the bounds of the array."");
+return 0;
+}
+return text[index];
 }
 
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
@@ -203,6 +227,37 @@ inline void CopyTo(GSharpArray<U> destination) const {
 if (!TryCopyTo(destination)) {
 __gsharp_trap(GSharpErrorCode::Argument, ""Destination is too short."");
 }
+}
+// Slice and CopyTo of an ArraySegment<T> or ImmutableArray<T> (ArrayViewMethods.GetChecks): a default value has no
+// array (data is nullptr; an empty one has an array), which C# reports first (IfDefault); CopyTo then reports a
+// destination without an array (IfDestinationNull, None for a span) before it compares the lengths
+template <GSharpErrorCode IfDefault>
+inline GSharpArray<T> CheckedSlice(int start) const {
+if (data == nullptr) {
+__gsharp_trap(IfDefault, __gsharp_view_message<IfDefault>());
+return GSharpArray<T>();
+}
+return Slice(start);
+}
+template <GSharpErrorCode IfDefault>
+inline GSharpArray<T> CheckedSlice(int start, int count) const {
+if (data == nullptr) {
+__gsharp_trap(IfDefault, __gsharp_view_message<IfDefault>());
+return GSharpArray<T>();
+}
+return Slice(start, count);
+}
+template <GSharpErrorCode IfDefault, GSharpErrorCode IfDestinationNull, typename U>
+inline void CheckedCopyTo(GSharpArray<U> destination) const {
+if (IfDefault != GSharpErrorCode::None && data == nullptr) {
+__gsharp_trap(IfDefault, __gsharp_view_message<IfDefault>());
+return;
+}
+if (IfDestinationNull != GSharpErrorCode::None && destination.data == nullptr) {
+__gsharp_trap(IfDestinationNull, __gsharp_view_message<IfDestinationNull>());
+return;
+}
+CopyTo(destination);
 }
 inline GSharpArray<T> AsSpan() const { return *this; }
 template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>

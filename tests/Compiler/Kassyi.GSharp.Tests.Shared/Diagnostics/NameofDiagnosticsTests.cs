@@ -13,25 +13,26 @@ public class NameofDiagnosticsTests
 {
     private const string TestCase = "Diagnostics/NameofString.cu.cs";
 
-    // nameof(NameofStringKernels)[0] on line 12 indexes the string; line 14 uses a length and a comparison; the only
-    // GSH0003 is the null constant's Length on line 24
+    // nameof(NameofStringKernels) on line 13 becomes a span, so the string itself reaches the device; line 14 reads an
+    // element and line 15 a length and a comparison, which are values; the only GSH0003 is the null constant's Length
+    // on line 25
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task NameofString_IndexedOnTheDevice_ReportsGsh0002AtTheNameof(string dialect)
+    public async Task NameofString_ConvertedToASpan_ReportsGsh0002AtTheNameof(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
         Assert.Equal(
-            [(Analyzer, 12, 17, 12, 44)],
+            [(Analyzer, 13, 32, 13, 59)],
             diagnostics.Ranges(GSharpDiagnostics.StringNotSupported.Id));
         Assert.Equal("The string type is not supported in GPU kernels",
             Assert.Single(diagnostics, static d => d.Id == GSharpDiagnostics.StringNotSupported.Id).Message);
-        Assert.Equal([(Analyzer, 24, 16, 24, 30)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
+        Assert.Equal([(Analyzer, 25, 16, 25, 30)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 
-    // Missing.Length on line 24, where Missing is a null constant string
+    // Missing.Length on line 25, where Missing is a null constant string
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -42,7 +43,7 @@ public class NameofDiagnosticsTests
 
         var reported = Assert.Single(diagnostics, static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id);
         Assert.Equal(
-            (24, 16, 24, 30),
+            (25, 16, 25, 30),
             (reported.StartLine, reported.StartColumn, reported.EndLine, reported.EndColumn));
         Assert.Equal(
             "The syntax 'Length of a null constant string (it throws NullReferenceException)' is not supported in " +
@@ -62,12 +63,12 @@ public class NameofDiagnosticsTests
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
 
         Assert.Equal(
-            [("(12,17): GSH0002", true), ("(24,16): GSH0003", true)],
+            [("(13,32): GSH0002", true), ("(25,16): GSH0003", true)],
             KernelDiagnostics.FindStatedFailures(run)
                 .Select(static f => (f.Failure[f.Failure.LastIndexOf('(')..], f.IsReported))
                 .Order());
-        // The C++ of the length and of the indexed name, which no dialect defines; the launcher's own nameof(r) in C#
-        // is not device code
+        // The C++ of the length and of the name converted to a span, which no dialect defines; the launcher's own
+        // nameof(r) in C# is not device code
         var inputTrees = run.Input.SyntaxTrees.ToHashSet();
         var generated = string.Concat(run.Output.SyntaxTrees.Where(tree => !inputTrees.Contains(tree)));
         Assert.DoesNotContain("nameof(r).length", generated, StringComparison.Ordinal);
