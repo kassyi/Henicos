@@ -25,6 +25,12 @@ internal enum CallTargetKind
     /// </summary>
     DialectIntrinsic,
 
+    /// <summary>
+    /// A <c>[CudaIntrinsic]</c> method whose attribute says the dialect does not implement it (the <c>unsupported</c>
+    /// column of the native API YAML): reported as a warning (GSH0054) and written as a runtime failure.
+    /// </summary>
+    UnsupportedIntrinsic,
+
     /// <summary>A method that <c>[BclIntrinsicMap]</c> maps.</summary>
     BclIntrinsicMap,
 
@@ -63,13 +69,14 @@ internal enum CallTargetKind
 /// </summary>
 /// <param name="Kind">What the call calls.</param>
 /// <param name="Method">
-/// The method in the message: <c>Type.Method</c> for GSH0107, with its parameters for GSH0109; empty for GSH0003.
+/// The method in the message: <c>Type.Method</c> for GSH0107 and GSH0054, with its parameters for GSH0109; empty for
+/// GSH0003.
 /// </param>
 /// <param name="Detail">
 /// The reason of GSH0107, the end of the GSH0109 message (what the dialect implements instead; empty when there is
 /// nothing to add), or the syntax of GSH0003.
 /// </param>
-/// <param name="Dialect">The dialect that has no implementation (GSH0109).</param>
+/// <param name="Dialect">The dialect that has no implementation (GSH0109, GSH0054).</param>
 /// <param name="ReportAt">
 /// Where a failure is reported when it is not the call itself: the body argument of a misused macro.
 /// </param>
@@ -83,14 +90,15 @@ internal readonly record struct CallTargetPlan(
     /// <summary>Whether the call cannot be emitted and is reported.</summary>
     public bool IsFailure => Kind is CallTargetKind.Unemitted or CallTargetKind.Unmapped or CallTargetKind.MisusedMacro;
 
-    /// <summary>The diagnostic of a failure.</summary>
-    /// <exception cref="InvalidOperationException">The plan is not a failure.</exception>
+    /// <summary>The diagnostic of a failure, or the warning of an intrinsic the dialect does not implement.</summary>
+    /// <exception cref="InvalidOperationException">The plan is neither a failure nor such an intrinsic.</exception>
     public DiagnosticDescriptor Descriptor => Kind switch
     {
         CallTargetKind.Unemitted => GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode,
         CallTargetKind.Unmapped => GSharpDiagnostics.UnmappedMethodCalledFromGpuCode,
         CallTargetKind.MisusedMacro => GSharpDiagnostics.UnsupportedSyntax,
-        _ => throw new InvalidOperationException($"A call target of kind {Kind} is not a failure.")
+        CallTargetKind.UnsupportedIntrinsic => GSharpDiagnostics.IntrinsicNotImplementedByDialect,
+        _ => throw new InvalidOperationException($"A call target of kind {Kind} is not reported.")
     };
 
     /// <summary>The arguments of the message of <see cref="Descriptor"/>.</summary>
@@ -98,6 +106,7 @@ internal readonly record struct CallTargetPlan(
     {
         CallTargetKind.Unmapped => [Method, Dialect, Detail],
         CallTargetKind.MisusedMacro => [Detail],
+        CallTargetKind.UnsupportedIntrinsic => [Method, Dialect],
         _ => [Method, Detail]
     };
 }

@@ -67,7 +67,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0051](GSH0051.md) | Error | Cannot take ownership of a reference parameter |
 | [GSH0052](GSH0052.md) | Error | Native API definition is not valid YAML |
 | [GSH0053](GSH0053.md) | Error | Native API definition violates the schema |
-| [GSH0054](GSH0054.md) | Warning | Gpu.InlinePtx is not supported by the target dialect |
+| [GSH0054](GSH0054.md) | Warning | An intrinsic is not implemented by the target dialect |
 | [GSH0055](GSH0055.md) | Error | Identifier containing '__' is reserved |
 | [GSH0056](GSH0056.md) | Error | GPU method name is a C++ keyword (Deprecated) |
 | [GSH0057](GSH0057.md) | Error | Malformed trusted key line |
