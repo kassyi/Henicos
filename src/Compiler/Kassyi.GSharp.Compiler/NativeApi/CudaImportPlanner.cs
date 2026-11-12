@@ -48,15 +48,28 @@ internal static class CudaImportPlanner
     private static ModuleKernelArgument CreateArgument(IParameterSymbol parameter)
     {
         var type = parameter.Type;
+        using var typeWriter = new SourceWriter();
+        typeWriter.AppendCsharpTypeName(type is IArrayTypeSymbol array ? array.ElementType : type);
+        if (parameter.RefKind != RefKind.None)
+        {
+            // 'out' has no value to copy in; 'in' and 'ref readonly' promise not to change the caller's value
+            return new ModuleKernelArgument(
+                parameter.Name,
+                ModuleKernelParameterKind.ByReference,
+                typeWriter.ToString(),
+                CopyIn: parameter.RefKind != RefKind.Out,
+                CopyOut: parameter.RefKind is RefKind.Ref or RefKind.Out
+            );
+        }
+
         var kind = type switch
         {
             IPointerTypeSymbol or IFunctionPointerTypeSymbol => ModuleKernelParameterKind.Pointer,
+            IArrayTypeSymbol { Rank: > 1 } => ModuleKernelParameterKind.MultidimensionalArray,
             IArrayTypeSymbol => ModuleKernelParameterKind.Array,
             _ => ModuleKernelParameterKind.Value,
         };
 
-        using var typeWriter = new SourceWriter();
-        typeWriter.AppendCsharpTypeName(type is IArrayTypeSymbol array ? array.ElementType : type);
         var hasIn = parameter.HasAttribute(KnownAttributes.In);
         var hasOut = parameter.HasAttribute(KnownAttributes.Out);
         return new ModuleKernelArgument(
@@ -64,7 +77,8 @@ internal static class CudaImportPlanner
             kind,
             typeWriter.ToString(),
             CopyIn: hasIn || !hasOut,
-            CopyOut: hasOut || !hasIn
+            CopyOut: hasOut || !hasIn,
+            AllowsNull: type is IArrayTypeSymbol { NullableAnnotation: NullableAnnotation.Annotated }
         );
     }
 
@@ -84,9 +98,9 @@ internal static class CudaImportPlanner
             return ModuleKernelParameterTypes.RefStructReason;
         }
 
-        if (parameter.RefKind != RefKind.None || parameter.ScopedKind != ScopedKind.None)
+        if (parameter.RefKind != RefKind.None)
         {
-            return ModuleKernelParameterTypes.ByReferenceReason;
+            return GetByReferenceProblem(type, launchSetting);
         }
 
         if (launchSetting != ModuleLaunchSetting.None)
@@ -116,22 +130,25 @@ internal static class CudaImportPlanner
         return conversion.IsImplicit ? null : ModuleKernelParameterTypes.DimensionTypeReason;
     }
 
+    // Why a 'ref', 'out' or 'in' parameter of <type> cannot be staged through a one-element device buffer
+    private static string? GetByReferenceProblem(ITypeSymbol type, ModuleLaunchSetting launchSetting)
+    {
+        if (launchSetting != ModuleLaunchSetting.None)
+        {
+            return ModuleKernelParameterTypes.LaunchSettingByReferenceReason;
+        }
+
+        return type is IPointerTypeSymbol or IFunctionPointerTypeSymbol or IArrayTypeSymbol
+            ? ModuleKernelParameterTypes.ByReferenceReason
+            : GetValueProblem(type);
+    }
+
     private static string? GetArrayProblem(IArrayTypeSymbol array)
     {
         var element = array.ElementType;
         if (element is IArrayTypeSymbol)
         {
             return ModuleKernelParameterTypes.JaggedArrayReason;
-        }
-
-        if (array.Rank > 1)
-        {
-            return ModuleKernelParameterTypes.MultidimensionalArrayReason;
-        }
-
-        if (array.NullableAnnotation == NullableAnnotation.Annotated)
-        {
-            return ModuleKernelParameterTypes.NullableArrayReason;
         }
 
         if (element is IPointerTypeSymbol or IFunctionPointerTypeSymbol)

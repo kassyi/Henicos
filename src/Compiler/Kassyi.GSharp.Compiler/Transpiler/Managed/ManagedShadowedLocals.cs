@@ -37,12 +37,12 @@ internal static class ManagedShadowedLocals
     public static HashSet<string> GetNamesInScope(SyntaxNode call, SemanticModel semanticModel)
     {
         var names = new HashSet<string>(StringComparer.Ordinal);
-        if (semanticModel.GetOriginalNode(call) is not { } original)
+        if (!semanticModel.TryGetOriginalNode(call, out var original, out var originalModel))
         {
             return names;
         }
 
-        semanticModel.Compilation.GetCachedSemanticModel(original.SyntaxTree)
+        originalModel
             .LookupSymbols(original.SpanStart)
             .AsStackEnumerable()
             .Where(static symbol => symbol is ILocalSymbol or IParameterSymbol or IRangeVariableSymbol ||

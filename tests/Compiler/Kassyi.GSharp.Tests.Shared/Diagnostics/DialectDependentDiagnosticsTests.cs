@@ -21,7 +21,7 @@ public class DialectDependentDiagnosticsTests
         IReadOnlyList<(DiagnosticOrigin, int, int, int, int)> expected = dialect == "Cpu"
             ? [(Analyzer, 11, 13, 11, 34), (Analyzer, 18, 13, 18, 34)]
             : [];
-        Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id));
+        Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.IntrinsicNotImplementedByDialect.Id));
     }
 
     [Theory]
@@ -34,7 +34,7 @@ public class DialectDependentDiagnosticsTests
 
         Assert.Equal(
             Enumerable.Repeat((Analyzer, 223, 13, 223, 51), count),
-            diagnostics.Ranges(GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id));
+            diagnostics.Ranges(GSharpDiagnostics.IntrinsicNotImplementedByDialect.Id));
     }
 
     // The text must be a constant in every dialect, also where the call becomes a runtime failure

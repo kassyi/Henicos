@@ -23,14 +23,14 @@ public static partial class Unsafe
 /// <returns>A raw pointer to the allocated memory block, or <c>null</c> when the allocation fails.</returns>
 /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
 [Kassyi.GSharp.Core.CudaIntrinsic("malloc")]
-public static unsafe void* Malloc(int size) => Kassyi.GSharp.Core.GpuOnlyException.Throw<nint>().ToPointer();
+public static unsafe void* Malloc(int size) => Kassyi.GSharp.Core.ManagedIntrinsics.Malloc(size);
 /// <summary>
 /// Frees unmanaged memory allocated by <see cref="Malloc"/> (<c>free</c>).
 /// </summary>
 /// <param name="ptr">A raw pointer to the allocated memory block to free.</param>
 /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
 [Kassyi.GSharp.Core.CudaIntrinsic("free")]
-public static unsafe void Free(void* ptr) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static unsafe void Free(void* ptr) => Kassyi.GSharp.Core.ManagedIntrinsics.Free(ptr);
 // ReSharper restore UnusedMember.Global
 #pragma warning restore IDE0051
 }

@@ -479,10 +479,10 @@
     "isEnabledByDefault": true
   },
   {
-    "name": "InlinePtxNotSupportedByDialect",
+    "name": "IntrinsicNotImplementedByDialect",
     "id": "GSH0054",
-    "title": "Gpu.InlinePtx is not supported by the target dialect",
-    "messageFormat": "Gpu.InlinePtx is not supported by the '{0}' dialect; the call is replaced with a runtime failure",
+    "title": "An intrinsic is not implemented by the target dialect",
+    "messageFormat": "'{0}' is not implemented by the '{1}' dialect; the call is replaced with a runtime failure",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
     "isEnabledByDefault": true

@@ -17,6 +17,7 @@ classes:
 methods:
   - name: Malloc
     nativeName: malloc
+    managed: ManagedIntrinsics.Malloc
     className: Gpu.Unsafe
     isUnsafe: true
     xmlDoc: |
@@ -33,6 +34,7 @@ methods:
 
   - name: Free
     nativeName: free
+    managed: ManagedIntrinsics.Free
     className: Gpu.Unsafe
     isUnsafe: true
     xmlDoc: |

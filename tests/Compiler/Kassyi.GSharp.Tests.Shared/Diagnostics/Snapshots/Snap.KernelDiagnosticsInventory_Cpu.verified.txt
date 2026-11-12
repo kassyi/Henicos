@@ -139,7 +139,7 @@
 (5,14)-(5,41) GSH0036 analyzer: The type 'GEN_36_MacroArgumentSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (14,26)-(14,31) GSH0012 analyzer: The argument 'count' of macro 'ForUnroll' must be a compile-time constant
 (19,9)-(19,15) GSH0002 analyzer: The string type is not supported in GPU kernels
-(21,9)-(21,30) GSH0054 analyzer: Gpu.InlinePtx is not supported by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
+(21,9)-(21,30) GSH0054 analyzer: 'Gpu.InlinePtx' is not implemented by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
 (21,23)-(21,29) GSH0006 analyzer: The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal
 (25,9)-(25,28) GSH0030 analyzer: The method 'MyKernel' calls Gpu.SyncGrid but is not marked with [GpuKernel(Cooperative = true)]. Grid synchronization requires a cooperative kernel launch.
 (25,22)-(25,27) GSH0003 analyzer: The syntax 'Gpu.SyncGrid requires a lambda expression argument' is not supported in GSharp GPU kernels
@@ -185,8 +185,8 @@
 (104,63)-(104,67) GSH0013 analyzer: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
 
 ## Generator/DialectDiagnostics.cu.cs
-(11,13)-(11,34) GSH0054 analyzer: Gpu.InlinePtx is not supported by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
-(18,13)-(18,34) GSH0054 analyzer: Gpu.InlinePtx is not supported by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
+(11,13)-(11,34) GSH0054 analyzer: 'Gpu.InlinePtx' is not implemented by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
+(18,13)-(18,34) GSH0054 analyzer: 'Gpu.InlinePtx' is not implemented by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
 
 ## Generator/AotContextName_Namespaces.cs
 (4,30)-(4,34) GSH0058 analyzer: The structs 'global::N1.Pair' and 'global::N2.Pair' both map to 'AotContexts.Pair' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.

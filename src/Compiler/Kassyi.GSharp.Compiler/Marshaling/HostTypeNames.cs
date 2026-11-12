@@ -20,4 +20,7 @@ internal static class HostTypeNames
     public const string FieldOffset = "global::System.Runtime.InteropServices.FieldOffset";
     public const string PointerList = "global::System.Collections.Generic.List<global::System.IntPtr>";
     public const string ArrayPoolShared = "global::System.Buffers.ArrayPool<byte>.Shared";
+    public const string Span = "global::System.Span";
+    public const string ReadOnlySpan = "global::System.ReadOnlySpan";
+    public const string ModuleKernelArguments = "global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments";
 }

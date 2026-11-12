@@ -12,6 +12,9 @@ private static readonly Lazy<byte[]> s_fatbin_shared_module = new(() => System.I
 private static readonly Lazy<byte[]> s_fatbin_other_module = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "other_module")));
 public static partial void MethodOne(float[] input, float factor)
 {
+if (input is null){
+throw new global::System.ArgumentNullException(nameof(input));
+}
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "Kernel1");
 using var d_input = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(input.Length);
@@ -39,6 +42,9 @@ public int count;
 }
 public static partial void MethodTwo(int[] output, int count)
 {
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "MethodTwo");
 using var d_output = new global::Kassyi.GSharp.Runtime.GpuBuffer<int>(output.Length);
@@ -63,6 +69,12 @@ d_output.CopyToHost(output);
 }
 public static partial void MethodThree(float[] input, float[] output, int length)
 {
+if (input is null){
+throw new global::System.ArgumentNullException(nameof(input));
+}
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_other_module.Value, "MethodThree");
 using var d_input = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(input.Length);
@@ -88,6 +100,9 @@ d_output.CopyToHost(output);
 }
 public static partial void MethodFour(uint[] output, int n, uint gridDimX, uint blockDimX, uint sharedMemBytes)
 {
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MultiMethodInvoker.MethodFour");
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_other_module.Value, "SharedKernel");
@@ -125,6 +140,9 @@ internal static partial class SecondaryInvoker
 private static readonly Lazy<byte[]> s_fatbin_shared_module = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "shared_module")));
 public static partial void SecondaryMethod(double[] data, double scale)
 {
+if (data is null){
+throw new global::System.ArgumentNullException(nameof(data));
+}
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "SecondaryMethod");
 using var d_data = new global::Kassyi.GSharp.Runtime.GpuBuffer<double>(data.Length);

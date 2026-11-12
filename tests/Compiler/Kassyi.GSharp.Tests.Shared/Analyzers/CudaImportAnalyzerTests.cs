@@ -16,7 +16,8 @@ public class CudaImportAnalyzerTests
     // Each parameter the launcher cannot pass is reported over its modifiers, type and name (without its
     // attributes). Not reported: the parameters of Passable (a launch setting of a type that converts to uint and an
     // IntPtr stream included), of Gridded (dimensions that convert through a user-defined operator), of Called
-    // (function pointers) and of Many (a params array, a name that starts with __gsharp_)
+    // (function pointers), of Many (a params array, a name that starts with __gsharp_), and the 'ref', 'out', 'in' and
+    // 'ref readonly' values, multidimensional and nullable arrays of Counted, Written and Packed
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Parameters_LauncherCannotPass_ReportGSH0110OverEachParameter()
@@ -37,17 +38,17 @@ public class CudaImportAnalyzerTests
                 (Id, 19, 42, 19, 56),
                 (Id, 22, 55, 22, 65),
                 (Id, 25, 41, 25, 51),
-                (Id, 28, 40, 28, 53),
-                (Id, 28, 55, 28, 68),
                 (Id, 31, 39, 31, 58),
                 (Id, 31, 60, 31, 73),
                 (Id, 31, 75, 31, 91),
                 (Id, 31, 93, 31, 106),
                 (Id, 34, 45, 34, 61),
                 (Id, 37, 38, 37, 63),
-                (Id, 40, 40, 40, 54),
-                (Id, 40, 56, 40, 67),
-                (Id, 40, 69, 40, 91),
+                (Id, 52, 44, 52, 60),
+                (Id, 52, 62, 52, 78),
+                (Id, 52, 80, 52, 95),
+                (Id, 52, 97, 52, 114),
+                (Id, 53, 9, 53, 30),
             ],
             actual);
         Assert.All(diagnostics, static d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
@@ -60,14 +61,17 @@ public class CudaImportAnalyzerTests
     [InlineData("rows", "Rows", "float[][]", ModuleKernelParameterTypes.JaggedArrayReason)]
     [InlineData("stream", "Streamed", "int", ModuleKernelParameterTypes.StreamTypeReason)]
     [InlineData("count", "Optional", "int?", ModuleKernelParameterTypes.NullableValueReason)]
-    [InlineData("grid", "Counted", "float[,]", ModuleKernelParameterTypes.MultidimensionalArrayReason)]
     [InlineData("pair", "Paired", "(byte, double)", ModuleKernelParameterTypes.AutoLayoutReason)]
     [InlineData("auto", "Paired", "AutoPair", ModuleKernelParameterTypes.AutoLayoutReason)]
     [InlineData("holder", "Paired", "HoldsAuto", ModuleKernelParameterTypes.AutoLayoutReason)]
     [InlineData("time", "Paired", "DateTime", ModuleKernelParameterTypes.AutoLayoutReason)]
     [InlineData("items", "AutoElements", "AutoPair[]", ModuleKernelParameterTypes.AutoLayoutReason)]
     [InlineData("values", "Spans", "Span<float>", ModuleKernelParameterTypes.RefStructReason)]
-    [InlineData("limit", "Written", "int", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("data", "ByReference", "float[]", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("label", "ByReference", "string", ModuleKernelParameterTypes.ManagedTypeReason)]
+    [InlineData("counts", "ByReference", "int*", ModuleKernelParameterTypes.ByReferenceReason)]
+    [InlineData("gridDimX", "ByReference", "uint", ModuleKernelParameterTypes.LaunchSettingByReferenceReason)]
+    [InlineData("autoPair", "ByReference", "AutoPair", ModuleKernelParameterTypes.AutoLayoutReason)]
     public async Task Parameter_LauncherCannotPass_NamesParameterMethodTypeAndReason(
         string parameter,
         string method,
