@@ -23,10 +23,10 @@ namespace Kassyi.GSharp.Naming;
 /// the <c>field</c> keyword; it decodes to <c>{name}.field</c>.</description></item>
 ///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
-///   <item><description><c>GSharpModuleContext_{module}</c> / <c>s_fatbin_{module}</c>: the generated C# class that loads
-/// the fatbin of an assembly and the field that holds the fatbin of a YAML module, with the module name escaped as a
-/// segment is (<see cref="TryDecodeModuleName"/>); they decode to <c>GSharpModuleContext(module)</c> and
-/// <c>s_fatbin(module)</c>.</description></item>
+///   <item><description><c>GSharpModuleContext_{module}</c> / <c>s_fatbin_{module}</c>: the generated C# class
+/// that loads the fatbin of an assembly and the field that holds the fatbin of a YAML module, with the module name
+/// escaped as a segment is (<see cref="TryDecodeModuleName"/>); they decode to <c>GSharpModuleContext(module)</c>
+/// and <c>s_fatbin(module)</c>.</description></item>
 /// </list>
 /// GSH0055 rejects <c>__</c> in user identifiers, so a C# name never starts with a digit-and-underscore ordinal and
 /// decoding is unambiguous.
