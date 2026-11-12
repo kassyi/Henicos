@@ -7,6 +7,7 @@ methods:
   # ===========================================================================
   - name: BitReverse
     nativeName: __brev
+    managed: ManagedBitIntrinsics.BitReverse
     summary: Reverses the bit order of a 32-bit unsigned integer using the __brev hardware instruction.
     returnType: uint
     returnDescription: The bit-reversed 32-bit unsigned integer.
@@ -51,6 +52,7 @@ methods:
 
   - name: AddWithCarry
     nativeName: __gsharp_add_cc
+    managed: ManagedIntegerIntrinsics.AddWithCarry
     summary: Adds two unsigned 32-bit integers with carry-in and carry-out propagation.
     returnType: uint
     returnDescription: The 32-bit addition result.
@@ -67,6 +69,7 @@ methods:
 
   - name: SubWithBorrow
     nativeName: __gsharp_sub_cc
+    managed: ManagedIntegerIntrinsics.SubWithBorrow
     summary: Subtracts two unsigned 32-bit integers with borrow-in and borrow-out propagation.
     returnType: uint
     returnDescription: The 32-bit subtraction result.
@@ -117,6 +120,7 @@ methods:
 
   - name: MultiplyWide
     nativeName: __gsharp_mul_wide
+    managed: ManagedIntegerIntrinsics.MultiplyWide
     summary: Computes the full 64-bit product of two 32-bit unsigned integers without overflow.
     returnType: ulong
     returnDescription: The 64-bit product of a and b.
@@ -130,6 +134,7 @@ methods:
 
   - name: MultiplyHigh
     nativeName: __umul64hi
+    managed: ManagedIntegerIntrinsics.MultiplyHigh
     summary: Computes the high 64 bits of the product of two 64-bit unsigned integers (__umul64hi).
     returnType: ulong
     returnDescription: The most significant 64 bits of the 128-bit product.
@@ -143,6 +148,7 @@ methods:
 
   - name: FunnelShiftLeft
     nativeName: __funnelshift_l
+    managed: ManagedBitIntrinsics.FunnelShiftLeft
     summary: Concatenates hi and lo, shifts left by shift, and extracts the most significant 32 bits.
     returnType: uint
     returnDescription: The most significant 32 bits of the shifted 64-bit pair.
@@ -159,6 +165,7 @@ methods:
 
   - name: FunnelShiftRight
     nativeName: __funnelshift_r
+    managed: ManagedBitIntrinsics.FunnelShiftRight
     summary: Concatenates hi and lo, shifts right by shift, and extracts the least significant 32 bits.
     returnType: uint
     returnDescription: The least significant 32 bits of the shifted 64-bit pair.
@@ -491,6 +498,7 @@ methods:
   # ===========================================================================
   - name: PopCount
     nativeName: __popc
+    managed: ManagedBitIntrinsics.PopCount
     summary: Counts the number of set bits (population count) in a 32-bit unsigned integer.
     returnType: uint
     returnDescription: The number of set bits.
@@ -501,6 +509,7 @@ methods:
 
   - name: PopCount
     nativeName: __popcll
+    managed: ManagedBitIntrinsics.PopCount
     summary: Counts the number of set bits (population count) in a 64-bit unsigned integer.
     returnType: uint
     returnDescription: The number of set bits.
@@ -511,6 +520,7 @@ methods:
 
   - name: CountLeadingZeros
     nativeName: __clz
+    managed: ManagedBitIntrinsics.CountLeadingZeros
     summary: Returns the number of consecutive zero bits starting from the most significant bit of a 32-bit integer.
     returnType: uint
     returnDescription: The count of leading zero bits.
@@ -521,6 +531,7 @@ methods:
 
   - name: CountLeadingZeros
     nativeName: __clzll
+    managed: ManagedBitIntrinsics.CountLeadingZeros
     summary: Returns the number of consecutive zero bits starting from the most significant bit of a 64-bit integer.
     returnType: uint
     returnDescription: The count of leading zero bits.
@@ -531,6 +542,7 @@ methods:
 
   - name: BitReverse
     nativeName: __brevll
+    managed: ManagedBitIntrinsics.BitReverse
     summary: Reverses the bit order of a 64-bit unsigned integer using the __brevll hardware instruction.
     returnType: ulong
     returnDescription: The bit-reversed 64-bit unsigned integer.
@@ -541,6 +553,7 @@ methods:
 
   - name: BytePermute
     nativeName: __byte_perm
+    managed: ManagedBitIntrinsics.BytePermute
     summary: Returns selected bytes from two 32-bit unsigned integers according to a selector mask.
     returnType: uint
     returnDescription: The permuted 32-bit result.
@@ -557,6 +570,7 @@ methods:
 
   - name: MultiplyHigh
     nativeName: __mulhi
+    managed: ManagedIntegerIntrinsics.MultiplyHigh
     summary: Computes the high 32 bits of the product of two 32-bit signed integers.
     returnType: int
     returnDescription: The most significant 32 bits of the 64-bit product.
@@ -570,6 +584,7 @@ methods:
 
   - name: MultiplyHigh
     nativeName: __mul64hi
+    managed: ManagedIntegerIntrinsics.MultiplyHigh
     summary: Computes the high 64 bits of the product of two 64-bit signed integers.
     returnType: long
     returnDescription: The most significant 64 bits of the 128-bit product.
@@ -582,10 +597,13 @@ methods:
         description: The second 64-bit signed multiplicand.
 
   - name: AbsDiff
-    nativeName: __sad
-    summary: Computes the absolute difference of two signed integers.
+    nativeName: __gsharp_abs_diff
+    managed: ManagedIntegerIntrinsics.AbsDiff
+    summary: Computes the absolute difference of two signed integers (PTX sad.s32).
     returnType: int
-    returnDescription: The absolute difference |a - b|.
+    returnDescription: >-
+      The absolute difference |a - b| in 32 bits; a difference above int.MaxValue keeps its 32 bits
+      and reads as negative (int.MinValue and int.MaxValue give -1).
     parameters:
       - name: a
         type: int
@@ -595,8 +613,9 @@ methods:
         description: The second operand.
 
   - name: AbsDiff
-    nativeName: __usad
-    summary: Computes the absolute difference of two unsigned integers.
+    nativeName: __gsharp_abs_diff
+    managed: ManagedIntegerIntrinsics.AbsDiff
+    summary: Computes the absolute difference of two unsigned integers (PTX sad.u32).
     returnType: uint
     returnDescription: The absolute difference |a - b|.
     parameters:
@@ -612,31 +631,40 @@ methods:
   # ===========================================================================
   - name: ThreadFence
     nativeName: __threadfence
+    managed: ManagedIntrinsics.ThreadFence
     summary: Ensures memory writes are visible across all threads on device.
     returnType: void
 
   - name: ThreadFenceBlock
     nativeName: __threadfence_block
+    managed: ManagedIntrinsics.ThreadFence
     summary: Ensures memory writes are visible to all threads in the same block.
     returnType: void
 
   - name: ThreadFenceSystem
     nativeName: __threadfence_system
+    managed: ManagedIntrinsics.ThreadFence
     summary: Ensures memory writes are visible across device and host.
     returnType: void
 
   # --- Hardware Timers ---
   - name: Clock
-    nativeName: clock
-    summary: Returns the value of a per-multiprocessor cycle counter (32-bit).
+    nativeName: __gsharp_clock
+    managed: ManagedIntrinsics.Clock
+    summary: Returns the value of a per-multiprocessor cycle counter (32-bit, %clock), which wraps.
     returnType: uint
-    returnDescription: The cycle counter value.
+    returnDescription: >-
+      The cycle counter value. The CPU paths count nanoseconds of the monotonic clock instead of
+      cycles and return the low 32 bits.
 
   - name: Clock64
-    nativeName: clock64
-    summary: Returns the value of a per-multiprocessor cycle counter (64-bit).
+    nativeName: __gsharp_clock64
+    managed: ManagedIntrinsics.Clock64
+    summary: Returns the value of a per-multiprocessor cycle counter (64-bit, %clock64).
     returnType: ulong
-    returnDescription: The 64-bit cycle counter value.
+    returnDescription: >-
+      The 64-bit cycle counter value. The CPU paths count nanoseconds of the monotonic clock instead
+      of cycles.
 
   # ===========================================================================
   # 5. Additional Hardware Atomics
@@ -762,6 +790,7 @@ methods:
   # ===========================================================================
   - name: BitFieldExtract
     nativeName: __gsharp_bfe
+    managed: ManagedBitIntrinsics.BitFieldExtract
     summary: Extracts a bit field from a 32-bit unsigned integer using the PTX bfe instruction.
     returnType: uint
     returnDescription: The extracted bit field.
@@ -778,6 +807,7 @@ methods:
 
   - name: BitFieldExtract
     nativeName: __gsharp_bfe64
+    managed: ManagedBitIntrinsics.BitFieldExtract
     summary: Extracts a bit field from a 64-bit unsigned integer using the PTX bfe instruction.
     returnType: ulong
     returnDescription: The extracted bit field.
@@ -794,6 +824,7 @@ methods:
 
   - name: BitFieldInsert
     nativeName: __gsharp_bfi
+    managed: ManagedBitIntrinsics.BitFieldInsert
     summary: Inserts a bit field into a 32-bit unsigned integer using the PTX bfi instruction.
     returnType: uint
     returnDescription: The result after bit field insertion.
@@ -813,6 +844,7 @@ methods:
 
   - name: BitFieldInsert
     nativeName: __gsharp_bfi64
+    managed: ManagedBitIntrinsics.BitFieldInsert
     summary: Inserts a bit field into a 64-bit unsigned integer using the PTX bfi instruction.
     returnType: ulong
     returnDescription: The result after bit field insertion.
@@ -832,6 +864,7 @@ methods:
 
   - name: Lop3
     nativeName: __gsharp_lop3
+    managed: ManagedBitIntrinsics.Lop3
     summary: >-
       Computes an arbitrary 3-input bitwise logic operation defined by an 8-bit lookup table (LUT)
       using the PTX lop3 instruction.
@@ -853,6 +886,7 @@ methods:
 
   - name: CountTrailingZeros
     nativeName: __gsharp_tzc_32
+    managed: ManagedBitIntrinsics.CountTrailingZeros
     summary: Returns the number of consecutive zero bits starting from the least significant bit of a 32-bit integer.
     returnType: uint
     returnDescription: The count of trailing zero bits.
@@ -863,6 +897,7 @@ methods:
 
   - name: CountTrailingZeros
     nativeName: __gsharp_tzc_64
+    managed: ManagedBitIntrinsics.CountTrailingZeros
     summary: Returns the number of consecutive zero bits starting from the least significant bit of a 64-bit integer.
     returnType: uint
     returnDescription: The count of trailing zero bits.
@@ -873,6 +908,7 @@ methods:
 
   - name: BitReverse64
     nativeName: __brevll
+    managed: ManagedBitIntrinsics.BitReverse
     summary: Reverses the bit order of a 64-bit unsigned integer using the __brevll hardware instruction.
     returnType: ulong
     returnDescription: The bit-reversed 64-bit unsigned integer.
@@ -883,6 +919,7 @@ methods:
 
   - name: DotProduct4
     nativeName: __dp4a
+    managed: ManagedIntegerIntrinsics.DotProduct4
     summary: Computes the 4-way 8-bit integer dot product with 32-bit accumulation using the __dp4a hardware intrinsic.
     typeTemplate:
       placeholder: T
@@ -902,6 +939,7 @@ methods:
 
   - name: Sad4
     nativeName: __gsharp_vabsdiff4
+    managed: ManagedIntegerIntrinsics.Sad4
     summary: >-
       Computes the SIMD sum of absolute differences of 4 packed unsigned bytes and accumulates with c
       (PTX vabsdiff4).
@@ -962,6 +1000,7 @@ methods:
 
   - name: NanoSleep
     nativeName: __nanosleep
+    managed: ManagedIntrinsics.NanoSleep
     summary: Suspends the calling thread for approximately the specified duration in nanoseconds.
     returnType: void
     parameters:
@@ -1000,6 +1039,7 @@ methods:
   # ===========================================================================
   - name: MultiplyAddWide
     nativeName: __gsharp_mad_wide
+    managed: ManagedIntegerIntrinsics.MultiplyAddWide
     summary: Computes (a * b) + c with full 64-bit precision without intermediate overflow.
     returnType: ulong
     returnDescription: The 64-bit result of (a * b) + c.
@@ -1016,6 +1056,7 @@ methods:
 
   - name: MultiplyAddWide
     nativeName: __gsharp_mad_wide_s
+    managed: ManagedIntegerIntrinsics.MultiplyAddWide
     summary: Computes (a * b) + c with full 64-bit signed precision without intermediate overflow.
     returnType: long
     returnDescription: The 64-bit result of (a * b) + c.
@@ -1032,6 +1073,7 @@ methods:
 
   - name: MultiplyAddWideWithCarry
     nativeName: __gsharp_madc_cc
+    managed: ManagedIntegerIntrinsics.MultiplyAddWideWithCarry
     summary: Computes (a * b) + c + carry-in with carry-out propagation.
     returnType: ulong
     returnDescription: The 64-bit result.
@@ -1072,16 +1114,20 @@ methods:
       while the thread runs.
 
   - name: SmId
-    nativeName: __smid
+    nativeName: __gsharp_smid
+    managed: ManagedGpuContext.SmId
     summary: Returns the streaming multiprocessor ID on which the calling thread is executing (%smid).
     returnType: int
-    returnDescription: The streaming multiprocessor ID.
+    returnDescription: >-
+      The streaming multiprocessor ID, which may change while the thread runs. The CPU paths run a
+      launch as one multiprocessor and return 0.
 
   # ===========================================================================
   # 10. Memory, Cache, Async DMA & Barriers
   # ===========================================================================
   - name: LoadCachedGlobal
     nativeName: __ldcg
+    managed: ManagedIntrinsics.LoadCachedGlobal
     summary: Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).
     typeTemplate:
       placeholder: T
@@ -1095,6 +1141,7 @@ methods:
 
   - name: StoreCachedGlobal
     nativeName: __stcg
+    managed: ManagedIntrinsics.StoreCachedGlobal
     summary: Stores data to global memory caching in L2 only (PTX st.cg).
     typeTemplate:
       placeholder: T
@@ -1109,7 +1156,8 @@ methods:
         description: The value to store.
 
   - name: Prefetch
-    nativeName: __prefetch
+    nativeName: __gsharp_prefetch_l2
+    managed: ManagedIntrinsics.Prefetch
     summary: Prefetches data at the specified address into the L2 cache (PTX prefetch.global.L2).
     returnType: void
     parameters:
@@ -1118,7 +1166,8 @@ methods:
         description: The memory address to prefetch into L2.
 
   - name: PrefetchUniform
-    nativeName: __prefetchu
+    nativeName: __gsharp_prefetch_uniform
+    managed: ManagedIntrinsics.Prefetch
     summary: Prefetches uniform data at the specified address into the L1 cache (PTX prefetchu.L1).
     returnType: void
     parameters:
@@ -1127,7 +1176,8 @@ methods:
         description: The uniform memory address to prefetch into L1.
 
   - name: ApplyPriorityL2
-    nativeName: __applypriority
+    nativeName: __gsharp_apply_priority_l2
+    managed: ManagedIntrinsics.ApplyPriorityL2
     summary: Eviction policy hint for the L2 cache line containing address (PTX applypriority).
     returnType: void
     parameters:
@@ -1143,6 +1193,7 @@ methods:
 
   - name: ConvertToSharedMemory
     nativeName: __cvta_generic_to_shared
+    unsupported: [Cpu]
     summary: Converts a generic pointer referencing shared memory to a shared state space address (PTX cvta.to.shared).
     typeTemplate:
       placeholder: T
@@ -1156,6 +1207,7 @@ methods:
 
   - name: CopyAsync
     nativeName: __gsharp_cp_async
+    managed: ManagedIntrinsics.CopyAsync
     summary: >-
       Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread
       (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or
@@ -1177,6 +1229,7 @@ methods:
 
   - name: CopyAsyncCommitGroup
     nativeName: __gsharp_cp_async_commit_group
+    managed: ManagedIntrinsics.CopyAsyncCommitGroup
     summary: >-
       Batches all prior uncommitted CopyAsync operations issued by the calling thread into a new
       commit group (PTX cp.async.commit_group).
@@ -1185,6 +1238,7 @@ methods:
 
   - name: CopyAsyncWaitGroup
     nativeName: __gsharp_cp_async_wait_group
+    managed: ManagedIntrinsics.CopyAsyncWaitGroup
     summary: >-
       Waits until at most pendingGroups committed CopyAsync groups of the calling thread remain pending
       (PTX cp.async.wait_group; 0 waits for all committed groups of the calling thread). Call
@@ -1199,6 +1253,7 @@ methods:
 
   - name: CopyAsyncWaitAll
     nativeName: __gsharp_cp_async_wait_all
+    managed: ManagedIntrinsics.CopyAsyncWaitAll
     summary: >-
       Waits until all prior CopyAsync operations issued by the calling thread have completed (PTX
       cp.async.wait_all). Call SyncThreads after waiting if other threads read the copied shared memory.
@@ -1207,6 +1262,7 @@ methods:
 
   - name: MBarrierInit
     nativeName: __gsharp_mbarrier_init
+    unsupported: [Cpu]
     summary: Initializes an asynchronous barrier object in shared memory (PTX mbarrier.init).
     returnType: void
     parameters:
@@ -1219,6 +1275,7 @@ methods:
 
   - name: MBarrierArrive
     nativeName: __gsharp_mbarrier_arrive
+    unsupported: [Cpu]
     summary: Signals arrival of the calling thread at the mbarrier object (PTX mbarrier.arrive).
     returnType: void
     parameters:
@@ -1228,6 +1285,7 @@ methods:
 
   - name: MBarrierWait
     nativeName: __gsharp_mbarrier_wait
+    unsupported: [Cpu]
     summary: Blocks the calling thread until the barrier completes the specified phase (PTX mbarrier.test_wait).
     returnType: void
     parameters:

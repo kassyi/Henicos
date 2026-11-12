@@ -93,7 +93,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         // A method with no device definition (of the project, #891, or one the dialect does not map) would be
         // called by a name nothing defines
-        if (CallTargetEmitter.TryFailCall(node, symbol, ref context))
+        if (CallTargetEmitter.TryReplaceCall(node, symbol, ref context))
         {
             return;
         }

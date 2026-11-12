@@ -816,6 +816,35 @@ __device__ __forceinline__ int __gsharp_warp_id() {
 return (int)(((threadIdx.z * blockDim.y + threadIdx.y) * blockDim.x + threadIdx.x) >> 5);
 }
 
+// --- Gpu.SmId / Gpu.Clock / Gpu.Clock64 ---
+// The %smid register: the streaming multiprocessor the thread runs on, which may change while it runs
+__device__ __forceinline__ int __gsharp_smid() {
+unsigned int smid;
+asm volatile(""mov.u32 %0, %%smid;"" : ""=r""(smid));
+return (int)smid;
+}
+// The cycle counters of the SM: %clock (32 bits, wraps) and %clock64. The CPU prelude has its own counter; a C++ name
+// clock would bind there to the C library function, which measures process time
+__device__ __forceinline__ unsigned int __gsharp_clock() { return (unsigned int)clock(); }
+__device__ __forceinline__ unsigned long long __gsharp_clock64() { return (unsigned long long)clock64(); }
+
+// --- Gpu.AbsDiff ---
+// PTX sad with a zero addend: |a - b| in 32 bits. __sad / __usad take the addend as a third operand
+__device__ __forceinline__ int __gsharp_abs_diff(int a, int b) { return (int)__sad(a, b, 0u); }
+__device__ __forceinline__ unsigned int __gsharp_abs_diff(unsigned int a, unsigned int b) { return __usad(a, b, 0u); }
+
+// --- Gpu.Prefetch / PrefetchUniform / ApplyPriorityL2 ---
+// PTX prefetch.global.L2 and prefetchu.L1 on the address. ApplyPriorityL2 changes no value and PTX applypriority only
+// sets the normal priority (evict_normal, 128 bytes), which the line has unless something else set it, so it does
+// nothing
+__device__ __forceinline__ void __gsharp_prefetch_l2(long long address) {
+asm volatile(""prefetch.global.L2 [%0];"" :: ""l""(address));
+}
+__device__ __forceinline__ void __gsharp_prefetch_uniform(long long address) {
+asm volatile(""prefetchu.L1 [%0];"" :: ""l""(address));
+}
+__device__ __forceinline__ void __gsharp_apply_priority_l2(long long, unsigned int, float) {}
+
 // --- Bit Manipulation ---
 __device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
 offset &= 31;

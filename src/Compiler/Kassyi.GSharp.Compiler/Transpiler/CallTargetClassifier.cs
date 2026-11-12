@@ -5,7 +5,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>
 /// Decides what a call in GPU code, or a method group that device code names, calls (<see cref="CallTargetPlan"/>):
 /// the target must be removed by C#, synthesized by lowering, emitted, mapped by the dialect or written by a rule; any
-/// other target is a failure, GSH0107 for a method of the compilation and GSH0109 for a method of another assembly.
+/// other target is a failure, GSH0107 for a method of the compilation and GSH0109 for a method of another assembly. An
+/// intrinsic that the dialect declares it does not implement is a warning (GSH0054) and a runtime failure.
 /// An invocation that binds to no method is decided by <see cref="ClassifyUntyped"/>.
 /// </summary>
 /// <remarks>
@@ -82,7 +83,11 @@ internal static class CallTargetClassifier
 
         if (GetMappedKind(called, method, model.Compilation, dialect) is { } mapped)
         {
-            return new CallTargetPlan(mapped);
+            // [WHY] The native API YAML declares the intrinsics a dialect cannot reproduce (mbarrier, WMMA on the CPU):
+            // the dialect's prelude does not define them, so the call becomes a runtime failure
+            return mapped == CallTargetKind.DialectIntrinsic && !DialectCallSupport.ImplementsIntrinsic(method, dialect)
+                ? new CallTargetPlan(CallTargetKind.UnsupportedIntrinsic, GetDisplayName(method), Dialect: dialect.Name)
+                : new CallTargetPlan(mapped);
         }
 
         if (GpuMacroClassifier.Classify(method) is { Kind: not GpuMacroKind.None } macro)

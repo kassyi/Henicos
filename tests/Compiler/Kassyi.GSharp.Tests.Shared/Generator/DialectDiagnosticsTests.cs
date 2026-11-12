@@ -21,7 +21,7 @@ public class DialectDiagnosticsTests
                 (DiagnosticOrigin.Analyzer, 11, 13, 11, 34),
                 (DiagnosticOrigin.Analyzer, 18, 13, 18, 34)
             ],
-            diagnostics.Ranges(GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id));
+            diagnostics.Ranges(GSharpDiagnostics.IntrinsicNotImplementedByDialect.Id));
     }
 
     [Fact]
@@ -30,6 +30,6 @@ public class DialectDiagnosticsTests
     {
         var diagnostics = await KernelDiagnostics.RunAsync(s_source, "Cuda");
 
-        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.IntrinsicNotImplementedByDialect.Id));
     }
 }

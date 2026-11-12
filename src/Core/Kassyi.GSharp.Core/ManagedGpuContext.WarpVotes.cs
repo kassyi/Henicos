@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace Kassyi.GSharp.Core;
 
-// The managed forms of Gpu.LaneId(), Gpu.WarpId() and the warp votes and reductions (#845).
+// The managed forms of Gpu.LaneId(), Gpu.WarpId(), Gpu.SmId() and the warp votes and reductions (#845).
 // For a vote, each lane publishes its predicate or value through __gsharp_warp_publish before a state boundary;
 // after it, every lane reads the values that the lanes of the mask published for the same instance of the call
 // (#1468). The native CPU prelude (WarpAndHints.hpp) computes the same.
@@ -22,6 +22,14 @@ public static partial class ManagedGpuContext
     /// </summary>
     /// <returns>The warp of the calling thread in its block.</returns>
     internal static int WarpId() => IsActive ? LinearThreadId >> 5 : GpuOnlyException.Throw<int>();
+
+    /// <summary>
+    /// The managed form of <c>Gpu.SmId()</c>, to which its stub forwards: 0, as the native CPU prelude gives
+    /// (WarpAndHints.hpp). The CPU runs a launch as one streaming multiprocessor, and 0 is a number a GPU also gives.
+    /// Outside a managed launch it throws <see cref="GpuOnlyException"/>.
+    /// </summary>
+    /// <returns>0.</returns>
+    internal static int SmId() => IsActive ? 0 : GpuOnlyException.Throw<int>();
 
     // The lanes of lanes whose published predicate is true
     private static uint BallotLanes(int linearTid, in WarpInstance instance, uint mask, uint lanes, string name,
