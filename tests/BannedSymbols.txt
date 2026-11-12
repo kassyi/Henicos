@@ -36,8 +36,8 @@
 # Note:
 #   Registered into analyzer via <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
 #   in tests/Directory.Build.props.
-#   A test may suppress RS0030 for one statement only in the four cases of .agents/rules/test-architecture.md 3.10
-#   (the string itself is what is checked), with the reason in English on the #pragma line.
+#   A test may suppress RS0030 for one statement only in the cases of .agents/rules/test-architecture.md 3.10
+#   (no syntax tree, symbol or registered set can express the check), with the reason in English on the #pragma line.
 # ==============================================================================
 
 M:Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(System.String,Microsoft.CodeAnalysis.CSharp.CSharpParseOptions,System.String,System.Text.Encoding,System.Threading.CancellationToken);Parsing directly skips the references and parse options of the shared test compilation. Put the source in TestCases/*.cs and load it with RoslynTestUtility.GetTestCaseContext or ReadTestCase, use GetKernelContext for the kernel file of the test, or pass the text to CreateCompilation or CreateCompilationAt and use that compilation. SyntaxFactory.ParseSyntaxTree, or a compilation built only to take its tree, is the same bypass and not allowed.
