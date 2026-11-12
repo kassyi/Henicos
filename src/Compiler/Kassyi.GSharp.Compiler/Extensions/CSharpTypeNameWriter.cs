@@ -97,9 +97,8 @@ internal static class CSharpTypeNameWriter
 
                 writer.Append(']');
                 break;
-            case IPointerTypeSymbol pointerType:
-                AppendTypeName(writer, pointerType.PointedAtType, useKeywords);
-                writer.Append('*');
+            case IPointerTypeSymbol or IFunctionPointerTypeSymbol:
+                AppendPointerTypeName(writer, type, useKeywords);
                 break;
             case ITypeParameterSymbol typeParameter:
                 AppendIdentifier(writer, typeParameter.Name);
@@ -121,6 +120,93 @@ internal static class CSharpTypeNameWriter
         if (useKeywords && type is { IsReferenceType: true, NullableAnnotation: NullableAnnotation.Annotated })
         {
             writer.Append('?');
+        }
+    }
+
+    // <pointed-at type>*, or a function pointer type
+    private static void AppendPointerTypeName(in SourceWriter writer, ITypeSymbol type, bool useKeywords)
+    {
+        if (type is IFunctionPointerTypeSymbol functionPointer)
+        {
+            AppendFunctionPointer(writer, functionPointer.Signature, useKeywords);
+            return;
+        }
+
+        if (type is IPointerTypeSymbol pointer)
+        {
+            AppendTypeName(writer, pointer.PointedAtType, useKeywords);
+            writer.Append('*');
+        }
+    }
+
+    // delegate*[ unmanaged[<conventions>]]<[<ref kind>] <parameter type>, ..., [ref [readonly]] <return type>>
+    private static void AppendFunctionPointer(in SourceWriter writer, IMethodSymbol signature, bool useKeywords)
+    {
+        writer.Append("delegate*");
+        AppendCallingConvention(writer, signature);
+        writer.Append('<');
+        foreach (var parameter in signature.Parameters)
+        {
+            writer.Append(parameter.RefKind switch
+            {
+                RefKind.Ref => "ref ",
+                RefKind.Out => "out ",
+                RefKind.In => "in ",
+                RefKind.RefReadOnlyParameter => "ref readonly ",
+                _ => string.Empty,
+            });
+            AppendTypeName(writer, parameter.Type, useKeywords);
+            writer.Append(", ");
+        }
+
+        writer.AppendIf(signature.ReturnsByRef, "ref ");
+        writer.AppendIf(signature.ReturnsByRefReadonly, "ref readonly ");
+        AppendTypeName(writer, signature.ReturnType, useKeywords);
+        writer.Append('>');
+    }
+
+    private const string CallConvPrefix = "CallConv";
+
+    // The calling convention of a function pointer as C# spells it: nothing for managed, ' unmanaged' with the
+    // conventions in brackets (CallConvCdecl as Cdecl)
+    private static void AppendCallingConvention(in SourceWriter writer, IMethodSymbol signature)
+    {
+        var convention = signature.CallingConvention switch
+        {
+            System.Reflection.Metadata.SignatureCallingConvention.CDecl => "Cdecl",
+            System.Reflection.Metadata.SignatureCallingConvention.StdCall => "Stdcall",
+            System.Reflection.Metadata.SignatureCallingConvention.ThisCall => "Thiscall",
+            System.Reflection.Metadata.SignatureCallingConvention.FastCall => "Fastcall",
+            _ => null,
+        };
+        if (convention is not null)
+        {
+            writer.Append($" unmanaged[{convention}]");
+            return;
+        }
+
+        if (signature.CallingConvention != System.Reflection.Metadata.SignatureCallingConvention.Unmanaged)
+        {
+            return;
+        }
+
+        writer.Append(" unmanaged");
+        var conventionTypes = signature.UnmanagedCallingConventionTypes;
+        if (conventionTypes.IsEmpty)
+        {
+            return;
+        }
+
+        using (writer.Brackets())
+        {
+            for (var i = 0; i < conventionTypes.Length; i++)
+            {
+                writer.AppendIf(i > 0, ", ");
+                var name = conventionTypes[i].Name;
+                writer.Append(name.StartsWith(CallConvPrefix, StringComparison.Ordinal)
+                    ? name[CallConvPrefix.Length..]
+                    : name);
+            }
         }
     }
 

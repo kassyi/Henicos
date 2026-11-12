@@ -182,18 +182,8 @@ public class IrClassifierTests
 
     internal static IrMethod Classify(string name) => IrClassifier.Classify(Build(name), Compilation);
 
-    internal static List<IrCall> Calls(IrMethod method)
-    {
-        var calls = new List<IrCall>();
-        IrNodeChildren.Visit(method.Body, node =>
-        {
-            if (node is IrCall call)
-            {
-                calls.Add(call);
-            }
-        });
-        return calls;
-    }
+    internal static List<IrCall> Calls(IrMethod method) =>
+        IrNodeChildren.DescendantsAndSelf(method.Body).OfType<IrCall>().ToList();
 
     // The statement of a body with one statement, for the kernels written as expression bodies
     internal static IrExpression Single(IrMethod method) =>

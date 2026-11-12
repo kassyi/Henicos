@@ -111,7 +111,7 @@ public class IrBuilderCategoryTests
             .Select(node => model.GetOperation(node))
             .OfType<IArgumentOperation>()
             .First();
-        var call = Assert.IsType<IrCall>(IrTestCases.Result(IrTestCases.BuildCase(method)));
+        var call = Assert.IsType<IrCall>(IrTestCases.CaseResult(method));
 
         Assert.Equal(isVariable, argument.Value.IsVariable());
         Assert.Equal(isVariable,
