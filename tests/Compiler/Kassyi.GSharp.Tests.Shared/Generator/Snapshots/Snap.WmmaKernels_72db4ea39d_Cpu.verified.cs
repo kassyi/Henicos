@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(__gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void>* __gsharp_id_0_acc, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_1_fragA, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_2_fragB);
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(__gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void>* __gsharp_id_0_acc, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_1_fragA, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_2_fragB){
-__gsharp_wmma_mma<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major, __gsharp_wmma_row_major, int>(&(*__gsharp_id_0_acc),&(*__gsharp_id_1_fragA),&(*__gsharp_id_2_fragB),&(*__gsharp_id_0_acc));
+__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect"");
 }
 
 ";
@@ -59,11 +59,11 @@ __gsharp_switch_1_state_0:
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_4_fragA = {};
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_5_fragB = {};
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void> __gsharp_id_6_acc = {};
-__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major>(&__gsharp_id_4_fragA,&__gsharp_id_0_a[0],16);
-__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major>(&__gsharp_id_5_fragB,&__gsharp_id_1_b[0],16);
-__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_id_6_acc,&__gsharp_id_2_c[0],16,0);
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(&__gsharp_id_6_acc,&__gsharp_id_4_fragA,&__gsharp_id_5_fragB);
-__gsharp_wmma_store<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_id_3_d[0],&__gsharp_id_6_acc,16,0);
+__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect"");
 __gsharp_state=-1;
 return;
 }
@@ -205,6 +205,10 @@ if (d.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(d));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WmmaKernels.WmmaInt8RowMajorKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WmmaKernels.WmmaInt8RowMajorKernel", "it reaches Wmma.Load(), and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -333,11 +337,11 @@ __gsharp_switch_1_state_0:
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_4_fragA = {};
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_col_major> __gsharp_id_5_fragB = {};
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void> __gsharp_id_6_acc = {};
-__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major>(&__gsharp_id_4_fragA,&__gsharp_id_0_a[0],16);
-__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_col_major>(&__gsharp_id_5_fragB,&__gsharp_id_1_bColMajor[0],16);
-__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_id_6_acc,&__gsharp_id_2_c[0],16,0);
-__gsharp_wmma_mma<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major, __gsharp_wmma_col_major, int>(&__gsharp_id_6_acc,&__gsharp_id_4_fragA,&__gsharp_id_5_fragB,&__gsharp_id_6_acc);
-__gsharp_wmma_store<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_id_3_d[0],&__gsharp_id_6_acc,16,0);
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect"");
 __gsharp_state=-1;
 return;
 }
@@ -479,6 +483,10 @@ if (d.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(d));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WmmaKernels.WmmaInt8ColMajorBKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WmmaKernels.WmmaInt8ColMajorBKernel", "it reaches Wmma.Load(), and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -607,11 +615,11 @@ __gsharp_switch_1_state_0:
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_3_fragA = {};
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_4_fragB = {};
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void> __gsharp_id_5_acc = {};
-__gsharp_wmma_fill<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_id_5_acc,0);
-__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major>(&__gsharp_id_3_fragA,&__gsharp_id_0_a[0],16);
-__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major>(&__gsharp_id_4_fragB,&__gsharp_id_1_b[0],16);
-__gsharp_wmma_mma<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major, __gsharp_wmma_row_major, int>(&__gsharp_id_5_acc,&__gsharp_id_3_fragA,&__gsharp_id_4_fragB,&__gsharp_id_5_acc);
-__gsharp_wmma_store<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_id_2_dColMajor[0],&__gsharp_id_5_acc,16,1);
+__gsharp_unsupported(""Wmma.Fill is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect"");
 __gsharp_state=-1;
 return;
 }
@@ -747,6 +755,10 @@ if (dColMajor.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dColMajor));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WmmaKernels.WmmaInt8ColMajorStoreKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WmmaKernels.WmmaInt8ColMajorStoreKernel", "it reaches Wmma.Fill(), and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -874,11 +886,11 @@ __gsharp_switch_1_state_0:
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 8, 8, 4, double, __gsharp_wmma_row_major> __gsharp_id_3_fragA = {};
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 8, 8, 4, double, __gsharp_wmma_row_major> __gsharp_id_4_fragB = {};
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 8, 8, 4, double, void> __gsharp_id_5_acc = {};
-__gsharp_wmma_fill<__gsharp_wmma_shape<8, 8, 4>, double>(&__gsharp_id_5_acc,0.0);
-__gsharp_wmma_load<__gsharp_wmma_shape<8, 8, 4>, double, __gsharp_wmma_row_major>(&__gsharp_id_3_fragA,&__gsharp_id_0_a[0],4);
-__gsharp_wmma_load<__gsharp_wmma_shape<8, 8, 4>, double, __gsharp_wmma_row_major>(&__gsharp_id_4_fragB,&__gsharp_id_1_b[0],8);
-__gsharp_wmma_mma<__gsharp_wmma_shape<8, 8, 4>, double, __gsharp_wmma_row_major, __gsharp_wmma_row_major, double>(&__gsharp_id_5_acc,&__gsharp_id_3_fragA,&__gsharp_id_4_fragB,&__gsharp_id_5_acc);
-__gsharp_wmma_store<__gsharp_wmma_shape<8, 8, 4>, double>(&__gsharp_id_2_d[0],&__gsharp_id_5_acc,8,0);
+__gsharp_unsupported(""Wmma.Fill is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect"");
 __gsharp_state=-1;
 return;
 }
@@ -1014,6 +1026,10 @@ if (d.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(d));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WmmaKernels.WmmaDoubleM8N8K4Kernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WmmaKernels.WmmaDoubleM8N8K4Kernel", "it reaches Wmma.Fill(), and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);

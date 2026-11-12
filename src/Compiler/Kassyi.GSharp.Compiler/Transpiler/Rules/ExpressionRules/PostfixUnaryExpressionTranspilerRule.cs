@@ -31,6 +31,12 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
+        // A user-defined ++ or -- has no C++ operator (GSH0060)
+        if (CallTargetEmitter.TryFailOperator(node, ref context))
+        {
+            return;
+        }
+
         if ((node.IsKind(SyntaxKind.PostIncrementExpression) || node.IsKind(SyntaxKind.PostDecrementExpression)) &&
             PropertyAccessorCall.IsAccessorPropertyTarget(node.Operand, ref context))
         {

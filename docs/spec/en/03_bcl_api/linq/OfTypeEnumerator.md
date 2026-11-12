@@ -61,7 +61,7 @@ The underlying enumerator providing source elements.
 Attempts to advance the enumerator to the next element of type `TResult`.
 
 ```csharp
-public bool TryGetNext(out TResult current);
+public bool TryGetNext([MaybeNullWhen(false)] out TResult current);
 ```
 
 #### Parameters

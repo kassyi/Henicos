@@ -28,7 +28,7 @@ public sealed class EmptyKernelBenchmark : IComputeBenchmark
 
     public void RunNativeCuda()
     {
-        NativeKernelInvoker.LaunchEmpty(gridDimX: 1, blockDimX: 1);
+        NativeBenchmarkKernels.LaunchEmpty(gridDimX: 1, blockDimX: 1);
         _nativeLaunched = true;
     }
 

@@ -18,9 +18,9 @@ internal sealed class IrInvariants
     private readonly IrMethod _method;
     private readonly SyntaxTree[] _trees;
     private readonly ImmutableArray<string>.Builder _violations = ImmutableArray.CreateBuilder<string>();
-    private readonly Dictionary<ISymbol, List<IrVariable>> _variablesBySymbol = new(SymbolEqualityComparer.Default);
+    private readonly Dictionary<ISymbol, ImmutableArray<IrVariable>> _variablesBySymbol =
+        new(SymbolEqualityComparer.Default);
     private readonly HashSet<IrVariable> _declaredByReference = [];
-    private readonly List<ImmutableArray<IrVariable>> _scopes = [];
 
     private IrInvariants(IrMethod method, Compilation compilation)
     {
@@ -33,7 +33,7 @@ internal sealed class IrInvariants
     {
         var checker = new IrInvariants(method, compilation);
         checker.CheckSource(method.Source, method.Source);
-        checker.Node(method.Body, null);
+        checker.Node(method.Body, null, ImmutableStack<ImmutableArray<IrVariable>>.Empty);
         return checker._violations.ToImmutable();
     }
 
@@ -44,7 +44,7 @@ internal sealed class IrInvariants
     public static ImmutableArray<string> VerifyClassified(IrMethod method)
     {
         var violations = ImmutableArray.CreateBuilder<string>();
-        IrNodeChildren.Visit(method.Body, node =>
+        foreach (var node in IrNodeChildren.DescendantsAndSelf(method.Body))
         {
             var (number, text) = node switch
             {
@@ -59,49 +59,37 @@ internal sealed class IrInvariants
                 var start = node.Source.Start;
                 violations.Add($"{number} at {start}..{start + node.Source.Length}: {text}");
             }
-        });
+        }
+
         return violations.ToImmutable();
     }
 
     /// <summary>Whether <paramref name="node"/> is or holds an opaque statement or expression anywhere.</summary>
-    public static bool ContainsOpaque(IrNode node)
-    {
-        var found = false;
-        IrNodeChildren.Visit(node, child => found |= child is IrOpaqueExpression or IrOpaqueStatement);
-        return found;
-    }
+    public static bool ContainsOpaque(IrNode node) =>
+        IrNodeChildren.Exists(node, static child => child is IrOpaqueExpression or IrOpaqueStatement);
 
-    private void Node(IrNode node, IrNode? parent)
+    // <scopes>: the locals of the blocks and sequences that enclose <node>, the innermost on top
+    private void Node(IrNode node, IrNode? parent, ImmutableStack<ImmutableArray<IrVariable>> scopes)
     {
         CheckSource(node.Source, parent?.Source ?? _method.Source);
         if (node is IrExpression expression)
         {
-            CheckExpression(expression, parent);
+            CheckExpression(expression, parent, scopes);
         }
         else
         {
-            CheckStatement(node);
+            CheckStatement(node, scopes);
         }
 
-        var locals = node switch
+        var inner = node switch
         {
-            IrBlock block => block.Locals,
-            IrSequence sequence => sequence.Locals,
-            _ => default(ImmutableArray<IrVariable>?)
+            IrBlock block => scopes.Push(block.Locals),
+            IrSequence sequence => scopes.Push(sequence.Locals),
+            _ => scopes
         };
-        if (locals is { } scope)
-        {
-            _scopes.Add(scope);
-        }
-
         foreach (var child in IrNodeChildren.Of(node))
         {
-            Node(child, node);
-        }
-
-        if (locals is not null)
-        {
-            _scopes.RemoveAt(_scopes.Count - 1);
+            Node(child, node, inner);
         }
     }
 
@@ -137,12 +125,12 @@ internal sealed class IrInvariants
         }
     }
 
-    private void CheckStatement(IrNode statement)
+    private void CheckStatement(IrNode statement, ImmutableStack<ImmutableArray<IrVariable>> scopes)
     {
         switch (statement)
         {
             case IrLocalDeclaration declaration:
-                CheckDeclaration(declaration);
+                CheckDeclaration(declaration, scopes);
                 break;
             case IrReturn { Value: { } value } @return:
                 Report(@return, IrNodeChecks.Return(_method.Symbol, value));
@@ -150,24 +138,25 @@ internal sealed class IrInvariants
         }
     }
 
-    private void CheckDeclaration(IrLocalDeclaration declaration)
+    private void CheckDeclaration(IrLocalDeclaration declaration, ImmutableStack<ImmutableArray<IrVariable>> scopes)
     {
         if (declaration.Variable.Kind != IrVariableKind.Local)
         {
             Report(declaration, "I10: a declaration declares a variable that is not a local");
         }
 
-        CheckVariable(declaration.Variable, declaration);
+        CheckVariable(declaration.Variable, declaration, scopes);
     }
 
-    private void CheckExpression(IrExpression expression, IrNode? parent)
+    private void CheckExpression(IrExpression expression, IrNode? parent,
+        ImmutableStack<ImmutableArray<IrVariable>> scopes)
     {
         Report(expression, IrNodeChecks.Category(expression, IrNodeChildren.IsWriteTarget(parent, expression)));
         Report(expression, IrNodeChecks.Node(expression));
         switch (expression)
         {
             case IrVariableReference reference:
-                CheckReference(reference, IrNodeChildren.IsOutArgument(parent, reference));
+                CheckReference(reference, IrNodeChildren.IsOutArgument(parent, reference), scopes);
                 break;
             case IrCall call:
                 CheckArguments(call, call.Arguments, call.Method.Parameters);
@@ -215,9 +204,10 @@ internal sealed class IrInvariants
     }
 
     // I17: a local is declared by at most one reference, the value of an out argument
-    private void CheckReference(IrVariableReference reference, bool isOutArgument)
+    private void CheckReference(IrVariableReference reference, bool isOutArgument,
+        ImmutableStack<ImmutableArray<IrVariable>> scopes)
     {
-        CheckVariable(reference.Variable, reference);
+        CheckVariable(reference.Variable, reference, scopes);
         if (!reference.IsDeclaration)
         {
             return;
@@ -235,7 +225,7 @@ internal sealed class IrInvariants
     }
 
     // I9, I19, I20: one instance per symbol and region, and every variable in scope
-    private void CheckVariable(IrVariable variable, IrNode node)
+    private void CheckVariable(IrVariable variable, IrNode node, ImmutableStack<ImmutableArray<IrVariable>> scopes)
     {
         if (variable.Symbol is { } symbol)
         {
@@ -246,9 +236,7 @@ internal sealed class IrInvariants
         {
             IrVariableKind.Parameter => _method.Parameters.Contains(variable),
             IrVariableKind.This => variable == _method.This,
-            _ => _scopes
-                .AsStackEnumerable()
-                .Any(variable, static (scope, current) => scope.Contains(current))
+            _ => IsDeclaredIn(scopes, variable)
         };
         if (!inScope)
         {
@@ -257,14 +245,24 @@ internal sealed class IrInvariants
         }
     }
 
-    private void CheckIdentity(ISymbol symbol, IrVariable variable, IrNode node)
+    private static bool IsDeclaredIn(ImmutableStack<ImmutableArray<IrVariable>> scopes, IrVariable variable)
     {
-        if (!_variablesBySymbol.TryGetValue(symbol, out var instances))
+        foreach (var scope in scopes)
         {
-            instances = [];
-            _variablesBySymbol.Add(symbol, instances);
+            if (scope.Contains(variable))
+            {
+                return true;
+            }
         }
 
+        return false;
+    }
+
+    private void CheckIdentity(ISymbol symbol, IrVariable variable, IrNode node)
+    {
+        var instances = _variablesBySymbol.TryGetValue(symbol, out var known)
+            ? known
+            : ImmutableArray<IrVariable>.Empty;
         if (instances
             .AsStackEnumerable()
             .Any(variable, static (other, current) => other.Region == current.Region && other != current))
@@ -273,7 +271,7 @@ internal sealed class IrInvariants
         }
         else if (!instances.Contains(variable))
         {
-            instances.Add(variable);
+            _variablesBySymbol[symbol] = instances.Add(variable);
         }
     }
 }

@@ -3,15 +3,6 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Constants;
 namespace Kassyi.GSharp.Stdlib.GpuMath;
 
 /// <summary>
-/// Specifies the GPU kernel execution engine backend.
-/// </summary>
-public enum GpuExecutionEngine
-{
-    /// <summary>Executes pre-compiled GSharp device kernels via Ahead-Of-Time (AOT) loaded modules.</summary>
-    GSharpAot
-}
-
-/// <summary>
 /// Represents a GPU execution context managing memory allocation pools, device workspaces, and backend providers for large integer computations.
 /// </summary>
 /// <remarks>
@@ -177,7 +168,13 @@ public class GpuWorkspace : IGpuResourceScope
     /// </summary>
     /// <param name="maxWords">The maximum word count for BigInteger operations.</param>
     /// <param name="engine">The GPU execution backend engine to utilize.</param>
-    /// <param name="useIsolatedContext">Whether to create and use an isolated CUDA context instead of the shared global context.</param>
+    /// <param name="useIsolatedContext">
+    /// Whether to create and use an isolated CUDA context instead of the shared global context. Do not make a
+    /// potentially unsafe call (an allocation of a number larger than every pooled buffer, a free, or an event query)
+    /// while the stream of an isolated workspace captures in global or thread-local mode: in a context of
+    /// <c>cuCtxCreate</c> the driver currently ends the process with an access violation instead of returning
+    /// <c>CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED</c> (NVIDIA bug 7081224). Relaxed mode is not affected.
+    /// </param>
     /// <exception cref="InvalidOperationException">Thrown when CUDA context or native workspace allocation fails.</exception>
     public GpuWorkspace(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot,
         bool useIsolatedContext = false)
@@ -194,6 +191,8 @@ public class GpuWorkspace : IGpuResourceScope
         }
         else
         {
+            // Throws on a driver older than the CUDA 13.0 driver before an isolated context is created
+            GpuKernelLoader.EnsureInitialized();
             var isolatedContext = IntPtr.Zero;
             if (useIsolatedContext)
             {

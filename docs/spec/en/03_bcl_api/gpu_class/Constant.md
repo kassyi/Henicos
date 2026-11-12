@@ -69,6 +69,8 @@ try {
 
 This macro guarantees zero allocations at runtime. The transpiler directly substitutes the string literal into the resulting C++ AST.
 
+`macroName` must be a constant string: a literal, `nameof(...)`, a `const string` field (of any class) or a concatenation of constants. The transpiler writes its value, the macro name. Any other argument reports [GSH0012](../diagnostics/GSH0012.md).
+
 ## See also
 
 ### Language Specification

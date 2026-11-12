@@ -23,11 +23,25 @@ public class ContextHoister(
     // The plan that AstLoweringPipeline gives this pass and StateMachineLowerer, or null to make one from the block
     private readonly StatePlan? _plan;
 
+    // The ref locals of the method that no state after a split reads (RefLocalLiveness), which stay locals
+    private readonly HashSet<ISymbol>? _refLocalsNotLiveAcrossSplit;
+
     /// <summary>Creates a hoister that takes the labels that start a state from <paramref name="plan"/>.</summary>
+    /// <param name="copiedParameters">Parameters that live in the frame of the method.</param>
+    /// <param name="semanticModel">The semantic model of the method's syntax tree.</param>
+    /// <param name="method">The kernel or device function that owns the body.</param>
+    /// <param name="plan">The labels that start a state.</param>
+    /// <param name="refLocalsNotLiveAcrossSplit">
+    /// The <c>ref</c> locals that are not live after any split point (<see cref="RefLocalLiveness"/>), which stay
+    /// locals, or <see langword="null"/> to hoist every ref local that a barrier follows in its scope.
+    /// </param>
     internal ContextHoister(IReadOnlyCollection<string>? copiedParameters, SemanticModel? semanticModel,
-        IMethodSymbol? method, StatePlan plan)
-        : this(copiedParameters, semanticModel, method) =>
+        IMethodSymbol? method, StatePlan plan, HashSet<ISymbol>? refLocalsNotLiveAcrossSplit = null)
+        : this(copiedParameters, semanticModel, method)
+    {
         _plan = plan;
+        _refLocalsNotLiveAcrossSplit = refLocalsNotLiveAcrossSplit;
+    }
 
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
     private readonly HashSet<string> _copiedParameters = [];
@@ -49,7 +63,8 @@ public class ContextHoister(
         _copiedParameters.Clear();
         var hoistedDecls = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
 
-        HasSplitPoint = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _hoistedVariables, hoistedDecls);
+        HasSplitPoint = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _hoistedVariables, hoistedDecls,
+            _refLocalsNotLiveAcrossSplit);
         if (!HasSplitPoint)
         {
             return (block, hoistedDecls);

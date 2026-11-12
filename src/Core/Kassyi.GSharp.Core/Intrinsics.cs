@@ -1,116 +1,6 @@
 namespace Kassyi.GSharp.Core;
 
 /// <summary>
-/// Represents a 3-dimensional coordinate vector used for grid and block dimensions in GPU kernels.
-/// </summary>
-/// <remarks>
-/// This struct is a marker intercepted by the GSharp Transpiler and mapped to CUDA <c>dim3</c>.
-/// </remarks>
-// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
-// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
-#pragma warning disable IDE0051 // Justification: Public API exposed for library consumers
-public struct Dim3
-{
-    /// <summary>Gets the X component of the 3D vector.</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public int X => GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the Y component of the 3D vector.</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public int Y => GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the Z component of the 3D vector.</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public int Z => GpuOnlyException.Throw<int>();
-}
-
-/// <summary>
-/// Provides access to the current GPU thread coordinates (<c>threadIdx</c>) within the thread block.
-/// </summary>
-// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
-// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
-// threadIdx, blockIdx, blockDim and gridDim are unsigned int in CUDA; the cast gives them the C# type int, so that
-// var and the arithmetic on them are signed as in C# (#521)
-[CudaIntrinsicPattern("(int)threadIdx.{0}")]
-public static class ThreadIndex
-{
-    /// <summary>Gets the thread index along the X axis (<c>threadIdx.x</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int X => ManagedGpuContext.IsActive ? ManagedGpuContext.ThreadIdxX : GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the thread index along the Y axis (<c>threadIdx.y</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int Y => ManagedGpuContext.IsActive ? ManagedGpuContext.ThreadIdxY : GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the thread index along the Z axis (<c>threadIdx.z</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int Z => ManagedGpuContext.IsActive ? ManagedGpuContext.ThreadIdxZ : GpuOnlyException.Throw<int>();
-}
-
-/// <summary>
-/// Provides access to the current thread block coordinates (<c>blockIdx</c>) within the grid.
-/// </summary>
-// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
-// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
-[CudaIntrinsicPattern("(int)blockIdx.{0}")]
-public static class BlockIndex
-{
-    /// <summary>Gets the block index along the X axis (<c>blockIdx.x</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int X => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockIdxX : GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the block index along the Y axis (<c>blockIdx.y</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int Y => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockIdxY : GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the block index along the Z axis (<c>blockIdx.z</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int Z => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockIdxZ : GpuOnlyException.Throw<int>();
-}
-
-/// <summary>
-/// Provides access to the dimensions of the thread block (<c>blockDim</c>).
-/// </summary>
-// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
-// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
-[CudaIntrinsicPattern("(int)blockDim.{0}")]
-public static class BlockDimension
-{
-    /// <summary>Gets the number of threads per block along the X axis (<c>blockDim.x</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int X => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockDimX : GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the number of threads per block along the Y axis (<c>blockDim.y</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int Y => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockDimY : GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the number of threads per block along the Z axis (<c>blockDim.z</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int Z => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockDimZ : GpuOnlyException.Throw<int>();
-}
-
-/// <summary>
-/// Provides access to the dimensions of the grid (<c>gridDim</c>).
-/// </summary>
-// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
-// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
-[CudaIntrinsicPattern("(int)gridDim.{0}")]
-public static class GridDimension
-{
-    /// <summary>Gets the number of blocks per grid along the X axis (<c>gridDim.x</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int X => ManagedGpuContext.IsActive ? ManagedGpuContext.GridDimX : GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the number of blocks per grid along the Y axis (<c>gridDim.y</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown inside of a managed execution context if disabled.</exception>
-    public static int Y => ManagedGpuContext.IsActive ? ManagedGpuContext.GridDimY : GpuOnlyException.Throw<int>();
-
-    /// <summary>Gets the number of blocks per grid along the Z axis (<c>gridDim.z</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
-    public static int Z => ManagedGpuContext.IsActive ? ManagedGpuContext.GridDimZ : GpuOnlyException.Throw<int>();
-}
-
-/// <summary>
 /// Provides hardware intrinsics, synchronization primitives, atomic operations, and macro markers for GPU kernels.
 /// </summary>
 // ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
@@ -132,7 +22,10 @@ public static partial class Gpu
         /// <summary>
         /// Instructs the GSharp Transpiler to emit a <c>#pragma unroll</c> directive immediately preceding the target loop.
         /// </summary>
-        /// <param name="factor">The maximum number of iterations to unroll. A value of 0 indicates that the compiler should determine the optimal unroll factor heuristically.</param>
+        /// <param name="factor">
+        /// The unroll factor, emitted as <c>#pragma unroll factor</c>. 0 emits a bare <c>#pragma unroll</c>: NVCC
+        /// unrolls the loop completely when its trip count is a compile-time constant and otherwise does not unroll it.
+        /// </param>
         /// <remarks>
         /// <para><b>Usage Scenario:</b></para>
         /// <para>This method is highly recommended for optimizing pure computational loops (such as SGEMM or array traversals) to improve Instruction-Level Parallelism (ILP). It relies on the NVCC compiler to unroll the loop during the final backend compilation phase.</para>
@@ -148,9 +41,13 @@ public static partial class Gpu
     /// Synchronizes all threads in the current block barrier (<c>__syncthreads()</c>).
     /// </summary>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown in a kernel launched under <c>KernelExecution.CSharp</c>, which runs one GPU thread at a time.
+    /// </exception>
     [CudaIntrinsic("__syncthreads")]
     public static void SyncThreads()
     {
+        ManagedGpuContext.ThrowIfCSharpExecution("Gpu.SyncThreads()");
         if (!ManagedGpuContext.IsActive)
         {
             GpuOnlyException.Throw();
@@ -174,7 +71,11 @@ public static partial class Gpu
     /// </remarks>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a kernel.</exception>
     [CudaIntrinsic("__gsharp_grid_sync")]
-    public static void SyncGrid(GridSyncMode mode = GridSyncMode.Deterministic) => GpuOnlyException.Throw();
+    public static void SyncGrid(GridSyncMode mode = GridSyncMode.Deterministic)
+    {
+        ManagedGpuContext.ThrowIfCSharpExecution("Gpu.SyncGrid()");
+        GpuOnlyException.Throw();
+    }
 
     /// <summary>
     /// Executes the provided action, automatically inserting a grid synchronization
@@ -195,7 +96,11 @@ public static partial class Gpu
     /// in the grid synchronizations of the remaining statements.
     /// </para>
     /// </remarks>
-    public static void SyncGrid(Action body) => GpuOnlyException.Throw();
+    public static void SyncGrid(Action body)
+    {
+        ManagedGpuContext.ThrowIfCSharpExecution("Gpu.SyncGrid(body)");
+        GpuOnlyException.Throw();
+    }
 
     /// <summary>
     /// Marker method for compile-time constant macro expansion. Replaced with the literal macro value during transpilation.
@@ -204,6 +109,43 @@ public static partial class Gpu
     /// <returns>A typed placeholder evaluated at GPU compile-time.</returns>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public static int Constant(string macroName) => GpuOnlyException.Throw<int>();
+
+    /// <summary>
+    /// Returns <paramref name="array"/> as a non-nullable array, or throws <see cref="NullReferenceException"/> when it
+    /// is <see langword="null"/>.
+    /// </summary>
+    /// <typeparam name="T">The element type of the array.</typeparam>
+    /// <param name="array">
+    /// An array that may be <see langword="null"/>, such as a nullable array field of a struct argument.
+    /// </param>
+    /// <returns><paramref name="array"/> itself.</returns>
+    /// <remarks>
+    /// <para>
+    /// Read a nullable array once through this method into a local, and use the local: the compiler knows that a
+    /// local initialized from <c>Gpu.NotNull</c> and never assigned holds an array, so its later reads, and the calls
+    /// that pass it where a device function parameter is not nullable, need no null check of their own.
+    /// </para>
+    /// <code>
+    /// int[] data = Gpu.NotNull(context.Data);   // throws here when context.Data is null
+    /// for (int i = 0; i &lt; data.Length; i++) { sum += data[i]; }
+    /// </code>
+    /// <para>
+    /// The method works in kernels, in device functions and on the host. A <see langword="null"/> optional kernel
+    /// argument, which reads as an empty array, is still <see langword="null"/> here and throws, and so does an empty
+    /// one, which the launchers pass as <see langword="null"/>.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="NullReferenceException">
+    /// <paramref name="array"/> is <see langword="null"/>. In a kernel the exception carries the place of the call, as
+    /// the exception of any other read of a <see langword="null"/> array does.
+    /// </exception>
+    // [NotNull]: after the call the compiler knows that the argument (a field, a local) is not null either
+    public static T[] NotNull<T>([System.Diagnostics.CodeAnalysis.NotNull] T[]? array) =>
+        array ?? throw new NullReferenceException(NotNullMessage);
+
+    // The message of the host and managed exception; the device reports the same text after "G#: ", with the place
+    private const string NotNullMessage = "Gpu.NotNull was given a null array";
+
     /// <summary>
     /// Injects raw inline PTX assembly or CUDA C++ instructions directly into the transpiled output.
     /// </summary>

@@ -16,6 +16,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// names, one per test assembly.
 /// </remarks>
 [Category(TestCategory.Compiler)]
+[Collection(TestCollections.CorpusScan)]
 public class IrSpillEquivalenceTests(ITestOutputHelper output)
 {
     private const string ExpectedFile = "IrSpillDifferences.expected.txt";
@@ -36,25 +37,20 @@ public class IrSpillEquivalenceTests(ITestOutputHelper output)
             output.WriteLine($"left to the syntax passes, {reason}: {count}");
         }
 
-        var actual = string.Join("\n", equivalence.Known.OrderBy(static m => m, StringComparer.Ordinal)) + "\n";
+        var actual = IrExpectedFiles.SortedLines(equivalence.Known);
         WriteReceived(equivalence, actual);
 
         Assert.True(equivalence.StatementsCompared > 100,
             $"Only {equivalence.StatementsCompared} planned statements.");
         Assert.True(equivalence.Unexplained.Count == 0,
             string.Join("\n", equivalence.Unexplained.OrderBy(static m => m, StringComparer.Ordinal).Take(30)));
-        var expectedPath = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Transpiler",
-            "Ir", ExpectedFile);
-        var expected = File.Exists(expectedPath) ? string.Join("\n", File.ReadAllLines(expectedPath)) + "\n" : "";
-        Assert.Equal(expected, actual);
+        IrExpectedFiles.AssertMatches(ExpectedFile, actual, output);
     }
 
-    // Named after the test assembly: Tests.Cpu and Tests.Cuda both compile this test and may run together
+    // On every run, with the unexplained statements after the known ones
     private void WriteReceived(IrSpillEquivalence equivalence, string known)
     {
-        var assembly = typeof(IrSpillEquivalenceTests).Assembly.GetName().Name ?? "tests";
-        var receivedPath = RepositoryPaths.Combine("tmp", $"IrSpillDifferences.{assembly}.received.txt");
-        Directory.CreateDirectory(Path.GetDirectoryName(receivedPath) ?? ".");
+        var receivedPath = IrExpectedFiles.ReceivedPath("IrSpillDifferences");
         var unexplained = equivalence.Unexplained
             .OrderBy(static m => m, StringComparer.Ordinal)
             .Select(static m => "UNEXPLAINED " + m);

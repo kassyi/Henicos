@@ -90,7 +90,7 @@ public partial class DiagnosticParityTests : TranspilerTestBase
         }
 
         // Bidirectional check between GSharpDiagnostics descriptor fields (via Roslyn symbols) and diagnostics.json
-        var gsharpDiagnosticsSymbol = MegaCompilationCache.BaseCompilation
+        var gsharpDiagnosticsSymbol = RoslynTestUtility.BaseCompilation
             .GetTypeByMetadataName("Kassyi.GSharp.Compiler.Diagnostics.GSharpDiagnostics");
         Assert.NotNull(gsharpDiagnosticsSymbol);
 
@@ -131,7 +131,7 @@ public partial class DiagnosticParityTests : TranspilerTestBase
         string fullPath = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "TestCases", relativeTestCasePath);
         string source = await File.ReadAllTextAsync(fullPath);
 
-        var analyzerDiagnostics = (await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new GpuKernelAnalyzer()))
+        var analyzerDiagnostics = (await GeneratorTestRunner.GetAnalyzerDiagnosticsAsync(source, new GpuKernelAnalyzer()))
             .Where(d => d.Id.StartsWith("GSH", StringComparison.Ordinal) && d.Id != GSharpDiagnostics.KernelClassMustBePartial.Id)
             .OrderBy(d => d.Location.SourceSpan.Start)
             .ThenBy(d => d.Id)

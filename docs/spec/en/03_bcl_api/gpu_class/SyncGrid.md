@@ -50,7 +50,7 @@ Gpu.SyncGrid(GridSyncMode.Fast);   // Fast
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU outside of a managed execution context.
+Thrown whenever the method itself runs on the host CPU. In a kernel, every dialect replaces the call (managed execution splits the kernel into grid phases at it), so the method body never runs there.
 
 ## SyncGrid(Action)
 
@@ -171,7 +171,7 @@ public static void EarlyExitKernel(int[] a)
 
 ### Automatic Grid Syncs in a Body
 
-When using the delegate-based syntax (`Gpu.SyncGrid(() => { ... })`), the compiler inserts a grid synchronization barrier (`cg::this_grid().sync();`) between the top-level statements of the body.
+When using the delegate-based syntax (`Gpu.SyncGrid(() => { ... })`), the compiler inserts a grid synchronization barrier (`__gsharp_grid_sync();`) between the top-level statements of the body.
 
 > [!IMPORTANT]
 > **Key Operational Behaviors & Precautions**:
@@ -193,7 +193,7 @@ When using the delegate-based syntax (`Gpu.SyncGrid(() => { ... })`), the compil
 Gpu.SyncGrid(() =>
 {
     ExecuteStep1();
-    ExecuteStep2(); // ❌ cg::this_grid().sync() is NOT inserted here!
+    ExecuteStep2(); // ❌ __gsharp_grid_sync() is NOT inserted here!
 });
 // If another kernel or subsequent statement expects Step2 to be fully finished across all blocks,
 // threads might diverge or race without an explicit barrier.
@@ -214,11 +214,11 @@ Gpu.SyncGrid(); // Explicitly ensures all grid blocks finish Step2() before cont
 Gpu.SyncGrid(() =>
 {
     var args = new TransformArgs { Length = 1024 };
-    // ⚠️ cg::this_grid().sync() is inserted after the local variable declaration!
+    // ⚠️ __gsharp_grid_sync() is inserted after the local variable declaration!
     ExecuteForwardNtt(args);
-    // ⚠️ cg::this_grid().sync() is inserted after kernel invocation
+    // ⚠️ __gsharp_grid_sync() is inserted after kernel invocation
     args.Buffer = tempBuffer;
-    // ⚠️ cg::this_grid().sync() is inserted after assignment!
+    // ⚠️ __gsharp_grid_sync() is inserted after assignment!
     ExecuteInverseNtt(args);
 });
 
@@ -325,9 +325,9 @@ Transpiled CUDA C++ output:
 ```cpp
 {
     Kernel1();
-    cg::this_grid().sync();
+    __gsharp_grid_sync();
     Kernel2();
-    cg::this_grid().sync();
+    __gsharp_grid_sync();
     Kernel3();
     // Note: No synchronization barrier is inserted after the last statement.
 }
@@ -353,7 +353,7 @@ Will be transpiled as flattened sequential statements with barriers safely inser
 ```cpp
 {
     statement1();
-    cg::this_grid().sync();
+    __gsharp_grid_sync();
     {
         statement2();
     }

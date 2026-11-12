@@ -19,6 +19,12 @@ Represents a deferred, vectorized GPU expression node operating on batches of ar
 public interface IGpuBigFloatVectorExpression : IDisposable
 ```
 
+The expressions of GpuMath read `Length`, `Capacity` and `TryGetLength` of their inputs once, when they are built: an
+implementation must not change them once it is the input of another expression. `Dispose` releases the expression and
+every expression below it, whatever the depth; one exception is rethrown as it is, several are thrown together in an
+`AggregateException`. See [IGpuBigIntVectorExpression](../gpu_big_int_and_uint/expressions/IGpuBigIntVectorExpression.md)
+for the depth and the order of evaluation.
+
 ## Properties
 
 | Name | Description |
@@ -149,11 +155,14 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
 using var array = new GpuBigFloatArray(workspace, length: 4, wordsPerElement: 4);
-using var zero = new GpuBigFloat(workspace, 4);
+using var zero = new GpuBigFloat(new GpuBigUInt(workspace, 4), exponent: 0, isNegative: false);
 
 for (int i = 0; i < 4; i++)
 {
-    using var val = new GpuBigFloat(new GpuBigUInt(workspace, (ulong)(i + 1)), exponent: 0, isNegative: i % 2 == 1);
+    using var val = new GpuBigFloat(
+        new GpuBigUInt(workspace, [(uint)(i + 1), 0u, 0u, 0u]),
+        exponent: 0,
+        isNegative: i % 2 == 1);
     array.SetElement(i, val);
 }
 

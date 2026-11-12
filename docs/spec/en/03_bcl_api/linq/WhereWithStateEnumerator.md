@@ -72,7 +72,7 @@ Thrown when `predicate` is `null`.
 Attempts to advance the enumerator to the next element that satisfies the predicate.
 
 ```csharp
-public bool TryGetNext(out TSource current);
+public bool TryGetNext([MaybeNullWhen(false)] out TSource current);
 ```
 
 #### Parameters

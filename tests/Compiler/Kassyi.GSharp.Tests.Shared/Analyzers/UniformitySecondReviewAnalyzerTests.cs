@@ -82,7 +82,7 @@ public class UniformitySecondReviewAnalyzerTests : TranspilerTestBase
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath)
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
 
         return diagnostics
             .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))

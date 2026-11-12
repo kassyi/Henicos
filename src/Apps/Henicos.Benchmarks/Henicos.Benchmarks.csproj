@@ -32,7 +32,8 @@
   
   <ItemGroup>
     <NativeBenchmarkCudaSources Include="ComputeBenchmarks\Native\*.cu" />
-    <AdditionalFiles Include="ComputeBenchmarks\Native\*.cu" />
+    <!-- The YAML module binding of the native kernels that take no [In] / [Out] array (NativeBenchmarkKernels) -->
+    <AdditionalFiles Include="ComputeBenchmarks\Native\native_benchmarks.yml" GSharpApi="true" />
   </ItemGroup>
 
   <Target Name="CompileNativeBenchmarks" BeforeTargets="GSharpAddGeneratedItemsToOutputDirectory">

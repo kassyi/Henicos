@@ -38,6 +38,96 @@ public class CudaImportGeneratorTests
             $"Unexpected output step reason: {o.Reason}"));
     }
 
+    // A method with a parameter the launcher cannot pass gets a body that throws the GSH0110 message instead of a
+    // launch that passes the host address of a reference (#1296). The implementation repeats the parameter modifiers of
+    // the declaration (ref kinds, scoped, params), so every method stays implemented and the output compiles without a
+    // using directive of the runtime: GSH0110 is the only error of such a method
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ParameterTheLauncherCannotPass_ThrowsInsteadOfLaunching()
+    {
+        var compilation = CreateCompilation(
+            RoslynTestUtility.ReadTestCase("NativeApi/CudaImportParameterDiagnostics.cs"));
+
+        CreateDriver().RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
+
+        Assert.Empty(generatorDiagnostics);
+        var source = Assert.Single(output.SyntaxTrees, static t => t.FilePath.EndsWith("_CudaImport.g.cs")).ToString();
+        var text = MethodBody(source, "public static partial void Text(string text)");
+        Assert.Equal(
+            "throw new global::System.NotSupportedException(\"Parameter 'text' of [CudaImport] method " +
+            "'ImportedKernels.Text' has type 'string', which the launcher cannot pass to the kernel: " +
+            ModuleKernelParameterTypes.ManagedTypeReason + "\");",
+            text);
+        Assert.Contains("cuLaunchKernel", MethodBody(source, "public static partial void Passable("));
+        Assert.Contains("cuLaunchKernel", MethodBody(source, "public static partial void Counted("));
+        Assert.Contains("cuLaunchKernel", MethodBody(source, "public static partial void Written("));
+        Assert.Contains("cuLaunchKernel", MethodBody(source, "public static partial void Packed("));
+        var errors = output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error || d.Id == "CS8500")
+            .Select(static d => d.ToString())
+            .ToArray();
+        Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
+    }
+
+    // The implementation part repeats each modifier of the declaration and writes a function pointer type in full
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Written(out int result, in int seed, ref readonly int limit)")]
+    [InlineData("Spans(scoped global::System.Span<float> values)")]
+    [InlineData("Many(int __gsharp_d_count, params float[] values)")]
+    [InlineData("Called(delegate* unmanaged<int, void> callback, delegate*<ref int, float> compute)")]
+    public void Signature_ParameterModifiersAndFunctionPointers_MatchTheDeclaration(string signature)
+    {
+        var compilation = CreateCompilation(
+            RoslynTestUtility.ReadTestCase("NativeApi/CudaImportParameterDiagnostics.cs"));
+
+        CreateDriver().RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+
+        var source = Assert.Single(output.SyntaxTrees, static t => t.FilePath.EndsWith("_CudaImport.g.cs")).ToString();
+        Assert.Contains($"public static partial void {signature}", source);
+    }
+
+    // The statements between the braces that follow <signature>
+    private static string MethodBody(string source, string signature)
+    {
+        var start = source.IndexOf(signature, StringComparison.Ordinal);
+        Assert.True(start >= 0, $"No method '{signature}' in the generated source.");
+        var open = source.IndexOf('{', start);
+        var depth = 0;
+        for (var i = open; i < source.Length; i++)
+        {
+            depth += source[i] switch { '{' => 1, '}' => -1, _ => 0 };
+            if (depth == 0)
+            {
+                return source[(open + 1)..i].Trim();
+            }
+        }
+
+        throw new Xunit.Sdk.XunitException($"The body of '{signature}' is not closed.");
+    }
+
+    // The namespace of a [CudaImport] class whose name is a keyword is written as C# source spells it, so the generated
+    // part compiles
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CudaImportClass_KeywordNamespace_GeneratedPartCompiles()
+    {
+        var compilation = CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Generators/CudaImport_KeywordNamespace.cu.cs")
+        );
+        var driver = CreateDriver().RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
+
+        var errors = diagnostics
+            .Concat(output.GetDiagnostics())
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => d.ToString())
+            .ToList();
+        Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
+        var generated = driver.GetRunResult().GeneratedTrees.Single().GetText().ToString();
+        Assert.Contains("namespace @event.Imports;", generated, StringComparison.Ordinal);
+    }
+
     private static CSharpCompilation CreateCompilation(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);

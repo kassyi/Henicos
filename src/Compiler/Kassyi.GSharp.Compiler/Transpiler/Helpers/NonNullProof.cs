@@ -7,20 +7,22 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The contract: an array declared non-nullable (<c>T[]</c>, <see cref="NullableAnnotation.NotAnnotated"/>) holds an
-/// array. A nullable (<c>T[]?</c>) or oblivious (<c>#nullable disable</c>) one may hold null. The launchers reject a
-/// null in a non-nullable kernel array parameter and in a non-nullable array field that a by-value struct argument
-/// reaches through struct fields (<see cref="GetNonNullableArrayFields"/>); a call of a device function checks such an
-/// argument once, at the call, when the caller has not proved it (<see cref="NeedsBoundaryCheck"/>). C# throws only
-/// when such a null is read; G# throws at the boundary, earlier, and only for a null in a non-nullable place.
+/// The contract: an array declared non-nullable (<c>T[]</c>,
+/// <see cref="Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated"/>) holds an array. A nullable (<c>T[]?</c>) or
+/// oblivious (<c>#nullable disable</c>) one may hold null. The launchers reject a null in a non-nullable kernel array
+/// parameter and in a non-nullable array field that a by-value struct argument reaches through struct fields
+/// (<see cref="GetNonNullableArrayFields"/>); a call of a device function checks such an argument once, at the call,
+/// when the caller has not proved it (<see cref="NeedsBoundaryCheck"/>). C# throws only when such a null is read; G#
+/// throws at the boundary, earlier, and only for a null in a non-nullable place.
 /// </para>
 /// <para>
 /// The proof (<see cref="IsProvenNonNull"/>): an array is non-null when it is a stack array (a local array of a
 /// constant size), a parameter of that kind that nothing in its method writes, a non-nullable array field of a proven
-/// struct, or a local that nothing writes after an initializer that is proven. A proven struct is a by-value struct
-/// parameter that nothing writes, a struct field of a proven struct, or a local that nothing writes after an
-/// initializer that is a proven struct. An element of an array is never proven: the launchers do not walk the
-/// elements.
+/// struct, a <c>Gpu.NotNull</c> call (which throws on null), or a local that nothing writes after an initializer
+/// that is proven: <c>int[] data = Gpu.NotNull(ctx.Data);</c> proves every later read of <c>data</c>. A proven struct
+/// is a by-value struct parameter that nothing writes, a struct field of a proven struct, or a local that nothing
+/// writes after an initializer that is a proven struct. An element of an array is never proven: the launchers do not
+/// walk the elements.
 /// </para>
 /// </remarks>
 internal static class NonNullProof
@@ -43,9 +45,15 @@ internal static class NonNullProof
             MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access =>
                 IsProvenField(access, model),
             IdentifierNameSyntax identifier => IsProvenIdentifier(identifier, model),
+            InvocationExpressionSyntax invocation => IsNotNullCall(invocation, model),
             _ => false
         };
     }
+
+    // Gpu.NotNull(a): the call throws instead of returning null
+    private static bool IsNotNullCall(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        model.GetSymbol(invocation) is IMethodSymbol method &&
+        GpuMacroClassifier.Classify(method).Kind == GpuMacroKind.NotNull;
 
     // s.Data: a non-nullable array field of a proven struct
     private static bool IsProvenField(MemberAccessExpressionSyntax access, SemanticModel model) =>

@@ -2,6 +2,7 @@ using System;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -56,10 +57,7 @@ public class ByRefKernelParameterTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void OutStructParameter_ManagedBarrierExecution_PreservesValueAcrossResumes()
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             var o = new int[4];
 
@@ -68,10 +66,6 @@ public class ByRefKernelParameterTests : TranspilerTestBase
             Assert.Equal(8, s.A);
             Assert.Equal(1.5f, s.B);
             Assert.Equal([8, 9, 10, 11], o);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
         }
     }
 #endif
@@ -97,10 +91,7 @@ public class ByRefKernelParameterTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void RefReadOnlyStructParameter_ManagedExecutionWithAndWithoutBarrier_ReadsValueAccurately()
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             var s = new ByRefParameterStruct { A = 10, B = 2.5f };
             var oNoBarrier = new int[4];
@@ -111,10 +102,6 @@ public class ByRefKernelParameterTests : TranspilerTestBase
 
             Assert.Equal([12, 13, 14, 15], oNoBarrier);
             Assert.Equal([22, 23, 24, 25], oBarrier);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
         }
     }
 #endif

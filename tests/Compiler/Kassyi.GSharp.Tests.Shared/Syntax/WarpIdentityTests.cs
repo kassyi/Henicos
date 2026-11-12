@@ -11,7 +11,7 @@ public class WarpIdentityTests
     [Scenario(TestScenario.Boundary)]
     public async Task WarpIdAndLaneId_AroundBarrier_DoNotSplitTheStateMachine()
     {
-        await RoslynTestUtility.TestGenerator("Syntax/WarpIdentityBarrierKernels.cu.cs")
+        await GeneratorTestRunner.TestGenerator("Syntax/WarpIdentityBarrierKernels.cu.cs")
                                .WithDialect("Cpu")
                                .HasNoErrorsAsync();
     }

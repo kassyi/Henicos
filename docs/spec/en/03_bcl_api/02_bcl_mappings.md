@@ -21,11 +21,11 @@ These methods are mapped directly to PTX (Parallel Thread Execution) instruction
 | .NET Method | Supported Types | CUDA/PTX Mapping | Description |
 | :--- | :--- | :--- | :--- |
 | `PopCount(value)` | `uint`, `ulong`, `nuint` | `__popc`, `__popcll` | Counts the number of set bits (1s) in the integer. |
-| `LeadingZeroCount(value)` | `uint`, `ulong`, `nuint` | `__clz`, `__clzll` | Counts the number of leading zero bits. |
-| `TrailingZeroCount(value)` | `uint`, `ulong`, `nuint` | (Emulated via `__clz`) | Counts the number of trailing zero bits. |
-| `Log2(value)` | `uint`, `ulong`, `nuint` | (Emulated via `__clz`) | Returns the integer base-2 logarithm of the specified value. |
-| `RotateLeft(value, offset)` | `uint`, `ulong`, `nuint` | (Emulated PTX macro) | Rotates the bits of the integer left. |
-| `RotateRight(value, offset)` | `uint`, `ulong`, `nuint` | (Emulated PTX macro) | Rotates the bits of the integer right. |
+| `LeadingZeroCount(value)` | `uint`, `ulong`, `nuint` | `__gsharp_lzc_32`, `__gsharp_lzc_64` | Counts the number of leading zero bits. |
+| `TrailingZeroCount(value)` | `uint`, `ulong`, `nuint` | `__gsharp_tzc_32`, `__gsharp_tzc_64` | Counts the number of trailing zero bits. |
+| `Log2(value)` | `uint`, `ulong`, `nuint` | `__gsharp_log2_32`, `__gsharp_log2_64` | Returns the integer base-2 logarithm of the specified value. |
+| `RotateLeft(value, offset)` | `uint`, `ulong`, `nuint` | `__gsharp_rotl32`, `__gsharp_rotl64` | Rotates the bits of the integer left. |
+| `RotateRight(value, offset)` | `uint`, `ulong`, `nuint` | `__gsharp_rotr32`, `__gsharp_rotr64` | Rotates the bits of the integer right. |
 
 #### Example
 
@@ -49,9 +49,9 @@ Standard .NET Interlocked operations are safely mapped to CUDA atomic instructio
 
 | .NET Method | Supported Types | CUDA/PTX Mapping |
 | :--- | :--- | :--- |
-| `Add(ref location, value)` | `int`, `long` | `atomicAdd` |
-| `Exchange(ref location, value)` | `int`, `uint`, `long`, `ulong` | `atomicExch` |
-| `CompareExchange(ref location, value, comparand)` | `int`, `uint`, `long`, `ulong` | `atomicCAS` (Compare And Swap) |
+| `Add(ref location, value)` | `int`, `long` | `__gsharp_atomicAdd` |
+| `Exchange(ref location, value)` | `int`, `uint`, `ulong` (`atomicExch`); `long` (`__gsharp_atomicExch`) | `atomicExch`, `__gsharp_atomicExch` |
+| `CompareExchange(ref location, value, comparand)` | `int`, `uint`, `long`, `ulong` | `__gsharp_atomicCAS` (Compare And Swap) |
 
 The results are the C# results on every path: `Add` returns the new value and wraps on overflow
 (`Interlocked.Add(ref x, 1)` with `x == int.MaxValue` returns `int.MinValue`), and the `long` overloads return a signed
@@ -95,9 +95,9 @@ _(Note: These functions adhere to IEEE-754 precision. For raw, uncompromised spe
 
 `Math.Max` / `Math.Min` (and `MathF`, `float.Max`, `double.Max`) give the .NET result on every path: NaN when either input is NaN, and `+0.0` is larger than `-0.0` (IEEE 754:2019 `maximum` / `minimum`). The C `fmaxf` / `fmax` return the other input for a NaN, so they are not used for these. On compute capability 8.0 and newer, the `float` overloads are one instruction (PTX `max.NaN.f32`), the cost of `fmaxf`; the `double` overloads add a NaN test. `float.MaxNumber` / `MinNumber` and `double.MaxNumber` / `MinNumber` (IEEE `maximumNumber` / `minimumNumber`: a NaN input is ignored, `+0.0` is larger than `-0.0`) compile to `fmaxf` / `fmax`, which are one instruction for both types; use them when NaN inputs need no propagation. `Math.Clamp` compares the value with `min` first, as .NET does, so `Math.Clamp(NaN, 0, 1)` is NaN and the sign of a zero value is kept. The NaN that a CUDA result holds can have a different payload from the .NET one; compare with `IsNaN`.
 
-`Math.Round` and `MathF.Round` round half to even, like the C# default (`Math.Round(2.5)` is `2`). They map to `rint` / `rintf`, not to `round`, which rounds half away from zero. Only the single-argument `double` and `float` overloads are supported. The overloads with a digits argument or a `MidpointRounding` argument, and `decimal`, are reported as `GSH0003`.
+`Math.Round` and `MathF.Round` round half to even, like the C# default (`Math.Round(2.5)` is `2`). They map to `rint` / `rintf`, not to `round`, which rounds half away from zero. Only the single-argument `double` and `float` overloads are supported. The overloads with a digits argument or a `MidpointRounding` argument, and `decimal`, are reported as [`GSH0109`](diagnostics/GSH0109.md).
 
-`Math.Abs`, `Math.Min` and `Math.Max` also have an `int` overload (`abs`, `min`, `max`), and `Math.Clamp` (`float`, `double`, `int`) maps to `__gsharp_clamp`. The constants (`Math.PI`, `Math.E`, `MathF.PI`) are written as their values. The C++ dialect maps the same members as the CUDA dialect. Any other member or overload (for example `Math.Abs(long)` or `MathF.Cbrt`) is reported as `GSH0003`, with its parameter types and the dialect that does not map it.
+`Math.Abs`, `Math.Min` and `Math.Max` also have an `int` overload (`abs`, `min`, `max`), and `Math.Clamp` (`float`, `double`, `int`) maps to `__gsharp_clamp`. The constants (`Math.PI`, `Math.E`, `MathF.PI`) are written as their values. The C++ dialect maps the same members as the CUDA dialect. Any other member or overload (for example `Math.Abs(long)` or `MathF.Cbrt`), and the generic math members of the numeric types that the dialect does not list (`int.Max`, `float.Clamp`), are reported as [`GSH0109`](diagnostics/GSH0109.md), with the parameter types, the dialect that does not map it, and the mapped members to use instead.
 
 ---
 
@@ -146,14 +146,27 @@ In addition to `MemoryExtensions.Sort`, G# maps the following slice, view, and i
 
 All other members and overloads of `Span<T>`, `ReadOnlySpan<T>`, `MemoryExtensions`, and `System.Array`—including search and comparison helpers (`IndexOf`, `Contains`, `SequenceEqual`, `StartsWith`, `EndsWith`, `BinarySearch`), `Replace` overloads, `ToArray`, `AsSpan` overloads taking `Index` or `Range`, `GetPinnableReference`, non-generic or range/comparer `Array.Sort` overloads, and uninvoked method groups—are rejected at compile time with `GSH0003`.
 
+---
+
+## 10.6 `System.Nullable<T>`
+
+G# supports value-type nullability inside GPU device code without heap allocations. The compiler lowers `Nullable<T>` structs and their query/access methods directly into C++ structs and conditional expressions while preserving C# evaluation order and side-effect guarantees.
+
+| Member / Overload | Supported Types | Behavior & Lowering |
+| :--- | :--- | :--- |
+| `Nullable<T>.HasValue` | Any value type `T` | Evaluates to `true` if a value is present; mapped to the `.HasValue` field. |
+| `Nullable<T>.Value` | Any value type `T` | Retrieves the underlying value; mapped to the `.Value` field. |
+| `Nullable<T>.GetValueOrDefault()` | Any value type `T` | Evaluates to `(opt.HasValue ? opt.Value : default(T))`. |
+| `Nullable<T>.GetValueOrDefault(T fallback)` | Any value type `T` | Evaluates to `(opt.HasValue ? opt.Value : fallback)`. |
+
+When evaluating the receiver or the fallback argument involves potential side effects or expressions that cannot safely be repeated or skipped, the transpiler emits sequenced evaluation using temporary variables to strictly uphold C#'s evaluation order.
+
 ## See also
-
-
 
 ### Architecture
 
 - [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
-- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../02_architecture/01_aot_transpiler.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler`)](../02_architecture/01_aot_transpiler.md)
 
 ### BCL API > Attributes
 

@@ -474,6 +474,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] __gsharp_in_particles, ref float totalMagnitude, ref bool successFlag, global::DebugReduc.SpecTypes __gsharp_in_largeStructVal, int __gsharp_in_particleCount, int __gsharp_in_unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<int> staticCache = new global::Kassyi.GSharp.Core.SharedMemory<int>(10000, 0xe20e17017ad9529aUL);
@@ -520,7 +521,7 @@ StatusFlag = 1
 };
 __gsharp_ctx->mag = global::DebugReduc.ComprehensiveSpecKernel.ComputeMagnitude(__gsharp_ctx->p);
 __gsharp_ctx->mag = (float)global::System.Math.Abs(__gsharp_ctx->mag);
-// 5. Automatic Loop Unrolling via Constant (for)
+// 5. Loop Statement (for)
 for (__gsharp_ctx->i = 0; __gsharp_ctx->i < __gsharp_ctx->unrollFactor; __gsharp_ctx->i++)
 {
 if (__gsharp_ctx->i == 1)
@@ -627,6 +628,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 private static bool __gsharp_layout_checked_ProcessPhysics;
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
@@ -644,6 +646,10 @@ if (particles.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(particles));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.ProcessPhysics");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ComprehensiveSpecKernel.ProcessPhysics", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -973,6 +979,10 @@ if (data.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(data));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ComprehensiveSpecKernel.CooperativePhysicsProcess", "it reaches Gpu.SyncGrid(), and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);

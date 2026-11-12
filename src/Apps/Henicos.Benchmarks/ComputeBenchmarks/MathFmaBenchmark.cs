@@ -56,7 +56,7 @@ public sealed class MathFmaBenchmark(int count = 1_000_000, int iterations = 100
     public void RunNativeCuda()
     {
         Array.Copy(_input, _dataNative, count);
-        NativeKernelInvoker.LaunchMathFma(_dataNative, count, iterations, gridDimX: GridDim, blockDimX: BlockSize);
+        NativeBenchmarkKernels.LaunchMathFma(_dataNative, count, iterations, gridDimX: GridDim, blockDimX: BlockSize);
     }
 
     public void Verify()

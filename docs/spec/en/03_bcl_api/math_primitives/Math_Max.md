@@ -26,13 +26,13 @@ Returns the larger of two specified numbers.
 | --- | --- |
 | [Max(float, float)](#max-float-float) | Returns the larger of two specified numbers. |
 | [Max(double, double)](#max-double-double) | Returns the larger of two specified numbers. |
+| [Max(int, int)](#max-int-int) | Returns the larger of two 32-bit signed integers. |
 
 ## Max(float, float)
 
 Returns the larger of two specified numbers.
 
 ```csharp
-[GpuDevice]
 public static float Max(float val1, float val2);
 ```
 
@@ -58,7 +58,6 @@ None. Does not throw exceptions.
 Returns the larger of two specified numbers.
 
 ```csharp
-[GpuDevice]
 public static double Max(double val1, double val2);
 ```
 
@@ -74,6 +73,33 @@ The second double-precision floating-point number.
 
 <i>double</i><br>
 The computed value.
+
+#### Exceptions
+
+None. Does not throw exceptions.
+
+<a id="max-int-int"></a>
+
+## Max(int, int)
+
+Returns the larger of two 32-bit signed integers.
+
+```csharp
+public static int Max(int val1, int val2);
+```
+
+#### Parameters
+
+`val1` <i>int</i><br>
+The first 32-bit signed integer.
+
+`val2` <i>int</i><br>
+The second 32-bit signed integer.
+
+#### Returns
+
+<i>int</i><br>
+The larger of `val1` and `val2`.
 
 #### Exceptions
 
@@ -109,7 +135,7 @@ Console.WriteLine($"Math.Max(5.0, -5.0) = {d:F1}");
 ### BCL API > Math Primitives
 
 - [Math and BitOperations](00_index.md)
-- [Vector2, Vector3, Vector4 Structs (System.Numerics)](VectorTypes.md)
+- [Vector Value Types](VectorTypes.md)
 
 ### Guides
 

@@ -30,7 +30,7 @@ public class SuspendingCallArgumentOrderTests
         var lowered = LowerKernel("ReadThenWrite");
 
         var temps = GetArgumentTemps(lowered);
-        Assert.Equal(["a", "Next(ref a)"], temps.Select(static t => t.Value).ToArray());
+        SyntaxAssert.Equivalent([Frame("a"), $"Next(ref {Frame("a")})"], temps.Select(static t => t.Value));
         Assert.Equal(temps.Select(static t => t.Name).ToArray(), GetResumedArguments(lowered));
     }
 
@@ -41,7 +41,7 @@ public class SuspendingCallArgumentOrderTests
         var lowered = LowerKernel("ReadThenIndependentWrite");
 
         var temps = GetArgumentTemps(lowered);
-        Assert.Equal(["Next(ref b)"], temps.Select(static t => t.Value).ToArray());
+        SyntaxAssert.Equivalent([$"Next(ref {Frame("b")})"], temps.Select(static t => t.Value));
         Assert.Equal(["a", temps[0].Name], GetResumedArguments(lowered));
     }
 
@@ -67,9 +67,10 @@ public class SuspendingCallArgumentOrderTests
         var call0 = rewritten.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .First(static i => i.Expression is IdentifierNameSyntax { Identifier.ValueText: "S" });
-        var first = call0.ArgumentList.Arguments[0].Expression.ToString();
-        Assert.Equal(spillsFirstArgument, first.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix,
-            StringComparison.Ordinal));
+        var first = call0.ArgumentList.Arguments[0].Expression;
+        var spills = GetTargetName(first).StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix,
+            StringComparison.Ordinal);
+        Assert.Equal(spillsFirstArgument, spills);
     }
 
     // A shuffle publishes its value before its state boundary and reads its arguments again after it, so its arguments
@@ -93,37 +94,50 @@ public class SuspendingCallArgumentOrderTests
             .Where(static v => v.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix,
                 StringComparison.Ordinal))
             .ToArray();
-        Assert.Equal(["v++", "W()", "M()", "L()"], temps.Select(static t => t.Initializer?.Value.ToString()).ToArray());
+        SyntaxAssert.Equivalent(
+            ["v++", "W()", "M()", "L()"],
+            temps.Select(static t => Assert.IsType<EqualsValueClauseSyntax>(t.Initializer).Value));
         var shuffle = rewritten.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .Single(static i => i.Expression.ToString() == "Warp.ShuffleSync");
-        Assert.Equal(
+            .Single(static i => i.Expression is MemberAccessExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "Warp" },
+                Name.Identifier.ValueText: "ShuffleSync"
+            });
+        SyntaxAssert.Equivalent(
             temps.Select(static t => t.Identifier.ValueText).ToArray(),
-            shuffle.ArgumentList.Arguments.Select(static a => a.Expression.ToString()).ToArray()
-        );
+            shuffle.ArgumentList.Arguments.Select(static a => a.Expression));
     }
 
     // <frame>__gsharp_arg_temp_<n> = <value>; in statement order (the frame access stripped)
-    private static (string Name, string Value)[] GetArgumentTemps(LoweredStateMachine lowered) =>
+    private static (string Name, ExpressionSyntax Value)[] GetArgumentTemps(LoweredStateMachine lowered) =>
         lowered.LoweredBody.DescendantNodes()
             .OfType<AssignmentExpressionSyntax>()
-            .Where(static a => StripFrame(a.Left.ToString())
+            .Where(static a => GetTargetName(a.Left)
                 .StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix, StringComparison.Ordinal))
-            .Select(static a => (StripFrame(a.Left.ToString()), StripFrame(a.Right.ToString())))
+            .Select(static a => (GetTargetName(a.Left), a.Right))
             .ToArray();
 
     // The arguments of CombineAcrossBarrier inside __gsharp_resume(...)
-    private static string[] GetResumedArguments(LoweredStateMachine lowered) =>
-        lowered.LoweredBody.DescendantNodes()
+    private static string[] GetResumedArguments(LoweredStateMachine lowered)
+    {
+        var call = lowered.LoweredBody.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
-            .First(static i => i.Expression is IdentifierNameSyntax { Identifier.ValueText: "CombineAcrossBarrier" })
-            .ArgumentList.Arguments
-            .Select(static a => StripFrame(a.Expression.ToString()))
+            .First(static i => i.Expression is IdentifierNameSyntax { Identifier.ValueText: "CombineAcrossBarrier" });
+        return call.ArgumentList.Arguments
+            .Select(static a => GetTargetName(a.Expression))
             .ToArray();
+    }
+
+    private static string GetTargetName(ExpressionSyntax expr) => expr switch
+    {
+        IdentifierNameSyntax id => id.Identifier.ValueText,
+        MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText,
+        _ => string.Empty
+    };
 
     // A local that lives across the barrier is a member of the frame: __gsharp_ctx-><name>
-    private static string StripFrame(string text) =>
-        text.Replace($"{GSharpInternalNames.StateMachine.Context}->", "", StringComparison.Ordinal);
+    private static string Frame(string name) => $"{GSharpInternalNames.StateMachine.Context}->{name}";
 
     private static LoweredStateMachine LowerKernel(string methodName)
     {

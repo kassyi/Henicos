@@ -36,7 +36,7 @@ public sealed class BclExceptionDifferentialTests
         (0.0, 0.0, 1.0),
     ];
 
-    private static readonly DifferentialCase s_nullableInt32ValueAccess = new(
+    internal static readonly DifferentialCase s_nullableInt32ValueAccess = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.NullableInt32ValueAccessKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -73,7 +73,7 @@ public sealed class BclExceptionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_nullableStructValueAccess = new(
+    internal static readonly DifferentialCase s_nullableStructValueAccess = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.NullableStructValueAccessKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -114,7 +114,7 @@ public sealed class BclExceptionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_mathClampInt32 = new(
+    internal static readonly DifferentialCase s_mathClampInt32 = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampInt32Kernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -162,7 +162,7 @@ public sealed class BclExceptionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_mathClampSingle = new(
+    internal static readonly DifferentialCase s_mathClampSingle = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampSingleKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -211,7 +211,7 @@ public sealed class BclExceptionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_mathClampDouble = new(
+    internal static readonly DifferentialCase s_mathClampDouble = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MathClampDoubleKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -296,7 +296,7 @@ public sealed class BclExceptionDifferentialTests
             Oracle = (b, s) => oracle(b.Get<int>("backing"), b.Get<int>("lengths"), b.Get<int>("dst"), s.Rows),
         };
 
-    private static readonly DifferentialCase s_firstOnEmpty = SliceCase(
+    internal static readonly DifferentialCase s_firstOnEmpty = SliceCase(
         nameof(BclExceptionDifferentialKernels.StackLinqFirstKernel),
         validLength: SliceWidth,
         faultLength: 0,
@@ -304,7 +304,7 @@ public sealed class BclExceptionDifferentialTests
             x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
         BclExceptionDifferentialKernels.StackLinqFirstKernel);
 
-    private static readonly DifferentialCase s_lastOnEmpty = SliceCase(
+    internal static readonly DifferentialCase s_lastOnEmpty = SliceCase(
         nameof(BclExceptionDifferentialKernels.StackLinqLastKernel),
         validLength: SliceWidth,
         faultLength: 0,
@@ -312,7 +312,7 @@ public sealed class BclExceptionDifferentialTests
             x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
         BclExceptionDifferentialKernels.StackLinqLastKernel);
 
-    private static readonly DifferentialCase s_singleOnEmpty = SliceCase(
+    internal static readonly DifferentialCase s_singleOnEmpty = SliceCase(
         nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel),
         validLength: 1,
         faultLength: 0,
@@ -320,7 +320,7 @@ public sealed class BclExceptionDifferentialTests
             x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
         BclExceptionDifferentialKernels.StackLinqSingleKernel);
 
-    private static readonly DifferentialCase s_singleOnTwoElements = SliceCase(
+    internal static readonly DifferentialCase s_singleOnTwoElements = SliceCase(
         $"{nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel)}_TwoElements",
         validLength: 1,
         faultLength: 2,
@@ -328,7 +328,7 @@ public sealed class BclExceptionDifferentialTests
             x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
         BclExceptionDifferentialKernels.StackLinqSingleKernel);
 
-    private static readonly DifferentialCase s_minOnEmpty = SliceCase(
+    internal static readonly DifferentialCase s_minOnEmpty = SliceCase(
         nameof(BclExceptionDifferentialKernels.StackLinqMinKernel),
         validLength: SliceWidth,
         faultLength: 0,
@@ -336,7 +336,7 @@ public sealed class BclExceptionDifferentialTests
             x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
         BclExceptionDifferentialKernels.StackLinqMinKernel);
 
-    private static readonly DifferentialCase s_maxOnEmpty = SliceCase(
+    internal static readonly DifferentialCase s_maxOnEmpty = SliceCase(
         nameof(BclExceptionDifferentialKernels.StackLinqMaxKernel),
         validLength: SliceWidth,
         faultLength: 0,
@@ -344,7 +344,7 @@ public sealed class BclExceptionDifferentialTests
             x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
         BclExceptionDifferentialKernels.StackLinqMaxKernel);
 
-    private static readonly DifferentialCase s_averageOnEmpty = SliceCase(
+    internal static readonly DifferentialCase s_averageOnEmpty = SliceCase(
         nameof(BclExceptionDifferentialKernels.StackLinqAverageKernel),
         validLength: SliceWidth,
         faultLength: 0,
@@ -352,7 +352,7 @@ public sealed class BclExceptionDifferentialTests
             x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
         BclExceptionDifferentialKernels.StackLinqAverageKernel);
 
-    private static readonly DifferentialCase s_aggregateOnEmpty = SliceCase(
+    internal static readonly DifferentialCase s_aggregateOnEmpty = SliceCase(
         nameof(BclExceptionDifferentialKernels.StackLinqAggregateKernel),
         validLength: SliceWidth,
         faultLength: 0,
@@ -404,10 +404,10 @@ public sealed class BclExceptionDifferentialTests
                 s.Rows),
         };
 
-    private static readonly DifferentialCase s_elementAtNegative = ElementAtCase("NegativeIndex", validIdx: 1, faultIdx: -1);
-    private static readonly DifferentialCase s_elementAtPastEnd = ElementAtCase("PastEnd", validIdx: 1, faultIdx: SliceWidth);
+    internal static readonly DifferentialCase s_elementAtNegative = ElementAtCase("NegativeIndex", validIdx: 1, faultIdx: -1);
+    internal static readonly DifferentialCase s_elementAtPastEnd = ElementAtCase("PastEnd", validIdx: 1, faultIdx: SliceWidth);
 
-    private static readonly DifferentialCase s_elementAtOrDefaultNegativeIndexSideEffect = new(
+    internal static readonly DifferentialCase s_elementAtOrDefaultNegativeIndexSideEffect = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -449,7 +449,7 @@ public sealed class BclExceptionDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_sortLengthMismatch = new(
+    internal static readonly DifferentialCase s_sortLengthMismatch = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortLengthMismatchKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -499,7 +499,7 @@ public sealed class BclExceptionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_sortComparerTrap = new(
+    internal static readonly DifferentialCase s_sortComparerTrap = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortComparerTrapKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -544,7 +544,7 @@ public sealed class BclExceptionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_trapNonContinuationGuard = new(
+    internal static readonly DifferentialCase s_trapNonContinuationGuard = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.TrapNonContinuationGuardKernel)}")
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),

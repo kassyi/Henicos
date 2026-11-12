@@ -1,5 +1,6 @@
 #if GSHARP_CPU
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime;
 #endif
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -147,20 +148,27 @@ public class ConditionalCallTests : TranspilerTestBase
             Assert.Equal([11, 21], data);
         });
 
+    // #1728: a kernel called from a kernel is removed like a device function
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalCall_KernelCalledFromKernel_IsRemoved() =>
+        OnEveryPath(static () =>
+        {
+            int[] data = [0, 0];
+
+            ConditionalKernelCallKernels.LaunchCallsRemovedKernel(data, blockDimX: 1);
+
+            Assert.Equal([42, 0], data);
+        });
+
     // The native build of the dialect, and on the CPU the managed path as well
     private static void OnEveryPath(Action check)
     {
         check();
 #if GSHARP_CPU
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             check();
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
 #endif
     }

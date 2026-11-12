@@ -118,8 +118,7 @@ public class Example
 
 ## Remarks
 
-This struct is a marker intercepted by the GSharp Transpiler and mapped to CUDA `dim3`.
-It is primarily returned by properties in `ThreadIndex`, `BlockIndex`, `BlockDimension`, and `GridDimension` when the full 3D vector is required.
+This struct is a marker intercepted by the GSharp Transpiler and mapped to CUDA `dim3`. It represents 3-dimensional launch dimensions and coordinates.
 
 ## See also
 

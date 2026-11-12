@@ -10,6 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// constructs opaque fails; one that builds more of them updates the table, which shows how far the IR reaches.
 /// </summary>
 [Category(TestCategory.Compiler)]
+[Collection(TestCollections.CorpusScan)]
 public class IrCoverageTests(ITestOutputHelper output)
 {
     private const string ExpectedFile = "IrOpaqueCoverage.expected.txt";
@@ -31,27 +32,7 @@ public class IrCoverageTests(ITestOutputHelper output)
         Assert.True(built > 500, $"Only {built} GPU methods were built.");
         Assert.True(violations.IsEmpty,
             string.Join("\n", violations.OrderBy(static v => v, StringComparer.Ordinal).Take(100)));
-        AssertTableMatches(opaque);
-    }
-
-    private void AssertTableMatches(ConcurrentDictionary<string, int> opaque)
-    {
-        var actual = string.Join("\n", opaque
-            .OrderBy(static pair => pair.Key, StringComparer.Ordinal)
-            .Select(static pair => pair.Key + "\t" + pair.Value)) + "\n";
-        var expectedPath = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Transpiler",
-            "Ir", ExpectedFile);
-        var expected = File.Exists(expectedPath) ? File.ReadAllText(expectedPath).Replace("\r", "") : "";
-        if (expected != actual)
-        {
-            // The table of this run, to compare with the expected one and copy over it when the change is intended
-            var receivedPath = RepositoryPaths.Combine("tmp",
-                $"IrOpaqueCoverage.{typeof(IrCoverageTests).Assembly.GetName().Name}.received.txt");
-            Directory.CreateDirectory(Path.GetDirectoryName(receivedPath) ?? ".");
-            File.WriteAllText(receivedPath, actual);
-            output.WriteLine("Received table: " + receivedPath);
-        }
-
-        Assert.Equal(expected, actual);
+        IrExpectedFiles.AssertMatches(ExpectedFile,
+            IrExpectedFiles.SortedLines(opaque.Select(static pair => pair.Key + "\t" + pair.Value)), output);
     }
 }

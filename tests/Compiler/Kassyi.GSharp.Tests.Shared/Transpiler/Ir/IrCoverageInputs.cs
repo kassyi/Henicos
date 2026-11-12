@@ -1,4 +1,5 @@
 #nullable enable
+using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Building;
 
@@ -48,10 +49,10 @@ internal static class IrCoverageInputs
             var tree = CSharpSyntaxTree.ParseText(File.ReadAllText(path),
                 new CSharpParseOptions(LanguageVersion.Preview), path: path);
 #pragma warning restore RS0030
-            visit(MegaCompilationCache.BaseCompilation.AddSyntaxTrees(s_globalUsings, tree), [tree]);
+            visit(RoslynTestUtility.BaseCompilation.AddSyntaxTrees(s_globalUsings, tree), [tree]);
         });
 
-        var shared = MegaCompilationCache.Compilation;
+        var shared = RoslynTestUtility.SharedCompilation;
         var differential = shared.SyntaxTrees
             .Where(tree => everyKernelFile
                 ? tree.FilePath.EndsWith(".cu.cs", StringComparison.Ordinal)
@@ -76,7 +77,7 @@ internal static class IrCoverageInputs
             foreach (var declaration in tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
             {
                 if (model.GetDeclaredSymbol(declaration) is { } symbol && GpuExecutionSpace.IsGpuFunction(symbol) &&
-                    BodyOf(declaration) is { } body &&
+                    declaration.GetBodyNode() is { } body &&
                     IrBuilder.TryBuild(symbol, compilation, CancellationToken.None) is { } method)
                 {
                     yield return (body, symbol, method);
@@ -124,9 +125,6 @@ internal static class IrCoverageInputs
                 ((SyntaxNode?)member.Body ?? member.ExpressionBody, model.GetDeclaredSymbol(member) as IMethodSymbol),
             _ => (null, null)
         };
-
-    private static SyntaxNode? BodyOf(MethodDeclarationSyntax declaration) =>
-        (SyntaxNode?)declaration.Body ?? declaration.ExpressionBody;
 
     /// <summary>Where a method is, for a test message.</summary>
     public static string Where(SyntaxTree tree, IMethodSymbol symbol) =>

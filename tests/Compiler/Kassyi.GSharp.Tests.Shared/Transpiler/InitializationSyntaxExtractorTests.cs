@@ -6,20 +6,18 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 [Category(TestCategory.Compiler)]
 public class InitializationSyntaxExtractorTests
 {
-    private static readonly string s_source = RoslynTestUtility.ReadTestCase("Transpiler/InitializationSyntaxExtractorSource.cs");
-
     [Theory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData("span", "int", false)]
-    [InlineData("readOnlySpan", "float", true)]
-    [InlineData("array", "int", false)]
+    [InlineData("span", SpecialType.System_Int32, false)]
+    [InlineData("readOnlySpan", SpecialType.System_Single, true)]
+    [InlineData("array", SpecialType.System_Int32, false)]
     public void TryGetArrayElementType_SystemSpansAndArrays_ExtractsElementType(
         string parameter,
-        string elementType,
+        SpecialType elementType,
         bool isConst)
     {
         Assert.True(InitializationSyntaxExtractor.TryGetArrayElementType(GetParameterType(parameter), out var element, out var readOnly));
-        Assert.Equal(elementType, element?.ToDisplayString());
+        Assert.Equal<ISymbol>(TestCompilation.GetSpecialType(elementType), element, SymbolEqualityComparer.Default);
         Assert.Equal(isConst, readOnly);
     }
 
@@ -33,24 +31,17 @@ public class InitializationSyntaxExtractorTests
         Assert.False(InitializationSyntaxExtractor.TryGetArrayElementType(GetParameterType(parameter), out _, out _));
     }
 
+    private static Compilation TestCompilation =>
+        RoslynTestUtility.GetTestCaseContext("Transpiler/InitializationSyntaxExtractorSource.cs").Compilation;
+
     private static ITypeSymbol GetParameterType(string name)
     {
-        var compilation = CSharpCompilation.Create("InitializationSyntaxExtractorTests")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(s_source));
-        var locals = compilation.GetTypeByMetadataName("Locals")
+        var locals = TestCompilation.GetTypeByMetadataName("Locals")
             ?? throw new InvalidOperationException("Test source does not declare 'Locals'.");
         var declare = locals.GetMembers("Declare")[0] as IMethodSymbol
             ?? throw new InvalidOperationException("Test source does not declare 'Locals.Declare'.");
-        foreach (var parameter in declare.Parameters)
-        {
-            if (parameter.Name == name)
-            {
-                return parameter.Type;
-            }
-        }
-
-        throw new InvalidOperationException($"'Locals.Declare' has no parameter '{name}'.");
+        var parameter = declare.Parameters.FirstOrDefault(p => p.Name == name)
+            ?? throw new InvalidOperationException($"'Locals.Declare' has no parameter '{name}'.");
+        return parameter.Type;
     }
 }

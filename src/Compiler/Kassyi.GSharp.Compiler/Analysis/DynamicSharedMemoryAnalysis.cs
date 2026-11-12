@@ -26,9 +26,9 @@ internal static class DynamicSharedMemoryAnalysis
 
     // [WHY] Only the queried function is cached: a depth-first walk that stops at an already visited function would
     // record a wrong 'false' for the functions inside a cycle (as in SuspensionAnalysis).
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_reaches = new();
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, bool> s_reaches = new();
 
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, ImmutableArray<ulong>>> s_sites = new();
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<ulong>> s_sites = new();
 
     /// <summary>
     /// Reads the count of a <c>SharedMemory&lt;T&gt;</c> local declarator: the creation, its first argument and the
@@ -77,12 +77,10 @@ internal static class DynamicSharedMemoryAnalysis
         {
             // A device function of another assembly: what its assembly recorded
             return DeviceExportTable.TryFindFunction(definition, compilation, out var imported) &&
-                   imported.Record.ReachesDynamicSharedMemory;
+                   imported.Record.Traits.ReachesDynamicSharedMemory;
         }
 
-        var cache = s_reaches.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
-        return cache.GetOrAdd(definition,
+        return s_reaches.For(compilation).GetOrAdd(definition,
             m => Reaches(m, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
     }
 
@@ -94,9 +92,7 @@ internal static class DynamicSharedMemoryAnalysis
     public static ImmutableArray<ulong> GetReachableSites(IMethodSymbol kernel, Compilation compilation)
     {
         var definition = kernel.OriginalDefinition;
-        var cache = s_sites.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, ImmutableArray<ulong>>(SymbolEqualityComparer.Default));
-        return cache.GetOrAdd(definition, m => CollectReachableSites(m, compilation));
+        return s_sites.For(compilation).GetOrAdd(definition, m => CollectReachableSites(m, compilation));
     }
 
     private static ImmutableArray<ulong> CollectReachableSites(IMethodSymbol kernel, Compilation compilation)
@@ -142,7 +138,7 @@ internal static class DynamicSharedMemoryAnalysis
             else if (DeviceExportTable.TryFindFunction(callee, compilation, out var imported))
             {
                 // The sites that the function of another assembly reaches, as its assembly recorded them
-                AddRecordedSites(imported.Record.DynamicSharedMemorySites, sites);
+                AddRecordedSites(imported.Record.Traits.DynamicSharedMemorySites, sites);
             }
         }
     }
@@ -168,7 +164,7 @@ internal static class DynamicSharedMemoryAnalysis
         if (!SuspensionAnalysis.TryGetDeviceFunctionBody(method, compilation, out var declaration))
         {
             return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
-                   imported.Record.ReachesDynamicSharedMemory;
+                   imported.Record.Traits.ReachesDynamicSharedMemory;
         }
 
         var semanticModel = compilation.GetSemanticModel(declaration.SyntaxTree);

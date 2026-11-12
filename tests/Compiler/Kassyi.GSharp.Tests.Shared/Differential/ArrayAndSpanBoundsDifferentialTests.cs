@@ -18,7 +18,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.BoundsAndMemoryDifferential)]
 public class ArrayAndSpanBoundsDifferentialTests
 {
-    private static readonly DifferentialCase s_arrayAndSpanBoundaryEdges = new(
+    internal static readonly DifferentialCase s_arrayAndSpanBoundaryEdges = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.ArrayAndSpanBoundaryEdgesKernel)))
     {
         Shape = LaunchShapes.PartialWarp(74, 37),
@@ -46,7 +46,7 @@ public class ArrayAndSpanBoundsDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_arrayIndexBounds = new(
+    internal static readonly DifferentialCase s_arrayIndexBounds = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel)))
     {
         Shape = LaunchShapes.PartialWarp(74, 37),
@@ -107,7 +107,7 @@ public class ArrayAndSpanBoundsDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_spanCanaryIndexBounds = new(
+    internal static readonly DifferentialCase s_spanCanaryIndexBounds = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -162,7 +162,7 @@ public class ArrayAndSpanBoundsDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_spanSliceStart = new(
+    internal static readonly DifferentialCase s_spanSliceStart = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.SpanSliceStartKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -211,7 +211,7 @@ public class ArrayAndSpanBoundsDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_spanSliceStartCount = new(
+    internal static readonly DifferentialCase s_spanSliceStartCount = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.SpanSliceStartCountKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),

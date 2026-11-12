@@ -11,7 +11,7 @@ description: "Bypasses a specified number of elements in a sequence and then ret
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Bypasses a specified number of elements in a sequence and then returns the remaining elements.
 
@@ -19,22 +19,31 @@ Bypasses a specified number of elements in a sequence and then returns the remai
 
 | Name | Description |
 | --- | --- |
-| [Skip<TEnumerator, TSource>(TEnumerator, int)](#skiptenumeratortsourcetenumeratorint) | Bypasses a specified number of elements. |
+| [Skip\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, int)](#skip-overload-1) | Bypasses a specified number of elements in a stack-allocated sequence and then returns the remaining elements. |
 
+<a id="skip-overload-1"></a>
 
-## Skip<TEnumerator, TSource>(TEnumerator, int)
+## Skip\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, int)
 
-Bypasses a specified number of elements.
+Bypasses a specified number of elements in a stack-allocated sequence and then returns the remaining elements.
 
 ```csharp
-public static SkipEnumerator<TEnumerator, TSource> Skip<TEnumerator, TSource>(this TEnumerator source, int count) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SkipEnumerator<TEnumerator, TSource>, TSource> Skip<TEnumerator, TSource>(
+    this StackEnumerable<TEnumerator, TSource> source, int count)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The sequence to return elements from.
+
+`count`<br>
+The number of elements to skip before returning the remaining elements.
 
 #### Returns
 
-<i>SkipEnumerator<TEnumerator, TSource></i>
-
-
+A `StackEnumerable<TEnumerator, TSource>` that contains elements that occur after the specified index in the input sequence.
 
 ## Remarks
 

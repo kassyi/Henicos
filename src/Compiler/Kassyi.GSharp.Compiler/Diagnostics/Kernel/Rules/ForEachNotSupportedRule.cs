@@ -21,8 +21,8 @@ internal sealed class ForEachNotSupportedRule : ISyntaxValidationRule<ForEachSta
         // Allowed: Array, InlineArray, Span/ReadOnlySpan, or a [GpuDeviceFunction] iterator source
         if (type is IArrayTypeSymbol ||
             type.HasAttribute(KnownAttributes.InlineArray) ||
-            type.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType &&
-            type.ContainingNamespace.IsSystemNamespace() ||
+            (type.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType &&
+             type.ContainingNamespace.IsSystemNamespace()) ||
             IteratorTypeResolver.IsIteratorForEachSource(node.Expression, context.SemanticModel))
         {
             return;

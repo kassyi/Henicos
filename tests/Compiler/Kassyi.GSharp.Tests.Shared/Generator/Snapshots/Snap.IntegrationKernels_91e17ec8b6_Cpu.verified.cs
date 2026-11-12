@@ -423,6 +423,7 @@ __gsharp_warp_path = next++;
 return next;
 }
 }
+#pragma warning disable CS8500 // The context is pinned by the launcher for the whole launch; a frame is a field of a pinned context
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] __gsharp_in_intInput, float[] __gsharp_in_floatInput, float[] __gsharp_in_results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct __gsharp_in_config, ulong[] __gsharp_in_globalCounter, int __gsharp_in_count, int __gsharp_in_dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel* __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<float> dynamicSharedMem = global::Kassyi.GSharp.Core.SharedMemory<float>.FindDynamic(0xf4a8b89f8fdf4f71UL);
@@ -601,6 +602,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8500
 
 private static bool __gsharp_layout_checked_AllInOneKernel;
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
@@ -635,6 +637,10 @@ if (globalCounter.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(globalCounter));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "Tier1IntegrationKernels.AllInOneKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("Tier1IntegrationKernels.AllInOneKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);

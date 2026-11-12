@@ -4,6 +4,7 @@ using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -150,15 +151,9 @@ public sealed class LaunchLimitDifferentialTests : TranspilerTestBase
 
     private static T Run<T>(bool forceManaged, Func<T> launch)
     {
-        var previous = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = forceManaged;
-        try
+        using (GpuExecution.Use(forceManaged ? KernelExecution.Managed : KernelExecution.Default))
         {
             return launch();
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previous;
         }
     }
 }

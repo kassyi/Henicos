@@ -26,13 +26,13 @@ Returns the absolute value of a specified number.
 | --- | --- |
 | [Abs(float)](#abs-float) | Returns the absolute value of a specified number. |
 | [Abs(double)](#abs-double) | Returns the absolute value of a specified number. |
+| [Abs(int)](#abs-int) | Returns the absolute value of a 32-bit signed integer. |
 
 ## Abs(float)
 
 Returns the absolute value of a specified number.
 
 ```csharp
-[GpuDevice]
 public static float Abs(float x);
 ```
 
@@ -55,7 +55,6 @@ None. Does not throw exceptions; returns `float.NaN` if `x` is `float.NaN`.
 Returns the absolute value of a specified number.
 
 ```csharp
-[GpuDevice]
 public static double Abs(double x);
 ```
 
@@ -72,6 +71,31 @@ The computed value.
 #### Exceptions
 
 None. Does not throw exceptions; returns `double.NaN` if `x` is `double.NaN`.
+
+<a id="abs-int"></a>
+
+## Abs(int)
+
+Returns the absolute value of a 32-bit signed integer.
+
+```csharp
+public static int Abs(int value);
+```
+
+#### Parameters
+
+`value` <i>int</i><br>
+A 32-bit signed integer.
+
+#### Returns
+
+<i>int</i><br>
+The absolute value of `value`.
+
+#### Exceptions
+
+`OverflowException`<br>
+`value` is `int.MinValue`. The managed path throws it as C# does. The native CPU build and the checked CUDA build are to throw it with the source location, and the release CUDA build does not check ([6. Semantics](../../01_language/06_semantics.md)); today the native CPU build and CUDA return `int.MinValue` instead (#947).
 
 ## Examples
 

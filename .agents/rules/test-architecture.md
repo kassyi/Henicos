@@ -214,6 +214,32 @@ else the guidelines of [gsharp-naming-conventions](gsharp-naming-conventions.md)
 - Name the behavior, not the issue, the lane or a case number (see 3.2).
 - Test classes, kernel classes and helpers follow the normal PascalCase rules, without underscores.
 
+### 3.10. Banned APIs in Tests (`RS0030`)
+
+The bans of the root `BannedSymbols.txt` (the string APIs `Substring`, `Replace`, `Split`, `Trim`, case conversion,
+`Regex`, ..., syntax to text, reflection) hold in tests as well. Lifting them would let string processing grow without
+limit and make the tests slower, so the ban stays and each exception is visible, one site at a time, with its reason.
+
+A test may suppress `RS0030` only where no syntax tree, symbol or registered set can express the check, in one of these
+cases. Cases 1 to 5 are for strings, where the string itself is what is checked:
+
+1. The protocol of the test tooling itself (for example the result lines of a child process).
+2. Strings that come from the OS or from outside (`PATH`, an external header, a `BannedSymbols` file).
+3. Line breaks, letter case or path separators are themselves what is checked.
+4. The format of output for people to read (reports, logs).
+5. C++ text, which has no syntax tree (generated C++, the prelude, C++ fragments in the compiler), for a rule that neither a snapshot nor the lowered C# tree can check; `Regex` is allowed here.
+6. A syntax tree turned into text for a Verify snapshot (`.verified.cs`), where the snapshot file is what is compared.
+7. Reflection where the CLR itself is the oracle (comparing a layout the compiler predicts with the runtime layout).
+8. Test tooling that parses source files outside its own compilation (a test generator that reads kernel files from disk).
+9. Reflection to call an assembly that the test compiled at run time, which the test project cannot reference.
+
+For case 5, first consider a snapshot or the lowered C# tree before the C++ is written. Check the C++ text only when the
+rule (uniqueness, agreement with a registered set, the absence of a form) cannot be expressed by a snapshot.
+
+Wrap only that statement in `#pragma warning disable RS0030 // <reason in English>` and `#pragma warning restore RS0030`.
+Never wrap a whole method or file, and never hide the suppression inside a helper. Product code does not use this rule:
+a suppression there follows the procedure of [transpiler-emission.md](transpiler-emission.md) §1.
+
 ---
 
 ## 4. DEVELOPMENT METHODOLOGY (Test-Driven AI Vibe Coding)

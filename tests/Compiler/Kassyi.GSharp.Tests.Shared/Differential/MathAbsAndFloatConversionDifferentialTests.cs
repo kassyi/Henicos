@@ -19,7 +19,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.IntegerTrapAndCheckedDifferential)]
 public class MathAbsAndFloatConversionDifferentialTests
 {
-    private static readonly DifferentialCase s_mathAbsInt32 = new(
+    internal static readonly DifferentialCase s_mathAbsInt32 = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -56,7 +56,7 @@ public class MathAbsAndFloatConversionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_mathAbsSingle = new(
+    internal static readonly DifferentialCase s_mathAbsSingle = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -85,7 +85,7 @@ public class MathAbsAndFloatConversionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_mathAbsDouble = new(
+    internal static readonly DifferentialCase s_mathAbsDouble = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsDoubleKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -114,7 +114,7 @@ public class MathAbsAndFloatConversionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_floatDivisionByZero = new(
+    internal static readonly DifferentialCase s_floatDivisionByZero = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.FloatDivisionByZeroKernel)))
     {
         Shape = LaunchShapes.PartialWarp(74, 37),
@@ -150,7 +150,7 @@ public class MathAbsAndFloatConversionDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_floatToIntegerConversion = new(
+    internal static readonly DifferentialCase s_floatToIntegerConversion = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionKernel)))
     {
         Shape = LaunchShapes.PartialWarp(74, 37),

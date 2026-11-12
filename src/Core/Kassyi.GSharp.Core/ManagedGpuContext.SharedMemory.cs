@@ -21,10 +21,13 @@ public static partial class ManagedGpuContext
 
     private sealed class SharedRegion
     {
-        public ulong SiteKey;
-        public int TypeId;
-        public int ByteLength;
-        public byte[] Bytes = [];
+        public ulong SiteKey { get; set; }
+
+        public int TypeId { get; set; }
+
+        public int ByteLength { get; set; }
+
+        public byte[] Bytes { get; set; } = [];
     }
 
     // The dynamic shared memory of each block (#544): one array of the launch's sharedMemBytes, in which the dynamic
@@ -49,10 +52,13 @@ public static partial class ManagedGpuContext
 
     private sealed class DynamicSharedMemory
     {
-        public byte[] Bytes = [];
-        public ulong Cursor;
-        public int RegionCount;
-        public DynamicRegion[] Regions = new DynamicRegion[8];
+        public byte[] Bytes { get; set; } = [];
+
+        public ulong Cursor { get; set; }
+
+        public int RegionCount { get; set; }
+
+        public DynamicRegion[] Regions { get; set; } = new DynamicRegion[8];
     }
 
     // A region is identified by the site key alone, as on CUDA and the native CPU path: the instantiations of a generic
@@ -180,31 +186,38 @@ public static partial class ManagedGpuContext
 
     /// <summary>
     /// Releases the dynamic shared memory of the blocks at the end of a grid; the next grid allocates its own.
+    /// For generated code only.
     /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static void EndGrid() => s_perBlockDynamic = null;
 
     /// <summary>
     /// Initializes or resets the shared memory arrays for a grid without dynamic shared memory (a launch with
     /// <c>sharedMemBytes</c> 0).
+    /// For generated code only.
     /// </summary>
     /// <param name="totalBlocks">The total number of blocks in the grid.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static void InitializeGrid(int totalBlocks) => InitializeGrid(totalBlocks, 0);
 
     /// <summary>
     /// Initializes or resets the shared memory arrays for the entire grid execution, keeping the dynamic shared memory of
     /// every block for the grid.
+    /// For generated code only.
     /// </summary>
     /// <param name="totalBlocks">The total number of blocks in the grid.</param>
     /// <param name="sharedMemBytes">
     /// The dynamic shared memory of each block, the <c>sharedMemBytes</c> of the launch, in which the dynamic declarations
     /// are placed.
     /// </param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static void InitializeGrid(int totalBlocks, uint sharedMemBytes) =>
         InitializeGrid(totalBlocks, sharedMemBytes, blocksRunInPhases: true);
 
     /// <summary>
     /// Initializes or resets the shared memory arrays for the entire grid execution.
+    /// For generated code only.
     /// </summary>
     /// <param name="totalBlocks">The total number of blocks in the grid.</param>
     /// <param name="sharedMemBytes">
@@ -215,6 +228,7 @@ public static partial class ManagedGpuContext
     /// Whether the blocks run in grid phases (a cooperative kernel), so that every block keeps its dynamic shared memory
     /// for the grid; otherwise each block runs to its end, and the blocks use one array in turn.
     /// </param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static void InitializeGrid(int totalBlocks, uint sharedMemBytes, bool blocksRunInPhases)
     {
         s_currentTypeKeySalt = 0;
@@ -257,6 +271,7 @@ public static partial class ManagedGpuContext
     /// <summary>
     /// Returns the shared memory of a <see cref="SharedMemory{T}"/> declaration in the current block, allocating it the
     /// first time the declaration is reached in the block.
+    /// For generated code only.
     /// </summary>
     /// <typeparam name="T">The unmanaged element type of the shared memory buffer.</typeparam>
     /// <param name="siteKey">The key that identifies the declaration. The G# compiler computes it for generated code.</param>
@@ -272,6 +287,7 @@ public static partial class ManagedGpuContext
     /// declaration is reached again with a larger <paramref name="count"/> (a device function called with a larger
     /// dynamic size), its region grows and keeps its contents, as a CUDA launch sized for the largest call would.
     /// </remarks>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static Span<T> AllocateSharedMemory<T>(ulong siteKey, int count) where T : unmanaged
     {
@@ -330,6 +346,7 @@ public static partial class ManagedGpuContext
     /// <summary>
     /// Returns the region of a dynamic <see cref="SharedMemory{T}"/> declaration (a count that is not a C# constant) in
     /// the current block's dynamic shared memory, placing it the first time the declaration is reached in the block.
+    /// For generated code only.
     /// </summary>
     /// <typeparam name="T">The unmanaged element type of the shared memory buffer.</typeparam>
     /// <param name="siteKey">The key that identifies the declaration. The G# compiler computes it for generated code.</param>
@@ -347,6 +364,7 @@ public static partial class ManagedGpuContext
     /// threads of the block first reach the declarations, each aligned to 16 bytes; a region that is still the last one
     /// grows in place; a growing region with a later region after it is an error, never a copy.
     /// </remarks>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static Span<T> AllocateDynamicSharedMemory<T>(ulong siteKey, int count, string place) where T : unmanaged
     {
@@ -369,7 +387,9 @@ public static partial class ManagedGpuContext
 
             if (block.RegionCount == block.Regions.Length)
             {
-                Array.Resize(ref block.Regions, block.RegionCount * 2);
+                var regions = block.Regions;
+                Array.Resize(ref regions, block.RegionCount * 2);
+                block.Regions = regions;
             }
 
             index = block.RegionCount++;
@@ -405,6 +425,7 @@ public static partial class ManagedGpuContext
     /// <summary>
     /// Returns the region of a dynamic <see cref="SharedMemory{T}"/> declaration that the current block has already placed,
     /// or an empty span when the declaration was not reached yet; places nothing.
+    /// For generated code only.
     /// </summary>
     /// <typeparam name="T">The unmanaged element type of the shared memory buffer.</typeparam>
     /// <param name="siteKey">The key that identifies the declaration. The G# compiler computes it for generated code.</param>
@@ -414,6 +435,7 @@ public static partial class ManagedGpuContext
     /// cannot live in the context). That redeclaration only finds the region; the declaration itself places it, where the
     /// kernel reaches it, so the regions are placed in the order of the CUDA placement.
     /// </remarks>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static Span<T> FindDynamicSharedMemory<T>(ulong siteKey) where T : unmanaged
     {

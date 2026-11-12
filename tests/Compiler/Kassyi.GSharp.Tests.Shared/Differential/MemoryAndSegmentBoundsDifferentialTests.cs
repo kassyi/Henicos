@@ -18,7 +18,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.BoundsAndMemoryDifferential)]
 public class MemoryAndSegmentBoundsDifferentialTests
 {
-    private static readonly DifferentialCase s_arraySegmentBounds = new(
+    internal static readonly DifferentialCase s_arraySegmentBounds = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.ArraySegmentBoundsKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -71,7 +71,7 @@ public class MemoryAndSegmentBoundsDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_memoryBounds = new(
+    internal static readonly DifferentialCase s_memoryBounds = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.MemoryBoundsKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -126,7 +126,7 @@ public class MemoryAndSegmentBoundsDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_sharedMemoryBounds = new(
+    internal static readonly DifferentialCase s_sharedMemoryBounds = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.SharedMemoryBoundsKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -184,7 +184,7 @@ public class MemoryAndSegmentBoundsDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_inlineArrayBounds = new(
+    internal static readonly DifferentialCase s_inlineArrayBounds = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),

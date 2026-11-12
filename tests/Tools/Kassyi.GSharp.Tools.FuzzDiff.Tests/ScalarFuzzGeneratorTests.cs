@@ -75,7 +75,7 @@ public class ScalarFuzzGeneratorTests
             var spec = generator.GenerateSingleKernel($"SweepKernel_{seed:D3}", seed, size);
             methodSources.Add(spec.KernelMethodSource);
 
-            var root = CSharpSyntaxTree.ParseText($"class __C {{ {spec.KernelMethodSource} }}", FuzzTestCompilationHelper.ParseOptions).GetRoot();
+            var root = FuzzSyntaxHelpers.ParseRoot($"class __C {{ {spec.KernelMethodSource} }}");
             nestedStatementsInControlFlow += CountNestedStatementsInControlFlowAndAssertLoopVarSafety(root);
         }
 
@@ -91,15 +91,11 @@ public class ScalarFuzzGeneratorTests
 
         foreach (string dialect in new[] { "Cpu", "Cuda" })
         {
-            var tree = CSharpSyntaxTree.ParseText(
+            var compilation = FuzzTestCompilationHelper.CreateCompilation(
                 combinedSource,
-                FuzzTestCompilationHelper.ParseOptions,
-                path: $"FuzzSweep100Kernels_{dialect}.cu.cs");
-            var compilation = CSharpCompilation.Create(
                 $"FuzzSweep100_{dialect}",
-                [tree],
-                FuzzTestCompilationHelper.BaseReferences,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true));
+                OptimizationLevel.Debug,
+                out _);
 
             var configProvider = new FuzzTestCompilationHelper.FuzzTestAnalyzerConfigOptionsProvider(dialect);
             var analyzerOptions = new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, configProvider);
@@ -110,7 +106,7 @@ public class ScalarFuzzGeneratorTests
             GeneratorDriver driver = CSharpGeneratorDriver.Create(
                 generators: [new GpuKernelGenerator().AsSourceGenerator()],
                 additionalTexts: null,
-                parseOptions: FuzzTestCompilationHelper.ParseOptions,
+                parseOptions: FuzzSyntaxHelpers.ParseOptions,
                 optionsProvider: configProvider);
             driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var generatorDiags);
 
@@ -309,7 +305,7 @@ public class ScalarFuzzGeneratorTests
         for (ulong seed = 0UL; seed < SeedCount; seed++)
         {
             var spec = genProfileG.GenerateSingleKernel($"AvoidG_{seed:D3}", seed, size: 4);
-            var root = CSharpSyntaxTree.ParseText($"class __C {{ {spec.KernelMethodSource} }}", FuzzTestCompilationHelper.ParseOptions).GetRoot();
+            var root = FuzzSyntaxHelpers.ParseRoot($"class __C {{ {spec.KernelMethodSource} }}");
 
             narrowIncDecValueAvoided += CountNarrowIncDecInValueContext(root);
             mixedWidthCoalesceAvoided += CountMixedWidthNullCoalesce(root);
@@ -360,7 +356,7 @@ public class ScalarFuzzGeneratorTests
         for (ulong seed = 0UL; seed < 30UL; seed++)
         {
             var spec = genAllowedAll.GenerateSingleKernel($"AllowAll_{seed:D3}", seed, size: 4);
-            var root = CSharpSyntaxTree.ParseText($"class __C {{ {spec.KernelMethodSource} }}", FuzzTestCompilationHelper.ParseOptions).GetRoot();
+            var root = FuzzSyntaxHelpers.ParseRoot($"class __C {{ {spec.KernelMethodSource} }}");
 
             narrowIncDecValueAllowed += CountNarrowIncDecInValueContext(root);
             mixedWidthCoalesceAllowed += CountMixedWidthNullCoalesce(root);

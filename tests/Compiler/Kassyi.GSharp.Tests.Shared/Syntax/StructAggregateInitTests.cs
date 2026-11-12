@@ -45,7 +45,7 @@ public partial class StructAggregateInitTests
     public void TranspileMethod_StructAggregateInitialization_EmitsAggregateInitializationSyntax()
     {
         var (cudaSource, diagnostics) =
-            RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitStruct));
+            TranspileTestRunner.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitStruct));
 
         Assert.Empty(diagnostics);
         Assert.Matches(MyStructInitRegex(), cudaSource.WithCSharpNames());
@@ -56,7 +56,7 @@ public partial class StructAggregateInitTests
     public void TranspileMethod_DeeplyNestedStructAggregateInitialization_EmitsNestedAggregateInitializationSyntax()
     {
         var (cudaSource, diagnostics) =
-            RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitNestedStruct));
+            TranspileTestRunner.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitNestedStruct));
 
         Assert.Empty(diagnostics);
         Assert.Matches(NestedStructInitRegex(), cudaSource.WithCSharpNames());

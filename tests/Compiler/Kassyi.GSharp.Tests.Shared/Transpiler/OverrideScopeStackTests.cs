@@ -119,13 +119,11 @@ public class OverrideScopeStackTests
     [Scenario(TestScenario.SadPath)]
     public void TryGet_OverridePushedWithSymbol_MatchesOnlyThatSymbol()
     {
-        var tree = CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase("Transpiler/ShadowedParameter.cs"));
-        var compilation = CSharpCompilation.Create("OverrideScope", [tree]);
-        var model = compilation.GetSemanticModel(tree);
+        var (compilation, tree, model) = RoslynTestUtility.GetTestCaseContext("Transpiler/ShadowedParameter.cs");
         var parameters = tree.GetRoot()
             .DescendantNodes()
             .OfType<ParameterSyntax>()
-            .Select(p => model.GetDeclaredSymbol(p) ?? throw new InvalidOperationException(p.ToString()))
+            .Select(p => model.GetDeclaredSymbol(p) ?? throw new InvalidOperationException(p.Identifier.ValueText))
             .ToArray();
         var stack = new OverrideScopeStack();
         stack.Push("i", new OverrideValue("0"), parameters[0]);

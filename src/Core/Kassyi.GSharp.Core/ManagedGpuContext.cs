@@ -4,97 +4,116 @@ using System.Runtime.CompilerServices;
 namespace Kassyi.GSharp.Core;
 
 /// <summary>
-/// Represents the execution context coordinates for a single GPU thread.
+/// The thread context of the managed CPU path, which the code G# generates and the Core intrinsics read. For generated
+/// code only: launch a kernel through its generated <c>Launch{Kernel}</c> method, and run its C# body with
+/// <c>GpuExecution.Use(KernelExecution.CSharp)</c> of Kassyi.GSharp.Runtime.
 /// </summary>
-public readonly record struct GpuThreadContext(
-    int ThreadIdxX, int ThreadIdxY, int ThreadIdxZ,
-    int BlockIdxX, int BlockIdxY, int BlockIdxZ,
-    int BlockDimX, int BlockDimY, int BlockDimZ,
-    int GridDimX, int GridDimY, int GridDimZ);
-
-/// <summary>
-/// Provides a managed execution context for evaluating GPU kernels directly on the .NET host CPU without native
-/// toolchains.
-/// </summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
 public static partial class ManagedGpuContext
 {
     /// <summary>
     /// Gets or sets a value indicating whether the current thread is executing within a managed cooperative scheduler.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static bool IsActive;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static bool IsActive { get; set; }
 
     /// <summary>
     /// Gets or sets the x-dimension thread index within the current thread block.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int ThreadIdxX;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int ThreadIdxX { get; set; }
 
     /// <summary>
     /// Gets or sets the y-dimension thread index within the current thread block.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int ThreadIdxY;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int ThreadIdxY { get; set; }
 
     /// <summary>
     /// Gets or sets the z-dimension thread index within the current thread block.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int ThreadIdxZ;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int ThreadIdxZ { get; set; }
 
     /// <summary>
     /// Gets or sets the x-dimension block index within the grid.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockIdxX;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int BlockIdxX { get; set; }
 
     /// <summary>
     /// Gets or sets the y-dimension block index within the grid.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockIdxY;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int BlockIdxY { get; set; }
 
     /// <summary>
     /// Gets or sets the z-dimension block index within the grid.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockIdxZ;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int BlockIdxZ { get; set; }
 
     /// <summary>
     /// Gets or sets the x-dimension size of each block.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockDimX;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int BlockDimX { get; set; }
 
     /// <summary>
     /// Gets or sets the y-dimension size of each block.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockDimY;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int BlockDimY { get; set; }
 
     /// <summary>
     /// Gets or sets the z-dimension size of each block.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int BlockDimZ;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int BlockDimZ { get; set; }
 
     /// <summary>
     /// Gets or sets the x-dimension size of the grid.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int GridDimX;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int GridDimX { get; set; }
 
     /// <summary>
     /// Gets or sets the y-dimension size of the grid.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int GridDimY;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int GridDimY { get; set; }
 
     /// <summary>
     /// Gets or sets the z-dimension size of the grid.
+    /// For generated code only.
     /// </summary>
-    [ThreadStatic]
-    public static int GridDimZ;
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [field: ThreadStatic]
+    public static int GridDimZ { get; set; }
 
     /// <summary>
     /// Set by generated code when the GPU thread being stepped reaches <c>Gpu.SyncGrid</c>, in the kernel or in any
@@ -105,9 +124,9 @@ public static partial class ManagedGpuContext
     /// The managed launcher steps one GPU thread at a time on one host thread, so a request set during a step belongs
     /// to that GPU thread, however deep the call that set it.
     /// </remarks>
-    [ThreadStatic]
+    [field: ThreadStatic]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static bool GridSyncRequested;
+    public static bool GridSyncRequested { get; set; }
 
     // Gpu.GridStrideLoop stops the start and the step here: no int index reaches 2^31, so index + step never wraps
     // around in 32 bits
@@ -173,9 +192,9 @@ public static partial class ManagedGpuContext
     /// The launcher keeps the thread waiting at the barrier until every thread of its block that has not finished waits
     /// too, as on the GPU, where no thread passes a block barrier before the others have reached it.
     /// </remarks>
-    [ThreadStatic]
+    [field: ThreadStatic]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static bool BlockBarrierRequested;
+    public static bool BlockBarrierRequested { get; set; }
 
     // The managed launcher of a cooperative kernel runs the grid in phases, each ending when every block has reached
     // Gpu.SyncGrid (#664). The GPU never completes a grid sync that a block, or thread 0 of a block, does not reach,
@@ -229,11 +248,10 @@ public static partial class ManagedGpuContext
         new($"G#: Gpu.SyncGrid reached in {kernel}, which is not [GpuKernel(Cooperative = true)]");
 
     /// <summary>
-    /// Sets the thread coordinates for the current cooperative scheduler step.
+    /// Sets the thread coordinates of the GPU thread that the current host thread runs, and marks the context active.
     /// </summary>
     /// <param name="ctx">The GPU thread execution context.</param>
-    // ReSharper disable once UnusedMember.Global -- Public API for code generators
-    public static void SetThreadContext(in GpuThreadContext ctx)
+    internal static void SetThreadContext(in GpuThreadContext ctx)
     {
         IsActive = true;
 
@@ -257,8 +275,7 @@ public static partial class ManagedGpuContext
     /// <summary>
     /// Clears the thread context when execution is completed.
     /// </summary>
-    // ReSharper disable once UnusedMember.Global -- Public API for code generators
-    public static void ClearThreadContext() => IsActive = false;
+    internal static void ClearThreadContext() => IsActive = false;
 
     // Mocks for Warp Shuffle operations in Managed Execution. The lanes meet at the same instance of a shuffle
     // before they read each other's values (ManagedGpuContext.WarpRendezvous.cs)
@@ -302,6 +319,7 @@ public static partial class ManagedGpuContext
     /// </remarks>
     internal static uint ActiveMask()
     {
+        ThrowIfCSharpExecution("Warp.ActiveMask()");
         if (!IsActive)
         {
             return GpuOnlyException.Throw<uint>();

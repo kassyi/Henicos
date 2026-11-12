@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.DeviceLibrary;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -226,7 +227,7 @@ public sealed class MarshalingBoundaryDifferentialTests
             ctx.Field("UnionItem.Tag", e.UnionItem.Tag, a.UnionItem.Tag, OutputPolicy.Exact);
         });
 
-    private static readonly DifferentialCase s_boolAllPositions = new(
+    internal static readonly DifferentialCase s_boolAllPositions = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.BoolAllPositionsKernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -310,7 +311,7 @@ public sealed class MarshalingBoundaryDifferentialTests
         '\uFFFF',
     ];
 
-    private static readonly DifferentialCase s_charAllPositions = new(
+    internal static readonly DifferentialCase s_charAllPositions = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.CharAllPositionsKernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -384,7 +385,7 @@ public sealed class MarshalingBoundaryDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_nullableBlitPositions = new(
+    internal static readonly DifferentialCase s_nullableBlitPositions = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableBlitPositionsKernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -443,7 +444,7 @@ public sealed class MarshalingBoundaryDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_nullableBlitScalarArg = new(
+    internal static readonly DifferentialCase s_nullableBlitScalarArg = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -486,7 +487,7 @@ public sealed class MarshalingBoundaryDifferentialTests
             // smell-scan: ignore swallowed-exception -- #961 (A Nullable<T> whose host and device layouts differ is
             // copied with the host layout): the native CPU P/Invoke delegate cannot marshal System.Nullable<T>;
             // probe/rb/oc keep their initial values so KnownDivergences reports the mismatch
-            catch (MarshalDirectiveException) when (!CpuKernelLoader.ForceManagedExecution)
+            catch (MarshalDirectiveException) when (GpuExecution.Current != KernelExecution.Managed)
             {
             }
 #else
@@ -503,7 +504,7 @@ public sealed class MarshalingBoundaryDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_nullableConvertPositions = new(
+    internal static readonly DifferentialCase s_nullableConvertPositions = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.NullableConvertPositionsKernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -545,7 +546,7 @@ public sealed class MarshalingBoundaryDifferentialTests
         0x7FC0_1234u, // quiet NaN payload
     ];
 
-    private static readonly DifferentialCase s_explicitLayoutAndUnionPositions = new(
+    internal static readonly DifferentialCase s_explicitLayoutAndUnionPositions = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.ExplicitLayoutAndUnionPositionsKernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -619,7 +620,7 @@ public sealed class MarshalingBoundaryDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_explicitUnionWithConvertArm = new(
+    internal static readonly DifferentialCase s_explicitUnionWithConvertArm = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.ExplicitUnionWithConvertArmKernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -653,7 +654,7 @@ public sealed class MarshalingBoundaryDifferentialTests
             ),
     };
 
-    private static readonly DifferentialCase s_autoLayoutAllPositions = new(
+    internal static readonly DifferentialCase s_autoLayoutAllPositions = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.AutoLayoutAllPositionsKernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -827,9 +828,9 @@ public sealed class MarshalingBoundaryDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_inlineArrayAndFixedBufferPositions = CreateInlineArrayAndFixedBufferCase();
+    internal static readonly DifferentialCase s_inlineArrayAndFixedBufferPositions = CreateInlineArrayAndFixedBufferCase();
 
-    private static readonly DifferentialCase s_inlineArrayNullableVec2 = new(
+    internal static readonly DifferentialCase s_inlineArrayNullableVec2 = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.InlineArrayNullableVec2Kernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -858,7 +859,7 @@ public sealed class MarshalingBoundaryDifferentialTests
             ),
     };
 
-    private static readonly DifferentialCase s_vectorAlignmentAndExternalStructs = new(
+    internal static readonly DifferentialCase s_vectorAlignmentAndExternalStructs = new(
         $"{nameof(MarshalingBoundaryDifferentialKernels)}.{nameof(MarshalingBoundaryDifferentialKernels.VectorAlignmentAndExternalStructsKernel)}")
     {
         Shape = LaunchShape.ForRows(DefaultRows, blockX: DefaultBlockX),
@@ -1033,7 +1034,7 @@ public sealed class MarshalingBoundaryDifferentialTests
             },
         };
 
-    private static readonly DifferentialCase s_multiRefScalarAndRawPointer = CreateMultiRefScalarAndRawPointerCase();
+    internal static readonly DifferentialCase s_multiRefScalarAndRawPointer = CreateMultiRefScalarAndRawPointerCase();
 
     // bool across all 4 positions (value, in, ref, out, bool[], return bool, struct field)
     [SkippableFact]

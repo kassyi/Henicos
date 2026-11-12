@@ -20,10 +20,17 @@ Contains native G# (CUDA) kernels and device functions used for trial division f
 public static partial class FermatTrialFactoringKernels
 ```
 
+## Fields
+
+| Name | Description |
+| --- | --- |
+| `QuadraticResidueMaskMod29` | `public const uint QuadraticResidueMaskMod29 = 0x13D122F2u;` the bit mask of the quadratic residues modulo 29 (bit `r` set when `r` is a residue), used by `PassesQuadraticAndSmallPrimeSieve`. |
+
 ## Methods
 
 | Name | Description |
 | --- | --- |
+| `PassesQuadraticAndSmallPrimeSieve(uint)` / `PassesQuadraticAndSmallPrimeSieve(ulong)` | GPU device functions (`[GpuDeviceFunction, GpuInline]`) that reject a candidate `k` whose residue characters modulo 3 and 29 disagree, or that has a prime factor from 3 to 29 (3 and 29 themselves pass). |
 | [ModPow64Under32Bits(ulong, ulong, ulong)](#modpow64under32bitsulong-ulong-ulong) | A GPU device function (`[GpuDeviceFunction, GpuInline]`) that computes 64-bit modular exponentiation for moduli under 32 bits. |
 | [SearchFactors32(uint, uint, uint[], uint[], int, uint, uint)](#searchfactors32uint-uint-uint-uint-int-uint-uint) | Checks the arguments and launches `SearchFactors32Kernel` on arrays. |
 | [SearchFactors32(uint, uint, GSharpArrayProxy, GSharpArrayProxy, int, uint, uint, IntPtr)](#searchfactors32uint-uint-gsharparrayproxy-gsharparrayproxy-int-uint-uint-intptr) | Checks the arguments and launches `SearchFactors32Kernel` on device buffers. |

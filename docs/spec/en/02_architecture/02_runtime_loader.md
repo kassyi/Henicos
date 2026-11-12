@@ -18,6 +18,12 @@ The runtime engine utilizes a robust scope-based context management lifecycle to
 
 Instead of a singleton context tracked via `[ThreadStatic]`, the AOT generated launcher stub automatically emits a local scope instance (`using var _cudaCtxScope = new CudaContextScope();`) at the beginning of each kernel invocation. This `CudaContextScope` pushes the active CUDA context to the calling thread (`cuCtxPushCurrent`) and safely pops it upon disposal (`cuCtxPopCurrent`), natively supporting parallel kernel dispatches from multiple host threads.
 
+The runtime initializes the driver once per process, on the first use or query (`cuInit`, `cuDriverGetVersion`, then the global context on device 0), and keeps the result. Without a driver or a device, or when a driver call fails, it switches to the CPU fallback mode. A driver that supports a CUDA version older than 13.0 (`cuDriverGetVersion` below 13000) is not a fallback case; see [Prerequisites](../00_getting_started/01_prerequisites.md#1-gpu-execution-default--recommended):
+
+- The queries do not throw: `IsDriverAvailable` and `IsCpuFallbackMode` are `false`, and `DriverUnavailableReason` holds the message (the CUDA version the driver supports and the required one; for the fallback cases, the failed call or the missing library).
+- GPU use throws a `NotSupportedException` with that message: `EnsureInitialized`, `GlobalContext`, a `CudaContextScope` and so every launch, transfer, stream completion and event timer.
+- `ForceCpuFallback` still runs on the CPU and does not touch the driver. The bindings of `cuda_driver_api.yml` therefore bind the versioned symbols of the CUDA 13 `cuda.h` (`cuEventElapsedTime_v2`, `cuMemAllocHost_v2`, ...) without a fallback for older drivers.
+
 ## 2.2 AOT Module Loading and Validation
 
 G# eliminates all runtime compilation overhead by requiring all C# kernels to be compiled into native NVIDIA Fatbins during the MSBuild AOT phase. The runtime operates exclusively as a secure, lightweight module loader, with zero dependencies on local toolchains.
@@ -31,7 +37,8 @@ The `LoadAotKernel` method is responsible for validating and loading the precomp
 
 ### 2.2.2 CPU AOT Kernel Loading (`CpuKernelLoader.LoadAotKernel`)
 
-When a kernel is compiled using the `CpuDialect` (Standard C++ fallback), it generates standard dynamic libraries (`.dll` or `.so`) rather than CUDA Fatbins.
+When a kernel is compiled using the `StandardCppDialect` (Standard C++ fallback), it generates standard dynamic
+libraries (`.dll` or `.so`) rather than CUDA Fatbins.
 The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 
 - It reads the compiled host library and performs the identical **64-byte Ed25519 Digital Signature Verification** via `AotSignatureValidator.ExtractAndVerify` against `GpuSecurityPolicy.EmbeddedKeys`.
@@ -40,8 +47,15 @@ The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 
 ### 2.2.3 Caching and Memory Management
 
-- **Concurrent Dictionary**: Once validated and loaded (either via `cuModuleLoadDataEx` or `NativeLibrary.Load`), the resulting `CUfunction` or `Delegate` handles are cached in a static `ConcurrentDictionary`.
-- **Zero-Allocation Cache Keys**: To avoid string allocations during high-frequency kernel dispatches, `GpuKernelLoader` utilizes a custom `Hash256` value type (a 32-byte struct extracted from the signature) combined with the kernel name as the composite key. Subsequent calls instantly retrieve the cached handle in $O(1)$ time with zero GC pressure.
+- **Concurrent Dictionary**: Once validated and loaded (either via `cuModuleLoadDataEx` or `NativeLibrary.Load`), the
+  resulting `CUfunction` or `Delegate` handles are cached in thread-safe collections in `CudaModuleCache` and
+  `CpuKernelLoader`.
+- **Zero-Allocation Cache Keys**: To avoid string allocations during high-frequency kernel dispatches,
+  `CudaModuleCache` indexes modules by `(IntPtr Context, AotSignatureValidator.Hash256 Hash)` and functions by
+  `(IntPtr Context, AotSignatureValidator.Hash256 Hash, string KernelName)`. The `Hash256` value type holds the first
+  32 bytes of the Ed25519 signature at the end of the binary, which `CudaModuleCache.ReadSignatureHash` reads without
+  verifying it; the signature is verified by `AotSignatureValidator.ExtractAndVerify` when the module is loaded into a
+  context. Subsequent calls instantly retrieve the cached handle in $O(1)$ time with zero GC pressure.
 - **One Module per Context**: A CUDA module and its functions belong to the context they were loaded in, so the GPU caches are keyed by the context as well. A launch loads the module into the context that is current for it (the context of the innermost `CudaContextScope`, such as the one of an isolated `GpuWorkspace`, otherwise the global context) the first time it runs there. Each generated launcher keeps the last function it resolved together with a number that identifies its context; a launch in the same context reuses it without a driver call, and a launch in another context resolves the function of that context. `GpuKernelLoader.DestroyContext` drops the modules of the destroyed context; a context created later gets a new number even when the driver reuses the handle, so nothing of the destroyed context is launched again.
 - **Graceful Shutdown**: Developers can explicitly call `GpuKernelLoader.Shutdown()` or `CpuKernelLoader.Shutdown()` to unload all cached modules (`cuModuleUnload` / `NativeLibrary.Free`), preventing resource leaks when kernels are no longer needed. A kernel launched after `GpuKernelLoader.Shutdown()` loads its module again: the generated launcher keeps its function together with the loader's module generation, which `Shutdown` advances. `Shutdown` must not run while another thread launches a kernel.
 
@@ -57,11 +71,14 @@ This stub accepts standard C# managed arrays (e.g., `T[]`, custom structs).
 2. **Grid and Block Dimensions**: The host logic determines the `gridDim` and `blockDim` parameters based on the workload size.
 3. **Dispatch**: Constructs the `IntPtr` argument array and invokes `cuLaunchKernel` (or the CPU delegate). After execution, it invokes `Unmarshal_T` to copy results back to the managed arrays and cleans up handles.
 
-### 2.3.2 Device Launcher (`LaunchKernelName_Device`)
+### 2.3.2 Pointer Launcher (`Launch{Kernel}Ptr`)
 
-This stub accepts only raw pointers (`T*`) or device abstractions (e.g., `GpuBuffer<T>`).
+This stub accepts only raw pointers (`T*`), device abstractions (e.g., `GpuBuffer<T>`), or native shadow structs
+(`AotContexts`).
 
-1. **Zero-Allocation**: It completely bypasses all managed array (`T[]`) pinning, deep struct marshaling, and memory allocation logic. **Passing structs with managed arrays to a `_Device` launcher is explicitly prohibited and will cause a compilation error.**
+1. **Zero-Allocation**: It completely bypasses all managed array (`T[]`) pinning, deep struct marshaling, and memory
+   allocation logic. **Passing structs with managed arrays to a `Ptr` launcher is prohibited; callers pass pre-allocated
+   device pointers or shadow structs.**
 2. **Grid and Block Dimensions**: Determines `gridDim` and `blockDim`.
 3. **Dispatch**: Immediately constructs the `IntPtr` argument array and invokes `cuLaunchKernel`.
 
@@ -84,7 +101,7 @@ G# introduces the `GpuBuffer<T>` abstraction in the Runtime space to provide a s
 using var buffer = new GpuBuffer<int>(1024);
 
 // Synchronously copies data from Host (ReadOnlySpan<T>) to Device
-buffer.CopyFromHost(hostSpan);
+buffer.CopyToDevice(hostSpan);
 
 // Access the raw CUdeviceptr for kernel invocation
 IntPtr devPtr = buffer.DevicePointer;
@@ -121,16 +138,25 @@ A single pinned, host-mapped memory slot (`GSharpDeviceErrorSlot`, 24 bytes) is 
 
 ### 2.6.2 Known Limits of the CUDA Error Records
 
-A launch through a generated launcher records its error under its own launch epoch (`LaunchErrorRecords`), and its launcher throws it. A launch captured into a CUDA graph has no epoch and still records into the shared slot above. For such a launch:
+A launch through a generated launcher records its error under its own launch epoch (`LaunchErrorRecords`), and its launcher throws it. A launch captured into a CUDA graph keeps its arguments in the graph and runs again at every replay, so it cannot own a record: it records into the shared slot above, which the synchronization after `cuGraphLaunch` reads.
 
-- A cooperative kernel whose grid barrier, or a kernel whose mbarrier, waits for a block or thread that failed relies on the shared slot to stop waiting. If another thread's synchronization consumes the slot before a waiter first looks at it (within about a millisecond of the failure), the waiter keeps waiting until the driver resets the GPU (TDR).
-- Its error can be thrown by the synchronization of any stream, not only the one the graph was launched on.
-- Two such launches that fail before a synchronization consumes the first error find the shared slot taken; the second one traps (a GPU fault that ends the context) rather than losing its error.
+A captured launch of a kernel that waits at a barrier counting a fixed number of arrivals (a cooperative kernel, or one that reaches an mbarrier) takes a capture epoch (bit 31 set) and, before the kernel, launches on the capturing stream a one-thread kernel of the module (`__gsharp_clear_capture_abort`) that clears its abort word in the module's `__gsharp_capture_abort` array. The graph runs that node before the kernel at every replay, so the waiters of a replay whose thread failed leave the barrier as for a launch that is not captured, and a later replay starts with a clear word. The node costs about 0.8 us per replay (a 4-byte memset node cost 7 to 15 us, RTX 3070 Ti, driver 621.14). A captured launch of any other kernel has epoch 0 and adds no node.
+
+A block that leaves a grid barrier after a failure takes its arrival back while the barrier has not completed. On driver 621.14 a graph keeps the grid workspace of a cooperative kernel node from one replay to the next, so an arrival left in a barrier that never completed would let blocks of the next replay pass their barriers early. NVIDIA does not document either behavior; the take-back is also correct when a driver clears the workspace for every replay.
+
+Several captured launches that fail before a synchronization (two failing nodes of one graph, or replays of different graphs) all write the shared slot: the first error of such a launch stays, the later failing launches only leave, and the synchronization throws the first error. The same holds for a launch that is not captured but records into the shared slot (below).
+
+Known limits of captured launches:
+
+- Their error can be thrown by the synchronization of any stream, not only the one the graph was launched on.
+- When several captured launches fail before a synchronization, only the first error is thrown; the others are lost.
+- Capture epochs are never released (the runtime does not see when a graph is destroyed). Two live graphs of the same module whose capture epochs are a multiple of 4096 apart share a word: a replay of one that runs at the same time as a failed replay of the other can clear the other's word, and the other's waiters keep waiting until the driver resets the GPU (TDR). Two executable graphs instantiated from one captured graph share their epochs: when they run at the same time, the failure of one makes the other leave its barriers, and as only one synchronization throws the error, the other instance may finish with partial results without an exception. G# itself instantiates every graph it captures once.
 
 Further limits:
 
-- When 256 launches whose launchers read their own record are in flight at once, the next launch runs with epoch 0, as a captured launch does.
-- Once every 2^32 launches the epoch counter wraps around and the host clears the abort words of every loaded module. The clear is not ordered with launches on non-blocking streams: a launch that failed and is still running at that moment can lose its abort word, and its grid barrier or mbarrier waiters keep waiting until the driver resets the GPU (TDR).
+- When the per-launch records could not be allocated, or 256 launches whose launchers read their own record are in flight at once, the next launch takes an epoch of the shared range (bit 31 set) and records into the shared slot like a captured launch: it keeps its own abort word, which `__gsharp_clear_capture_abort` clears on the stream before a kernel that waits for arrivals (so a word left by a launch 2^31 shared epochs earlier does no harm), its launcher throws any recorded error, and when several such launches fail before a synchronization, only the first error is thrown. When the shared slot holds the error of a launch that owns a ring epoch (one that overflowed, below), a failing launch of the shared range traps instead, as no synchronization would throw that record for it.
+- A launch whose own record is still held by an unconsumed error of the launch 256 epochs before it records into the shared slot; when that is held by another launch as well, the thread traps (a GPU fault that ends the context) rather than let its launcher return partial results with no exception.
+- Once every 2^31 launches the epoch counter wraps around and the host clears the abort words of every loaded module. The clear is not ordered with launches on non-blocking streams: a launch that failed and is still running at that moment can lose its abort word, and its grid barrier or mbarrier waiters keep waiting until the driver resets the GPU (TDR).
 
 ### 2.6.3 Native CPU Consistency
 

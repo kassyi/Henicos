@@ -36,14 +36,11 @@ public class MixedHoistDeclarationLoweringTests
         Assert.Null(loop.Declaration);
         Assert.Empty(loop.Initializers);
         var block = Assert.IsType<BlockSyntax>(loop.Parent);
-        Assert.Equal(
+        SyntaxAssert.Equivalent(
             [
                 "__gsharp_ctx->a = 1;",
                 "int b = __gsharp_ctx->a + 1;"
             ],
-            block.Statements
-                .TakeWhile(static s => s is not ForStatementSyntax)
-                .Select(static s => s.NormalizeWhitespace().ToString())
-                .ToArray());
+            block.Statements.TakeWhile(static s => s is not ForStatementSyntax));
     }
 }

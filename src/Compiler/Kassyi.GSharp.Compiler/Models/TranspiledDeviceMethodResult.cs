@@ -23,6 +23,10 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// </param>
 /// <param name="Export">The device code export record of the function, or default when it is not exported (an iterator).</param>
 /// <param name="StructExports">The device code export records of the structs that the function uses.</param>
+/// <param name="HeldRefLocalSites">
+/// The ref locals that the CPU state machine of a function that may suspend would keep in its frame and GSH0039 does
+/// not report; the generator reports GSH0003 at each on a CPU dialect build (#1640).
+/// </param>
 internal readonly record struct TranspiledDeviceMethodResult(
     HostClassHeader Class,
     string MethodName,
@@ -37,7 +41,8 @@ internal readonly record struct TranspiledDeviceMethodResult(
     EquatableArray<string> FrameDependencies = default,
     string ManagedCSharpSource = "",
     DeviceExportRecord Export = default,
-    EquatableArray<DeviceExportRecord> StructExports = default)
+    EquatableArray<DeviceExportRecord> StructExports = default,
+    EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default)
 {
     public string GetSignature(bool isCuda) => isCuda ? CudaSignature : CppSignature;
 

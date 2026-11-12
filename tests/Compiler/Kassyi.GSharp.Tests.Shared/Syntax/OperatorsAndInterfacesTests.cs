@@ -86,7 +86,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Execute_ConversionOperators_ConvertsAndAssignsExpectedFloat()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
+        var (_, diagnostics) = TranspileTestRunner.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.ConversionOperators), isDevice: false, dialect: CurrentDialect);
         Assert.Empty(diagnostics);
 
@@ -99,7 +99,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Execute_AutoProperties_InitializesSensorReadingFields()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
+        var (_, diagnostics) = TranspileTestRunner.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.AutoProperties), isDevice: false, dialect: CurrentDialect);
         Assert.Empty(diagnostics);
 
@@ -113,7 +113,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Execute_ExpressionBodiedProperties_CalculatesAreaFromWidth()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
+        var (_, diagnostics) = TranspileTestRunner.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.ExpressionBodiedProperties), isDevice: false, dialect: CurrentDialect);
         Assert.Empty(diagnostics);
 
@@ -127,7 +127,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Execute_StaticAbstractMembers_InitializesConstantImplValue()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
+        var (_, diagnostics) = TranspileTestRunner.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.StaticAbstractMembers), isDevice: false, dialect: CurrentDialect);
         Assert.Empty(diagnostics);
 
@@ -140,7 +140,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_CheckedUnchecked_FailsWithUnsupportedSyntaxAndEmitsPlaceholder()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.CheckedUnchecked), isDevice: false, dialect: CurrentDialect);
 
         // The analyzer reports the construct (UnsupportedSyntaxKindDiagnosticsTests); the transpiler records the failure and
@@ -155,7 +155,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Execute_ExtensionMethods_InvokesDeviceExtensionMethod()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
+        var (_, diagnostics) = TranspileTestRunner.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.ExtensionMethods), isDevice: false, dialect: CurrentDialect);
         Assert.Empty(diagnostics);
 
@@ -169,7 +169,7 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Execute_NullableValueTypes_HandlesNullAndAssignsDefault()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
+        var (_, diagnostics) = TranspileTestRunner.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.NullableValueTypes), isDevice: false, dialect: CurrentDialect);
         Assert.Empty(diagnostics);
 

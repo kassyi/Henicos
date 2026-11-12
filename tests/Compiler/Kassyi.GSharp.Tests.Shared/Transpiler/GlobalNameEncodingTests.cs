@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Naming;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
@@ -209,20 +210,18 @@ public class GlobalNameEncodingTests
         }
 
         // C# identifiers never start with a digit and never contain "__" (GSH0055).
-        var name = new string(chars).Replace("__", "_u");
-        return char.IsDigit(name[0]) ? "n" + name : name;
-    }
-
-    private static bool IsCppIdentifierBody(string text)
-    {
-        foreach (var c in text)
+        for (var i = 1; i < chars.Length; i++)
         {
-            if (c is not (>= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_'))
+            if (chars[i] == '_' && chars[i - 1] == '_')
             {
-                return false;
+                chars[i] = 'u';
             }
         }
 
-        return text.Length > 0;
+        var name = new string(chars);
+        return char.IsDigit(name[0]) ? "n" + name : name;
     }
+
+    private static bool IsCppIdentifierBody(string text) =>
+        text.Length > 0 && text.AsSpan().AsStackEnumerable().All(c => c is (>= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_'));
 }

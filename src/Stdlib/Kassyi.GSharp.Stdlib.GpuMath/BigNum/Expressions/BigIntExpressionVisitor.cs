@@ -162,7 +162,7 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
 
     /// <inheritdoc/>
     readonly int IExpressionWalker<IGpuBigUIntExpression, GpuBigIntMemoryHandle, bool>.OperandCount(
-        IGpuBigUIntExpression node) =>
+        IGpuBigUIntExpression node, bool isRoot) =>
         node is UnsignedOperatorExpression op ? op.OperandCount : 0;
 
     /// <inheritdoc/>

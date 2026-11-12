@@ -1,0 +1,51 @@
+# Launchers for Native/module_arguments.cu (ModuleArgumentTests). The array parameters are spelled with spaces inside
+# and before the rank specifier, which a launcher must still stage through a device buffer. The others pass a null
+# array, values by 'ref', 'in' and 'out', and a two-dimensional array; ModuleArgumentImports declares the same kernels
+# with [CudaImport].
+namespace: Kassyi.GSharp.Tests.Cuda
+className: ModuleArgumentKernels
+moduleName: module_arguments.gfatbin
+methods:
+  - name: RecordPointerSpaceInRank
+    entryPoint: RecordPointer
+    parameters:
+      - { name: data, type: "float[ ]" }
+      - { name: slots, type: ulong }
+  - name: RecordPointerSpaceBeforeRank
+    entryPoint: RecordPointer
+    parameters:
+      - { name: data, type: "float [ ]" }
+      - { name: slots, type: ulong }
+  - name: Scale
+    parameters:
+      - { name: data, type: "float[ ]" }
+      - { name: n, type: int }
+      - { name: factor, type: float }
+      - { name: gridDimX, type: uint }
+      - { name: blockDimX, type: uint }
+  - name: RecordAddress
+    parameters:
+      - { name: data, type: "float[]" }
+      - { name: seen, type: "ulong[]" }
+  - name: RecordNullableAddress
+    entryPoint: RecordAddress
+    parameters:
+      - { name: data, type: "float[]?" }
+      - { name: seen, type: "ulong[]" }
+  - name: UpdateByReference
+    parameters:
+      - { name: total, type: ref int }
+      - { name: seed, type: in int }
+      - { name: result, type: out int }
+  - name: UpdateByReferenceBounded
+    parameters:
+      - { name: total, type: ref int }
+      - { name: seed, type: in int }
+      - { name: result, type: out int }
+      - { name: blockDimX, type: uint }
+  - name: ShiftMatrix
+    parameters:
+      - { name: x, type: "float[,]" }
+      - { name: rows, type: int }
+      - { name: cols, type: int }
+      - { name: blockDimX, type: uint }

@@ -479,6 +479,10 @@ if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReductionKernels.ReductionKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReductionKernels.ReductionKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
+}
 if (!global::System.Object.ReferenceEquals(input, output))
 {
 input = (global::Kassyi.GSharp.Core.Float4[])input.Clone();

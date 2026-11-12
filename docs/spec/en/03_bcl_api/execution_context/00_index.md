@@ -18,7 +18,9 @@ Structs and properties for determining grid and block dimensions and indices.
 - [BlockDimension](BlockDimension.md): Gets the dimensions of the thread block.
 - [BlockIndex](BlockIndex.md): Gets the block index within the grid.
 - [ThreadIndex](ThreadIndex.md): Gets the thread index within the block.
-- [ManagedGpuContext](ManagedGpuContext.md): Provides a managed execution context for evaluating GPU kernels on the host CPU.
+- [GpuExecution and KernelExecution](GpuExecution.md): Select how the generated launchers run kernels inside a scope:
+  the default path, the managed CPU path, or the kernel's C# body one GPU thread at a time.
+- [ManagedGpuContext](ManagedGpuContext.md): The thread context of the managed CPU path, for generated code only.
 
 ## See also
 

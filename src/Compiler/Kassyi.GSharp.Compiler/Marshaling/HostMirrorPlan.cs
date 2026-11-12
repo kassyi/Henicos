@@ -1,38 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-/// <summary>How the host mirror checks the offset of one of its fields.</summary>
-internal enum HostMirrorOffsetCheck
-{
-    /// <summary>
-    /// Not checked: a fixed buffer or a pointer, which <c>Unsafe.As</c> cannot take, or no offset to compare.
-    /// </summary>
-    None,
-
-    /// <summary>
-    /// Against the host offset that the compiler predicts (<see cref="HostMirrorField.ExpectedOffset"/>), for a field
-    /// the launcher cannot name on the struct.
-    /// </summary>
-    PredictedOffset,
-
-    /// <summary>Against the same field of the struct, which the launcher can name.</summary>
-    StructField
-}
-
-/// <summary>One field of the host mirror, in <see cref="StructAbiMembers"/> order.</summary>
-/// <param name="Member">The member of the struct that the field mirrors.</param>
-/// <param name="FieldOffset">
-/// The <c>[FieldOffset]</c> of a <c>LayoutKind.Explicit</c> mirror, otherwise <see langword="null"/>.
-/// </param>
-/// <param name="Check">How the offset is checked before the mirror is used.</param>
-/// <param name="ExpectedOffset">
-/// The predicted host offset for <see cref="HostMirrorOffsetCheck.PredictedOffset"/>.
-/// </param>
-internal readonly record struct HostMirrorField(
-    StructAbiMember Member,
-    int? FieldOffset,
-    HostMirrorOffsetCheck Check,
-    int ExpectedOffset);
-
 /// <summary>
 /// The host mirror of a converted struct (<see cref="NativeStructEmitter.NeedsHostMirror"/>): its layout attribute and
 /// fields, which give it the CLR layout of the struct, and the offset check of each field.

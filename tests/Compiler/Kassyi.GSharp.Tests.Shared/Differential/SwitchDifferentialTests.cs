@@ -14,7 +14,7 @@ public sealed class SwitchDifferentialTests
     private const int Rows = 64;
     private static readonly LaunchShape s_shape = LaunchShape.ForRows(Rows, blockX: 32);
 
-    private static readonly DifferentialCase s_switchIntStatement = new(
+    internal static readonly DifferentialCase s_switchIntStatement = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchIntStatementKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -43,7 +43,7 @@ public sealed class SwitchDifferentialTests
             b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_switchWideInt64Statement = new(
+    internal static readonly DifferentialCase s_switchWideInt64Statement = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchWideInt64StatementKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -77,7 +77,7 @@ public sealed class SwitchDifferentialTests
             b.Get<long>("a"), b.Get<ulong>("ua"), b.Get<long>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_switchNarrowCharEnumStatement = new(
+    internal static readonly DifferentialCase s_switchNarrowCharEnumStatement = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchNarrowCharEnumStatementKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -94,7 +94,7 @@ public sealed class SwitchDifferentialTests
             b.Get<byte>("ba"), b.Get<sbyte>("sba"), b.Get<short>("sa"), b.Get<ushort>("usa"), b.Get<int>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_switchGotoAndSharedLocals = new(
+    internal static readonly DifferentialCase s_switchGotoAndSharedLocals = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchGotoAndSharedLocalsKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -109,7 +109,7 @@ public sealed class SwitchDifferentialTests
             b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_switchExpressionIntAndLong = new(
+    internal static readonly DifferentialCase s_switchExpressionIntAndLong = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchExpressionIntAndLongKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -134,7 +134,7 @@ public sealed class SwitchDifferentialTests
             b.Get<int>("a"), b.Get<int>("b"), b.Get<long>("la"), b.Get<long>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_switchExpressionFloatSpecial = new(
+    internal static readonly DifferentialCase s_switchExpressionFloatSpecial = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchExpressionFloatSpecialKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -149,7 +149,7 @@ public sealed class SwitchDifferentialTests
             b.Get<int>("sel"), b.Get<float>("fa"), b.Get<float>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_ternaryNestedAndRef = new(
+    internal static readonly DifferentialCase s_ternaryNestedAndRef = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.TernaryNestedAndRefKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -165,7 +165,7 @@ public sealed class SwitchDifferentialTests
             b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("c"), b.Get<int>("dst"), Rows),
     };
 
-    private static readonly DifferentialCase s_ternaryTargetTypedAndNarrow = new(
+    internal static readonly DifferentialCase s_ternaryTargetTypedAndNarrow = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.TernaryTargetTypedAndNarrowKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -190,7 +190,7 @@ public sealed class SwitchDifferentialTests
             b.Get<long>("ldst"), b.Get<double>("ddst"), Rows),
     };
 
-    private static readonly DifferentialCase s_nullCoalesceAndNullCheckMatching = new(
+    internal static readonly DifferentialCase s_nullCoalesceAndNullCheckMatching = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.NullCoalesceAndNullCheckMatchingKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -208,7 +208,7 @@ public sealed class SwitchDifferentialTests
     // The kernel calls Gpu.SyncThreads() inside a switch section, which the sequential oracle cannot run; the reference
     // is the same computation without the barriers
     // Fixed to an exact multiple of Rows because early `if (t >= n) return;` precedes `Gpu.SyncThreads()`.
-    private static readonly DifferentialCase s_switchFlattenedFloatAndGoto = new(
+    internal static readonly DifferentialCase s_switchFlattenedFloatAndGoto = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchFlattenedFloatAndGotoKernel)}")
     {
         Shape = s_shape,
@@ -308,12 +308,16 @@ public sealed class SwitchDifferentialTests
                 _ => fa[t]
             };
 
-            long fTag = (fv != fv) ? long.MinValue
-                : (fv == 0.0f ? 0L
-                : (fv == float.PositiveInfinity ? long.MaxValue
-                : (fv == float.NegativeInfinity ? -5_000_000_000L
-                : (fv == 1.5f ? 15L
-                : (fv == -2.5f ? -25L : 7L)))));
+            long fTag = fv switch
+            {
+                float.NaN => long.MinValue,
+                0.0f => 0L, // -0.0f matches too, as fv == 0.0f does
+                float.PositiveInfinity => long.MaxValue,
+                float.NegativeInfinity => -5_000_000_000L,
+                1.5f => 15L,
+                -2.5f => -25L,
+                _ => 7L
+            };
 
             int fRes = 0;
             switch (fTag)

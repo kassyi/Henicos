@@ -66,7 +66,7 @@ internal sealed class UnsupportedConstructRule :
     public void Analyze(PredefinedTypeSyntax node, ref ValidationContext context)
     {
         if (!node.Keyword.IsKind(SyntaxKind.StringKeyword) ||
-            node.Parent is VariableDeclarationSyntax declaration && declaration.Type == node ||
+            (node.Parent is VariableDeclarationSyntax declaration && declaration.Type == node) ||
             IsInSignature(node))
         {
             return;
@@ -81,11 +81,13 @@ internal sealed class UnsupportedConstructRule :
     public void Analyze(CheckedStatementSyntax node, ref ValidationContext context) =>
         context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
 
-    // A kernel runs only through its launcher; in device code a call of it has no C++ form (#880)
+    // A kernel runs only through its launcher; in device code a call of it has no C++ form (#880). A call that C#
+    // removes, or one in its arguments, never runs (#1728)
     public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
     {
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol method &&
-            method.OriginalDefinition.HasAttribute(KnownAttributes.GpuKernel))
+            method.OriginalDefinition.HasAttribute(KnownAttributes.GpuKernel) &&
+            !RemovedCalls.IsInRemovedCall(node, context.SemanticModel))
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node,
                 GpuCodeConstraints.FormatKernelCalledFromDeviceCode(method));

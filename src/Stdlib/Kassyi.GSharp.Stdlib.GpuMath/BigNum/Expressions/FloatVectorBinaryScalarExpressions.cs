@@ -1,52 +1,52 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-internal readonly ref struct FloatVectorScalarOperands
-{
-    public FloatVectorScalarOperands(GpuBigFloatArrayView vector, GpuFloatOperand scalar, GpuBigFloatArrayView destination)
-    {
-        Vector = vector;
-        Scalar = scalar;
-        Destination = destination;
-    }
-
-    public GpuBigFloatArrayView Vector { get; }
-
-    public GpuFloatOperand Scalar { get; }
-
-    public GpuBigFloatArrayView Destination { get; }
-}
-
 internal abstract class FloatVectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
     GpuFloatOperand scalar,
-    int wordsPerElement) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
+    int wordsPerElement) : IGpuBigFloatVectorExpression, IFloatVectorOperator
 {
-    public int Length => vector.Length;
+    private readonly VectorShape _shape = VectorShape.Of(vector);
+
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(vector);
+
+    public int Length => _shape.Length;
     public int WordsPerElement { get; } = wordsPerElement;
+
+    public bool MayThrow => _inputsMayThrow || ElementMayThrow;
+
+    /// <summary>
+    /// Gets whether the operation itself can throw for an element (a zero divisor, a negative square root, a value the
+    /// host arithmetic cannot compute).
+    /// </summary>
+    protected virtual bool ElementMayThrow => RunsOnHost;
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
     private readonly VectorResultCache _cache = new();
 
     protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
-    public int Capacity => vector.Capacity;
+    public int Capacity => _shape.Capacity;
 
-    public bool TryGetLength(out int length) => vector.TryGetLength(out length);
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them
-    public FloatVectorEvaluation EvaluateCore(
-        GpuWorkspace workspace,
-        int elementOffset,
-        int? elementCount,
-        GpuBigFloatArrayView targetResult)
+    public int OperandCount => 1;
+
+    public object GetOperand(int index) => vector;
+
+    // The target is checked before the vector is evaluated, so that a rejected target evaluates nothing
+    public void Enter(in VectorRequest request) => request.FloatTarget(Capacity, WordsPerElement);
+
+    // The window of the capacity; the elements are the first Count of them
+    public VectorRequest OperandRequest(in VectorRequest request) => request.WindowOf(Capacity);
+
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second) =>
+        VectorResult.Of(Apply(workspace, request.EvalCount(Capacity), request.FloatTarget(Capacity, WordsPerElement),
+            first.Float));
+
+    private FloatVectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigFloatArrayView target,
+        FloatVectorEvaluation vecResult)
     {
-        var evalCount = elementCount ?? (Capacity - elementOffset);
-        // The target is checked before the child runs, so that a rejected target evaluates nothing
-        var target = VectorResultCache.HasTarget(targetResult)
-            ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
-            : default;
-        var vecResult = DeviceCounted.Evaluate(vector, workspace, elementOffset, evalCount);
-
         // A target that shares words with an input is written from the cache after the launch (#864)
         var output = VectorOutput.Open(_cache, workspace, evalCount, WordsPerElement, target, vecResult.Storage,
             scalar: scalar.Significand);
@@ -128,140 +128,17 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
         FloatVectorScalarOperands operands,
         uint gridDimX);
 
-    public void Dispose()
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        // A cache release that throws (a failed capture refuses the clear) does not skip the children
-        try
-        {
-            _cache.Dispose();
-        }
-        finally
-        {
-            vector.Dispose();
-        }
-    }
-}
+        Enter(request);
 
-internal sealed class FloatVectorAddScalarExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuFloatOperand scalar)
-    : FloatVectorBinaryScalarExpressionBase(
-        vector,
-        scalar,
-        Math.Max(vector.WordsPerElement, scalar.Significand.NumWords) + 1)
-{
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorScalarOperands operands,
-        uint gridDimX)
-    {
-        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub
-        {
-            FloatOp = CreateScalarFloatOp(operands),
-            OpSign = 0u
-        };
-        GpuBigIntVectorKernels.LaunchVectorFloatAddScalarKernelPtr(
-            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal sealed class FloatVectorSubScalarExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuFloatOperand scalar)
-    : FloatVectorBinaryScalarExpressionBase(
-        vector,
-        scalar,
-        Math.Max(vector.WordsPerElement, scalar.Significand.NumWords) + 1)
-{
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorScalarOperands operands,
-        uint gridDimX)
-    {
-        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub
-        {
-            FloatOp = CreateScalarFloatOp(operands),
-            OpSign = 1u
-        };
-        GpuBigIntVectorKernels.LaunchVectorFloatSubScalarKernelPtr(
-            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal sealed class FloatVectorMulScalarExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuFloatOperand scalar)
-    : FloatVectorBinaryScalarExpressionBase(
-        vector,
-        scalar,
-        vector.WordsPerElement + scalar.Significand.NumWords)
-{
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorScalarOperands operands,
-        uint gridDimX)
-    {
-        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatMul
-        {
-            FloatOp = CreateScalarFloatOp(operands)
-        };
-        GpuBigIntVectorKernels.LaunchVectorFloatMulScalarKernelPtr(
-            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal sealed class FloatVectorDivScalarExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuFloatOperand scalar)
-    : FloatVectorBinaryScalarExpressionBase(
-        vector,
-        scalar,
-        Math.Max(vector.WordsPerElement, scalar.Significand.NumWords) + 1)
-{
-    protected override bool DividesByZero(GpuWorkspace workspace, FloatVectorScalarOperands operands)
-    {
-        ZeroDivisorCheck.ThrowIfCapturingScalarTest(workspace);
-        return new GpuBigUIntView(workspace, operands.Scalar.Significand).IsZero();
+        return Apply(workspace, request, VectorWalk.EvaluateDirect(vector, workspace, OperandRequest(request), level),
+            default);
     }
 
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorScalarOperands operands,
-        uint gridDimX)
-    {
-        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatDiv
-        {
-            FloatOp = CreateScalarFloatOp(operands)
-        };
-        using var scratch = DivModScratch.Rent(workspace, ctx.FloatOp.Core, gridDimX);
-        ctx.Scratch = scratch?.ToProxy() ?? default;
-        GpuBigIntVectorKernels.LaunchVectorFloatDivScalarKernelPtr(
-            ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
-    }
-}
+    public void DisposeOwn() => _cache.Dispose();
 
-internal sealed class FloatVectorPowScalarExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuFloatOperand exponentScalar)
-    : FloatVectorBinaryScalarExpressionBase(
-        vector,
-        exponentScalar,
-        Math.Max(vector.WordsPerElement, exponentScalar.Significand.NumWords))
-{
-    protected override bool RunsOnHost => true;
-
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorScalarOperands operands,
-        uint gridDimX)
-    {
-        var expOperand = operands.Scalar;
-        FloatVectorElementwiseHelper.ExecuteUnary(
-            workspace,
-            operands.Vector,
-            operands.Destination,
-            (int)gridDimX,
-            (ref GpuBigIntExecutionContext ctx, IGpuBigFloatArithmetic arith, in GpuFloatOperand src, GpuBigIntMemoryHandle dst) =>
-                arith.Pow(ref ctx, in src, in expOperand, dst));
-    }
+    public void Dispose() => VectorWalk.Dispose(this);
 }

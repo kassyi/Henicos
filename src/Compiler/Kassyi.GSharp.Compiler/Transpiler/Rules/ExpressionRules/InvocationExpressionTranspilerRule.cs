@@ -91,13 +91,10 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        // A method of the project with no device definition would be called by a name nothing defines (#891)
-        if (UnemittedMethodCall.GetReason(symbol, node, context.Query.SemanticModel, context.Emitter.Dialect) is
-            { } reason)
+        // A method with no device definition (of the project, #891, or one the dialect does not map) would be
+        // called by a name nothing defines
+        if (CallTargetEmitter.TryReplaceCall(node, symbol, ref context))
         {
-            context.Reporter.Fail(GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode, node,
-                UnemittedMethodCall.GetDisplayName(symbol), reason);
-            context.Visitor.AppendUnsupportedPlaceholder(node);
             return;
         }
 
@@ -225,10 +222,17 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
     }
 
+    // A call that lowering synthesized (a prelude helper), as it is written; nameof and any other call without a method
+    // never reach the output by name (CallTargetClassifier.ClassifyUntyped)
     private static void TranspileUntypedInvocation(
         InvocationExpressionSyntax node,
         ref TranspileContext context)
     {
+        if (CallTargetEmitter.TryFailUntypedCall(node, ref context))
+        {
+            return;
+        }
+
         var arguments = node.ArgumentList.Arguments;
         using var sequence = EvaluationOrder.BeginCall(ref context, arguments, callee: null, node.Expression,
             spillAll: false);

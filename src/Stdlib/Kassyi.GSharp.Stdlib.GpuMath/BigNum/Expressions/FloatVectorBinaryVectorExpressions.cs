@@ -1,35 +1,27 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-internal readonly ref struct FloatVectorZipOperands
-{
-    public FloatVectorZipOperands(
-        GpuBigFloatArrayView left,
-        GpuBigFloatArrayView right,
-        GpuBigFloatArrayView destination,
-        GpuBigUIntArrayView zeroDivisor)
-    {
-        Left = left;
-        Right = right;
-        Destination = destination;
-        ZeroDivisor = zeroDivisor;
-    }
-
-    public GpuBigFloatArrayView Left { get; }
-
-    public GpuBigFloatArrayView Right { get; }
-
-    public GpuBigFloatArrayView Destination { get; }
-
-    /// <summary>Gets the word of <see cref="ZeroDivisorCheck"/> for a division, or the default view.</summary>
-    public GpuBigUIntArrayView ZeroDivisor { get; }
-}
-
 internal abstract class FloatVectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression left,
     [TakesOwnership] IGpuBigFloatVectorExpression right,
-    int wordsPerElement) : IGpuBigFloatVectorExpression, IDeviceCountedFloatVector
+    int wordsPerElement) : IGpuBigFloatVectorExpression, IFloatVectorOperator
 {
-    public int Length => left.Length;
+    private readonly VectorShape _shape = VectorShape.Of(left);
+
+    // The capacity of the right input, for the length check of a Zip before anything is evaluated
+    private readonly int _rightCapacity = right.Capacity;
+
+    private readonly bool _inputsMayThrow = VectorEffects.MayThrow(left) || VectorEffects.MayThrow(right);
+
+    public int Length => _shape.Length;
+
+    // Inputs of different lengths are rejected
+    public bool MayThrow => _inputsMayThrow || ElementMayThrow || Capacity != _rightCapacity;
+
+    /// <summary>
+    /// Gets whether the operation itself can throw for an element (a zero divisor, a negative square root, a value the
+    /// host arithmetic cannot compute).
+    /// </summary>
+    protected virtual bool ElementMayThrow => ChecksZeroDivisor || RunsOnHost;
     public int WordsPerElement { get; } = wordsPerElement;
 
     // The result buffers, lent until the next evaluation or Dispose; a caller's target is never kept
@@ -43,33 +35,40 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
     /// <summary>Gets whether the kernel reports a zero divisor element (<see cref="ZeroDivisorCheck"/>).</summary>
     protected virtual bool ChecksZeroDivisor => false;
 
-    public int Capacity => left.Capacity;
+    public int Capacity => _shape.Capacity;
 
-    public bool TryGetLength(out int length) => left.TryGetLength(out length);
+    public bool TryGetLength(out int length) => _shape.TryGetLength(out length);
 
-    // Evaluates the window of the capacity; the elements are the first Count of them
-    public FloatVectorEvaluation EvaluateCore(
-        GpuWorkspace workspace,
-        int elementOffset,
-        int? elementCount,
-        GpuBigFloatArrayView targetResult)
+    public int OperandCount => 2;
+
+    public object GetOperand(int index) => index == 0 ? left : right;
+
+    // The lengths and the target are checked before the inputs are evaluated, so that a rejected request evaluates
+    // nothing
+    public void Enter(in VectorRequest request)
     {
-        if (left.Capacity != right.Capacity)
-        {
-            throw new ArgumentException("Vector lengths must match for Zip operations.");
-        }
+        VectorShape.ThrowIfLengthsDiffer(Capacity, _rightCapacity, VectorShape.ZipLengthsMessage);
+        request.FloatTarget(Capacity, WordsPerElement);
+    }
 
-        var evalCount = elementCount ?? (Capacity - elementOffset);
-        // The target is checked before the children run, so that a rejected target evaluates nothing
-        var target = VectorResultCache.HasTarget(targetResult)
-            ? VectorResultCache.TargetFloat(targetResult, evalCount, WordsPerElement)
-            : default;
-        _operands.Evaluate(left, right, workspace, elementOffset, evalCount, out var leftResult, out var rightResult);
+    // The window of the capacity; the elements are the first Count of them
+    public VectorRequest OperandRequest(in VectorRequest request) => request.WindowOf(Capacity);
 
-        if (leftResult.Storage.Length != rightResult.Storage.Length)
-        {
-            throw new ArgumentException("Vector lengths must match for Zip operations.");
-        }
+    public VectorResult Apply(GpuWorkspace workspace, scoped in VectorRequest request, VectorResult first,
+        VectorResult second)
+    {
+        var evalCount = request.EvalCount(Capacity);
+        var leftResult = first.Float;
+        var rightResult = second.Float;
+        _operands.KeepBoth(left, workspace, request.Offset, evalCount, ref leftResult, ref rightResult);
+        return VectorResult.Of(Apply(workspace, evalCount, request.FloatTarget(Capacity, WordsPerElement), leftResult,
+            rightResult));
+    }
+
+    private FloatVectorEvaluation Apply(GpuWorkspace workspace, int evalCount, GpuBigFloatArrayView target,
+        FloatVectorEvaluation leftResult, FloatVectorEvaluation rightResult)
+    {
+        VectorShape.ThrowIfEvaluatedLengthsDiffer(leftResult.Storage.Length, rightResult.Storage.Length);
 
         var count = DeviceCounted.Combine(leftResult.Count, rightResult.Count);
         // A target that shares words with an input is written from the cache after the launch (#864)
@@ -140,149 +139,30 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         FloatVectorZipOperands operands,
         uint gridDimX);
 
-    public void Dispose()
+    // One level of a recursive evaluation (VectorWalk.EvaluateDirect)
+    public VectorResult EvaluateDirect(GpuWorkspace workspace, scoped in VectorRequest request,
+        RecursionLevel level)
     {
-        // A cache release that throws (a failed capture refuses the clear) does not skip the children
+        Enter(request);
+
+        var operandRequest = OperandRequest(request);
+        var first = VectorWalk.EvaluateDirect(left, workspace, operandRequest, level);
+        var second = VectorWalk.EvaluateDirect(right, workspace, operandRequest, level);
+        return Apply(workspace, request, first, second);
+    }
+
+    public void DisposeOwn()
+    {
+        // A cache release that throws (a failed capture refuses the clear) does not skip the other one
         try
         {
-            try
-            {
-                _cache.Dispose();
-            }
-            finally
-            {
-                _operands.Dispose();
-            }
+            _cache.Dispose();
         }
         finally
         {
-            try
-            {
-                left.Dispose();
-            }
-            finally
-            {
-                right.Dispose();
-            }
+            _operands.Dispose();
         }
     }
-}
 
-internal sealed class FloatVectorAddVectorExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression left,
-    [TakesOwnership] IGpuBigFloatVectorExpression right)
-    : FloatVectorBinaryVectorExpressionBase(
-        left,
-        right,
-        Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
-{
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorZipOperands operands,
-        uint gridDimX)
-    {
-        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub
-        {
-            FloatOp = CreateZipFloatOp(operands),
-            OpSign = 0u
-        };
-        GpuBigIntVectorKernels.LaunchVectorFloatZipAddKernelPtr(
-            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal sealed class FloatVectorSubVectorExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression left,
-    [TakesOwnership] IGpuBigFloatVectorExpression right)
-    : FloatVectorBinaryVectorExpressionBase(
-        left,
-        right,
-        Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
-{
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorZipOperands operands,
-        uint gridDimX)
-    {
-        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub
-        {
-            FloatOp = CreateZipFloatOp(operands),
-            OpSign = 1u
-        };
-        GpuBigIntVectorKernels.LaunchVectorFloatZipSubKernelPtr(
-            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal sealed class FloatVectorMulVectorExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression left,
-    [TakesOwnership] IGpuBigFloatVectorExpression right)
-    : FloatVectorBinaryVectorExpressionBase(
-        left,
-        right,
-        left.WordsPerElement + right.WordsPerElement)
-{
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorZipOperands operands,
-        uint gridDimX)
-    {
-        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatMul
-        {
-            FloatOp = CreateZipFloatOp(operands)
-        };
-        GpuBigIntVectorKernels.LaunchVectorFloatZipMulKernelPtr(
-            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal sealed class FloatVectorDivVectorExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression left,
-    [TakesOwnership] IGpuBigFloatVectorExpression right)
-    : FloatVectorBinaryVectorExpressionBase(
-        left,
-        right,
-        Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
-{
-    protected override bool ChecksZeroDivisor => true;
-
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorZipOperands operands,
-        uint gridDimX)
-    {
-        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatDiv
-        {
-            FloatOp = CreateZipFloatOp(operands),
-            ZeroDivisor = operands.ZeroDivisor.ToProxy()
-        };
-        using var scratch = DivModScratch.Rent(workspace, ctx.FloatOp.Core, gridDimX);
-        ctx.Scratch = scratch?.ToProxy() ?? default;
-        GpuBigIntVectorKernels.LaunchVectorFloatZipDivKernelPtr(
-            ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal sealed class FloatVectorPowVectorExpression(
-    [TakesOwnership] IGpuBigFloatVectorExpression left,
-    [TakesOwnership] IGpuBigFloatVectorExpression right)
-    : FloatVectorBinaryVectorExpressionBase(
-        left,
-        right,
-        Math.Max(left.WordsPerElement, right.WordsPerElement))
-{
-    protected override bool RunsOnHost => true;
-
-    protected override void DispatchKernel(
-        GpuWorkspace workspace,
-        FloatVectorZipOperands operands,
-        uint gridDimX) =>
-        FloatVectorElementwiseHelper.ExecuteBinary(
-            workspace,
-            operands.Left,
-            operands.Right,
-            operands.Destination,
-            (int)gridDimX,
-            static (ref ctx, arith, in l, in r, dst) =>
-                arith.Pow(ref ctx, in l, in r, dst));
+    public void Dispose() => VectorWalk.Dispose(this);
 }

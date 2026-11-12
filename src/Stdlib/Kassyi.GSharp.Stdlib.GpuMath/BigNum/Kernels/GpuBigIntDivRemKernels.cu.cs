@@ -105,6 +105,8 @@ public static partial class GpuBigIntDivRemKernels
         var dims = core.Dimensions;
         var ops = core.Operands;
         var iterScratch = core.Workspace.Iteration;
+        uint[] currentProduct = Gpu.NotNull(iterScratch.CurrentProduct);
+        uint[] constant = Gpu.NotNull(ops.Constant);
         int n = dims.NumberOfWords;
         int resultWords = (dims.TargetBits + 31) / 32;
 
@@ -115,7 +117,7 @@ public static partial class GpuBigIntDivRemKernels
         {
             // 1. currentProduct = targetOperand * resultBuffer (n, resultWords -> n + resultWords)
             ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer,
-                iterScratch.CurrentProduct, n, resultWords, n + resultWords, chunkSize);
+                currentProduct, n, resultWords, n + resultWords, chunkSize);
 
             // 2. diff = constant - currentProduct
             Gpu.SyncGrid();
@@ -126,13 +128,14 @@ public static partial class GpuBigIntDivRemKernels
                     Operands = new OperandContext { CarryBuffer = core.CarryBuffer },
                     NumberOfWords = n + resultWords
                 };
-                GpuBigIntKernels.ExecuteSub(ref subCtx, iterScratch.Diff, ops.Constant,
-                    iterScratch.CurrentProduct);
+                GpuBigIntKernels.ExecuteSub(ref subCtx, iterScratch.Diff, constant,
+                    currentProduct);
             });
             Gpu.SyncGrid();
 
             // 3. nextIter = resultBuffer * diff (resultWords, n + resultWords -> n + 2 * resultWords)
-            ExecuteNttMultiplyMacro(core, ops.ResultBuffer, iterScratch.Diff, iterScratch.NextIter,
+            uint[] nextIter = Gpu.NotNull(iterScratch.NextIter);
+            ExecuteNttMultiplyMacro(core, ops.ResultBuffer, iterScratch.Diff, nextIter,
                 resultWords, n + resultWords, n + 2 * resultWords, chunkSize);
 
             // 4. copy resultBuffer = nextIter >> (2 * numBits + marginBits)
@@ -146,8 +149,8 @@ public static partial class GpuBigIntDivRemKernels
             {
                 int srcIdx = idx + wordShift;
                 // Ensure we don't read out of bounds.
-                uint w0 = (srcIdx < srcMaxWords) ? iterScratch.NextIter[srcIdx] : 0u;
-                uint w1 = (srcIdx + 1 < srcMaxWords) ? iterScratch.NextIter[srcIdx + 1] : 0u;
+                uint w0 = (srcIdx < srcMaxWords) ? nextIter[srcIdx] : 0u;
+                uint w1 = (srcIdx + 1 < srcMaxWords) ? nextIter[srcIdx + 1] : 0u;
 
                 uint shiftedValue = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
                 ops.ResultBuffer[idx] = shiftedValue;
@@ -157,15 +160,15 @@ public static partial class GpuBigIntDivRemKernels
 
         // Final correction to x = floor(2^T / b): r = 2^T - b * x, then r moves into [0, b) and x by the same steps.
         // The Newton result is floor(2^T / b) or one less, so this takes at most one step after convergence.
-        ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer, iterScratch.CurrentProduct, n, resultWords,
+        ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer, currentProduct, n, resultWords,
             n + resultWords, chunkSize);
 
         // Constant holds 2^(T+1) in n + 2 * resultWords words; reading it shifted right by one bit gives 2^T.
         int remainderWords = n + resultWords;
-        GpuBigIntKernels.DeviceAddSubAlignedParallel(iterScratch.CurrentProduct, remainderWords, ops.Constant,
+        GpuBigIntKernels.DeviceAddSubAlignedParallel(currentProduct, remainderWords, constant,
             n + 2 * resultWords, iterScratch.Diff, remainderWords, 0, 1, -2, true);
         var delta = CorrectIntoDivisorRange(iterScratch.Diff, ops.TargetOperand, remainderWords, n, 1000,
-            core.CorrectionStatus, ReciprocalCorrectionFailed);
+            Gpu.NotNull(core.CorrectionStatus), ReciprocalCorrectionFailed);
         Gpu.SingleThread(() => AddSmallSigned(ops.ResultBuffer, resultWords, delta));
     }
 

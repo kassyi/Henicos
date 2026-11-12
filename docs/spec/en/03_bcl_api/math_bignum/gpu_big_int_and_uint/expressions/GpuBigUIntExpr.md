@@ -94,6 +94,7 @@ A lazy AST node representing the square root.
 | `operator -(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy subtraction expression; a difference below zero is a domain error. |
 | `operator *(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy multiplication expression. |
 | `operator /(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy division expression. |
+| `operator %(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy remainder expression. |
 | `operator &(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy bitwise AND expression. |
 | `operator \|(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy bitwise OR expression. |
 | `operator ^(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy bitwise XOR expression. |

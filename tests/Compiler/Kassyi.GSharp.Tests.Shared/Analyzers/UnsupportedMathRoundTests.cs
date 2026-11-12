@@ -7,26 +7,26 @@ public class UnsupportedMathRoundTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Round_WithDigitsOrMidpointRounding_ReportsGSH0003AtTheMethodAccess()
+    public async Task Round_WithDigitsOrMidpointRounding_ReportsGsh0109AtTheCall()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/UnsupportedMathRoundOverloads.cu.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
-        // 'Math.Round' / 'MathF.Round' member access of the five unsupported overloads, lines 11 to 15 (1-based)
+        // The calls of the five overloads the dialect does not map, lines 11 to 15 (1-based)
         (int Line, int StartColumn, int EndColumn)[] expected =
         [
-            (10, 20, 30),
-            (11, 20, 30),
-            (12, 20, 30),
-            (13, 22, 33),
-            (14, 22, 33),
+            (10, 20, 44),
+            (11, 20, 72),
+            (12, 20, 69),
+            (13, 22, 49),
+            (14, 22, 71),
         ];
 
         Assert.Equal(expected.Length, diagnostics.Length);
         for (int i = 0; i < expected.Length; i++)
         {
-            Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diagnostics[i].Id);
+            Assert.Equal(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id, diagnostics[i].Id);
             var span = diagnostics[i].Location.GetLineSpan();
             Assert.Equal((expected[i].Line, expected[i].StartColumn), (span.StartLinePosition.Line, span.StartLinePosition.Character));
             Assert.Equal((expected[i].Line, expected[i].EndColumn), (span.EndLinePosition.Line, span.EndLinePosition.Character));

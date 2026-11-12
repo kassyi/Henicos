@@ -19,6 +19,12 @@ Represents a deferred GPU vector expression yielding an array of boolean predica
 public interface IGpuBoolVectorExpression : IDisposable
 ```
 
+The expressions of GpuMath read `Length`, `Capacity` and `TryGetLength` of their inputs once, when they are built: an
+implementation must not change them once it is the input of another expression. `Dispose` releases the expression and
+every expression below it, whatever the depth; one exception is rethrown as it is, several are thrown together in an
+`AggregateException`. See [IGpuBigIntVectorExpression](IGpuBigIntVectorExpression.md)
+for the depth and the order of evaluation.
+
 Implements: `IDisposable`
 
 ## Remarks

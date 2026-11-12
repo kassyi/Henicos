@@ -13,7 +13,7 @@ public class HostWrapperNameCollisionGeneratorTests
     [Scenario(TestScenario.Boundary)]
     public async Task HostWrapperNameCollisions_GenerateCompilableWrappers(string dialect)
     {
-        var testConfig = RoslynTestUtility.TestGenerator("Generators/GpuKernel_HostWrapperNames.cu.cs")
+        var testConfig = GeneratorTestRunner.TestGenerator("Generators/GpuKernel_HostWrapperNames.cu.cs")
             .WithDialect(dialect);
 
         await testConfig.HasNoErrorsAsync();

@@ -1,28 +1,80 @@
 namespace Kassyi.GSharp.Compiler.Extensions;
 
-/// <summary>Writes C# type and namespace names of Roslyn symbols for generated C# source.</summary>
+/// <summary>
+/// Writes the C# names of Roslyn symbols for generated C# source: type references from <c>global::</c>, namespace names
+/// and the names that declare a type, each identifier that is a keyword escaped with <c>@</c> as
+/// <c>SymbolDisplayFormat.FullyQualifiedFormat</c> writes it; and, apart from those, the metadata name of a namespace.
+/// </summary>
 internal static class CSharpTypeNameWriter
 {
     /// <summary>
-    /// Gets the dot-separated name of <paramref name="namespaceSymbol"/>, or an empty string for the global namespace.
+    /// Gets the name of <paramref name="namespaceSymbol"/> as C# source spells it (<c>@event.P3</c>), without
+    /// <c>global::</c>, or an empty string for the global namespace.
     /// </summary>
-    public static string GetFullNamespaceName(this INamespaceSymbol? namespaceSymbol)
+    public static string GetCsharpNamespaceName(this INamespaceSymbol? namespaceSymbol) =>
+        GetNamespaceName(namespaceSymbol, escapeKeywords: true);
+
+    /// <summary>Appends the name that <see cref="GetCsharpNamespaceName"/> returns.</summary>
+    public static ref readonly SourceWriter AppendCsharpNamespace(this in SourceWriter writer,
+        INamespaceSymbol? namespaceSymbol)
     {
-        if (namespaceSymbol is null or { IsGlobalNamespace: true })
+        AppendNamespace(writer, namespaceSymbol, escapeKeywords: true);
+        return ref writer;
+    }
+
+    /// <summary>
+    /// Gets the metadata name of <paramref name="namespaceSymbol"/> (<c>event.P3</c>): dot-separated, keywords not
+    /// escaped, or an empty string for the global namespace. For a metadata or display name only, such as the type name
+    /// that <c>[UnsafeAccessorType]</c> takes; C# source takes <see cref="GetCsharpNamespaceName"/>.
+    /// </summary>
+    public static string GetMetadataNamespaceName(this INamespaceSymbol? namespaceSymbol) =>
+        GetNamespaceName(namespaceSymbol, escapeKeywords: false);
+
+    /// <summary>
+    /// Appends <paramref name="name"/> as C# source spells an identifier: a reserved keyword gets the verbatim <c>@</c>
+    /// prefix (<c>ISymbol.Name</c> of <c>@class</c> is <c>class</c>).
+    /// </summary>
+    public static ref readonly SourceWriter AppendCsharpIdentifier(this in SourceWriter writer, string name)
+    {
+        writer.AppendIf(IsReservedKeyword(name), "@");
+        writer.Append(name);
+        return ref writer;
+    }
+
+    /// <summary>
+    /// Appends the name that declares <paramref name="type"/> in a partial declaration of it: its identifier and its
+    /// own type parameters (<c>@class</c>, <c>Outer&lt;T&gt;</c>), each escaped as
+    /// <see cref="AppendCsharpIdentifier"/> does.
+    /// </summary>
+    public static ref readonly SourceWriter AppendDeclaredTypeName(this in SourceWriter writer, INamedTypeSymbol type)
+    {
+        writer.AppendCsharpIdentifier(type.Name);
+        if (type.TypeParameters.IsEmpty)
         {
-            return string.Empty;
+            return ref writer;
         }
 
-        // Fast path for single-level namespace
-        if (namespaceSymbol.ContainingNamespace is null or { IsGlobalNamespace: true })
+        writer.Append('<');
+        for (var i = 0; i < type.TypeParameters.Length; i++)
         {
-            return namespaceSymbol.Name;
+            writer.AppendIf(i > 0, ", ");
+            writer.AppendCsharpIdentifier(type.TypeParameters[i].Name);
         }
 
+        writer.Append('>');
+        return ref writer;
+    }
+
+    /// <summary>Gets the name that <see cref="AppendDeclaredTypeName"/> writes.</summary>
+    public static string GetDeclaredTypeName(this INamedTypeSymbol type)
+    {
         using var writer = new SourceWriter();
-        writer.AppendNamespace(namespaceSymbol);
+        writer.AppendDeclaredTypeName(type);
         return writer.ToString();
     }
+
+    /// <summary>Whether <paramref name="name"/> is a reserved keyword, which C# source writes with <c>@</c>.</summary>
+    public static bool IsReservedKeyword(string name) => SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None;
 
     /// <summary>
     /// Returns the C# primitive keyword (e.g. "int", "float", "bool") for the specified <see cref="SpecialType"/>, or null if none.
@@ -97,12 +149,11 @@ internal static class CSharpTypeNameWriter
 
                 writer.Append(']');
                 break;
-            case IPointerTypeSymbol pointerType:
-                AppendTypeName(writer, pointerType.PointedAtType, useKeywords);
-                writer.Append('*');
+            case IPointerTypeSymbol or IFunctionPointerTypeSymbol:
+                AppendPointerTypeName(writer, type, useKeywords);
                 break;
             case ITypeParameterSymbol typeParameter:
-                writer.Append(typeParameter.Name);
+                writer.AppendCsharpIdentifier(typeParameter.Name);
                 break;
             case INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType
                 when useKeywords:
@@ -124,6 +175,93 @@ internal static class CSharpTypeNameWriter
         }
     }
 
+    // <pointed-at type>*, or a function pointer type
+    private static void AppendPointerTypeName(in SourceWriter writer, ITypeSymbol type, bool useKeywords)
+    {
+        if (type is IFunctionPointerTypeSymbol functionPointer)
+        {
+            AppendFunctionPointer(writer, functionPointer.Signature, useKeywords);
+            return;
+        }
+
+        if (type is IPointerTypeSymbol pointer)
+        {
+            AppendTypeName(writer, pointer.PointedAtType, useKeywords);
+            writer.Append('*');
+        }
+    }
+
+    // delegate*[ unmanaged[<conventions>]]<[<ref kind>] <parameter type>, ..., [ref [readonly]] <return type>>
+    private static void AppendFunctionPointer(in SourceWriter writer, IMethodSymbol signature, bool useKeywords)
+    {
+        writer.Append("delegate*");
+        AppendCallingConvention(writer, signature);
+        writer.Append('<');
+        foreach (var parameter in signature.Parameters)
+        {
+            writer.Append(parameter.RefKind switch
+            {
+                RefKind.Ref => "ref ",
+                RefKind.Out => "out ",
+                RefKind.In => "in ",
+                RefKind.RefReadOnlyParameter => "ref readonly ",
+                _ => string.Empty,
+            });
+            AppendTypeName(writer, parameter.Type, useKeywords);
+            writer.Append(", ");
+        }
+
+        writer.AppendIf(signature.ReturnsByRef, "ref ");
+        writer.AppendIf(signature.ReturnsByRefReadonly, "ref readonly ");
+        AppendTypeName(writer, signature.ReturnType, useKeywords);
+        writer.Append('>');
+    }
+
+    private const string CallConvPrefix = "CallConv";
+
+    // The calling convention of a function pointer as C# spells it: nothing for managed, ' unmanaged' with the
+    // conventions in brackets (CallConvCdecl as Cdecl)
+    private static void AppendCallingConvention(in SourceWriter writer, IMethodSymbol signature)
+    {
+        var convention = signature.CallingConvention switch
+        {
+            System.Reflection.Metadata.SignatureCallingConvention.CDecl => "Cdecl",
+            System.Reflection.Metadata.SignatureCallingConvention.StdCall => "Stdcall",
+            System.Reflection.Metadata.SignatureCallingConvention.ThisCall => "Thiscall",
+            System.Reflection.Metadata.SignatureCallingConvention.FastCall => "Fastcall",
+            _ => null,
+        };
+        if (convention is not null)
+        {
+            writer.Append($" unmanaged[{convention}]");
+            return;
+        }
+
+        if (signature.CallingConvention != System.Reflection.Metadata.SignatureCallingConvention.Unmanaged)
+        {
+            return;
+        }
+
+        writer.Append(" unmanaged");
+        var conventionTypes = signature.UnmanagedCallingConventionTypes;
+        if (conventionTypes.IsEmpty)
+        {
+            return;
+        }
+
+        using (writer.Brackets())
+        {
+            for (var i = 0; i < conventionTypes.Length; i++)
+            {
+                writer.AppendIf(i > 0, ", ");
+                var name = conventionTypes[i].Name;
+                writer.Append(name.StartsWith(CallConvPrefix, StringComparison.Ordinal)
+                    ? name[CallConvPrefix.Length..]
+                    : name);
+            }
+        }
+    }
+
     // <namespace>.<containing type>.<name>[<type arguments>]. A containing type keeps its type arguments, so a type
     // nested in a generic type is written as Outer<int>.Inner.
     private static void AppendQualifiedName(in SourceWriter writer, ITypeSymbol type, bool useKeywords)
@@ -135,12 +273,12 @@ internal static class CSharpTypeNameWriter
                 writer.Append('.');
                 break;
             case INamespaceSymbol { IsGlobalNamespace: false } containingNamespace:
-                writer.AppendNamespace(containingNamespace);
+                AppendNamespace(writer, containingNamespace, escapeKeywords: true);
                 writer.Append('.');
                 break;
         }
 
-        writer.Append(type.Name);
+        writer.AppendCsharpIdentifier(type.Name);
         if (type is not INamedTypeSymbol { TypeArguments: { Length: > 0 } typeArguments })
         {
             return;
@@ -160,23 +298,46 @@ internal static class CSharpTypeNameWriter
         writer.Append('>');
     }
 
-    /// <summary>
-    /// Recursively writes the namespace hierarchy to the source writer without string allocations.
-    /// </summary>
-    public static ref readonly SourceWriter AppendNamespace(this in SourceWriter writer, INamespaceSymbol? ns)
+    private static string GetNamespaceName(INamespaceSymbol? namespaceSymbol, bool escapeKeywords)
+    {
+        if (namespaceSymbol is null or { IsGlobalNamespace: true })
+        {
+            return string.Empty;
+        }
+
+        // Fast path for a single-level namespace that is not a keyword
+        if (namespaceSymbol.ContainingNamespace is null or { IsGlobalNamespace: true } &&
+            !(escapeKeywords && IsReservedKeyword(namespaceSymbol.Name)))
+        {
+            return namespaceSymbol.Name;
+        }
+
+        using var writer = new SourceWriter();
+        AppendNamespace(writer, namespaceSymbol, escapeKeywords);
+        return writer.ToString();
+    }
+
+    // With escapeKeywords, a segment that is a keyword is written as C# source spells it (@event)
+    private static void AppendNamespace(in SourceWriter writer, INamespaceSymbol? ns, bool escapeKeywords)
     {
         if (ns is null || ns.IsGlobalNamespace)
         {
-            return ref writer;
+            return;
         }
 
         if (ns.ContainingNamespace is { IsGlobalNamespace: false } parentNs)
         {
-            writer.AppendNamespace(parentNs);
+            AppendNamespace(writer, parentNs, escapeKeywords);
             writer.Append('.');
         }
 
-        writer.Append(ns.Name);
-        return ref writer;
+        if (escapeKeywords)
+        {
+            writer.AppendCsharpIdentifier(ns.Name);
+        }
+        else
+        {
+            writer.Append(ns.Name);
+        }
     }
 }

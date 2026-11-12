@@ -39,7 +39,7 @@ public class ConstantLiteralCultureTests
         try
         {
             CultureInfo.CurrentCulture = culture;
-            var (driver, _, diagnostics) = RoslynTestUtility.RunGenerator(source, dialect);
+            var (driver, _, diagnostics) = GeneratorTestRunner.RunGenerator(source, dialect);
             Assert.Empty(diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
             return driver.GetRunResult().Results
                 .SelectMany(static r => r.GeneratedSources)
@@ -54,13 +54,17 @@ public class ConstantLiteralCultureTests
     // The line where the two texts part, so that the failure shows the literal instead of the whole file
     private static string FirstDifference(string expected, string actual)
     {
+#pragma warning disable RS0030 // Splits the outputs into lines only to format a readable failure report
         var expectedLines = expected.Split('\n');
         var actualLines = actual.Split('\n');
+#pragma warning restore RS0030
         for (var i = 0; i < Math.Min(expectedLines.Length, actualLines.Length); i++)
         {
             if (expectedLines[i] != actualLines[i])
             {
+#pragma warning disable RS0030 // Trims the two differing lines for the readable failure report
                 return $"line {i + 1}{Environment.NewLine}expected: {expectedLines[i].Trim()}{Environment.NewLine}actual:   {actualLines[i].Trim()}";
+#pragma warning restore RS0030
             }
         }
 

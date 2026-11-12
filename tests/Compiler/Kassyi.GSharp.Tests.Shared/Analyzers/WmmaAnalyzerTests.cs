@@ -11,7 +11,7 @@ public class WmmaAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Wmma_UnsupportedFragmentsLocationsAndOperands_ReportsGSH0076()
     {
-        var diagnostics = (await RoslynTestUtility
+        var diagnostics = (await GeneratorTestRunner
             .TestAnalyzer("Analyzers/Wmma_SadPath.cs", s_analyzer)
             .GetDiagnosticsAsync())
             .Where(static d => d.Id == GSharpDiagnostics.UnsupportedWarpMatrixOperation.Id)
@@ -67,5 +67,66 @@ public class WmmaAnalyzerTests : TranspilerTestBase
         var span8 = diagnostics[8].Location.GetLineSpan();
         Assert.Equal((58, 29), (span8.StartLinePosition.Line, span8.StartLinePosition.Character));
         Assert.Equal((58, 46), (span8.EndLinePosition.Line, span8.EndLinePosition.Character));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Wmma_UserAndCoreMarkerLocals_ReportsGSH0076OnlyForTheCoreMarkers()
+    {
+        var diagnostics = (await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/Wmma_MarkerKinds.cs", s_analyzer)
+            .GetDiagnosticsAsync())
+            .Where(static d => d.Severity >= DiagnosticSeverity.Warning)
+            .OrderBy(static d => d.Location.SourceSpan.Start)
+            .ToArray();
+
+        // The locals of UserWmmaShape and UserWmmaLayout (lines 22-23) are ordinary structs; only the Core markers are
+        // reported
+        Assert.Equal(2, diagnostics.Length);
+        Assert.All(diagnostics, static d => Assert.Equal(GSharpDiagnostics.UnsupportedWarpMatrixOperation.Id, d.Id));
+        Assert.All(diagnostics, static d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
+
+        // 0: WmmaM16N16K16 coreShape (line 28, 0-based 27)
+        var span0 = diagnostics[0].Location.GetLineSpan();
+        Assert.Equal((27, 8), (span0.StartLinePosition.Line, span0.StartLinePosition.Character));
+        Assert.Equal((27, 21), (span0.EndLinePosition.Line, span0.EndLinePosition.Character));
+
+        // 1: WmmaRowMajor coreLayout (line 29, 0-based 28)
+        var span1 = diagnostics[1].Location.GetLineSpan();
+        Assert.Equal((28, 8), (span1.StartLinePosition.Line, span1.StartLinePosition.Character));
+        Assert.Equal((28, 20), (span1.EndLinePosition.Line, span1.EndLinePosition.Character));
+    }
+
+    // A struct of the user that implements IWmmaShape or IWmmaLayout compiles as any other struct: no diagnostic, and
+    // the struct is emitted. GeneratorSnapshotTests compares the generated code of each case with its snapshots
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("UserMarkerLocal.cu.cs", "LocalShapeTag")]
+    [InlineData("UserMarkerExpression.cu.cs", "ExpressionLayoutTag")]
+    [InlineData("UserMarkerDefault.cu.cs", "DefaultShapeTag")]
+    [InlineData("UserMarkerField.cu.cs", "FieldLayoutTag")]
+    [InlineData("UserMarkerParameter.cu.cs", "ParameterMarkerTag")]
+    public async Task Wmma_UserStructImplementingAMarkerInterface_CompilesAsAnOrdinaryStruct(
+        string fileName,
+        string structName)
+    {
+        var relativePath = "Analyzers/WmmaUserMarker/" + fileName;
+
+        var analyzerDiagnostics = await TestAnalyzer(relativePath, s_analyzer).GetDiagnosticsAsync();
+        Assert.DoesNotContain(analyzerDiagnostics, static d => d.Severity >= DiagnosticSeverity.Warning);
+
+        var driver = await TestGenerator(relativePath).GetDriverAsync();
+        var runResult = driver.GetRunResult();
+        Assert.DoesNotContain(runResult.Diagnostics, static d => d.Severity >= DiagnosticSeverity.Warning);
+
+        // The definition line of the struct: struct __gsharp_ty_<namespace>__<name>
+        var lines = runResult.GeneratedTrees
+            .SelectMany(static t => t.GetText().Lines)
+            .Select(static line => line.ToString());
+        Assert.Contains(
+            lines,
+            line => line.StartsWith("struct __gsharp_ty_", StringComparison.Ordinal) &&
+                line.EndsWith("__" + structName, StringComparison.Ordinal)
+        );
     }
 }

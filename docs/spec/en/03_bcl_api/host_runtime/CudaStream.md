@@ -76,6 +76,16 @@ Blocks the current host thread until all operations in this stream have complete
 public void Synchronize();
 ```
 
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The stream has been disposed.
+
+[CudaException](../01_diagnostics_and_exceptions.md#cudaexception)<br>
+`cuStreamSynchronize` failed.
+
+A device error that a kernel recorded and that no other synchronization has thrown yet is thrown as its .NET exception (for example an `IndexOutOfRangeException` of a kernel launched through a `Ptr` launcher).
+
 ## SynchronizeAsync(CancellationToken)
 
 Asynchronously waits until all operations currently enqueued on this stream have completed, without blocking the calling thread.
@@ -93,6 +103,11 @@ A token that detaches the awaiter; the GPU work itself is not canceled.
 
 _ValueTask_<br>
 A task that completes when the stream has drained.
+
+#### Exceptions
+
+`ObjectDisposedException`<br>
+The stream has been disposed (thrown before a task is returned).
 
 ## Remarks
 

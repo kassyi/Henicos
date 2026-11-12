@@ -12,7 +12,7 @@ public class StructMutatingGetterDifferentialTests
 
     private const string KernelName = nameof(StructMutatingGetterDifferentialKernels.MutatingGetterKernel);
 
-    private static readonly DifferentialCase s_mutatingGetter = new(
+    internal static readonly DifferentialCase s_mutatingGetter = new(
         $"{nameof(StructMutatingGetterDifferentialKernels)}.{KernelName}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(Rows),

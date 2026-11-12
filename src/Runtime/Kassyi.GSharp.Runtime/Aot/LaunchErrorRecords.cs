@@ -10,15 +10,20 @@ using Kassyi.GSharp.Runtime.Interop;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Every launch takes an epoch (<see cref="NextLaunchEpoch"/>) and passes it to the kernel as its hidden last
-/// parameter. A failing thread claims the record of its epoch (one of <see cref="Records"/> in pinned host-mapped
-/// memory, indexed by
-/// <c>epoch % Records</c>) and writes its epoch into the abort word of the launch (an array in device memory of each
-/// module), which the waiters of the same launch at a barrier that counts a fixed number of arrivals (the grid barrier,
-/// an mbarrier) read to leave.
+/// Every launch takes an epoch (<see cref="NextLaunchEpoch(IntPtr, bool, IntPtr)"/>) and passes it to the kernel as
+/// its hidden last parameter. A failing thread claims the record of its epoch (one of <see cref="Records"/> in pinned
+/// host-mapped memory, indexed by <c>epoch % Records</c>) and writes its epoch into the abort word of the launch (an
+/// array in device memory of each module), which the waiters of the same launch at a barrier that counts a fixed number
+/// of arrivals (the grid barrier, an mbarrier) read to leave.
 /// </para>
 /// <para>
-/// A launcher that reads the record of its launch itself owns the epoch from <see cref="NextLaunchEpoch"/> to
+/// A launch captured into a CUDA graph runs again at every replay with the same arguments, so it owns no record and
+/// records into the shared one (<see cref="DeviceErrorSlot"/>). When its kernel waits at such a barrier, it takes a
+/// capture epoch (bit 31 set) whose abort word a kernel node of the graph clears before every replay.
+/// </para>
+/// <para>
+/// A launcher that reads the record of its launch itself owns the epoch from
+/// <see cref="NextLaunchEpoch(IntPtr, bool, IntPtr)"/> to
 /// <see cref="ThrowIfLaunchError"/> (or <see cref="ReleaseLaunchEpoch"/> when the launch fails earlier), and a stream
 /// synchronization does not take an owned record (<see cref="DeviceErrorSlot.ThrowIfDeviceError"/>), so the launcher
 /// throws its own error. The record of a launch that no launcher reads (a <c>Ptr</c> launch outside the checked build)
@@ -37,9 +42,20 @@ public static unsafe class LaunchErrorRecords
     // The records (Prelude.cu, GSharpLaunchErrorRing)
     private static readonly int s_bytes = (int)Records * sizeof(GSharpDeviceErrorSlot);
 
+    // The bit of the capture epochs (__GSHARP_CAPTURE_EPOCH of the CUDA prelude)
+    private const uint CaptureEpochBit = 0x80000000u;
+
+    // The kernel of each module that clears the abort word of a captured launch (Prelude.cu)
+    private const string ClearCaptureAbortName = "__gsharp_clear_capture_abort";
+
     private static IntPtr s_host;
     private static ulong s_device;
     private static int s_lastEpoch;
+    private static int s_lastSharedEpoch;
+
+    // Tests: HoldEveryRecordForTest
+    [ThreadStatic]
+    private static bool t_holdEveryRecordForTest;
 
     // The epoch whose launcher reads the record of each index itself, or 0
     private static readonly uint[] s_owners = new uint[Records];
@@ -57,7 +73,7 @@ public static unsafe class LaunchErrorRecords
 
         if (!DeviceErrorSlot.TryAllocateMapped(s_bytes, out var host, out var device, out var reason))
         {
-            // [WHY] Every launch then has epoch 0 and shares the record of DeviceErrorSlot: an error can be thrown by
+            // [WHY] Every launch then records into the shared record of DeviceErrorSlot: an error can be thrown by
             // the synchronization of another launch
             Logger.Warning(nameof(LaunchErrorRecords),
                 $"The per-launch device error records could not be allocated ({reason}); " +
@@ -93,32 +109,66 @@ public static unsafe class LaunchErrorRecords
     /// epoch until it does, or until <see cref="ReleaseLaunchEpoch"/>.
     /// </param>
     /// <returns>
-    /// A new nonzero epoch, or 0 when the stream is being captured into a CUDA graph or when there are no per-launch
-    /// records.
+    /// A new nonzero epoch, or 0 when the stream is being captured into a CUDA graph.
     /// </returns>
     /// <exception cref="Exception">
     /// A device error of an earlier launch that nothing consumed is recorded where this launch would record its own:
     /// that error is thrown, before the launch.
     /// </exception>
-    public static uint NextLaunchEpoch(IntPtr stream, bool launcherConsumes)
+    public static uint NextLaunchEpoch(IntPtr stream, bool launcherConsumes) =>
+        NextLaunchEpoch(stream, launcherConsumes, IntPtr.Zero);
+
+    /// <summary>
+    /// Takes the epoch of a launch of a kernel that waits at a barrier counting a fixed number of arrivals (a grid
+    /// barrier or an mbarrier), like <see cref="NextLaunchEpoch(IntPtr, bool)"/>. On a stream that is being captured
+    /// into a CUDA graph it takes a capture epoch and launches a one-thread kernel that clears the launch's abort word
+    /// on the stream, which the graph runs before the kernel at every replay.
+    /// </summary>
+    /// <param name="stream">The stream the kernel is launched on.</param>
+    /// <param name="launcherConsumes">
+    /// Whether the launcher reads the record of the launch itself (<see cref="ThrowIfLaunchError"/>).
+    /// </param>
+    /// <param name="barrierFunction">
+    /// The function of the kernel, whose module holds the abort words of captured launches; <see cref="IntPtr.Zero"/>
+    /// for a kernel that waits at no such barrier.
+    /// </param>
+    /// <returns>A new nonzero epoch, or 0 for a captured launch of a kernel without such a barrier.</returns>
+    /// <exception cref="Exception">
+    /// A device error of an earlier launch that nothing consumed is recorded where this launch would record its own:
+    /// that error is thrown, before the launch.
+    /// </exception>
+    public static uint NextLaunchEpoch(IntPtr stream, bool launcherConsumes, IntPtr barrierFunction)
     {
+        // [WHY] A captured launch keeps its arguments in the graph and runs again at every replay, so it cannot own a
+        // record: it records into the shared one, which the synchronization after cuGraphLaunch reads. The waiters of
+        // a barrier that counts a fixed number of arrivals need an abort word to leave when a thread failed, and the
+        // word must be clear at the start of every replay: the graph gets a node in front of the kernel that clears it.
+        var capturing = CudaDriverApi.cuStreamIsCapturing(stream, out var captureStatus);
+        if (capturing != CUresult.CudaSuccess && barrierFunction != IntPtr.Zero)
+        {
+            // [WHY] Epoch 0 would leave the waiters of a failed launch waiting until the driver resets the GPU
+            CudaException.ThrowIfError(capturing);
+        }
+
+        if (capturing != CUresult.CudaSuccess || captureStatus != CUstreamCaptureStatus.None)
+        {
+            // An invalidated capture fails the launch anyway
+            return barrierFunction != IntPtr.Zero && captureStatus == CUstreamCaptureStatus.Active
+                ? TakeSharedEpoch(stream, barrierFunction)
+                : 0u;
+        }
+
         var ring = (GSharpDeviceErrorSlot*)Volatile.Read(ref s_host);
         if (ring == null)
         {
-            return 0u;
-        }
-
-        // [WHY] A captured launch keeps its arguments in the graph and runs again at every replay, so it cannot own a
-        // record: it records into the shared one, which the synchronization after cuGraphLaunch reads
-        if (CudaDriverApi.cuStreamIsCapturing(stream, out var captureStatus) != CUresult.CudaSuccess ||
-            captureStatus != CUstreamCaptureStatus.None)
-        {
-            return 0u;
+            // [WHY] Without records the device writes into the shared record, but the launch still needs its own
+            // abort word, so that its waiters leave on its failure and only on its own
+            return TakeSharedEpoch(stream, barrierFunction);
         }
 
         // An epoch whose record a launcher still waits for is skipped, so that this launch neither throws nor
-        // overwrites that launcher's error; when every record is owned, the launch shares the record of epoch 0
-        for (var attempt = 0u; attempt < Records; attempt++)
+        // overwrites that launcher's error
+        for (var attempt = 0u; attempt < Records && !t_holdEveryRecordForTest; attempt++)
         {
             var epoch = TakeEpoch();
             var index = epoch % Records;
@@ -138,34 +188,99 @@ public static unsafe class LaunchErrorRecords
             return epoch;
         }
 
-        return 0u;
+        // [WHY] Every record is owned by a launcher: the launch records into the shared record, as without records,
+        // and keeps an abort word of its own
+        return TakeSharedEpoch(stream, barrierFunction);
     }
 
+    // The epochs of launches that own a record in the ring: 1 to 2^31 - 1 (the epochs with bit 31 set record into the
+    // shared record)
     private static uint TakeEpoch()
     {
-        var epoch = unchecked((uint)Interlocked.Increment(ref s_lastEpoch));
+        var epoch = unchecked((uint)Interlocked.Increment(ref s_lastEpoch)) & ~CaptureEpochBit;
         if (epoch != 0u)
         {
             return epoch;
         }
 
         // The counter wrapped around: the epochs come back, and so would the abort words of launches that failed
-        // 2^32 epochs ago
+        // 2^31 epochs ago
         CudaModuleCache.ClearLaunchAbortWords();
         return TakeEpoch();
+    }
+
+    // Takes an epoch with bit 31 set: the launch records into the shared record (Prelude.cu, __gsharp_launch_record),
+    // where a failing thread keeps the error of another such launch that is already there, and has its abort word in
+    // __gsharp_capture_abort. A captured launch takes one, and a launch that is not captured takes one when it cannot
+    // take a record of the ring. For a kernel that waits for arrivals (function is not zero) it first launches
+    // __gsharp_clear_capture_abort of the function's module on the stream, which clears the epoch's word; in a capture
+    // that launch becomes a node in front of the kernel. [WHY] These epochs are never released: a graph lives until its
+    // owner destroys it, which the runtime does not see, and the counter wraps after 2^31 epochs, so a word can still
+    // hold the same value from an earlier failed launch; the clear in front of every launch that reads the word makes
+    // that harmless without clearing every module at the wrap, which a capture would not allow. The word holds the
+    // full epoch, so a word that two graphs share (epochs a multiple of 4096 apart) never makes a launch leave on the
+    // other's failure; only a replay of one that runs at the same time as a failed replay of the other can clear the
+    // other's word.
+    private static uint TakeSharedEpoch(IntPtr stream, IntPtr function)
+    {
+        var counter = unchecked((uint)Interlocked.Increment(ref s_lastSharedEpoch));
+        var epoch = CaptureEpochBit | (counter & ~CaptureEpochBit);
+        if (function == IntPtr.Zero)
+        {
+            return epoch;
+        }
+
+        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetModule(out var module, function));
+        if (CudaDriverApi.cuModuleGetFunction(out var clear, module, ClearCaptureAbortName) != CUresult.CudaSuccess)
+        {
+            // [WHY] Epoch 0 would leave the waiters of a failed launch waiting until the driver resets the GPU
+            throw new InvalidOperationException(
+                $"The CUDA module of the kernel has no {ClearCaptureAbortName} kernel; it was built by an older G# " +
+                "compiler and cannot be captured into a CUDA graph.");
+        }
+
+        void** parameters = stackalloc void*[1];
+        parameters[0] = &epoch;
+        CudaException.ThrowIfError(
+            CudaDriverApi.cuLaunchKernel(clear, 1, 1, 1, 1, 1, 1, 0, stream, parameters, IntPtr.Zero)
+        );
+        return epoch;
+    }
+
+    // Tests: the next epoch with bit 31 set is the one after <counter>, so that a test can take an epoch again, as
+    // after the counter wrapped around
+    internal static void SetLastSharedEpochForTest(int counter) => Volatile.Write(ref s_lastSharedEpoch, counter);
+
+    // Tests: the launches of the calling thread take an epoch with bit 31 set, as while every record is owned, until
+    // the result is disposed
+    internal static IDisposable HoldEveryRecordForTest()
+    {
+        t_holdEveryRecordForTest = true;
+        return new RecordsReleased();
+    }
+
+    private sealed class RecordsReleased : IDisposable
+    {
+        public void Dispose() => t_holdEveryRecordForTest = false;
     }
 
     /// <summary>
     /// Throws the device error that the launch with <paramref name="launchEpoch"/> recorded, if any, once the launch
     /// has completed, and ends the launcher's ownership of the epoch; the records of other launches stay for their own
-    /// launchers and synchronizations. For epoch 0 it throws any recorded device error, like
+    /// launchers and synchronizations. For an epoch the launcher does not own (epoch 0, a launch made without records
+    /// or while every record was owned) it throws any recorded device error, like
     /// <see cref="DeviceErrorSlot.ThrowIfDeviceError"/>.
     /// </summary>
-    /// <param name="launchEpoch">The epoch that <see cref="NextLaunchEpoch"/> returned for the launch.</param>
+    /// <param name="launchEpoch">
+    /// The epoch that <see cref="NextLaunchEpoch(IntPtr, bool, IntPtr)"/> returned for the launch.
+    /// </param>
     public static void ThrowIfLaunchError(uint launchEpoch)
     {
         var ring = (GSharpDeviceErrorSlot*)Volatile.Read(ref s_host);
-        if (launchEpoch == 0u || ring == null)
+        // [WHY] Such a launch records into the shared record, where the error of another launch may already be: the
+        // device keeps the first error (Prelude.cu, __gsharp_record_error), and the launcher throws it rather than
+        // return partial results with no exception
+        if (ring == null || !IsOwned(launchEpoch))
         {
             DeviceErrorSlot.ThrowIfDeviceError();
             return;
@@ -192,7 +307,9 @@ public static unsafe class LaunchErrorRecords
     /// Ends the launcher's ownership of <paramref name="launchEpoch"/> without reading its record, when the launch ends
     /// before <see cref="ThrowIfLaunchError"/>; a record of the launch is then thrown by the next synchronization.
     /// </summary>
-    /// <param name="launchEpoch">The epoch that <see cref="NextLaunchEpoch"/> returned for the launch.</param>
+    /// <param name="launchEpoch">
+    /// The epoch that <see cref="NextLaunchEpoch(IntPtr, bool, IntPtr)"/> returned for the launch.
+    /// </param>
     public static void ReleaseLaunchEpoch(uint launchEpoch)
     {
         if (launchEpoch != 0u)

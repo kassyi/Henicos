@@ -2,7 +2,6 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
-// [SkipSnapshotConsistency("Tested in separate suites")]
 public static partial class GpuBigIntVectorKernels
 {
     [GpuDeviceFunction]
@@ -262,7 +261,8 @@ public static partial class GpuBigIntVectorKernels
         Gpu.SyncThreads();
 
         uint flipTop = ctx.OffsetBinary ? 0x80000000u : 0u;
-        uint top = ctx.Source[ctx.SourceWords - 1] ^ flipTop;
+        var source = Gpu.NotNull(ctx.Source);
+        uint top = source[ctx.SourceWords - 1] ^ flipTop;
         bool negative = (top & 0x80000000u) != 0u;
 
         // magnitude = negative ? ~raw + 1 : raw, with the +1 carried through the words of the block.
@@ -271,7 +271,7 @@ public static partial class GpuBigIntVectorKernels
         {
             int idx = offset + tid;
             bool valid = idx < ctx.SourceWords;
-            uint raw = valid ? ctx.Source[idx] : 0u;
+            uint raw = valid ? source[idx] : 0u;
             if (idx == ctx.SourceWords - 1)
             {
                 raw ^= flipTop;

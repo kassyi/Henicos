@@ -34,11 +34,15 @@
     <Compile Include="..\..\Shared\Cryptography\Ed25519.cs" Link="Cryptography\Ed25519.cs" />
     <Compile Include="..\..\Shared\Cryptography\Ed25519Field.cs" Link="Cryptography\Ed25519Field.cs" />
     <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyValidator.cs" Link="Cryptography\Ed25519PublicKeyValidator.cs" />
+    <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyStatus.cs" Link="Cryptography\Ed25519PublicKeyStatus.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cpu" />
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cuda" />
+    <!-- Links the differential harness of Tests.Shared, whose sequential oracle sets the thread context through
+         ManagedThreadContext -->
+    <InternalsVisibleTo Include="Kassyi.GSharp.Tools.FuzzDiff.Tests" />
     <!-- CudaModuleCache.CurrentContextId keys the device memory caches of the stdlib by context -->
     <InternalsVisibleTo Include="Kassyi.GSharp.Stdlib.GpuMath" />
   </ItemGroup>

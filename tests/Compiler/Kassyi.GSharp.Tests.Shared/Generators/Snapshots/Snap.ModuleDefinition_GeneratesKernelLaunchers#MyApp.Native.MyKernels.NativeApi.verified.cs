@@ -15,12 +15,18 @@ private static readonly Lazy<byte[]> s_fatbin___native_my_custom_kernels_fatbin 
 /// <param name="c">Matrix C.</param>
 public static void SgemmCustom(float[] a, float[] c, int n, uint gridDimX, uint blockDimX)
 {
+if (a is null){
+throw new global::System.ArgumentNullException(nameof(a));
+}
+if (c is null){
+throw new global::System.ArgumentNullException(nameof(c));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MyKernels.SgemmCustom");
-using var scope = new GpuKernelLoader.CudaContextScope();
-var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "sgemm_kernel_v1");
-using var d_a = new GpuBuffer<float>(a.Length);
+using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "sgemm_kernel_v1");
+using var d_a = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(a.Length);
 d_a.CopyToDevice(a);
-using var d_c = new GpuBuffer<float>(c.Length);
+using var d_c = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(c.Length);
 d_c.CopyToDevice(c);
 unsafe
 {
@@ -28,39 +34,42 @@ var p_a = d_a.DevicePointer;
 var p_c = d_c.DevicePointer;
 var p_n = n;
 var kernelParams = stackalloc void*[3];
-kernelParams[0] = &p_a;
-kernelParams[1] = &p_c;
-kernelParams[2] = &p_n;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_a);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_c);
+kernelParams[2] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<int>(ref p_n);
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 kernel,
 gridDimX, 1, 1,
 blockDimX, 1, 1,
-0, IntPtr.Zero, kernelParams, IntPtr.Zero));
+0, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));
 }
-CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuCtxSynchronize());
 d_a.CopyToHost(a);
 d_c.CopyToHost(c);
 }
 public static void Fill(int[] data, int value)
 {
-using var scope = new GpuKernelLoader.CudaContextScope();
-var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "Fill");
-using var d_data = new GpuBuffer<int>(data.Length);
+if (data is null){
+throw new global::System.ArgumentNullException(nameof(data));
+}
+using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin___native_my_custom_kernels_fatbin.Value, "Fill");
+using var d_data = new global::Kassyi.GSharp.Runtime.GpuBuffer<int>(data.Length);
 d_data.CopyToDevice(data);
 unsafe
 {
 var p_data = d_data.DevicePointer;
 var p_value = value;
 var kernelParams = stackalloc void*[2];
-kernelParams[0] = &p_data;
-kernelParams[1] = &p_value;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_data);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<int>(ref p_value);
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,
 1, 1, 1,
-0, IntPtr.Zero, kernelParams, IntPtr.Zero));
+0, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));
 }
-CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuCtxSynchronize());
 d_data.CopyToHost(data);
 }
 }

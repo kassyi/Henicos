@@ -12,6 +12,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The runtime runs a kernel's C# body with the thread context set (GpuExecution, KernelExecution.CSharp), and
+         gives the test assemblies the thread context through ManagedThreadContext: an InternalsVisibleTo from Core to
+         them would make the internal Fnv1A64, which Core and the compiler both link, ambiguous there -->
+    <InternalsVisibleTo Include="Kassyi.GSharp.Runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Shared with the compiler so the shared-memory site keys use the same hash. -->
     <Compile Include="..\..\Shared\Hashing\Fnv1A64.cs" Link="Hashing\Fnv1A64.cs" />
   </ItemGroup>

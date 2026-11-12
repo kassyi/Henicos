@@ -18,7 +18,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.BoundsAndMemoryDifferential)]
 public class NullArrayAndFieldDifferentialTests
 {
-    private static readonly DifferentialCase s_nullArrayOptionalValid = new(
+    internal static readonly DifferentialCase s_nullArrayOptionalValid = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.NullArrayOptionalValidKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -39,7 +39,7 @@ public class NullArrayAndFieldDifferentialTests
             opt: null),
     };
 
-    private static readonly DifferentialCase s_nullArrayLengthTrap = new(
+    internal static readonly DifferentialCase s_nullArrayLengthTrap = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.NullArrayLengthTrapKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -56,7 +56,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_nullArrayIndexerTrap = new(
+    internal static readonly DifferentialCase s_nullArrayIndexerTrap = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.NullArrayIndexerTrapKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -73,7 +73,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_nullArrayForeachTrap = new(
+    internal static readonly DifferentialCase s_nullArrayForeachTrap = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.NullArrayForeachTrapKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -90,7 +90,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_nullArrayReassignedParameterTrap = new(
+    internal static readonly DifferentialCase s_nullArrayReassignedParameterTrap = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.NullArrayReassignedParameterTrapKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -110,7 +110,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_allThreadsNullDereferenceTrap = new(
+    internal static readonly DifferentialCase s_allThreadsNullDereferenceTrap = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel)))
     {
         Shape = new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
@@ -148,7 +148,7 @@ public class NullArrayAndFieldDifferentialTests
 
     // A null read in a device function reports no site on CUDA (its message is not registered),
     // so only the type is checked
-    private static readonly DifferentialCase s_gridStrideNullParameter = new(
+    internal static readonly DifferentialCase s_gridStrideNullParameter = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.GridStrideNullParameterKernel)))
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
@@ -174,7 +174,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows),
     };
 
-    private static readonly DifferentialCase s_allThreadsEmptyFirstTrap = new(
+    internal static readonly DifferentialCase s_allThreadsEmptyFirstTrap = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel)))
     {
         Shape = new LaunchShape(2, 2, 2, 4, 4, 2, SimultaneousRows),
@@ -314,4 +314,32 @@ public class NullArrayAndFieldDifferentialTests
     [SkippableFact]
     public void NullArray_AllThreadsEmptyFirstTrap_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_allThreadsEmptyFirstTrap);
+
+    // Gpu.NotNull: seed 0 passes the array through, seed 1 throws NullReferenceException at the call on every path (the
+    // place of the call on CUDA)
+    [SkippableFact]
+    public void NullValidation_GpuNotNull_ThrowsAtTheCall() =>
+        DifferentialRunner.Run(new DifferentialCase(
+            KernelName(nameof(BoundsAndMemoryDifferentialKernels.GpuNotNullKernel)))
+        {
+            Shape = LaunchShapes.Linear(DefaultRows, 32),
+            Seeds = [0, 1],
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayArgument(674, 23) : null,
+            Inputs = static (rng, shape) => new DiffBuffers()
+                .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
+                .In("flags", new[] { rng.Seed }, readOnly: true)
+                .Out<int>("dst", shape.Rows, ["value"], OutputPolicy.Exact),
+            Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchGpuNotNullKernel(
+                b.Get<int>("src"),
+                b.Get<int>("flags"),
+                b.Get<int>("dst"),
+                s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX),
+            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.GpuNotNullKernel(
+                b.Get<int>("src"),
+                b.Get<int>("flags"),
+                b.Get<int>("dst"),
+                s.Rows),
+        });
 }

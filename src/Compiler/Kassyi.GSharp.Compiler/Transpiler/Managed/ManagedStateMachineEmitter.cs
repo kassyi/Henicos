@@ -213,20 +213,24 @@ internal static class ManagedStateMachineEmitter
         string accessibility,
         bool isUnsafe)
     {
-        writer.AppendLine(EditorBrowsableNever);
-        AppendDeviceStateMachineSignature(writer, frameName, stateMachineName, methodSymbol, copiedParameters,
-            accessibility, isUnsafe);
-        using (writer.Scope(" {"))
+        // An unsafe frame is taken by pointer (ManagedPointerWarning.PinnedContext)
+        using (writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe))
         {
-            foreach (var localInit in localInits)
+            writer.AppendLine(EditorBrowsableNever);
+            AppendDeviceStateMachineSignature(writer, frameName, stateMachineName, methodSymbol, copiedParameters,
+                accessibility, isUnsafe);
+            using (writer.Scope(" {"))
             {
-                AppendResumeLocal(writer, localInit);
-            }
+                foreach (var localInit in localInits)
+                {
+                    AppendResumeLocal(writer, localInit);
+                }
 
-            AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
-            writer.AppendLine(bodySource);
-            writer.AppendLine(
-                "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
+                AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
+                writer.AppendLine(bodySource);
+                writer.AppendLine("throw new global::System.InvalidOperationException(" +
+                                  "\"The device function state machine reached an unknown state.\");");
+            }
         }
 
         writer.AppendLine();
@@ -314,7 +318,7 @@ internal static class ManagedStateMachineEmitter
                                  .AsStackEnumerable()
                                  .Any(static n => n is PointerTypeSyntax or FunctionPointerTypeSyntax));
 
-            public static void EmitStateMachineMethod(
+    public static void EmitStateMachineMethod(
         SourceWriter writer,
         string contextName,
         string stateMachineName,
@@ -325,6 +329,9 @@ internal static class ManagedStateMachineEmitter
         string bodySource,
         bool isUnsafe = false)
     {
+        // An unsafe context is taken by pointer (ManagedPointerWarning.PinnedContext)
+        using var suppression =
+            writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe);
         writer.AppendLine(EditorBrowsableNever);
         EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters, isUnsafe);
         using (writer.Scope(" {"))

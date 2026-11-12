@@ -22,7 +22,7 @@ public sealed class SignedDeepChainTests
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void RightDeepSum_IsExact() =>
-        RunOnSmallStack(static workspace =>
+        LimitedStack.Run(StackSize, cpuFallback: false, static workspace =>
         {
             var values = Values(Depth);
             var leaves = Leaves(workspace, values);
@@ -56,7 +56,7 @@ public sealed class SignedDeepChainTests
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void RightDeepChain_OfNegationsFitsAndDifferences_IsExact() =>
-        RunOnSmallStack(static workspace =>
+        LimitedStack.Run(StackSize, cpuFallback: false, static workspace =>
         {
             var values = Values(Depth);
             var leaves = Leaves(workspace, values);
@@ -86,7 +86,7 @@ public sealed class SignedDeepChainTests
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void RightDeepSum_IntoAWiderTarget_ClearsTheWordsAbove() =>
-        RunOnSmallStack(static workspace =>
+        LimitedStack.Run(StackSize, cpuFallback: false, static workspace =>
         {
             var values = Values(Depth);
             var leaves = Leaves(workspace, values);
@@ -155,32 +155,5 @@ public sealed class SignedDeepChainTests
     {
         var magnitude = value.Value.ToBigInteger();
         return value.IsNegative ? -magnitude : magnitude;
-    }
-
-    // Runs the body with its own workspace on a thread whose stack is 1 MB, and rethrows what it threw
-    private static void RunOnSmallStack(Action<GpuWorkspace> body)
-    {
-        CudaCapability.EnsureGpuAvailable();
-        Exception? failure = null;
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                using var scope = new GpuKernelLoader.CudaContextScope();
-                using var workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
-                body(workspace);
-            }
-            catch (Exception ex)
-            {
-                failure = ex;
-            }
-        }, StackSize);
-        thread.Start();
-        thread.Join();
-
-        if (failure is not null)
-        {
-            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
-        }
     }
 }

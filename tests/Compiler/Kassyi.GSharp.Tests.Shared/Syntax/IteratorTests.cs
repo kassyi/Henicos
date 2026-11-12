@@ -3,6 +3,7 @@ using Xunit;
 #if GSHARP_CPU
 using System;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime;
 #endif
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -243,13 +244,12 @@ public class IteratorTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Transpile_ExternalAssemblyIterator_ReportsUnsupportedSyntax()
     {
-        var externalLibrarySource = RoslynTestUtility.ReadTestCase("Analyzers/IteratorExternalAssembly_Lib.cs");
-        var consumerSource = RoslynTestUtility.ReadTestCase("Analyzers/IteratorExternalAssembly_Consumer.cu.cs");
+        var externalTree = RoslynTestUtility.GetTestCaseContext("Analyzers/IteratorExternalAssembly_Lib.cs").Tree;
+        var consumerTree = RoslynTestUtility.GetTestCaseContext("Analyzers/IteratorExternalAssembly_Consumer.cu.cs").Tree;
 
-        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
         var externalComp = CSharpCompilation.Create(
             "ExternalIteratorLib",
-            [CSharpSyntaxTree.ParseText(externalLibrarySource, parseOptions)],
+            [externalTree],
             RoslynTestUtility.BaseReferences,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
@@ -261,7 +261,7 @@ public class IteratorTests : TranspilerTestBase
 
         var consumerComp = CSharpCompilation.Create(
             "ConsumerApp",
-            [CSharpSyntaxTree.ParseText(consumerSource, parseOptions, path: "IteratorExternalAssembly_Consumer.cu.cs")],
+            [consumerTree],
             RoslynTestUtility.BaseReferences.Append(externalRef),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
@@ -298,9 +298,7 @@ public class IteratorTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void EnumerateManaged_AllIteratorKernels_MatchesNativeSemantics()
     {
-        bool previousState = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
-        try
+        using (GpuExecution.Use(KernelExecution.Managed))
         {
             var rangeOut = new int[4];
             IteratorKernels.LaunchRangeKernel(rangeOut, 4, blockDimX: 4);
@@ -368,10 +366,6 @@ public class IteratorTests : TranspilerTestBase
             var seventeenOut = new int[4];
             IteratorDepthKernels.LaunchSeventeenLevelsKernel(seventeenOut, blockDimX: 4);
             Assert.Equal([17, 18, 19, 20], seventeenOut);
-        }
-        finally
-        {
-            CpuKernelLoader.ForceManagedExecution = previousState;
         }
     }
 #endif

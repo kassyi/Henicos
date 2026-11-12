@@ -209,7 +209,7 @@ public static void SyncVsAtomicExample(int[] data, int[] histogram) {
     // -------------------------------------------------------------
     // 2. Execution Barrier: SyncThreads
     // -------------------------------------------------------------
-    var sharedCache = SharedMemory<int>.Allocate(256);
+    var sharedCache = new SharedMemory<int>(256);
     sharedCache[ThreadIndex.X] = localValue;
 
     // ⚠️ BARRIER: We must wait for ALL threads to finish writing to
@@ -288,7 +288,7 @@ NVIDIA GPU cores do not have standard I/O pipes, consoles, or text streams attac
 >
 > If you attempt to invoke `Console.WriteLine`—or **any unmapped third-party library or BCL method**—inside a `[GpuKernel]`, G# will reject the code immediately at **build time (compile time)**. It does *not* wait until runtime to crash on the GPU:
 >
-> - **[GSH0003](../03_bcl_api/diagnostics/GSH0003.md) (Unsupported syntax in GPU kernel)**: Triggered because the method is not mapped to a native CUDA/PTX intrinsic. Any unfamiliar method invocation is rejected.
+> - **[GSH0109](../03_bcl_api/diagnostics/GSH0109.md) (A method without a device implementation is called from GPU code)**: Triggered because the method has no device implementation in the target dialect: it is neither a `[GpuDeviceFunction]` nor mapped to a native function. Any unfamiliar method invocation is rejected.
 > - **[GSH0002](../03_bcl_api/diagnostics/GSH0002.md) (String usage not supported in GPU kernels)**: Triggered if string literals or interpolated strings are passed as arguments.
 > - **[RS0030](../03_bcl_api/diagnostics/RS0030.md) (Banned API in GPU kernel)**: Triggered by Roslyn analyzers for prohibited standard .NET runtime APIs.
 >

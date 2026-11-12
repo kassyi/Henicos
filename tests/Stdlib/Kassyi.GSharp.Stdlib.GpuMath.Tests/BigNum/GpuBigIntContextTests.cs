@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Reflection;
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -51,35 +48,19 @@ public class GpuBigIntContextTests
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange
+        const int TransformLength = 64;
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-        var provider = GSharpKernelProvider.Instance;
-        
-        // Populate cache by performing an NTT multiplication
-        using var a = new GpuBigUInt(context, new uint[] { 1, 2, 3 });
-        using var b = new GpuBigUInt(context, new uint[] { 4, 5, 6 });
-        using var c = new GpuBigUInt(context, new uint[6]);
-        provider.Mul(context, a, b, c);
+        var advancedMath = GSharpKernelProvider.Instance.KernelAdvancedMath;
 
-        var advancedMathField = typeof(GSharpKernelProvider).GetField(
-            "_advancedMath", BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.NotNull(advancedMathField);
-        var advancedMath = advancedMathField.GetValue(provider);
-        Assert.NotNull(advancedMath);
-
-        var twiddleCacheField = advancedMath.GetType().GetField(
-            "_twiddleCache",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.NotNull(twiddleCacheField);
-        var twiddleCache = Assert.IsAssignableFrom<IDictionary>(twiddleCacheField.GetValue(advancedMath));
-
-        Assert.True(twiddleCache.Count > 0, "Cache should be populated after multiplication.");
-        int cachedCountBefore = twiddleCache.Count;
+        // Populate the shared twiddle cache through the first workspace
+        var cached = advancedMath.GetOrCreateTwiddleFactors(context, TransformLength);
 
         // Act
         context.Dispose();
 
         // Assert - Shared provider caches must not be cleared on individual context disposal
-        Assert.Equal(cachedCountBefore, twiddleCache.Count);
+        using var next = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        Assert.Same(cached, advancedMath.GetOrCreateTwiddleFactors(next, TransformLength));
     }
 
     [SkippableFact]

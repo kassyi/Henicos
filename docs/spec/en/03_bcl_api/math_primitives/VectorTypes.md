@@ -13,7 +13,7 @@ description: "Information about G#'s native vector types (Float2, Int4, etc.) th
 **Namespace:** `Kassyi.GSharp.Core`  
 **Assembly:** `Kassyi.GSharp.Core.dll`
 
-G# introduces sequentially laid-out vector value types (e.g., `Float2`, `Float3`, `Float4`, `Int2`, `UInt4`, `Double2`) that match CUDA native vector memory layouts.
+G# provides 18 sequentially laid-out vector value types that match the CUDA built-in vector types: `Float2`..`Float4`, `Int2`..`Int4`, `UInt2`..`UInt4`, `Double2`..`Double4`, `Long2`..`Long4` and `ULong2`..`ULong4` (CUDA `float2`..`float4`, `int2`..`int4`, `uint2`..`uint4`, `double2`..`double4`, `longlong2`..`longlong4`, `ulonglong2`..`ulonglong4`). `System.Numerics.Vector2`, `Vector3` and `Vector4` are also supported in kernels and map to `float2`, `float3` and `float4`. Their operators and methods are not mapped yet: an operator such as `a + b` is reported as [GSH0060](../diagnostics/GSH0060.md) and a method such as `Vector3.Dot` as [GSH0109](../diagnostics/GSH0109.md).
 
 ```csharp
 // Execution Context: G# Kernel (GPU) or Host (CPU fallback)
@@ -33,7 +33,7 @@ Console.WriteLine($"({v1.X}, {v1.Y}, {v1.Z}) + ({v2.X}, {v2.Y}, {v2.Z}) = ({resu
 
 Since these types map directly to CUDA native built-in vector types (e.g., `float4`, `int2`), they are optimally aligned in GPU memory. This allows a single vectorized memory transaction (like `LD.E.128` for `Float4`) to load or store all components simultaneously, drastically improving memory bandwidth utilization compared to sequential scalar loads.
 
-- **Alignment**: 2-component and 4-component vectors (e.g., `Float2`, `Float4`) are aligned to their total size (e.g. 8 bytes and 16 bytes). 3-component vectors (e.g., `Float3`) are aligned to the size of their base type, meaning they do not benefit from 128-bit vectorized loads.
+- **Alignment**: 2-component vectors are aligned to their total size (8 bytes for `Float2`, 16 bytes for `Double2`). 4-component vectors are aligned to their total size up to 16 bytes: `Float4` to 16 bytes, and the 32-byte `Double4`, `Long4` and `ULong4` also to 16 bytes, as the CUDA types are. 3-component vectors (e.g., `Float3`) are aligned to the size of their element type, so they do not benefit from vectorized loads.
 
 ## Examples
 

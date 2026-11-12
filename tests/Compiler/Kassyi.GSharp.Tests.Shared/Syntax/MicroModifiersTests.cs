@@ -105,7 +105,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_FileLocalTypes_SucceedsWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.FileLocalTypes), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -121,7 +121,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Transpile_ParamsSpan_ReportsFailureOrDiagnostic()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.ParamsSpan), isDevice: true, dialect: CurrentDialect);
 
         var (model, methodSymbol) = RoslynTestUtility.GetMethodContext<MicroModifiersTarget>(nameof(MicroModifiersTarget.ParamsSpan));
@@ -142,7 +142,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_RefReadonlyReturns_EmitsConstReference()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.RefReadonlyReturns), isDevice: true, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -157,7 +157,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_VolatileModifier_EmitsVolatileKeyword()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.VolatileModifier), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -173,7 +173,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_SkipLocalsInitAttribute_SucceedsWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.SkipLocalsInitAttribute), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -189,7 +189,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Transpile_ForeachTupleDeconstruction_ReportsUnsupportedOrFails()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.ForeachTupleDeconstruction), isDevice: false, dialect: CurrentDialect);
 
         // Tuple deconstruction is unsupported by spec; the analyzer reports it once (UnsupportedSyntaxKindDiagnosticsTests)
@@ -209,12 +209,14 @@ public class MicroModifiersTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Transpile_FunctionPointerCallingConventions_ReportsFailureOrDiagnostic()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.FunctionPointerCallingConventions), isDevice: false, dialect: CurrentDialect);
 
         // Host function pointers cannot be dereferenced on the device; the analyzer rejects the parameter
         // (KernelSignatureDiagnosticsTests) and the transpiler records the failure.
         diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, "'FunctionPointerType'");
+        // The call itself has no device form either; it is never written as a call of the pointer
+        diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, "'call through a function pointer'");
         await Verify(cudaSource);
 
         Assert.Equal(15, InvokeFunctionPointerTarget());
@@ -225,7 +227,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_LineDirectives_SucceedsWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.LineDirectives), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -241,7 +243,7 @@ public class MicroModifiersTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_ImplicitStackallocArray_SucceedsWithoutDiagnostics()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.ImplicitStackallocArray), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

@@ -181,9 +181,11 @@ public class TypeNameCheckAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
+#pragma warning disable RS0030 // Quotes the user's code in a diagnostic message a person reads
             var shortName = invocation.Arguments[1].Value.ConstantValue is { HasValue: true, Value: string value }
                 ? value
                 : invocation.Arguments[1].Syntax.ToString();
+#pragma warning restore RS0030
             ReportUnlessChecked(context, invocation.Syntax, shortName);
         }
 
@@ -213,7 +215,9 @@ public class TypeNameCheckAnalyzer : DiagnosticAnalyzer
         {
             if (!ChecksNamespace(EnclosingMember(node)))
             {
+#pragma warning disable RS0030 // Quotes the user's code in a diagnostic message a person reads
                 context.ReportDiagnostic(Diagnostic.Create(NameOnlyTypeCheck, node.GetLocation(), node.ToString(), name));
+#pragma warning restore RS0030
             }
         }
     }

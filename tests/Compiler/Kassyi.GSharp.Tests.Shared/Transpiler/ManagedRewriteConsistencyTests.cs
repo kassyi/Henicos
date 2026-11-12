@@ -1,5 +1,7 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Extensions;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
@@ -12,8 +14,10 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// A function that needs no managed version runs as the user's method on the managed path. Rewriting its body must then
 /// give the body with its names qualified and nothing else, apart from the rewrites whose result the user's method
 /// already gives: the body macros with a lambda (Kassyi.GSharp.Core runs them), the site key of a
-/// <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key), the length of an optional array
-/// and the calls that C# removes (<c>RemovedCalls</c>), which the user's method does not make either.
+/// <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key), the length of an optional array,
+/// the calls that C# removes (<c>RemovedCalls</c>), which the user's method does not make either, the arm that C# adds
+/// to a switch expression that is not exhaustive, and the <c>in</c> of a variable passed to a <c>ref readonly</c>
+/// parameter without a keyword.
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [Scenario(TestScenario.HappyPath)]
@@ -23,7 +27,7 @@ public class ManagedRewriteConsistencyTests
     [Fact]
     public void Rewrite_FunctionWithoutManagedVersion_RewritesToItsQualifiedBody()
     {
-        var compilation = MegaCompilationCache.Compilation;
+        var compilation = RoslynTestUtility.SharedCompilation;
         var checkedBodies = 0;
         var versions = 0;
         var violations = new List<string>();
@@ -35,14 +39,15 @@ public class ManagedRewriteConsistencyTests
                 continue;
             }
 
-            var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
+            var rewrittenNode = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
                     new ManagedAccessorSet(method, compilation))
-                .Visit(body)?.ToFullString();
-            var qualified = ManagedNameQualifier.Qualify(body, model).ToFullString();
+                .Visit(body);
+            var qualifiedNode = ManagedNameQualifier.Qualify(body, model);
+            var isEquivalent = SyntaxFactory.AreEquivalent(rewrittenNode, qualifiedNode);
             if (ManagedVersionAnalysis.Needs(method, compilation))
             {
                 versions++;
-                if (rewritten == qualified)
+                if (isEquivalent)
                 {
                     violations.Add($"{method}: needs a managed version, but the rewriter changes nothing");
                 }
@@ -56,7 +61,7 @@ public class ManagedRewriteConsistencyTests
             }
 
             checkedBodies++;
-            if (rewritten != qualified)
+            if (!isEquivalent)
             {
                 violations.Add($"{method}: the rewriter changes a body that ManagedRewriteClassifier does not classify");
             }
@@ -73,7 +78,7 @@ public class ManagedRewriteConsistencyTests
     [Fact]
     public void Rewrite_SemanticRewriteCandidates_IsExpandedOperatorMacro()
     {
-        var compilation = MegaCompilationCache.Compilation;
+        var compilation = RoslynTestUtility.SharedCompilation;
         var macros = 0;
         var sequentialSums = 0;
         foreach (var (_, declaration, model) in EnumerateDeviceFunctions(compilation))
@@ -153,28 +158,44 @@ public class ManagedRewriteConsistencyTests
                 new ManagedAccessorSet(method, compilation))
             .Visit(body);
         Assert.NotNull(visited);
-        var rewritten = visited.ToFullString();
+
+        var invocations = visited.DescendantNodes().OfType<InvocationExpressionSyntax>().ToArray();
+        var floatEnumerator = SyntaxFactory.ParseTypeName("global::Kassyi.ZeroAlloc.Linq.ArrayEnumerator<float>");
 
         // All 11 float/double StackEnumerable Sum calls (f0..f5, d0..d4) become SumSequential
-        Assert.Equal(11, CountOccurrences(rewritten, ".SumSequential"));
-        Assert.Contains("StackLinqExtensions.SumSequential<global::Kassyi.ZeroAlloc.Linq.ArrayEnumerator<float>>(", rewritten);
-
-        // Only the 2 int Sum calls (i0, i1) and 1 ParallelStackEnumerable Sum call (fp) remain .Sum(
-        Assert.Equal(3, CountOccurrences(rewritten, "StackLinqExtensions.Sum("));
-    }
-
-    private static int CountOccurrences(string text, string pattern)
-    {
-        var count = 0;
-        var index = 0;
-        while ((index = text.IndexOf(pattern, index, StringComparison.Ordinal)) >= 0)
+        Assert.Equal(11, invocations.Count(static i =>
+            Callee(i) is (not null, { Identifier.ValueText: "SumSequential" })));
+        Assert.Contains(invocations, i => Callee(i) is (var receiver, GenericNameSyntax
         {
-            count++;
-            index += pattern.Length;
-        }
+            Identifier.ValueText: "SumSequential",
+            TypeArgumentList.Arguments: [var argument]
+        }) && IsStackLinqExtensions(receiver) && SyntaxFactory.AreEquivalent(argument, floatEnumerator));
 
-        return count;
+        // Only the 2 int Sum calls (i0, i1) and 1 ParallelStackEnumerable Sum call (fp) remain StackLinqExtensions.Sum(
+        Assert.Equal(3, invocations.Count(static i =>
+            Callee(i) is (var receiver, IdentifierNameSyntax { Identifier.ValueText: "Sum" }) &&
+            IsStackLinqExtensions(receiver)));
     }
+
+    // <receiver>.<name>(...) as a member access or a qualified name; <name>(...) has no receiver
+    private static (ExpressionSyntax? Receiver, SimpleNameSyntax? Name) Callee(InvocationExpressionSyntax invocation) =>
+        invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax access => (access.Expression, access.Name),
+            QualifiedNameSyntax qualified => (qualified.Left, qualified.Right),
+            SimpleNameSyntax simple => (null, simple),
+            _ => (null, null)
+        };
+
+    // StackLinqExtensions, with or without its namespace
+    private static bool IsStackLinqExtensions(ExpressionSyntax? receiver) =>
+        receiver switch
+        {
+            MemberAccessExpressionSyntax access => access.Name,
+            QualifiedNameSyntax qualified => qualified.Right,
+            SimpleNameSyntax simple => simple,
+            _ => null
+        } is { Identifier.ValueText: "StackLinqExtensions" };
 
     private static IEnumerable<(IMethodSymbol Method, MethodDeclarationSyntax Declaration, SemanticModel Model)>
         EnumerateDeviceFunctions(Compilation compilation)
@@ -206,6 +227,13 @@ public class ManagedRewriteConsistencyTests
                 model.GetSymbolInfo(access.Expression).Symbol is IParameterSymbol
                 {
                     Type: IArrayTypeSymbol, NullableAnnotation: NullableAnnotation.Annotated
+                },
+            SwitchExpressionSyntax switchExpression =>
+                model.GetOperation(switchExpression) is ISwitchExpressionOperation { IsExhaustive: false },
+            ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.None } argument =>
+                model.GetOperation(argument.Expression) is
+                {
+                    Parent: IArgumentOperation { Parameter.RefKind: RefKind.RefReadOnlyParameter }
                 },
             _ => false
         });

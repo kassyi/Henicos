@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        GSharpDiagnostics.All;
+        GSharpDiagnostics.Reported;
 
     public override void Initialize(AnalysisContext context)
     {
@@ -45,6 +45,11 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         walker.Visit(destructor);
     }
 
+    // A class or a record class, which the generator reopens; not a struct or a record struct
+    private static bool IsClassDeclaration(SyntaxNode? node) =>
+        node is ClassDeclarationSyntax ||
+        node is RecordDeclarationSyntax record && !record.ClassOrStructKeyword.IsKind(SyntaxKind.StructKeyword);
+
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
         ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)
     {
@@ -61,8 +66,9 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         }
 
         // The generator adds members to the class that holds GPU code, so that class and every type enclosing it must be
-        // partial (#941). A struct that holds device functions is not reopened, so it is not reported.
-        var reopened = methodDeclaration.Parent is ClassDeclarationSyntax ? methodDeclaration.Parent : null;
+        // partial (#941). A struct that holds device functions is not reopened, so it is not reported; a record class
+        // is.
+        var reopened = IsClassDeclaration(methodDeclaration.Parent) ? methodDeclaration.Parent : null;
         for (var parent = reopened; parent is TypeDeclarationSyntax typeDecl; parent = parent.Parent)
         {
             if (!typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword) && reportedTypes.TryAdd(typeDecl, 0))

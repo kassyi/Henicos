@@ -16,22 +16,11 @@ description: "Loads AOT-compiled native CPU kernel libraries, verifies digital s
 Loads AOT-compiled native CPU kernel libraries, manages function pointer/delegate caching, and controls fallback to pure C# managed execution.
 
 ```csharp
-public sealed class CpuKernelLoader
+public static class CpuKernelLoader
 ```
 
-## Properties
-
-| Name | Description |
-| --- | --- |
-| [ForceManagedExecution](#forcemanagedexecution) | Gets or sets a value indicating whether to forcefully bypass native AOT DLL execution and use pure C# managed execution. |
-
-## ForceManagedExecution
-
-Gets or sets a value indicating whether to forcefully bypass native AOT DLL execution and use pure C# managed execution (stored per async flow in an `AsyncLocal<bool>`).
-
-```csharp
-public static bool ForceManagedExecution { get; set; }
-```
+To run the kernels on the managed path although the native library exists, select
+[`KernelExecution.Managed`](../execution_context/GpuExecution.md) with `GpuExecution.Use`.
 
 ## Methods
 
@@ -41,6 +30,8 @@ public static bool ForceManagedExecution { get; set; }
 | [LoadAotKernelPtr(string, string)](#loadaotkernelptrstring-string) | Loads an AOT-compiled native CPU library and returns a raw function pointer. |
 | [LoadAotKernel\<TDelegate\>(string, string)](#loadaotkerneltdelegatestring-string) | Loads an AOT-compiled native CPU library and returns a strongly-typed delegate. |
 | [Shutdown()](#shutdown) | Unloads all cached CPU modules and clears the in-memory delegate cache. |
+| [RegisterErrorSites(string, ReadOnlySpan\<GSharpErrorSite\>)](#registererrorsitesstring-readonlyspangsharperrorsite) | Registers the error site table of a native CPU library. |
+| [ThrowIfNativeError(string)](#throwifnativeerrorstring) | Throws the managed exception for the error that a native CPU library recorded, if any. |
 
 ## ShouldUseManagedExecution(string)
 
@@ -58,7 +49,7 @@ The path to the native DLL to check.
 #### Returns
 
 _bool_<br>
-`true` if `ForceManagedExecution` is enabled or `dllPath` does not exist on disk; otherwise, `false`.
+`true` if the current flow selected [`KernelExecution.Managed`](../execution_context/GpuExecution.md) or `dllPath` does not exist on disk; otherwise, `false`.
 
 ## LoadAotKernelPtr(string, string)
 
@@ -125,6 +116,37 @@ Unloads all cached CPU modules and clears the in-memory cache to reclaim memory.
 public static void Shutdown();
 ```
 
+<a id="registererrorsitesstring-readonlyspangsharperrorsite"></a>
+
+## RegisterErrorSites(string, ReadOnlySpan\<GSharpErrorSite\>)
+
+Registers the error site table of a native CPU library, so that an error the library records can be reported with its source location. The generated launchers call it; user code does not need to.
+
+```csharp
+public static void RegisterErrorSites(string dllPath, ReadOnlySpan<GSharpErrorSite> sites);
+```
+
+#### Parameters
+
+`dllPath` _string_<br>
+The file path to the native dynamic library.
+
+`sites` _ReadOnlySpan\<GSharpErrorSite\>_<br>
+The 1-based error site table.
+
+## ThrowIfNativeError(string)
+
+Reads the error slot of a native CPU library and, when a kernel recorded an error (an out-of-range index, a division by zero ...), throws the corresponding managed exception with the source location. The generated launchers call it after each launch; user code does not need to.
+
+```csharp
+public static void ThrowIfNativeError(string dllPath);
+```
+
+#### Parameters
+
+`dllPath` _string_<br>
+The file path to the native dynamic library.
+
 ## Examples
 
 ### Controlling Managed CPU Fallback Execution
@@ -134,14 +156,17 @@ public static void Shutdown();
 
 ```csharp
 using System;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
 
 // Execution Context: Host (CPU)
 
-CpuKernelLoader.ForceManagedExecution = true;
-bool useManaged = CpuKernelLoader.ShouldUseManagedExecution("nonexistent_kernel.dll");
-Console.WriteLine($"ShouldUseManagedExecution: {useManaged}");
-CpuKernelLoader.ForceManagedExecution = false;
+string existing = typeof(CpuKernelLoader).Assembly.Location;
+using (GpuExecution.Use(KernelExecution.Managed))
+{
+    bool useManaged = CpuKernelLoader.ShouldUseManagedExecution(existing);
+    Console.WriteLine($"ShouldUseManagedExecution: {useManaged}");   // True: the managed path is selected
+}
 ```
 
 ## Remarks

@@ -65,8 +65,15 @@ using var kept = array.GetElement(2).ToOwned();                      // a copy t
 | `ToHostArray()`, `GetTopWords(int)`, `ToBigInteger(bool)` | Read the value back to the host. |
 | `PadTo(int)`, `ModInverse(scoped GpuBigUIntView)`, `DivideByUInt32(uint)` | Return a new owned `GpuBigUInt`. |
 | `ToProxy()` | The `GSharpArrayProxy` of the viewed words. |
+| `ToString()` | Returns the word count and the buffer handle, for debugging; it does not read device memory. |
 
 The asynchronous members of `GpuBigUInt` (`ToHostArrayAsync` and others) are not on the view: a `ref struct` cannot be used by an `async` method. Call them on the owner.
+
+## Operators
+
+| Name | Description |
+| --- | --- |
+| `implicit operator GpuBigUIntView(GpuBigUInt)` | Converts an owned `GpuBigUInt` to a view of its buffer without copying. |
 
 ## See also
 

@@ -55,33 +55,34 @@ public class AdvancedMemoryTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Transpile_UnsafeAsPointer_EmitsPointerCastAndDereference()
+    public void Transpile_UnsafeAsPointer_FailsAsAMethodTheDialectDoesNotImplement()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.UnsafeAsPointer), dialect: CurrentDialect);
 
-        Assert.Empty(diagnostics);
-        // The target is not a [GpuKernel], so its array parameter may be null and each read is checked (#706)
-        Assert.Matches(@"int\* ptr = \(int\*\)AsPointer\(&__gsharp_array_at\(data, 0, ""[^""]*""\)\);", cudaSource.WithCSharpNames());
+        // No dialect defines Unsafe.AsPointer; its bare name would not build
+        diagnostics.AssertFails(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode, "'Unsafe.AsPointer");
+        Assert.DoesNotContain(")AsPointer(", cudaSource.WithCSharpNames());
         Assert.Contains("*ptr=777;", cudaSource.WithCSharpNames());
     }
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Transpile_MemoryMarshalCast_EmitsSpanCastToGSharpArray()
+    public void Transpile_MemoryMarshalCast_FailsAsAMethodTheDialectDoesNotImplement()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.MemoryMarshalCast), dialect: CurrentDialect);
 
-        Assert.Empty(diagnostics);
-        Assert.Contains("GSharpArray<int> ints = Cast(bytes.AsSpan());", cudaSource.WithCSharpNames());
+        // No dialect defines MemoryMarshal.Cast; its bare name would not build
+        diagnostics.AssertFails(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode, "'MemoryMarshal.Cast(");
+        Assert.DoesNotContain("= Cast(", cudaSource.WithCSharpNames());
     }
 
     [Fact]
     [Category(TestCategory.Syntax)]
     public void Transpile_RefFieldsUpdate_EmitsRefWrapperStructAndAssignment()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.RefFieldsUpdate), isDevice: true, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -93,7 +94,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_SimdVector128_EmitsVectorTypeAndArrayAccess()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.SimdVector128), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -112,7 +113,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_PointerIncrementKernel_EmitsPointerArithmeticAssignments()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod(
             typeof(AdvancedMemoryKernels), nameof(AdvancedMemoryKernels.PointerIncrementKernel), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -124,7 +125,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_FixedSizeBuffers_EmitsStructWithInlineArray()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<AdvancedMemoryTarget>(
             nameof(AdvancedMemoryTarget.FixedSizeBuffers), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);

@@ -2,6 +2,7 @@
 using System;
 using Kassyi.GSharp.Runtime.Aot;
 using Xunit;
+using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -11,17 +12,16 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 [Collection(TestCollections.GlobalStateSequential)]
 public class KernelValueParameterManagedTests : IDisposable
 {
-    private readonly bool _previousForceManaged;
+    private readonly GpuExecutionScope _managedScope;
 
     public KernelValueParameterManagedTests()
     {
-        _previousForceManaged = CpuKernelLoader.ForceManagedExecution;
-        CpuKernelLoader.ForceManagedExecution = true;
+        _managedScope = GpuExecution.Use(KernelExecution.Managed);
     }
 
     public void Dispose()
     {
-        CpuKernelLoader.ForceManagedExecution = _previousForceManaged;
+        _managedScope.Dispose();
     }
 
     [Fact]

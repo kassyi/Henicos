@@ -41,14 +41,14 @@ public abstract class TranspilerTestBase
             return new GeneratorTestConfig(resolvedFile).WithDialect(DialectName);
         }
 
-        return RoslynTestUtility.TestGenerator(relativePathToTestCases, callerFilePath)
+        return GeneratorTestRunner.TestGenerator(relativePathToTestCases, callerFilePath)
             .WithDialect(DialectName);
     }
 
     protected AnalyzerTestConfig TestAnalyzer(string relativePathToTestCases,
         DiagnosticAnalyzer analyzer, [CallerFilePath] string callerFilePath = "")
     {
-        return RoslynTestUtility.TestAnalyzer(relativePathToTestCases, analyzer, callerFilePath)
+        return GeneratorTestRunner.TestAnalyzer(relativePathToTestCases, analyzer, callerFilePath)
             .WithDialect(DialectName);
     }
 
@@ -64,11 +64,6 @@ public abstract class TranspilerTestBase
         return Verifier.Verify(target, "cs").UseFastHashSnapshotName(methodName, DialectName);
     }
 
-    protected SettingsTask Verify(SyntaxNode target,
-        [CallerMemberName] string methodName = "")
-    {
-        return Verifier.Verify(target.ToFullString(), "cs").UseFastHashSnapshotName(methodName, DialectName);
-    }
 
     /// <summary>
     /// A convenient one-liner to generate and verify a source generator's output.

@@ -32,7 +32,7 @@ internal static class ExpressionWalk
         try
         {
             walker.Enter(root, target);
-            frames.Push(new Frame<TNode, TTarget>(root, target, walker.OperandCount(root)));
+            frames.Push(new Frame<TNode, TTarget>(root, target, walker.OperandCount(root, target)));
             while (frames.Count > 0)
             {
                 ref var frame = ref frames.Peek();
@@ -42,7 +42,8 @@ internal static class ExpressionWalk
                     var operandTarget = walker.OperandTarget(frame.Node, frame.Target);
                     frame.Next++;
                     walker.Enter(operand, operandTarget);
-                    frames.Push(new Frame<TNode, TTarget>(operand, operandTarget, walker.OperandCount(operand)));
+                    frames.Push(new Frame<TNode, TTarget>(operand, operandTarget,
+                        walker.OperandCount(operand, operandTarget)));
                     continue;
                 }
 

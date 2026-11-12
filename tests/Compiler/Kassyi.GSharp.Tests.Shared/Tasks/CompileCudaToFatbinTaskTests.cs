@@ -60,7 +60,7 @@ public class CompileCudaToFatbinTaskTests
 
     [Theory]
     [InlineData(new[] { "kernel1.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
-    [InlineData(new[] { "kernel.cu" }, "sm_86,compute_86;sm_89,compute_89", "combined_fatbin")]
+    [InlineData(new[] { "kernel.cu" }, "compute_86,sm_86;compute_89,sm_89", "combined_fatbin")]
     [InlineData(new[] { "combined_fatbin_bundle.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
     public void CompileCudaToFatbinTask_CombinedFatbinName_SuccessCases(string[] sources, string targetArch,
         string combinedName)
@@ -125,7 +125,7 @@ public class CompileCudaToFatbinTaskTests
     }
 
     [Fact]
-    public void CompileCudaToFatbinTask_DetectRegisterSpillSuppressGs0001()
+    public void CompileCudaToFatbinTask_SuppressGs0001Marker_LogsNoSpillWarning()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel1.cu", "// gsharp:suppress GS0001\ndummy");

@@ -65,8 +65,8 @@ case 1: return __gsharp_neg_i32(__gsharp_id_3_tid);
 }
 __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 1171422392u);
 }());
-unsigned long long __gsharp_id_5_start = clock64();
-while((long long)(clock64()-__gsharp_id_5_start)<__gsharp_id_1_cycles)
+unsigned long long __gsharp_id_5_start = __gsharp_clock64();
+while((long long)(__gsharp_clock64()-__gsharp_id_5_start)<__gsharp_id_1_cycles)
 {
 }
 __gsharp_id_2_result[__gsharp_id_3_tid]=__gsharp_id_4_value;
@@ -168,7 +168,8 @@ int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.B
 int value = keys[tid] switch
 {
 0 => tid,
-1 => -tid
+1 => -tid,
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
 };
 ulong start = global::Kassyi.GSharp.Core.Gpu.Clock64();
 while ((long)(global::Kassyi.GSharp.Core.Gpu.Clock64() - start) < cycles)
@@ -203,6 +204,14 @@ if (result.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(result));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchEpochKernels.DelayedWriteKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::System.Int32[] __gsharp_csharp_arg_0 = keys;
+global::System.Int64 __gsharp_csharp_arg_1 = cycles;
+global::System.Int32[] __gsharp_csharp_arg_2 = result;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Cuda.LaunchEpochKernels.DelayedWriteKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
+return;
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -350,8 +359,8 @@ case 1: return __gsharp_neg_i32(__gsharp_ctx->__gsharp_id_3_tid);
 }
 __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, 1441869600u);
 }());
-__gsharp_ctx->__gsharp_id_5_start=clock64();
-while((long long)(clock64()-__gsharp_ctx->__gsharp_id_5_start)<__gsharp_ctx->__gsharp_id_1_cycles)
+__gsharp_ctx->__gsharp_id_5_start=__gsharp_clock64();
+while((long long)(__gsharp_clock64()-__gsharp_ctx->__gsharp_id_5_start)<__gsharp_ctx->__gsharp_id_1_cycles)
 {
 }
 __gsharp_yielded_for_grid_sync=true;
@@ -508,7 +517,8 @@ __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSha
 __gsharp_ctx.value = __gsharp_ctx.keys[__gsharp_ctx.tid] switch
 {
 0 => __gsharp_ctx.tid,
-1 => -__gsharp_ctx.tid
+1 => -__gsharp_ctx.tid,
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
 };
 __gsharp_ctx.start = global::Kassyi.GSharp.Core.Gpu.Clock64();
 while ((long)(global::Kassyi.GSharp.Core.Gpu.Clock64() - __gsharp_ctx.start) < __gsharp_ctx.cycles)
@@ -550,6 +560,10 @@ if (result.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(result));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchEpochKernels.DelayedGridSyncAfterFailKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LaunchEpochKernels.DelayedGridSyncAfterFailKernel", "it reaches Gpu.SyncGrid(), and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -806,7 +820,8 @@ int tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.B
 int key = tid == failingThread ? global::Kassyi.GSharp.Tests.Cuda.LaunchEpochKernels.FailKey : 0;
 result[tid] = key switch
 {
-0 => tid
+0 => tid,
+var __gsharp_unmatched => throw new global::System.Runtime.CompilerServices.SwitchExpressionException(__gsharp_unmatched),
 };
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -829,6 +844,13 @@ if (result.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(result));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchEpochKernels.FillUnlessFailKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::System.Int32 __gsharp_csharp_arg_0 = failingThread;
+global::System.Int32[] __gsharp_csharp_arg_1 = result;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Cuda.LaunchEpochKernels.FillUnlessFailKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+return;
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);

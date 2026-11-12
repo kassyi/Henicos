@@ -58,5 +58,7 @@ public readonly record struct ThreadOrder(ThreadOrderKind Kind, int Seed)
     }
 
     /// <inheritdoc/>
+#pragma warning disable RS0030 // Human-readable order name for the differential failure messages
     public override string ToString() => Kind == ThreadOrderKind.Permuted ? $"permuted (seed {Seed})" : Kind.ToString().ToLowerInvariant();
+#pragma warning restore RS0030
 }

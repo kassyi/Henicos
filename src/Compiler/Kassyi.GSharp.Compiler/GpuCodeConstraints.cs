@@ -14,12 +14,14 @@ internal static class GpuCodeConstraints
 {
     /// <summary>
     /// Whether a GPU function returns <see langword="void"/>, an unmanaged type with a device representation, or is a
-    /// valid device iterator (GSH0004).
+    /// valid device iterator (GSH0004). A kernel cannot return a ref struct: its launcher returns the result of each
+    /// thread in an array.
     /// </summary>
     public static bool HasSupportedReturnType(IMethodSymbol method, ITranspilerDialect dialect) =>
         method.ReturnType.SpecialType == SpecialType.System_Void ||
         IteratorTypeResolver.IsDeviceIteratorMethod(method) ||
         (method.ReturnType.IsUnmanagedType &&
+         !(method.ReturnType.IsRefLikeType && method.HasAttribute(KnownAttributes.GpuKernel)) &&
          (StructLayoutValidator.HasDeviceRepresentation(method.ReturnType, dialect) ||
           IsReportedAsRuntimeOnly(method.ReturnType)));
 
@@ -98,6 +100,58 @@ internal static class GpuCodeConstraints
     }
 
     /// <summary>
+    /// Why device code cannot call the user-defined operator <paramref name="method"/> (GSH0060): the operator name and
+    /// the name of the type that declares it, or <see langword="null"/> when the operator has a device definition.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] A closed list, as for calls (<c>CallTargetClassifier</c>): the transpiler writes an operator expression as
+    /// the C++ operator, which exists only when the dialect's C++ type defines it, so the namespace of the type proves
+    /// nothing (#512). Two operators have a definition: a <c>[GpuOperatorMacro]</c> one, which the transpiler expands
+    /// to a call of its target where <see cref="OperatorMacroPosition"/> allows it, and one that a row of the dialect's
+    /// YAML names, which declares that the dialect's C++ type defines the C++ operator (no row does today). A
+    /// <c>[CudaIntrinsic]</c> or intrinsic pattern also maps a method, but the operator expression would not call it.
+    /// </remarks>
+    public static (string Operator, string Type)? GetOperatorProblem(IMethodSymbol method, ITranspilerDialect dialect)
+    {
+        if (method.HasAttribute(KnownAttributes.GpuOperatorMacro) || IsDialectOperator(method, dialect))
+        {
+            return null;
+        }
+
+        return (method.Name, method.ContainingType?.Name ?? string.Empty);
+    }
+
+    /// <summary>
+    /// The user-defined operator that <paramref name="node"/> (a binary, unary, increment or decrement expression or a
+    /// compound assignment, of the model's tree or of a lowered tree mapped to it) calls where the transpiler writes it
+    /// as an operator, with the user's expression that calls it; <see langword="null"/> for a built-in operator and for
+    /// a comparison with <c>null</c> written as a null test (<see cref="NullRepresentation.GetNullTestOperand"/>).
+    /// </summary>
+    /// <remarks>
+    /// [WHY] A node of a lowered tree is mapped back to the user's source by span, which can name a node of another
+    /// kind; only an operation of the node's own kind is its operator.
+    /// </remarks>
+    public static (IMethodSymbol Method, ExpressionSyntax Written)? GetUserDefinedOperator(ExpressionSyntax node,
+        SemanticModel model)
+    {
+        var operation = model.GetSafeOperation(node);
+        if (operation?.Syntax is not ExpressionSyntax written ||
+            written.RawKind != node.RawKind ||
+            operation.GetUserDefinedOperator() is not { } method ||
+            (node is BinaryExpressionSyntax binary && NullRepresentation.GetNullTestOperand(binary, model) != null))
+        {
+            return null;
+        }
+
+        return (method, written);
+    }
+
+    private static bool IsDialectOperator(IMethodSymbol method, ITranspilerDialect dialect) =>
+        !method.HasAttribute(KnownAttributes.CudaIntrinsic) &&
+        method.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) != true &&
+        dialect.TryMapIntrinsic(method, out _);
+
+    /// <summary>
     /// The GSH0003 text for a call of a <c>[GpuKernel]</c> method from device code: a kernel is launched by the host
     /// through its launcher, and C++ has no call of it from another kernel or a device function.
     /// </summary>
@@ -129,6 +183,16 @@ internal static class GpuCodeConstraints
     /// </summary>
     public const string SwitchSectionLocalNotDeclarable =
         "span, ref local, stack array or other local that needs its initializer, used by another switch section than the one that declares it";
+
+    /// <summary>
+    /// The GSH0003 text for a <c>ref</c> local that the CPU state machine would have to keep in its frame and GSH0039
+    /// does not report: one rebound with <c>= ref</c>, one used in another state than its declaration (a switch
+    /// section), or the <c>ref</c> iteration variable of a <c>foreach</c> used across a barrier. The frame cannot hold
+    /// a reference (#921).
+    /// </summary>
+    public const string RefLocalHeldByCpuStateMachine =
+        "ref local that the CPU state machine keeps across a barrier or a call that may suspend " +
+        "(rebound with '= ref', used in another switch section, or a ref foreach variable)";
 
     /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
     public const string DynamicArraySize = "dynamic array size";
@@ -249,7 +313,8 @@ internal static class GpuCodeConstraints
 
     /// <summary>
     /// Whether <paramref name="dialect"/> emits <c>Gpu.InlinePtx</c>; the others replace the call with a runtime failure
-    /// (GSH0054). Kept temporarily until #1052 and #1054 merge; use <see cref="Dialects.DialectCallSupport.SupportsInlinePtx"/> instead.
+    /// (GSH0054). Kept temporarily until #1052 and #1054 merge; use
+    /// <see cref="Transpiler.Dialects.DialectCallSupport.SupportsInlinePtx"/> instead.
     /// </summary>
     // TODO(#581): Remove once #1052 and #1054 merge.
     public static bool SupportsInlinePtx(ITranspilerDialect dialect) =>

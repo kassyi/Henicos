@@ -13,14 +13,12 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </remarks>
 internal static class ManagedStateMachineAvailability
 {
-    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_results = new();
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, bool> s_results = new();
 
     /// <summary>Whether the state machine of <paramref name="method"/> can be emitted (or, for a function of another assembly, was).</summary>
     public static bool CanEmit(IMethodSymbol method, Compilation compilation)
     {
-        var results = s_results.GetValue(compilation,
-            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
-        return CanEmit(method.OriginalDefinition, compilation, results,
+        return CanEmit(method.OriginalDefinition, compilation, s_results.For(compilation),
             new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
     }
 
@@ -101,7 +99,7 @@ internal static class ManagedStateMachineAvailability
         if (DeviceExportTable.IsOutside(method, compilation))
         {
             return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
-                   imported.Record.ManagedStateMachine;
+                   imported.Record.Traits.ManagedStateMachine;
         }
 
         if (!AreContainingTypesPartial(method) ||

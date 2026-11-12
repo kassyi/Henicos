@@ -10,16 +10,16 @@ public class GpuKernelAnalyzerTests
     [InlineData("GSH-02", "Analyzers/GpuKernel/LinqQuery_InGpuKernel.cu.cs", "GSH0008")]
     [InlineData("GSH-03", "Analyzers/GpuKernel/ImplicitVar_WithoutSuffix_InGpuKernel.cu.cs", "GSH0009")]
     [InlineData("GSH-19", "Analyzers/ManualEnumeratorSadPath.cs", "GSH0019")]
-    [InlineData("SYN-49", "Analyzers/UnsupportedInterlockedOverload.cs", "GSH0003")]
-    [InlineData("SYN-68", "Analyzers/UnsupportedMathMethod.cs", "GSH0003")]
-    [InlineData("SYN-155", "Analyzers/UnsupportedBitOperationsMethod.cs", "GSH0003")]
+    [InlineData("SYN-49", "Analyzers/UnsupportedInterlockedOverload.cs", "GSH0109")]
+    [InlineData("SYN-68", "Analyzers/UnsupportedMathMethod.cs", "GSH0109")]
+    [InlineData("SYN-155", "Analyzers/UnsupportedBitOperationsMethod.cs", "GSH0109")]
     [InlineData("GSH-36", "Analyzers/KernelClassMustBePartial_SadPath.cs", "GSH0036")]
     public async Task GpuKernelAnalyzer_KernelWithErrorConstruct_ReportsTheGivenDiagnostic(
         string featureId,
         string testCasePath,
         string expectedErrorId)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsErrorsAsync(expectedErrorId);
     }
 
@@ -39,7 +39,7 @@ public class GpuKernelAnalyzerTests
         string testCasePath,
         string[] expectedDiagnosticIds)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .ReportsDiagnosticsAsync(expectedDiagnosticIds);
     }
 
@@ -50,7 +50,7 @@ public class GpuKernelAnalyzerTests
     [InlineData("GSH-34-Happy", "Analyzers/ParamsProhibited_HappyPath.cs")]
     public async Task GpuKernelAnalyzer_ValidKernelConstruct_HasNoErrors(string featureId, string testCasePath)
     {
-        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+        await GeneratorTestRunner.TestAnalyzer(testCasePath, s_analyzer)
                                .HasNoErrorsAsync();
     }
 
@@ -58,7 +58,7 @@ public class GpuKernelAnalyzerTests
     [Scenario(TestScenario.SadPath)]
     public async Task UserDefinedGpuMacros_CustomMacroMethods_AreNotValidatedAsGpuMacros()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/GpuKernel/LookalikeGpuMacros_InGpuKernel.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/GpuKernel/LookalikeGpuMacros_InGpuKernel.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.MacroArgumentMustBeConstant.Id);
@@ -75,7 +75,7 @@ public class GpuKernelAnalyzerTests
         const string ExpectedMessageFormat =
             "The type '{0}' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.";
 
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/EnclosingTypeMustBePartial_SadPath.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/EnclosingTypeMustBePartial_SadPath.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var actual = diagnostics
             .Where(d => d.Id == GSharpDiagnostics.KernelClassMustBePartial.Id)
@@ -92,13 +92,14 @@ public class GpuKernelAnalyzerTests
             })
             .ToArray();
 
-        // DeviceOnlyStruct is not reported, and OuterOfTwoClasses only once
+        // DeviceOnlyStruct and DeviceOnlyRecordStruct are not reported, and OuterOfTwoClasses only once
         Assert.Equal(
         [
             (4, 13, 4, 33, string.Format(ExpectedMessageFormat, "OuterNonPartialClass")),
             (6, 18, 6, 39, string.Format(ExpectedMessageFormat, "OuterNonPartialStruct")),
             (18, 14, 18, 35, string.Format(ExpectedMessageFormat, "OuterNonPartialRecord")),
             (35, 13, 35, 30, string.Format(ExpectedMessageFormat, "OuterOfTwoClasses")),
+            (58, 14, 58, 36, string.Format(ExpectedMessageFormat, "NonPartialKernelRecord")),
         ], actual);
     }
 
@@ -106,7 +107,7 @@ public class GpuKernelAnalyzerTests
     [Scenario(TestScenario.SadPath)]
     public async Task TranspilerFailureCheck_NoDepthLimit_ReportsOnlyOtherDiagnosticWithoutThrowingAD0001()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/IteratorInlineDepth_SadPath.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/IteratorInlineDepth_SadPath.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
 
         Assert.DoesNotContain(diagnostics, static d => d.Id == "AD0001");
@@ -136,14 +137,14 @@ public class GpuKernelAnalyzerTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void SupportedDiagnostics_DefinedDiagnosticDescriptors_CoversAllDefinedDiagnostics()
+    public void SupportedDiagnostics_ReportedDescriptors_CoversEveryReportedDiagnostic()
     {
         var supportedIds = s_analyzer.SupportedDiagnostics
             .Select(static d => d.Id)
             .ToHashSet(StringComparer.Ordinal);
 
-        Assert.NotEmpty(GSharpDiagnostics.All);
-        foreach (var descriptor in GSharpDiagnostics.All)
+        Assert.NotEmpty(GSharpDiagnostics.Reported);
+        foreach (var descriptor in GSharpDiagnostics.Reported)
         {
             Assert.Contains(descriptor.Id, supportedIds);
         }

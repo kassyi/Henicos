@@ -197,8 +197,7 @@ public sealed class GridBarrierTests
         Assert.Null(ex.InnerException);
 
         // The threads failed before the first barrier, so every block leaves it: no surviving thread gets to its write.
-        // A launch without an epoch (captured into a graph) still passes the barriers with the surviving threads
-        // (LaunchEpochTests in Tests.Cuda).
+        // A launch captured into a graph does the same (LaunchEpochTests in Tests.Cuda).
         Assert.All(result, static value => Assert.Equal(Untouched, value));
     }
 

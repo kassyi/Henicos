@@ -12,36 +12,42 @@ private static readonly Lazy<byte[]> s_fatbin_shared_module = new(() => System.I
 private static readonly Lazy<byte[]> s_fatbin_other_module = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "other_module")));
 public static partial void MethodOne(float[] input, float factor)
 {
-using var scope = new GpuKernelLoader.CudaContextScope();
-var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "Kernel1");
-using var d_input = new GpuBuffer<float>(input.Length);
+if (input is null){
+throw new global::System.ArgumentNullException(nameof(input));
+}
+using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "Kernel1");
+using var d_input = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(input.Length);
 d_input.CopyToDevice(input);
 unsafe
 {
 var p_input = d_input.DevicePointer;
 var p_factor = factor;
 var kernelParams = stackalloc void*[2];
-kernelParams[0] = &p_input;
-kernelParams[1] = &p_factor;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_input);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<float>(ref p_factor);
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,
 1, 1, 1,
-0, IntPtr.Zero, kernelParams, IntPtr.Zero));
+0, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));
 }
-CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuCtxSynchronize());
 }
-[StructLayout(LayoutKind.Sequential)]
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Sequential)]
 private struct __gsharp_native_context_MethodTwo
 {
-public IntPtr output;
+public global::System.IntPtr output;
 public int count;
 }
 public static partial void MethodTwo(int[] output, int count)
 {
-using var scope = new GpuKernelLoader.CudaContextScope();
-var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "MethodTwo");
-using var d_output = new GpuBuffer<int>(output.Length);
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
+using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "MethodTwo");
+using var d_output = new global::Kassyi.GSharp.Runtime.GpuBuffer<int>(output.Length);
 var ctx = new __gsharp_native_context_MethodTwo
 {
 output = d_output.DevicePointer,
@@ -51,62 +57,71 @@ count = count
 unsafe
 {
 var kernelParams = stackalloc void*[1];
-kernelParams[0] = &ctx;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<__gsharp_native_context_MethodTwo>(ref ctx);
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,
 1, 1, 1,
-0, IntPtr.Zero, kernelParams, IntPtr.Zero));
+0, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));
 }
-CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuCtxSynchronize());
 d_output.CopyToHost(output);
 }
 public static partial void MethodThree(float[] input, float[] output, int length)
 {
-using var scope = new GpuKernelLoader.CudaContextScope();
-var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_other_module.Value, "MethodThree");
-using var d_input = new GpuBuffer<float>(input.Length);
+if (input is null){
+throw new global::System.ArgumentNullException(nameof(input));
+}
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
+using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_other_module.Value, "MethodThree");
+using var d_input = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(input.Length);
 d_input.CopyToDevice(input);
-using var d_output = new GpuBuffer<float>(output.Length);
+using var d_output = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(output.Length);
 unsafe
 {
 var p_input = d_input.DevicePointer;
 var p_output = d_output.DevicePointer;
 var p_length = length;
 var kernelParams = stackalloc void*[3];
-kernelParams[0] = &p_input;
-kernelParams[1] = &p_output;
-kernelParams[2] = &p_length;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_input);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_output);
+kernelParams[2] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<int>(ref p_length);
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,
 1, 1, 1,
-0, IntPtr.Zero, kernelParams, IntPtr.Zero));
+0, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));
 }
-CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuCtxSynchronize());
 d_output.CopyToHost(output);
 }
 public static partial void MethodFour(uint[] output, int n, uint gridDimX, uint blockDimX, uint sharedMemBytes)
 {
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MultiMethodInvoker.MethodFour");
-using var scope = new GpuKernelLoader.CudaContextScope();
-var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_other_module.Value, "SharedKernel");
+using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_other_module.Value, "SharedKernel");
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(kernel, sharedMemBytes, "MultiMethodInvoker.MethodFour");
-using var d_output = new GpuBuffer<uint>(output.Length);
+using var d_output = new global::Kassyi.GSharp.Runtime.GpuBuffer<uint>(output.Length);
 unsafe
 {
 var p_output = d_output.DevicePointer;
 var p_n = n;
 var kernelParams = stackalloc void*[2];
-kernelParams[0] = &p_output;
-kernelParams[1] = &p_n;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_output);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<int>(ref p_n);
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 kernel,
 gridDimX, 1, 1,
 blockDimX, 1, 1,
-sharedMemBytes, IntPtr.Zero, kernelParams, IntPtr.Zero));
+sharedMemBytes, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));
 }
-CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuCtxSynchronize());
 d_output.CopyToHost(output);
 }
 }
@@ -125,23 +140,26 @@ internal static partial class SecondaryInvoker
 private static readonly Lazy<byte[]> s_fatbin_shared_module = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "shared_module")));
 public static partial void SecondaryMethod(double[] data, double scale)
 {
-using var scope = new GpuKernelLoader.CudaContextScope();
-var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "SecondaryMethod");
-using var d_data = new GpuBuffer<double>(data.Length);
+if (data is null){
+throw new global::System.ArgumentNullException(nameof(data));
+}
+using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "SecondaryMethod");
+using var d_data = new global::Kassyi.GSharp.Runtime.GpuBuffer<double>(data.Length);
 d_data.CopyToDevice(data);
 unsafe
 {
 var p_data = d_data.DevicePointer;
 var p_scale = scale;
 var kernelParams = stackalloc void*[2];
-kernelParams[0] = &p_data;
-kernelParams[1] = &p_scale;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+kernelParams[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref p_data);
+kernelParams[1] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<double>(ref p_scale);
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 kernel,
 1, 1, 1,
 1, 1, 1,
-0, IntPtr.Zero, kernelParams, IntPtr.Zero));
+0, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));
 }
-CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuCtxSynchronize());
 }
 }

@@ -6,7 +6,7 @@
 
 **A zero-overhead C#-to-CUDA AOT transpiler. Write bare-metal GPU kernels in standard C#.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![.NET 8.0](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/) [![CUDA](https://img.shields.io/badge/CUDA-12%2B-green.svg)](https://developer.nvidia.com/cuda-toolkit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![.NET 8.0](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/) [![CUDA](https://img.shields.io/badge/CUDA-13%2B-green.svg)](https://developer.nvidia.com/cuda-toolkit)
 
 🔥 **Highlights:**
 - **Zero-Allocation Architecture:** 100% value-type (`struct`) driven, absolutely no garbage collection overhead on the device.
@@ -38,6 +38,16 @@ You write C#, but the runtime semantics are strictly native CUDA.
 - **Execution:** You program massively parallel hardware threads structured into Grids, Blocks, and Warps, with direct access to registers, Shared Memory, and VRAM.
 
 Skip the C++ headers, CMake setups, and P/Invoke boilerplate. Write C#, command bare-metal NVIDIA hardware.
+
+---
+
+## Requirements
+
+- **GPU execution**: an NVIDIA GPU (compute capability 8.6 and newer with the default build settings) and a driver for **CUDA 13.0 or newer** (R580 branch or newer; 580.65.06 or newer on Linux). On an older driver, GPU use throws a `NotSupportedException` naming the version found and the version required; `GpuKernelLoader.IsDriverAvailable` is `false` and `GpuKernelLoader.DriverUnavailableReason` gives the same message.
+- **Build**: the .NET 10 SDK, the NVIDIA CUDA Toolkit 13.0 or newer (`nvcc`) and a C++ host compiler (MSVC on Windows, GCC / Clang on Linux).
+- **CPU mode**: a C++ host compiler only; no GPU, driver or CUDA Toolkit.
+
+Details: [Prerequisites & Installation](docs/spec/en/00_getting_started/01_prerequisites.md).
 
 ---
 
@@ -83,7 +93,7 @@ public static partial class Mandelbrot
 
 ### Native CUDA Interop (`[CudaImport]`)
 
-Need to integrate existing, highly tuned CUDA C++ (`.cu`) kernels into your .NET application? G# seamlessly binds native `.fatbin` or `.ptx` binaries with zero P/Invoke boilerplate. Kernel entry point constants are automatically parsed from `.cu` files and exposed via `NativeCudaKernels`:
+Need to integrate existing, highly tuned CUDA C++ (`.cu`) kernels into your .NET application? G# seamlessly binds native `.fatbin` or `.ptx` binaries with zero P/Invoke boilerplate. `EntryPoint` names the `extern "C" __global__` function of the module:
 
 ```csharp
 using System.Runtime.InteropServices;
@@ -92,7 +102,7 @@ public static partial class NativeInterop
 {
     public const string FatbinName = "native_kernels.fatbin";
 
-    [CudaImport(FatbinName, EntryPoint = NativeCudaKernels.ReductionKernel_Native)]
+    [CudaImport(FatbinName, EntryPoint = "ReductionKernel_Native")]
     public static partial void LaunchReduction(
         [In] Float4[] input, [Out] float[] output, int n,
         uint gridDimX, uint blockDimX);
@@ -209,7 +219,7 @@ Specs, guides, and API references are available in [`docs/spec/en/`](docs/spec/e
 
 ## Reporting a Bug
 
-Run the environment report and paste its output into the bug report. From a clone with the .NET 10 SDK: `just env-info` (or `dotnet run tools/collect-env/collect-env.cs`). Without a clone: download `collect-env-win-x64.exe` or `collect-env-linux-x64` from the latest release. The report leaves out your user name, host name, serial numbers and profile paths.
+Run the environment report and paste its output into the bug report. From a clone with the .NET SDK 10.0.300 or later (older SDKs reject the `#:include` directive the tool uses): `just env-info` (or `dotnet run tools/collect-env/collect-env.cs`). Without a clone: download `collect-env-win-x64.exe` or `collect-env-linux-x64` from the latest release. The report leaves out your user name, host name, serial numbers and profile paths.
 
 ---
 

@@ -51,7 +51,10 @@ public class StatementPreludeTests
         var model = s_compilation.GetSemanticModel(tree);
 
         var statement = tree.GetRoot().DescendantNodes().OfType<ExpressionStatementSyntax>()
-            .First(s => s.ToString().Contains("TryGet", StringComparison.Ordinal));
+            .First(static s => s.Expression is InvocationExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax { Identifier.ValueText: "TryGet" }
+            });
 
         using var visitor = RoslynToCudaVisitor.Rent(new StandardCppDialect(), model);
         using var writer = new SourceWriter();

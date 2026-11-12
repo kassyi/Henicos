@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 /// <summary>
@@ -17,11 +15,11 @@ public class ExplicitUnionEmissionTests
     {
         var source = RoslynTestUtility.ReadTestCase("Layout/ExplicitUnionOrder.cs");
 
-        var (_, output, _) = RoslynTestUtility.RunGenerator(source, dialect);
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(source, dialect);
 
         var generated = string.Concat(output.SyntaxTrees.Select(static tree => tree.ToString()));
-        Assert.Matches(
-            new Regex(@"union\{\r?\nlong long __gsharp_mb_L;\r?\nint __gsharp_mb_I;\r?\n\}"),
-            generated);
+        Assert.True(
+            generated.Contains("union{\r\nlong long __gsharp_mb_L;\r\nint __gsharp_mb_I;\r\n}", StringComparison.Ordinal) ||
+            generated.Contains("union{\nlong long __gsharp_mb_L;\nint __gsharp_mb_I;\n}", StringComparison.Ordinal));
     }
 }

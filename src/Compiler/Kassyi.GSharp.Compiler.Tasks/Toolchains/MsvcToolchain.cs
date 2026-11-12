@@ -342,7 +342,7 @@ public sealed class MsvcToolchain : INativeToolchain
         return File.Exists(vswhere) ? vswhere : null;
     }
 
-    // The vswhere query below is repeated by tools/collect-env/collect-env.cs (Msvc); keep both in sync.
+    // The vswhere query below is repeated by tools/collect-env/ToolchainProbe.cs (Msvc); keep both in sync.
     private string? QueryInstallationPath(string vswhere, CancellationToken cancellationToken)
     {
         var vswhereStartInfo = new ProcessStartInfo

@@ -12,7 +12,10 @@ description: "This document provides a 'Rosetta Stone' example that validates al
 > **Compiler Validation Reference Code**
 > This file is **not** a beginner tutorial or a getting-started guide. It is a comprehensive "Rosetta Stone" test-case designed to demonstrate how the G# transpiler converts all supported C# features into C++. It contains intentional edge-cases and hundreds of lines of code, serving primarily as a compiler validation reference.
 
-This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository. It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`, `[Constant]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit array marshaling.
+This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository.
+It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`,
+`[GpuConstexpr]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit
+array marshaling.
 
 ## 8.1 The G# Source Code
 
@@ -153,7 +156,7 @@ public static partial class ComprehensiveSpecKernel
             float mag = ComputeMagnitude(p);
             mag = (float)Math.Abs(mag);
 
-            // 5. Automatic Loop Unrolling via Constant (for)
+            // 5. Loop Statement (for)
             for (int i = 0; i < unrollFactor; i++)
             {
                 if (i == 1) continue;
@@ -284,7 +287,7 @@ public static partial class ComprehensiveSpecKernel
 
 ## 8.2 Build Output (Diagnostics)
 
-When building this code, MSBuild natively catches the strict constraints via the `Kassyi.Generators.GSharp` analyzers:
+When building this code, MSBuild natively catches the strict constraints via the `Kassyi.GSharp.Compiler` analyzers:
 
 ```
 ComprehensiveSpecKernel.cu.cs(107,63): warning GSH0013: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
@@ -298,7 +301,9 @@ The generator emits one C# file per kernel class. The CUDA C++ for each kernel i
 
 Inside the C++, every user identifier is renamed from its symbol: parameters and locals become `__gsharp_id_{n}_{name}`, and fields of structs that G# defines become `__gsharp_mb_{name}`. The renaming keeps C# names that are reserved in C++ or CUDA from breaking the build. See [Identifier Naming](01_aot_transpiler.md#126-identifier-naming-cppnameresolver).
 
-The listing below is the CUDA snapshot of this file (`tests/Compiler/Kassyi.GSharp.Tests.Cuda/Snapshots/Snap.TestComprehensiveSpecKern_*_Cuda#ComprehensiveSpecKernel.g.verified.cs`). Regenerate §8.1 and §8.3 with `node scripts/sync-comprehensive-spec.js`.
+The listing below is the CUDA snapshot of this file
+(`tests/Compiler/Kassyi.GSharp.Tests.Cuda/Snapshots/Snap.ComprehensiveSpecKernel_*_Cuda#DebugReduc__ComprehensiveSpecKernel.g.verified.cs`).
+Regenerate §8.1 and §8.3 with `node scripts/agent/sync-comprehensive-spec.js`.
 
 <!-- BEGIN CPP -->
 
@@ -496,7 +501,8 @@ unsigned int cursor;
 unsigned int offset[1];
 unsigned int size[1];
 };
-extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles, float* __gsharp_id_1_totalMagnitude, bool* __gsharp_id_2_successFlag, __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor){
+extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles, float* __gsharp_id_1_totalMagnitude, bool* __gsharp_id_2_successFlag, __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 __gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_dsmem_storage;
 __gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
@@ -664,9 +670,10 @@ global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfun
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_2 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[7];
 // Marshal array: particles
 int __gsharp_size_0 = checked(particles.Length * sizeof(global::DebugReduc.PhysicsVector));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -704,6 +711,7 @@ __gsharp_kernel_params[3] = &largeStructVal;
 __gsharp_kernel_params[4] = &particleCount;
 // Marshal scalar: unrollFactor
 __gsharp_kernel_params[5] = &unrollFactor;
+__gsharp_kernel_params[6] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -735,10 +743,11 @@ fixed (global::System.Boolean* __gsharp_ptr_2 = &successFlag)
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_ptr_2, __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 if (__gsharp_d_1 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
 if (__gsharp_d_2 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_2, hStream);
@@ -765,9 +774,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_ProcessPhysics.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ComprehensiveSpecKernel.ProcessPhysics");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[6];
+void** __gsharp_kernel_params = stackalloc void*[7];
 // Marshal device array: particles
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = particles.Data;
@@ -784,6 +794,7 @@ __gsharp_kernel_params[3] = &largeStructVal;
 __gsharp_kernel_params[4] = &particleCount;
 // Marshal scalar: unrollFactor
 __gsharp_kernel_params[5] = &unrollFactor;
+__gsharp_kernel_params[6] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -800,7 +811,8 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string CooperativePhysicsProcess_Source = @"extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(GSharpArray<int> __gsharp_id_0_data){
+public const string CooperativePhysicsProcess_Source = @"extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(GSharpArray<int> __gsharp_id_0_data, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_1_tid;
 __gsharp_grid_sync();
@@ -826,9 +838,10 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_CooperativePhysicsProcess.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: data
 int __gsharp_size_0 = checked(data.Length * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -846,6 +859,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 __gsharp_proxy_0[0] = __gsharp_d_0;
 }
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
+__gsharp_kernel_params[1] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchCooperativeKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -863,10 +877,12 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ThrowIfDeviceError();
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
 if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 }
 }
@@ -891,15 +907,17 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_CooperativePhysicsProcess.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[1];
+void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal device array: data
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = data.Data;
 ((int*)(__gsharp_proxy_0 + 1))[0] = data.Length;
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
+__gsharp_kernel_params[1] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchCooperativeKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -949,7 +967,8 @@ The G# compiler natively intercepts these syntax tree nodes and fails the build 
 
 This explicit trace proves that:
 
-1. `Constant` uses preprocessor macros.
+1. `[GpuConstexpr]` parameters are still ordinary run-time arguments: `unrollFactor` is the kernel parameter
+   `int __gsharp_id_5_unrollFactor`, and the loop over it is not unrolled (the candidate values are not used yet).
 2. Custom Structs map flawlessly, and all 11 primitive C# types align to their C++ equivalents.
 3. Diagnostic warnings and errors natively integrate with MSBuild (`GSH0001` - `GSH0004`, `GSH0013` and `GSH0064`) to act as strict guardrails.
 4. `CastExpression` and `ParenthesizedExpression` AST nodes are properly translated, allowing explicit math method casting like `(float)Math.Sqrt(...)`.
@@ -966,5 +985,5 @@ This explicit trace proves that:
 ### Architecture
 
 - [2. Compiler and Runtime Architecture](00_index.md)
-- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](01_aot_transpiler.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler`)](01_aot_transpiler.md)
 - [2. Runtime Execution and AOT Loader Pipeline (`Kassyi.GSharp.Runtime`)](02_runtime_loader.md)

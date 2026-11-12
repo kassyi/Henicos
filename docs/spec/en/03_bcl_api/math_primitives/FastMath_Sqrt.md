@@ -47,7 +47,7 @@ Console.WriteLine($"FastMath.Sqrt(16.0f) = {f:F1}");
 
 ## Remarks
 
-Usable in both CPU fallback (delegating to `MathF.Sqrt`) and GPU device kernels (mapped to the CUDA `sqrtf` intrinsic).
+On the GPU it maps to the CUDA intrinsic `__fsqrt_rn` (square root rounded to nearest). The native CPU build maps it to `sqrtf`, and the managed path calls `MathF.Sqrt`.
 ## See also
 
 

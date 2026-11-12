@@ -234,11 +234,21 @@ public class ManagedVersionAnalysisTests
         var model = s_compilation.GetSemanticModel(declaration.SyntaxTree);
         var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
                 new ManagedAccessorSet(method, s_compilation))
-            .Visit(body)?.ToFullString();
+            .Visit(body);
 
         Assert.NotNull(rewritten);
-        Assert.Contains("global::ManagedVersionCases.Lookalike.InlinePtx(\"nop;\");", rewritten);
-        Assert.DoesNotContain("NotSupportedException", rewritten);
+        Assert.Empty(rewritten.DescendantNodes().OfType<ThrowStatementSyntax>());
+        // The qualifier is a name (global::ManagedVersionCases.Lookalike), which an expression never parses to
+        var expected = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.ParseName("global::ManagedVersionCases.Lookalike"),
+                SyntaxFactory.IdentifierName("InlinePtx")
+            ),
+            SyntaxFactory.ParseArgumentList("(\"nop;\")")
+        );
+        var call = Assert.Single(rewritten.DescendantNodes().OfType<InvocationExpressionSyntax>());
+        SyntaxAssert.Equivalent(expected, call);
     }
 
     [Fact]
@@ -253,13 +263,13 @@ public class ManagedVersionAnalysisTests
         var model = s_compilation.GetSemanticModel(declaration.SyntaxTree);
         var rewritten = new ManagedExecutionRewriter(model, ManagedBodyKind.ManagedVersion,
                 new ManagedAccessorSet(method, s_compilation))
-            .Visit(body)?.ToFullString();
+            .Visit(body);
 
         Assert.NotNull(rewritten);
-        Assert.Contains(
+        Assert.Empty(rewritten.DescendantNodes().OfType<InvocationExpressionSyntax>());
+        SyntaxAssert.Equivalent(
             "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");",
-            rewritten);
-        Assert.DoesNotContain("InlinePtx(\"nop;\")", rewritten);
+            Assert.Single(rewritten.DescendantNodes().OfType<ThrowStatementSyntax>()));
     }
 
     [Fact]

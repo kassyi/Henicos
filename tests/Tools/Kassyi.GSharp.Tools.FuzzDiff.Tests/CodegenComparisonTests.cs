@@ -145,7 +145,7 @@ public class CodegenComparisonTests
         Assert.Equal(("a[0] = 2;", "a[0] = 4;"), (difference.BaseText, difference.HeadText));
         Assert.Equal(
             "a[0] = 4;",
-            headOutputs.ManagedFiles["Launchers.g.cs"].Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n')[difference.FileLine - 1]);
+            GetLine(headOutputs.ManagedFiles["Launchers.g.cs"], difference.FileLine - 1));
     }
 
     [Fact]
@@ -259,6 +259,22 @@ public class CodegenComparisonTests
     public void TryParseOptions_UnknownDialect_Fails()
     {
         Assert.False(CompareCommand.TryParseOptions(["--base", "main", "--dialects", "Cpu,Metal"], out _, out _, out _));
+    }
+
+    private static string GetLine(string text, int lineIndex)
+    {
+        var currentIndex = 0;
+        foreach (var line in text.AsSpan().EnumerateLines())
+        {
+            if (currentIndex == lineIndex)
+            {
+                return line.ToString();
+            }
+
+            currentIndex++;
+        }
+
+        throw new IndexOutOfRangeException($"Line index {lineIndex} is out of range.");
     }
 
     private static GeneratorOutputs Outputs(string nativeModule, string launcherFile, params (string Name, string Text)[] otherFiles)

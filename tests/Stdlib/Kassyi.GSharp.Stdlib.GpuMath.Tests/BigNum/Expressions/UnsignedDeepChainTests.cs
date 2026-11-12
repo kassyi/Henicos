@@ -25,21 +25,21 @@ public sealed class UnsignedDeepChainTests
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void LeftDeepChain_OfTruncatedSums_IsExact() =>
-        UnsignedChains.RunOnStack(SmallStack, cpuFallback: true, static workspace =>
+        LimitedStack.Run(SmallStack, cpuFallback: true, static workspace =>
             UnsignedChains.TruncatedSums(workspace, Depth, leftDeep: true));
 
     // e = (x_i + e).Truncate(2): every level is the right operand of the next
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void RightDeepChain_OfTruncatedSums_IsExact() =>
-        UnsignedChains.RunOnStack(SmallStack, cpuFallback: true, static workspace =>
+        LimitedStack.Run(SmallStack, cpuFallback: true, static workspace =>
             UnsignedChains.TruncatedSums(workspace, Depth, leftDeep: false));
 
     // e = (((e << 7) >> 7) + x_i).Fit(3): shifts and a checked narrowing between the sums
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void DeepChain_OfShiftsAndFits_IsExact() =>
-        UnsignedChains.RunOnStack(SmallStack, cpuFallback: true, static workspace =>
+        LimitedStack.Run(SmallStack, cpuFallback: true, static workspace =>
             UnsignedChains.ShiftsAndFits(workspace, Depth));
 
     // The sum of 1000 leaves as a left-deep chain and as a balanced tree: the same value, the oracle's
@@ -48,7 +48,7 @@ public sealed class UnsignedDeepChainTests
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void DeepChain_AndBalancedTree_OfTheSameLeaves_Agree() =>
-        UnsignedChains.RunOnStack(SmallStack, cpuFallback: true, static workspace =>
+        LimitedStack.Run(SmallStack, cpuFallback: true, static workspace =>
             UnsignedChains.DeepAndBalancedSums(workspace, 1000));
 
     // e = e * 3 - x_i: the operands of the difference cannot be swapped
@@ -57,7 +57,7 @@ public sealed class UnsignedDeepChainTests
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void DeepChain_OfProductsAndDifferences_IsExact() =>
-        UnsignedChains.RunOnStack(SmallStack, cpuFallback: true, static workspace =>
+        LimitedStack.Run(SmallStack, cpuFallback: true, static workspace =>
             UnsignedChains.ProductsAndDifferences(workspace, 1000));
 
     // A failing root: the buffer Evaluate rented for the result goes back
@@ -68,7 +68,7 @@ public sealed class UnsignedDeepChainTests
     [InlineData(true)]
     [Scenario(TestScenario.SadPath)]
     public void FailingRoot_ReturnsEveryBuffer(bool intoTarget) =>
-        UnsignedChains.RunOnStack(SmallStack, cpuFallback: true, workspace =>
+        LimitedStack.Run(SmallStack, cpuFallback: true, workspace =>
             UnsignedChains.FailureReturnsEveryBuffer(workspace, failAtRoot: true, intoTarget));
 
     // A failing node below the root: its result buffer and the operands evaluated before it go back
@@ -79,7 +79,7 @@ public sealed class UnsignedDeepChainTests
     [InlineData(true)]
     [Scenario(TestScenario.SadPath)]
     public void FailingInnerNode_ReturnsEveryBuffer(bool intoTarget) =>
-        UnsignedChains.RunOnStack(SmallStack, cpuFallback: true, workspace =>
+        LimitedStack.Run(SmallStack, cpuFallback: true, workspace =>
             UnsignedChains.FailureReturnsEveryBuffer(workspace, failAtRoot: false, intoTarget));
 
     // A Fit that does not fit, halfway down a chain of 100000 levels: every buffer leased so far goes back
@@ -90,7 +90,7 @@ public sealed class UnsignedDeepChainTests
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void FailureHalfwayDownADeepChain_ReturnsEveryBuffer() =>
-        UnsignedChains.RunOnStack(SmallStack, cpuFallback: true, static workspace =>
+        LimitedStack.Run(SmallStack, cpuFallback: true, static workspace =>
             UnsignedChains.DeepFailureReturnsEveryBuffer(workspace, Depth));
 }
 
@@ -105,31 +105,31 @@ public sealed class UnsignedDeepChainGpuTests
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void LeftDeepChain_OfTruncatedSums_IsExact() =>
-        UnsignedChains.RunOnStack(StackSize, cpuFallback: false, static workspace =>
+        LimitedStack.Run(StackSize, cpuFallback: false, static workspace =>
             UnsignedChains.TruncatedSums(workspace, Depth, leftDeep: true));
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void RightDeepChain_OfTruncatedSums_IsExact() =>
-        UnsignedChains.RunOnStack(StackSize, cpuFallback: false, static workspace =>
+        LimitedStack.Run(StackSize, cpuFallback: false, static workspace =>
             UnsignedChains.TruncatedSums(workspace, Depth, leftDeep: false));
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void DeepChain_OfShiftsAndFits_IsExact() =>
-        UnsignedChains.RunOnStack(StackSize, cpuFallback: false, static workspace =>
+        LimitedStack.Run(StackSize, cpuFallback: false, static workspace =>
             UnsignedChains.ShiftsAndFits(workspace, Depth));
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void DeepChain_AndBalancedTree_OfTheSameLeaves_Agree() =>
-        UnsignedChains.RunOnStack(StackSize, cpuFallback: false, static workspace =>
+        LimitedStack.Run(StackSize, cpuFallback: false, static workspace =>
             UnsignedChains.DeepAndBalancedSums(workspace, 1000));
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void DeepChain_OfProductsAndDifferences_IsExact() =>
-        UnsignedChains.RunOnStack(StackSize, cpuFallback: false, static workspace =>
+        LimitedStack.Run(StackSize, cpuFallback: false, static workspace =>
             UnsignedChains.ProductsAndDifferences(workspace, 1000));
 }
 
@@ -291,48 +291,6 @@ internal static class UnsignedChains
         finally
         {
             Dispose(leaves);
-        }
-    }
-
-    // Runs the body with its own workspace on a thread with the given stack, and rethrows what it threw
-    public static void RunOnStack(int stackSize, bool cpuFallback, Action<GpuWorkspace> body)
-    {
-        if (!cpuFallback)
-        {
-            CudaCapability.EnsureGpuAvailable();
-        }
-
-        Exception? failure = null;
-        var thread = new Thread(() =>
-        {
-            GpuKernelLoader.ForceCpuFallback = cpuFallback;
-            GpuKernelLoader.CudaContextScope? scope = null;
-            try
-            {
-                if (!cpuFallback)
-                {
-                    scope = new GpuKernelLoader.CudaContextScope();
-                }
-
-                using var workspace = new GpuWorkspace(1 << 16, GpuExecutionEngine.GSharpAot);
-                body(workspace);
-            }
-            catch (Exception ex)
-            {
-                failure = ex;
-            }
-            finally
-            {
-                scope?.Dispose();
-                GpuKernelLoader.ForceCpuFallback = false;
-            }
-        }, stackSize);
-        thread.Start();
-        thread.Join();
-
-        if (failure is not null)
-        {
-            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
         }
     }
 

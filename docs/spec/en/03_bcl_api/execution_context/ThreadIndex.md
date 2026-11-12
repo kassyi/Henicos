@@ -1,12 +1,12 @@
 ---
-title: "ThreadIndex Struct (Kassyi.GSharp.Core)"
+title: "ThreadIndex Class (Kassyi.GSharp.Core)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
 description: "Gets the thread index within the block."
 ---
 
-## ThreadIndex Struct
+## ThreadIndex Class
 
 ## Definition
 
@@ -108,7 +108,7 @@ public class KernelExample
         
         if (attr != null)
         {
-            // Will output: threadIdx.{0}
+            // Will output: (int)threadIdx.{0}
             Console.WriteLine($"ThreadIndex maps to CUDA intrinsic: {attr.Pattern}");
         }
     }
@@ -118,7 +118,7 @@ public class KernelExample
 ## Remarks
 
 Maps directly to the `threadIdx` built-in variable in CUDA PTX.
-These properties are strictly designed for execution within a `[GpuKernel]` or `[GpuDeviceFunction]` on the GPU. Accessing them from the Host (CPU) execution context will throw a `Kassyi.GSharp.Core.GpuOnlyException`.
+These properties are strictly designed for execution within a `[GpuKernel]` or `[GpuDeviceFunction]` on the GPU. Accessing them from the Host (CPU) execution context outside of a managed execution context will throw a `Kassyi.GSharp.Core.GpuOnlyException`; when `ManagedGpuContext.IsActive` is true, they return the simulated thread index.
 
 ## See also
 

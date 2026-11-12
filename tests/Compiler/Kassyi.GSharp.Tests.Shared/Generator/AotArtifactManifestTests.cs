@@ -24,7 +24,7 @@ public class AotArtifactManifestTests
     {
         using var dir = new TempDirectory();
 
-        RoslynTestUtility.RunGenerator(s_kernelSource, dialect, dir.Options);
+        GeneratorTestRunner.RunGenerator(s_kernelSource, dialect, dir.Options);
 
         var sourceName = $"Kassyi.GSharp.Kernels_{AssemblyName}{extension}";
         Assert.True(File.Exists(Path.Combine(dir.Path, sourceName)));
@@ -38,7 +38,7 @@ public class AotArtifactManifestTests
         using var dir = new TempDirectory();
         File.WriteAllText(dir.ManifestPath, "Kassyi.GSharp.Kernels_Old.g.cpp\n");
 
-        RoslynTestUtility.RunGenerator(s_noKernelSource, "Cuda", dir.Options);
+        GeneratorTestRunner.RunGenerator(s_noKernelSource, "Cuda", dir.Options);
 
         Assert.True(File.Exists(dir.ManifestPath));
         Assert.Empty(File.ReadAllLines(dir.ManifestPath));
@@ -55,7 +55,7 @@ public class AotArtifactManifestTests
         var compilation = RoslynTestUtility.CreateCompilation(hasKernels ? s_kernelSource : s_noKernelSource)
             .AddReferences(CSharpCompilation.Create("OtherProject").ToMetadataReference());
 
-        RoslynTestUtility.RunGenerator(compilation, "Cuda", dir.Options);
+        GeneratorTestRunner.RunGenerator(compilation, "Cuda", dir.Options);
 
         Assert.False(File.Exists(dir.ManifestPath));
         Assert.Empty(Directory.GetFiles(dir.Path));
@@ -73,7 +73,7 @@ public class AotArtifactManifestTests
         var sourcePath = Path.Combine(dir.Path, $"Kassyi.GSharp.Kernels_{AssemblyName}.g.cu");
         Directory.CreateDirectory(sourcePath);
 
-        var (_, _, diagnostics) = RoslynTestUtility.RunGenerator(s_kernelSource, "Cuda", dir.Options);
+        var (_, _, diagnostics) = GeneratorTestRunner.RunGenerator(s_kernelSource, "Cuda", dir.Options);
 
         var failure = Assert.Single(diagnostics, static d => d.Id == GSharpDiagnostics.AotArtifactWriteFailed.Id);
         Assert.Equal(DiagnosticSeverity.Info, failure.Severity);

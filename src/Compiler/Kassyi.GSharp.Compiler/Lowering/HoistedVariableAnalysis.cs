@@ -11,13 +11,23 @@ internal static class HoistedVariableAnalysis
     /// Adds the key of every hoisted declaration of <paramref name="block"/> to <paramref name="hoistedKeys"/> and the
     /// declarators themselves, in the order written, to <paramref name="hoistedDeclarators"/>.
     /// </summary>
+    /// <param name="block">The body to analyze.</param>
+    /// <param name="semanticModel">The semantic model of the method's syntax tree, or <see langword="null"/>.</param>
+    /// <param name="plan">The labels that start a state, or <see langword="null"/> to plan them from the block.</param>
+    /// <param name="hoistedKeys">Receives the key of every hoisted declaration.</param>
+    /// <param name="hoistedDeclarators">Receives the hoisted declarators.</param>
+    /// <param name="refLocalsNotLiveAcrossSplit">
+    /// The <c>ref</c> locals that are not live after any split point (<see cref="RefLocalLiveness"/>): a barrier in
+    /// their scope does not hoist them.
+    /// </param>
     /// <returns>Whether the block has a split point; without one nothing is hoisted.</returns>
     public static bool Analyze(
         BlockSyntax block,
         SemanticModel? semanticModel,
         StatePlan? plan,
         HashSet<DeclarationKey> hoistedKeys,
-        ImmutableArray<VariableDeclaratorSyntax>.Builder hoistedDeclarators)
+        ImmutableArray<VariableDeclaratorSyntax>.Builder hoistedDeclarators,
+        HashSet<ISymbol>? refLocalsNotLiveAcrossSplit = null)
     {
         // [WHY] One-pass AST traversal to collect barriers and variables efficiently in O(N).
         var analyzer = new HoistAnalyzer();
@@ -34,7 +44,7 @@ internal static class HoistedVariableAnalysis
         {
             var (decl, scopeEnd) = analyzer.Variables[v];
             keys[v] = LoweringIdentity.ForDeclaration(decl, semanticModel);
-            if (MustHoist(decl, scopeEnd, keys[v], boundaries))
+            if (MustHoist(decl, scopeEnd, keys[v], boundaries, refLocalsNotLiveAcrossSplit))
             {
                 hoistedKeys.Add(keys[v]);
             }
@@ -76,20 +86,26 @@ internal static class HoistedVariableAnalysis
     }
 
     // Whether the declaration lives in the context: always for shared memory and the result of a suspending call;
-    // otherwise when a barrier lies in its scope after it, or it is used after a split label in its scope
+    // otherwise when a barrier lies in its scope after it (unless it is a ref local that no state after a split reads),
+    // or it is used after a split label in its scope
     private static bool MustHoist(
         VariableDeclaratorSyntax decl,
         int scopeEnd,
         DeclarationKey key,
-        StateBoundaries boundaries)
+        StateBoundaries boundaries,
+        HashSet<ISymbol>? refLocalsNotLiveAcrossSplit)
     {
         if (IsAlwaysHoisted(decl))
         {
             return true;
         }
 
+        // [WHY] A ref local cannot be a field of the managed frame class (CS9059). One that is not live after any split
+        // point is declared and used within one state, so it stays a local there (#1640); a live one is GSH0039
+        var staysLocal = key.Symbol != null && refLocalsNotLiveAcrossSplit != null &&
+                         refLocalsNotLiveAcrossSplit.Contains(key.Symbol);
         var declEnd = decl.Span.End;
-        return CrossesBarrier(boundaries.BarrierStarts, declEnd, scopeEnd) ||
+        return (!staysLocal && CrossesBarrier(boundaries.BarrierStarts, declEnd, scopeEnd)) ||
                (boundaries.LastReferenceStarts is { } lastReferenceStarts &&
                 IsUsedAfterSplitLabel(boundaries.SplitLabelStarts, lastReferenceStarts, key, declEnd, scopeEnd));
     }

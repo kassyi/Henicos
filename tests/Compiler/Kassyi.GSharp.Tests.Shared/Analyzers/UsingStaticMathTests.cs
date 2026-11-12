@@ -12,22 +12,22 @@ public class UsingStaticMathTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public async Task UsingStaticMath_DirectCall_ReportsGSH0003Once()
+    public async Task UsingStaticMath_DirectCall_ReportsGsh0109Once()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/UsingStaticMath/UsingStaticMathDirectCallKernels.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/UsingStaticMath/UsingStaticMathDirectCallKernels.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var diag = Assert.Single(diagnostics);
-        Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);
+        Assert.Equal(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id, diag.Id);
     }
 
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public async Task ExplicitMath_MemberAccessCall_ReportsGSH0003Once()
+    public async Task ExplicitMath_MemberAccessCall_ReportsGsh0109Once()
     {
-        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/UsingStaticMath/ExplicitMathMemberAccessKernels.cu.cs", s_analyzer)
+        var diagnostics = await GeneratorTestRunner.TestAnalyzer("Analyzers/UsingStaticMath/ExplicitMathMemberAccessKernels.cu.cs", s_analyzer)
                                                  .GetDiagnosticsAsync();
         var diag = Assert.Single(diagnostics);
-        Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);
+        Assert.Equal(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id, diag.Id);
     }
 }

@@ -228,6 +228,10 @@ if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedMemoryRefIndexerKernels.AtomicAddSharedMemoryKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SharedMemoryRefIndexerKernels.AtomicAddSharedMemoryKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
@@ -362,7 +366,7 @@ __gsharp_ctx->__gsharp_id_2_bar={ (unsigned long long*)__gsharp_allocate_smem_st
 __gsharp_ctx->__gsharp_id_3_data={ (int*)__gsharp_allocate_smem_static(0xdd78a5a1ffca4b9full, (32) * sizeof(int), alignof(int)) };
 if(__gsharp_ctx->__gsharp_id_1_tid==0)
 {
-__gsharp_mbarrier_init(&__gsharp_ctx->__gsharp_id_2_bar[0],32);
+__gsharp_unsupported(""Gpu.MBarrierInit is not implemented by the StandardCppDialect dialect"");
 }
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -372,8 +376,8 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 __gsharp_ctx->__gsharp_id_3_data[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_tid,3);
-__gsharp_mbarrier_arrive(&__gsharp_ctx->__gsharp_id_2_bar[0]);
-__gsharp_mbarrier_wait(&__gsharp_ctx->__gsharp_id_2_bar[0],0);
+__gsharp_unsupported(""Gpu.MBarrierArrive is not implemented by the StandardCppDialect dialect"");
+__gsharp_unsupported(""Gpu.MBarrierWait is not implemented by the StandardCppDialect dialect"");
 __gsharp_ctx->__gsharp_id_0_output[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_ctx->__gsharp_id_3_data[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1))%32];
 __gsharp_state=-1;
 return;
@@ -514,6 +518,10 @@ if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedMemoryRefIndexerKernels.MBarrierSharedMemoryKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SharedMemoryRefIndexerKernels.MBarrierSharedMemoryKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
+}
 var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
 var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);

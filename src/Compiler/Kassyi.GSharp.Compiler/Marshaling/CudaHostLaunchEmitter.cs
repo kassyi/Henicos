@@ -6,9 +6,10 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class CudaHostLaunchEmitter
 {
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
-    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName, bool isCheckedBuild = false)
+    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName,
+        bool isCheckedBuild = false)
     {
-        WriteFunctionField(writer, kernel, assemblyName);
+        WriteFunctionField(writer, kernel, moduleName);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
         WriteWarmupFunctionPointerMethod(writer, kernel);
         WriteLaunchMethod(writer, kernel, false, isCheckedBuild);
@@ -21,8 +22,7 @@ internal static class CudaHostLaunchEmitter
 
     private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr, bool isCheckedBuild)
     {
-        writer.AppendLine(
-            "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
+        using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.Description);
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, isDevicePtr);
         using (writer.Scope())
         {
@@ -39,6 +39,7 @@ internal static class CudaHostLaunchEmitter
 
             LaunchLimitEmitter.WriteCudaCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
+            CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr));
 
             writer.AppendLine(
                 $"using (var {GSharpInternalNames.Launcher.CudaContextScope} = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
@@ -65,8 +66,6 @@ internal static class CudaHostLaunchEmitter
 
             AutoResultEmitter.WriteReturn(writer, kernel.Host);
         }
-
-        writer.AppendLine("#pragma warning restore CS8500");
     }
 
     // The public Launch{Name}Ptr of an overloaded kernel: device pointers are typed GpuBuffer<T>, so C# selects the
@@ -132,11 +131,11 @@ internal static class CudaHostLaunchEmitter
     }
 
     // private static readonly CudaKernelFunction <field> = new CudaKernelFunction("<kernel>", <context>.GetFatbin);
-    private static void WriteFunctionField(SourceWriter writer, in KernelEmission kernel, string assemblyName)
+    private static void WriteFunctionField(SourceWriter writer, in KernelEmission kernel, string moduleName)
     {
         const string FunctionType = "global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction";
         var field = KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey);
-        var moduleContextName = AotHostNames.GetModuleContextName(assemblyName);
+        var moduleContextName = AotModuleNames.GetModuleContextName(moduleName);
         writer.Append($"private static readonly {FunctionType} {field} = new {FunctionType}");
         using (writer.Parentheses())
         {
@@ -187,11 +186,12 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine();
     }
 
-    public static string GenerateModuleContextClass(string assemblyName,
+    public static string GenerateModuleContextClass(string moduleName,
         EquatableArray<KernelWarmup> warmups)
     {
-        var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
-        var moduleContextName = AotHostNames.GetModuleContextName(assemblyName);
+        var fatbinLiteral = SymbolDisplay.FormatLiteral(AotModuleNames.GetArtifactFileStem(moduleName) + ".gfatbin",
+            quote: true);
+        var moduleContextName = AotModuleNames.GetModuleContextName(moduleName);
 
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
@@ -216,7 +216,7 @@ internal static class CudaHostLaunchEmitter
             var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
             if (fatbin is not null) return fatbin;
             var baseDir = global::System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-            var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_{{safeAssemblyName}}.gfatbin");
+            var fatbinPath = global::System.IO.Path.Combine(baseDir, {{fatbinLiteral}});
             if (!global::System.IO.File.Exists(fatbinPath))
             {
             throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");

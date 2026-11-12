@@ -12,14 +12,10 @@ public partial class PreludeInternalNamesTests
     [GeneratedRegex(@"(?<![A-Za-z0-9_])_(ctx|state|yieldedForGridSync|warpExchange|all_contexts)(?![A-Za-z0-9_])")]
     private static partial Regex LegacyInternalNameRegex();
 
-    [GeneratedRegex(@"enum\s+class\s+GSharpErrorCode\s*:\s*[A-Za-z0-9_]+\s*\{(?<body>[^}]+)\}", RegexOptions.Singleline)]
-    private static partial Regex ErrorCodeEnumRegex();
-
-    [GeneratedRegex(@"(?<name>[A-Za-z0-9_]+)\s*=\s*(?<value>[0-9]+)")]
-    private static partial Regex ErrorCodeEntryRegex();
-
+#pragma warning disable RS0030 // The C++ prelude has no syntax tree; finds an InternalNames.yml name as an identifier
     private static bool ContainsIdentifier(string source, string identifier) =>
         Regex.IsMatch(source, $"(?<![A-Za-z0-9_]){Regex.Escape(identifier)}(?![A-Za-z0-9_])");
+#pragma warning restore RS0030
 
     // The names that InternalNames.yml marks as declared by the Prelude.
     public static TheoryData<string, string> PreludeDeclaredNames()
@@ -72,34 +68,26 @@ public partial class PreludeInternalNamesTests
     [Scenario(TestScenario.HappyPath)]
     public void Preludes_DeclareIdenticalGSharpErrorCodeEnumValues()
     {
-        var cppEntries = ParseErrorCodeEntries(GSharpPreludeResources.Cpp);
-        var cudaEntries = ParseErrorCodeEntries(GSharpPreludeResources.Cuda);
-        var managedNames = Enum.GetNames<GSharpErrorCode>();
-        var managedValues = Enum.GetValues<GSharpErrorCode>();
-
-        Assert.Equal(managedNames.Length, cppEntries.Count);
-        Assert.Equal(managedNames.Length, cudaEntries.Count);
-
-        for (var i = 0; i < managedNames.Length; i++)
-        {
-            var expectedName = managedNames[i];
-            var expectedValue = (int)managedValues[i];
-            Assert.Equal((expectedName, expectedValue), cppEntries[i]);
-            Assert.Equal((expectedName, expectedValue), cudaEntries[i]);
-        }
+        // The runtime reads a device error code as the C# enum, so both preludes declare exactly its values
+        // mutant: SwitchExpression = 11 in Prelude/Types.hpp
+        AssertDeclaresErrorCodes(GSharpPreludeResources.Cpp, "int32_t");
+        AssertDeclaresErrorCodes(GSharpPreludeResources.Cuda, "int");
     }
 
-    private static List<(string Name, int Value)> ParseErrorCodeEntries(string preludeSource)
+    // enum class GSharpErrorCode : <type> {<line break><name> = <value>,<line break>...<name> = <value><line break>};
+    // The prelude generator removes the indentation and keeps the line breaks of the checkout.
+    private static void AssertDeclaresErrorCodes(string prelude, string underlyingType)
     {
-        var enumMatch = ErrorCodeEnumRegex().Match(preludeSource);
-        Assert.True(enumMatch.Success, "GSharpErrorCode enum declaration was not found in prelude.");
+        var lineBreak = prelude.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+        var entries = string.Join(
+            "," + lineBreak,
+            Enum.GetValues<GSharpErrorCode>().Select(static code => $"{code} = {(int)code}")
+        );
 
-        var entries = new List<(string Name, int Value)>();
-        foreach (Match match in ErrorCodeEntryRegex().Matches(enumMatch.Groups["body"].Value))
-        {
-            entries.Add((match.Groups["name"].Value, int.Parse(match.Groups["value"].Value)));
-        }
-
-        return entries;
+        Assert.Contains(
+            $"enum class GSharpErrorCode : {underlyingType} {{{lineBreak}{entries}{lineBreak}}};",
+            prelude,
+            StringComparison.Ordinal
+        );
     }
 }

@@ -47,33 +47,3 @@ public abstract class ComputeBenchmarkAdapter
         GpuMetricsContext.RecordBytes(_benchmark.TheoreticalBytes);
     }
 }
-
-public class EmptyKernelAdapter : ComputeBenchmarkAdapter
-{
-    protected override IComputeBenchmark Create() => new EmptyKernelBenchmark();
-}
-
-public class MathFmaAdapter : ComputeBenchmarkAdapter
-{
-    protected override IComputeBenchmark Create() => new MathFmaBenchmark();
-}
-
-public class BranchDivergenceAdapter : ComputeBenchmarkAdapter
-{
-    protected override IComputeBenchmark Create() => new BranchDivergenceBenchmark();
-}
-
-public class MemoryCopyAdapter : ComputeBenchmarkAdapter
-{
-    protected override IComputeBenchmark Create() => new MemoryCopyBenchmark();
-}
-
-public class TransposeAdapter : ComputeBenchmarkAdapter
-{
-    protected override IComputeBenchmark Create() => new TransposeBenchmark();
-}
-
-public class MandelbrotAdapter : ComputeBenchmarkAdapter
-{
-    protected override IComputeBenchmark Create() => new MandelbrotBenchmark();
-}

@@ -52,7 +52,7 @@ public class MutantSwitchRemoverTests
 
         var removed = MutantSwitchRemover.Remove(instrumented, model);
 
-        Assert.Equal(Normalize(original), Normalize(removed));
+        SyntaxAssert.Equivalent(original, removed);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class MutantSwitchRemoverTests
 
         var removed = MutantSwitchRemover.Remove(instrumented, model);
 
-        Assert.Equal(Normalize(original), Normalize(removed));
+        SyntaxAssert.Equivalent(original, removed);
     }
 
     // The copy maps back to the user's tree (generator-invariants §2): the kept branch is the node Stryker left in place
@@ -85,7 +85,7 @@ public class MutantSwitchRemoverTests
                    ?? throw new InvalidOperationException("The return statement lost its expression.");
 
         Assert.Same(conditional.WhenFalse, model.GetOriginalNode(kept));
-        Assert.Equal("a + b", kept.ToString());
+        SyntaxAssert.Equivalent("a + b", kept);
     }
 
     // Every node of the copy maps back to the user's tree (generator-invariants §2), every statement to a statement of
@@ -174,6 +174,4 @@ public class MutantSwitchRemoverTests
 
     private static MethodDeclarationSyntax GetMethod(MethodDeclarationSyntax[] methods, string name) =>
         methods.Single(m => m.Identifier.ValueText == name);
-
-    private static string Normalize(SyntaxNode node) => node.NormalizeWhitespace().ToFullString();
 }

@@ -121,7 +121,7 @@ public class ControlFlowTests : TranspilerTestBase
     {
         // Runtime semantics covered by SwitchExpression_VariousInputs_SelectsTheMatchingArm (kernel launch),
         // since ThreadIndex is unavailable outside a GPU context.
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod(
             typeof(ControlFlowKernels), nameof(ControlFlowKernels.SwitchExpressionKernel), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -133,7 +133,7 @@ public class ControlFlowTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_RefConditionalExpression_MatchesSnapshotAndModifiesTargets()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ControlFlowTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ControlFlowTarget>(
             nameof(ControlFlowTarget.RefConditionalExpression), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -155,7 +155,7 @@ public class ControlFlowTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public async Task Transpile_DefaultLiteral_MatchesSnapshotAndResetsItems()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ControlFlowTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ControlFlowTarget>(
             nameof(ControlFlowTarget.DefaultLiteral), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -166,34 +166,6 @@ public class ControlFlowTests : TranspilerTestBase
         ControlFlowTarget.DefaultLiteral(items, counts);
         Assert.Equal(default, items[0]);
         Assert.Equal(0, counts[0]);
-    }
-}
-
-public struct SampleData
-{
-    public int X;
-    public float Y;
-}
-
-public class ControlFlowTarget
-{
-    [GpuDeviceFunction]
-    public static void IncrementRef(ref int target)
-    {
-        target += 1;
-    }
-
-    public static void RefConditionalExpression(int[] a, int[] b, bool useFirst)
-    {
-        IncrementRef(ref (useFirst ? ref a[0] : ref b[0]));
-    }
-
-    public static void DefaultLiteral(SampleData[] items, int[] counts)
-    {
-        SampleData s = default;
-        int c = default(int);
-        items[0] = s;
-        counts[0] = c;
     }
 }
 

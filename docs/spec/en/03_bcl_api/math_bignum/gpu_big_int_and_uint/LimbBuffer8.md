@@ -59,7 +59,7 @@ Console.WriteLine($"Sum of 8 limbs: {sum}");
 - [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
 - [GpuBigUInt](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuBigUInt.md)
-- [GpuBigUInt<T>](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuUIntBigIntegerGeneric.md)
+- [GpuBigUInt<T>](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuBigUIntGeneric.md)
 
 ### Guides
 

@@ -45,6 +45,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
     public const string TypeKeyedSitesRegistrationTrackingName = "GpuTypeKeyedSitesRegistrationInput";
 
     /// <summary>
+    /// The tracking name of the input of the output that reports the ref locals the CPU state machines would keep in
+    /// their frames (#1640). It reads the compilation to place each diagnostic in the user's tree, so it runs again on
+    /// every edit; it only reports.
+    /// </summary>
+    public const string HeldRefLocalsTrackingName = "GpuHeldRefLocalsInput";
+
+    /// <summary>
     /// The tracking name of the step that reads the device code export records of the referenced assemblies, which the
     /// native module imports from.
     /// </summary>
@@ -149,12 +156,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild);
             });
 
-        // The wrappers take only the assembly names from the compilation, so this value compares equal across edits and
+        // The wrappers take only the module name from the compilation, so this value compares equal across edits and
         // the steps after it stay cached; the compilation itself is never combined with an output
         var hostOptions = context.CompilationProvider
-            .Select(static (compilation, _) => (compilation.Assembly.Name, compilation.AssemblyName))
+            .Select(static (compilation, _) => AotModuleNames.GetModuleName(compilation))
             .Combine(configProvider)
-            .Select(static (input, _) => HostEmitOptions.Create(input.Right, input.Left.Item1, input.Left.Item2));
+            .Select(static (input, _) => new HostEmitOptions(input.Right, input.Left));
 
         var aotTarget = context.CompilationProvider.Select(static (compilation, _) => AotTarget.Create(compilation));
 
@@ -178,7 +185,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .ForAttributeWithMetadataName(
                 KnownAttributes.GpuKernelMetadataName,
                 predicate: static (node, _) => node is MethodDeclarationSyntax,
-                transform: static (ctx, _) => TranspileKernel(ctx))
+                transform: static (ctx, cancellationToken) => TranspileKernel(ctx, cancellationToken))
             .WithTrackingName(KernelTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
@@ -194,6 +201,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         var allKernels = kernelMethods.Collect();
         var allDevices = deviceMethods.Collect();
+
+        // [WHY] A ref local that the CPU state machine would keep in its frame and GSH0039 does not report is the
+        // generator's own finding, from the lowering (#1640); reported for the CPU dialect only, which lowers (#929)
+        var heldRefLocalSites = kernelMethods
+            .Select(static (kernel, _) => kernel.HeldRefLocalSites)
+            .Collect()
+            .Combine(deviceMethods.Select(static (device, _) => device.HeldRefLocalSites).Collect())
+            .Combine(configProvider)
+            .Combine(context.CompilationProvider)
+            .WithTrackingName(HeldRefLocalsTrackingName);
+        context.RegisterSourceOutput(heldRefLocalSites,
+            static (spc, input) => ReportHeldRefLocals(spc, input.Left.Left.Left, input.Left.Left.Right,
+                input.Left.Right, input.Right));
 
         // The structs that other assemblies can name and whose device definition a consumer cannot build from metadata;
         // the structs that device code uses come with the functions
@@ -302,10 +322,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
             static (spc, sites) => EmitTypeKeyedSitesRegistration(spc, sites));
     }
 
-    private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context)
+    private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context,
+        CancellationToken cancellationToken)
     {
+        // A kernel that KernelDeclarationAnalyzer rejects (GSH0111, GSH0112) or whose return type cannot be the element
+        // of the result array (GSH0004) gets nothing: a launcher in a struct, an interface or a generic method would be
+        // a declaration error, which stops the C# build before any analyzer diagnostic of the project is reported
         if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
-            context.TargetSymbol is not IMethodSymbol methodSymbol)
+            context.TargetSymbol is not IMethodSymbol methodSymbol ||
+            !KernelDeclaration.IsLaunchable(methodSymbol, context.SemanticModel.Compilation, cancellationToken))
         {
             return null;
         }
@@ -341,6 +366,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
             var kernelErrorSites = errorSites.Entries.AsEquatableArray();
+            var heldRefLocalSites = HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -354,7 +380,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     ToIncludes(requiredIncludesCpp),
                     "",
                     structExports,
-                    kernelErrorSites
+                    kernelErrorSites,
+                    heldRefLocalSites
                 );
             }
 
@@ -371,7 +398,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 ToIncludes(requiredIncludesCpp),
                 "",
                 structExports,
-                kernelErrorSites
+                kernelErrorSites,
+                heldRefLocalSites
             );
         }
         catch (Exception ex)
@@ -506,7 +534,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 frames,
                 managedCSharpSource,
                 export,
-                structExports);
+                structExports,
+                HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel));
         }
         catch (InsufficientExecutionStackException)
         {
@@ -571,25 +600,35 @@ public class GpuKernelGenerator : IIncrementalGenerator
     private static DeviceExportRecord CreateFailedFunctionRecord(IMethodSymbol method, string internalError)
     {
         var cppName = GlobalCppNames.GetFunctionName(method);
-        return default(DeviceExportRecord) with
-        {
-            Kind = DeviceExportRecord.FunctionKind,
-            Id = method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
-            CppName = cppName,
-            CppFullName = GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
-            FrameName = "",
-            Effect = "Memory",
-            CudaSignature = "",
-            CudaBody = "",
-            CudaDispose = "",
-            CppSignature = "",
-            CppBody = "",
-            CppDispose = "",
-            CudaFailed = true,
-            CppFailed = true,
-            InternalError = internalError
-        };
+        var names = new DeviceExportRecord.ExportNames(
+            CppName: cppName,
+            CppFullName: GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
+            DefinedNames: default,
+            DefinedIds: default,
+            DefinedFullNames: default);
+        return new DeviceExportRecord(
+            DeviceExportRecord.FunctionKind,
+            method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
+            names,
+            Cuda: DeviceExportRecord.DialectText.NotTranspiled,
+            Cpp: DeviceExportRecord.DialectText.NotTranspiled,
+            DeviceExportRecord.FunctionTraits.None,
+            internalError);
     }
+
+    private static DeviceExportRecord.DialectText BuildFunctionDialectText(
+        string cppName,
+        ExportedFunctionText text) =>
+        new(
+            References: DeviceExportEmitter.CollectReferences(
+                DeviceExportEmitter.OwnNames(cppName, default, text.KeptNames),
+                text.Signature,
+                text.Body),
+            Signature: text.Signature,
+            Body: text.Body,
+            Dispose: "",
+            Includes: text.Includes,
+            Failed: text.Failed);
 
     private static DeviceExportRecord CreateFunctionRecord(IMethodSymbol method, Compilation compilation,
         ExportedFunctionText cuda, ExportedFunctionText cpp, string frameName, EquatableArray<string> frameDependencies,
@@ -606,44 +645,40 @@ public class GpuKernelGenerator : IIncrementalGenerator
         // B7: which parameters make a barrier diverge, for a caller in another assembly
         var divergence = UniformityAnalysis.GetExportedDivergence(method, compilation);
 
-        return new DeviceExportRecord(
-            DeviceExportRecord.FunctionKind,
-            method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
-            cppName,
-            GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
-            default,
-            default,
-            default,
-            DeviceExportEmitter.CollectReferences(DeviceExportEmitter.OwnNames(cppName, default, cuda.KeptNames),
-                cuda.Signature, cuda.Body),
-            DeviceExportEmitter.CollectReferences(DeviceExportEmitter.OwnNames(cppName, default, cpp.KeptNames),
-                cpp.Signature, cpp.Body),
-            frameName,
-            frameDependencies,
-            SuspensionAnalysis.IsSuspendingFunction(method, compilation),
-            SuspensionAnalysis.ReachesBlockBarrier(method, compilation),
-            ContextInferenceEngine.IsParallelDependent(method,
+        var names = new DeviceExportRecord.ExportNames(
+            CppName: cppName,
+            CppFullName: GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
+            DefinedNames: default,
+            DefinedIds: default,
+            DefinedFullNames: default);
+
+        var traits = new DeviceExportRecord.FunctionTraits(
+            FrameName: frameName,
+            FrameDependencies: frameDependencies,
+            Suspends: SuspensionAnalysis.IsSuspendingFunction(method, compilation),
+            ReachesBlockBarrier: SuspensionAnalysis.ReachesBlockBarrier(method, compilation),
+            IsParallelDependent: ContextInferenceEngine.IsParallelDependent(method,
                 new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default), compilation),
-            DynamicSharedMemoryAnalysis.ReachesDynamicSharedMemory(method, compilation),
-            siteNames.MoveToImmutable().AsEquatableArray(),
-            DeviceExportEmitter.FormatEffect(DeviceFunctionEffects.Classify(method, compilation)),
-            cuda.Signature,
-            cuda.Body,
-            "",
-            cpp.Signature,
-            cpp.Body,
-            "",
-            cuda.Includes,
-            cpp.Includes,
-            cuda.Failed,
-            cpp.Failed,
+            ReachesDynamicSharedMemory: DynamicSharedMemoryAnalysis.ReachesDynamicSharedMemory(method, compilation),
+            DynamicSharedMemorySites: siteNames.MoveToImmutable().AsEquatableArray(),
+            Effect: DeviceExportEmitter.FormatEffect(DeviceFunctionEffects.Classify(method, compilation)),
             // The records and the state machines are emitted together (GSharpExportDeviceCode)
             ManagedStateMachine: hasManagedStateMachine,
             ManagedVersion: hasManagedVersion,
-            "",
-            divergence.ConditionParameters,
-            divergence.ExitOnlyParameters,
-            divergence.HasExitOnlyBarrier);
+            DivergentConditionParameters: divergence.ConditionParameters,
+            DivergentExitOnlyParameters: divergence.ExitOnlyParameters,
+            HasExitOnlyBarrier: divergence.HasExitOnlyBarrier,
+            ReachesArrivalBarrier: SuspensionAnalysis.ReachesArrivalBarrier(method, compilation),
+            ReachesSharedMemory: CSharpExecutionAnalysis.ReachesSharedMemory(method, compilation));
+
+        return new DeviceExportRecord(
+            DeviceExportRecord.FunctionKind,
+            method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
+            names,
+            Cuda: BuildFunctionDialectText(cppName, cuda),
+            Cpp: BuildFunctionDialectText(cppName, cpp),
+            traits,
+            InternalError: "");
     }
 
     // A struct that other assemblies can name, rendered for both dialects (StructTranspiler.IsExportedOnItsOwn), with
@@ -813,7 +848,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             ReportInternalError(context, kernel.InternalError);
         }
 
-        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(model, options.Config, options.AssemblyName);
+        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(model, options.Config, options.ModuleName);
         context.AddSource(model.Class.HintName, SourceText.From(wrapperSource, Encoding.UTF8));
     }
 
@@ -901,7 +936,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var symbolSites = ImmutableArray.CreateBuilder<GSharpNameEncoding.SymbolErrorSiteRecord>();
-        var rawSites = new List<ErrorSiteEntry>();
+        var rawSites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
         foreach (var method in kernelMethods)
         {
             if (!method.ErrorSites.IsDefaultOrEmpty)
@@ -984,8 +1019,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
-        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(options.ModuleAssemblyName, warmups);
-        context.AddSource($"{AotHostNames.GetModuleContextName(options.ModuleAssemblyName)}.g.cs",
+        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(options.ModuleName, warmups);
+        context.AddSource($"{AotModuleNames.GetModuleContextName(options.ModuleName)}.g.cs",
             SourceText.From(contextSource, Encoding.UTF8));
     }
 
@@ -999,8 +1034,35 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return distinct;
     }
 
-    // The generator reports only its own failure (GSH0048); the analyzers report the user's errors, and a construct the
-    // transpiler could not emit is stated in the output as #error
+    // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite); a device
+    // function's sites once, however many results it has
+    private static void ReportHeldRefLocals(SourceProductionContext context,
+        ImmutableArray<EquatableArray<HeldRefLocalSite>> kernels,
+        ImmutableArray<EquatableArray<HeldRefLocalSite>> devices,
+        GeneratorConfig config,
+        Compilation compilation)
+    {
+        if (config.IsCuda)
+        {
+            return;
+        }
+
+        var reported = new HashSet<HeldRefLocalSite>();
+        foreach (var sites in kernels.AddRange(devices))
+        {
+            foreach (var site in sites)
+            {
+                if (reported.Add(site))
+                {
+                    site.Report(context, compilation);
+                }
+            }
+        }
+    }
+
+    // The generator reports its own failure (GSH0048) and the ref locals that only the lowering finds
+    // (ReportHeldRefLocals); the analyzers report the user's errors, and a construct the transpiler could not emit is
+    // stated in the output as #error
     private static void ReportInternalError(SourceProductionContext context, string internalError)
     {
         if (internalError.Length > 0)

@@ -31,7 +31,7 @@ public class MutantSwitchGeneratorTests
     private static string Generate(string testCase, string hintName)
     {
         var source = RoslynTestUtility.ReadTestCase(Path.Combine("Generator", testCase));
-        var (driver, output, diagnostics) = RoslynTestUtility.RunGenerator(source, "Cpu");
+        var (driver, output, diagnostics) = GeneratorTestRunner.RunGenerator(source, "Cpu");
 
         Assert.Empty(diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
         Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));

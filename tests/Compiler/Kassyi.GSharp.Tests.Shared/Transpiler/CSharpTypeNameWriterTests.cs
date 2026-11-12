@@ -45,15 +45,76 @@ public class CSharpTypeNameWriterTests
         Assert.Equal(expected, writer.ToString());
     }
 
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void GetFullNamespaceName_NestedNamespaces_JoinsNamespaceSegments()
+    // A keyword name is spelled as C# source spells it, so the generated code that parses the name compiles
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("KeywordGeneric", "global::Names.@class<int>")]
+    [InlineData("KeywordArgument", "global::Names.@class<global::Names.@struct>")]
+    [InlineData("KeywordNamespace", "global::@event.Plain")]
+    public void AppendCsharpTypeName_KeywordName_EscapesTheKeyword(string field, string expected)
     {
-        Assert.Equal("Names", s_holder.ContainingNamespace.GetFullNamespaceName());
-        Assert.Equal(
-            "System.Collections.Generic",
-            GetType("System.Collections.Generic.List`1").ContainingNamespace.GetFullNamespaceName()
-        );
+        using var writer = new SourceWriter();
+        writer.AppendCsharpTypeName(GetFieldType(field));
+
+        Assert.Equal(expected, writer.ToString());
+    }
+
+    // A namespace that generated C# source reopens or qualifies with is spelled as C# source spells it
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("event.Plain", "@event")]
+    [InlineData("event.base.Deep", "@event.@base")]
+    [InlineData("Names.Holder", "Names")]
+    [InlineData("System.Collections.Generic.List`1", "System.Collections.Generic")]
+    public void GetCsharpNamespaceName_Namespace_EscapesEachKeywordSegment(string typeName, string expected)
+    {
+        var ns = GetType(typeName).ContainingNamespace;
+        using var writer = new SourceWriter();
+        writer.AppendCsharpNamespace(ns);
+
+        Assert.Equal(expected, ns.GetCsharpNamespaceName());
+        Assert.Equal(expected, writer.ToString());
+    }
+
+    // A metadata name is written as it is: [UnsafeAccessorType] and the other metadata names take no @
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("event.Plain", "event")]
+    [InlineData("event.base.Deep", "event.base")]
+    [InlineData("System.Collections.Generic.List`1", "System.Collections.Generic")]
+    public void GetMetadataNamespaceName_Namespace_KeepsTheNames(string typeName, string expected) =>
+        Assert.Equal(expected, GetType(typeName).ContainingNamespace.GetMetadataNamespaceName());
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void GetCsharpNamespaceName_GlobalNamespace_IsEmpty()
+    {
+        Assert.Equal("", s_compilation.GlobalNamespace.GetCsharpNamespaceName());
+        Assert.Equal("", s_compilation.GlobalNamespace.GetMetadataNamespaceName());
+    }
+
+    // The name that declares a type in a partial declaration: its identifier and its own type parameters, escaped
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Names.class`1", "@class<T>")]
+    [InlineData("Names.KeywordParameters`2", "KeywordParameters<@in, U>")]
+    [InlineData("Names.Outer`1+Inner", "Inner")]
+    [InlineData("event.Plain", "Plain")]
+    public void GetDeclaredTypeName_KeywordNames_EscapesTheKeywords(string typeName, string expected) =>
+        Assert.Equal(expected, GetType(typeName).GetDeclaredTypeName());
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("class", "@class")]
+    [InlineData("value", "value")]
+    [InlineData("Class", "Class")]
+    public void AppendCsharpIdentifier_ReservedKeywordOnly_GetsTheVerbatimPrefix(string name, string expected)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendCsharpIdentifier(name);
+
+        Assert.Equal(expected, writer.ToString());
+        Assert.Equal(expected, name.ToCSharpIdentifier());
     }
 
     private static ITypeSymbol GetFieldType(string name) =>

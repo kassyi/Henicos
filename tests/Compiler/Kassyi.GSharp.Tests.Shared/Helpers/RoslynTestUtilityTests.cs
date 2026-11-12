@@ -13,12 +13,12 @@ public class RoslynTestUtilityTests
     [Scenario(TestScenario.HappyPath)]
     public void TranspileMethod_ForwardsSpecifiedDialect()
     {
-        var (cudaOutput, cudaDiagnostics) = RoslynTestUtility.TranspileMethod<RoslynTestUtilityTests>(
+        var (cudaOutput, cudaDiagnostics) = TranspileTestRunner.TranspileMethod<RoslynTestUtilityTests>(
             nameof(SampleDeviceAdd),
             isDevice: true,
             dialect: new GSharpCudaDialect());
 
-        var (cppOutput, cppDiagnostics) = RoslynTestUtility.TranspileMethod<RoslynTestUtilityTests>(
+        var (cppOutput, cppDiagnostics) = TranspileTestRunner.TranspileMethod<RoslynTestUtilityTests>(
             nameof(SampleDeviceAdd),
             isDevice: true,
             dialect: new StandardCppDialect());

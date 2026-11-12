@@ -9,7 +9,7 @@ public class MacroContextNameGeneratorTests
     private static string Generate(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase("Generators/GpuKernel_MacroContextName.cu.cs");
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, dialect);
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(source, dialect);
         return string.Join("\n", driver.GetRunResult().GeneratedTrees.Select(static t => t.GetText().ToString()));
     }
 
@@ -36,6 +36,8 @@ public class MacroContextNameGeneratorTests
         var text = Generate(dialect);
 
         // The target is declared as __gsharp_fn_<namespace>__<type>__MacroCtxAdd; a bare MacroCtxAdd( call has no declaration.
+#pragma warning disable RS0030 // Generated C++ has no syntax tree; no call may name the undeclared bare function
         Assert.DoesNotMatch(new Regex(@"(?<![A-Za-z0-9_])MacroCtxAdd\(&"), text);
+#pragma warning restore RS0030
     }
 }

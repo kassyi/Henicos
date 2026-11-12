@@ -35,7 +35,7 @@ The type of objects to enumerate.
 Attempts to advance the enumerator to the next element of the sequence and outputs the current element if available.
 
 ```csharp
-bool TryGetNext(out T current);
+bool TryGetNext([MaybeNullWhen(false)] out T current);
 ```
 
 #### Parameters

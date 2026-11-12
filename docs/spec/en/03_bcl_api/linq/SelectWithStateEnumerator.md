@@ -75,7 +75,7 @@ Thrown when `selector` is `null`.
 Attempts to advance the enumerator to the next element and projects it using the selector.
 
 ```csharp
-public bool TryGetNext(out TResult current);
+public bool TryGetNext([MaybeNullWhen(false)] out TResult current);
 ```
 
 #### Parameters

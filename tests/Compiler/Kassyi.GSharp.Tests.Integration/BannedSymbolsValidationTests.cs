@@ -54,17 +54,19 @@ namespace Kassyi.GSharp.Tests.Integration
             
             for (int i = 0; i < lines.Length; i++)
             {
-                var line = lines[i].Trim();
-                if (string.IsNullOrEmpty(line) || line.StartsWith('#'))
+                var lineSpan = lines[i].AsSpan().Trim();
+                if (lineSpan.IsEmpty || lineSpan.StartsWith("#"))
                     continue;
 
-                var parts = line.Split(new[] { ';' }, 2);
-                var symbol = parts[0].Trim();
+                var semicolonIndex = lineSpan.IndexOf(';');
+                var symbolSpan = semicolonIndex >= 0 ? lineSpan[..semicolonIndex].Trim() : lineSpan;
+                var descriptionSpan = semicolonIndex >= 0 ? lineSpan[(semicolonIndex + 1)..].Trim() : default;
+                var symbol = symbolSpan.ToString();
 
                 bool hasValidPrefix = false;
                 foreach (var prefix in ValidDocIdPrefixes)
                 {
-                    if (symbol.StartsWith(prefix, StringComparison.Ordinal))
+                    if (symbolSpan.StartsWith(prefix, StringComparison.Ordinal))
                     {
                         hasValidPrefix = true;
                         break;
@@ -79,7 +81,7 @@ namespace Kassyi.GSharp.Tests.Integration
                     $"Duplicate symbol '{symbol}' found within the same file {filePath} at line {i + 1}. " +
                     $"This will cause BannedApiAnalyzers to emit RS0031.");
                     
-                dict[symbol] = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+                dict[symbol] = descriptionSpan.IsEmpty ? string.Empty : descriptionSpan.ToString();
             }
             
             return dict;

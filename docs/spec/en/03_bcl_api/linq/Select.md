@@ -11,7 +11,7 @@ description: "Projects each element of a sequence into a new form."
 ## Definition
 
 **Namespace:** `Kassyi.ZeroAlloc.Linq`  
-**Assembly:** `Kassyi.GSharp.Core.dll`
+**Assembly:** `Kassyi.ZeroAlloc.Linq.dll`
 
 Projects each element of a sequence into a new form.
 
@@ -19,56 +19,114 @@ Projects each element of a sequence into a new form.
 
 | Name | Description |
 | --- | --- |
-| [Select<TEnumerator, TSource, TResult>(TEnumerator, Func<TSource, TResult>)](#selecttenumeratortsourcetresulttenumeratorfunctsourcetresult) | Projects elements into a new form. |
-| [Select<TEnumerator, TSource, TResult>(TEnumerator, Func<TSource, int, TResult>)](#selecttenumeratortsourcetresulttenumeratorfunctsourceinttresult) | Projects elements into a new form incorporating index. |
-| [Select<TEnumerator, TSource, TState, TResult>(TEnumerator, TState, Func<TSource, TState, TResult>)](#selecttenumeratortsourcetstatetresulttenumeratortstatefunctsourcetstatetresult) | Projects elements into a new form with a selector that receives a state value. Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly. |
+| [Select\<TEnumerator, TSource, TResult\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, TResult\>)](#select-overload-1) | Projects each element of a stack-allocated sequence into a new form. |
+| [Select\<TEnumerator, TSource, TResult\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, int, TResult\>)](#select-overload-2) | Projects each element of a stack-allocated sequence into a new form by incorporating the element's index. |
+| [Select\<TEnumerator, TSource, TState, TResult\>(StackEnumerable\<TEnumerator, TSource\>, TState, Func\<TSource, TState, TResult\>)](#select-overload-3) | Projects each element of a stack-allocated sequence into a new form with a selector that receives a caller-supplied state. Host-only. |
 
+<a id="select-overload-1"></a>
 
-## Select<TEnumerator, TSource, TResult>(TEnumerator, Func<TSource, TResult>)
+## Select\<TEnumerator, TSource, TResult\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, TResult\>)
 
-Projects elements into a new form.
+Projects each element of a stack-allocated sequence into a new form.
 
 ```csharp
-public static SelectEnumerator<TEnumerator, TSource, TResult> Select<TEnumerator, TSource, TResult>(this TEnumerator source, Func<TSource, TResult> selector) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SelectEnumerator<TEnumerator, TSource, TResult>, TResult> Select<TEnumerator, TSource,
+    TResult>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, TResult> selector)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The sequence of elements to invoke a transform function on.
+
+`selector`<br>
+A transform function to apply to each element.
 
 #### Returns
 
-<i>SelectEnumerator<TEnumerator, TSource, TResult></i>
+A `StackEnumerable<TEnumerator, TResult>` whose elements are the result of invoking the transform function on each element of `source`.
 
-## Select<TEnumerator, TSource, TResult>(TEnumerator, Func<TSource, int, TResult>)
+#### Exceptions
 
-Projects elements into a new form incorporating index.
+`ArgumentNullException`<br>
+Thrown when `selector` is `null`.
+
+**Performance:** Evaluated lazily with zero heap allocations.
+
+<a id="select-overload-2"></a>
+
+## Select\<TEnumerator, TSource, TResult\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, int, TResult\>)
+
+Projects each element of a stack-allocated sequence into a new form by incorporating the element's index.
 
 ```csharp
-public static SelectAtEnumerator<TEnumerator, TSource, TResult> Select<TEnumerator, TSource, TResult>(this TEnumerator source, Func<TSource, int, TResult> selector) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SelectAtEnumerator<TEnumerator, TSource, TResult>, TResult> Select<TEnumerator, TSource,
+    TResult>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    Func<TSource, int, TResult> selector)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
+
+#### Parameters
+
+`source`<br>
+The sequence of elements to invoke a transform function on.
+
+`selector`<br>
+A transform function to apply to each source element; the second parameter of the function represents the index of the source element.
 
 #### Returns
 
-<i>SelectAtEnumerator<TEnumerator, TSource, TResult></i>
+A `StackEnumerable<TEnumerator, TResult>` whose elements are the result of invoking the transform function on each element of `source`.
 
+#### Exceptions
 
+`ArgumentNullException`<br>
+Thrown when `selector` is `null`.
 
-## Select<TEnumerator, TSource, TState, TResult>(TEnumerator, TState, Func<TSource, TState, TResult>)
+**Performance:** Evaluated lazily with zero heap allocations.
 
-Projects elements into a new form with a selector that receives a state value. Pass the outer value as `state` so that the lambda can be `static` and no closure is allocated.
+<a id="select-overload-3"></a>
+
+## Select\<TEnumerator, TSource, TState, TResult\>(StackEnumerable\<TEnumerator, TSource\>, TState, Func\<TSource, TState, TResult\>)
+
+Projects each element of a stack-allocated sequence into a new form with a selector that receives a caller-supplied state.
 
 ```csharp
-public static StackEnumerable<SelectWithStateEnumerator<TEnumerator, TSource, TState, TResult>, TResult> Select<TEnumerator, TSource, TState, TResult>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, TResult> selector) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+public static StackEnumerable<SelectWithStateEnumerator<TEnumerator, TSource, TState, TResult>, TResult> Select<
+    TEnumerator, TSource, TState, TResult>(
+    this StackEnumerable<TEnumerator, TSource> source,
+    TState state,
+    Func<TSource, TState, TResult> selector)
+    where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
 ```
 
-```csharp
-var lengths = names
-    .AsStackEnumerable()
-    .Select(prefix, static (n, p) => n.Length + p.Length);
-```
+#### Parameters
+
+`source`<br>
+The sequence of elements to invoke a transform function on.
+
+`state`<br>
+The value passed to every call of `selector`.
+
+`selector`<br>
+A transform function to apply to each element; the second parameter is `state`.
 
 #### Returns
 
-<i>StackEnumerable&lt;SelectWithStateEnumerator&lt;TEnumerator, TSource, TState, TResult&gt;, TResult&gt;</i>
+A `StackEnumerable<TEnumerator, TResult>` whose elements are the result of invoking the transform function on each element of `source`.
 
-**Execution Target:** Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly.
+#### Exceptions
+
+`ArgumentNullException`<br>
+Thrown when `selector` is `null`.
+
+**Performance:** Evaluated lazily. Passing the outer value as `state` lets `selector` be a `static` lambda, so no closure is allocated.
+
+**Execution Target:** Host-only (CPU) operation. Cannot be transpiled or invoked within GPU kernels.
 
 ## Examples
 

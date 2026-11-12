@@ -23,7 +23,7 @@ public static partial class BclIntrinsicMappedKernels
         output[ThreadIndex.X] = BitOperations.PopCount(data[ThreadIndex.X]);
     }
 
-    // Not mapped: GSH0003
+    // Not mapped: GSH0109
     [GpuKernel]
     [SkipSnapshotConsistency("Diagnostics case")]
     public static void UnmappedBitOperationsKernel(uint[] data)
@@ -31,7 +31,7 @@ public static partial class BclIntrinsicMappedKernels
         data[0] = BitOperations.RoundUpToPowerOf2(data[0]);
     }
 
-    // Not mapped for long and ulong operands of Or: GSH0003
+    // Not mapped for long and ulong operands of Or: GSH0109
     [GpuKernel]
     [SkipSnapshotConsistency("Diagnostics case")]
     public static void UnmappedInterlockedOverloadKernel(long[] counter)

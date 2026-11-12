@@ -48,15 +48,15 @@ Applying `[TakesOwnership]` enforces the following strict compile-time constrain
 
 ### 1. Constructor Parameters Only
 
-The `[TakesOwnership]` attribute is permitted **only** on parameters of instance constructors (including standard constructors and C# 12 Primary Constructors). Applying it to regular member methods, static methods, local functions, lambda expressions, delegates, or property/indexer parameters is prohibited (**GSH0050**). Dynamic mid-stream ownership relays violate static determinism.
+The `[TakesOwnership]` attribute is permitted **only** on parameters of instance constructors (including standard constructors and C# 12 Primary Constructors). Applying it to regular member methods, static methods, local functions, lambda expressions, delegates, or property/indexer parameters is prohibited (**GSH0050**, diagnostic descriptor defined). Dynamic mid-stream ownership relays violate static determinism.
 
 ### 2. Target Type Must Implement `IDisposable`
 
-The parameter type decorated with `[TakesOwnership]` must implement `System.IDisposable` (**GSH0049**). Transferring ownership of non-disposable types (e.g., primitives like `int` or plain data structs) is a semantic contradiction and produces a compile error.
+The parameter type decorated with `[TakesOwnership]` must implement `System.IDisposable` (**GSH0049**, diagnostic descriptor defined). Transferring ownership of non-disposable types (e.g., primitives like `int` or plain data structs) is a semantic contradiction; the analyzer that reports it is not implemented yet (#934).
 
 ### 3. No Pass-by-Reference Modifiers (`ref`, `in`, `out`)
 
-A parameter marked with `[TakesOwnership]` cannot declare `ref`, `in`, or `out` modifiers (**GSH0051**). Pass-by-reference binds the parameter to the caller's storage location, conflicting with the move semantics of ownership transfer.
+A parameter marked with `[TakesOwnership]` cannot declare `ref`, `in`, or `out` modifiers (**GSH0051**, diagnostic descriptor defined). Pass-by-reference binds the parameter to the caller's storage location, conflicting with the move semantics of ownership transfer.
 
 ### 4. Receiving Type Must Implement `IDisposable`
 
@@ -70,17 +70,17 @@ The receiving type must explicitly invoke `.Dispose()` on the owned resource ins
 
 ## Associated Diagnostics & Errors
 
-The Roslyn Zero-Leak Analyzer (`DisposableOwnershipAnalyzer`) verifies `[TakesOwnership]` usage and emits the following diagnostics:
+The Roslyn Zero-Leak Analyzer (`DisposableOwnershipAnalyzer`) verifies ownership and disposal rules, associating with the following diagnostics:
 
 | Diagnostic ID | Severity | Name | Description |
 | :--- | :--- | :--- | :--- |
-| **[GSH0020](../diagnostics/GSH0020.md)** | Error | `MissingIDisposableWithOwnership` | The class or struct takes ownership of a resource but does not implement `IDisposable`. |
-| **[GSH0021](../diagnostics/GSH0021.md)** | Warning | `MissingBaseDisposeCall` | A derived disposable class fails to invoke `base.Dispose(bool)` in its disposal logic. |
-| **[GSH0022](../diagnostics/GSH0022.md)** | Error | `UndisposedOwnedResource` | An owned resource accepted via `[TakesOwnership]` is not disposed within `Dispose()`. |
+| **[GSH0020](../diagnostics/GSH0020.md)** | Error | `MissingIDisposable` | The class or struct holds or takes ownership of a resource but does not implement `IDisposable`. |
+| **[GSH0021](../diagnostics/GSH0021.md)** | Warning | `UndisposedField` | The `Dispose()` method does not explicitly invoke `.Dispose()` on all owned GPU resources (Deprecated, replaced by composite scopes). |
+| **[GSH0022](../diagnostics/GSH0022.md)** | Error | `UndisposedGpuScope` | An owned resource or scope accepted via `[TakesOwnership]` is not disposed within `Dispose()`. |
 | **[GSH0027](../diagnostics/GSH0027.md)** | Error | `DisposingBorrowedResource` | A borrowed parameter (lacking `[TakesOwnership]`) is improperly disposed, causing double-free hazards. |
-| **[GSH0049](../diagnostics/GSH0049.md)** | Error | `InvalidTakesOwnershipTarget` | `[TakesOwnership]` is applied to a parameter whose type does not implement `IDisposable`. |
-| **[GSH0050](../diagnostics/GSH0050.md)** | Error | `TakesOwnershipOnlyAllowedOnConstructors` | `[TakesOwnership]` is applied to a method, lambda, or local function instead of a constructor. |
-| **[GSH0051](../diagnostics/GSH0051.md)** | Error | `TakesOwnershipByRefNotSupported` | `[TakesOwnership]` is applied to a parameter marked with `ref`, `in`, or `out`. |
+| **[GSH0049](../diagnostics/GSH0049.md)** | Error | `InvalidTakesOwnershipTarget` | `[TakesOwnership]` is applied to a parameter whose type does not implement `IDisposable` (descriptor defined; analyzer enforcement planned). |
+| **[GSH0050](../diagnostics/GSH0050.md)** | Error | `TakesOwnershipOnlyAllowedOnConstructors` | `[TakesOwnership]` is applied to a method, lambda, or local function instead of a constructor (descriptor defined; analyzer enforcement planned). |
+| **[GSH0051](../diagnostics/GSH0051.md)** | Error | `TakesOwnershipByRefNotSupported` | `[TakesOwnership]` is applied to a parameter marked with `ref`, `in`, or `out` (descriptor defined; analyzer enforcement planned). |
 
 ---
 

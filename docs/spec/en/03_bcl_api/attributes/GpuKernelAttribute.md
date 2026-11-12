@@ -72,16 +72,28 @@ public class Example
 
 Methods marked with this attribute are mapped to `__global__` functions in CUDA C++. They are invoked from the CPU (Host) using the G# Runtime.
 
+### Where a Kernel May Be Declared
+
+A kernel runs only through the `Launch{Kernel}` method that G# generates into its class, so `[GpuKernel]` is allowed only on an ordinary `static` method of a class (a `static` class, a record class, or a class nested in a type that is not generic). The class and every type around it must be `partial` ([GSH0036](../diagnostics/GSH0036.md)). G# reports [GSH0111](../diagnostics/GSH0111.md) and generates nothing for a kernel that is:
+
+- an operator, a conversion operator, an accessor, a lambda or a local function;
+- an instance method, or a member of a struct, an interface, a C# 14 extension block or a `file` type;
+- a generic method, or a member of a generic type;
+- the entry point, a `[ModuleInitializer]` or `[UnmanagedCallersOnly]` method, or a method that implements an interface member;
+- an extension method that C# calls by its name (`GetEnumerator`, `GetAsyncEnumerator`, `Deconstruct`, `GetAwaiter`, `GetPinnableReference`, `Add`, `Dispose`, `DisposeAsync`), or a method that a `[CollectionBuilder]` attribute names.
+
+Put the body in a `[GpuDeviceFunction]` method and call it from a kernel declared as above.
+
 ### Allowed Parameter Types (Signature Whitelist)
 
 The `[GpuKernel]` method signature strictly permits only the following types:
 
 | Category | Allowed | Prohibited |
 | :--- | :--- | :--- |
-| **Primitives** | Value types (`int`, `float`, `bool`, etc.) | Reference types (`class`, `string`) |
-| **Structs** | Blittable `struct` (passed by value, `ref`, or `out`) | Structs containing references |
+| **Primitives** | Value types (`int`, `float`, `bool`, etc.) | Reference types (`class`, `string`, interfaces, delegates, `object`), and arrays of them ([GSH0112](../diagnostics/GSH0112.md)) |
+| **Structs** | Blittable `struct` (passed by value, `ref`, `in` / `ref readonly`, or `out`), or structs with 1D array fields (`T[]`) | Structs containing non-array reference types |
 | **Arrays** | 1D Managed Arrays (`T[]`) | Multi-dimensional Arrays (`T[,]`) |
-| **Spans** | N/A (Only allowed as local variables inside the kernel) | `Span<T>`, `ReadOnlySpan<T>` |
+| **Spans / Buffers** | `Span<T>`, `ReadOnlySpan<T>`, `Memory<T>`, `ReadOnlyMemory<T>`, `ArraySegment<T>`, `ImmutableArray<T>` | N/A |
 | **Pointers** | Raw Pointers (`T*` - requires `unsafe` keyword) | N/A |
 
 > [!WARNING]

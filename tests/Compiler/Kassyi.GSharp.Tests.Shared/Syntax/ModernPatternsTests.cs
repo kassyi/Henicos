@@ -68,7 +68,7 @@ public class ModernPatternsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_ListPatterns_FailsWithUnsupportedSyntaxDiagnostic()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (_, diagnostics) = TranspileTestRunner.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.ListPatterns), isDevice: false, dialect: CurrentDialect);
 
         // The analyzer reports the pattern (UnsupportedConstructDiagnosticsTests); the transpiler records the failure
@@ -79,7 +79,7 @@ public class ModernPatternsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_PropertyPatterns_FailsWithUnsupportedSyntaxDiagnostic()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (_, diagnostics) = TranspileTestRunner.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.PropertyPatterns), isDevice: false, dialect: CurrentDialect);
 
         // The analyzer reports the pattern (UnsupportedConstructDiagnosticsTests); the transpiler records the failure
@@ -90,7 +90,7 @@ public class ModernPatternsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_PositionalPatterns_FailsWithUnsupportedSyntaxAndEmitsPlaceholder()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.PositionalPatterns), isDevice: false, dialect: CurrentDialect);
 
         // The analyzer reports the construct (UnsupportedSyntaxKindDiagnosticsTests); the transpiler records the failure and
@@ -103,7 +103,7 @@ public class ModernPatternsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_LambdaDefaultParameters_EmitsValidSourceAndCalculatesExpectedValue()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.LambdaDefaultParameters), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -118,7 +118,7 @@ public class ModernPatternsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_LambdaExplicitReturnType_EmitsValidSourceAndCalculatesExpectedValue()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.LambdaExplicitReturnType), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -133,7 +133,7 @@ public class ModernPatternsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Transpile_ScopedRef_EmitsValidSourceAndCalculatesExpectedValue()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (cudaSource, diagnostics) = TranspileTestRunner.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.ScopedRef), isDevice: true, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
@@ -146,13 +146,13 @@ public class ModernPatternsTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Transpile_UnsafeNullRef_EmitsValidSourceAndEvaluatesExpectedValue()
+    public void Transpile_UnsafeNullRef_FailsOnTheDeviceAndEvaluatesOnTheHost()
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (_, diagnostics) = TranspileTestRunner.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.UnsafeNullRef), isDevice: false, dialect: CurrentDialect);
 
-        Assert.Empty(diagnostics);
-        Assert.False(string.IsNullOrEmpty(cudaSource));
+        // No dialect defines Unsafe.IsNullRef; its bare name would not build
+        diagnostics.AssertFails(GSharpDiagnostics.UnmappedMethodCalledFromGpuCode, "'Unsafe.IsNullRef(");
 
         int[] output = [42];
         ModernPatternsTarget.UnsafeNullRef(output);

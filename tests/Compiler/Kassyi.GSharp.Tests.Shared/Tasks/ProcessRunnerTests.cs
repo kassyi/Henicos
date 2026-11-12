@@ -28,7 +28,7 @@ public class ProcessRunnerTests
         
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("Hello World", result.StandardOutput);
-        Assert.Empty(result.StandardError.Trim());
+        Assert.Equal(string.Empty, result.StandardError.AsSpan().Trim().ToString());
     }
 
     [Fact]

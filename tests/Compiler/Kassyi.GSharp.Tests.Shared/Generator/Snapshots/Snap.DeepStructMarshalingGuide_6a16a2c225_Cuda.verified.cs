@@ -730,6 +730,12 @@ public static void WarmupFunctionPointerFermatMegaKernel() => global::Kassyi.GSh
 public static unsafe void LaunchFermatMegaKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeepStructMarshalingGuideKernels.FermatMegaKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext __gsharp_csharp_arg_0 = ctx;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.FermatMegaKernel(__gsharp_csharp_arg_0));
+return;
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.__gsharp_hfunc_FermatMegaKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.s_errorSites);
@@ -771,6 +777,10 @@ __gsharp_device_arrays.Free(hStream);
 public static unsafe void LaunchFermatMegaKernelPtr(global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.AotContexts.Fermat ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeepStructMarshalingGuideKernels.FermatMegaKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeepStructMarshalingGuideKernels.FermatMegaKernel", "LaunchFermatMegaKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFermatMegaKernel");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.__gsharp_hfunc_FermatMegaKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.s_errorSites);
@@ -837,6 +847,12 @@ public static void WarmupFunctionPointerModernKernel() => global::Kassyi.GSharp.
 public static unsafe void LaunchModernKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeepStructMarshalingGuideKernels.ModernKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext __gsharp_csharp_arg_0 = ctx;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.ModernKernel(__gsharp_csharp_arg_0));
+return;
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.__gsharp_hfunc_ModernKernel.Resolve();
@@ -878,6 +894,10 @@ __gsharp_device_arrays.Free(hStream);
 public static unsafe void LaunchModernKernelPtr(global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.AotContexts.Crypto ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeepStructMarshalingGuideKernels.ModernKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeepStructMarshalingGuideKernels.ModernKernel", "LaunchModernKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchModernKernel");
+}
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.DeepStructMarshalingGuideKernels.__gsharp_hfunc_ModernKernel.Resolve();

@@ -251,6 +251,14 @@ Launcher:
     CopySourcePrefix: __gsharp_source_
     CopyBufferPrefix: __gsharp_copy_
     CopyIndexPrefix: __gsharp_copy_index_
+    # The C# execution of a launcher (KernelExecution.CSharp): the linear index of the GPU thread that the lambda runs,
+    # the copy of the auto result and of each argument that the lambda captures, and the pinned pointer and length of
+    # a span argument
+    CSharpThread: __gsharp_csharp_thread
+    CSharpResult: __gsharp_csharp_result
+    CSharpArgumentPrefix: __gsharp_csharp_arg_
+    CSharpPinnedPrefix: __gsharp_csharp_pin_
+    CSharpLengthPrefix: __gsharp_csharp_len_
 
 ReturnValue:
   Summary: The buffer that a kernel returning a value writes into, the device-side locals that fill it, and the launcher locals that convert a returned struct whose layouts differ.
@@ -280,6 +288,9 @@ Prelude:
     ArrayRef: { Value: __gsharp_array_ref, Prelude: ErrorChannel.hpp }
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
+    # The array of a Gpu.NotNull call: a null array fails with NullReferenceException, also a null optional kernel
+    # argument, which reads as an empty array but is null
+    ArrayNotNull: { Value: __gsharp_array_not_null, Prelude: ErrorChannel.hpp }
     # A by-value struct argument of a device function: the non-nullable array fields it reaches, checked at the call
     StructRef: { Value: __gsharp_struct_ref, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }

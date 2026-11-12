@@ -28,7 +28,7 @@ public class StackLinqUnfusedDifferentialTests
         [-1, 7, -1, -1],
     ];
 
-    private static readonly DifferentialCase s_unfusedOperators = new(
+    internal static readonly DifferentialCase s_unfusedOperators = new(
         $"{nameof(StackLinqUnfusedDifferentialKernels)}.{nameof(StackLinqUnfusedDifferentialKernels.UnfusedOperatorKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(64),
@@ -44,7 +44,7 @@ public class StackLinqUnfusedDifferentialTests
         Oracle = static (b, _) => StackLinqUnfusedDifferentialKernels.UnfusedOperatorKernel(b.Get<int>("xs"), b.Get<long>("r")),
     };
 
-    private static readonly DifferentialCase s_indexedLambdas = new(
+    internal static readonly DifferentialCase s_indexedLambdas = new(
         $"{nameof(StackLinqUnfusedDifferentialKernels)}.{nameof(StackLinqUnfusedDifferentialKernels.IndexedLambdaKernel)}")
     {
         Shapes = LaunchShapes.OneDimensionalMatrix(64),
@@ -62,13 +62,13 @@ public class StackLinqUnfusedDifferentialTests
 
     // Seed 1 gives row 3 a threshold above every element: Last(predicate) finds no match and throws the message of
     // C# and System.Linq, on the fused and the unfused path alike
-    private static readonly DifferentialCase s_fusedLastNoMatch = LastPredicateCase(
+    internal static readonly DifferentialCase s_fusedLastNoMatch = LastPredicateCase(
         nameof(StackLinqUnfusedDifferentialKernels.LastPredicateNoMatchKernel),
         static (x, t, d, s) => StackLinqUnfusedDifferentialKernels.LaunchLastPredicateNoMatchKernel(
             x, t, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
         StackLinqUnfusedDifferentialKernels.LastPredicateNoMatchKernel);
 
-    private static readonly DifferentialCase s_unfusedLastNoMatch = LastPredicateCase(
+    internal static readonly DifferentialCase s_unfusedLastNoMatch = LastPredicateCase(
         nameof(StackLinqUnfusedDifferentialKernels.UnfusedLastPredicateNoMatchKernel),
         static (x, t, d, s) => StackLinqUnfusedDifferentialKernels.LaunchUnfusedLastPredicateNoMatchKernel(
             x, t, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),

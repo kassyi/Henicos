@@ -11,15 +11,23 @@ public class WmmaTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void WmmaInt8RowMajor_Transpilation_EmitsDialectFragmentsAndIntrinsics()
     {
-        var (source, diagnostics) = RoslynTestUtility.TranspileMethod<WmmaKernels>(
+        var (source, diagnostics) = TranspileTestRunner.TranspileMethod<WmmaKernels>(
             nameof(WmmaKernels.WmmaInt8RowMajorKernel), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
         Assert.Contains("__gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major>", source);
         Assert.Contains("__gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major>", source);
         Assert.Contains("__gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void>", source);
+#if GSHARP_CPU
+        // The CPU dialect does not implement the operations (GSH0054): each call is a runtime failure
+        const string NotImplemented = " is not implemented by the StandardCppDialect dialect\")";
+        Assert.Contains("__gsharp_unsupported(\"Wmma.Load" + NotImplemented, source);
+        Assert.Contains("__gsharp_unsupported(\"Wmma.Store" + NotImplemented, source);
+        Assert.DoesNotContain("__gsharp_wmma_load", source);
+#else
         Assert.Contains("__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major>(&", source);
         Assert.Contains("__gsharp_wmma_store<__gsharp_wmma_shape<16, 16, 16>, int>(&", source);
+#endif
     }
 
 #if GSHARP_CPU

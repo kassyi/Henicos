@@ -246,4 +246,13 @@ public static partial class LibMath
         Gpu.SyncThreads();
         return next;
     }
+
+    /// <summary>Writes the thread's slot of a block-shared tile and reads it back (static shared memory).</summary>
+    [GpuDeviceFunction]
+    public static int StaticTile(int tid)
+    {
+        var tile = new SharedMemory<int>(64);
+        tile[tid] = tid + 1;
+        return tile[tid];
+    }
 }

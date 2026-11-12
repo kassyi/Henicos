@@ -29,7 +29,6 @@ The unmanaged type of the elements in the buffer.
 | Name | Description |
 | --- | --- |
 | [GpuBuffer(Int32)](#gpubufferint32) | Allocates a new device buffer capable of holding `length` elements. |
-| [GpuBuffer(IntPtr)](#gpubufferintptr) | Initializes a new instance of the `GpuBuffer<T>` class with the specified byte size. |
 
 ## GpuBuffer(Int32)
 
@@ -54,19 +53,6 @@ Number of elements.
 
 `CudaException`<br>
 The CUDA driver failed to make the context current or allocate device memory.
-
-## GpuBuffer(IntPtr)
-
-Initializes a new instance of the `GpuBuffer<T>` class with the specified byte size.
-
-```csharp
-public GpuBuffer(IntPtr byteSize);
-```
-
-#### Parameters
-
-`byteSize` _IntPtr_<br>
-The raw byte size of the buffer.
 
 ## Properties
 
@@ -150,6 +136,8 @@ The buffer has been disposed.
 
 `CudaException`<br>
 The synchronous device-to-host memory transfer (`cuMemcpyDtoH_v2`) failed.
+
+A device error that an earlier kernel recorded and that no other synchronization has thrown yet is thrown after the copy as its .NET exception (for example an `IndexOutOfRangeException`).
 
 ## Dispose()
 

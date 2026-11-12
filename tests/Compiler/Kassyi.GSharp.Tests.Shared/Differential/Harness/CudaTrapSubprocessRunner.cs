@@ -151,16 +151,20 @@ public static class CudaTrapSubprocessRunner
 
     internal static bool TryParseResultLine(string content, out Exception? thrown)
     {
+#pragma warning disable RS0030 // The child's stdout is text; the RESULT line is a protocol this harness writes
         foreach (string rawLine in content.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
         {
             string line = rawLine.Trim();
+#pragma warning restore RS0030
             if (!line.StartsWith(ResultPrefix, StringComparison.Ordinal))
             {
                 continue;
             }
 
             string payload = line[ResultPrefix.Length..];
+#pragma warning disable RS0030 // RESULT line fields: '|'-separated text written by FormatResultLine
             string[] parts = payload.Split('|');
+#pragma warning restore RS0030
             if (parts.Length >= 1 && parts[0] == "NONE")
             {
                 thrown = null;

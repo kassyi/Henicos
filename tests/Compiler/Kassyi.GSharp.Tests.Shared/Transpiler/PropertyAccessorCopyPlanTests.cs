@@ -18,7 +18,7 @@ public class PropertyAccessorCopyPlanTests
         string propertyName,
         [CallerFilePath] string callerFilePath = "")
     {
-        var (compilation, tree) = MegaCompilationCache.GetSourceContext(callerFilePath);
+        var (compilation, tree) = RoslynTestUtility.GetCallerSourceContext(callerFilePath);
         var model = compilation.GetSemanticModel(tree);
         var member = tree.GetRoot()
             .DescendantNodes()

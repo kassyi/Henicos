@@ -1,69 +1,49 @@
 namespace Kassyi.GSharp.Compiler.NativeApi;
 
 /// <summary>
-/// A host-side parameter of a generated kernel launcher.
-/// </summary>
-/// <param name="Name">The C# parameter name.</param>
-/// <param name="TypeName">The C# type as written in the launcher signature.</param>
-/// <param name="ArrayElementTypeName">The element type when the parameter is a managed array; otherwise <see langword="null"/>.</param>
-/// <param name="IsCopiedIn">Whether the array is copied to the device before the launch.</param>
-/// <param name="IsCopiedOut">Whether the array is copied back to the host after the launch.</param>
-internal readonly record struct ModuleKernelLaunchParameter(
-    string Name,
-    string TypeName,
-    string? ArrayElementTypeName,
-    bool IsCopiedIn,
-    bool IsCopiedOut)
-{
-    public bool IsArray => ArrayElementTypeName is not null;
-}
-
-/// <summary>
 /// Emits launcher bodies that load a kernel from a fatbin module next to the application and launch it
 /// through the CUDA driver API. Shared by <c>[CudaImport]</c> and YAML <c>moduleName</c> bindings.
 /// </summary>
 /// <remarks>
-/// Parameters named <c>gridDimX/Y/Z</c>, <c>blockDimX/Y/Z</c>, <c>sharedMemBytes</c> and <c>stream</c> are launch
-/// configuration and are not passed to the kernel. Managed arrays are staged through <c>GpuBuffer&lt;T&gt;</c>.
-/// When a stream is given, synchronization is scoped to that stream.
+/// Writes a <see cref="ModuleKernelLaunchPlan"/> and decides nothing: the planners (<see cref="CudaImportPlanner"/>,
+/// <see cref="ModuleBindingPlanner"/>) choose which parameters are kernel arguments, how each is passed and which set
+/// the launch. Managed arrays are staged through <c>GpuBuffer&lt;T&gt;</c>. When a stream is given, synchronization is
+/// scoped to that stream.
 /// </remarks>
 internal static class ModuleKernelLaunchEmitter
 {
     // The launcher-local struct that packs the kernel arguments for cuLaunchKernel; followed by the method name.
     private const string NativeContextPrefix = "__gsharp_native_context_";
 
-    public static bool IsLaunchParameter(string name) =>
-        name is "gridDimX" or "gridDimY" or "gridDimZ"
-            or "blockDimX" or "blockDimY" or "blockDimZ"
-            or "sharedMemBytes" or "stream";
+    private const string ModuleKernelArguments = HostTypeNames.ModuleKernelArguments;
+
+    private const string AddressOf = ModuleKernelArguments + ".AddressOf";
+
+    private const string Zero = HostTypeNames.IntPtr + ".Zero";
+
+    private const string ThrowIfError = HostTypeNames.CudaException + ".ThrowIfError";
 
     public static void EmitModuleCacheField(SourceWriter writer, string moduleName)
     {
         writer.Append("private static readonly Lazy<byte[]> s_fatbin_");
-        AppendSanitizedIdentifier(writer, moduleName);
+        writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
         writer.Append(" = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, ");
         AppendStringLiteral(writer, moduleName);
         writer.AppendLine(")));");
         writer.AppendLine();
     }
 
-    public static void EmitNativeContextStruct(SourceWriter writer, string methodName,
-        ImmutableArray<ModuleKernelLaunchParameter> parameters)
+    public static void EmitNativeContextStruct(SourceWriter writer, string methodName, ModuleKernelLaunchPlan plan)
     {
-        writer.AppendLine("[StructLayout(LayoutKind.Sequential)]");
+        writer.AppendLine($"[{HostTypeNames.StructLayout}({HostTypeNames.LayoutKind}.Sequential)]");
         writer.AppendLine($"private struct {NativeContextPrefix}{methodName}");
         using (writer.Scope())
         {
-            foreach (var param in parameters)
+            foreach (var argument in plan.Arguments)
             {
-                if (IsLaunchParameter(param.Name))
-                {
-                    continue;
-                }
-
-                writer.AppendLine(param.IsArray
-                    ? $"public IntPtr {param.Name};"
-                    : $"public {param.TypeName} {param.Name};");
+                writer.AppendLine(argument.IsStaged
+                    ? $"public {HostTypeNames.IntPtr} {argument.Name};"
+                    : $"public {argument.TypeName} {argument.Name};");
             }
         }
 
@@ -78,7 +58,7 @@ internal static class ModuleKernelLaunchEmitter
     /// <param name="entryPoint">The mangled native kernel entry-point symbol.</param>
     /// <param name="methodName">The C# launcher method name.</param>
     /// <param name="launcherName">The launcher as <c>Type.Method</c>, named by the shared memory limit error.</param>
-    /// <param name="parameters">The marshaled kernel parameters.</param>
+    /// <param name="plan">The kernel arguments and launch settings; it must have no problems.</param>
     /// <param name="packContext">Whether struct parameters are packed into a generated launch context struct.</param>
     public static void EmitLaunchBody(
         SourceWriter writer,
@@ -86,13 +66,20 @@ internal static class ModuleKernelLaunchEmitter
         string entryPoint,
         string methodName,
         string launcherName,
-        ImmutableArray<ModuleKernelLaunchParameter> parameters,
+        ModuleKernelLaunchPlan plan,
         bool packContext)
     {
-        WriteLaunchLimitCheck(writer, launcherName, parameters);
-        writer.AppendLine("using var scope = new GpuKernelLoader.CudaContextScope();");
-        writer.Append("var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_");
-        AppendSanitizedIdentifier(writer, moduleName);
+        if (!plan.CanLaunch)
+        {
+            throw new InvalidOperationException($"The launcher of '{launcherName}' has parameters it cannot pass.");
+        }
+
+        var launch = plan.Launch;
+        WriteNullChecks(writer, plan.Arguments);
+        WriteLaunchLimitCheck(writer, launcherName, launch);
+        writer.AppendLine($"using var scope = new {HostTypeNames.GpuKernelLoader}.CudaContextScope();");
+        writer.Append($"var kernel = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(s_fatbin_");
+        writer.Append(AotModuleNames.ToIdentifierPart(moduleName));
         writer.Append(".Value, ");
         AppendStringLiteral(writer, entryPoint);
         writer.AppendLine(");");
@@ -100,23 +87,58 @@ internal static class ModuleKernelLaunchEmitter
         // [WHY] sharedMemBytes above 48 KB needs the function's opt-in, and a request the device cannot hold is
         // rejected with the launcher's name instead of the driver's bare CUDA_ERROR_INVALID_VALUE, as in
         // CudaHostLaunchEmitter (#545, #820). Without the parameter the launch requests no dynamic shared memory.
-        if (HasLaunchParameter(parameters, "sharedMemBytes"))
+        if (launch.SharedMemBytes is { } sharedMemBytes)
         {
-            writer.Append("global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(kernel, sharedMemBytes, ");
+            writer.Append(
+                $"global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(kernel, {sharedMemBytes}, ");
             AppendStringLiteral(writer, launcherName);
             writer.AppendLine(");");
         }
 
         writer.AppendLine();
 
-        EmitBufferAllocations(writer, parameters);
+        EmitBufferAllocations(writer, plan.Arguments);
         if (packContext)
         {
-            EmitContextInitialization(writer, methodName, parameters);
+            EmitContextInitialization(writer, methodName, plan.Arguments);
         }
 
-        EmitKernelLaunch(writer, parameters, packContext);
-        EmitBufferOutputs(writer, parameters);
+        EmitKernelLaunch(writer, methodName, plan, packContext);
+        EmitBufferOutputs(writer, plan.Arguments);
+    }
+
+    /// <summary>
+    /// Emits a launcher body that throws <see cref="NotSupportedException"/> with <paramref name="message"/>, for a
+    /// method whose parameters the launcher cannot pass (the analyzer reports the same message as an error).
+    /// </summary>
+    // throw new global::System.NotSupportedException("<message>");
+    public static void EmitUnavailableBody(SourceWriter writer, string message) =>
+        writer.AppendLine(
+            $"throw new global::System.NotSupportedException({SymbolDisplay.FormatLiteral(message, quote: true)});");
+
+    // if (<name> is null) { throw new global::System.ArgumentNullException(nameof(<name>)); }
+    // [WHY] Only an array declared nullable (T[]?, T[,]?) reaches the kernel as a null pointer; null for another array
+    // is rejected before anything is copied or launched, as the launchers of [GpuKernel] methods reject it
+    private static void WriteNullChecks(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
+    {
+        foreach (var argument in arguments)
+        {
+            if (!argument.IsArray || argument.AllowsNull)
+            {
+                continue;
+            }
+
+            writer.Append("if ");
+            using (writer.Parentheses())
+            {
+                writer.Append($"{argument.Name} is null");
+            }
+
+            using (writer.Scope())
+            {
+                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({argument.Name}));");
+            }
+        }
     }
 
     // global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(<gridDimX or 1>, ..., <blockDimZ or 1>, "<launcher>");
@@ -124,12 +146,9 @@ internal static class ModuleKernelLaunchEmitter
     // launchers of [GpuKernel] methods (LaunchLimitEmitter, #799), before the context and the device allocations. A
     // launcher without dimension parameters launches 1 x 1 x 1 blocks of 1 thread, which needs no check.
     private static void WriteLaunchLimitCheck(SourceWriter writer, string launcherName,
-        ImmutableArray<ModuleKernelLaunchParameter> parameters)
+        ModuleLaunchConfiguration launch)
     {
-        var hasDimension = parameters
-            .AsStackEnumerable()
-            .Any(static p => IsDimensionParameter(p.Name));
-        if (!hasDimension)
+        if (!launch.HasDimensions)
         {
             return;
         }
@@ -137,20 +156,13 @@ internal static class ModuleKernelLaunchEmitter
         writer.Append("global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch");
         using (writer.Parentheses())
         {
-            writer.Append($"{GetLaunchParamOrValue(parameters, "gridDimX", "1")}, ");
-            writer.Append($"{GetLaunchParamOrValue(parameters, "gridDimY", "1")}, ");
-            writer.Append($"{GetLaunchParamOrValue(parameters, "gridDimZ", "1")}, ");
-            writer.Append($"{GetLaunchParamOrValue(parameters, "blockDimX", "1")}, ");
-            writer.Append($"{GetLaunchParamOrValue(parameters, "blockDimY", "1")}, ");
-            writer.Append($"{GetLaunchParamOrValue(parameters, "blockDimZ", "1")}, ");
+            writer.Append($"{launch.GridDimX ?? "1"}, {launch.GridDimY ?? "1"}, {launch.GridDimZ ?? "1"}, ");
+            writer.Append($"{launch.BlockDimX ?? "1"}, {launch.BlockDimY ?? "1"}, {launch.BlockDimZ ?? "1"}, ");
             AppendStringLiteral(writer, launcherName);
         }
 
         writer.AppendLine(";");
     }
-
-    private static bool IsDimensionParameter(string name) =>
-        name is "gridDimX" or "gridDimY" or "gridDimZ" or "blockDimX" or "blockDimY" or "blockDimZ";
 
     /// <summary>
     /// Appends <paramref name="value"/> as an escaped C# regular string literal, including the quotes.
@@ -189,64 +201,79 @@ internal static class ModuleKernelLaunchEmitter
         writer.Append('"');
     }
 
-    public static void AppendSanitizedIdentifier(SourceWriter writer, string name)
+    // Array: using var d_<name> = new GpuBuffer<<element>>(<name>.Length); d_<name>.CopyToDevice(<elements of name>);
+    // Nullable array: using var d_<name> = <name> is null ? null : new GpuBuffer<<element>>(<name>.Length);
+    //                 d_<name>?.CopyToDevice(<elements of name>);
+    // By reference: [var h_<name> = default(<type>);] using var d_<name> = new GpuBuffer<<type>>(1);
+    //               d_<name>.CopyToDevice(new ReadOnlySpan<<type>>(in <name> or h_<name>));
+    // [WHY] A null nullable array is passed as a null pointer. An 'out' value sends default from a local of the
+    // launcher (h_<name>): C# cannot read the parameter before it is assigned, the kernel starts from a known value
+    // instead of what the device memory held, and the caller's variable changes only in the write-back, so a launch
+    // that throws leaves it as it was and a 'ref' parameter that aliases it is copied in with the caller's value.
+    private static void EmitBufferAllocations(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
     {
-        foreach (var c in name)
+        foreach (var argument in arguments)
         {
-            writer.Append(c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '_' ? c : '_');
-        }
-    }
-
-    private static void EmitBufferAllocations(SourceWriter writer, ImmutableArray<ModuleKernelLaunchParameter> parameters)
-    {
-        foreach (var param in parameters)
-        {
-            if (IsLaunchParameter(param.Name) || !param.IsArray)
+            var name = argument.Name;
+            var buffer = $"{HostTypeNames.GpuBuffer}<{argument.TypeName}>";
+            switch (argument.Kind)
             {
-                continue;
-            }
+                case ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray:
+                    writer.AppendLine(argument.AllowsNull
+                        ? $"using var d_{name} = {name} is null ? null : new {buffer}({name}.Length);"
+                        : $"using var d_{name} = new {buffer}({name}.Length);");
+                    if (argument.CopyIn)
+                    {
+                        writer.Append($"d_{name}{GetAccess(argument)}CopyToDevice(");
+                        WriteHostElements(writer, argument);
+                        writer.AppendLine(");");
+                    }
 
-            writer.AppendLine($"using var d_{param.Name} = new GpuBuffer<{param.ArrayElementTypeName}>({param.Name}.Length);");
-            if (param.IsCopiedIn)
-            {
-                writer.AppendLine($"d_{param.Name}.CopyToDevice({param.Name});");
+                    break;
+                case ModuleKernelParameterKind.ByReference:
+                    var host = GetHostValue(argument);
+                    writer.AppendLineIf(!argument.CopyIn, $"var {host} = default({argument.TypeName});");
+                    writer.AppendLine($"using var d_{name} = new {buffer}(1);");
+                    writer.AppendLine(
+                        $"d_{name}.CopyToDevice(new {HostTypeNames.ReadOnlySpan}<{argument.TypeName}>(in {host}));");
+                    break;
             }
         }
 
         writer.AppendLine();
     }
 
+    // <name>, or ModuleKernelArguments.Flatten<<element>>(<name>): the elements of an array as one span
+    private static void WriteHostElements(SourceWriter writer, ModuleKernelArgument argument) =>
+        writer.Append(argument.Kind == ModuleKernelParameterKind.MultidimensionalArray
+            ? $"{ModuleKernelArguments}.Flatten<{argument.TypeName}>({argument.Name})"
+            : argument.Name);
+
+    // d_<name>?.DevicePointer ?? IntPtr.Zero for a nullable array, d_<name>.DevicePointer otherwise
+    private static string GetDevicePointer(ModuleKernelArgument argument) => argument.AllowsNull
+        ? $"d_{argument.Name}?.DevicePointer ?? {Zero}"
+        : $"d_{argument.Name}.DevicePointer";
+
+    // The host storage of a value passed by reference: the parameter, or the launcher local h_<name> of an 'out' value
+    private static string GetHostValue(ModuleKernelArgument argument) =>
+        argument.CopyIn ? argument.Name : $"h_{argument.Name}";
+
+    // The member access on the buffer of <argument>: '?.' when a nullable array leaves it null
+    private static string GetAccess(ModuleKernelArgument argument) => argument.AllowsNull ? "?." : ".";
+
     private static void EmitContextInitialization(SourceWriter writer, string methodName,
-        ImmutableArray<ModuleKernelLaunchParameter> parameters)
+        EquatableArray<ModuleKernelArgument> arguments)
     {
         writer.AppendLine($"var ctx = new {NativeContextPrefix}{methodName}");
         using (writer.Scope())
         {
-            for (var i = 0; i < parameters.Length; i++)
+            for (var i = 0; i < arguments.Length; i++)
             {
-                var param = parameters[i];
-                if (IsLaunchParameter(param.Name))
-                {
-                    continue;
-                }
-
-                writer.Append(param.IsArray
-                    ? $"{param.Name} = d_{param.Name}.DevicePointer"
-                    : $"{param.Name} = {param.Name}");
-
-                var isLast = parameters
-                    .AsStackEnumerable()
-                    .Skip(i + 1)
-                    .All(static p => IsLaunchParameter(p.Name));
-
-                if (!isLast)
-                {
-                    writer.AppendLine(",");
-                }
-                else
-                {
-                    writer.AppendLine();
-                }
+                var argument = arguments[i];
+                writer.Append(argument.IsStaged
+                    ? $"{argument.Name} = {GetDevicePointer(argument)}"
+                    : $"{argument.Name} = {argument.Name}");
+                writer.AppendLine(i < arguments.Length - 1 ? "," : string.Empty);
             }
         }
 
@@ -254,133 +281,107 @@ internal static class ModuleKernelLaunchEmitter
         writer.AppendLine();
     }
 
-    private static void EmitKernelLaunch(
-        SourceWriter writer, ImmutableArray<ModuleKernelLaunchParameter> parameters, bool packContext)
+    private static void EmitKernelLaunch(SourceWriter writer, string methodName, ModuleKernelLaunchPlan plan,
+        bool packContext)
     {
-        var kernelArgsCount = parameters
-            .AsStackEnumerable()
-            .Count(static param => !IsLaunchParameter(param.Name));
-
-        var stream = GetLaunchParamOrValue(parameters, "stream", "IntPtr.Zero");
-
         writer.AppendLine("unsafe");
         using (writer.Scope())
         {
-            EmitKernelParametersSetup(writer, parameters, kernelArgsCount, packContext);
-            writer.AppendLine();
-            EmitCuLaunchKernelCall(writer, parameters, stream);
-        }
-
-        EmitLaunchSynchronization(writer, parameters);
-    }
-
-    private static void EmitKernelParametersSetup(
-        SourceWriter writer,
-        ImmutableArray<ModuleKernelLaunchParameter> parameters,
-        int kernelArgsCount,
-        bool packContext)
-    {
-        if (packContext)
-        {
-            writer.AppendLine("var kernelParams = stackalloc void*[1];");
-            writer.AppendLine("kernelParams[0] = &ctx;");
-            return;
-        }
-
-        EmitUnpackedKernelParameters(writer, parameters, kernelArgsCount);
-    }
-
-    private static void EmitUnpackedKernelParameters(
-        SourceWriter writer,
-        ImmutableArray<ModuleKernelLaunchParameter> parameters,
-        int kernelArgsCount)
-    {
-        foreach (var param in parameters)
-        {
-            if (IsLaunchParameter(param.Name))
+            if (packContext)
             {
-                continue;
+                writer.AppendLine("var kernelParams = stackalloc void*[1];");
+                writer.AppendLine($"kernelParams[0] = {AddressOf}<{NativeContextPrefix}{methodName}>(ref ctx);");
+            }
+            else
+            {
+                EmitUnpackedKernelParameters(writer, plan.Arguments);
             }
 
-            writer.AppendLine(param.IsArray
-                ? $"var p_{param.Name} = d_{param.Name}.DevicePointer;"
-                : $"var p_{param.Name} = {param.Name};");
+            writer.AppendLine();
+            EmitCuLaunchKernelCall(writer, plan.Launch);
         }
 
-        if (kernelArgsCount == 0)
+        EmitLaunchSynchronization(writer, plan.Launch);
+    }
+
+    // var p_<name> = <name or the device pointer of d_<name>>; ... kernelParams[<i>] = AddressOf<<type>>(ref p_<name>);
+    // [WHY] The address of a value goes through AddressOf, which only accepts unmanaged types: a class written in a
+    // YAML binding, which the reader cannot tell from a struct, fails to compile there instead of reaching the kernel
+    // as the host address of the reference. A pointer cannot be a type argument and is never a reference, so its local
+    // is passed by '&'.
+    private static void EmitUnpackedKernelParameters(SourceWriter writer,
+        EquatableArray<ModuleKernelArgument> arguments)
+    {
+        foreach (var argument in arguments)
+        {
+            writer.AppendLine(argument.IsStaged
+                ? $"var p_{argument.Name} = {GetDevicePointer(argument)};"
+                : $"var p_{argument.Name} = {argument.Name};");
+        }
+
+        if (arguments.Length == 0)
         {
             writer.AppendLine("void** kernelParams = null;");
             return;
         }
 
-        writer.AppendLine($"var kernelParams = stackalloc void*[{kernelArgsCount}];");
-        var paramIndex = 0;
-        foreach (var param in parameters)
+        writer.AppendLine($"var kernelParams = stackalloc void*[{arguments.Length}];");
+        for (var i = 0; i < arguments.Length; i++)
         {
-            if (IsLaunchParameter(param.Name))
+            var argument = arguments[i];
+            if (argument.Kind == ModuleKernelParameterKind.Pointer)
             {
+                writer.AppendLine($"kernelParams[{i}] = &p_{argument.Name};");
                 continue;
             }
 
-            writer.AppendLine($"kernelParams[{paramIndex}] = &p_{param.Name};");
-            paramIndex++;
+            var type = argument.IsStaged ? HostTypeNames.IntPtr : argument.TypeName;
+            writer.AppendLine($"kernelParams[{i}] = {AddressOf}<{type}>(ref p_{argument.Name});");
         }
     }
 
-    private static void EmitCuLaunchKernelCall(
-        SourceWriter writer,
-        ImmutableArray<ModuleKernelLaunchParameter> parameters,
-        string stream)
+    private static void EmitCuLaunchKernelCall(SourceWriter writer, ModuleLaunchConfiguration launch)
     {
-        var gridX = GetLaunchParamOrValue(parameters, "gridDimX", "1");
-        var gridY = GetLaunchParamOrValue(parameters, "gridDimY", "1");
-        var gridZ = GetLaunchParamOrValue(parameters, "gridDimZ", "1");
-        var blockX = GetLaunchParamOrValue(parameters, "blockDimX", "1");
-        var blockY = GetLaunchParamOrValue(parameters, "blockDimY", "1");
-        var blockZ = GetLaunchParamOrValue(parameters, "blockDimZ", "1");
-        var sharedMem = GetLaunchParamOrValue(parameters, "sharedMemBytes", "0");
-
-        writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(");
+        writer.AppendLine($"{ThrowIfError}({HostTypeNames.CudaDriverApi}.cuLaunchKernel(");
         writer.AppendLine("kernel,");
-        writer.AppendLine($"{gridX}, {gridY}, {gridZ},");
-        writer.AppendLine($"{blockX}, {blockY}, {blockZ},");
-        writer.AppendLine($"{sharedMem}, {stream}, kernelParams, IntPtr.Zero));");
+        writer.AppendLine($"{launch.GridDimX ?? "1"}, {launch.GridDimY ?? "1"}, {launch.GridDimZ ?? "1"},");
+        writer.AppendLine($"{launch.BlockDimX ?? "1"}, {launch.BlockDimY ?? "1"}, {launch.BlockDimZ ?? "1"},");
+        writer.AppendLine(
+            $"{launch.SharedMemBytes ?? "0"}, {launch.Stream ?? Zero}, kernelParams, {Zero}));");
     }
 
-    private static void EmitLaunchSynchronization(
-        SourceWriter writer,
-        ImmutableArray<ModuleKernelLaunchParameter> parameters)
+    private static void EmitLaunchSynchronization(SourceWriter writer, ModuleLaunchConfiguration launch)
     {
         writer.AppendLine();
-        if (HasLaunchParameter(parameters, "stream"))
-        {
-            writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));");
-        }
-        else
-        {
-            writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());");
-        }
+        writer.AppendLine(launch.Stream is { } stream
+            ? $"{ThrowIfError}({HostTypeNames.CudaDriverApi}.cuStreamSynchronize({stream}));"
+            : $"{ThrowIfError}({HostTypeNames.CudaDriverApi}.cuCtxSynchronize());");
     }
 
-    private static void EmitBufferOutputs(SourceWriter writer, ImmutableArray<ModuleKernelLaunchParameter> parameters)
+    // Array: d_<name>[?].CopyToHost(<elements of name>);
+    // By reference: d_<name>.CopyToHost(new Span<<type>>(ref <name> or h_<name>)); [<name> = h_<name>;]
+    private static void EmitBufferOutputs(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
     {
-        foreach (var param in parameters)
+        foreach (var argument in arguments)
         {
-            if (IsLaunchParameter(param.Name) || !param.IsArray || !param.IsCopiedOut)
+            if (!argument.IsStaged || !argument.CopyOut)
             {
                 continue;
             }
 
-            writer.AppendLine($"d_{param.Name}.CopyToHost({param.Name});");
+            var name = argument.Name;
+            if (argument.IsArray)
+            {
+                writer.Append($"d_{name}{GetAccess(argument)}CopyToHost(");
+                WriteHostElements(writer, argument);
+                writer.AppendLine(");");
+            }
+            else
+            {
+                var host = GetHostValue(argument);
+                writer.AppendLine($"d_{name}.CopyToHost(new {HostTypeNames.Span}<{argument.TypeName}>(ref {host}));");
+                writer.AppendLineIf(!argument.CopyIn, $"{name} = {host};");
+            }
         }
     }
-
-    private static bool HasLaunchParameter(ImmutableArray<ModuleKernelLaunchParameter> parameters, string name) =>
-        parameters
-            .AsStackEnumerable()
-            .Any(name, static (p, target) => p.Name == target);
-
-    private static string GetLaunchParamOrValue(ImmutableArray<ModuleKernelLaunchParameter> parameters, string name,
-        string defaultValue) =>
-        HasLaunchParameter(parameters, name) ? name : defaultValue;
 }

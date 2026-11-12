@@ -44,8 +44,18 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>Whether the kernel is a static method, which the C# execution can call without an object.</summary>
+    public bool IsStatic { get; init; }
+
     /// <summary>Whether the kernel or any device function it calls reaches a warp shuffle or warp match (#1001).</summary>
     public bool ReachesWarpShuffle { get; init; }
+
+    /// <summary>
+    /// Whether the kernel may wait at a barrier that counts a fixed number of arrivals: a cooperative kernel (its grid
+    /// barrier, also the implicit one of an <c>AsParallel()</c> grid aggregate), or a kernel that reaches an mbarrier
+    /// or <c>Gpu.SyncGrid()</c>. A captured launch of such a kernel needs an abort word of its own (#1637).
+    /// </summary>
+    public bool WaitsForArrivals { get; init; }
 
     /// <summary>The <c>global::</c>-qualified name of the class that declares the kernel, for qualifying sibling members.</summary>
     public string ClassQualifiedName { get; init; }
@@ -63,6 +73,14 @@ internal readonly record struct KernelHostModel
 
     /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
     public string MessageName { get; init; }
+
+    /// <summary>
+    /// The first construct that the kernel reaches and that cannot run one GPU thread at a time, with why
+    /// (<see cref="CSharpExecutionAnalysis.FindObstacle"/>), or <see langword="null"/>: the launcher's C# execution
+    /// then throws instead of running the kernel. Always <see langword="null"/> without a semantic model (the
+    /// analyzer).
+    /// </summary>
+    public string? CSharpExecutionObstacle { get; init; }
 
     /// <summary>
     /// The bytes of one slot of the grid scratch of the AsParallel() aggregates of the kernel (CUDA, cooperative kernels),
@@ -136,12 +154,18 @@ internal readonly record struct KernelHostModel
             CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda, kernel.ContainingType),
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu, kernel.ContainingType),
             IsCooperative = kernel.IsCooperativeKernel(),
+            IsStatic = kernel.IsStatic,
             ReachesWarpShuffle = model != null && SuspensionAnalysis.ReachesWarpShuffle(kernel, model.Compilation),
+            WaitsForArrivals = kernel.IsCooperativeKernel() ||
+                               (model != null && SuspensionAnalysis.ReachesArrivalBarrier(kernel, model.Compilation)),
             ClassQualifiedName = AotHostNames.GetHostClassQualifiedName(kernel.ContainingType),
             HasReservedLaunchParameterName = kernel.Parameters
                 .AsStackEnumerable()
                 .Any(static p => KernelHostNames.IsReservedLaunchParameterName(p.Name)),
             MessageName = KernelHostNames.GetMessageName(kernel),
+            CSharpExecutionObstacle = model != null
+                ? CSharpExecutionAnalysis.FindObstacle(kernel, model.Compilation)
+                : null,
             GridScratchSlotBytes = model != null && kernel.IsCooperativeKernel() &&
                                    kernel.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) &&
                                    declaration.SyntaxTree == model.SyntaxTree
@@ -277,12 +301,19 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 
 /// <summary>The partial class that the generated host members of a kernel or device function go into.</summary>
 /// <param name="HintName">The source hint name of the class's wrapper (<see cref="GlobalCppNames.GetHintName"/>).</param>
-/// <param name="Namespace">The dot-separated namespace, or empty for the global namespace.</param>
-/// <param name="Name">The class name.</param>
+/// <param name="Namespace">
+/// The namespace as C# source spells it (<c>@event.P3</c>), or empty for the global namespace.
+/// </param>
+/// <param name="Name">The class name as C# source spells it (<c>@class</c>).</param>
+/// <param name="Keyword">
+/// The keyword of the user's declaration after <c>partial</c> (<c>class</c>, or <c>record</c> for a record class),
+/// which every part must repeat (CS0261).
+/// </param>
 /// <param name="Accessibility">The declared accessibility keywords, which the generated part must repeat (CS0262).</param>
 /// <param name="IsPublic">Whether the class is public, which decides the CS0649 suppression.</param>
 /// <param name="OuterDeclarations">
-/// The partial declarations of the types that contain the class, outermost first (<c>partial class Outer</c>), so
+/// The partial declarations of the types that contain the class, outermost first (<c>partial class Outer</c>, names
+/// as <see cref="CSharpTypeNameWriter.GetDeclaredTypeName"/> spells them), so
 /// that a part of a nested class is written inside them.
 /// </param>
 /// <param name="FullyQualifiedName">The <c>global::</c>-qualified C# type name, including any enclosing types.</param>
@@ -295,6 +326,7 @@ internal readonly record struct HostClassHeader(
     string HintName,
     string Namespace,
     string Name,
+    string Keyword,
     string Accessibility,
     bool IsPublic,
     EquatableArray<string> OuterDeclarations,
@@ -305,8 +337,9 @@ internal readonly record struct HostClassHeader(
 
     public static HostClassHeader Create(INamedTypeSymbol type, Compilation compilation) => new(
         GlobalCppNames.GetHintName(type),
-        type.ContainingNamespace.GetFullNamespaceName(),
-        type.Name,
+        type.ContainingNamespace.GetCsharpNamespaceName(),
+        type.Name.ToCSharpIdentifier(),
+        GetKeyword(type),
         SyntaxFacts.GetText(type.DeclaredAccessibility),
         type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
         CreateOuterDeclarations(type),
@@ -323,21 +356,15 @@ internal readonly record struct HostClassHeader(
         var declarations = ImmutableArray.CreateBuilder<string>();
         for (var outer = type.ContainingType; outer != null; outer = outer.ContainingType)
         {
-            var keyword = outer.IsRecord
-                ? outer.TypeKind == TypeKind.Struct ? "record struct" : "record"
-                : outer.TypeKind == TypeKind.Struct ? "struct" : outer.TypeKind == TypeKind.Interface ? "interface" : "class";
-            var name = outer.Name;
-            for (var i = 0; i < outer.TypeParameters.Length; i++)
-            {
-                name += (i == 0 ? "<" : ", ") + outer.TypeParameters[i].Name;
-            }
-
-            name += outer.TypeParameters.IsEmpty ? "" : ">";
-            declarations.Insert(0, $"partial {keyword} {name}");
+            declarations.Insert(0, $"partial {GetKeyword(outer)} {outer.GetDeclaredTypeName()}");
         }
 
         return declarations.ToImmutable().AsEquatableArray();
     }
+
+    private static string GetKeyword(INamedTypeSymbol type) => type.IsRecord
+        ? type.TypeKind == TypeKind.Struct ? "record struct" : "record"
+        : type.TypeKind == TypeKind.Struct ? "struct" : type.TypeKind == TypeKind.Interface ? "interface" : "class";
 }
 
 /// <summary>The native shadow struct and the marshaling methods of one user struct, as the wrapper declares them.</summary>
@@ -358,6 +385,9 @@ internal readonly record struct StructHostSource(string AotStructPath, string Cu
 /// <param name="CppSource">The C++ source of the kernel.</param>
 /// <param name="ManagedCSharpSource">The managed fallback of the kernel.</param>
 /// <param name="InternalError">The exception that stopped the transpilation (GSH0048), or empty.</param>
+/// <param name="ErrorSites">
+/// The source locations of the run-time error sites of the kernel, which the class reports by site ID.
+/// </param>
 internal readonly record struct KernelEmission(
     KernelHostModel Host,
     string MemberKey,
@@ -394,7 +424,7 @@ internal readonly record struct KernelClassModel(
         var emissions = ImmutableArray.CreateBuilder<KernelEmission>(kernels.Count);
         var structs = ImmutableArray.CreateBuilder<StructHostSource>();
         var structIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var rawClassSites = new List<ErrorSiteEntry>();
+        var rawClassSites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
         for (var i = 0; i < kernels.Count; i++)
         {
             var kernel = kernels[i];

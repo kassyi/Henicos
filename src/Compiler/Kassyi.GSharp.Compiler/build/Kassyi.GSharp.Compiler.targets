@@ -9,6 +9,7 @@
   <!-- Register the tasks out-of-process to avoid MSBuild node locking (MSB3026/MSB3027) -->
   <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" TaskFactory="TaskHostFactory" />
   <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" TaskFactory="TaskHostFactory" />
+  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.ValidateCudaArchitecturesTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" TaskFactory="TaskHostFactory" />
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
@@ -80,6 +81,14 @@
       <!-- The symbol file next to each source, read by the demangler -->
       <FileWrites Include="@(_GSharpAotArtifactNames->'$(IntermediateOutputPath)%(Identity).gsym.json')" />
     </ItemGroup>
+  </Target>
+
+  <!-- A malformed GSharpTargetArchitectures entry fails every build (error GS0004), also where GSharpCompileCuda
+       skips nvcc (GSHARP_TEST_NO_CUDA, GSharpSkipCudaCompilation, no .cu sources). It runs no nvcc and logs
+       nothing when every entry is valid. -->
+  <Target Name="GSharpValidateCudaArchitectures" BeforeTargets="GSharpCompileCuda"
+          Condition="'$(GSharpTargetArchitectures)' != ''">
+    <ValidateCudaArchitecturesTask TargetArchitectures="$(GSharpTargetArchitectures)" />
   </Target>
 
   <!-- Define the target to compile CUDA sources -->

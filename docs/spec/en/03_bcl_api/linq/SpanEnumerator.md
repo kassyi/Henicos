@@ -54,7 +54,7 @@ The read-only span to enumerate.
 Attempts to advance the enumerator to the next element of the span.
 
 ```csharp
-public bool TryGetNext(out T current);
+public bool TryGetNext([MaybeNullWhen(false)] out T current);
 ```
 
 #### Parameters

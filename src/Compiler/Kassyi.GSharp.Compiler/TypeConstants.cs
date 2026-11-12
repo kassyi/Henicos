@@ -30,6 +30,7 @@ internal static class TypeConstants
     public const string WmmaType = "Wmma";
     public const string ThreadIndexType = "ThreadIndex";
     public const string BlockIndexType = "BlockIndex";
+    public const string Dim3Type = "Dim3";
     public const string SyncThreadsMethod = "SyncThreads";
     public const string ActiveMaskMethod = "ActiveMask";
 
@@ -49,8 +50,6 @@ internal static class TypeConstants
         public const string LayoutInterface = "IWmmaLayout";
         public const string RowMajor = "WmmaRowMajor";
         public const string ColumnMajor = "WmmaColumnMajor";
-
-        public const string MemoryLayout = "WmmaMemoryLayout";
 
         public const string Fill = "Fill";
         public const string Load = "Load";
@@ -76,6 +75,7 @@ internal static class TypeConstants
         public const string GridStrideLoop = nameof(GridStrideLoop);
         public const string SingleThread = nameof(SingleThread);
         public const string Constant = nameof(Constant);
+        public const string NotNull = nameof(NotNull);
         public const string CopyAsync = nameof(CopyAsync);
         public const string CopyAsyncWaitGroup = nameof(CopyAsyncWaitGroup);
     }

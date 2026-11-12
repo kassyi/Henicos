@@ -4,7 +4,8 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 /// <summary>
 /// The forms of <c>MemoryExtensions.Sort</c> that device code cannot run are reported as GSH0003 at the argument (or the
-/// call) that causes them (#625), and nothing else is reported.
+/// call) that causes them (#625); the only other report is the call of <c>Comparer&lt;T&gt;.Create</c>, which no
+/// dialect implements (GSH0109).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class SpanSortAnalyzerTests : TranspilerTestBase
@@ -15,7 +16,7 @@ public class SpanSortAnalyzerTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public async Task Sort_UnsupportedForms_ReportGSH0003AtTheirArgument()
     {
-        var diagnostics = await RoslynTestUtility
+        var diagnostics = await GeneratorTestRunner
             .TestAnalyzer("Analyzers/SpanSort/SpanSortUnsupported.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
@@ -32,6 +33,7 @@ public class SpanSortAnalyzerTests : TranspilerTestBase
             (65, 8, 65, 19, MemoryExtensionsTranspilerRule.NoDefaultOrder), // nint keys
         ];
         var actual = diagnostics
+            .Where(static d => d.Id != GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id)
             .Select(static d => (d.Id, Span: d.Location.GetLineSpan(), Message: d.GetMessage()))
             .OrderBy(static d => d.Span.StartLinePosition.Line)
             .Select(static d => (d.Id, Start: (d.Span.StartLinePosition.Line, d.Span.StartLinePosition.Character),
@@ -47,5 +49,13 @@ public class SpanSortAnalyzerTests : TranspilerTestBase
             Assert.Equal((endLine, endColumn), actual[i].End);
             Assert.Contains(reason, actual[i].Message);
         }
+
+        var unmapped = Assert.Single(
+            diagnostics,
+            static d => d.Id == GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id);
+        var unmappedSpan = unmapped.Location.GetLineSpan();
+        Assert.Equal((22, 18), (unmappedSpan.StartLinePosition.Line, unmappedSpan.StartLinePosition.Character));
+        Assert.Equal((22, 55), (unmappedSpan.EndLinePosition.Line, unmappedSpan.EndLinePosition.Character));
+        Assert.Contains("'Comparer<T>.Create(Comparison<T>)'", unmapped.GetMessage());
     }
 }

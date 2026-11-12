@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
@@ -103,7 +102,7 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, IB
         }
 
         CaptureChecks.ThrowIfCapturing(workspace, "The result header of a vector Sum, Max or Min",
-            "Evaluate them directly; Count can be captured.");
+            "Evaluate them directly; Count of a chain without a division or a square root can be captured.");
 
         if (_passes.Count == 0 && EmptyIsError)
         {
@@ -303,118 +302,4 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, IB
 
         _vector.Dispose();
     }
-}
-
-// The sum of up to Capacity elements of b bits has at most b + ceil(log2 Capacity) bits (.NET Enumerable.Sum of
-// BigInteger cannot overflow either); the result has the words of that bound, which the accumulator (one word more
-// than the elements) always holds, so the sum never overflows.
-internal sealed class VectorSumReductionExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
-    : VectorReductionExpressionBase(vector)
-{
-    public override long Bits => Vector.BitsPerElement + CeilLog2(Vector.Capacity);
-
-    // ceil(log2 n) for n >= 1; 0 for a capacity of 0 or 1
-    private static int CeilLog2(int n) =>
-        n <= 1 ? 0 : 32 - System.Numerics.BitOperations.LeadingZeroCount((uint)(n - 1));
-
-    protected override bool UseOffsetBinary => false;
-
-    protected override bool EmptyIsError => false;
-
-    protected override void DispatchChunkKernel(
-        GpuWorkspace workspace,
-        GpuBigIntVectorKernels.AotContexts.VectorReductionChunk chunkCtx,
-        uint gridDimX,
-        uint blockDimX)
-    {
-        GpuBigIntVectorKernels.LaunchVectorSumReductionChunkKernelPtr(
-            chunkCtx, gridDimX, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal sealed class VectorMaxReductionExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
-    : VectorReductionExpressionBase(vector)
-{
-    protected override bool UseOffsetBinary => true;
-
-    protected override bool EmptyIsError => true;
-
-    protected override void DispatchChunkKernel(
-        GpuWorkspace workspace,
-        GpuBigIntVectorKernels.AotContexts.VectorReductionChunk chunkCtx,
-        uint gridDimX,
-        uint blockDimX)
-    {
-        GpuBigIntVectorKernels.LaunchVectorMaxReductionChunkKernelPtr(
-            chunkCtx, gridDimX, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal sealed class VectorMinReductionExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
-    : VectorReductionExpressionBase(vector)
-{
-    protected override bool UseOffsetBinary => true;
-
-    protected override bool EmptyIsError => true;
-
-    protected override void DispatchChunkKernel(
-        GpuWorkspace workspace,
-        GpuBigIntVectorKernels.AotContexts.VectorReductionChunk chunkCtx,
-        uint gridDimX,
-        uint blockDimX)
-    {
-        GpuBigIntVectorKernels.LaunchVectorMinReductionChunkKernelPtr(
-            chunkCtx, gridDimX, 1, 1, blockDimX, 1, 1, 0, workspace.Stream);
-    }
-}
-
-internal class VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
-    : IGpuBigIntExpression, IDisposable
-{
-    public int NumWords => 1;
-
-    // A length known on the host needs no evaluation and is written with a host copy, which also works under the CPU
-    // fallback; a device count (after Where) evaluates the vector and lets a kernel write the count, so that no host
-    // synchronization is needed and a CUDA graph counts again on every launch
-    public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
-    {
-        if (vector.TryGetLength(out var length))
-        {
-            return WriteHostCount(workspace, targetResult, length);
-        }
-
-        var count = DeviceCounted.Evaluate(vector, workspace).Count;
-        var destination = targetResult ?? new GpuBigUInt(workspace, NumWords);
-        try
-        {
-            var ctx = new GpuBigIntVectorKernels.AotContexts.ElementCountWrite
-            {
-                Destination = destination.ToProxy(),
-                DestinationWords = destination.NumWords,
-                Count = count.ToContext()
-            };
-            GpuBigIntVectorKernels.LaunchWriteElementCountKernelPtr(ctx, 1, 1, 1, 32, 1, 1, 0, workspace.Stream);
-            return new GpuBigInt(destination, false);
-        }
-        catch when (!targetResult.HasValue)
-        {
-            destination.Dispose();
-            throw;
-        }
-    }
-
-    private static GpuBigInt WriteHostCount(GpuWorkspace workspace, GpuBigUInt? targetResult, int length)
-    {
-        if (targetResult is { } target)
-        {
-            var words = new uint[target.NumWords];
-            words[0] = (uint)length;
-            workspace.Provider.CopyHostToDevice(target.DevicePointer, words, words.Length, workspace.Stream);
-            return new GpuBigInt(target, false);
-        }
-
-        return new GpuBigInt(new GpuBigUInt(workspace, new[] { (uint)length }), false);
-    }
-
-    public void Dispose() => vector.Dispose();
 }

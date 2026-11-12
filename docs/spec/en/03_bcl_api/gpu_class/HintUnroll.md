@@ -19,7 +19,9 @@ Hints the compiler to unroll the immediately following loop.
 
 | Name | Description |
 | --- | --- |
-| [Unroll(int)](#unroll-int) | Hints the compiler to unroll the immediately following loop by a specific factor (or completely if 0). |
+| [Unroll(int)](#unroll-int) | Hints the compiler to unroll the immediately following loop by a specific factor (`0` unrolls completely when the trip count is a compile-time constant). |
+
+<a id="unroll-int"></a>
 
 ## Unroll(int)
 
@@ -32,7 +34,7 @@ public static void Unroll(int factor = 0);
 #### Parameters
 
 `factor` _int_<br>
-The unroll factor. If `0`, the loop is completely unrolled.
+The unroll factor, emitted as `#pragma unroll <factor>`. If `0` (the default), a bare `#pragma unroll` is emitted: NVCC then unrolls the loop completely when its trip count is a compile-time constant, and otherwise does not unroll it.
 
 #### Exceptions
 

@@ -27,6 +27,14 @@ internal static class SymbolExtensions
             { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
         };
 
+    public static bool IsSystemDiagnostics(this INamespaceSymbol? ns) =>
+        ns is
+        {
+            Name: "Diagnostics",
+            ContainingNamespace:
+            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+        };
+
     public static bool IsSystemLinq(this INamespaceSymbol? ns) =>
         ns is
         {
@@ -124,6 +132,15 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool IsArrayLikeType(this ITypeSymbol? type) => type.TryGetArrayLikeElementType(out _);
 
+    /// <summary>T of <see cref="Nullable{T}"/>, or <paramref name="type"/> itself.</summary>
+    public static ITypeSymbol UnwrapNullable(this ITypeSymbol type) =>
+        type is INamedTypeSymbol
+        {
+            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlying]
+        }
+            ? underlying
+            : type;
+
     /// <summary>
     /// Returns T when type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } and its single type argument is array-like; otherwise returns type unchanged.
     /// </summary>
@@ -210,6 +227,9 @@ internal static class SymbolExtensions
     /// <summary>
     /// Checks whether the type is one of the WMMA fragment types (<c>WmmaMatrixA&lt;...&gt;</c>,
     /// <c>WmmaMatrixB&lt;...&gt;</c>, or <c>WmmaAccumulator&lt;...&gt;</c>) in <c>Kassyi.GSharp.Core</c>.
+    /// Fragment types are opaque warp-distributed register tiles that are emitted as special WMMA fragment
+    /// declarations; they can be used only as locals (of kernels and device functions) and as device function
+    /// parameters.
     /// </summary>
     public static bool IsWmmaFragmentType(
         [NotNullWhen(true)] this ITypeSymbol? type) =>
@@ -221,22 +241,24 @@ internal static class SymbolExtensions
         } && type.ContainingNamespace.IsCoreNamespace();
 
     /// <summary>
-    /// Checks whether the type is a WMMA shape or layout marker type or interface (<c>IWmmaShape</c>,
-    /// <c>IWmmaLayout</c>, <c>WmmaM16N16K16</c>, <c>WmmaRowMajor</c>, etc.) in <c>Kassyi.GSharp.Core</c>.
+    /// Checks whether the type is a WMMA shape or layout marker of <c>Kassyi.GSharp.Core</c>: one of the interfaces
+    /// <c>IWmmaShape</c> and <c>IWmmaLayout</c>, or a type of Core that implements one of them (<c>WmmaM16N16K16</c>,
+    /// <c>WmmaRowMajor</c>, ...). Marker types carry no data and are only type arguments that choose the shape and
+    /// the layout, so they are never emitted as values. A type outside Core that implements one of the interfaces is
+    /// not a marker: it is an ordinary type.
     /// </summary>
     public static bool IsWmmaMarkerType(
         [NotNullWhen(true)] this ITypeSymbol? type) =>
-        type is INamedTypeSymbol
-        {
-            Name: TypeConstants.WmmaTypes.ShapeInterface
-                or TypeConstants.WmmaTypes.M16N16K16
-                or TypeConstants.WmmaTypes.M32N8K16
-                or TypeConstants.WmmaTypes.M8N32K16
-                or TypeConstants.WmmaTypes.M8N8K4
-                or TypeConstants.WmmaTypes.LayoutInterface
-                or TypeConstants.WmmaTypes.RowMajor
-                or TypeConstants.WmmaTypes.ColumnMajor
-        } && type.ContainingNamespace.IsCoreNamespace();
+        type is INamedTypeSymbol named &&
+        named.ContainingNamespace.IsCoreNamespace() &&
+        (IsWmmaMarkerInterface(named) ||
+         named.AllInterfaces
+             .AsStackEnumerable()
+             .Any(IsWmmaMarkerInterface));
+
+    private static bool IsWmmaMarkerInterface(INamedTypeSymbol iface) =>
+        iface.Name is TypeConstants.WmmaTypes.ShapeInterface or TypeConstants.WmmaTypes.LayoutInterface &&
+        iface.ContainingNamespace.IsCoreNamespace();
 
     /// <summary>
     /// Attempts to get the first declaring syntax node of the specified type for this symbol. For the defining

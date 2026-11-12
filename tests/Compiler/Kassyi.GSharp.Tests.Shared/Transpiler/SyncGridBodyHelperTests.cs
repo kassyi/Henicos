@@ -83,9 +83,9 @@ public class SyncGridBodyHelperTests
     {
         var statements = Flatten("NestedBody", withModel);
 
-        Assert.Equal(
+        SyntaxAssert.Equivalent(
             ["x += 1;", "x += 2;", "x += 3;", "x += 4;"],
-            statements.Elements.Select(static e => e.Node.ToString()).ToArray());
+            statements.Elements.Select(static e => e.Node));
         Assert.Equal([0, 1, 1, 0], statements.Elements.Select(static e => e.BodyIndex).ToArray());
         Assert.Equal([-1, 0], statements.BodyParents.ToArray());
     }
@@ -100,7 +100,7 @@ public class SyncGridBodyHelperTests
         var statements = Flatten("NestedExpressionBody", withModel);
 
         var nested = Assert.IsAssignableFrom<ExpressionSyntax>(statements.Elements[1].Node);
-        Assert.Equal("x += 2", nested.ToString());
+        SyntaxAssert.Equivalent("x += 2", nested);
         Assert.Equal(1, statements.Elements[1].BodyIndex);
     }
 
@@ -149,7 +149,7 @@ public class SyncGridBodyHelperTests
     {
         var statements = Flatten("ExpressionBodyIsBody", withModel);
 
-        Assert.Equal(["x += 1;", "x += 2;"], statements.Elements.Select(static e => e.Node.ToString()).ToArray());
+        SyntaxAssert.Equivalent(["x += 1;", "x += 2;"], statements.Elements.Select(static e => e.Node));
         Assert.Equal([-1, 0], statements.BodyParents.ToArray());
     }
 
@@ -218,12 +218,13 @@ public class SyncGridBodyHelperTests
 
     private static SemanticModel GetModel() => s_compilation.GetSemanticModel(s_compilation.SyntaxTrees.Single());
 
-    // The first statement of the method: with a model from the compilation's tree, without one from a fresh parse
+    // The first statement of the method: with a model from the compilation's tree, without one from a copy of the tree
+    // outside the compilation
     private static (StatementSyntax Statement, SemanticModel? Model) GetSyncGridStatement(string method, bool withModel)
     {
         var tree = withModel
             ? s_compilation.SyntaxTrees.Single()
-            : CSharpSyntaxTree.ParseText(s_compilation.SyntaxTrees.Single().GetText());
+            : s_compilation.SyntaxTrees.Single().WithFilePath("Detached.cs");
         var statement = tree.GetRoot()
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()

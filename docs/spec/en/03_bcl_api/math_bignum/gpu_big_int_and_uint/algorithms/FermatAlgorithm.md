@@ -97,6 +97,7 @@ GPU context initialization fails.
 | `ChainLength` | The squarings of the test, `2E + 1`. |
 | `BlockSize` | The Gerbicz-Li block size in use (the option, or `clamp(floor(sqrt(2E + 1)), 2, 1000)`). |
 | `Iteration` | The squarings done on the state: the position of the last run (or of a restore) plus the squarings of `RunBenchmarkChunk` since. |
+| `LastProof` | The Pietrzak proof (`FermatPrpProof?`) finalized by the last completed `Run` or `RunAsync` when `FermatPrpOptions.ProofPower` is positive and `gcd(a, N) == 1`; otherwise `null`. |
 
 ## Methods
 
@@ -110,6 +111,7 @@ GPU context initialization fails.
 | `GetState()` / `GetStateAsync(CancellationToken)` | Returns the canonical state `u mod N`, `ResidueWords` words. |
 | `GetModulus()` | Returns `N` as a `BigInteger` (allocates `O(E)` bits). |
 | `Dispose()` | Releases the residues, the scratch buffers, the CUDA Graphs and the workspace. |
+| `static VerifyProof(FermatPrpProof)` | Verifies a proof modulo `N(E)` in `2 * (E mod 2^k) + 1 + floor(E / 2^k) + 254 * (k + 1)` modular squarings and returns a `FermatPrpVerificationResult`. Throws `ArgumentNullException` for a `null` proof. |
 
 Every member throws `ObjectDisposedException` after `Dispose`.
 
@@ -121,6 +123,8 @@ Every member throws `ObjectDisposedException` after `Dispose`.
 | `CheckIntervalBlocks` | 0 (`B` blocks) | The blocks between checks. The chain always ends with a check. |
 | `MaxConsecutiveRollbacks` | 3 | The failed checks in a row that end the run with an exception. |
 | `OnVerifiedCheckpoint` | `null` | Receives every point that passed a check, for example to save it to a file. |
+| `ProofPower` | 0 (no proof) | The Pietrzak halving tree depth `k`, from 1 to `FermatPrpProof.MaxProofPower` (20) with `2^k <= E`. A positive value records `3 * 2^k` residue slots during the run (in host RAM unless `ProofLeafFile` is set) and stores the proof in `LastProof`. |
+| `ProofLeafFile` | `null` | A file that holds the proof slots on disk instead of host RAM, and keeps them across checkpoint restarts. Ignored when `ProofPower` is 0; an empty or whitespace path throws `ArgumentException`. |
 
 ## FermatPrpResult Struct
 
@@ -133,6 +137,34 @@ Every member throws `ObjectDisposedException` after `Dispose`.
 | `Iterations` | The squarings of the chain actually run, including those repeated after rollbacks. |
 | `ChecksPassed`, `Rollbacks` | The Gerbicz-Li checks passed and the rollbacks. |
 | `Elapsed` | The time the run took. |
+
+## FermatPrpProof Class
+
+A dual-segment batched Pietrzak proof that the squaring chain modulo `N(E)` produced `u_E = a^(2^E) mod N` and `u_K = a^(2^(2E+1)) mod N`, up to sign. Immutable; the residue buffers are copied on construction.
+
+| Member | Description |
+| --- | --- |
+| `MaxProofPower` | The largest supported depth, 20. |
+| `FermatPrpProof(FermatPrpProofHeader, ReadOnlyMemory<uint>, ReadOnlyMemory<uint>, IReadOnlyList<ReadOnlyMemory<uint>>)` | Builds a proof from its header, `ResidueE`, `ResidueK` and the `k` halving witnesses, all in the signed form `min(x, N - x)`. |
+| `Header`, `E`, `Base`, `ProofPower`, `ResidueWords` | The modulus, base, depth and residue word count. |
+| `ResidueE`, `ResidueK`, `Witnesses` | The residues and the witnesses. |
+| `Save(string)` | Writes the proof atomically (temporary file and rename) with a trailing SHA-256 digest. |
+| `static Load(string)` | Reads a proof and checks its digest; throws `FileNotFoundException` or `InvalidDataException`. |
+
+## FermatPrpProofHeader Struct
+
+`readonly record struct FermatPrpProofHeader(int E, uint Base, int ProofPower, int ResidueWords)`; the constructor `FermatPrpProofHeader(int e, uint base, int proofPower)` derives `ResidueWords = ceil((2E + 1) / 32)`.
+
+## FermatPrpVerificationResult Struct
+
+| Property | Description |
+| --- | --- |
+| `IsValid` | Whether the proof passed every domain guard and the final squaring check. |
+| `IsProbablePrime` | `IsValid` and `u_K * a^10 = u_E (mod N)`, that is `a^(N-1) = 1 (mod N)`. |
+| `Residue64`, `CheckResidue64` | The low 64 bits of `u_K * a^10 mod N` and `u_E mod N` in the signed form `min(x, N - x)` when valid; otherwise 0. |
+| `Squarings` | The modular squarings of the verification. |
+| `Elapsed` | The verification time. |
+| `FailureReason` | `null` when valid; otherwise the reason. |
 
 ## FermatPrpCheckpoint Class
 
@@ -179,6 +211,6 @@ var result = resumed.Run();
 ### BCL API > Math Bignum
 
 - [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
-- [GpuBigUInt Class](../GpuUIntBigInteger.md)
+- [GpuBigUInt Struct](../GpuBigUInt.md)
 - [GpuBigIntFermatKernels Class](../kernels/GpuBigIntFermatKernels.md)
 - [FermatRunner (renamed, migration notes)](Fermat.md)

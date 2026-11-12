@@ -2,43 +2,6 @@ using System.Text.Json;
 
 namespace Kassyi.GSharp.Compiler.Generators;
 
-/// <summary>Represents a diagnostic definition entry deserialized from diagnostics.json.</summary>
-public sealed class DiagnosticDefinition
-{
-    /// <summary>Gets or sets the identifier name for the diagnostic descriptor property.</summary>
-    public string Name { get; set; } = "";
-
-    /// <summary>Gets or sets the diagnostic ID (e.g. GSH0001).</summary>
-    public string Id { get; set; } = "";
-
-    /// <summary>Gets or sets the diagnostic title.</summary>
-    public string Title { get; set; } = "";
-
-    /// <summary>Gets or sets the message format string.</summary>
-    public string MessageFormat { get; set; } = "";
-
-    /// <summary>Gets or sets the diagnostic category.</summary>
-    public string Category { get; set; } = "";
-
-    /// <summary>Gets or sets the optional long description of the diagnostic.</summary>
-    public string Description { get; set; } = "";
-
-    /// <summary>Gets or sets the default severity string.</summary>
-    public string DefaultSeverity { get; set; } = "";
-
-    /// <summary>Gets or sets a value indicating whether the diagnostic is enabled by default.</summary>
-    public bool IsEnabledByDefault
-    {
-        get; set;
-    }
-
-    /// <summary>Gets or sets a value indicating whether this diagnostic is obsolete.</summary>
-    public bool IsObsolete
-    {
-        get; set;
-    }
-}
-
 /// <summary>Generates strongly-typed DiagnosticDescriptor C# definitions from diagnostics.json.</summary>
 public static partial class DiagnosticGenerator
 {
@@ -104,26 +67,37 @@ public static partial class DiagnosticGenerator
             foreach (var diag in diagnostics)
             {
                 var name = EmitDiagnosticDescriptor(writer, diag, seenIds, seenNames);
-                descriptorNames.Add(name);
-            }
 
-            writer.Line(
-                "/// <summary>Gets an immutable array containing all diagnostic descriptors defined in " +
-                "diagnostics.json.</summary>");
-            writer.Line(
-                "public static readonly ImmutableArray<DiagnosticDescriptor> All = " +
-                "ImmutableArray.Create<DiagnosticDescriptor>(");
-            using (writer.Scope("", ");"))
-            {
-                for (var i = 0; i < descriptorNames.Count; i++)
+                // An obsolete descriptor is never reported, so no analyzer lists it as supported; naming it in
+                // Reported would also make the generated file reference an [Obsolete] member (CS0618)
+                if (!diag.IsObsolete)
                 {
-                    var isLast = i == descriptorNames.Count - 1;
-                    writer.Line($"{descriptorNames[i]}{(isLast ? "" : ",")}");
+                    descriptorNames.Add(name);
                 }
             }
+
+            EmitReported(writer, descriptorNames);
         }
 
         return writer.ToString();
+    }
+
+    // public static readonly ImmutableArray<DiagnosticDescriptor> Reported = ImmutableArray.Create<...>(<names>);
+    private static void EmitReported(SourceWriter writer, List<string> descriptorNames)
+    {
+        writer.Line("/// <summary>Gets the descriptors of diagnostics.json that the compiler reports: every one");
+        writer.Line("/// that is not obsolete.</summary>");
+        writer.Line(
+            "public static readonly ImmutableArray<DiagnosticDescriptor> Reported = " +
+            "ImmutableArray.Create<DiagnosticDescriptor>(");
+        using (writer.Scope("", ");"))
+        {
+            for (var i = 0; i < descriptorNames.Count; i++)
+            {
+                var isLast = i == descriptorNames.Count - 1;
+                writer.Line($"{descriptorNames[i]}{(isLast ? "" : ",")}");
+            }
+        }
     }
 
     private static string EmitDiagnosticDescriptor(

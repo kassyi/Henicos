@@ -101,7 +101,7 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter, IBlockLowerin
                     ? temp
                     : SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, temp);
                 var statements = ImmutableArray.Create<StatementSyntax>(
-                    CreateTempDeclaration(name, binary.Left.WithoutTrivia()),
+                    LoweringSyntax.DeclareLocal(name, binary.Left.WithoutTrivia()),
                     SyntaxFactory.IfStatement(guard, SyntaxFactory.Block(Assign(temp, binary.Right)))
                 );
                 return (statements, temp);
@@ -110,9 +110,9 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter, IBlockLowerin
             {
                 // var t = default; if (c) { t = whenTrue; } else { t = whenFalse; }
                 var typedDefault = SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)
-                    .WithAdditionalAnnotations(ternary.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+                    .WithOriginalSpanFrom(ternary);
                 var statements = ImmutableArray.Create<StatementSyntax>(
-                    CreateTempDeclaration(name, typedDefault),
+                    LoweringSyntax.DeclareLocal(name, typedDefault),
                     SyntaxFactory.IfStatement(
                         ternary.Condition.WithoutTrivia(),
                         SyntaxFactory.Block(Assign(temp, ternary.WhenTrue)),
@@ -174,17 +174,5 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter, IBlockLowerin
     private static ExpressionStatementSyntax Assign(IdentifierNameSyntax target, ExpressionSyntax value) =>
         SyntaxFactory.ExpressionStatement(
             SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, value.WithoutTrivia())
-        );
-
-    // var <name> = <value>;
-    private static LocalDeclarationStatementSyntax CreateTempDeclaration(string name, ExpressionSyntax value) =>
-        SyntaxFactory.LocalDeclarationStatement(
-            SyntaxFactory.VariableDeclaration(
-                SyntaxFactory.IdentifierName("var"),
-                SyntaxFactory.SingletonSeparatedList(
-                    SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(name))
-                        .WithInitializer(SyntaxFactory.EqualsValueClause(value))
-                )
-            )
         );
 }

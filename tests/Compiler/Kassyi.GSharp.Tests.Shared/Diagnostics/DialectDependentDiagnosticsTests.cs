@@ -3,8 +3,9 @@ using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
-/// The checks that depend on the dialect (GSH0054, GSH0006, GSH0065, and GSH0003 for a Math member the dialect does not
-/// map) come from the analyzer, which reads <c>GSharpTargetDialect</c>; the generator reports none of them (S-46, #461).
+/// The checks that depend on the dialect (GSH0054, GSH0006, GSH0065, and GSH0109 for a Math member the dialect does
+/// not map) come from the analyzer, which reads <c>GSharpTargetDialect</c>; the generator reports none of them (S-46,
+/// #461).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class DialectDependentDiagnosticsTests
@@ -20,7 +21,7 @@ public class DialectDependentDiagnosticsTests
         IReadOnlyList<(DiagnosticOrigin, int, int, int, int)> expected = dialect == "Cpu"
             ? [(Analyzer, 11, 13, 11, 34), (Analyzer, 18, 13, 18, 34)]
             : [];
-        Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id));
+        Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.IntrinsicNotImplementedByDialect.Id));
     }
 
     [Theory]
@@ -33,7 +34,7 @@ public class DialectDependentDiagnosticsTests
 
         Assert.Equal(
             Enumerable.Repeat((Analyzer, 223, 13, 223, 51), count),
-            diagnostics.Ranges(GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id));
+            diagnostics.Ranges(GSharpDiagnostics.IntrinsicNotImplementedByDialect.Id));
     }
 
     // The text must be a constant in every dialect, also where the call becomes a runtime failure
@@ -112,39 +113,44 @@ public class DialectDependentDiagnosticsTests
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 
-    // #899: a member that the dialect does not map, also an unmapped overload of a mapped name, is reported with the
-    // overload and the dialect, whether it is called with its type, through using static or converted to a delegate
+    // #899: a member that the dialect does not map, also an unmapped overload of a mapped name, is reported as GSH0109
+    // with the overload and the dialect, whether it is called with its type, through using static or converted to a
+    // delegate; a mapped member converted to a delegate is GSH0003
     [Theory]
     [InlineData("Cpu", "StandardCppDialect")]
     [InlineData("Cuda", "GSharpCudaDialect")]
     [Scenario(TestScenario.SadPath)]
-    public async Task UnmappedMathMembers_UnsupportedDialect_ReportsGsh0003WithDialectName(
+    public async Task UnmappedMathMembers_UnsupportedDialect_ReportsGsh0109WithDialectName(
         string dialect,
         string dialectName)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/UnmappedMathMembers.cs", dialect);
 
         AssertCompiles("Analyzers/UnmappedMathMembers.cs");
+        const string Unmapped = "GSH0109";
+        const string MethodGroup = "GSH0003";
         Assert.Equal(
             [
-                (Analyzer, 17, 16, 17, 24, $"Math.Abs(long) (not mapped by {dialectName})"),
-                (Analyzer, 17, 33, 17, 41, $"Math.Max(long, long) (not mapped by {dialectName})"),
-                (Analyzer, 18, 16, 18, 26, $"MathF.Cbrt(float) (not mapped by {dialectName})"),
+                // A call: the whole invocation
+                (Analyzer, 17, 16, 17, 30, Unmapped, "'Math.Abs(long)'"),
+                (Analyzer, 17, 33, 17, 51, Unmapped, "'Math.Max(long, long)'"),
+                (Analyzer, 18, 16, 18, 32, Unmapped, "'MathF.Cbrt(float)'"),
                 // A method group: the member access
-                (Analyzer, 19, 30, 19, 38, $"Math.Abs(long) (not mapped by {dialectName})"),
-                // Through using static System.Math: the whole invocation
-                (Analyzer, 20, 16, 20, 26, $"Math.Cbrt(double) (not mapped by {dialectName})"),
-                (Analyzer, 21, 16, 21, 25, $"Math.Abs(long) (not mapped by {dialectName})"),
+                (Analyzer, 19, 30, 19, 38, Unmapped, "'Math.Abs(long)'"),
+                // Through using static System.Math
+                (Analyzer, 20, 16, 20, 26, Unmapped, "'Math.Cbrt(double)'"),
+                (Analyzer, 21, 16, 21, 25, Unmapped, "'Math.Abs(long)'"),
                 // A mapped member as a method group, qualified and through using static, and an unmapped one through
                 // using static: the member access or the name
-                (Analyzer, 22, 29, 22, 37, "Math.Abs(int) (used as a method group)"),
-                (Analyzer, 23, 29, 23, 32, "Math.Abs(int) (used as a method group)"),
-                (Analyzer, 24, 31, 24, 34, $"Math.Abs(long) (not mapped by {dialectName})")
+                (Analyzer, 22, 29, 22, 37, MethodGroup, "Math.Abs(int) (used as a method group)"),
+                (Analyzer, 23, 29, 23, 32, MethodGroup, "Math.Abs(int) (used as a method group)"),
+                (Analyzer, 24, 31, 24, 34, Unmapped, "'Math.Abs(long)'")
             ],
-            diagnostics
-                .Where(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id)
-                .Select(static d => (d.Origin, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, ExtractSyntax(d.Message))));
-        Assert.All(diagnostics, static d => Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, d.Id));
+            diagnostics.Select(static d => (d.Origin, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, d.Id,
+                d.Id == Unmapped ? ExtractMethod(d.Message) : ExtractSyntax(d.Message))));
+        Assert.All(
+            diagnostics.Where(static d => d.Id == Unmapped),
+            d => Assert.Contains($"has no implementation in the '{dialectName}' dialect", d.Message));
     }
 
     // KernelDiagnostics leaves out the C# errors of the input; a call that does not bind would check nothing
@@ -152,6 +158,13 @@ public class DialectDependentDiagnosticsTests
         Assert.Empty(RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(relativePathToTestCases))
             .GetDiagnostics()
             .Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+    // The quoted '{0}' of "The method '{0}' has no implementation in the '{1}' dialect ...", quotes included
+    private static string ExtractMethod(string message)
+    {
+        var start = message.IndexOf('\'');
+        return message[start..(message.IndexOf('\'', start + 1) + 1)];
+    }
 
     // The '{0}' of "The syntax '{0}' is not supported in GSharp GPU kernels"
     private static string ExtractSyntax(string message)

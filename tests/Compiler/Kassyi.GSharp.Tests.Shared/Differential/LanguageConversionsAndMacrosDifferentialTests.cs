@@ -16,7 +16,7 @@ public class LanguageConversionsAndMacrosDifferentialTests
 {
     private const int Rows = 128;
 
-    private static readonly DifferentialCase s_implicitConversions = new(
+    internal static readonly DifferentialCase s_implicitConversions = new(
         $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.UserDefinedImplicitConversionsKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
@@ -43,7 +43,7 @@ public class LanguageConversionsAndMacrosDifferentialTests
     private static int MacroAdd(int left, int right, int bias) => (left * 3) + right + bias;
     private static int MacroSub(int left, int right) => (left * 2) - right + 9;
 
-    private static readonly DifferentialCase s_macroArithmetic = new(
+    internal static readonly DifferentialCase s_macroArithmetic = new(
         $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroArithmeticKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
@@ -81,7 +81,7 @@ public class LanguageConversionsAndMacrosDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_macroEvaluationOrder = new(
+    internal static readonly DifferentialCase s_macroEvaluationOrder = new(
         $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroEvaluationOrderKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
@@ -117,7 +117,7 @@ public class LanguageConversionsAndMacrosDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_macroCastAndShift = new(
+    internal static readonly DifferentialCase s_macroCastAndShift = new(
         $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroCastAndShiftKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
@@ -152,7 +152,7 @@ public class LanguageConversionsAndMacrosDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_macroInDeviceFunction = new(
+    internal static readonly DifferentialCase s_macroInDeviceFunction = new(
         $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroInDeviceFunctionKernel)}")
     {
         Shape = LaunchShape.ForRows(Rows, blockX: 64),
@@ -188,7 +188,7 @@ public class LanguageConversionsAndMacrosDifferentialTests
         },
     };
 
-    private static readonly DifferentialCase s_macroAcrossBarrierAndUsingStatic = new(
+    internal static readonly DifferentialCase s_macroAcrossBarrierAndUsingStatic = new(
         $"{nameof(LanguageConversionsAndMacrosDifferentialKernels)}.{nameof(LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroAcrossBarrierAndUsingStaticKernel)}")
     {
         Shape = LaunchShapes.Grid1D(gridX: 1, blockX: 64, rows: 64),

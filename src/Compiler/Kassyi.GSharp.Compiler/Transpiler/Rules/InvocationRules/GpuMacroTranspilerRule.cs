@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 /// <summary>
-/// Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions and the grid barrier of
-/// Gpu.SyncGrid(mode).
+/// Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions, the grid barrier of
+/// Gpu.SyncGrid(mode) and the null check of Gpu.NotNull(array).
 /// </summary>
 internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 {
@@ -17,7 +17,11 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
                 return true;
 
             case GpuMacroKind.Constant:
-                TranspileConstant(node, ref context);
+                TranspileConstant(node, call, ref context);
+                return true;
+
+            case GpuMacroKind.NotNull when call.GetArgument(node.ArgumentList.Arguments, 0) is { } array:
+                NotNullCallCheck.Append(NotNullCallCheck.Plan(node, array.Expression, ref context), ref context);
                 return true;
 
             case GpuMacroKind.SyncGrid when !call.HasBody:
@@ -118,19 +122,31 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
         context.Emitter.Writer.AppendLine();
     }
 
-    private static void TranspileConstant(InvocationExpressionSyntax node, ref TranspileContext context)
+    // <macro name>: the value of the constant string argument (a literal, nameof, a const field, a concatenation of
+    // constants). Any other argument is a failure (GSH0012), never an empty expression or the C# name of a field; an
+    // argument C# cannot bind is the C# compiler's error
+    private static void TranspileConstant(InvocationExpressionSyntax node, GpuMacroCall call,
+        ref TranspileContext context)
     {
-        if (node.ArgumentList.Arguments.Count == 1)
+        var model = context.Query.SemanticModel;
+        if (call.GetArgument(node.ArgumentList.Arguments, 0)?.Expression is not { } argument)
         {
-            var expr = node.ArgumentList.Arguments[0].Expression;
-            if (expr is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression))
-            {
-                context.Emitter.Writer.Append(literal.Token.ValueText);
-            }
-            else if (expr is IdentifierNameSyntax identifier)
-            {
-                context.Emitter.Writer.Append(identifier.Identifier.ValueText);
-            }
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
         }
+
+        if (model.GetSafeConstantValue(argument) is { HasValue: true, Value: string macroName })
+        {
+            context.Emitter.Writer.Append(macroName);
+            return;
+        }
+
+        if (model.GetTypeSymbol(argument) is { TypeKind: not TypeKind.Error } && call.Method is { } method)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.MacroArgumentMustBeConstant, argument,
+                method.Parameters[0].Name, method.Name);
+        }
+
+        context.Visitor.AppendUnsupportedPlaceholder(node);
     }
 }

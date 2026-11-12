@@ -12,7 +12,7 @@ public class GeneratorSadPathTests
         string testCasePath,
         string expectedErrorId)
     {
-        await RoslynTestUtility.TestGenerator(testCasePath)
+        await GeneratorTestRunner.TestGenerator(testCasePath)
                                .ReportsErrorsAsync(expectedErrorId);
     }
 
@@ -25,6 +25,8 @@ public class GeneratorSadPathTests
     [InlineData("GEN-52", "Analyzers/InvalidMappingSadPath.cs", "GSH0001")]
     // A struct field of a reference type other than an array (the generated code no longer states it as #error)
     [InlineData("GEN-33", "Analyzers/UnsupportedStructFieldsSadPath.cs", "GSH0078")]
+    // An object creation inside parentheses is found as well
+    [InlineData("SYN-91_92", "Analyzers/InvalidParenthesesSadPath.cs", "GSH0001")]
     public async Task Analyzer_InvalidKernel_ReportsTheGivenDiagnostic(
         string featureId,
         string testCasePath,
@@ -44,7 +46,7 @@ public class GeneratorSadPathTests
         string testCasePath,
         string expectedDiagnosticId)
     {
-        await RoslynTestUtility.TestGenerator(testCasePath)
+        await GeneratorTestRunner.TestGenerator(testCasePath)
                                .ReportsDiagnosticsAsync(expectedDiagnosticId);
     }
 
@@ -74,24 +76,15 @@ public class GeneratorSadPathTests
     [InlineData("GEN-17", "Analyzers/RefOutReassignmentSadPath.cs")]
     public async Task Generator_ValidConstruct_HasNoErrors(string featureId, string testCasePath)
     {
-        await RoslynTestUtility.TestGenerator(testCasePath)
+        await GeneratorTestRunner.TestGenerator(testCasePath)
                                .HasNoErrorsAsync();
-    }
-
-    [Theory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData("SYN-91_92", "Analyzers/InvalidParenthesesSadPath.cs")]
-    public async Task Generator_InvalidConstruct_HasErrors(string featureId, string testCasePath)
-    {
-        await RoslynTestUtility.TestGenerator(testCasePath)
-                               .HasErrorsAsync();
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task LocalFunctionCapture_CapturedVariablesInKernel_ReportsExpectedDiagnostic()
     {
-        await RoslynTestUtility.TestGenerator("Analyzers/LocalFunctionCaptureSadPath.cs")
+        await GeneratorTestRunner.TestGenerator("Analyzers/LocalFunctionCaptureSadPath.cs")
                                .ReportsErrorsAsync("CS8421");
     }
 }
