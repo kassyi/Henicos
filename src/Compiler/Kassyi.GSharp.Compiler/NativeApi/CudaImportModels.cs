@@ -7,21 +7,23 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// <param name="NamespaceName">The namespace name containing the method, or empty for global namespace.</param>
 /// <param name="ClassHeader">The pre-rendered class declaration header string.</param>
 /// <param name="MethodName">The name of the partial import method.</param>
+/// <param name="MessageName">The method as messages name it (<c>Type.Method</c>).</param>
 /// <param name="ModuleName">The fatbin module name specified in the attribute.</param>
 /// <param name="EntryPoint">The kernel entry point function name in CUDA C++.</param>
 /// <param name="PackContext">Whether parameters should be packed into a context struct before launching.</param>
 /// <param name="Signature">The pre-rendered C# method signature.</param>
-/// <param name="Parameters">The launch parameters of the method.</param>
+/// <param name="Plan">The kernel arguments and launch settings of the launcher.</param>
 internal readonly record struct CudaImportMethodModel(
     string ClassKey,
     string NamespaceName,
     string ClassHeader,
     string MethodName,
+    string MessageName,
     string ModuleName,
     string EntryPoint,
     bool PackContext,
     string Signature,
-    EquatableArray<ModuleKernelLaunchParameter> Parameters);
+    ModuleKernelLaunchPlan Plan);
 
 /// <summary>
 /// Value model representing a group of <c>[CudaImport]</c> methods in a single class declaration.

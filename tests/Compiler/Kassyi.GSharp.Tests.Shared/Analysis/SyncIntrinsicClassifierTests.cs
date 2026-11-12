@@ -72,7 +72,7 @@ public class SyncIntrinsicClassifierTests
         "BytePermute", "Constant", "ConvertToSharedMemory", "CopyAsync", "CopyAsyncCommitGroup", "CopyAsyncWaitAll",
         "CopyAsyncWaitGroup", "CountLeadingZeros", "CountTrailingZeros", "DotProduct4", "ForUnroll", "FunnelShiftLeft",
         "FunnelShiftRight", "GridStrideLoop", "InlinePtx", "LoadCachedGlobal", "Lop3", "MultiplyAddWide",
-        "MultiplyAddWideWithCarry", "MultiplyHigh", "MultiplyWide", "NanoSleep", "PopCount", "Prefetch",
+        "MultiplyAddWideWithCarry", "MultiplyHigh", "MultiplyWide", "NanoSleep", "NotNull", "PopCount", "Prefetch",
         "PrefetchUniform", "ReductionAdd", "Sad4", "SingleThread", "StoreCachedGlobal", "SubWithBorrow"
     ];
 

@@ -2,6 +2,7 @@
 using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Ir;
+using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
@@ -13,7 +14,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// </summary>
 internal static class IrEffectDifferences
 {
-    private const string Less = "IR finds less";
+    internal const string Less = "IR finds less";
     private const string More = "IR finds more";
 
     /// <summary>The reason of a difference at <paramref name="node"/>, or <see langword="null"/>.</summary>
@@ -55,7 +56,7 @@ internal static class IrEffectDifferences
             IrClassificationEquivalence.KnownPrefix + "an initializer writes the new value",
         // The syntax walk reads the location of a struct temporary (a call result, a creation) as memory
         IrFieldReference { Receiver: { Type.IsValueType: true } receiver }
-            when !IsStorage(receiver) && Differs(ir, old, reads: Memory()) =>
+            when !IrMemberEffects.IsVariable(receiver) && Differs(ir, old, reads: Memory()) =>
             IrClassificationEquivalence.KnownPrefix + "a field of a struct temporary reads no memory",
         _ => null
     };
@@ -71,11 +72,15 @@ internal static class IrEffectDifferences
         _ => null
     };
 
+    /// <summary>Whether the reads and writes of <paramref name="effects"/> lie within those of
+    /// <paramref name="bound"/>.</summary>
+    public static bool IsWithin(ExpressionEffects effects, ExpressionEffects bound) =>
+        effects.Reads.IsSubsetOf(bound.Reads) && effects.Writes.IsSubsetOf(bound.Writes);
+
     // narrow lies within wide, and wide within narrow plus exactly the given reads and writes
     private static bool Differs(ExpressionEffects narrow, ExpressionEffects wide, VariableSet reads = default,
         VariableSet writes = default) =>
-        narrow.Reads.IsSubsetOf(wide.Reads) && narrow.Writes.IsSubsetOf(wide.Writes) &&
-        wide.Reads.IsSubsetOf(narrow.Reads.Union(reads)) && wide.Writes.IsSubsetOf(narrow.Writes.Union(writes));
+        IsWithin(narrow, wide) && IsWithin(wide, narrow.Union(new ExpressionEffects(reads, writes)));
 
     private static VariableSet Memory() => new() { Memory = true };
 
@@ -105,10 +110,8 @@ internal static class IrEffectDifferences
 
     // Whether a call, an operator macro or a creation below the node may write memory, so that a missing write of
     // memory cannot be put down to the discard or the initializer
-    private static bool WritesMemoryBelow(IrNode node, Compilation compilation)
-    {
-        var writes = false;
-        IrNodeChildren.Visit(node, child => writes |= child switch
+    private static bool WritesMemoryBelow(IrNode node, Compilation compilation) =>
+        IrNodeChildren.Exists(node, child => child switch
         {
             IrCall call => call.Classification.Effect == DeviceFunctionEffect.Memory,
             IrUnary { Operator.Method: not null } or IrBinary { Operator.Method: not null } => true,
@@ -119,17 +122,4 @@ internal static class IrEffectDifferences
             IrPropertyReference => true,
             _ => false
         });
-        return writes;
-    }
-
-    private static bool IsStorage(IrExpression expression) => expression switch
-    {
-        IrVariableReference or IrElementReference => true,
-        IrFieldReference { Receiver: { } receiver } => !receiver.Type.IsValueType || IsStorage(receiver),
-        IrFieldReference => true,
-        IrPropertyReference property => property.Property.RefKind != RefKind.None,
-        IrCall call => call.Method.RefKind != RefKind.None,
-        IrConditional conditional => conditional.IsRef,
-        _ => false
-    };
 }
