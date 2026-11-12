@@ -126,6 +126,75 @@ public class CallTargetClassifierTests
         Assert.Equal(reportedAt, plan.ReportAt?.ToString());
     }
 
+    // The first invocation that binds to no method (nameof, dynamic, a function pointer) in the body of the named
+    // method of this file
+    private static CallTargetPlan ClassifyUntyped(string callerName, [CallerFilePath] string callerFilePath = "")
+    {
+        var (compilation, tree) = RoslynTestUtility.GetCallerSourceContext(callerFilePath);
+        var model = compilation.GetSemanticModel(tree);
+        var call = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .First(m => m.Identifier.ValueText == callerName)
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .First(i => model.GetSymbolInfo(i).Symbol is not IMethodSymbol);
+        return CallTargetClassifier.ClassifyUntyped(call, model);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ClassifyUntyped_NameofReached_ReturnsNameofStringAsGsh0002()
+    {
+        var plan = ClassifyUntyped(nameof(CallTargetCases.IndexesNameof));
+
+        Assert.Equal(CallTargetKind.NameofString, plan.Kind);
+        Assert.Equal("GSH0002", plan.Descriptor.Id);
+        Assert.Empty(plan.MessageArgs);
+    }
+
+    [Theory]
+    [InlineData(nameof(CallTargetCases.CallsDynamic), CallTargetClassifier.UnboundCall)]
+    [InlineData(nameof(CallTargetCases.CallsFunctionPointer), CallTargetClassifier.FunctionPointerCall)]
+    [Scenario(TestScenario.SadPath)]
+    public void ClassifyUntyped_CallWithoutMethod_ReturnsUnboundAsGsh0003(string caller, string syntax)
+    {
+        var plan = ClassifyUntyped(caller);
+
+        Assert.Equal(CallTargetKind.Unbound, plan.Kind);
+        Assert.Equal("GSH0003", plan.Descriptor.Id);
+        Assert.Equal(new object[] { syntax }, plan.MessageArgs);
+    }
+
+    // A prelude helper that lowering writes into a tree of its own, with no original span: written as it is
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ClassifyUntyped_CallSynthesizedByLowering_ReturnsSynthesized()
+    {
+        var (_, _, model) = FindCall(nameof(CallTargetCases.CallsMarked), nameof(CallTargetHelpers.Marked));
+        var synthesized = (InvocationExpressionSyntax)SyntaxFactory.ParseExpression("__gsharp_grid_stride_step()");
+
+        var plan = CallTargetClassifier.ClassifyUntyped(synthesized, model);
+
+        Assert.Equal(CallTargetKind.Synthesized, plan.Kind);
+        Assert.False(plan.IsFailure);
+    }
+
+    // A name that does not exist is the C# compiler's error: no failure of G#, only the placeholder
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ClassifyUntyped_NameCSharpCannotBind_ReturnsNotCSharpWithoutFailure()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation("static class C { static int M() => Undefined(1); }");
+        var tree = compilation.SyntaxTrees.Last();
+        var call = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+
+        var plan = CallTargetClassifier.ClassifyUntyped(call, compilation.GetSemanticModel(tree));
+
+        Assert.Equal(CallTargetKind.NotCSharp, plan.Kind);
+        Assert.False(plan.IsFailure);
+    }
+
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Descriptor_NotAFailure_Throws()
@@ -232,4 +301,10 @@ public static class CallTargetCases
     public static long CallsLongMax(long a) => Math.Max(a, 3L);
 
     public static float CallsCbrt(float a) => MathF.Cbrt(a);
+
+    public static int IndexesNameof() => nameof(CallTargetCases)[0];
+
+    public static int CallsDynamic(dynamic d) => d.Next();
+
+    public static unsafe int CallsFunctionPointer(delegate*<int, int> f) => f(1);
 }

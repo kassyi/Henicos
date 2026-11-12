@@ -15,6 +15,7 @@ classes:
 methods:
   - name: Fill
     nativeName: __gsharp_wmma_fill
+    unsupported: [Cpu]
     summary: Fills all elements of a warp matrix A fragment with a scalar value across the warp.
     typeParameters:
       - name: TShape
@@ -37,6 +38,7 @@ methods:
 
   - name: Fill
     nativeName: __gsharp_wmma_fill
+    unsupported: [Cpu]
     summary: Fills all elements of a warp matrix B fragment with a scalar value across the warp.
     typeParameters:
       - name: TShape
@@ -59,6 +61,7 @@ methods:
 
   - name: Fill
     nativeName: __gsharp_wmma_fill
+    unsupported: [Cpu]
     summary: Fills all elements of a warp accumulator fragment with a scalar value across the warp.
     typeParameters:
       - name: TShape
@@ -78,6 +81,7 @@ methods:
 
   - name: Load
     nativeName: __gsharp_wmma_load
+    unsupported: [Cpu]
     summary: Synchronously loads a matrix A tile from global or shared memory into a warp fragment across all threads of the warp.
     typeParameters:
       - name: TShape
@@ -103,6 +107,7 @@ methods:
 
   - name: Load
     nativeName: __gsharp_wmma_load
+    unsupported: [Cpu]
     summary: Synchronously loads a matrix B tile from global or shared memory into a warp fragment across all threads of the warp.
     typeParameters:
       - name: TShape
@@ -128,6 +133,7 @@ methods:
 
   - name: Load
     nativeName: __gsharp_wmma_load
+    unsupported: [Cpu]
     summary: Synchronously loads an accumulator matrix tile from global or shared memory into a warp fragment across all threads of the warp.
     typeParameters:
       - name: TShape
@@ -153,6 +159,7 @@ methods:
 
   - name: Store
     nativeName: __gsharp_wmma_store
+    unsupported: [Cpu]
     summary: Synchronously stores a warp accumulator fragment to global or shared memory across all threads of the warp.
     typeParameters:
       - name: TShape
@@ -178,6 +185,7 @@ methods:
 
   - name: MultiplyAccumulate
     nativeName: __gsharp_wmma_mma
+    unsupported: [Cpu]
     summary: Performs a warp-synchronous Tensor Core matrix multiply-accumulate operation (D = A * B + C) across all threads of the warp.
     typeParameters:
       - name: TShape

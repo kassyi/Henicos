@@ -60,6 +60,9 @@ public class CudaImportGeneratorTests
             ModuleKernelParameterTypes.ManagedTypeReason + "\");",
             text);
         Assert.Contains("cuLaunchKernel", MethodBody(source, "public static partial void Passable("));
+        Assert.Contains("cuLaunchKernel", MethodBody(source, "public static partial void Counted("));
+        Assert.Contains("cuLaunchKernel", MethodBody(source, "public static partial void Written("));
+        Assert.Contains("cuLaunchKernel", MethodBody(source, "public static partial void Packed("));
         var errors = output.GetDiagnostics()
             .Where(static d => d.Severity == DiagnosticSeverity.Error || d.Id == "CS8500")
             .Select(static d => d.ToString())

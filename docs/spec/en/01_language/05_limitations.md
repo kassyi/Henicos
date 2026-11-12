@@ -74,8 +74,10 @@ that a project built only for CUDA accepts a warp shuffle in the places that GSH
 
 Other differences of the CPU paths:
 
-* `Gpu.InlinePtx` has no CPU equivalent: [GSH0054](../03_bcl_api/diagnostics/GSH0054.md) warns, and the call fails at
-  run time.
+* `Gpu.InlinePtx`, mbarrier, WMMA and `Gpu.ConvertToSharedMemory` have no CPU equivalent:
+  [GSH0054](../03_bcl_api/diagnostics/GSH0054.md) warns, and the call fails at run time.
+* `Gpu.SmId()` returns 0, and `Gpu.Clock()` / `Gpu.Clock64()` count nanoseconds of the monotonic clock instead of the
+  cycles of a multiprocessor.
 * Two `SharedMemory<T>` declarations on one line share a buffer in managed execution
   ([GSH0063](../03_bcl_api/diagnostics/GSH0063.md)).
 * A thread that is inside more than 16 thread-dependent branches and loops at once, in methods that reach
@@ -154,7 +156,7 @@ examples:
 | [**GSH0051**](../03_bcl_api/diagnostics/GSH0051.md) | Error | Cannot take ownership of a reference parameter | Triggered when `[TakesOwnership]` is applied to a `ref` or `out` parameter. |
 | [**GSH0052**](../03_bcl_api/diagnostics/GSH0052.md) | Error | Native API definition is not valid YAML | Triggered when a YAML native API definition marked with `GSharpApi="true"` cannot be parsed. |
 | [**GSH0053**](../03_bcl_api/diagnostics/GSH0053.md) | Error | Native API definition violates the schema | Triggered when a YAML native API definition is well-formed but does not satisfy the G# native API schema. |
-| [**GSH0054**](../03_bcl_api/diagnostics/GSH0054.md) | Warning | Gpu.InlinePtx is not supported by the target dialect | Triggered when `Gpu.InlinePtx` is transpiled for a dialect that cannot embed inline assembly, such as the CPU dialect; the call is replaced with a run-time failure. |
+| [**GSH0054**](../03_bcl_api/diagnostics/GSH0054.md) | Warning | An intrinsic is not implemented by the target dialect | Triggered when GPU code calls an intrinsic that the target dialect does not implement, such as `Gpu.InlinePtx`, mbarrier or WMMA on the CPU dialect; the call is replaced with a run-time failure. |
 | [**GSH0055**](../03_bcl_api/diagnostics/GSH0055.md) | Error | Identifier containing '__' is reserved | Triggered when an identifier declared in GPU code, or a member of a struct used there, contains a double underscore. |
 | [**GSH0056**](../03_bcl_api/diagnostics/GSH0056.md) | Error | GPU method name is a C++ keyword (Deprecated) | No longer reported: a `[GpuKernel]` or `[GpuDeviceFunction]` method whose name is a C++/CUDA keyword is renamed automatically. |
 | [**GSH0057**](../03_bcl_api/diagnostics/GSH0057.md) | Error | Malformed trusted key line | Triggered when a line in `trusted_keys.txt` is not a valid key followed by a matching fnv1a64 fingerprint. |

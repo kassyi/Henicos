@@ -23,9 +23,13 @@ internal static class ModuleBindingPlanner
             }
             else
             {
-                // A YAML binding has no [In] / [Out]: an array is copied both ways
+                // A YAML binding has no [In] / [Out]: an array is copied both ways; an 'out' value is not copied in
+                // and an 'in' value is not copied back
                 builder.AddArgument(new ModuleKernelArgument(parameter.Name, type.Kind,
-                    type.ElementTypeName ?? type.TypeName, CopyIn: true, CopyOut: true));
+                    type.ElementTypeName ?? type.TypeName,
+                    CopyIn: type.RefKind != RefKind.Out,
+                    CopyOut: type.RefKind != RefKind.In,
+                    AllowsNull: type.AllowsNull));
             }
         }
 

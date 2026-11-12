@@ -47,6 +47,15 @@ public static unsafe partial class ImportedKernels
 
     [CudaImport("k.fatbin")]
     public static partial void Many(int __gsharp_d_count, params float[] values);
+
+    [CudaImport("k.fatbin")]
+    public static partial void ByReference(ref float[] data, out string label, ref int* counts, ref uint gridDimX,
+        out AutoPair autoPair);
+
+#nullable enable
+    [CudaImport("k.fatbin", PackContext = true)]
+    public static partial void Packed(ref int total, [In] float[,]? grid, [Out] float[]? values, out double result,
+        in Grid seed);
 }
 
 [StructLayout(LayoutKind.Auto)]
