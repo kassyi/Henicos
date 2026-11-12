@@ -73,16 +73,17 @@ public partial class EmissionShapeTests
     public void PointerLauncher_RejectsOnlyProxiesThatDescribeNoArray()
     {
         var launcher = PointerLauncher(Generate("PointerLaunchShapeKernels", "Cuda"), "LaunchEveryKindKernelPtr");
-        var launch = launcher.IndexOf("CudaContextScope()", StringComparison.Ordinal);
+        var launch = launcher.IndexOf("CudaContextScope __gsharp", StringComparison.Ordinal);
 
         foreach (var name in (string[])["values", "extra", "words"])
         {
             AssertCheckBeforeLaunch(launcher, launch,
                 $"if ({name}.Length < 0){{",
-                $"throw new global::System.ArgumentOutOfRangeException(nameof({name}), {name}.Length, \"The array length must not be negative.\");",
+                $"throw new global::System.ArgumentOutOfRangeException(\"{name}\", {name}.Length, " +
+                "\"The array length must not be negative.\");",
                 "}",
                 $"if ({name}.Data == global::System.IntPtr.Zero && {name}.Length != 0){{",
-                $"throw new global::System.ArgumentException(\"A null array has no elements, so its length must be 0.\", nameof({name}));",
+                $"throw new global::System.ArgumentException(\"A null array has no elements, so its length must be 0.\", \"{name}\");",
                 "}");
         }
 

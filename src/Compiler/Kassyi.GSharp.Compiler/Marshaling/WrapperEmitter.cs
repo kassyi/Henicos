@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class WrapperEmitter
 {
     private const string NegativeLengthMessage = "The array length must not be negative.";
-    private const string EmptySpanMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
+    private const string EmptyArrayMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
     private const string InconsistentProxyMessage = "A null array has no elements, so its length must be 0.";
 
     internal readonly struct InteropParameterInfo(
@@ -411,52 +411,52 @@ internal static class WrapperEmitter
         var name = shape.Identifier;
         if (shape.IsOptional)
         {
-            // if (<name> is { <Length or Count>: 0 }) { <name> = null; }
-            writer.Append("if ");
-            using (writer.Parentheses())
-            {
-                writer.Append($"{name} is {{ {shape.LengthMember}: 0 }}");
-            }
-
-            using (writer.Scope())
-            {
-                writer.AppendLine($"{name} = null;");
-            }
-
+            WriteOptionalArrayCheck(writer, name, shape.LengthMember);
             return;
         }
 
         if (shape.Container == ArrayContainerKind.ImmutableArray)
         {
-            // if (<name>.IsDefault) { throw new ArgumentNullException(nameof(<name>)); }
-            writer.Append("if ");
-            using (writer.Parentheses())
-            {
-                writer.Append($"{name}.IsDefault");
-            }
-
-            using (writer.Scope())
-            {
-                writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
-            }
+            WriteNullCheck(writer, shape.Name, $"{name}.IsDefault");
+            WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);
+            return;
         }
 
-        // if (<length> == 0) { throw new ArgumentException(<message>, nameof(<name>)); }
+        WriteEmptyArrayCheck(writer, shape.LengthExpression, shape.Name);
+    }
+
+    private static void WriteOptionalArrayCheck(SourceWriter writer, string name, string lengthMember)
+    {
         writer.Append("if ");
         using (writer.Parentheses())
         {
-            writer.Append(shape.Container == ArrayContainerKind.ImmutableArray
-                ? $"{name}.Length == 0"
-                : $"{shape.LengthExpression} == 0");
+            writer.Append($"{name} is {{ {lengthMember}: 0 }}");
         }
 
         using (writer.Scope())
         {
-            writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptySpanMessage}\", nameof({name}));");
+            writer.AppendLine($"{name} = null;");
         }
     }
 
-    // if (<name>.<field path> is null) { throw new ArgumentNullException(nameof(<name>), "<name>.<field path> is null, ..."); }
+    // if (<condition>) { throw new ArgumentNullException("<parameter name>"); }
+    // [WHY] The parameter name is a string literal: nameof(<name>) would call a parameter or method named nameof
+    private static void WriteNullCheck(SourceWriter writer, string parameterName, string condition)
+    {
+        writer.Append("if ");
+        using (writer.Parentheses())
+        {
+            writer.Append(condition);
+        }
+
+        using (writer.Scope())
+        {
+            writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}({Literal(parameterName)});");
+        }
+    }
+
+    // if (<name>.<field path> is null)
+    // { throw new ArgumentNullException("<name>", "<name>.<field path> is null, ..."); }
     // if (<name>.<field path>.Data == IntPtr.Zero) { ... }   (the shadow struct of the pointer launcher)
     // [WHY] The kernel reads a non-nullable array field of a by-value struct argument without a null check
     // (NonNullProof); the launcher enforces the annotation of the field (#1409)
@@ -482,10 +482,29 @@ internal static class WrapperEmitter
 
                 using (writer.Scope())
                 {
+                    var message = Literal($"{shape.Name}.{path} is null, but the field is not nullable.");
                     writer.AppendLine(
-                        $"throw new global::System.ArgumentNullException(nameof({name}), \"{name}.{path} is null, but the field is not nullable.\");");
+                        $"throw new {HostTypeNames.ArgumentNullException}({Literal(shape.Name)}, {message});");
                 }
             }
+        }
+    }
+
+    private static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
+
+    // if (<length> == 0) { throw new ArgumentException(<message>, "<parameter name>"); }
+    private static void WriteEmptyArrayCheck(SourceWriter writer, string length, string parameterName)
+    {
+        writer.Append("if ");
+        using (writer.Parentheses())
+        {
+            writer.Append($"{length} == 0");
+        }
+
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                $"throw new {HostTypeNames.ArgumentException}(\"{EmptyArrayMessage}\", {Literal(parameterName)});");
         }
     }
 
@@ -514,8 +533,8 @@ internal static class WrapperEmitter
 
             using (writer.Scope())
             {
-                writer.AppendLine(
-                    $"throw new global::System.ArgumentOutOfRangeException(nameof({name}), {name}.Length, \"{NegativeLengthMessage}\");");
+                writer.Append($"throw new {HostTypeNames.ArgumentOutOfRangeException}({Literal(shape.Name)}, ");
+                writer.AppendLine($"{name}.Length, \"{NegativeLengthMessage}\");");
             }
 
             writer.Append("if ");
@@ -527,7 +546,7 @@ internal static class WrapperEmitter
             using (writer.Scope())
             {
                 writer.AppendLine(
-                    $"throw new global::System.ArgumentException(\"{InconsistentProxyMessage}\", nameof({name}));");
+                    $"throw new {HostTypeNames.ArgumentException}(\"{InconsistentProxyMessage}\", {Literal(shape.Name)});");
             }
         }
 

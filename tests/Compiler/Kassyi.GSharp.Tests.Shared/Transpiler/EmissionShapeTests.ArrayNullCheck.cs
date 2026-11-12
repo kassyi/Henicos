@@ -167,7 +167,8 @@ public partial class EmissionShapeTests
 
         Assert.Contains($"if ({test})", launcher, StringComparison.Ordinal);
         Assert.Contains(
-            "throw new global::System.ArgumentNullException(nameof(p), \"p.Data is null, but the field is not nullable.\");",
+            "throw new global::System.ArgumentNullException(\"p\", " +
+            "\"p.Data is null, but the field is not nullable.\");",
             launcher,
             StringComparison.Ordinal);
         Assert.DoesNotContain("h.Data", launcher, StringComparison.Ordinal);

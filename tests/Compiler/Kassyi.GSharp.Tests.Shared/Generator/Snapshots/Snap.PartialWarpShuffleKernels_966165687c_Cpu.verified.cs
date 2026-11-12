@@ -85,7 +85,7 @@ return false;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(91,43)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(91,43)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -303,7 +303,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, 32, "PartialWarpShuffleKernels.cs(15,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, 32, "PartialWarpShuffleKernels.cs(15,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -325,15 +325,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ShuffleDownKernel", "it reaches Warp.ShuffleDownSync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ShuffleDownKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel();
@@ -343,7 +343,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -442,7 +442,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleDownKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel", __gsharp_dll_path);
+__gsharp_delegate_ShuffleDownKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleDownKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -617,7 +617,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.laneMask, 32, "PartialWarpShuffleKernels.cs(23,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.laneMask, 32, "PartialWarpShuffleKernels.cs(23,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -639,15 +639,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ShuffleXorKernel", "it reaches Warp.ShuffleXorSync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ShuffleXorKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel();
@@ -657,7 +657,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -756,7 +756,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleXorKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel", __gsharp_dll_path);
+__gsharp_delegate_ShuffleXorKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleXorKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -935,7 +935,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.srcLane, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(31,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.srcLane, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(31,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -957,15 +957,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ShuffleIdxKernel", "it reaches Warp.ShuffleSync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ShuffleIdxKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel();
@@ -975,7 +975,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -1074,7 +1074,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleIdxKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel", __gsharp_dll_path);
+__gsharp_delegate_ShuffleIdxKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleIdxKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleIdxKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -1249,7 +1249,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 1u, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(39,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 1u, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(39,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -1271,15 +1271,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ShuffleDownWidthKernel", "it reaches Warp.ShuffleDownSync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ShuffleDownWidthKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel();
@@ -1289,7 +1289,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -1388,7 +1388,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleDownWidthKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel", __gsharp_dll_path);
+__gsharp_delegate_ShuffleDownWidthKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleDownWidthKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleDownWidthKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -1567,7 +1567,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.laneMask, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(47,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.laneMask, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(47,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -1589,15 +1589,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ShuffleXorWidthKernel", "it reaches Warp.ShuffleXorSync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ShuffleXorWidthKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel();
@@ -1607,7 +1607,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -1706,7 +1706,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleXorWidthKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel", __gsharp_dll_path);
+__gsharp_delegate_ShuffleXorWidthKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleXorWidthKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleXorWidthKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -1885,7 +1885,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(55,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, __gsharp_ctx.delta, __gsharp_ctx.width, "PartialWarpShuffleKernels.cs(55,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -1907,15 +1907,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ShuffleUpWidthKernel", "it reaches Warp.ShuffleUpSync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ShuffleUpWidthKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel();
@@ -1925,7 +1925,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -2024,7 +2024,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleUpWidthKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel", __gsharp_dll_path);
+__gsharp_delegate_ShuffleUpWidthKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleUpWidthKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleUpWidthKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -2195,7 +2195,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 3, 8, "PartialWarpShuffleKernels.cs(64,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 3, 8, "PartialWarpShuffleKernels.cs(64,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -2217,15 +2217,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ShuffleNamedArgumentsKernel", "it reaches Warp.ShuffleSync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ShuffleNamedArgumentsKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel();
@@ -2235,7 +2235,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -2334,7 +2334,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleNamedArgumentsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel", __gsharp_dll_path);
+__gsharp_delegate_ShuffleNamedArgumentsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleNamedArgumentsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedArgumentsKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -2505,7 +2505,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 3, 8, "PartialWarpShuffleKernels.cs(73,13)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.v, 3, 8, "PartialWarpShuffleKernels.cs(73,13)");
 __gsharp_ctx.v = __gsharp_warp_temp_0;
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_ctx.v;
 __gsharp_ctx.__gsharp_state = -1;
@@ -2527,15 +2527,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ShuffleNamedValueKernel", "it reaches Warp.ShuffleSync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ShuffleNamedValueKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel();
@@ -2545,7 +2545,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -2644,7 +2644,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleNamedValueKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel", __gsharp_dll_path);
+__gsharp_delegate_ShuffleNamedValueKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShuffleNamedValueKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ShuffleNamedValueKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -2817,7 +2817,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(80,33)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(80,33)");
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -2838,15 +2838,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ActiveMaskKernel", "it reaches Warp.ActiveMask(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ActiveMaskKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel();
@@ -2856,7 +2856,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -2955,7 +2955,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ActiveMaskKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel", __gsharp_dll_path);
+__gsharp_delegate_ActiveMaskKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ActiveMaskKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -3177,15 +3177,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ActiveMaskViaDeviceKernel", "it reaches Warp.ActiveMask(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ActiveMaskViaDeviceKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskViaDeviceKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskViaDeviceKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskViaDeviceKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskViaDeviceKernel();
@@ -3195,7 +3195,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -3294,7 +3294,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ActiveMaskViaDeviceKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskViaDeviceKernel", __gsharp_dll_path);
+__gsharp_delegate_ActiveMaskViaDeviceKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ActiveMaskViaDeviceKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMaskViaDeviceKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -3467,7 +3467,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(97,68)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 0, "PartialWarpShuffleKernels.cs(97,68)");
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.Y * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -3488,15 +3488,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.ActiveMask2DKernel", "it reaches Warp.ActiveMask(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.ActiveMask2DKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMask2DKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMask2DKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMask2DKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMask2DKernel();
@@ -3506,7 +3506,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -3605,7 +3605,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ActiveMask2DKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMask2DKernel", __gsharp_dll_path);
+__gsharp_delegate_ActiveMask2DKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ActiveMask2DKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__ActiveMask2DKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -3779,7 +3779,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_match_any_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, "PartialWarpShuffleKernels.cs(104,33)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_match_any_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, "PartialWarpShuffleKernels.cs(104,33)");
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -3800,15 +3800,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.MatchAnyCallerOutsideMaskKernel", "it reaches Gpu.MatchAnySync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.MatchAnyCallerOutsideMaskKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAnyCallerOutsideMaskKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAnyCallerOutsideMaskKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAnyCallerOutsideMaskKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAnyCallerOutsideMaskKernel();
@@ -3818,7 +3818,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -3917,7 +3917,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_MatchAnyCallerOutsideMaskKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAnyCallerOutsideMaskKernel", __gsharp_dll_path);
+__gsharp_delegate_MatchAnyCallerOutsideMaskKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_MatchAnyCallerOutsideMaskKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAnyCallerOutsideMaskKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -4095,7 +4095,7 @@ return;
 
 case 1:
 {
-var __gsharp_warp_temp_0 = __gsharp_warp_match_all_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, ref __gsharp_ctx.pred, "PartialWarpShuffleKernels.cs(112,33)");
+uint __gsharp_warp_temp_0 = __gsharp_warp_match_all_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.mask, __gsharp_ctx.v, ref __gsharp_ctx.pred, "PartialWarpShuffleKernels.cs(112,33)");
 __gsharp_ctx.result[global::Kassyi.GSharp.Core.ThreadIndex.X] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -4116,15 +4116,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PartialWarpShuffleKernels.MatchAllCallerOutsideMaskKernel", "it reaches Gpu.MatchAllSync(), and the C# execution runs one GPU thread at a time");
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PartialWarpShuffleKernels.MatchAllCallerOutsideMaskKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAllCallerOutsideMaskKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAllCallerOutsideMaskKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAllCallerOutsideMaskKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAllCallerOutsideMaskKernel();
@@ -4134,7 +4134,7 @@ for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.
 __gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -4233,7 +4233,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_MatchAllCallerOutsideMaskKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAllCallerOutsideMaskKernel", __gsharp_dll_path);
+__gsharp_delegate_MatchAllCallerOutsideMaskKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_MatchAllCallerOutsideMaskKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Transpiler__PartialWarpShuffleKernels__MatchAllCallerOutsideMaskKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);

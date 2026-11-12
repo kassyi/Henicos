@@ -19,6 +19,11 @@ internal readonly record struct KernelParameterShape
     /// <summary>The parameter name as a C# identifier, which every reference to the argument uses.</summary>
     public string Identifier { get; init; }
 
+    /// <summary>
+    /// The parameter name as metadata spells it (<c>class</c> for <c>@class</c>), which the argument checks report.
+    /// </summary>
+    public string Name { get; init; }
+
     public RefKind RefKind { get; init; }
 
     public KernelParameterKind Kind { get; init; }
@@ -226,6 +231,7 @@ internal readonly record struct KernelParameterShape
         {
             Ordinal = parameter.Ordinal,
             Identifier = parameter.Name.ToCSharpIdentifier(),
+            Name = parameter.Name,
             RefKind = parameter.RefKind,
             Kind = parameter.RefKind is RefKind.Ref or RefKind.Out
                 ? KernelParameterKind.RefScalar

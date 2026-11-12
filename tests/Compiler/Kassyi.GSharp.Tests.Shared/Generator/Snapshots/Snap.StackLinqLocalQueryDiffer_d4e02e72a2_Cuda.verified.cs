@@ -17,10 +17,11 @@ private static byte[]? s_fatbin;
 /// </summary>
 public static byte[] GetFatbin()
 {
-var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
 if (fatbin is not null) return fatbin;
-var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location)
+?? global::System.AppContext.BaseDirectory;
+string fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
 {
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
@@ -79,6 +80,13 @@ public partial class StackLinqLocalQueryDifferentialKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1830470506u, "StackLinqLocalQueryDifferentialKernels.cs", 30, 47, "LocalQueryWithLambdaStagesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(995834138u, "StackLinqLocalQueryDifferentialKernels.cs", 46, 9, "LocalQueryWithLambdaStagesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(941059528u, "StackLinqLocalQueryDifferentialKernels.cs", 56, 9, "LocalQueryWithLambdaStagesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1635741770u, "StackLinqLocalQueryDifferentialKernels.cs", 59, 9, "LocalQueryWithLambdaStagesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(35528186u, "StackLinqLocalQueryDifferentialKernels.cs", 61, 21, "LocalQueryWithLambdaStagesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(737418608u, "StackLinqLocalQueryDifferentialKernels.cs", 63, 9, "LocalQueryWithLambdaStagesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1693076544u, "StackLinqLocalQueryDifferentialKernels.cs", 67, 9, "LocalQueryWithLambdaStagesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1168391676u, "StackLinqLocalQueryDifferentialKernels.cs", 67, 32, "LocalQueryWithLambdaStagesKernel", "Sequence contains no elements"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -89,7 +97,7 @@ public static partial class AotContexts
 public const string LocalQueryWithLambdaStagesKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqLocalQueryDifferentialKernels__LocalQueryWithLambdaStagesKernel(GSharpArray<int> __gsharp_id_0_xs, GSharpArray<int> __gsharp_id_1_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_t,4),4)>__gsharp_id_0_xs.length)
+if(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_t,4),4)>__gsharp_array_ref(__gsharp_id_0_xs, 1830470506u).length)
 {
 return;
 }
@@ -101,7 +109,7 @@ __gsharp_id_5_calls=__gsharp_add_i32(__gsharp_id_5_calls,1);
 return __gsharp_id_7_x&0xFFFF;
 }
 ),0);
-__gsharp_id_1_r[__gsharp_id_4_o+0]=([&]() {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_4_o+0, 995834138u)=([&]() {
 auto __gsharp_seq_0 = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(__gsharp_id_6_none);
 auto __gsharp_seq_1 = (__gsharp_mul_i32(__gsharp_id_5_calls,1000));
 return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
@@ -112,7 +120,7 @@ __gsharp_id_8_calls2=__gsharp_add_i32(__gsharp_id_8_calls2,1);
 return __gsharp_id_10_x&0xFFFF;
 }
 ),2);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,1)]=([&]() {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,1), 941059528u)=([&]() {
 auto __gsharp_seq_2 = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(__gsharp_id_9_two);
 auto __gsharp_seq_3 = (__gsharp_mul_i32(__gsharp_id_8_calls2,1000));
 return __gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
@@ -121,13 +129,13 @@ auto __gsharp_id_11_positive = Kassyi::ZeroAlloc::Linq::StackLinq::Where(Kassyi:
 return __gsharp_id_12_x>0;
 }
 );
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,2)]=Kassyi::ZeroAlloc::Linq::StackLinq::Count(__gsharp_id_11_positive);
-int __gsharp_id_13_bound = __gsharp_id_0_xs[__gsharp_mul_i32(__gsharp_id_2_t,4)]>>1;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,2), 1635741770u)=Kassyi::ZeroAlloc::Linq::StackLinq::Count(__gsharp_id_11_positive);
+int __gsharp_id_13_bound = __gsharp_array_at(__gsharp_id_0_xs, __gsharp_mul_i32(__gsharp_id_2_t,4), 35528186u)>>1;
 auto __gsharp_id_14_above = Kassyi::ZeroAlloc::Linq::StackLinq::Where(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_3_slice),[&](auto __gsharp_id_15_x) {
 return __gsharp_id_15_x>__gsharp_id_13_bound;
 }
 );
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,3)]=Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::Select(__gsharp_id_14_above,[&](auto __gsharp_id_16_x) {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,3), 737418608u)=Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::Select(__gsharp_id_14_above,[&](auto __gsharp_id_16_x) {
 return __gsharp_id_16_x&0xFF;
 }
 ));
@@ -139,7 +147,7 @@ return __gsharp_mul_i32(__gsharp_id_19_x&0xFFF,__gsharp_id_17_k);
 return (__gsharp_id_20_x&1)==1;
 }
 );
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_4_o,4)]=(Kassyi::ZeroAlloc::Linq::StackLinq::Any(__gsharp_id_18_odd)?Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_18_odd,1168391676u):(-1));
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,4), 1693076544u)=(Kassyi::ZeroAlloc::Linq::StackLinq::Any(__gsharp_id_18_odd)?Kassyi::ZeroAlloc::Linq::StackLinq::Max(__gsharp_id_18_odd,1168391676u):(-1));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LocalQueryWithLambdaStagesKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqLocalQueryDifferentialKernels__LocalQueryWithLambdaStagesKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -150,18 +158,6 @@ public static void WarmupFunctionPointerLocalQueryWithLambdaStagesKernel() => gl
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchLocalQueryWithLambdaStagesKernel(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (xs is null){
-throw new global::System.ArgumentNullException(nameof(xs));
-}
-if (xs.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(xs));
-}
-if (r is null){
-throw new global::System.ArgumentNullException(nameof(r));
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -170,7 +166,7 @@ global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.__gsharp_hfunc_LocalQueryWithLambdaStagesKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel");
@@ -181,10 +177,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: xs
-int __gsharp_size_0 = checked(xs.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((xs?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = xs.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(xs) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (xs?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -198,10 +194,10 @@ __gsharp_proxy_0[0] = __gsharp_d_0;
 }
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal array: r
-int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Int32));
+int __gsharp_size_1 = checked((r?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+__gsharp_proxy_1[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(r) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_1 + 1))[0] = (r?.Length ?? 0);
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 if (__gsharp_size_1 > 0)
 {
@@ -267,29 +263,23 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 public static unsafe void LaunchLocalQueryWithLambdaStagesKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy xs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (xs.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(xs), xs.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("xs", xs.Length, "The array length must not be negative.");
 }
-if (xs.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(xs));
-}
-if (xs.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(xs));
+if (xs.Data == global::System.IntPtr.Zero && xs.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "xs");
 }
 if (r.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("r", r.Length, "The array length must not be negative.");
 }
-if (r.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(r));
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel", "LaunchLocalQueryWithLambdaStagesKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchLocalQueryWithLambdaStagesKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.__gsharp_hfunc_LocalQueryWithLambdaStagesKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqLocalQueryDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel");

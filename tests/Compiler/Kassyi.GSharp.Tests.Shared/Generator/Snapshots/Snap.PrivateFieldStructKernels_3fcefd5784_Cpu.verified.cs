@@ -118,12 +118,12 @@ public static unsafe void Marshal_PfHolder(ref global::Kassyi.GSharp.Tests.Share
 native = default;
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>());
 if (!AotContexts.PfHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.PfHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
 native._scale = host._scale;
 if (host._data != null)
 {
-var pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException(nameof(allocatedPtrs));
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host._data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host._data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
 native._data.Data = handle.AddrOfPinnedObject();
 native._data.Length = host._data.Length;
@@ -131,13 +131,13 @@ native._data.Length = host._data.Length;
 Marshal_PfInner(ref host._inner, ref native._inner, allocatedPtrs, hStream);
 if (host._items != null)
 {
-var pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException(nameof(allocatedPtrs));
-var shadow = new AotContexts.PfInner[host._items.Length];
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+AotContexts.PfInner[] shadow = new AotContexts.PfInner[host._items.Length];
 for (int i = 0; i < host._items.Length; i++)
 {
 Marshal_PfInner(ref host._items[i], ref shadow[i], allocatedPtrs, hStream);
 }
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(shadow, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(shadow, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
 native._items.Data = handle.AddrOfPinnedObject();
 native._items.Length = host._items.Length;
@@ -154,12 +154,12 @@ public static unsafe void Unmarshal_PfHolder(ref global::Kassyi.GSharp.Tests.Sha
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>());
 if (!AotContexts.PfHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.PfHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
 host._scale = native._scale;
 Unmarshal_PfInner(ref host._inner, ref native._inner, hStream);
 if (host._items != null && native._items.Data != global::System.IntPtr.Zero)
 {
-var shadow = (AotContexts.PfInner*)native._items.Data;
+AotContexts.PfInner* shadow = (AotContexts.PfInner*)native._items.Data;
 for (int i = 0; i < host._items.Length; i++)
 {
 Unmarshal_PfInner(ref host._items[i], ref shadow[i], hStream);
@@ -177,7 +177,7 @@ public static void CopyArrays_PfHolder(ref global::Kassyi.GSharp.Tests.Shared.Sy
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>());
 if (!AotContexts.PfHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.PfHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
 if (host._data != null)
 {
 host._data = (global::System.Int32[])host._data.Clone();
@@ -196,7 +196,7 @@ public static bool HoldsArray_PfHolder(global::Kassyi.GSharp.Tests.Shared.Syntax
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>());
 if (!AotContexts.PfHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.PfHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
 if (global::System.Object.ReferenceEquals(host._data, array))
 {
 return true;
@@ -248,11 +248,11 @@ public static unsafe void Marshal_PfInner(ref global::Kassyi.GSharp.Tests.Shared
 native = default;
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>());
 if (!AotContexts.PfInner.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.PfInner.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
 if (host._values != null)
 {
-var pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException(nameof(allocatedPtrs));
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host._values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host._values, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
 native._values.Data = handle.AddrOfPinnedObject();
 native._values.Length = host._values.Length;
@@ -263,14 +263,14 @@ public static unsafe void Unmarshal_PfInner(ref global::Kassyi.GSharp.Tests.Shar
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>());
 if (!AotContexts.PfInner.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.PfInner.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
 host._bias = native._bias;
 }
 public static void CopyArrays_PfInner(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner hostValue)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>());
 if (!AotContexts.PfInner.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.PfInner.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
 if (host._values != null)
 {
 host._values = (global::System.Int32[])host._values.Clone();
@@ -280,7 +280,7 @@ public static bool HoldsArray_PfInner(global::Kassyi.GSharp.Tests.Shared.Syntax.
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>());
 if (!AotContexts.PfInner.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.PfInner.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
 if (global::System.Object.ReferenceEquals(host._values, array))
 {
 return true;
@@ -344,7 +344,7 @@ public static readonly bool FieldOffsetsMatch = CheckFieldOffsets();
 private static bool CheckFieldOffsets()
 {
 global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder s = default;
-ref var m = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, __gsharp_host_mirror>(ref s);
+ref __gsharp_host_mirror m = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, __gsharp_host_mirror>(ref s);
 return true &&
 global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, byte>(ref s), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32[], byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in s.Data))) == global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<__gsharp_host_mirror, byte>(ref m), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32[], byte>(ref m.Data));
 }
@@ -355,11 +355,11 @@ public static unsafe void Marshal_LibInternalFieldHolder(ref global::Kassyi.GSha
 native = default;
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>());
 if (!AotContexts.LibInternalFieldHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.LibInternalFieldHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
 if (host.Data != null)
 {
-var pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException(nameof(allocatedPtrs));
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
 native.Data.Data = handle.AddrOfPinnedObject();
 native.Data.Length = host.Data.Length;
@@ -371,7 +371,7 @@ public static unsafe void Unmarshal_LibInternalFieldHolder(ref global::Kassyi.GS
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>());
 if (!AotContexts.LibInternalFieldHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.LibInternalFieldHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
 host.Hidden = native.Hidden;
 host.Wide = native.Wide;
 }
@@ -379,7 +379,7 @@ public static void CopyArrays_LibInternalFieldHolder(ref global::Kassyi.GSharp.T
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>());
 if (!AotContexts.LibInternalFieldHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.LibInternalFieldHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
 if (host.Data != null)
 {
 host.Data = (global::System.Int32[])host.Data.Clone();
@@ -389,7 +389,7 @@ public static bool HoldsArray_LibInternalFieldHolder(global::Kassyi.GSharp.Tests
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>());
 if (!AotContexts.LibInternalFieldHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder");
-ref var host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
+ref AotContexts.LibInternalFieldHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
 if (global::System.Object.ReferenceEquals(host.Data, array))
 {
 return true;
@@ -673,21 +673,21 @@ global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gri
 holder = __gsharp_csharp_arg_0;
 return;
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepPrivateFieldsKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepPrivateFieldsKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepPrivateFieldsKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepPrivateFieldsKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepPrivateFieldsKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -771,13 +771,13 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_StepPrivateFieldsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepPrivateFieldsKernel", __gsharp_dll_path);
+__gsharp_delegate_StepPrivateFieldsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_StepPrivateFieldsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepPrivateFieldsKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.PfHolder __gsharp_native_0 = default;
-var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
 try
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.Marshal_PfHolder(ref holder, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
@@ -787,7 +787,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.
 }
 finally
 {
-foreach (var __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
 }
 #pragma warning restore CS8500
@@ -977,21 +977,21 @@ global::System.Int32[] __gsharp_csharp_arg_1 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.ReadExplicitSwappedKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 return;
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__ReadExplicitSwappedKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__ReadExplicitSwappedKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__ReadExplicitSwappedKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__ReadExplicitSwappedKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -1080,7 +1080,7 @@ if (!__gsharp_layout_checked_ReadExplicitSwappedKernel)
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfExplicitSwapped>() != 20) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfExplicitSwapped", 20, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfExplicitSwapped>());
 __gsharp_layout_checked_ReadExplicitSwappedKernel = true;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ReadExplicitSwappedKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__ReadExplicitSwappedKernel", __gsharp_dll_path);
+__gsharp_delegate_ReadExplicitSwappedKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ReadExplicitSwappedKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__ReadExplicitSwappedKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
@@ -1254,21 +1254,21 @@ global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gri
 holder = __gsharp_csharp_arg_0;
 return;
 }
-var __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
-var __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
 {
 int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
 int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepLibraryInternalFieldsKernel[__gsharp_context_count];
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepLibraryInternalFieldsKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepLibraryInternalFieldsKernel[__gsharp_context_count];
 for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
 {
 __gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepLibraryInternalFieldsKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
-var __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
 bool __gsharp_any_grid_active = true;
 try
 {
@@ -1352,13 +1352,13 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 }
 return;
 }
-var __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_StepLibraryInternalFieldsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepLibraryInternalFieldsKernel", __gsharp_dll_path);
+__gsharp_delegate_StepLibraryInternalFieldsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_StepLibraryInternalFieldsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepLibraryInternalFieldsKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.LibInternalFieldHolder __gsharp_native_0 = default;
-var __gsharp_allocated_ptrs_0 = new global::System.Collections.Generic.List<global::System.IntPtr>();
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
 try
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.Marshal_LibInternalFieldHolder(ref holder, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
@@ -1368,7 +1368,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.
 }
 finally
 {
-foreach (var __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
 }
 #pragma warning restore CS8500
