@@ -66,4 +66,16 @@ internal enum LauncherLocal
 
     /// <summary>The length of a span argument of the C# execution, <c>__gsharp_csharp_len_{ordinal}</c>.</summary>
     CSharpLength,
+
+    /// <summary>
+    /// The local of an external module launcher that holds a kernel argument, whose address the launch passes,
+    /// <c>__gsharp_karg_{ordinal}</c>.
+    /// </summary>
+    KernelArgument,
+
+    /// <summary>
+    /// The local of an external module launcher that holds an <c>out</c> value until the write-back,
+    /// <c>__gsharp_out_{ordinal}</c>.
+    /// </summary>
+    OutValue,
 }

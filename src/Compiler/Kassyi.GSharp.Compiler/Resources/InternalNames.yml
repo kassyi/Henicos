@@ -259,6 +259,15 @@ Launcher:
     CSharpArgumentPrefix: __gsharp_csharp_arg_
     CSharpPinnedPrefix: __gsharp_csharp_pin_
     CSharpLengthPrefix: __gsharp_csharp_len_
+    # The launchers of external modules ([CudaImport], YAML moduleName): the static field that holds the bytes of a
+    # module, followed by its number in the class; the struct that packs the arguments of a method (PackContext),
+    # followed by the method's number in the class, and its local; the local of each kernel argument and of an 'out'
+    # value, followed by the parameter ordinal
+    ModuleFieldPrefix: __gsharp_module_
+    NativeContextTypePrefix: __gsharp_native_context_
+    NativeContext: __gsharp_native_context
+    KernelArgumentPrefix: __gsharp_karg_
+    OutValuePrefix: __gsharp_out_
 
 ReturnValue:
   Summary: The buffer that a kernel returning a value writes into, the device-side locals that fill it, and the launcher locals that convert a returned struct whose layouts differ.

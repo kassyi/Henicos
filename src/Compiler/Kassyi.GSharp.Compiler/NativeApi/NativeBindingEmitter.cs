@@ -79,6 +79,7 @@ internal static class NativeBindingEmitter
     public static string EmitModuleBindings(NativeApiDefinition def)
     {
         var moduleName = def.ModuleName ?? string.Empty;
+        var moduleField = ModuleKernelLaunchEmitter.GetModuleFieldName(0);
 
         using var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
@@ -94,7 +95,7 @@ internal static class NativeBindingEmitter
         writer.AppendLine($"public static partial class {def.ClassName}");
         using (writer.Scope())
         {
-            ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, moduleName);
+            ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, moduleField, moduleName);
 
             foreach (var m in def.Methods)
             {
@@ -107,8 +108,8 @@ internal static class NativeBindingEmitter
                 using (writer.Scope())
                 {
                     var entryPoint = string.IsNullOrEmpty(m.EntryPoint) ? m.Name : m.EntryPoint ?? m.Name;
-                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleName, entryPoint, m.Name, $"{def.ClassName}.{m.Name}",
-                        plan, packContext: false);
+                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleField, entryPoint,
+                        $"{def.ClassName}.{m.Name}", plan, contextTypeName: null);
                 }
 
                 writer.AppendLine();

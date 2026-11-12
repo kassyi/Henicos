@@ -1,7 +1,10 @@
 namespace Kassyi.GSharp.Compiler.NativeApi;
 
 /// <summary>A kernel argument of a module launcher, in the order the kernel declares it.</summary>
-/// <param name="Name">The C# parameter name.</param>
+/// <param name="Ordinal">
+/// The position of the parameter in the declaration, which names the launcher's locals of the argument.
+/// </param>
+/// <param name="Name">The C# parameter name as C# source spells it (<c>@in</c>).</param>
 /// <param name="Kind">How the launcher passes the argument.</param>
 /// <param name="TypeName">
 /// The C# type of the value whose address the kernel receives: the parameter type, the element type of an array, or
@@ -20,6 +23,7 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// Null for another array throws <see cref="ArgumentNullException"/> before the launch.
 /// </param>
 internal readonly record struct ModuleKernelArgument(
+    int Ordinal,
     string Name,
     ModuleKernelParameterKind Kind,
     string TypeName,
@@ -37,7 +41,7 @@ internal readonly record struct ModuleKernelArgument(
 
 /// <summary>
 /// The parameters of a module launcher that set the launch instead of passing a kernel argument; each is the parameter
-/// name, or <see langword="null"/> when the launcher uses the default.
+/// name as C# source spells it, or <see langword="null"/> when the launcher uses the default.
 /// </summary>
 internal readonly record struct ModuleLaunchConfiguration(
     string? GridDimX,
