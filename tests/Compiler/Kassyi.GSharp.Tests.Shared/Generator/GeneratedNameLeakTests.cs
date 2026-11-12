@@ -16,8 +16,8 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 /// GPU method is renamed at the symbol level to a unique probe name (<see cref="UserNameProbeRenamer"/>) before the
 /// transpilation. Each probe in the output must be the end of the spelling that <see cref="CppNameResolver"/> gives its
 /// symbol: <c>__gsharp_id_{ordinal}_</c>, or <c>__gsharp_il_{region}_{ordinal}_</c> in a copy that an expansion
-/// stamped with a region. Any other text in front of it, a compiler prefix such as <c>__gsharp_raw_arg_</c> included,
-/// means that an emission site wrote the name itself.
+/// stamped with a region. Any other text in front of it, a compiler prefix such as <c>__gsharp_in_</c> included, means
+/// that an emission site wrote the name itself.
 /// </para>
 /// <para>
 /// A <c>nameof</c> keeps the original name as its value (the renamer replaces it with its string literal), so its text

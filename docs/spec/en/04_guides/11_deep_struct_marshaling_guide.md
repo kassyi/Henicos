@@ -442,11 +442,9 @@ G# natively handles `null` array members:
   context unusable for the rest of the process, as any device fault does. The same holds for an array local, a device
   function parameter or an array element that holds `null`. Converting the array to a span
   (`ReadOnlySpan<T> s = ctx.DebugTelemetry;`) gives an empty span, as in C#. If you mean "no data", write `= []`.
-- A `null` optional kernel argument (`float[]? bias` passed as `null` or `[]`) keeps its own contract: the kernel reads
-  it as an array of length 0, also through a local or a device function, on CUDA and the native CPU build. The managed
-  path reads its `Length` as 0 only where the kernel reads the parameter itself; through a local or a device function
-  it throws `NullReferenceException` there (#852). Once the kernel assigns the parameter, it is an ordinary array and a
-  `null` read throws on every path.
+- A `null` kernel array argument, nullable (`float[]? bias`) or not, reaches the kernel as `null`, as in a C# call:
+  `bias == null` is true, and reading it throws `NullReferenceException` on every path, also through a local or a
+  device function. An empty array (`[]`) is an array of length 0, not `null`.
 - On the GPU, the kernel can safely test for presence:
 
 ```csharp

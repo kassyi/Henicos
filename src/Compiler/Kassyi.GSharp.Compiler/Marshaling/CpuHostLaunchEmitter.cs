@@ -475,8 +475,10 @@ internal static class CpuHostLaunchEmitter
         }
     }
 
-    // new GSharpArrayProxy { Data = (IntPtr)__gsharp_p_<ord>, Length = <length> } new GSharpArrayProxy { Data = <null
-    // test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }   (converted)
+    // An argument passed as it is:
+    // new GSharpArrayProxy { Data = (IntPtr)__gsharp_p_<ord>, Length = <length> }
+    // A converted array:
+    // new GSharpArrayProxy { Data = <null test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }
     // [WHY] The shadow of a null array is an empty rented array, whose pinned address is not null
     private static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape)
     {
