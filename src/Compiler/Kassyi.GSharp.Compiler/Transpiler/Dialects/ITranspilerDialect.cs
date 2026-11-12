@@ -54,21 +54,17 @@ public interface ITranspilerDialect
     void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol);
 
     /// <summary>
-    /// Emits the target C++ parameter type and modifier attributes, resolving pointer, reference, and alias semantics.
+    /// Emits the target C++ parameter type: an array as <c>GSharpArray&lt;T&gt;</c> (<c>const T</c> with
+    /// <c>[GpuReadOnly]</c>), a <c>SharedMemory&lt;T&gt;</c> as <c>T*</c>, and a pointer for <c>ref</c> / <c>out</c>
+    /// (and <c>in</c> outside kernels). No parameter is marked as non-aliasing: C# lets two of them address the same
+    /// memory.
     /// </summary>
     /// <param name="context">The active transpilation context used for source output.</param>
     /// <param name="p">The syntax node defining the method parameter.</param>
     /// <param name="typeSymbol">The resolved semantic type symbol for the parameter, or <see langword="null"/> if unresolvable.</param>
     /// <param name="parameterSymbol">The resolved parameter symbol, or <see langword="null"/> if unresolvable.</param>
-    /// <returns>
-    /// A tuple containing:
-    /// <list type="bullet">
-    /// <item><term><c>IsRefPointer</c></term><description><see langword="true"/> if the parameter is passed by reference as a pointer.</description></item>
-    /// <item><term><c>IsPointerType</c></term><description><see langword="true"/> if the parameter represents an unmanaged raw pointer.</description></item>
-    /// <item><term><c>HasRestrict</c></term><description><see langword="true"/> if this method has already emitted the C++ <c>__restrict__</c> qualifier for the parameter.</description></item>
-    /// </list>
-    /// </returns>
-    (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol);
+    void AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol,
+        IParameterSymbol? parameterSymbol);
 
     /// <summary>
     /// Attempts to map an invocation of a C# method to a target-specific intrinsic or macro expression.

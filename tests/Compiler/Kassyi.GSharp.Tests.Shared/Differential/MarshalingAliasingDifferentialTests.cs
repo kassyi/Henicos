@@ -213,6 +213,36 @@ public sealed class MarshalingAliasingDifferentialTests
         },
     };
 
+    // Two raw pointers into one buffer, the second one element ahead: C# reads every value the previous iteration
+    // wrote, so the buffer becomes 0, 1, 2, ..., n (#979)
+    private static unsafe DifferentialCase CreateOverlappingPointerShiftCase() =>
+        new(KernelName(nameof(MarshalingAliasingDifferentialKernels.OverlappingPointerShiftKernel)))
+        {
+            Shape = LaunchShapes.SingleThread(),
+            Seeds = [0],
+            Inputs = static (_, _) => new DiffBuffers()
+                .In("backing", new int[OverlappingPointerShiftCount + 1], OutputPolicy.Exact),
+            Oracle = static (b, _) =>
+            {
+                fixed (int* backing = b.Get<int>("backing"))
+                {
+                    MarshalingAliasingDifferentialKernels.OverlappingPointerShiftKernel(
+                        backing, backing + 1, OverlappingPointerShiftCount);
+                }
+            },
+            Launch = static (b, s) =>
+            {
+                using var scope = b.PinOrUpload();
+                var backing = (int*)scope.PinOrUpload<int>("backing");
+                MarshalingAliasingDifferentialKernels.LaunchOverlappingPointerShiftKernel(
+                    backing, backing + 1, OverlappingPointerShiftCount, gridDimX: s.GridX, blockDimX: s.BlockX);
+            },
+        };
+
+    private const int OverlappingPointerShiftCount = 8;
+
+    internal static readonly DifferentialCase s_overlappingPointerShift = CreateOverlappingPointerShiftCase();
+
     // --- Deep Struct internal array aliasing (#707) ---
     internal static readonly DifferentialCase s_deepStructInternalArraySharing = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.DeepStructInternalAliasKernel)))
@@ -382,6 +412,11 @@ public sealed class MarshalingAliasingDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ScalarAliasing_AliasedRefScalars_MatchesOracleExceptKnownCudaIssue() =>
         DifferentialRunner.Run(s_aliasedRefScalars);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void PointerAliasing_DestinationOneAheadOfSource_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_overlappingPointerShift);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
