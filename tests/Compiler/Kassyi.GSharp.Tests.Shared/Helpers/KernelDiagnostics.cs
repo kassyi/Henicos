@@ -112,7 +112,7 @@ public static class KernelDiagnostics
     }
 
     // #error ""<path>(<line>,<column>): <ID>: ..."" in a verbatim string of the generated C#, or <no original span>
-#pragma warning disable RS0030 // The #error text the generator writes into C++ has no syntax tree; its location and ID are paired with the analyzer's
+#pragma warning disable RS0030 // Generated #error text has no syntax tree; pairs its place and ID with the analyzer
     private static readonly Regex s_statedFailure = new(
         "#error \"\"(?:(?<path>[^\"\r\n]*?)\\((?<line>\\d+),(?<column>\\d+)\\)|(?<none><no original span>)): (?<id>GSH\\d{4}):",
         RegexOptions.Compiled);
@@ -128,7 +128,7 @@ public static class KernelDiagnostics
         var failures = new List<(string, bool)>();
         foreach (var tree in run.Output.SyntaxTrees.Where(tree => !inputTrees.Contains(tree)))
         {
-#pragma warning disable RS0030 // The #error text the generator writes into C++ has no syntax tree; its location and ID are paired with the analyzer's
+#pragma warning disable RS0030 // Generated #error text has no syntax tree; pairs its place and ID with the analyzer
             var matches = s_statedFailure.Matches(tree.ToString());
 #pragma warning restore RS0030
             foreach (Match match in matches)

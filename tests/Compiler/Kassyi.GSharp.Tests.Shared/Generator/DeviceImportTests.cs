@@ -142,7 +142,9 @@ public class DeviceImportTests
         var (_, kernels) = Generate(dialect);
 
         // The C++ lines (the CPU wrapper also holds the managed body)
-        var readAndClear = Assert.Single(LinesContaining(kernels, "__gsharp_fn_DeviceExportCase__LibMath__ReadAndClear("));
+        var readAndClear = Assert.Single(
+            LinesContaining(kernels, "__gsharp_fn_DeviceExportCase__LibMath__ReadAndClear(")
+        );
         var takeOne = Assert.Single(LinesContaining(kernels, "__gsharp_fn_DeviceExportCase__LibMath__TakeOne("));
         Assert.Contains("__gsharp_seq_", readAndClear, StringComparison.Ordinal);
         Assert.DoesNotContain("__gsharp_seq_", takeOne, StringComparison.Ordinal);
