@@ -52,6 +52,7 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
         [
             new GpuKernelAnalyzer(),
             new KernelClassAnalyzer(),
+            new KernelDeclarationAnalyzer(),
             new BarrierUsageAnalyzer(),
             new ParallelDependentCallAnalyzer(),
         ];

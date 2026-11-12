@@ -89,9 +89,9 @@ internal static class WrapperEmitter
     private const string GeneratedCSharpWarningSuppressions =
         "#pragma warning disable CS0162, CS0164, CS0219, CS0649, CS1718";
 
-    // namespace <namespace> { <outer partial declarations> <accessibility> partial class <name>, without the namespace
-    // for the global namespace. The generated part must declare the accessibility of the user's part, or the compiler
-    // reports CS0262.
+    // namespace <namespace> { <outer partial declarations> <accessibility> partial <keyword> <name>, without the
+    // namespace for the global namespace. The generated part must declare the accessibility of the user's part, or the
+    // compiler reports CS0262, and its kind (class, record), or CS0261.
     private static void WriteClassDeclaration(SourceWriter writer, in HostClassHeader header)
     {
         if (!header.IsGlobalNamespace)
@@ -107,7 +107,7 @@ internal static class WrapperEmitter
             writer.AppendLine("{");
         }
 
-        writer.AppendLine($"{header.Accessibility} partial class {header.Name}");
+        writer.AppendLine($"{header.Accessibility} partial {header.Keyword} {header.Name}");
     }
 
     private static void CloseClassDeclaration(SourceWriter writer, in HostClassHeader header)

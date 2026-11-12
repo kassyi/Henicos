@@ -288,6 +288,10 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 /// <param name="HintName">The source hint name of the class's wrapper (<see cref="GlobalCppNames.GetHintName"/>).</param>
 /// <param name="Namespace">The dot-separated namespace, or empty for the global namespace.</param>
 /// <param name="Name">The class name.</param>
+/// <param name="Keyword">
+/// The keyword of the user's declaration after <c>partial</c> (<c>class</c>, or <c>record</c> for a record class),
+/// which every part must repeat (CS0261).
+/// </param>
 /// <param name="Accessibility">The declared accessibility keywords, which the generated part must repeat (CS0262).</param>
 /// <param name="IsPublic">Whether the class is public, which decides the CS0649 suppression.</param>
 /// <param name="OuterDeclarations">
@@ -304,6 +308,7 @@ internal readonly record struct HostClassHeader(
     string HintName,
     string Namespace,
     string Name,
+    string Keyword,
     string Accessibility,
     bool IsPublic,
     EquatableArray<string> OuterDeclarations,
@@ -316,6 +321,7 @@ internal readonly record struct HostClassHeader(
         GlobalCppNames.GetHintName(type),
         type.ContainingNamespace.GetFullNamespaceName(),
         type.Name,
+        GetKeyword(type),
         SyntaxFacts.GetText(type.DeclaredAccessibility),
         type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
         CreateOuterDeclarations(type),
@@ -332,9 +338,6 @@ internal readonly record struct HostClassHeader(
         var declarations = ImmutableArray.CreateBuilder<string>();
         for (var outer = type.ContainingType; outer != null; outer = outer.ContainingType)
         {
-            var keyword = outer.IsRecord
-                ? outer.TypeKind == TypeKind.Struct ? "record struct" : "record"
-                : outer.TypeKind == TypeKind.Struct ? "struct" : outer.TypeKind == TypeKind.Interface ? "interface" : "class";
             var name = outer.Name;
             for (var i = 0; i < outer.TypeParameters.Length; i++)
             {
@@ -342,11 +345,15 @@ internal readonly record struct HostClassHeader(
             }
 
             name += outer.TypeParameters.IsEmpty ? "" : ">";
-            declarations.Insert(0, $"partial {keyword} {name}");
+            declarations.Insert(0, $"partial {GetKeyword(outer)} {name}");
         }
 
         return declarations.ToImmutable().AsEquatableArray();
     }
+
+    private static string GetKeyword(INamedTypeSymbol type) => type.IsRecord
+        ? type.TypeKind == TypeKind.Struct ? "record struct" : "record"
+        : type.TypeKind == TypeKind.Struct ? "struct" : type.TypeKind == TypeKind.Interface ? "interface" : "class";
 }
 
 /// <summary>The native shadow struct and the marshaling methods of one user struct, as the wrapper declares them.</summary>

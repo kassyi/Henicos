@@ -125,7 +125,7 @@ public class GpuOnlyMembersTests
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
                 .WithAllowUnsafe(true)
                 .WithNullableContextOptions(NullableContextOptions.Enable))
-            .AddReferences(MegaCompilationCache.BaseCompilation.References)
+            .AddReferences(RoslynTestUtility.BaseReferences)
             .AddSyntaxTrees(sources.Concat(stubs).Append(implicitUsings));
     }
 

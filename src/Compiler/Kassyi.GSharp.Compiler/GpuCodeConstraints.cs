@@ -14,12 +14,14 @@ internal static class GpuCodeConstraints
 {
     /// <summary>
     /// Whether a GPU function returns <see langword="void"/>, an unmanaged type with a device representation, or is a
-    /// valid device iterator (GSH0004).
+    /// valid device iterator (GSH0004). A kernel cannot return a ref struct: its launcher returns the result of each
+    /// thread in an array.
     /// </summary>
     public static bool HasSupportedReturnType(IMethodSymbol method, ITranspilerDialect dialect) =>
         method.ReturnType.SpecialType == SpecialType.System_Void ||
         IteratorTypeResolver.IsDeviceIteratorMethod(method) ||
         (method.ReturnType.IsUnmanagedType &&
+         !(method.ReturnType.IsRefLikeType && method.HasAttribute(KnownAttributes.GpuKernel)) &&
          (StructLayoutValidator.HasDeviceRepresentation(method.ReturnType, dialect) ||
           IsReportedAsRuntimeOnly(method.ReturnType)));
 
