@@ -4,11 +4,24 @@
 // Queues builds and test runs on this machine, so that agents and worktrees running side by side do not oversubscribe
 // the CPU and memory.
 //
-// A scheduler listens on 127.0.0.1 (port 47117, GSHARP_BUILD_QUEUE_PORT) and grants slots of a CPU pool (4 by default,
-// GSHARP_BUILD_QUEUE_SLOTS) in arrival order. `run` asks for a slot, waits, runs the command itself in the caller's
-// directory (incremental builds keep working), and gives the slot back when the command ends. The scheduler starts on
-// the first `run`, in <main checkout>/tmp/build-queue (so that it never holds a worktree open), and exits after 30
-// minutes without jobs.
+// A scheduler listens on 127.0.0.1 (port 47117, GSHARP_BUILD_QUEUE_PORT) and grants slots of a CPU pool (6 by default,
+// GSHARP_BUILD_QUEUE_SLOTS). `run` asks for a slot, waits, runs the command itself in the caller's directory
+// (incremental builds keep working), and gives the slot back when the command ends. The scheduler starts on the first
+// `run`, in <main checkout>/tmp/build-queue (so that it never holds a worktree open), and exits after 30 minutes
+// without jobs.
+//
+// Order (--policy, GSHARP_BUILD_QUEUE_POLICY): the scheduler records how long each command ran (history.json in the
+// state directory, the last 9 runs per command text). With `hrrn` (the default) the waiting jobs are ordered by
+// response ratio, (waited + typical run time) / typical run time: a short job goes first, and a long one rises the
+// longer it waits, so that none starves. A later job may start in free slots when it does not delay the first job
+// (backfilling): it ends before the first job could start, counting every running job at its longest recorded time,
+// or it fits in the slots the first job leaves free. `backfill` keeps arrival order with backfilling; `fifo` keeps
+// arrival order without it.
+//
+// Job ids: `run` prints `queued #<id>` as soon as the scheduler took the job, with the jobs ahead of it and its
+// expected start and end; `status <id> [--json]` tells them again at any time. The expected times play the grants
+// forward with each command's typical (median) run time. Ids count up and are never reused while the state directory
+// lives (the next id is saved in jobs-<port>.json and history.json).
 //
 // Slots follow the command, not only the connection:
 //   - The client reports the process id of the command it started. When the client dies but the command still runs
@@ -43,11 +56,11 @@
 //
 // Usage:
 //   node scripts/agent/build-queue.js run [--weight <n>] [--gpu] [--shell <name>] [--timeout-minutes <n>] -- "<command>"
-//   node scripts/agent/build-queue.js status
+//   node scripts/agent/build-queue.js status [<id>] [--json]
 //   node scripts/agent/build-queue.js cancel <id>
 //   node scripts/agent/build-queue.js cancel-all
 //   node scripts/agent/build-queue.js stop
-//   node scripts/agent/build-queue.js serve [--slots <n>]
+//   node scripts/agent/build-queue.js serve [--slots <n>] [--policy hrrn|backfill|fifo]
 //   node scripts/agent/build-queue.js --self-test
 //
 // Exit codes (run): the exit code of the command; 2 on a usage error; 3 when the wait timed out; 4 when the job was
@@ -61,13 +74,23 @@ const { spawn, spawnSync } = require('child_process');
 
 const ProtocolVersion = 2;
 const DefaultPort = 47117;
-const DefaultSlots = 4;
+const DefaultSlots = 6; // measured on 24 cores / 64 GB (test-execution.md, Build queue)
 const IdleExitMs = 30 * 60 * 1000;
 const NoticeIntervalMs = 5 * 60 * 1000;
 const StartupGraceMs = 1500;
 const OrphanPollMs = 2000;
 const LogRotateBytes = 5 * 1024 * 1024;
 const CancelledExitCode = 4;
+const Policies = ['fifo', 'backfill', 'hrrn'];
+const DefaultPolicy = 'hrrn';
+const UnknownTypicalMs = 60 * 1000; // the typical run time of a command with no recorded run, for its response ratio
+const HistoryRunsPerCommand = 9;
+const HistoryCommands = 500;
+const RegrantMs = 5 * 1000; // how often the scheduler re-orders and grants while jobs wait
+const ForecastNoticeMs = 60 * 1000; // a waiting client is told again when its expected start moved this much
+const OverrunGuessMs = 30 * 1000; // forecast: the rest of a running job that has run longer than any recorded run
+const LongestRunMs = 7 * 24 * 60 * 60 * 1000; // run times and starts beyond this are taken as damaged input
+const ForecastSteps = 2000; // the forecast replays at most this many steps; jobs it does not reach get no times
 
 const JobVariable = 'GSHARP_BUILD_QUEUE_JOB';
 const InGpuLockVariable = 'GSHARP_BUILD_QUEUE_IN_GPU_LOCK';
@@ -76,15 +99,16 @@ const MsbuildArgsVariable = 'GSHARP_BUILD_QUEUE_MSBUILD_ARGS';
 const CpusVariable = 'GSHARP_BUILD_QUEUE_CPUS';
 const StateDirectoryVariable = 'GSHARP_BUILD_QUEUE_STATE_DIR';
 const ShellVariable = 'GSHARP_BUILD_QUEUE_SHELL';
+const PolicyVariable = 'GSHARP_BUILD_QUEUE_POLICY';
 
 const usage = [
   'Usage:',
   '  node scripts/agent/build-queue.js run [--weight <n>] [--gpu] [--shell <name>] [--timeout-minutes <n>] -- "<command>"',
-  '  node scripts/agent/build-queue.js status',
+  '  node scripts/agent/build-queue.js status [<id>] [--json]',
   '  node scripts/agent/build-queue.js cancel <id>',
   '  node scripts/agent/build-queue.js cancel-all',
   '  node scripts/agent/build-queue.js stop',
-  '  node scripts/agent/build-queue.js serve [--slots <n>]',
+  '  node scripts/agent/build-queue.js serve [--slots <n>] [--policy hrrn|backfill|fifo]',
   '  node scripts/agent/build-queue.js --self-test',
   '',
   'run         Waits for a slot of the build queue, runs the command in this directory, gives the slot back.',
@@ -93,13 +117,15 @@ const usage = [
   '            --shell <name>         bash, pwsh, powershell, cmd or sh (default: the caller\'s: Git Bash when MSYSTEM',
   '                                   or SHELL is set, else PowerShell on Windows, /bin/sh elsewhere).',
   '            --timeout-minutes <n>  Give up waiting after n minutes and exit with 3 (default 0 = wait forever).',
-  'status      Lists the running and waiting jobs with their ids.',
+  'status      Lists the running and waiting jobs with their ids, the jobs ahead and the expected start and end;',
+  '            with <id>, only that job (exit 1 when it ended or is unknown); --json prints the same as JSON.',
   'cancel      Cancels one job: a waiting job leaves the queue, a running job is stopped. Its run exits with 4.',
   'cancel-all  Cancels every job and empties the queue.',
   'stop        Stops the scheduler; running jobs keep running and register with the next one.',
   'serve       Runs the scheduler in the foreground (run starts it on demand).',
   '',
-  `Environment: GSHARP_BUILD_QUEUE_PORT (default ${DefaultPort}), GSHARP_BUILD_QUEUE_SLOTS (default ${DefaultSlots}).`,
+  `Environment: GSHARP_BUILD_QUEUE_PORT (default ${DefaultPort}), GSHARP_BUILD_QUEUE_SLOTS (default ${DefaultSlots}),`,
+  `GSHARP_BUILD_QUEUE_POLICY (default ${DefaultPolicy}; the scheduler keeps the policy it started with).`,
   'Quote the command as one string when it needs pipes or redirection.',
 ].join('\n');
 
@@ -128,11 +154,14 @@ function parseArgs(argv) {
     gpu: false,
     timeoutMinutes: 0,
     slots: Number(process.env.GSHARP_BUILD_QUEUE_SLOTS) || DefaultSlots,
+    policy: Policies.includes(process.env[PolicyVariable]) ? process.env[PolicyVariable] : DefaultPolicy,
     port: Number(process.env.GSHARP_BUILD_QUEUE_PORT) || DefaultPort,
     commandFromEnv: false,
     shell: '',
     stateDir: '',
     cancelId: 0,
+    statusId: 0,
+    json: false,
     command: command.join(' '),
     // Several words after `--` are argv that the calling shell has already split: re-quote them for the shell that
     // runs them (see run), instead of joining them into a different command.
@@ -150,6 +179,10 @@ function parseArgs(argv) {
       }
       continue;
     }
+    if (options.mode === 'status' && options.statusId === 0 && /^\d+$/.test(arg)) {
+      options.statusId = parsePositive('status', arg, false); // status <id>, before or after the options
+      continue;
+    }
     switch (arg) {
       case '--help':
       case '-h':
@@ -165,11 +198,20 @@ function parseArgs(argv) {
       case '--gpu':
         options.gpu = true;
         break;
+      case '--json':
+        options.json = true;
+        break;
       case '--timeout-minutes':
         options.timeoutMinutes = parsePositive('--timeout-minutes', own[++i], true);
         break;
       case '--slots':
         options.slots = parsePositive('--slots', own[++i], false);
+        break;
+      case '--policy':
+        options.policy = own[++i] || '';
+        if (!Policies.includes(options.policy)) {
+          usageError(`--policy needs ${Policies.join(', ')}.`);
+        }
         break;
       case '--port': // for the self-test
         options.port = parsePositive('--port', own[++i], false);
@@ -353,14 +395,24 @@ function isProcessGroupAlive(pid) {
 // Scheduler
 
 /**
- * The scheduler state, without sockets, so that the order of grants can be reasoned about apart from the network:
- * waiting jobs sorted by arrival time and granted strictly in that order while the head fits; a job that holds the GPU
- * lock is granted at once. Nothing is granted before `holdUntil` (re-registration after a restart).
+ * The scheduler state, without sockets, so that the order of grants can be reasoned about apart from the network.
+ * A job that holds the GPU lock is granted at once. The other waiting jobs are ordered by the policy, and the first one
+ * is granted while it fits:
+ *   - fifo: arrival order; a later job never overtakes the first one.
+ *   - backfill: arrival order, and a later job may start in the free slots when it does not delay the first one
+ *     (EASY backfilling): it ends before the first job could start, or it fits in the slots the first job leaves free.
+ *   - hrrn: the same backfilling, with the jobs ordered by response ratio (waited time + typical run time) / typical
+ *     run time, highest first: a short job goes first, and a long one rises the longer it waits, so that none starves.
+ * The run times come from `job.estimate` ({ typicalMs, longestMs } of the command's earlier runs, or null). Backfilling
+ * reserves the start of the first job as if every running job took its longest recorded time, and backfills nothing
+ * while a running job has no recorded time or has run longer than all of them. Nothing is granted before `holdUntil`
+ * (re-registration after a restart).
  */
 class Scheduler {
-  constructor(capacity, holdUntil = 0) {
+  constructor(capacity, holdUntil = 0, policy = DefaultPolicy) {
     this.capacity = capacity;
     this.holdUntil = holdUntil;
+    this.policy = policy;
     this.used = 0;
     this.running = [];
     this.waiting = [];
@@ -373,19 +425,16 @@ class Scheduler {
   /** Adds a waiting job and returns the jobs granted by it. */
   enqueue(job, now = Date.now()) {
     job.weight = this.clampWeight(job.weight);
-    const before = (a, b) => (a.queuedAt !== b.queuedAt ? a.queuedAt < b.queuedAt : a.id < b.id);
-    let index = this.waiting.length;
-    while (index > 0 && before(job, this.waiting[index - 1])) {
-      index--;
-    }
-    this.waiting.splice(index, 0, job);
+    this.waiting.push(job);
     return this.grant(now);
   }
 
   /** Registers a job that already runs (its client reconnected after the scheduler restarted). */
-  adopt(job) {
+  adopt(job, now = Date.now()) {
     job.weight = this.clampWeight(job.weight);
-    job.grantedAt = job.grantedAt || Date.now();
+    // The start the client reported, unless it is missing, in the future or older than any run can be
+    job.grantedAt = job.grantedAt > now - LongestRunMs && job.grantedAt <= now ? job.grantedAt : now;
+    job.adopted = true; // its run started before this scheduler: no run time is recorded for it
     this.running.push(job);
     this.used += job.weight;
   }
@@ -404,10 +453,26 @@ class Scheduler {
     return this.grant(now);
   }
 
-  /** Grants GPU holders at once and the head of the queue while it fits; never lets a later job overtake the head. */
+  /** Sorts the waiting jobs into the order of the policy (also the positions the clients are told). */
+  order(now = Date.now()) {
+    const arrival = (a, b) => a.queuedAt - b.queuedAt || a.id - b.id;
+    if (this.policy !== 'hrrn') {
+      this.waiting.sort(arrival);
+      return;
+    }
+    const ratio = (job) => {
+      const typical = job.estimate ? Math.max(job.estimate.typicalMs, 1000) : UnknownTypicalMs;
+      return (Math.max(0, now - job.queuedAt) + typical) / typical;
+    };
+    const ratios = new Map(this.waiting.map((job) => [job, ratio(job)]));
+    this.waiting.sort((a, b) => ratios.get(b) - ratios.get(a) || arrival(a, b));
+  }
+
+  /** Grants GPU holders at once, then the first waiting job while it fits, then backfills (unless fifo). */
   grant(now = Date.now()) {
     const granted = [];
     if (now < this.holdUntil) {
+      this.order(now); // the positions the clients are told
       return granted;
     }
     const take = (job) => {
@@ -418,14 +483,204 @@ class Scheduler {
       granted.push(job);
     };
     this.waiting.filter((job) => job.gpu).forEach(take);
+    this.order(now);
     while (this.waiting.length > 0 && this.used + this.waiting[0].weight <= this.capacity) {
       take(this.waiting[0]);
+    }
+    if (this.policy !== 'fifo' && this.waiting.length > 1) {
+      this.backfill(now).forEach((job) => {
+        job.backfilled = true;
+        take(job);
+      });
     }
     return granted;
   }
 
+  /** The waiting jobs after the first that may start now without delaying the first one's reserved start. */
+  backfill(now) {
+    const first = this.waiting[0];
+    // When the running jobs end, at the latest; unknown when one has no recorded time or ran past all of them
+    const ends = [];
+    for (const job of this.running) {
+      const end = job.estimate ? job.grantedAt + job.estimate.longestMs : NaN;
+      if (!(end > now)) {
+        return [];
+      }
+      ends.push({ end, weight: job.weight });
+    }
+    ends.sort((a, b) => a.end - b.end);
+    // The reserved start: the first time enough slots are free for the first job, and what it leaves free then
+    let free = this.capacity - this.used;
+    let reserved = now;
+    for (const { end, weight } of ends) {
+      if (free >= first.weight) {
+        break;
+      }
+      free += weight;
+      reserved = end;
+    }
+    // Once every running job has ended, all slots are free: the first job (weight clamped to the capacity) fits
+    let spare = free - first.weight;
+    let idle = this.capacity - this.used;
+    const chosen = [];
+    for (const job of this.waiting.slice(1)) {
+      if (job.gpu || job.weight > idle) {
+        continue;
+      }
+      const endsInTime = job.estimate !== null && job.estimate !== undefined && now + job.estimate.longestMs <= reserved;
+      if (endsInTime || job.weight <= spare) {
+        if (!endsInTime) {
+          spare -= job.weight;
+        }
+        idle -= job.weight;
+        chosen.push(job);
+      }
+    }
+    return chosen;
+  }
+
+  /**
+   * When each job is expected to start and end ({ startAt, endAt } per job): the grants of this scheduler played
+   * forward on copies of the jobs, each taking its typical run time (UnknownTypicalMs without a record). A running job
+   * past its typical time is expected to end at its longest recorded time, and past that, OverrunGuessMs from now.
+   */
+  forecast(now = Date.now()) {
+    const duration = (job) => (job.estimate ? job.estimate.typicalMs : UnknownTypicalMs);
+    const simulation = new Scheduler(this.capacity, 0, this.policy);
+    const originals = new Map();
+    const ends = new Map();
+    const result = new Map();
+    for (const job of this.running) {
+      const copy = { ...job };
+      let endAt = job.grantedAt + duration(job);
+      if (endAt <= now && job.estimate) {
+        endAt = job.grantedAt + job.estimate.longestMs;
+      }
+      if (endAt <= now) {
+        endAt = now + OverrunGuessMs;
+      }
+      simulation.running.push(copy);
+      simulation.used += copy.weight;
+      ends.set(copy, endAt);
+      result.set(job, { startAt: job.grantedAt, endAt });
+    }
+    for (const job of this.waiting) {
+      const copy = { ...job };
+      originals.set(copy, job);
+      simulation.waiting.push(copy);
+    }
+    let time = now;
+    for (let step = 0; step < ForecastSteps && simulation.waiting.length > 0; step++) {
+      for (const copy of simulation.grant(time)) {
+        ends.set(copy, time + duration(copy));
+        result.set(originals.get(copy), { startAt: time, endAt: time + duration(copy) });
+      }
+      if (simulation.waiting.length === 0 || simulation.running.length === 0) {
+        break;
+      }
+      // The next end, or with free slots under hrrn the next re-grant (RegrantMs; a minute here, a coarser step that
+      // keeps the replay short), when a waiting job may have overtaken the first one
+      const regrant = this.policy === 'hrrn' && simulation.used < this.capacity ? time + 60 * 1000 : Infinity;
+      time = Math.max(time, Math.min(regrant, ...simulation.running.map((copy) => ends.get(copy))));
+      for (const copy of simulation.running.filter((other) => ends.get(other) <= time)) {
+        simulation.running.splice(simulation.running.indexOf(copy), 1);
+        simulation.used -= copy.weight;
+      }
+    }
+    return result;
+  }
+
   isIdle() {
     return this.running.length === 0 && this.waiting.length === 0;
+  }
+}
+
+/**
+ * The run times of earlier commands, by command text, in <state dir>/history.json: the last runs of each command that
+ * ran to the end (not cancelled, not lost), so that the scheduler can order and backfill by them.
+ */
+class RunHistory {
+  constructor(file, log) {
+    this.file = file;
+    this.log = log;
+    this.commands = Object.create(null); // keys are command texts: "constructor" or "__proto__" must stay plain keys
+    this.nextId = 1; // a second copy of the next job id, for when jobs-<port>.json is lost
+    try {
+      // Keep only well-formed entries, so that a damaged file costs its records, never the scheduler
+      const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const commands = saved !== null && typeof saved === 'object' ? saved.commands : null;
+      if (commands !== null && typeof commands === 'object') {
+        for (const [key, entry] of Object.entries(commands)) {
+          const runs = entry !== null && typeof entry === 'object' && Array.isArray(entry.runs) ? entry.runs : [];
+          const valid = runs.filter((ms) => Number.isFinite(ms) && ms >= 0 && ms <= LongestRunMs).slice(-HistoryRunsPerCommand);
+          if (valid.length > 0) {
+            this.commands[key] = { runs: valid, lastUsed: Number.isFinite(entry.lastUsed) ? entry.lastUsed : 0 };
+          }
+        }
+      }
+      if (Number.isInteger(saved && saved.nextId) && saved.nextId > 0) {
+        this.nextId = saved.nextId;
+      }
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        log(`could not read ${file}: ${error.message}`);
+      }
+    }
+  }
+
+  static key(command) {
+    return command.trim().replace(/\s+/g, ' ');
+  }
+
+  /** { typicalMs (median), longestMs } of the command's recorded runs, or null when it has none. */
+  estimate(command) {
+    const entry = this.commands[RunHistory.key(command)];
+    if (!entry || !Array.isArray(entry.runs) || entry.runs.length === 0) {
+      return null;
+    }
+    const runs = entry.runs.filter((ms) => Number.isFinite(ms) && ms >= 0).sort((a, b) => a - b);
+    if (runs.length === 0) {
+      return null;
+    }
+    const middle = runs.length >> 1;
+    const typicalMs = runs.length % 2 === 1 ? runs[middle] : (runs[middle - 1] + runs[middle]) / 2;
+    return { typicalMs, longestMs: runs[runs.length - 1] };
+  }
+
+  record(command, ms, nextId = this.nextId, now = Date.now()) {
+    this.nextId = Math.max(this.nextId, nextId);
+    const key = RunHistory.key(command);
+    const entry = this.commands[key] || { runs: [], lastUsed: 0 };
+    entry.runs = entry.runs.concat(Math.min(Math.round(ms), LongestRunMs)).slice(-HistoryRunsPerCommand);
+    entry.lastUsed = now;
+    this.commands[key] = entry;
+    const keys = Object.keys(this.commands);
+    if (keys.length > HistoryCommands) {
+      keys
+        .sort((a, b) => this.commands[a].lastUsed - this.commands[b].lastUsed)
+        .slice(0, keys.length - HistoryCommands)
+        .forEach((old) => delete this.commands[old]);
+    }
+    const temporary = `${this.file}.${process.pid}.tmp`;
+    try {
+      fs.mkdirSync(path.dirname(this.file), { recursive: true });
+      fs.writeFileSync(temporary, JSON.stringify({ nextId: this.nextId, commands: this.commands }));
+      // Windows refuses to replace a file that another process has open (a reader, a virus scanner): retry briefly
+      for (let attempt = 1; ; attempt++) {
+        try {
+          fs.renameSync(temporary, this.file);
+          break;
+        } catch (error) {
+          if (attempt >= 10 || (error.code !== 'EPERM' && error.code !== 'EACCES' && error.code !== 'EBUSY')) {
+            throw error;
+          }
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * attempt);
+        }
+      }
+    } catch (error) {
+      this.log(`could not write ${this.file}: ${error.message}`);
+      fs.rmSync(temporary, { force: true });
+    }
   }
 }
 
@@ -441,27 +696,50 @@ function describeJob(job) {
     command: job.command,
     queuedAt: job.queuedAt,
     grantedAt: job.grantedAt || null,
+    typicalMs: job.estimate ? job.estimate.typicalMs : null,
   };
 }
 
 function serve(options) {
-  const scheduler = new Scheduler(options.slots, Infinity); // nothing is granted before listening (see listen)
+  // nothing is granted before listening (see listen)
+  const scheduler = new Scheduler(options.slots, Infinity, options.policy || DefaultPolicy);
   // Several schedulers may write to one log for a moment (one stopping, the next starting): tag each line
   const log = (text) => process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`);
-  let nextId = 1;
+  const stateDirectory = options.stateDir || resolveStateDirectory();
+  const history = new RunHistory(path.join(stateDirectory, 'history.json'), log);
+  let nextId = history.nextId;
   let idleSince = Date.now();
 
+  // Tells each waiting client its place and expected times when the place changed or the start moved by a minute
   const notifyWaiting = () => {
+    if (scheduler.waiting.length === 0) {
+      return;
+    }
+    const forecast = scheduler.forecast();
     scheduler.waiting.forEach((job, index) => {
-      if (job.lastPosition !== index) {
+      const view = outlook(job, forecast);
+      if (job.lastPosition !== index || Math.abs(view.startAt - (job.lastStartAt || 0)) >= ForecastNoticeMs) {
         job.lastPosition = index;
-        send(job.socket, { type: 'waiting', id: job.id, position: index + 1, used: scheduler.used, capacity: scheduler.capacity });
+        job.lastStartAt = view.startAt;
+        send(job.socket, { type: 'waiting', id: job.id, ...view, used: scheduler.used, capacity: scheduler.capacity });
       }
     });
   };
+  /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
+  const outlook = (job, forecast) => {
+    const expected = forecast.get(job) || { startAt: null, endAt: null };
+    const index = scheduler.waiting.indexOf(job);
+    return {
+      state: index >= 0 ? 'waiting' : 'running',
+      ahead: Math.max(0, index),
+      position: index + 1,
+      startAt: expected.startAt,
+      endAt: expected.endAt,
+    };
+  };
   const announce = (granted) => {
     for (const job of granted) {
-      log(`grant #${job.id} weight ${job.weight}${job.gpu ? ' gpu' : ''} pid ${job.pid}: ${job.command}`);
+      log(`grant #${job.id} weight ${job.weight}${job.gpu ? ' gpu' : ''}${job.backfilled ? ' backfilled' : ''} pid ${job.pid}: ${job.command}`);
       send(job.socket, { type: 'granted', id: job.id, cpus: job.cpus(), capacity: scheduler.capacity });
     }
     notifyWaiting();
@@ -492,6 +770,7 @@ function serve(options) {
     command: String(message.command || ''),
     queuedAt: Number(message.queuedAt) || Date.now(),
     grantedAt: Number(message.grantedAt) || 0,
+    estimate: history.estimate(String(message.command || '')),
     lastPosition: -1,
     done: false,
     cancelled: false,
@@ -502,7 +781,7 @@ function serve(options) {
 
   // The running jobs with a started command, so that a restarted scheduler still counts the ones whose client is gone
   // (nobody re-registers them). Jobs whose client lives re-register themselves.
-  const jobsPath = path.join(options.stateDir || resolveStateDirectory(), `jobs-${options.port}.json`);
+  const jobsPath = path.join(stateDirectory, `jobs-${options.port}.json`);
   const persist = () => {
     const records = scheduler.running
       .filter((job) => job.commandPid > 0)
@@ -542,6 +821,11 @@ function serve(options) {
 
   const release = (job, why) => {
     log(`end #${job.id} (${why})`);
+    // Only a run seen from its grant to its end: the command ended by itself (not stopped by a signal or a cancel), and
+    // the job was not lost or adopted after a restart
+    if (why === 'client closed' && job.completed && !job.cancelled && !job.adopted && job.grantedAt > 0) {
+      history.record(job.command, Date.now() - job.grantedAt, nextId);
+    }
     announce(scheduler.remove(job));
     if (scheduler.isIdle()) {
       idleSince = Date.now();
@@ -586,7 +870,6 @@ function serve(options) {
     }
   }, OrphanPollMs).unref();
 
-  /** Cancels jobs: a waiting job leaves the queue, a running one is told to stop (or killed when its client is gone). */
   /** Cancels jobs and resolves to the ids it cancelled: a job that ended meanwhile (while the processes of lost
    * clients were read) is left out. */
   const cancel = async (requested) => {
@@ -651,7 +934,9 @@ function serve(options) {
           if (job !== null) {
             return;
           }
-          job = createJob(socket, { ...message, grantedAt: 0 });
+          // A re-registering job started its command before this scheduler: its run time counts from that start
+          // (backfilling reserves by it), not from the restart
+          job = createJob(socket, { ...message, grantedAt: message.type === 'adopt' ? Number(message.spawnedAt) || 0 : 0 });
           if (message.type === 'adopt') {
             // The same client lost only its connection: the slot the scheduler kept for it is this job. Adopt first,
             // so that removing the kept job hands no slot to a waiting job.
@@ -669,7 +954,10 @@ function serve(options) {
             idleSince = Date.now();
           } else {
             log(`queue #${job.id} weight ${job.weight}${job.gpu ? ' gpu' : ''} pid ${job.pid}: ${job.command}`);
-            announce(scheduler.enqueue(job));
+            const granted = scheduler.enqueue(job);
+            // The id first, so that the caller can ask about its job (status <id>) whatever happens next
+            send(socket, { type: 'queued', id: job.id, ...outlook(job, scheduler.forecast()) });
+            announce(granted);
             persist(); // keeps the next id
           }
           break;
@@ -684,19 +972,26 @@ function serve(options) {
         case 'done':
           if (job !== null) {
             job.done = true;
+            job.completed = message.completed === true;
           }
           break;
-        case 'status':
+        case 'status': {
+          scheduler.order();
+          const forecast = scheduler.forecast();
+          const view = (j) => ({ ...describeJob(j), ...outlook(j, forecast) });
           send(socket, {
             type: 'status',
             pid: process.pid,
+            now: Date.now(),
+            policy: scheduler.policy,
             capacity: scheduler.capacity,
             used: scheduler.used,
-            running: scheduler.running.map(describeJob),
-            waiting: scheduler.waiting.map(describeJob),
+            running: scheduler.running.map(view),
+            waiting: scheduler.waiting.map(view),
           });
           socket.end();
           break;
+        }
         case 'cancel': {
           const all = scheduler.running.concat(scheduler.waiting);
           const targets = message.all === true ? all : all.filter((j) => j.id === message.id);
@@ -709,8 +1004,10 @@ function serve(options) {
         case 'stop': {
           log('stop requested');
           send(socket, { type: 'stopping', running: scheduler.running.length, waiting: scheduler.waiting.length });
-          // Flush what was sent to the clients (a cancel just before the stop) before leaving: end every connection
-          // and exit when they are closed, or after a second
+          // Deliver what was sent to the clients (a cancel just before the stop) before leaving: end every connection
+          // and exit when the clients have closed their side too, or after a second. Exiting once our data is only
+          // flushed is not enough: on Windows a process that exits with unread data from a client (a "started" sent
+          // right after a grant) resets the connection, and the client can lose the messages it has not read yet.
           server.close();
           const open = scheduler.running.concat(scheduler.waiting).map((j) => j.socket).filter((s) => s !== null);
           let pending = open.length + 1;
@@ -721,8 +1018,14 @@ function serve(options) {
             }
           };
           setTimeout(() => process.exit(0), 1000).unref();
-          socket.end(closed);
-          open.forEach((s) => s.end(closed));
+          for (const s of [socket, ...open]) {
+            if (s.destroyed) {
+              closed();
+              continue;
+            }
+            s.once('close', closed);
+            s.end();
+          }
           break;
         }
         default:
@@ -741,12 +1044,19 @@ function serve(options) {
     process.exit(1);
   });
   server.listen(options.port, '127.0.0.1', () => {
-    log(`scheduler pid ${process.pid} on 127.0.0.1:${options.port}, ${scheduler.capacity} slots, ${os.cpus().length} cores`);
+    log(`scheduler pid ${process.pid} on 127.0.0.1:${options.port}, ${scheduler.capacity} slots, ${os.cpus().length} cores, policy ${scheduler.policy}`);
     // The grace for re-registration starts once clients can connect; only the scheduler that owns the port restores.
     scheduler.holdUntil = Date.now() + StartupGraceMs;
     restore();
     setTimeout(() => announce(scheduler.grant()), StartupGraceMs + 10);
   });
+  // The response ratios change with time alone: a waiting job can overtake the first one and fit in the free slots
+  // between two events, so grant again now and then while jobs wait
+  setInterval(() => {
+    if (scheduler.waiting.length > 0) {
+      announce(scheduler.grant());
+    }
+  }, RegrantMs).unref();
   setInterval(() => {
     if (scheduler.isIdle() && Date.now() - idleSince >= IdleExitMs) {
       log('idle; exiting');
@@ -818,7 +1128,7 @@ function startScheduler(options) {
       prefix(`could not rotate ${logPath}: ${error.message}`);
     }
   }
-  const args = [__filename, 'serve', '--port', String(options.port), '--slots', String(options.slots)];
+  const args = [__filename, 'serve', '--port', String(options.port), '--slots', String(options.slots), '--policy', options.policy];
   args.push('--state-dir', stateDirectory);
   if (process.platform === 'win32' && startThroughWmi(args, stateDirectory, logPath)) {
     return;
@@ -996,7 +1306,10 @@ function shellInvocation(shell, command) {
   }
 }
 
-/** Runs the command in the shell with the queue's environment; resolves to its exit code. */
+/**
+ * Runs the command in the shell with the queue's environment; resolves to { code, signaled }: signaled when a signal
+ * ended the command (Unix; on Windows `taskkill /F` gives exit code 1, which looks like a failure).
+ */
 function runShell(command, shell, env, onChild) {
   return new Promise((resolve) => {
     const start = (name) => {
@@ -1019,14 +1332,16 @@ function runShell(command, shell, env, onChild) {
           return;
         }
         prefix(`could not start the command with ${file}: ${error.message}`);
-        resolve(1);
+        resolve({ code: 1, signaled: false });
       });
       if (child.pid !== undefined) {
         onChild(child);
       }
-      child.on('close', (code) => {
+      child.on('close', (code, signal) => {
         if (!replaced) {
-          resolve(code === null ? 1 : code);
+          // A shell reports a command that signal n killed as 128 + n (Unix)
+          const bySignal = signal !== null || (process.platform !== 'win32' && code > 128 && code < 160);
+          resolve({ code: code === null ? 1 : code, signaled: bySignal });
         }
       });
     };
@@ -1113,7 +1428,7 @@ async function run(options) {
     };
     process.on('SIGINT', stop(130));
     process.on('SIGTERM', stop(143));
-    process.exit(await runShell(command, resolveShell(options.shell), process.env, (c) => (child = c)));
+    process.exit((await runShell(command, resolveShell(options.shell), process.env, (c) => (child = c))).code);
     return;
   }
   if (options.gpu && !inGpuLock) {
@@ -1134,8 +1449,10 @@ async function run(options) {
   let registered = true; // false when the scheduler refused this client's protocol version
   let lastNotice = -Infinity;
   let lastPosition = 0;
+  let lastStartAt = null;
 
-  const finish = (code) => {
+  // completed: the command ran to its own end (not stopped by a signal or a cancel), so its run time may be recorded
+  const finish = (code, completed = false) => {
     if (state === 'done') {
       return;
     }
@@ -1146,7 +1463,7 @@ async function run(options) {
     // Exit once "done" has been flushed, so that the scheduler frees the slot at once instead of treating the job as
     // a lost client whose command may still run.
     setTimeout(() => process.exit(code), 1000).unref();
-    send(socket, { version: ProtocolVersion, type: 'done' });
+    send(socket, { version: ProtocolVersion, type: 'done', completed });
     socket.end(() => process.exit(code));
   };
   const onSignal = (signal, code) => () => {
@@ -1180,14 +1497,14 @@ async function run(options) {
       [CpusVariable]: String(cpus),
       [MsbuildArgsVariable]: `-m:${cpus}`,
     };
-    const code = await runShell(command, resolveShell(options.shell), env, (c) => {
+    const { code, signaled } = await runShell(command, resolveShell(options.shell), env, (c) => {
       child = c;
       spawnedAt = Date.now();
       if (c.pid !== undefined) {
         send(socket, { version: ProtocolVersion, type: 'started', commandPid: c.pid, spawnedAt });
       }
     });
-    finish(code);
+    finish(code, !signaled); // a run a signal cut short is not recorded
   };
 
   const attach = async () => {
@@ -1221,15 +1538,28 @@ async function run(options) {
     });
     onMessages(current, (message) => {
       switch (message.type) {
+        case 'queued': {
+          jobId = Number(message.id) || jobId;
+          const outlook = message.state === 'waiting' ? describeOutlook(message, Date.now()) : '';
+          // The first waiting notice says the same: skip it
+          lastPosition = message.position;
+          lastStartAt = message.startAt;
+          lastNotice = Date.now();
+          prefix(`queued #${message.id}${outlook ? `: ${outlook}` : ''}; "build-queue.js status ${message.id}" shows it`);
+          break;
+        }
         case 'waiting': {
           jobId = Number(message.id) || jobId;
           const now = Date.now();
-          if (message.position !== lastPosition || now - lastNotice >= NoticeIntervalMs) {
+          const moved = Math.abs((message.startAt || 0) - (lastStartAt || 0)) >= ForecastNoticeMs;
+          if (message.position !== lastPosition || moved || now - lastNotice >= NoticeIntervalMs) {
             lastPosition = message.position;
+            lastStartAt = message.startAt;
             lastNotice = now;
+            const outlook = describeOutlook(message, now);
             prefix(
-              `waiting: position ${message.position}, ${message.used}/${message.capacity} slots in use ` +
-                `(${Math.round((now - queuedAt) / 1000)}s)`,
+              `waiting #${jobId}: position ${message.position}, ${message.used}/${message.capacity} slots in use ` +
+                `(${Math.round((now - queuedAt) / 1000)}s)${outlook ? `; ${outlook}` : ''}`,
             );
           }
           break;
@@ -1308,7 +1638,22 @@ function formatJob(job, now) {
   const since = job.grantedAt || job.queuedAt;
   const minutes = Math.round((now - since) / 60000);
   const flags = `${job.gpu ? ' gpu' : ''}${job.orphan ? ' client-lost' : ''}`;
-  return `  #${job.id} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}\n      ${job.command}`;
+  const outlook = describeOutlook(job, now);
+  return `  #${job.id} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${outlook ? `\n      ${outlook}` : ''}\n      ${job.command}`;
+}
+
+/** "2 ahead, start ~20:31 (in 6m), end ~20:35 (in 10m)" for a waiting job, "end ~20:35 (in 4m)" for a running one. */
+function describeOutlook(view, now) {
+  if (!Number.isFinite(view.startAt) || !Number.isFinite(view.endAt)) {
+    return '';
+  }
+  const clock = (time) => new Date(time).toTimeString().slice(0, 5);
+  const minutes = (ms) => `${Math.max(0, Math.round(ms / 60000))}m`;
+  const end = `expected end ~${clock(view.endAt)} (in ${minutes(view.endAt - now)})`;
+  if (view.state === 'running') {
+    return end;
+  }
+  return `${view.ahead} ahead, expected start ~${clock(view.startAt)} (in ${minutes(view.startAt - now)}), ${end}`;
 }
 
 function printReplyError(reply) {
@@ -1318,16 +1663,31 @@ function printReplyError(reply) {
 
 async function status(options) {
   const reply = await request(options, { type: 'status' });
-  if (reply === null) {
-    process.stdout.write(`no scheduler on 127.0.0.1:${options.port} (no jobs)\n`);
-    return;
-  }
-  if (reply.type !== 'status') {
+  if (reply !== null && reply.type !== 'status') {
     printReplyError(reply);
     return;
   }
-  const now = Date.now();
-  const lines = [`scheduler pid ${reply.pid}: ${reply.used}/${reply.capacity} slots in use`];
+  if (options.statusId > 0) {
+    // One job: its state, place and expected times; exit 1 when the scheduler does not know it (ended or never queued)
+    const job = reply === null ? undefined : reply.running.concat(reply.waiting).find((j) => j.id === options.statusId);
+    if (job === undefined) {
+      process.stdout.write(options.json ? `${JSON.stringify({ id: options.statusId, state: 'unknown' })}\n` : `no job #${options.statusId} (ended, or never queued)\n`);
+      process.exitCode = 1;
+      return;
+    }
+    process.stdout.write(options.json ? `${JSON.stringify({ now: reply.now, ...job })}\n` : `${formatJob(job, reply.now)}\n`);
+    return;
+  }
+  if (reply === null) {
+    process.stdout.write(options.json ? `${JSON.stringify({ running: [], waiting: [] })}\n` : `no scheduler on 127.0.0.1:${options.port} (no jobs)\n`);
+    return;
+  }
+  if (options.json) {
+    process.stdout.write(`${JSON.stringify(reply)}\n`);
+    return;
+  }
+  const now = reply.now || Date.now();
+  const lines = [`scheduler pid ${reply.pid}: ${reply.used}/${reply.capacity} slots in use, policy ${reply.policy}`];
   lines.push(`running (${reply.running.length}):`);
   reply.running.forEach((job) => lines.push(formatJob(job, now)));
   lines.push(`waiting (${reply.waiting.length}):`);
@@ -1403,13 +1763,198 @@ async function usedWithin(port, expected, ms) {
   }
 }
 
+/** Backfilling: a later job starts only when it ends before the first job's reserved start or fits in what it leaves. */
+function checkBackfill(assert, job) {
+  const times = (typicalS, longestS) => ({ typicalMs: typicalS * 1000, longestMs: longestS * 1000 });
+  for (const policy of ['backfill', 'fifo']) {
+    const s = new Scheduler(4, 0, policy);
+    const a = job(1, 3, 0, false, times(80, 100));
+    const b = job(2, 2, 1);
+    const c = job(3, 1, 2, false, times(40, 50));
+    const d = job(4, 1, 3, false, times(400, 500));
+    assert.deepStrictEqual(s.enqueue(a, 0), [a]);
+    assert.deepStrictEqual(s.enqueue(b, 1), []);
+    const expected = policy === 'fifo' ? [] : [c];
+    assert.deepStrictEqual(s.enqueue(c, 2), expected, `${policy}: a job that ends before the first one can start`);
+    assert.deepStrictEqual(s.enqueue(d, 3), [], `${policy}: no free slot left`);
+    assert.deepStrictEqual(s.waiting[0], b, `${policy}: the first job stays first`);
+  }
+  {
+    // The first job waits for 3 slots; when a 2-slot job ends, 4 are free: one slot to spare for a long job
+    const s = new Scheduler(4, 0, 'backfill');
+    const a = job(1, 2, 0, false, times(80, 100));
+    const b = job(2, 3, 1);
+    const c = job(3, 1, 2, false, times(400, 500));
+    const d = job(4, 1, 3);
+    s.enqueue(a, 0);
+    s.enqueue(b, 1);
+    assert.deepStrictEqual(s.enqueue(c, 2), [c], 'a long job fits in the slot the first job leaves free');
+    assert.deepStrictEqual(s.enqueue(d, 3), [], 'the spare slot is taken; an unknown job could run past the reserved start');
+    assert.deepStrictEqual(s.remove(a, 100000), [b], 'the first job starts at its reserved time');
+  }
+  {
+    // Several jobs backfilled in one pass: the spare slot and the idle slots are each used once
+    const running = (weight, longestS) => Object.assign(job(9, weight, 0, false, times(longestS, longestS)), { grantedAt: 1 }); // adopt() reads 0 as unset
+    const s = new Scheduler(4, 1000, 'backfill');
+    s.adopt(running(2, 100), 500);
+    const queued = [job(2, 3, 1), job(3, 1, 2, false, times(500, 500)), job(4, 1, 3, false, times(500, 500))];
+    queued.forEach((j) => s.enqueue(j, 500));
+    assert.deepStrictEqual(s.grant(1000), [queued[1]], 'one spare slot: only one long job');
+    const t = new Scheduler(4, 1000, 'backfill');
+    t.adopt(running(3, 100), 500);
+    const short = [job(2, 4, 1), job(3, 1, 2, false, times(50, 50)), job(4, 1, 3, false, times(50, 50))];
+    short.forEach((j) => t.enqueue(j, 500));
+    assert.deepStrictEqual(t.grant(1000), [short[1]], 'one idle slot: only one short job');
+    const u = new Scheduler(4, 1000, 'backfill');
+    u.adopt(running(3, 100), 500);
+    const late = [job(2, 4, 1), job(3, 1, 2, false, times(500, 500))];
+    late.forEach((j) => u.enqueue(j, 500));
+    assert.deepStrictEqual(u.grant(1000), [], 'a job that would run past the reserved start, with no slot to spare');
+    // Two running jobs: the one that ends first frees enough; the reservation leaves no slot to spare
+    const v = new Scheduler(4, 1000, 'backfill');
+    v.adopt(Object.assign(job(7, 1, 0, false, times(500, 500)), { grantedAt: 1 }), 500);
+    v.adopt(Object.assign(job(8, 2, 0, false, times(100, 100)), { grantedAt: 1 }), 500);
+    const behind = [job(2, 3, 1), job(3, 1, 2, false, times(1000, 1000))];
+    behind.forEach((j) => v.enqueue(j, 500));
+    assert.deepStrictEqual(v.grant(1000), [], 'the ends are taken in time order, not in the order the jobs started');
+  }
+  {
+    // A running job with no recorded time, or past its longest one: its end is unknown, nothing is backfilled,
+    // not even into a slot that would be spare
+    const s = new Scheduler(4, 0, 'backfill');
+    s.enqueue(job(1, 2, 0), 0);
+    s.enqueue(job(2, 3, 1), 1);
+    assert.deepStrictEqual(s.enqueue(job(3, 1, 2, false, times(1, 1)), 2), [], 'unknown end of a running job');
+    const t = new Scheduler(4, 0, 'backfill');
+    t.enqueue(job(1, 2, 0, false, times(5, 10)), 0);
+    t.enqueue(job(2, 3, 1), 1);
+    assert.deepStrictEqual(t.enqueue(job(3, 1, 20000, false, times(1, 1)), 20000), [], 'running past its longest time');
+  }
+}
+
+/** Response ratio order: a short job goes first, and a long one rises the longer it waits. */
+function checkResponseRatio(assert, job) {
+  const typical = (seconds) => ({ typicalMs: seconds * 1000, longestMs: seconds * 1000 });
+  {
+    const s = new Scheduler(1, 0, 'hrrn');
+    const x = job(1, 1, 0);
+    const long = job(2, 1, 0, false, typical(600));
+    const short = job(3, 1, 10000, false, typical(30));
+    s.enqueue(x, 0);
+    s.enqueue(long, 0);
+    s.enqueue(short, 10000);
+    assert.deepStrictEqual(s.remove(x, 60000), [short], 'the short job overtakes the long one');
+  }
+  {
+    const s = new Scheduler(1, 0, 'hrrn');
+    const x = job(1, 1, 0);
+    const long = job(2, 1, 0, false, typical(600));
+    const short = job(3, 1, 1000000, false, typical(30));
+    s.enqueue(x, 0);
+    s.enqueue(long, 0);
+    s.enqueue(short, 1000000);
+    assert.deepStrictEqual(s.remove(x, 1010000), [long], 'a long job that waited long enough goes first');
+  }
+  {
+    const s = new Scheduler(1, 0, 'hrrn');
+    const x = job(1, 1, 0);
+    const unknown = job(2, 1, 0);
+    const known = job(3, 1, 0, false, typical(90));
+    s.enqueue(x, 0);
+    s.enqueue(known, 0);
+    s.enqueue(unknown, 0);
+    assert.deepStrictEqual(s.remove(x, 30000), [unknown], 'a job with no record counts as UnknownTypicalMs');
+  }
+}
+
+/** Forecast: grants played forward with the typical times; a job past its times is expected to end soon. */
+function checkForecast(assert, job) {
+  const times = (typicalS, longestS) => ({ typicalMs: typicalS * 1000, longestMs: longestS * 1000 });
+  const s = new Scheduler(2, 0, 'fifo');
+  const a = job(1, 2, 0, false, times(100, 300));
+  const b = job(2, 1, 1, false, times(50, 50));
+  const c = job(3, 1, 2, false, times(20, 20));
+  const d = job(4, 2, 3);
+  [a, b, c, d].forEach((j) => s.enqueue(j, 0));
+  let f = s.forecast(10000);
+  assert.deepStrictEqual(f.get(a), { startAt: 0, endAt: 100000 });
+  assert.deepStrictEqual(f.get(b), { startAt: 100000, endAt: 150000 });
+  assert.deepStrictEqual(f.get(c), { startAt: 100000, endAt: 120000 });
+  assert.deepStrictEqual(f.get(d), { startAt: 150000, endAt: 150000 + UnknownTypicalMs });
+  assert.strictEqual(s.waiting.length, 3, 'the forecast does not change the scheduler');
+  f = s.forecast(200000);
+  assert.strictEqual(f.get(a).endAt, 300000, 'past its typical time: its longest time');
+  f = s.forecast(400000);
+  assert.strictEqual(f.get(a).endAt, 400000 + OverrunGuessMs, 'past its longest time: soon');
+  // hrrn: a short job overtakes the waiting long one while slots are free, with no job ending in between
+  const h = new Scheduler(4, 0, 'hrrn');
+  const running = job(1, 2, 0, false, times(900, 900));
+  const wide = job(2, 4, -600000, false, times(3600, 3600)); // has waited 10 minutes
+  const narrow = job(3, 2, 0, false, times(1200, 1200));
+  h.enqueue(running, 0);
+  h.enqueue(wide, 0);
+  h.enqueue(narrow, 0);
+  assert.deepStrictEqual(h.waiting, [wide, narrow], 'the wide job waited longer: it is first');
+  // The ratios cross at 300 s: (300 + 600 + 3600) / 3600 = (300 + 1200) / 1200
+  const expected = h.forecast(0).get(narrow).startAt;
+  assert.ok(expected > 300000 && expected < 900000, `the forecast sees the overtaking before the running job ends (${expected})`);
+  assert.deepStrictEqual(h.grant(400000), [narrow], 'once its ratio passed the wide one, it fits and starts');
+  // During the startup grace the positions already follow the ratio
+  const held = new Scheduler(4, 1000, 'hrrn');
+  const long = job(4, 1, 0, false, times(600, 600));
+  const short = job(5, 1, 1, false, times(10, 10));
+  held.enqueue(long, 500);
+  held.enqueue(short, 500);
+  assert.deepStrictEqual(held.waiting, [short, long], 'ordered while nothing is granted');
+  // A replay that would take too many steps stops; the jobs it did not reach have no times
+  const slow = new Scheduler(8, 0, 'hrrn');
+  slow.enqueue(job(1, 2, 0, false, times(LongestRunMs / 1000, LongestRunMs / 1000)), 0);
+  const far = job(2, 8, 0);
+  slow.enqueue(far, 0);
+  const started = Date.now();
+  assert.strictEqual(slow.forecast(0).get(far), undefined, 'not reached within ForecastSteps');
+  assert.ok(Date.now() - started < 1000, 'the forecast stays fast');
+}
+
+/** Run history: median and longest of the last runs per command, kept on disk. */
+function checkRunHistory(assert) {
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'build-queue-history-')), 'history.json');
+  const history = new RunHistory(file, () => {});
+  assert.strictEqual(history.estimate('dotnet build'), null);
+  [10, 30, 20].forEach((ms) => history.record('dotnet  build ', ms));
+  assert.deepStrictEqual(history.estimate('dotnet build'), { typicalMs: 20, longestMs: 30 }, 'spaces do not matter');
+  history.record('dotnet build', 40);
+  assert.deepStrictEqual(history.estimate('dotnet build'), { typicalMs: 25, longestMs: 40 });
+  for (let i = 0; i < HistoryRunsPerCommand; i++) {
+    history.record('dotnet build', 5);
+  }
+  assert.deepStrictEqual(new RunHistory(file, () => {}).estimate('dotnet build'), { typicalMs: 5, longestMs: 5 }, 'only the last runs count');
+  // A damaged file loses its bad entries, never the scheduler
+  fs.writeFileSync(file, JSON.stringify({ nextId: -3, commands: { a: { runs: 5 }, b: 7, c: null, d: { runs: [1, 'x', -2, 3] } } }));
+  const damaged = new RunHistory(file, () => {});
+  assert.strictEqual(damaged.nextId, 1, 'a negative next id is ignored');
+  assert.deepStrictEqual(damaged.estimate('d'), { typicalMs: 2, longestMs: 3 }, 'the valid runs of an entry stay');
+  ['a', 'b', 'c'].forEach((key) => damaged.record(key, 10));
+  assert.deepStrictEqual(damaged.estimate('a'), { typicalMs: 10, longestMs: 10 });
+  fs.writeFileSync(file, '[1, 2');
+  assert.strictEqual(new RunHistory(file, () => {}).estimate('a'), null, 'unreadable JSON starts empty');
+  // Command texts that are names of Object members are plain keys
+  const plain = new RunHistory(file, () => {});
+  ['constructor', 'toString', '__proto__'].forEach((key) => plain.record(key, 7));
+  assert.deepStrictEqual(new RunHistory(file, () => {}).estimate('__proto__'), { typicalMs: 7, longestMs: 7 });
+  assert.strictEqual(new RunHistory(file, () => {}).estimate('hasOwnProperty'), null);
+  // Times beyond any real run are damaged input
+  fs.writeFileSync(file, JSON.stringify({ commands: { huge: { runs: [1e15, 5] } } }));
+  assert.deepStrictEqual(new RunHistory(file, () => {}).estimate('huge'), { typicalMs: 5, longestMs: 5 });
+}
+
 async function selfTest() {
   const assert = require('assert');
 
   // Scheduler order: FIFO, the head is never overtaken, GPU holders are granted at once, weights are clamped,
   // nothing is granted during the startup grace.
-  const s = new Scheduler(4);
-  const job = (id, weight, queuedAt, gpu = false) => ({ id, weight, queuedAt, gpu });
+  const s = new Scheduler(4, 0, 'fifo');
+  const job = (id, weight, queuedAt, gpu = false, estimate = null) => ({ id, weight, queuedAt, gpu, estimate });
   const a = job(1, 2, 1);
   const b = job(2, 2, 2);
   const c = job(3, 4, 3);
@@ -1433,6 +1978,10 @@ async function selfTest() {
   const h = job(7, 1, 1);
   assert.deepStrictEqual(held.enqueue(h, 500), [], 'nothing is granted during the startup grace');
   assert.deepStrictEqual(held.grant(1000), [h]);
+  checkBackfill(assert, job);
+  checkResponseRatio(assert, job);
+  checkForecast(assert, job);
+  checkRunHistory(assert);
 
   // Node limit: added per dotnet invocation that sets no -m of its own.
   assert.strictEqual(limitMsbuildNodes('dotnet test X.csproj && dotnet build', 6), 'dotnet test -m:6 X.csproj && dotnet build -m:6');
@@ -1505,6 +2054,40 @@ async function selfTest() {
     }
     const before = await request({ port }, { type: 'status' });
     assert.strictEqual(before.used, 2, 'the holder and one job fill the 2 slots');
+    assert.ok(before.waiting.length >= 1, 'jobs wait');
+    before.waiting.forEach((waiting, index) => {
+      assert.strictEqual(waiting.ahead, index, 'the jobs ahead of a waiting job');
+      assert.ok(Number.isFinite(waiting.startAt) && waiting.endAt > waiting.startAt, 'expected start and end');
+      assert.ok(index === 0 || waiting.startAt >= before.waiting[index - 1].startAt, 'a later job is expected to start later');
+    });
+    // run prints its id at once; status <id> --json tells the same job
+    const asking = spawn(process.execPath, [__filename, 'run', '--port', String(port), '--slots', '2', '--', sleeper(100)], {
+      stdio: ['ignore', 'ignore', 'pipe'],
+      windowsHide: true,
+      env,
+    });
+    children.push(asking);
+    const queuedId = await new Promise((resolve) => {
+      let text = '';
+      asking.stderr.on('data', (data) => {
+        text += data;
+        const match = /queued #(\d+): (\d+) ahead, expected start/.exec(text);
+        if (match) {
+          resolve(Number(match[1]));
+        }
+      });
+      asking.on('close', () => resolve(0));
+    });
+    assert.ok(queuedId > 0, 'run prints "queued #<id>: <n> ahead, expected start ..." while it waits');
+    const one = spawnSync(process.execPath, [__filename, 'status', String(queuedId), '--json', '--port', String(port)], {
+      encoding: 'utf8',
+      windowsHide: true,
+      env,
+    });
+    const view = JSON.parse(one.stdout);
+    assert.strictEqual(view.id, queuedId);
+    assert.strictEqual(view.state, 'waiting');
+    assert.ok(Number.isFinite(view.endAt), 'status <id> --json gives the expected end');
     killProcessTree(holder.pid);
     assert.deepStrictEqual(await Promise.all(runs), [0, 0, 0, 0]);
     const events = fs
@@ -1547,6 +2130,37 @@ async function selfTest() {
     assert.strictEqual(await usedWithin(port, 0, 5000), 0);
     const empty = await request({ port }, { type: 'status' });
     assert.deepStrictEqual([empty.used, empty.running.length, empty.waiting.length], [0, 0, 0]);
+    // Run times are recorded for the commands that ended by themselves, not for killed, lost or cancelled ones, nor
+    // for one stopped early (done with completed: false, as a client sends after a signal)
+    const rawRun = (command, completed) =>
+      new Promise((resolve) => {
+        const s = net.connect(port, '127.0.0.1', () =>
+          send(s, { version: ProtocolVersion, type: 'request', weight: 1, pid: process.pid, command, queuedAt: Date.now() }),
+        );
+        onMessages(s, (m) => {
+          if (m.type === 'granted') {
+            send(s, { version: ProtocolVersion, type: 'done', completed });
+            s.end();
+          }
+        });
+        s.on('close', resolve);
+        s.on('error', resolve);
+      });
+    await rawRun('stopped early', false);
+    await rawRun('ran to its end', true);
+    // The scheduler records when it sees the close, after our side closed; the early run's close came before
+    let recorded = new RunHistory(path.join(dir, 'history.json'), () => {});
+    for (let i = 0; i < 30 && recorded.estimate('ran to its end') === null; i++) {
+      await delay(100);
+      recorded = new RunHistory(path.join(dir, 'history.json'), () => {});
+    }
+    for (const i of [0, 1, 2, 3]) {
+      assert.ok(recorded.estimate(`"${process.execPath}" "${script}" "${marker}" ${i}`) !== null, `job ${i} is recorded`);
+    }
+    assert.ok(recorded.estimate('ran to its end') !== null, 'a run that ended by itself is recorded');
+    assert.strictEqual(recorded.estimate('stopped early'), null, 'a run stopped early is not recorded');
+    assert.strictEqual(recorded.estimate(sleeper(60000)), null, 'killed and cancelled runs are not recorded');
+    assert.strictEqual(recorded.estimate(sleeper(8000)), null, 'the run of a lost client is not recorded');
 
     // 4. After a scheduler restart, running jobs re-register before waiting ones are granted: never over capacity.
     const k1 = client(port, sleeper(6000));
@@ -1554,16 +2168,20 @@ async function selfTest() {
     await delay(600);
     const k3 = client(port, sleeper(500));
     await delay(600);
+    const restartedAt = Date.now();
     servers[0].kill('SIGKILL'); // the clients start the next scheduler themselves
     let maxUsed = 0;
+    let adoptedSince = Infinity;
     for (let i = 0; i < 20; i++) {
       const snapshot = await request({ port }, { type: 'status' }).catch(() => null); // the scheduler may be restarting
       if (snapshot !== null && snapshot.type === 'status') {
         maxUsed = Math.max(maxUsed, snapshot.used);
+        snapshot.running.forEach((j) => (adoptedSince = Math.min(adoptedSince, j.grantedAt)));
       }
       await delay(150);
     }
     assert.ok(maxUsed <= 2, `never over capacity after a restart, saw ${maxUsed}`);
+    assert.ok(adoptedSince < restartedAt, 'a re-registered job keeps the start of its command, not the restart time');
     assert.deepStrictEqual(await Promise.all([k1.done, k2.done, k3.done]), [0, 0, 0]);
 
     // 6. The command runs in the chosen shell and its exit code comes back: PowerShell passes the code of the last
@@ -1660,6 +2278,59 @@ async function selfTest() {
     const newIds = fs.readFileSync(path.join(dir, `jobs-${port}.json`), 'utf8');
     assert.ok(JSON.parse(newIds).nextId > beforeRestart.running[0].id, 'new ids continue after the saved ones');
     assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanPollMs * 3), 0, 'and released when its command exits');
+
+    // 9. hrrn re-grants while jobs wait, not only when a job ends: a short job that overtakes the waiting wide one
+    //    starts within RegrantMs, although nothing ends before the running job (20 s).
+    const hrrnDir = fs.mkdtempSync(path.join(os.tmpdir(), 'build-queue-self-test-hrrn-'));
+    const hrrnPort = port + 1;
+    const longRun = sleeper(20000);
+    const shortRun = sleeper(300);
+    fs.writeFileSync(
+      path.join(hrrnDir, 'history.json'),
+      JSON.stringify({
+        commands: {
+          [RunHistory.key(longRun)]: { runs: [20000], lastUsed: 1 },
+          // typical 20 s, longest 30 s: it cannot be backfilled before the running job ends
+          [RunHistory.key(shortRun)]: { runs: [10000, 20000, 30000], lastUsed: 1 },
+        },
+      }),
+    );
+    try {
+      servers.push(await startTestScheduler(hrrnPort, 2, { ...env, [StateDirectoryVariable]: hrrnDir }));
+      await delay(StartupGraceMs);
+      client(hrrnPort, longRun);
+      assert.strictEqual(await usedWithin(hrrnPort, 1, 5000), 1, 'the long job runs before the wide one arrives');
+      client(hrrnPort, sleeper(301), ['--weight', '2']); // unknown: one minute; waits for both slots
+      await delay(4000);
+      // The short job arrives behind the wide one, which has waited about 4 s longer: their ratios cross about 2 s
+      // later ((t + 20) / 20 = (t + 4 + 60) / 60), so it first waits, then starts at a re-grant, not at enqueue.
+      // Without the re-grant it would start only when the long job ends, at least 13 s after it is seen waiting.
+      client(hrrnPort, shortRun);
+      let seenWaitingAt = 0;
+      let startedAfterWaiting = Infinity;
+      const pollUntil = Date.now() + 20000;
+      while (Date.now() < pollUntil) {
+        const now = await request({ port: hrrnPort }, { type: 'status' });
+        if (seenWaitingAt === 0 && now.waiting.some((j) => j.command === shortRun)) {
+          seenWaitingAt = Date.now();
+        }
+        if (now.running.some((j) => j.command === shortRun)) {
+          startedAfterWaiting = seenWaitingAt === 0 ? -1 : Date.now() - seenWaitingAt;
+          break;
+        }
+        await delay(200);
+      }
+      assert.ok(seenWaitingAt > 0, 'the short job waited behind the wide one first');
+      assert.ok(
+        startedAfterWaiting >= 0 && startedAfterWaiting < RegrantMs + 5000,
+        `the short job started ${startedAfterWaiting} ms after it was seen waiting, not at the next end`,
+      );
+      await request({ port: hrrnPort }, { type: 'cancel', all: true });
+      await usedWithin(hrrnPort, 0, 5000); // the cancelled clients are gone before the stop: none re-registers
+      await request({ port: hrrnPort }, { type: 'stop' });
+    } finally {
+      fs.rmSync(hrrnDir, { recursive: true, force: true });
+    }
   } finally {
     children.forEach((child) => child.exitCode === null && killProcessTree(child.pid));
     servers.forEach((server) => server.kill('SIGKILL'));
