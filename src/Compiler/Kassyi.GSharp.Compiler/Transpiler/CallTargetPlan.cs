@@ -54,7 +54,25 @@ internal enum CallTargetKind
     Unemitted,
 
     /// <summary>A method of another assembly that the dialect does not implement (GSH0109).</summary>
-    Unmapped
+    Unmapped,
+
+    /// <summary>
+    /// <c>nameof</c> whose value stays a string on the device (GSH0002): a length or a comparison of constant strings
+    /// is written as its value before the <c>nameof</c> is reached.
+    /// </summary>
+    NameofString,
+
+    /// <summary>
+    /// An invocation that binds to no method and that lowering did not synthesize (GSH0003): a call through a function
+    /// pointer or a call bound at run time.
+    /// </summary>
+    Unbound,
+
+    /// <summary>
+    /// An invocation that C# cannot bind (a name that does not exist, no applicable overload): the C# compiler reports
+    /// it, so it is not reported again and only the placeholder is written for it.
+    /// </summary>
+    NotCSharp
 }
 
 /// <summary>
@@ -67,7 +85,7 @@ internal enum CallTargetKind
 /// </param>
 /// <param name="Detail">
 /// The reason of GSH0107, the end of the GSH0109 message (what the dialect implements instead; empty when there is
-/// nothing to add), or the syntax of GSH0003.
+/// nothing to add), or the syntax of GSH0003; empty for GSH0002.
 /// </param>
 /// <param name="Dialect">The dialect that has no implementation (GSH0109).</param>
 /// <param name="ReportAt">
@@ -81,7 +99,8 @@ internal readonly record struct CallTargetPlan(
     SyntaxNode? ReportAt = null)
 {
     /// <summary>Whether the call cannot be emitted and is reported.</summary>
-    public bool IsFailure => Kind is CallTargetKind.Unemitted or CallTargetKind.Unmapped or CallTargetKind.MisusedMacro;
+    public bool IsFailure => Kind is CallTargetKind.Unemitted or CallTargetKind.Unmapped or
+        CallTargetKind.MisusedMacro or CallTargetKind.NameofString or CallTargetKind.Unbound;
 
     /// <summary>The diagnostic of a failure.</summary>
     /// <exception cref="InvalidOperationException">The plan is not a failure.</exception>
@@ -89,7 +108,8 @@ internal readonly record struct CallTargetPlan(
     {
         CallTargetKind.Unemitted => GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode,
         CallTargetKind.Unmapped => GSharpDiagnostics.UnmappedMethodCalledFromGpuCode,
-        CallTargetKind.MisusedMacro => GSharpDiagnostics.UnsupportedSyntax,
+        CallTargetKind.MisusedMacro or CallTargetKind.Unbound => GSharpDiagnostics.UnsupportedSyntax,
+        CallTargetKind.NameofString => GSharpDiagnostics.StringNotSupported,
         _ => throw new InvalidOperationException($"A call target of kind {Kind} is not a failure.")
     };
 
@@ -97,7 +117,8 @@ internal readonly record struct CallTargetPlan(
     public object[] MessageArgs => Kind switch
     {
         CallTargetKind.Unmapped => [Method, Dialect, Detail],
-        CallTargetKind.MisusedMacro => [Detail],
+        CallTargetKind.MisusedMacro or CallTargetKind.Unbound => [Detail],
+        CallTargetKind.NameofString => [],
         _ => [Method, Detail]
     };
 }

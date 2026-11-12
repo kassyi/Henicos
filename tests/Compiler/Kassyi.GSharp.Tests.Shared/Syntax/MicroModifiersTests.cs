@@ -215,6 +215,8 @@ public class MicroModifiersTests : TranspilerTestBase
         // Host function pointers cannot be dereferenced on the device; the analyzer rejects the parameter
         // (KernelSignatureDiagnosticsTests) and the transpiler records the failure.
         diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, "'FunctionPointerType'");
+        // The call itself has no device form either; it is never written as a call of the pointer
+        diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, "'call through a function pointer'");
         await Verify(cudaSource);
 
         Assert.Equal(15, InvokeFunctionPointerTarget());

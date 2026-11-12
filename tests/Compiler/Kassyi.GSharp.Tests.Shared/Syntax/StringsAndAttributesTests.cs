@@ -89,8 +89,11 @@ public class StringsAndAttributesTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.NameOfExpression), isDevice: false, dialect: CurrentDialect);
 
-        // The analyzer reports the string variable (UnsupportedConstructDiagnosticsTests); the transpiler records the failure
+        // The analyzer reports the string variable (UnsupportedConstructDiagnosticsTests); the transpiler records the
+        // failure, also at the nameof, whose value stays a string and is never written as nameof(...)
         diagnostics.AssertFails(GSharpDiagnostics.StringNotSupported);
+        Assert.Contains(diagnostics, static f => f.Descriptor.Id == GSharpDiagnostics.StringNotSupported.Id &&
+            f.Location.SourceTree?.GetText().ToString(f.Location.SourceSpan) == "nameof(output)");
         await Verify(cudaSource);
     }
 
