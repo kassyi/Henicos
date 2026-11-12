@@ -15,68 +15,20 @@ public class NativeCudaKernelsGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(kernelNames, EmitNativeCudaKernels);
     }
 
-    private static ImmutableArray<string> ExtractKernelNames(AdditionalText file, CancellationToken cancellationToken)
+    // Compared by value, so an edit of a .cu file that keeps its kernel names leaves the output cached.
+    private static EquatableArray<string> ExtractKernelNames(AdditionalText file, CancellationToken cancellationToken)
     {
         var text = file.GetText(cancellationToken);
         if (text == null)
         {
-            return ImmutableArray<string>.Empty;
+            return ImmutableArray<string>.Empty.AsEquatableArray();
         }
 
-        return ExtractKernelNamesFromSource(text.ToString());
-    }
-
-    private static ImmutableArray<string> ExtractKernelNamesFromSource(string textStr)
-    {
-        var builder = ImmutableArray.CreateBuilder<string>();
-        var searchSpan = "__global__".AsSpan();
-        var currentIndex = 0;
-
-        while (true)
-        {
-            var remaining = textStr.AsSpan(currentIndex);
-            var idx = remaining.IndexOf(searchSpan, StringComparison.Ordinal);
-            if (idx == -1)
-            {
-                break;
-            }
-
-            currentIndex = SkipWhitespace(textStr, currentIndex + idx + searchSpan.Length);
-            if (currentIndex + 4 > textStr.Length ||
-                !textStr.AsSpan(currentIndex, 4).SequenceEqual("void".AsSpan()))
-            {
-                continue;
-            }
-
-            currentIndex = SkipWhitespace(textStr, currentIndex + 4);
-            var start = currentIndex;
-            while (currentIndex < textStr.Length &&
-                   (char.IsLetterOrDigit(textStr[currentIndex]) || textStr[currentIndex] == '_'))
-            {
-                currentIndex++;
-            }
-
-            if (currentIndex > start)
-            {
-                builder.Add(textStr[start..currentIndex]);
-            }
-        }
-
-        return builder.ToImmutable();
-    }
-
-    private static int SkipWhitespace(string text, int index)
-    {
-        while (index < text.Length && char.IsWhiteSpace(text[index]))
-        {
-            index++;
-        }
-
-        return index;
+        return CudaKernelNameScanner.Scan(text.ToString()).AsEquatableArray();
     }
 
     private static void EmitNativeCudaKernels(
-        SourceProductionContext spc, ImmutableArray<ImmutableArray<string>> arrays)
+        SourceProductionContext spc, ImmutableArray<EquatableArray<string>> arrays)
     {
         if (arrays.IsEmpty)
         {
@@ -104,12 +56,12 @@ public class NativeCudaKernelsGenerator : IIncrementalGenerator
         spc.AddSource("NativeCudaKernels.g.cs", writer.ToString());
     }
 
-    private static void EmitKernelConstants(SourceWriter writer, ImmutableArray<ImmutableArray<string>> arrays)
+    private static void EmitKernelConstants(SourceWriter writer, ImmutableArray<EquatableArray<string>> arrays)
     {
         var generated = new HashSet<string>();
         foreach (var array in arrays)
         {
-            EmitArrayKernelConstants(writer, array, generated);
+            EmitArrayKernelConstants(writer, array.AsImmutableArray(), generated);
         }
     }
 
@@ -120,7 +72,8 @@ public class NativeCudaKernelsGenerator : IIncrementalGenerator
         {
             if (generated.Add(kernelName))
             {
-                writer.AppendLine($"public const string {kernelName} = \"{kernelName}\";");
+                var literal = SymbolDisplay.FormatLiteral(kernelName, quote: true);
+                writer.AppendLine($"public const string {kernelName.ToCSharpIdentifier()} = {literal};");
             }
         }
     }
