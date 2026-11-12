@@ -274,7 +274,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.ContinueInSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInSwitchKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchContinueInSwitchKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInSwitchKernel", "LaunchContinueInSwitchKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchContinueInSwitchKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -478,7 +478,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchContinueInSwitchWithoutCaseKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel", "LaunchContinueInSwitchWithoutCaseKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchContinueInSwitchWithoutCaseKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -713,7 +713,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchGotoOutOfSwitchKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel", "LaunchGotoOutOfSwitchKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchGotoOutOfSwitchKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -945,7 +945,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchContinueInNestedSwitchKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel", "LaunchContinueInNestedSwitchKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchContinueInNestedSwitchKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

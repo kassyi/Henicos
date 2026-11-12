@@ -714,7 +714,7 @@ public static unsafe void LaunchStepPrivateFieldsKernelPtr(global::System.IntPtr
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepPrivateFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.StepPrivateFieldsKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchStepPrivateFieldsKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.StepPrivateFieldsKernel", "LaunchStepPrivateFieldsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchStepPrivateFieldsKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -888,7 +888,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.ReadExplicitSwappedKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchReadExplicitSwappedKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.ReadExplicitSwappedKernel", "LaunchReadExplicitSwappedKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchReadExplicitSwappedKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1015,7 +1015,7 @@ public static unsafe void LaunchStepLibraryInternalFieldsKernelPtr(global::Syste
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.StepLibraryInternalFieldsKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchStepLibraryInternalFieldsKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.StepLibraryInternalFieldsKernel", "LaunchStepLibraryInternalFieldsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchStepLibraryInternalFieldsKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

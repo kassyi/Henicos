@@ -307,7 +307,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CoreSyntaxKernels.ComplexLogicKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.ComplexLogicKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchComplexLogicKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.ComplexLogicKernel", "LaunchComplexLogicKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchComplexLogicKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -489,7 +489,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CoreSyntaxKernels.ControlFlowKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.ControlFlowKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchControlFlowKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.ControlFlowKernel", "LaunchControlFlowKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchControlFlowKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -655,7 +655,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CoreSyntaxKernels.StructKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.StructKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchStructKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.StructKernel", "LaunchStructKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchStructKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -831,7 +831,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CoreSyntaxKernels.PaddedStructKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.PaddedStructKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchPaddedStructKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.PaddedStructKernel", "LaunchPaddedStructKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchPaddedStructKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -966,7 +966,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CoreSyntaxKernels.DeviceMethodKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.DeviceMethodKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchDeviceMethodKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CoreSyntaxKernels.DeviceMethodKernel", "LaunchDeviceMethodKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchDeviceMethodKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

@@ -136,7 +136,7 @@ public static unsafe void LaunchEmptyKernelPtr(uint gridDimX = 1, uint gridDimY 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EmptyKernelKernels.EmptyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("EmptyKernelKernels.EmptyKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchEmptyKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("EmptyKernelKernels.EmptyKernel", "LaunchEmptyKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchEmptyKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

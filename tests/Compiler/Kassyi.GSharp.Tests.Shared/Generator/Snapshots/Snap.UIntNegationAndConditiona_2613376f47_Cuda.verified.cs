@@ -559,7 +559,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UIntNegationAndConditionalShapeKernels.ConvertedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UIntNegationAndConditionalShapeKernels.ConvertedKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchConvertedKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UIntNegationAndConditionalShapeKernels.ConvertedKernel", "LaunchConvertedKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchConvertedKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1108,7 +1108,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UIntNegationAndConditionalShapeKernels.UnchangedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UIntNegationAndConditionalShapeKernels.UnchangedKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchUnchangedKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UIntNegationAndConditionalShapeKernels.UnchangedKernel", "LaunchUnchangedKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchUnchangedKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

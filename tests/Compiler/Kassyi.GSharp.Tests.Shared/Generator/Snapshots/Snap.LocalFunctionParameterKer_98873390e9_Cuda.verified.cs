@@ -244,7 +244,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchReadOnlyLocalFunctionParameterKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LocalFunctionParameterKernels.ReadOnlyLocalFunctionParameterKernel", "LaunchReadOnlyLocalFunctionParameterKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchReadOnlyLocalFunctionParameterKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

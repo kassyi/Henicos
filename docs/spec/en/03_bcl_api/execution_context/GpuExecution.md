@@ -131,15 +131,21 @@ construct:
   StackLinq `Sum` (summed in order by the generated code), `Gpu.InlinePtx`.
 
 The compiler finds these in the kernel and in every device function it calls. What it cannot see, such as an operation
-reached through a delegate, throws `GpuOnlyException` (an `InvalidOperationException`) when a thread reaches it. Launch
-such a kernel under `Default` or `Managed`. The `Launch{Kernel}Ptr` launchers take device memory, which the C# body
-cannot read; they throw `InvalidOperationException` inside the scope.
+reached through a delegate, throws `InvalidOperationException` when a thread reaches it. Launch
+such a kernel under `Default` or `Managed`. A device function of another assembly is judged by what its assembly
+recorded when it was built; one built before the record said whether it reaches static shared memory is caught when a
+thread reaches the declaration. The `Launch{Kernel}Ptr` launchers take the arguments in the form the device uses; they
+throw `InvalidOperationException` inside the scope.
 
 ### Reflection and Dynamic Calls
 
 A kernel method called through reflection, `dynamic` or a delegate is a plain C# call: it runs once, with no launch
 and no thread context, and a GPU intrinsic in it throws `GpuOnlyException`. Such calls are the caller's
 responsibility; `GpuExecution` affects only the generated launchers.
+
+The thread context that the C# execution sets is the one of [`ManagedGpuContext`](ManagedGpuContext.md), whose
+members the code G# generates writes from the user's assembly. They stay public, hidden from IntelliSense only; code
+that writes them itself changes what the intrinsics read on that thread, which G# does not support.
 
 ## See also
 

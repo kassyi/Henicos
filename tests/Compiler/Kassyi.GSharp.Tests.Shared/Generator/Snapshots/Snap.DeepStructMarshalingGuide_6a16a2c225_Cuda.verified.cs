@@ -779,7 +779,7 @@ public static unsafe void LaunchFermatMegaKernelPtr(global::Kassyi.GSharp.Tests.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeepStructMarshalingGuideKernels.FermatMegaKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeepStructMarshalingGuideKernels.FermatMegaKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchFermatMegaKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeepStructMarshalingGuideKernels.FermatMegaKernel", "LaunchFermatMegaKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFermatMegaKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -896,7 +896,7 @@ public static unsafe void LaunchModernKernelPtr(global::Kassyi.GSharp.Tests.Shar
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeepStructMarshalingGuideKernels.ModernKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeepStructMarshalingGuideKernels.ModernKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchModernKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeepStructMarshalingGuideKernels.ModernKernel", "LaunchModernKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchModernKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

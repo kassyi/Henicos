@@ -1047,7 +1047,7 @@ global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag* __gsharp_csharp_arg
 int __gsharp_csharp_len_1 = spanBags.Length;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag* __gsharp_csharp_arg_2 = __gsharp_csharp_pin_2;
 int __gsharp_csharp_len_2 = roSpanBags.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.DeepStructSixContainersKernel(__gsharp_csharp_arg_0, new global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1), new global::System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag>(__gsharp_csharp_arg_2, __gsharp_csharp_len_2), __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.DeepStructSixContainersKernel(__gsharp_csharp_arg_0, global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1), global::System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref *__gsharp_csharp_arg_2, __gsharp_csharp_len_2), __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
 }
 return;
 }
@@ -2928,7 +2928,7 @@ global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = sliceA.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = sliceB.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
 }
 return;
 }

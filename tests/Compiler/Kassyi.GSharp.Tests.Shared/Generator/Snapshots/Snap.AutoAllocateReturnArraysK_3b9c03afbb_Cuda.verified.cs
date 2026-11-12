@@ -183,8 +183,9 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+var __gsharp_csharp_result = __gsharp_auto_result;
 global::System.Int32 __gsharp_csharp_arg_0 = someValue;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.NormalReturnKernel(__gsharp_csharp_arg_0));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.NormalReturnKernel(__gsharp_csharp_arg_0));
 return __gsharp_auto_result;
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -245,7 +246,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.NormalReturnKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchNormalReturnKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.NormalReturnKernel", "LaunchNormalReturnKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNormalReturnKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -312,7 +313,8 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.OneThreadKernel());
+var __gsharp_csharp_result = __gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.OneThreadKernel());
 return __gsharp_auto_result;
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -371,7 +373,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.OneThreadKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchOneThreadKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.OneThreadKernel", "LaunchOneThreadKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchOneThreadKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -463,7 +465,8 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.StructReturnKernel());
+var __gsharp_csharp_result = __gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.StructReturnKernel());
 return __gsharp_auto_result;
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -522,7 +525,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.StructReturnKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchStructReturnKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.StructReturnKernel", "LaunchStructReturnKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchStructReturnKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -610,8 +613,9 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResult[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+var __gsharp_csharp_result = __gsharp_auto_result;
 global::System.Single __gsharp_csharp_arg_0 = scale;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResultKernel(__gsharp_csharp_arg_0));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResultKernel(__gsharp_csharp_arg_0));
 return __gsharp_auto_result;
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -686,7 +690,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.VectorResult[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.VectorResultKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchVectorResultKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.VectorResultKernel", "LaunchVectorResultKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchVectorResultKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -787,7 +791,8 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResult[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResultKernel());
+var __gsharp_csharp_result = __gsharp_auto_result;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResultKernel());
 return __gsharp_auto_result;
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
@@ -860,7 +865,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.AutoLayoutResult[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.AutoLayoutResultKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchAutoLayoutResultKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("AutoAllocateReturnArraysKernels.AutoLayoutResultKernel", "LaunchAutoLayoutResultKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchAutoLayoutResultKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

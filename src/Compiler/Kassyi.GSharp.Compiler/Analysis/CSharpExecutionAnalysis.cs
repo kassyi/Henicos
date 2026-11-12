@@ -13,7 +13,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// one that suspends reaches a barrier or a warp collective, and one with a managed version holds a managed-only
 /// rewrite.
 /// What the walk cannot see (a delegate parameter, a helper that is not a device function) is caught at run time by
-/// the Core intrinsics.
+/// the Core intrinsics. The same walk tells whether a device function reaches <c>SharedMemory&lt;T&gt;</c>, which its
+/// export record carries for the assemblies that call it (<see cref="ReachesSharedMemory"/>).
 /// </para>
 /// <para>
 /// [WHY] Only the queried kernel is cached, as in <see cref="SuspensionAnalysis"/>: a depth-first walk that stops at an
@@ -27,6 +28,14 @@ internal static class CSharpExecutionAnalysis
 
     private static readonly PerCompilationSymbolCache<IMethodSymbol, string> s_answers = new();
 
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, bool> s_sharedMemory = new();
+
+    // What makes a kernel unable to run one thread at a time
+    private static readonly Query s_obstacle = new(FindInNode, FindImported);
+
+    // A SharedMemory<T> declaration, static or dynamic
+    private static readonly Query s_sharedMemoryQuery = new(FindSharedMemory, FindImportedSharedMemory);
+
     /// <summary>
     /// The first construct that <paramref name="kernel"/> reaches and that cannot run one GPU thread at a time, as the
     /// user writes it, with why (<c>Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time</c>), or
@@ -39,14 +48,34 @@ internal static class CSharpExecutionAnalysis
         if (!answers.TryGetValue(definition, out var found))
         {
             // "" for none: the cache keeps no null
-            found = Find(definition, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)) ?? "";
+            found = Find(definition, s_obstacle, compilation, NewVisited()) ?? "";
             answers.TryAdd(definition, found);
         }
 
         return found.Length == 0 ? null : found;
     }
 
-    private static string? Find(IMethodSymbol method, Compilation compilation, HashSet<IMethodSymbol> visited)
+    /// <summary>
+    /// Whether <paramref name="method"/> (a kernel or a device function) reaches a <c>SharedMemory&lt;T&gt;</c>
+    /// declaration, static or dynamic, directly or through the device functions it calls or names.
+    /// </summary>
+    public static bool ReachesSharedMemory(IMethodSymbol method, Compilation compilation)
+    {
+        var definition = method.OriginalDefinition;
+        var answers = s_sharedMemory.For(compilation);
+        if (!answers.TryGetValue(definition, out var reaches))
+        {
+            reaches = Find(definition, s_sharedMemoryQuery, compilation, NewVisited()) is not null;
+            answers.TryAdd(definition, reaches);
+        }
+
+        return reaches;
+    }
+
+    private static HashSet<IMethodSymbol> NewVisited() => new(SymbolEqualityComparer.Default);
+
+    private static string? Find(IMethodSymbol method, Query query, Compilation compilation,
+        HashSet<IMethodSymbol> visited)
     {
         if (!visited.Add(method))
         {
@@ -57,27 +86,27 @@ internal static class CSharpExecutionAnalysis
             !compilation.ContainsSyntaxTree(declaration.SyntaxTree) ||
             !declaration.HasBody())
         {
-            return FindImported(method, compilation);
+            return query.Imported(method, compilation);
         }
 
         var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
         return RemovedCalls.DescendantNodesThatRun(declaration, model)
             .AsStackEnumerable()
             .Select(
-                (model, compilation, visited),
-                static (node, state) => FindInNode(node, state.model) ??
-                                        FindInCallee(node, state.model, state.compilation, state.visited)
+                (model, query, compilation, visited),
+                static (node, state) => state.query.InNode(node, state.model) ??
+                                        FindInCallee(node, state.model, state.query, state.compilation, state.visited)
             ).FirstOrDefault(static found => found is not null);
     }
 
     // The name of each call and method group of a device function (F, T.F, x.F, F<int>), walked where it is named
-    private static string? FindInCallee(SyntaxNode node, SemanticModel model, Compilation compilation,
+    private static string? FindInCallee(SyntaxNode node, SemanticModel model, Query query, Compilation compilation,
         HashSet<IMethodSymbol> visited) =>
         node is SimpleNameSyntax &&
         model.GetSymbolInfo(node).Symbol is IMethodSymbol callee &&
         ManagedVersionAnalysis.GetDefinition(callee) is var definition &&
         definition.HasAttribute(KnownAttributes.GpuDeviceFunction)
-            ? Find(definition, compilation, visited)
+            ? Find(definition, query, compilation, visited)
             : null;
 
     // An intrinsic that takes the other threads, a shared memory declaration or a managed-only rewrite
@@ -102,12 +131,15 @@ internal static class CSharpExecutionAnalysis
             case AssignmentExpressionSyntax assignment
                 when ManagedRewriteClassifier.TryGetOperatorMacro(assignment, model, out _):
                 return "an operator macro ([GpuOperatorMacro]), which only the generated code expands";
-            case BaseObjectCreationExpressionSyntax creation when model.GetTypeSymbol(creation).IsSharedMemoryType():
-                return "SharedMemory<T>" + OneThreadAtATime;
             default:
-                return null;
+                return FindSharedMemory(node, model) is null ? null : "SharedMemory<T>" + OneThreadAtATime;
         }
     }
+
+    private static string? FindSharedMemory(SyntaxNode node, SemanticModel model) =>
+        node is BaseObjectCreationExpressionSyntax creation && model.GetTypeSymbol(creation).IsSharedMemoryType()
+            ? "SharedMemory<T>"
+            : null;
 
     // A barrier, a warp shuffle, vote, match or collective, Warp.ActiveMask() or an mbarrier
     private static bool NeedsOtherThreads(SyncIntrinsicInfo info) =>
@@ -133,7 +165,7 @@ internal static class CSharpExecutionAnalysis
             return $"{name} of another assembly, which reaches a barrier or a warp collective{OneThreadAtATime}";
         }
 
-        if (traits.ReachesDynamicSharedMemory)
+        if (traits.ReachesSharedMemory || traits.ReachesDynamicSharedMemory)
         {
             return $"{name} of another assembly, which uses SharedMemory<T>{OneThreadAtATime}";
         }
@@ -141,5 +173,23 @@ internal static class CSharpExecutionAnalysis
         return traits.ManagedVersion
             ? $"{name} of another assembly, whose C# meaning only the generated code gives"
             : null;
+    }
+
+    // A device function of another assembly that recorded a SharedMemory<T> declaration; a record written before the
+    // static ones were recorded tells only the dynamic ones
+    private static string? FindImportedSharedMemory(IMethodSymbol method, Compilation compilation) =>
+        DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
+        (imported.Record.Traits.ReachesSharedMemory || imported.Record.Traits.ReachesDynamicSharedMemory)
+            ? "SharedMemory<T>"
+            : null;
+
+    // What a walk looks for in a body, and in the export record of a device function of another assembly
+    private sealed class Query(
+        Func<SyntaxNode, SemanticModel, string?> inNode,
+        Func<IMethodSymbol, Compilation, string?> imported)
+    {
+        public Func<SyntaxNode, SemanticModel, string?> InNode { get; } = inNode;
+
+        public Func<IMethodSymbol, Compilation, string?> Imported { get; } = imported;
     }
 }

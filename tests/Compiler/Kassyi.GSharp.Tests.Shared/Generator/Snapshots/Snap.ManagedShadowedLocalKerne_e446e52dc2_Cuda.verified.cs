@@ -311,7 +311,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.GridStrideLoopKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.GridStrideLoopKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchGridStrideLoopKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.GridStrideLoopKernel", "LaunchGridStrideLoopKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchGridStrideLoopKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -454,7 +454,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.SingleThreadKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.SingleThreadKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSingleThreadKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.SingleThreadKernel", "LaunchSingleThreadKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSingleThreadKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -604,7 +604,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.ForUnrollKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.ForUnrollKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchForUnrollKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.ForUnrollKernel", "LaunchForUnrollKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchForUnrollKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -768,7 +768,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.NestedAndLaterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.NestedAndLaterKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchNestedAndLaterKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.NestedAndLaterKernel", "LaunchNestedAndLaterKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNestedAndLaterKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -929,7 +929,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.LocalFunctionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.LocalFunctionKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchLocalFunctionKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.LocalFunctionKernel", "LaunchLocalFunctionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchLocalFunctionKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1063,7 +1063,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.ManagedVersionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.ManagedVersionKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchManagedVersionKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.ManagedVersionKernel", "LaunchManagedVersionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchManagedVersionKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

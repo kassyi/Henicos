@@ -102,7 +102,7 @@ public class CSharpExecutionAnalysisTests
         var plan = CSharpExecutionPlan.Create(Host("Plain"), isDevicePtr: true);
 
         Assert.Equal(
-            "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to " +
+            "LaunchPlainPtr takes the arguments in the form the device uses, and the C# execution runs only through " +
             "LaunchPlain",
             plan.CannotRunReason);
     }

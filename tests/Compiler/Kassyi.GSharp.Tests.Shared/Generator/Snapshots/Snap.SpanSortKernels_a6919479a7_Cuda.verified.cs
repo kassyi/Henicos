@@ -142,7 +142,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortIntKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortIntKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -219,7 +219,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortIntKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortIntKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortIntKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortIntKernel", "LaunchSortIntKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortIntKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -278,7 +278,7 @@ fixed (global::System.Int64* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int64* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortLongKernel(new global::System.Span<global::System.Int64>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortLongKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -355,7 +355,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortLongKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortLongKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortLongKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortLongKernel", "LaunchSortLongKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortLongKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -414,7 +414,7 @@ fixed (global::System.UInt32* __gsharp_csharp_pin_0 = data)
 {
 global::System.UInt32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortUIntKernel(new global::System.Span<global::System.UInt32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortUIntKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -491,7 +491,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortUIntKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortUIntKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortUIntKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortUIntKernel", "LaunchSortUIntKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortUIntKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -550,7 +550,7 @@ fixed (global::System.Char* __gsharp_csharp_pin_0 = data)
 {
 global::System.Char* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortCharKernel(new global::System.Span<global::System.Char>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortCharKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -627,7 +627,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortCharKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortCharKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortCharKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortCharKernel", "LaunchSortCharKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortCharKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -686,7 +686,7 @@ fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.SortRank* __gsharp_csharp_pin_0
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.SortRank* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortEnumKernel(new global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRank>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortEnumKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -763,7 +763,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortEnumKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortEnumKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortEnumKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortEnumKernel", "LaunchSortEnumKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortEnumKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -822,7 +822,7 @@ fixed (global::System.Single* __gsharp_csharp_pin_0 = data)
 {
 global::System.Single* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortFloatKernel(new global::System.Span<global::System.Single>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortFloatKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -899,7 +899,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortFloatKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortFloatKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortFloatKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortFloatKernel", "LaunchSortFloatKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortFloatKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -958,7 +958,7 @@ fixed (global::System.Double* __gsharp_csharp_pin_0 = data)
 {
 global::System.Double* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortDoubleKernel(new global::System.Span<global::System.Double>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortDoubleKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -1035,7 +1035,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortDoubleKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortDoubleKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortDoubleKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortDoubleKernel", "LaunchSortDoubleKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortDoubleKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1177,7 +1177,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortSegmentsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortSegmentsKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortSegmentsKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortSegmentsKernel", "LaunchSortSegmentsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortSegmentsKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1259,7 +1259,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparerKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparerKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -1338,7 +1338,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortComparerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortComparerKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortComparerKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortComparerKernel", "LaunchSortComparerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortComparerKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1416,7 +1416,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortDescendingKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortDescendingKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -1493,7 +1493,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortDescendingKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortDescendingKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortDescendingKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortDescendingKernel", "LaunchSortDescendingKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortDescendingKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1556,7 +1556,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparisonKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparisonKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -1635,7 +1635,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortComparisonKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortComparisonKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortComparisonKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortComparisonKernel", "LaunchSortComparisonKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortComparisonKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1696,7 +1696,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortMethodGroupKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortMethodGroupKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -1773,7 +1773,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortMethodGroupKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortMethodGroupKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortMethodGroupKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortMethodGroupKernel", "LaunchSortMethodGroupKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortMethodGroupKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1832,7 +1832,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortNullComparerKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortNullComparerKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -1909,7 +1909,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortNullComparerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortNullComparerKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortNullComparerKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortNullComparerKernel", "LaunchSortNullComparerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortNullComparerKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1999,7 +1999,7 @@ fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord* __gsharp_csharp_pin
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparableKernel(new global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparableKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -2076,7 +2076,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortComparableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortComparableKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortComparableKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortComparableKernel", "LaunchSortComparableKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortComparableKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2141,7 +2141,7 @@ global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
 }
 return;
 }
@@ -2255,7 +2255,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortPairsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortPairsKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsKernel", "LaunchSortPairsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortPairsKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2326,7 +2326,7 @@ global::System.Single* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsFloatKernel(new global::System.Span<global::System.Single>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsFloatKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
 }
 return;
 }
@@ -2440,7 +2440,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortPairsFloatKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsFloatKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortPairsFloatKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsFloatKernel", "LaunchSortPairsFloatKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortPairsFloatKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2534,7 +2534,7 @@ global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparerKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparerKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
 }
 return;
 }
@@ -2650,7 +2650,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortPairsComparerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsComparerKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortPairsComparerKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsComparerKernel", "LaunchSortPairsComparerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortPairsComparerKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2727,7 +2727,7 @@ global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparisonKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparisonKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
 }
 return;
 }
@@ -2843,7 +2843,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortPairsComparisonKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsComparisonKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortPairsComparisonKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsComparisonKernel", "LaunchSortPairsComparisonKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortPairsComparisonKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -2947,7 +2947,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord* __gsharp_csharp_arg_0 = __
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparableKernel(new global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparableKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
 }
 return;
 }
@@ -3061,7 +3061,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortPairsComparableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsComparableKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortPairsComparableKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsComparableKernel", "LaunchSortPairsComparableKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortPairsComparableKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -3143,7 +3143,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortBogusComparerKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortBogusComparerKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -3220,7 +3220,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortBogusComparerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortBogusComparerKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortBogusComparerKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortBogusComparerKernel", "LaunchSortBogusComparerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortBogusComparerKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -3313,7 +3313,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.InconsistentRecord* __gsharp_csharp_ar
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsInconsistentKernel(new global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.InconsistentRecord>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsInconsistentKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
 }
 return;
 }
@@ -3427,7 +3427,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortPairsInconsistentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsInconsistentKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortPairsInconsistentKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortPairsInconsistentKernel", "LaunchSortPairsInconsistentKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortPairsInconsistentKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -3506,7 +3506,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortTrappingComparisonKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortTrappingComparisonKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -3620,7 +3620,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SpanSortKernels.SortTrappingComparisonKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortTrappingComparisonKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSortTrappingComparisonKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SpanSortKernels.SortTrappingComparisonKernel", "LaunchSortTrappingComparisonKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSortTrappingComparisonKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

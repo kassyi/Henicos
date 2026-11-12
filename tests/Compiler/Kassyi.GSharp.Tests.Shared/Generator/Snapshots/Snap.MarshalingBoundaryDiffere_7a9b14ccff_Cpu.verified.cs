@@ -828,6 +828,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Boolean[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+var __gsharp_csharp_result = __gsharp_auto_result;
 global::System.Boolean __gsharp_csharp_arg_0 = v;
 global::System.Boolean __gsharp_csharp_arg_1 = iv;
 global::System.Boolean __gsharp_csharp_arg_2 = rv;
@@ -835,7 +836,7 @@ global::System.Boolean __gsharp_csharp_arg_3 = default;
 global::System.Boolean[] __gsharp_csharp_arg_4 = arr;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffBoolPack __gsharp_csharp_arg_5 = pack;
 global::System.Int32[] __gsharp_csharp_arg_6 = probe;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.BoolAllPositionsKernel(__gsharp_csharp_arg_0, in __gsharp_csharp_arg_1, ref __gsharp_csharp_arg_2, out __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, ref __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.BoolAllPositionsKernel(__gsharp_csharp_arg_0, in __gsharp_csharp_arg_1, ref __gsharp_csharp_arg_2, out __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, ref __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
 rv = __gsharp_csharp_arg_2;
 ov = __gsharp_csharp_arg_3;
 pack = __gsharp_csharp_arg_5;
@@ -1184,6 +1185,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Char[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+var __gsharp_csharp_result = __gsharp_auto_result;
 global::System.Char __gsharp_csharp_arg_0 = v;
 global::System.Char __gsharp_csharp_arg_1 = iv;
 global::System.Char __gsharp_csharp_arg_2 = rv;
@@ -1191,7 +1193,7 @@ global::System.Char __gsharp_csharp_arg_3 = default;
 global::System.Char[] __gsharp_csharp_arg_4 = arr;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffCharPack __gsharp_csharp_arg_5 = pack;
 global::System.Int32[] __gsharp_csharp_arg_6 = probe;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.CharAllPositionsKernel(__gsharp_csharp_arg_0, in __gsharp_csharp_arg_1, ref __gsharp_csharp_arg_2, out __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, ref __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.CharAllPositionsKernel(__gsharp_csharp_arg_0, in __gsharp_csharp_arg_1, ref __gsharp_csharp_arg_2, out __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, ref __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
 rv = __gsharp_csharp_arg_2;
 ov = __gsharp_csharp_arg_3;
 pack = __gsharp_csharp_arg_5;
@@ -1616,10 +1618,11 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Nullable<global::System.Int32>[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+var __gsharp_csharp_result = __gsharp_auto_result;
 global::System.Nullable<global::System.Int32>[] __gsharp_csharp_arg_0 = arr;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder __gsharp_csharp_arg_1 = h;
 global::System.Int32[] __gsharp_csharp_arg_2 = probe;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.NullableBlitPositionsKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.NullableBlitPositionsKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 h = __gsharp_csharp_arg_1;
 return __gsharp_auto_result;
 }
@@ -2652,12 +2655,13 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+var __gsharp_csharp_result = __gsharp_auto_result;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped __gsharp_csharp_arg_0 = gVal;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion __gsharp_csharp_arg_1 = uRef;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffExplicitGapped[] __gsharp_csharp_arg_2 = gArr;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffFloatUintUnion[] __gsharp_csharp_arg_3 = uArr;
 global::System.Int32[] __gsharp_csharp_arg_4 = probe;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.ExplicitLayoutAndUnionPositionsKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.ExplicitLayoutAndUnionPositionsKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
 uRef = __gsharp_csharp_arg_1;
 return __gsharp_auto_result;
 }
@@ -3387,6 +3391,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+var __gsharp_csharp_result = __gsharp_auto_result;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed __gsharp_csharp_arg_0 = val;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed __gsharp_csharp_arg_1 = inVal;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed __gsharp_csharp_arg_2 = refVal;
@@ -3394,7 +3399,7 @@ global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed __gsharp_csharp_ar
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed[] __gsharp_csharp_arg_4 = arr;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested __gsharp_csharp_arg_5 = nested;
 global::System.Int64[] __gsharp_csharp_arg_6 = probe;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AutoLayoutAllPositionsKernel(__gsharp_csharp_arg_0, in __gsharp_csharp_arg_1, ref __gsharp_csharp_arg_2, out __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, ref __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AutoLayoutAllPositionsKernel(__gsharp_csharp_arg_0, in __gsharp_csharp_arg_1, ref __gsharp_csharp_arg_2, out __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, ref __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
 refVal = __gsharp_csharp_arg_2;
 outVal = __gsharp_csharp_arg_3;
 nested = __gsharp_csharp_arg_5;
@@ -3927,13 +3932,14 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+var __gsharp_csharp_result = __gsharp_auto_result;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3 __gsharp_csharp_arg_0 = valVecs;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineOuterPacket __gsharp_csharp_arg_1 = outer;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineVec2Padded3[] __gsharp_csharp_arg_2 = vecArr;
 global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket __gsharp_csharp_arg_3 = fixedPkt;
 global::Kassyi.GSharp.Tests.Shared.Differential.FixedBufferPacket[] __gsharp_csharp_arg_4 = fixedArr;
 global::System.Int32[] __gsharp_csharp_arg_5 = probe;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.InlineArrayAndFixedBufferPositionsKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, ref __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, __gsharp_csharp_arg_5));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.InlineArrayAndFixedBufferPositionsKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, ref __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, __gsharp_csharp_arg_5));
 outer = __gsharp_csharp_arg_1;
 fixedPkt = __gsharp_csharp_arg_3;
 return __gsharp_auto_result;
@@ -4832,6 +4838,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+var __gsharp_csharp_result = __gsharp_auto_result;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture __gsharp_csharp_arg_0 = tortVal;
 global::Kassyi.GSharp.Tests.Shared.Differential.OuterPacket __gsharp_csharp_arg_1 = outerRef;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffVecAlignTorture[] __gsharp_csharp_arg_2 = tortArr;
@@ -4839,7 +4846,7 @@ global::Kassyi.GSharp.Tests.DeviceLibrary.PackedPair[] __gsharp_csharp_arg_3 = e
 global::Kassyi.GSharp.Tests.DeviceLibrary.SwapPair[] __gsharp_csharp_arg_4 = extSwapArr;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffExternalNestedHolder __gsharp_csharp_arg_5 = extHolder;
 global::System.Single[] __gsharp_csharp_arg_6 = probe;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_auto_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.VectorAlignmentAndExternalStructsKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, ref __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.VectorAlignmentAndExternalStructsKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, ref __gsharp_csharp_arg_5, __gsharp_csharp_arg_6));
 outerRef = __gsharp_csharp_arg_1;
 extHolder = __gsharp_csharp_arg_5;
 return __gsharp_auto_result;

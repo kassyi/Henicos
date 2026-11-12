@@ -12,6 +12,8 @@ internal static class CSharpExecutionEmitter
     private const string RunnerType = "global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner";
     private const string ThreadParameter = GSharpInternalNames.Launcher.CSharpThread;
     private const string AutoResult = GSharpInternalNames.ReturnValue.Buffer;
+    private const string Result = GSharpInternalNames.Launcher.CSharpResult;
+    private const string MemoryMarshalType = "global::System.Runtime.InteropServices.MemoryMarshal";
     private const string LaunchDimensions = "gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ";
 
     // if (GpuExecution.Current == KernelExecution.CSharp)
@@ -39,10 +41,14 @@ internal static class CSharpExecutionEmitter
         }
     }
 
+    // [var __gsharp_csharp_result = __gsharp_auto_result;]
     // <type> __gsharp_csharp_arg_<n> = <parameter>;   (value, in, ref)
     // <type> __gsharp_csharp_arg_<n> = default;       (out)
+    // [WHY] The lambda captures only locals of the branch: a captured local of the whole launcher (the auto result)
+    // would make C# allocate the closure when the launcher starts, on every path
     private static void WriteCopies(SourceWriter writer, in CSharpExecutionPlan plan)
     {
+        writer.AppendLineIf(plan.ReturnsValue, $"var {Result} = {AutoResult};");
         foreach (var argument in plan.Arguments)
         {
             if (!IsSpan(argument))
@@ -95,11 +101,11 @@ internal static class CSharpExecutionEmitter
     }
 
     // CSharpKernelRunner.Run(gridDimX, ..., blockDimZ,
-    //     __gsharp_csharp_thread => [__gsharp_auto_result[__gsharp_csharp_thread] = ]<kernel>(<arguments>));
+    //     __gsharp_csharp_thread => [__gsharp_csharp_result[__gsharp_csharp_thread] = ]<kernel>(<arguments>));
     private static void WriteRun(SourceWriter writer, in CSharpExecutionPlan plan)
     {
         writer.Append($"{RunnerType}.Run({LaunchDimensions}, {ThreadParameter} => ");
-        writer.AppendIf(plan.ReturnsValue, $"{AutoResult}[{ThreadParameter}] = ");
+        writer.AppendIf(plan.ReturnsValue, $"{Result}[{ThreadParameter}] = ");
         writer.Append(plan.Method);
         using (writer.Parentheses())
         {
@@ -126,12 +132,13 @@ internal static class CSharpExecutionEmitter
             case CSharpArgumentKind.Out:
                 writer.Append($"out {argument.Local}");
                 break;
+            // [WHY] Not the pointer constructor of Span, which rejects an element type that holds references; the
+            // fixed statement keeps the elements in place while the run uses the span
             case CSharpArgumentKind.Span:
-                writer.Append($"new global::System.Span<{argument.TypeName}>({argument.Local}, {argument.Length})");
+                writer.Append($"{MemoryMarshalType}.CreateSpan(ref *{argument.Local}, {argument.Length})");
                 break;
             case CSharpArgumentKind.ReadOnlySpan:
-                writer.Append(
-                    $"new global::System.ReadOnlySpan<{argument.TypeName}>({argument.Local}, {argument.Length})");
+                writer.Append($"{MemoryMarshalType}.CreateReadOnlySpan(ref *{argument.Local}, {argument.Length})");
                 break;
             default:
                 writer.Append(argument.Local);

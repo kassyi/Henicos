@@ -1,4 +1,6 @@
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Tests.DeviceLibrary;
+using Kassyi.GSharp.Tests.Shared.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
@@ -43,6 +45,28 @@ public static partial class CSharpExecutionKernels
         int id = LinearThreadIndex();
         data[id] = source[id] * 3;
     }
+
+    // A span of structs that hold an array: an element type that contains references
+    [GpuKernel]
+    public static void SpanBagKernel(Span<ConvertBag> bags)
+    {
+        int i = ThreadIndex.X;
+        bags[i].N = bags[i].Data[0] + i;
+    }
+
+    // A value-returning kernel and a void kernel with the same parameters, whose launches allocate the same apart from
+    // the result array
+    [GpuKernel]
+    public static int ReturnScaleKernel(int scale) => scale;
+
+    [GpuKernel]
+    public static void IgnoreScaleKernel(int scale)
+    {
+    }
+
+    // Static shared memory in a device function of another assembly
+    [GpuKernel]
+    public static void LibrarySharedMemoryKernel(int[] data) => data[ThreadIndex.X] = LibMath.StaticTile(ThreadIndex.X);
 
     // A block barrier, which has no meaning when one thread runs at a time
     [GpuKernel]

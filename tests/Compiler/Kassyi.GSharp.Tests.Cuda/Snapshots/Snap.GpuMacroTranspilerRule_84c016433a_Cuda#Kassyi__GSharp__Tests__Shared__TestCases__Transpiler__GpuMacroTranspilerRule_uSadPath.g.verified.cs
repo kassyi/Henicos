@@ -73,7 +73,7 @@ public static unsafe void LaunchKernelPtr(uint gridDimX = 1, uint gridDimY = 1, 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuMacroTranspilerRule_SadPath.Kernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GpuMacroTranspilerRule_SadPath.Kernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GpuMacroTranspilerRule_SadPath.Kernel", "LaunchKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

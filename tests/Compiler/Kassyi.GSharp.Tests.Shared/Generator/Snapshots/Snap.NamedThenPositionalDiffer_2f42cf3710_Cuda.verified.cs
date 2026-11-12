@@ -393,7 +393,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NamedThenPositionalDifferentialKernels.NamedThenPositionalKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("NamedThenPositionalDifferentialKernels.NamedThenPositionalKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchNamedThenPositionalKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("NamedThenPositionalDifferentialKernels.NamedThenPositionalKernel", "LaunchNamedThenPositionalKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNamedThenPositionalKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -642,7 +642,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NamedThenPositionalDifferentialKernels.NamedThenPositionalSuspendingCallKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("NamedThenPositionalDifferentialKernels.NamedThenPositionalSuspendingCallKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchNamedThenPositionalSuspendingCallKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("NamedThenPositionalDifferentialKernels.NamedThenPositionalSuspendingCallKernel", "LaunchNamedThenPositionalSuspendingCallKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNamedThenPositionalSuspendingCallKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

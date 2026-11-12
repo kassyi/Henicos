@@ -37,41 +37,47 @@ internal readonly record struct CSharpExecutionPlan
             ReturnsValue = kernel.ReturnsValue
         };
 
-        if (isDevicePtr)
+        var reason = GetCannotRunReason(kernel, isDevicePtr);
+        if (reason is null && TryPlanArguments(kernel, out var arguments, out reason))
         {
-            return plan with
-            {
-                CannotRunReason = "the pointer launcher takes device memory, which the C# body cannot read; pass the " +
-                                  $"host values to {KernelHostNames.GetLaunchName(kernel)}"
-            };
+            return plan with { Arguments = arguments };
         }
 
-        if (!kernel.IsStatic)
-        {
-            return plan with { CannotRunReason = "it is an instance method, and the launcher has no object for it" };
-        }
+        return plan with { CannotRunReason = reason };
+    }
 
-        if (kernel.CSharpExecutionObstacle is { } obstacle)
-        {
-            return plan with { CannotRunReason = $"it reaches {obstacle}" };
-        }
+    // Why the launcher cannot run the kernel as C#, before its arguments are looked at
+    private static string? GetCannotRunReason(in KernelHostModel kernel, bool isDevicePtr) => true switch
+    {
+        // The pointer launcher takes the arguments in the device's form: device pointers, array proxies, shadows
+        _ when isDevicePtr => $"{KernelHostNames.GetTypedPointerLaunchName(kernel)} takes the arguments in the form " +
+                              "the device uses, and the C# execution runs only through " +
+                              KernelHostNames.GetLaunchName(kernel),
+        _ when !kernel.IsStatic => "it is an instance method, and the launcher has no object for it",
+        _ when kernel.CSharpExecutionObstacle is { } obstacle => $"it reaches {obstacle}",
+        _ => null
+    };
 
-        var arguments = ImmutableArray.CreateBuilder<CSharpArgument>(kernel.Parameters.Length);
+    // The arguments of the kernel call, or false with the reason when one of them cannot reach the GPU threads
+    private static bool TryPlanArguments(in KernelHostModel kernel, out ImmutableArray<CSharpArgument> arguments,
+        [NotNullWhen(false)] out string? reason)
+    {
+        var builder = ImmutableArray.CreateBuilder<CSharpArgument>(kernel.Parameters.Length);
         foreach (var parameter in kernel.Parameters)
         {
             if (PlanArgument(parameter) is not { } argument)
             {
-                return plan with
-                {
-                    CannotRunReason = $"its parameter '{parameter.Identifier}' is a ref struct that the GPU threads " +
-                                      "cannot share"
-                };
+                arguments = default;
+                reason = $"its parameter '{parameter.Identifier}' is a ref struct that the GPU threads cannot share";
+                return false;
             }
 
-            arguments.Add(argument);
+            builder.Add(argument);
         }
 
-        return plan with { Arguments = arguments.MoveToImmutable() };
+        arguments = builder.MoveToImmutable();
+        reason = null;
+        return true;
     }
 
     // [WHY] The lambda captures locals of the branch, never the launcher's parameters: a captured parameter would live

@@ -184,7 +184,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UniformBarrierKernels.FlatBarrierKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UniformBarrierKernels.FlatBarrierKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchFlatBarrierKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UniformBarrierKernels.FlatBarrierKernel", "LaunchFlatBarrierKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFlatBarrierKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -320,7 +320,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UniformBarrierKernels.LoopBarrierKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UniformBarrierKernels.LoopBarrierKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchLoopBarrierKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UniformBarrierKernels.LoopBarrierKernel", "LaunchLoopBarrierKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchLoopBarrierKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -415,7 +415,7 @@ public static unsafe void LaunchScopedSpanBeforeBarrierKernelPtr(global::System.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UniformBarrierKernels.ScopedSpanBeforeBarrierKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UniformBarrierKernels.ScopedSpanBeforeBarrierKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchScopedSpanBeforeBarrierKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UniformBarrierKernels.ScopedSpanBeforeBarrierKernel", "LaunchScopedSpanBeforeBarrierKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchScopedSpanBeforeBarrierKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -546,7 +546,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UniformBarrierKernels.SafeGotoWithinPhaseKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UniformBarrierKernels.SafeGotoWithinPhaseKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSafeGotoWithinPhaseKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("UniformBarrierKernels.SafeGotoWithinPhaseKernel", "LaunchSafeGotoWithinPhaseKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSafeGotoWithinPhaseKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

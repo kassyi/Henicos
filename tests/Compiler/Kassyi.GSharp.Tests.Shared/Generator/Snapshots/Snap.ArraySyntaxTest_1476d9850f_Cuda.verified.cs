@@ -140,7 +140,7 @@ public static unsafe void LaunchImplicitArrayFormsKernelPtr(uint gridDimX = 1, u
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ArraySyntaxTestKernels.ImplicitArrayFormsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ArraySyntaxTestKernels.ImplicitArrayFormsKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchImplicitArrayFormsKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ArraySyntaxTestKernels.ImplicitArrayFormsKernel", "LaunchImplicitArrayFormsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchImplicitArrayFormsKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

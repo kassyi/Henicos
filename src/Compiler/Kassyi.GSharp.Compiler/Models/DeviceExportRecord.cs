@@ -59,7 +59,8 @@ internal readonly record struct DeviceExportRecord(
         int DivergentConditionParameters = 0,
         int DivergentExitOnlyParameters = 0,
         bool HasExitOnlyBarrier = false,
-        bool ReachesArrivalBarrier = false)
+        bool ReachesArrivalBarrier = false,
+        bool ReachesSharedMemory = false)
     {
         /// <summary>
         /// The traits of a record that is not a transpiled function (a struct, or a function that failed): no frame, no

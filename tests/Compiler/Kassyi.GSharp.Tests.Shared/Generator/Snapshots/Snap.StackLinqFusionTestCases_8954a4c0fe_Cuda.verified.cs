@@ -210,7 +210,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqFusionTestCases.SimpleWhereSelectSum");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqFusionTestCases.SimpleWhereSelectSum", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchSimpleWhereSelectSum");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqFusionTestCases.SimpleWhereSelectSum", "LaunchSimpleWhereSelectSumPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSimpleWhereSelectSum");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -370,7 +370,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqFusionTestCases.MultipleWhere");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqFusionTestCases.MultipleWhere", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchMultipleWhere");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqFusionTestCases.MultipleWhere", "LaunchMultipleWherePtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMultipleWhere");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -526,7 +526,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqFusionTestCases.MultipleSelect");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqFusionTestCases.MultipleSelect", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchMultipleSelect");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqFusionTestCases.MultipleSelect", "LaunchMultipleSelectPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMultipleSelect");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -715,7 +715,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqFusionTestCases.HellPattern");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqFusionTestCases.HellPattern", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchHellPattern");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqFusionTestCases.HellPattern", "LaunchHellPatternPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchHellPattern");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Tests.Shared.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
@@ -100,6 +101,50 @@ public class CSharpExecutionTests
         }
 
         Assert.Equal([3, 6, 9, 12, 15, 18], data);
+    }
+
+    // The element type holds references, which a span made from a pointer does not allow
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Launch_CSharpScopeSpansOfStructsWithArrays_PassesTheElements()
+    {
+        var bags = new[]
+        {
+            new ConvertBag { N = 1, Data = [3, 0] },
+            new ConvertBag { N = 2, Data = [7, 0] }
+        };
+        var o = new int[2];
+
+        using (GpuExecution.Use(KernelExecution.CSharp))
+        {
+            InArrayCopyKernels.LaunchReadOnlySpanBagKernel(bags, o, blockDimX: 2);
+            CSharpExecutionKernels.LaunchSpanBagKernel(bags.AsSpan(), blockDimX: 2);
+        }
+
+        Assert.Equal([3, 7], o);
+        // The C# call writes the caller's arrays: the launchers' copies do not apply
+        Assert.Equal([77, 0], bags[0].Data);
+        Assert.Equal([77, 78], new[] { bags[0].N, bags[1].N });
+    }
+
+    // Static shared memory in a device function of another assembly: its export record says so, and the launcher
+    // throws before any thread runs
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Launch_CSharpScopeLibraryFunctionWithSharedMemory_ThrowsBeforeRunning()
+    {
+        var data = new[] { 7, 7 };
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            using (GpuExecution.Use(KernelExecution.CSharp))
+            {
+                CSharpExecutionKernels.LaunchLibrarySharedMemoryKernel(data, blockDimX: 2);
+            }
+        });
+
+        Assert.Contains("it reaches LibMath.StaticTile() of another assembly, which uses SharedMemory<T>", ex.Message);
+        Assert.Equal([7, 7], data);
     }
 
     // The generated launcher throws before any thread runs: the array keeps its values

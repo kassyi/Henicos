@@ -309,7 +309,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchWriteExpectedOffsetsKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel", "LaunchWriteExpectedOffsetsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchWriteExpectedOffsetsKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -476,7 +476,7 @@ public static unsafe void LaunchRoundtripKernelPtr(global::System.IntPtr data, u
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NestedVectorAlignmentKernels.RoundtripKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("NestedVectorAlignmentKernels.RoundtripKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchRoundtripKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("NestedVectorAlignmentKernels.RoundtripKernel", "LaunchRoundtripKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRoundtripKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

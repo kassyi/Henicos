@@ -190,7 +190,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortIntKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortIntKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -443,7 +443,7 @@ fixed (global::System.Int64* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int64* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortLongKernel(new global::System.Span<global::System.Int64>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortLongKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -696,7 +696,7 @@ fixed (global::System.UInt32* __gsharp_csharp_pin_0 = data)
 {
 global::System.UInt32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortUIntKernel(new global::System.Span<global::System.UInt32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortUIntKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -949,7 +949,7 @@ fixed (global::System.Char* __gsharp_csharp_pin_0 = data)
 {
 global::System.Char* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortCharKernel(new global::System.Span<global::System.Char>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortCharKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -1202,7 +1202,7 @@ fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.SortRank* __gsharp_csharp_pin_0
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.SortRank* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortEnumKernel(new global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRank>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortEnumKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -1455,7 +1455,7 @@ fixed (global::System.Single* __gsharp_csharp_pin_0 = data)
 {
 global::System.Single* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortFloatKernel(new global::System.Span<global::System.Single>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortFloatKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -1708,7 +1708,7 @@ fixed (global::System.Double* __gsharp_csharp_pin_0 = data)
 {
 global::System.Double* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortDoubleKernel(new global::System.Span<global::System.Double>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortDoubleKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -2251,7 +2251,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparerKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparerKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -2521,7 +2521,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortDescendingKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortDescendingKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -2778,7 +2778,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparisonKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparisonKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -3031,7 +3031,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortMethodGroupKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortMethodGroupKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -3284,7 +3284,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortNullComparerKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortNullComparerKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -3558,7 +3558,7 @@ fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord* __gsharp_csharp_pin
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparableKernel(new global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortComparableKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -3827,7 +3827,7 @@ global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
 }
 return;
 }
@@ -4087,7 +4087,7 @@ global::System.Single* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsFloatKernel(new global::System.Span<global::System.Single>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsFloatKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
 }
 return;
 }
@@ -4370,7 +4370,7 @@ global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparerKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparerKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
 }
 return;
 }
@@ -4634,7 +4634,7 @@ global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparisonKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparisonKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
 }
 return;
 }
@@ -4915,7 +4915,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord* __gsharp_csharp_arg_0 = __
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparableKernel(new global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.SortRecord>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsComparableKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
 }
 return;
 }
@@ -5196,7 +5196,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortBogusComparerKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortBogusComparerKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0)));
 }
 return;
 }
@@ -5474,7 +5474,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.InconsistentRecord* __gsharp_csharp_ar
 int __gsharp_csharp_len_0 = keys.Length;
 global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
 int __gsharp_csharp_len_1 = items.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsInconsistentKernel(new global::System.Span<global::Kassyi.GSharp.Tests.Shared.Syntax.InconsistentRecord>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortPairsInconsistentKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1)));
 }
 return;
 }
@@ -5751,7 +5751,7 @@ fixed (global::System.Int32* __gsharp_csharp_pin_0 = data)
 {
 global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
 int __gsharp_csharp_len_0 = data.Length;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortTrappingComparisonKernel(new global::System.Span<global::System.Int32>(__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.SpanSortKernels.SortTrappingComparisonKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), __gsharp_csharp_arg_1));
 }
 return;
 }

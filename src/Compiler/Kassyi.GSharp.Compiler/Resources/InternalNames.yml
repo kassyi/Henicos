@@ -252,8 +252,10 @@ Launcher:
     CopyBufferPrefix: __gsharp_copy_
     CopyIndexPrefix: __gsharp_copy_index_
     # The C# execution of a launcher (KernelExecution.CSharp): the linear index of the GPU thread that the lambda runs,
-    # the copy of a ref or out argument that the lambda captures, and the pinned pointer and length of a span argument
+    # the copy of the auto result and of each argument that the lambda captures, and the pinned pointer and length of
+    # a span argument
     CSharpThread: __gsharp_csharp_thread
+    CSharpResult: __gsharp_csharp_result
     CSharpArgumentPrefix: __gsharp_csharp_arg_
     CSharpPinnedPrefix: __gsharp_csharp_pin_
     CSharpLengthPrefix: __gsharp_csharp_len_

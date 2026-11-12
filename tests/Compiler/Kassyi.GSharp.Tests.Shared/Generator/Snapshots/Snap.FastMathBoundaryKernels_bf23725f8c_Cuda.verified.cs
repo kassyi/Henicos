@@ -236,7 +236,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Exp");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("FastMathBoundaryKernels.Kernel_COR01_FastMath_Exp", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchKernel_COR01_FastMath_Exp");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("FastMathBoundaryKernels.Kernel_COR01_FastMath_Exp", "LaunchKernel_COR01_FastMath_ExpPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchKernel_COR01_FastMath_Exp");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -426,7 +426,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Log");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("FastMathBoundaryKernels.Kernel_COR01_FastMath_Log", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchKernel_COR01_FastMath_Log");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("FastMathBoundaryKernels.Kernel_COR01_FastMath_Log", "LaunchKernel_COR01_FastMath_LogPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchKernel_COR01_FastMath_Log");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -616,7 +616,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Sqrt");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("FastMathBoundaryKernels.Kernel_COR01_FastMath_Sqrt", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchKernel_COR01_FastMath_Sqrt");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("FastMathBoundaryKernels.Kernel_COR01_FastMath_Sqrt", "LaunchKernel_COR01_FastMath_SqrtPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchKernel_COR01_FastMath_Sqrt");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -806,7 +806,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Abs");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("FastMathBoundaryKernels.Kernel_COR01_FastMath_Abs", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchKernel_COR01_FastMath_Abs");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("FastMathBoundaryKernels.Kernel_COR01_FastMath_Abs", "LaunchKernel_COR01_FastMath_AbsPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchKernel_COR01_FastMath_Abs");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

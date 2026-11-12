@@ -99,6 +99,19 @@ public class GpuExecutionTests
         Assert.Equal(KernelExecution.Default, seen);
     }
 
+    // A scope that Use did not return (default) restores nothing
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Dispose_DefaultScope_KeepsTheOuterSelection()
+    {
+        using (GpuExecution.Use(KernelExecution.Managed))
+        {
+            default(GpuExecutionScope).Dispose();
+
+            Assert.Equal(KernelExecution.Managed, GpuExecution.Current);
+        }
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Use_ValueOutsideTheEnumeration_Throws()
@@ -134,7 +147,7 @@ public class GpuExecutionTests
     [InlineData("Gpu.SyncGrid(body)")]
     [InlineData("Warp.ActiveMask()")]
     [InlineData("SharedMemory<T>")]
-    public void Run_DelegateReachesAnOperationOfOtherThreads_ThrowsGpuOnlyException(string construct)
+    public void Run_DelegateReachesAnOperationOfOtherThreads_ThrowsInvalidOperationException(string construct)
     {
         Action<long> thread = construct switch
         {
@@ -146,7 +159,7 @@ public class GpuExecutionTests
         };
         var ran = 0;
 
-        var ex = Assert.Throws<GpuOnlyException>(() => CSharpKernelRunner.Run(1, 1, 1, 2, 1, 1, id =>
+        var ex = Assert.Throws<InvalidOperationException>(() => CSharpKernelRunner.Run(1, 1, 1, 2, 1, 1, id =>
         {
             ran++;
             thread(id);

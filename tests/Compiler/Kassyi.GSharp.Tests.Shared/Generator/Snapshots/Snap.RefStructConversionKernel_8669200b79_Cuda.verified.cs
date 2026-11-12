@@ -347,7 +347,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.ImplicitRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.ImplicitRefStructConversionKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchImplicitRefStructConversionKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.ImplicitRefStructConversionKernel", "LaunchImplicitRefStructConversionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchImplicitRefStructConversionKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -624,7 +624,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.ExplicitRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.ExplicitRefStructConversionKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchExplicitRefStructConversionKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.ExplicitRefStructConversionKernel", "LaunchExplicitRefStructConversionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchExplicitRefStructConversionKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -980,7 +980,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.RefStructToRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.RefStructToRefStructConversionKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchRefStructToRefStructConversionKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.RefStructToRefStructConversionKernel", "LaunchRefStructToRefStructConversionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRefStructToRefStructConversionKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1205,7 +1205,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.MixedRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.MixedRefStructConversionKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchMixedRefStructConversionKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.MixedRefStructConversionKernel", "LaunchMixedRefStructConversionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMixedRefStructConversionKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

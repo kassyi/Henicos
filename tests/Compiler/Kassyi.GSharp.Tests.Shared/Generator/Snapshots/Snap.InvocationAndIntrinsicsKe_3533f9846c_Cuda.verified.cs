@@ -365,7 +365,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.InterlockedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("InvocationAndIntrinsicsKernels.InterlockedKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchInterlockedKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("InvocationAndIntrinsicsKernels.InterlockedKernel", "LaunchInterlockedKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInterlockedKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -597,7 +597,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.InterlockedEdgeCasesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("InvocationAndIntrinsicsKernels.InterlockedEdgeCasesKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchInterlockedEdgeCasesKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("InvocationAndIntrinsicsKernels.InterlockedEdgeCasesKernel", "LaunchInterlockedEdgeCasesKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInterlockedEdgeCasesKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -920,7 +920,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.MathKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("InvocationAndIntrinsicsKernels.MathKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchMathKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("InvocationAndIntrinsicsKernels.MathKernel", "LaunchMathKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMathKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -1249,7 +1249,7 @@ throw new global::System.ArgumentException("Kernel array arguments must not be e
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.MathEdgeCasesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("InvocationAndIntrinsicsKernels.MathEdgeCasesKernel", "the pointer launcher takes device memory, which the C# body cannot read; pass the host values to LaunchMathEdgeCasesKernel");
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("InvocationAndIntrinsicsKernels.MathEdgeCasesKernel", "LaunchMathEdgeCasesKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMathEdgeCasesKernel");
 }
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
