@@ -44,7 +44,16 @@ internal static class IrTestCases
     public static string PrintResult(string testCase, string type, string name) =>
         IrPrinter.Print(Result(Build(testCase, type, name)));
 
-    public static string PrintCaseResult(string name) => IrPrinter.Print(Result(BuildCase(name)));
+    /// <summary>The initializer of <c>result</c> in the builder case <paramref name="name"/>.</summary>
+    public static IrExpression CaseResult(string name) => Result(BuildCase(name));
+
+    public static string PrintCaseResult(string name) => IrPrinter.Print(CaseResult(name));
+
+    /// <summary>The text of <paramref name="method"/> with <c>\n</c> line breaks, whatever the platform.</summary>
+    public static string PrintLf(IrMethod method) => IrPrinter.Print(method).ReplaceLineEndings("\n");
+
+    /// <summary>The text of <paramref name="statement"/> with <c>\n</c> line breaks, whatever the platform.</summary>
+    public static string PrintLf(IrStatement statement) => IrPrinter.Print(statement).ReplaceLineEndings("\n");
 
     /// <summary>The single statement of the body (or the statement at <paramref name="index"/>).</summary>
     public static IrStatement Statement(IrMethod method, int index = 0) => method.Body.Statements[index];

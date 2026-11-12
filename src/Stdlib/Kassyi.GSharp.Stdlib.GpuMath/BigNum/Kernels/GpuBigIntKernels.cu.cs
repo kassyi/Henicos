@@ -316,6 +316,7 @@ public static partial class GpuBigIntKernels
     [GpuDeviceFunction]
     public static void ExecuteShiftLeft(GpuBigIntContext ctx, int wordShift, int bitShift)
     {
+        var left = Gpu.NotNull(ctx.Operands.LeftOperand);
         Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
             var srcIdx0 = i - wordShift;
@@ -324,8 +325,8 @@ public static partial class GpuBigIntKernels
             var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
             var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
 
-            var w0 = ctx.Operands.LeftOperand[safeIdx0];
-            var w1 = ctx.Operands.LeftOperand[safeIdx1];
+            var w0 = left[safeIdx0];
+            var w1 = left[safeIdx1];
 
             var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
             var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
@@ -341,6 +342,7 @@ public static partial class GpuBigIntKernels
     [GpuDeviceFunction]
     public static void ExecuteShiftRight(GpuBigIntContext ctx, int wordShift, int bitShift)
     {
+        var left = Gpu.NotNull(ctx.Operands.LeftOperand);
         Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
             var srcIdx0 = i + wordShift;
@@ -349,8 +351,8 @@ public static partial class GpuBigIntKernels
             var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
             var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
 
-            var w0 = ctx.Operands.LeftOperand[safeIdx0];
-            var w1 = ctx.Operands.LeftOperand[safeIdx1];
+            var w0 = left[safeIdx0];
+            var w1 = left[safeIdx1];
 
             var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
             var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
@@ -368,7 +370,8 @@ public static partial class GpuBigIntKernels
     {
         Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords, static (ref context, i) =>
         {
-            context.Operands.ResultBuffer[i] = context.Operands.LeftOperand[i] & context.Operands.RightOperand[i];
+            context.Operands.ResultBuffer[i] = Gpu.NotNull(context.Operands.LeftOperand)[i] &
+                                               Gpu.NotNull(context.Operands.RightOperand)[i];
         });
     }
 
@@ -377,7 +380,8 @@ public static partial class GpuBigIntKernels
     {
         Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords, static (ref context, i) =>
         {
-            context.Operands.ResultBuffer[i] = context.Operands.LeftOperand[i] | context.Operands.RightOperand[i];
+            context.Operands.ResultBuffer[i] = Gpu.NotNull(context.Operands.LeftOperand)[i] |
+                                               Gpu.NotNull(context.Operands.RightOperand)[i];
         });
     }
 
@@ -386,7 +390,8 @@ public static partial class GpuBigIntKernels
     {
         Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords, static (ref context, i) =>
         {
-            context.Operands.ResultBuffer[i] = context.Operands.LeftOperand[i] ^ context.Operands.RightOperand[i];
+            context.Operands.ResultBuffer[i] = Gpu.NotNull(context.Operands.LeftOperand)[i] ^
+                                               Gpu.NotNull(context.Operands.RightOperand)[i];
         });
     }
 
@@ -395,7 +400,7 @@ public static partial class GpuBigIntKernels
     {
         Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords, static (ref context, i) =>
         {
-            context.Operands.ResultBuffer[i] = ~context.Operands.LeftOperand[i];
+            context.Operands.ResultBuffer[i] = ~Gpu.NotNull(context.Operands.LeftOperand)[i];
         });
     }
 

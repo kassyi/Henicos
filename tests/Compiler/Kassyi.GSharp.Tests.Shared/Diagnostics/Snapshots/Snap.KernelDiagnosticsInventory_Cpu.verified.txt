@@ -6,6 +6,7 @@
 ## Analyzers/InvalidMappingSadPath.cs
 (12,21)-(12,52) GSH0036 analyzer: The type 'GEN_39_52_InvalidMappingSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
 (28,19)-(28,31) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
+(29,19)-(29,36) GSH0109 analyzer: The method 'object.GetHashCode()' has no implementation in the 'StandardCppDialect' dialect and cannot be called from GPU code
 
 ## Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs
 (5,21)-(5,53) GSH0036 analyzer: The type 'GSH_01_StringTernary_InGpuKernel' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
@@ -70,6 +71,7 @@
 (23,40)-(23,56) GSH0003 analyzer: The syntax 'MakeRefExpression' is not supported in GSharp GPU kernels
 (31,13)-(31,21) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
 (31,31)-(31,39) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
+(31,31)-(31,53) GSH0109 analyzer: The method 'GCHandle.Alloc(object?)' has no implementation in the 'StandardCppDialect' dialect and cannot be called from GPU code
 (32,13)-(32,16) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
 (50,33)-(50,37) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
 (51,13)-(51,20) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels

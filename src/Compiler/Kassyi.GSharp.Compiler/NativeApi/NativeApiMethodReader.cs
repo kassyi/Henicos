@@ -206,7 +206,7 @@ internal static class NativeApiMethodReader
         if (bindingKind == NativeApiBindingKind.Module)
         {
             var type = parameter.Type.AsSpan().Trim().ToString();
-            if (ModuleKernelParameterTypes.GetUnsupportedReason(type) is { } reason)
+            if (ModuleKernelParameterTypes.Parse(parameter.Name, type).Reason is { } reason)
             {
                 throw Schema(LineOf(mapping, "type"),
                     $"Parameter '{parameter.Name}' of kernel method '{methodName}' has type '{type}', " +
