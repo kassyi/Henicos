@@ -66,6 +66,64 @@ public class NativeApiModuleGeneratorTests
         Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
     }
 
+    // The forms the launcher stages through device buffers compile without a warning: values passed by 'ref', 'out',
+    // 'in' and 'ref readonly' (an 'out' value is set before the launcher reads it), multidimensional and nullable
+    // arrays, the latter also with 'params'
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ModuleDefinition_StagedParameters_CompileWithoutWarnings()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: StagedKernels
+            moduleName: ./native/staged.fatbin
+            methods:
+              - name: Run
+                parameters:
+                  - { name: total, type: ref int }
+                  - { name: result, type: out double }
+                  - { name: seed, type: in uint }
+                  - { name: limit, type: ref readonly long }
+                  - { name: scale, type: scoped ref float }
+                  - { name: grid, type: "float[,]" }
+                  - { name: cube, type: "int[ , , ]?" }
+                  - { name: values, type: "params float[]?" }
+              - name: Optional
+                parameters:
+                  - { name: data, type: "float[]?" }
+                  - { name: gridDimX, type: uint }
+            """;
+        var compilation = CreateCompilation();
+        var driver = CreateDriver(Api("staged.yml", Yaml));
+
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
+
+        Assert.Empty(generatorDiagnostics);
+        var problems = output.GetDiagnostics()
+            .Where(d => d.Severity >= DiagnosticSeverity.Warning)
+            .Select(d => d.ToString())
+            .ToArray();
+        Assert.True(problems.Length == 0, string.Join(Environment.NewLine, problems));
+        var source = Assert.Single(output.SyntaxTrees, t => t.FilePath.EndsWith("StagedKernels.NativeApi.g.cs"))
+            .ToString();
+        Assert.Contains("var h_result = default(double);", source);
+        Assert.Contains("d_result.CopyToHost(new global::System.Span<double>(ref h_result));", source);
+        Assert.Contains("result = h_result;", source);
+        Assert.DoesNotContain("result = default;", source);
+        Assert.Contains("d_total.CopyToHost(new global::System.Span<int>(ref total));", source);
+        Assert.DoesNotContain("d_seed.CopyToHost", source);
+        Assert.DoesNotContain("d_limit.CopyToHost", source);
+        Assert.Contains(
+            "d_grid.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<float>(grid));",
+            source);
+        Assert.Contains(
+            "d_cube?.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<int>(cube));",
+            source);
+        Assert.Contains("throw new global::System.ArgumentNullException(nameof(grid));", source);
+        Assert.DoesNotContain("nameof(cube)", source);
+        Assert.DoesNotContain("nameof(values)", source);
+    }
+
     // A class named in YAML cannot be told from a struct without the compilation; the launcher takes the address of
     // the argument through a method constrained to unmanaged types, so a class is a compile error in the generated
     // launcher instead of reaching the kernel as the host address of the reference (#1417)

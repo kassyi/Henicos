@@ -4,18 +4,35 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// <param name="Name">The C# parameter name.</param>
 /// <param name="Kind">How the launcher passes the argument.</param>
 /// <param name="TypeName">
-/// The C# type of the value whose address the kernel receives: the parameter type, or the element type of an array.
+/// The C# type of the value whose address the kernel receives: the parameter type, the element type of an array, or
+/// the referenced type of a <c>ref</c>, <c>out</c> or <c>in</c> parameter.
 /// </param>
-/// <param name="CopyIn">Whether an array is copied to the device before the launch.</param>
-/// <param name="CopyOut">Whether an array is copied back to the host after the launch.</param>
+/// <param name="CopyIn">
+/// Whether an array or a value passed by reference is copied to the device before the launch; for a value passed by
+/// reference that is not (<c>out</c>), <see langword="default"/> is copied from a local of the launcher, and the
+/// parameter is assigned only in the write-back.
+/// </param>
+/// <param name="CopyOut">
+/// Whether an array or a value passed by reference is copied back to the host after the launch.
+/// </param>
+/// <param name="AllowsNull">
+/// Whether an array is declared nullable (<c>T[]?</c>, <c>T[,]?</c>): null then reaches the kernel as a null pointer.
+/// Null for another array throws <see cref="ArgumentNullException"/> before the launch.
+/// </param>
 internal readonly record struct ModuleKernelArgument(
     string Name,
     ModuleKernelParameterKind Kind,
     string TypeName,
     bool CopyIn,
-    bool CopyOut)
+    bool CopyOut,
+    bool AllowsNull = false)
 {
-    public bool IsArray => Kind == ModuleKernelParameterKind.Array;
+    /// <summary>Whether the kernel receives the device pointer of a buffer the launcher allocates.</summary>
+    public bool IsStaged => Kind is ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray
+        or ModuleKernelParameterKind.ByReference;
+
+    /// <summary>Whether the parameter is an array, one-dimensional or multidimensional.</summary>
+    public bool IsArray => Kind is ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray;
 }
 
 /// <summary>

@@ -11,6 +11,12 @@ public static partial class TestInvoker
 private static readonly Lazy<byte[]> s_fatbin_my_fatbin = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, "my_fatbin")));
 public static partial void LaunchMyKernel(float[] a, float[] b, float scalarValue, uint gridDimX, uint blockDimX)
 {
+if (a is null){
+throw new global::System.ArgumentNullException(nameof(a));
+}
+if (b is null){
+throw new global::System.ArgumentNullException(nameof(b));
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "TestInvoker.LaunchMyKernel");
 using var scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var kernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_fatbin_my_fatbin.Value, "MyKernel");
