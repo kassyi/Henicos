@@ -300,7 +300,7 @@ public class HostAliasGroupsTests
             Assert.True(HostAliasCopies.TryGetHostCopy<long>(groups, 0, ranges, out _, out _));
             var error = Assert.Throws<NotSupportedException>(
                 () => HostAliasCopies.TryGetHostCopy<int>(groups, 1, ranges, out _, out _));
-            Assert.Contains("longs,ints", error.Message);
+            Assert.Contains("'longs', 'ints'", error.Message, StringComparison.Ordinal);
         }
     }
 

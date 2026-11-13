@@ -3820,11 +3820,12 @@ global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKe
 global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_5 = new();
 byte[]? __gsharp_auto_result_shadow = null;
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed));
-global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_alias_handles = new();
+global::System.Collections.Generic.List<global::System.IntPtr>? __gsharp_alias_handles = null;
 try
 {
 if (__gsharp_aliases != null)
 {
+__gsharp_alias_handles = new();
 fixed (byte* __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref refVal), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref outVal), __gsharp_alias_pin_4 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(arr), __gsharp_alias_pin_5 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref nested), __gsharp_alias_pin_6 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(probe))
 {
 nint* __gsharp_alias_ranges = stackalloc nint[30];
@@ -3888,8 +3889,16 @@ global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKe
 }
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref val, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref inVal, ref __gsharp_native_1, __gsharp_allocated_ptrs_1, hStream);
+if (!(__gsharp_aliases?.IsMember(0) == true))
+{
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref refVal, ref __gsharp_native_2, __gsharp_allocated_ptrs_2, hStream);
+}
+if (!(__gsharp_aliases?.IsMember(1) == true))
+{
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref outVal, ref __gsharp_native_3, __gsharp_allocated_ptrs_3, hStream);
+}
+if (!(__gsharp_aliases?.IsMember(2) == true))
+{
 __gsharp_shadow_4 = global::System.Buffers.ArrayPool<byte>.Shared.Rent(__gsharp_size_4);
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed> __gsharp_native_4 = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed>(__gsharp_shadow_4.AsSpan(0, __gsharp_size_4));
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed> __gsharp_host_4 = arr;
@@ -3897,7 +3906,11 @@ for (int __gsharp_index_4 = 0; __gsharp_index_4 < __gsharp_native_4.Length; __gs
 {
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref __gsharp_host_4[__gsharp_index_4], ref __gsharp_native_4[__gsharp_index_4], __gsharp_allocated_ptrs_4, hStream);
 }
+}
+if (!(__gsharp_aliases?.IsMember(3) == true))
+{
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoNested(ref nested, ref __gsharp_native_5, __gsharp_allocated_ptrs_5, hStream);
+}
 __gsharp_auto_result_shadow = global::System.Buffers.ArrayPool<byte>.Shared.Rent(__gsharp_auto_result_size);
 global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed> __gsharp_auto_result_native = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed>(__gsharp_auto_result_shadow.AsSpan(0, __gsharp_auto_result_size));
 __gsharp_auto_result_native.Clear();
@@ -3920,6 +3933,8 @@ global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKe
 }
 if (!(__gsharp_aliases?.IsMember(2) == true))
 {
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed> __gsharp_native_4 = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed>(__gsharp_shadow_4.AsSpan(0, __gsharp_size_4));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed> __gsharp_host_4 = arr;
 for (int __gsharp_index_4 = 0; __gsharp_index_4 < __gsharp_native_4.Length; __gsharp_index_4++)
 {
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref __gsharp_host_4[__gsharp_index_4], ref __gsharp_native_4[__gsharp_index_4], hStream);
@@ -4006,7 +4021,7 @@ foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_3) glo
 foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_4) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 if (__gsharp_shadow_4 != null) global::System.Buffers.ArrayPool<byte>.Shared.Return(__gsharp_shadow_4);
 foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_5) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
-foreach (global::System.IntPtr __gsharp_handle in __gsharp_alias_handles) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
+if (__gsharp_alias_handles != null) foreach (global::System.IntPtr __gsharp_handle in __gsharp_alias_handles) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 if (__gsharp_auto_result_shadow != null) global::System.Buffers.ArrayPool<byte>.Shared.Return(__gsharp_auto_result_shadow);
 }
 return __gsharp_auto_result;
