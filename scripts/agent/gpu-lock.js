@@ -170,7 +170,10 @@ function readOwner(lockPath) {
 }
 
 const options = parseArgs(process.argv.slice(2));
-const lockPath = options.lockPath === '' ? resolveLockPath() : path.resolve(options.lockPath);
+// GSHARP_GPU_LOCK_PATH: the same as --lock-path, for a test whose command reaches this script indirectly (the job queue's
+// self-test); real runs share the default
+const lockOverride = options.lockPath || process.env.GSHARP_GPU_LOCK_PATH || '';
+const lockPath = lockOverride === '' ? resolveLockPath() : path.resolve(lockOverride);
 const commandText = options.command.join(' ');
 
 /** The owner record that takeover decisions read; owner.txt stays the human-readable form. */
@@ -483,7 +486,10 @@ function runCommand() {
   const spawnedAt = Date.now();
   // Unix: detached makes the command the leader of a new session and process group (pgid = its pid), so the group
   // outlives a hard kill of this script and a waiter can see that the command still runs. Windows keeps the console.
-  child = spawn(commandText, { stdio: 'inherit', shell: true, detached: process.platform !== 'win32' });
+  // GSHARP_GPU_LOCK_HELD tells the command that it holds the lock: job-queue.js run --gpu inside it (a just recipe
+  // that long-checks.js runs under this lock) asks for its CPU slot without taking the lock a second time
+  const env = { ...process.env, GSHARP_GPU_LOCK_HELD: lockPath };
+  child = spawn(commandText, { stdio: 'inherit', shell: true, env, detached: process.platform !== 'win32' });
   recordCommandProcess(spawnedAt);
   // After the record, so that a hard kill during the reading leaves a lock whose owner and command can be checked; in
   // parallel with the start of the command, which takes longer than the reading before it can reach the GPU

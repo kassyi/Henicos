@@ -1,5 +1,5 @@
 {
-  "build-queue-gate": {
+  "job-queue-gate": {
     "PreToolUse": [
       {
         "matcher": "run_command",
