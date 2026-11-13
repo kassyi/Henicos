@@ -376,5 +376,37 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 }
 }
 #pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchComplexSignatureKernelPtr(global::System.IntPtr scalarRef, global::System.IntPtr scalarOut, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy arrayVal, global::System.IntPtr structRef, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (arrayVal.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("arrayVal", arrayVal.Length, "The array length must not be negative.");
+}
+if (arrayVal.Data == global::System.IntPtr.Zero && arrayVal.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "arrayVal");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperOptimizationKernels.ComplexSignatureKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WrapperOptimizationKernels.ComplexSignatureKernel", "LaunchComplexSignatureKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchComplexSignatureKernel");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchComplexSignatureKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchComplexSignatureKernel, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::System.Int32*, global::System.Single*, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct*, global::System.UInt32, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::System.Int32*, global::System.Single*, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct*, global::System.UInt32, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, (global::System.Int32*)scalarRef, (global::System.Single*)scalarOut, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = arrayVal.Data, Length = arrayVal.Length }, (global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct*)structRef, constantVal);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
 }
 }

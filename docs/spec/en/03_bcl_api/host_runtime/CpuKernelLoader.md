@@ -22,6 +22,11 @@ public static class CpuKernelLoader
 To run the kernels on the managed path although the native library exists, select
 [`KernelExecution.Managed`](../execution_context/GpuExecution.md) with `GpuExecution.Use`.
 
+The generated `Launch{Kernel}` launchers run on both paths. The CPU `Launch{Kernel}Ptr` launchers call the native
+library through the function pointer of [LoadAotKernelPtr](#loadaotkernelptrstring-string) and run only on the native
+path for now: where [ShouldUseManagedExecution](#shouldusemanagedexecutionstring) is `true`, they throw
+`NotSupportedException`.
+
 ## Methods
 
 | Name | Description |

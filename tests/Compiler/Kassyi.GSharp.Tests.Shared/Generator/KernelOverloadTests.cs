@@ -43,6 +43,20 @@ public class KernelOverloadTests
         Assert.Contains("LaunchRunPtr(global::Kassyi.GSharp.Runtime.GpuBuffer<global::System.Single>", wrapper);
     }
 
+    // The CPU launchers load each overload's own native launcher, the typed pointer launchers included
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void OverloadedKernels_CpuDialect_LoadsDistinctEntryPointsAndTypedPointerLaunchers()
+    {
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(s_overloadedKernels, "Cpu");
+        var wrapper = output.SyntaxTrees.Single(t => t.FilePath.EndsWith("K.g.cs", StringComparison.Ordinal)).ToString();
+
+        Assert.Contains("LoadAotKernelPtr(\"__gsharp_launch_OverloadTest__K__Run_o0\"", wrapper);
+        Assert.Contains("LoadAotKernelPtr(\"__gsharp_launch_OverloadTest__K__Run_o1\"", wrapper);
+        Assert.Contains("public static unsafe void LaunchRunPtr(global::Kassyi.GSharp.Runtime.GpuBuffer<global::System.Int32>", wrapper);
+        Assert.Contains("public static unsafe void LaunchRunPtr(global::Kassyi.GSharp.Runtime.GpuBuffer<global::System.Single>", wrapper);
+    }
+
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("Cpu")]

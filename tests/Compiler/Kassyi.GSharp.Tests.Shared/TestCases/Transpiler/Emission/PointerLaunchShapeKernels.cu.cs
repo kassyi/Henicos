@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Emission;
@@ -28,6 +29,29 @@ public static partial class PointerLaunchShapeKernels
         {
             total = values.Length + (extra is null ? 0 : extra.Length) + pair.Second;
         }
+    }
+
+    // An automatic layout is the runtime's choice, not the C++ one: the pointer launcher takes its shadow struct
+    [StructLayout(LayoutKind.Auto)]
+    public struct Shuffled
+    {
+        public byte On;
+        public long Value;
+    }
+
+    // The kinds that the CPU pointer launcher passes to the native launcher in their own form: a nullable array-like
+    // value, a ref and a by-value struct whose layouts differ, an out scalar, bool and char scalars, and an auto result
+    [GpuKernel]
+    public static int NativeFormsKernel(Memory<int>? memory, ref Shuffled shuffled, Shuffled byValue, out int count,
+        bool flag, char letter)
+    {
+        count = 0;
+        if (memory.HasValue && ThreadIndex.X < memory.Value.Length)
+        {
+            memory.Value.Span[ThreadIndex.X] = letter;
+        }
+
+        return flag ? (int)shuffled.Value + (int)byValue.Value : byValue.On;
     }
 
     // Overloads: the public pointer launcher takes GpuBuffer<T> and forwards each array with its length

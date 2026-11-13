@@ -251,7 +251,7 @@ internal static class WrapperEmitter
                 }
                 else
                 {
-                    CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities.Launcher, moduleName);
+                    CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities, moduleName);
                 }
             }
         }
