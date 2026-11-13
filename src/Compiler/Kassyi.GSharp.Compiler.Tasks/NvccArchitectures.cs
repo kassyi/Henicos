@@ -29,13 +29,17 @@ internal static class NvccArchitectures
     {
         var gencodes = new List<NvccGencode>();
         var invalidEntries = new List<string>();
-        foreach (var part in (targetArchitectures ?? "").Split(';'))
+        var rest = (targetArchitectures ?? "").AsSpan();
+        while (rest.Length > 0)
         {
-            var entry = part.Trim();
+            var separator = rest.IndexOf(';');
+            var entry = (separator < 0 ? rest : rest.Slice(0, separator)).Trim();
             if (entry.Length > 0 && !TryAddGencodes(entry, gencodes))
             {
-                invalidEntries.Add(entry);
+                invalidEntries.Add(entry.ToString());
             }
+
+            rest = separator < 0 ? ReadOnlySpan<char>.Empty : rest.Slice(separator + 1);
         }
 
         return new NvccArchitecturePlan(gencodes, invalidEntries);
@@ -64,26 +68,27 @@ internal static class NvccArchitectures
         "'sm_XY' (SASS and PTX for X.Y, as nvcc -arch=sm_XY) or 'compute_XY' (PTX for X.Y); " +
         "an architecture may end in 'a' or 'f'.";
 
-    private static bool TryAddGencodes(string entry, List<NvccGencode> gencodes)
+    private static bool TryAddGencodes(ReadOnlySpan<char> entry, List<NvccGencode> gencodes)
     {
         var commaIndex = entry.IndexOf(',');
         if (commaIndex >= 0)
         {
-            var arch = entry.Substring(0, commaIndex).Trim();
-            var code = entry.Substring(commaIndex + 1).Trim();
+            var arch = entry.Slice(0, commaIndex).Trim();
+            var code = entry.Slice(commaIndex + 1).Trim();
             if (!IsArchitecture(arch, VirtualPrefix) ||
                 !(IsArchitecture(code, RealPrefix) || IsArchitecture(code, VirtualPrefix)))
             {
                 return false;
             }
 
-            gencodes.Add(new NvccGencode(arch, code));
+            gencodes.Add(new NvccGencode(arch.ToString(), code.ToString()));
             return true;
         }
 
         if (IsArchitecture(entry, VirtualPrefix))
         {
-            gencodes.Add(new NvccGencode(entry, entry));
+            var text = entry.ToString();
+            gencodes.Add(new NvccGencode(text, text));
             return true;
         }
 
@@ -93,16 +98,16 @@ internal static class NvccArchitectures
         }
 
         // nvcc -arch=sm_XY means -gencode arch=compute_XY,code=[sm_XY,compute_XY]; the suffix stays on both.
-        var virtualArch = VirtualPrefix + entry.Substring(RealPrefix.Length);
-        gencodes.Add(new NvccGencode(virtualArch, entry));
+        var virtualArch = VirtualPrefix + entry.Slice(RealPrefix.Length).ToString();
+        gencodes.Add(new NvccGencode(virtualArch, entry.ToString()));
         gencodes.Add(new NvccGencode(virtualArch, virtualArch));
         return true;
     }
 
     // <prefix><two or more digits>[a|f]
-    private static bool IsArchitecture(string text, string prefix)
+    private static bool IsArchitecture(ReadOnlySpan<char> text, string prefix)
     {
-        if (!text.StartsWith(prefix, StringComparison.Ordinal))
+        if (!text.StartsWith(prefix.AsSpan(), StringComparison.Ordinal))
         {
             return false;
         }

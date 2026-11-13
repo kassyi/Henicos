@@ -211,24 +211,28 @@ internal static class ModuleKernelParameterTypes
     private static bool TryReadModifiers(string text, ref int position, out RefKind refKind, out bool isScoped,
         out bool isParams)
     {
-        const string ScopedModifier = "scoped";
-        var modifiers = string.Empty;
-        while (TryReadModifier(text, ref position, out var word))
+        refKind = RefKind.None;
+        isParams = false;
+        isScoped = TryReadModifier(text, ref position, "scoped");
+        if (!isScoped && TryReadModifier(text, ref position, "params"))
         {
-            modifiers = modifiers.Length == 0 ? word : $"{modifiers} {word}";
+            isParams = true;
+        }
+        else if (TryReadModifier(text, ref position, "ref"))
+        {
+            refKind = TryReadModifier(text, ref position, "readonly") ? RefKind.In : RefKind.Ref;
+        }
+        else if (TryReadModifier(text, ref position, "out"))
+        {
+            refKind = RefKind.Out;
+        }
+        else if (TryReadModifier(text, ref position, "in"))
+        {
+            refKind = RefKind.In;
         }
 
-        isScoped = modifiers == ScopedModifier || modifiers.StartsWith(ScopedModifier + " ", StringComparison.Ordinal);
-        var rest = isScoped ? modifiers[ScopedModifier.Length..].TrimStart() : modifiers;
-        isParams = !isScoped && rest == "params";
-        refKind = rest switch
-        {
-            "ref" => RefKind.Ref,
-            "out" => RefKind.Out,
-            "in" or "ref readonly" => RefKind.In,
-            _ => RefKind.None,
-        };
-        return rest.Length == 0 || isParams || refKind != RefKind.None;
+        // A modifier after these is one in another order
+        return !IsModifierAt(text, position);
     }
 
     // A 'ref', 'out' or 'in' parameter: an unmanaged value staged through a one-element device buffer
@@ -248,17 +252,11 @@ internal static class ModuleKernelParameterTypes
             reason, refKind);
     }
 
-    // Reads one modifier word at <position> and moves past it and the whitespace after it
-    private static bool TryReadModifier(string text, ref int position, out string modifier)
+    // Reads <modifier> at <position> when a type follows it, and moves past it and the whitespace after it
+    private static bool TryReadModifier(string text, ref int position, string modifier)
     {
-        var end = position;
-        while (end < text.Length && !char.IsWhiteSpace(text[end]))
-        {
-            end++;
-        }
-
-        modifier = text[position..end];
-        if (end == text.Length || modifier is not ("ref" or "out" or "in" or "scoped" or "params" or "readonly"))
+        var word = ReadWord(text, position, out var end);
+        if (end == text.Length || !word.SequenceEqual(modifier.AsSpan()))
         {
             return false;
         }
@@ -270,6 +268,25 @@ internal static class ModuleKernelParameterTypes
 
         position = end;
         return true;
+    }
+
+    // Whether the word at <position> is a parameter modifier with a type after it
+    private static bool IsModifierAt(string text, int position)
+    {
+        var word = ReadWord(text, position, out var end);
+        return end < text.Length && (word is "ref" or "out" or "in" or "scoped" or "params" or "readonly");
+    }
+
+    // The characters from <position> up to the next whitespace, which <end> points at
+    private static ReadOnlySpan<char> ReadWord(string text, int position, out int end)
+    {
+        end = position;
+        while (end < text.Length && !char.IsWhiteSpace(text[end]))
+        {
+            end++;
+        }
+
+        return text.AsSpan(position, end - position);
     }
 
     private static ModuleParameterType Classify(TypeSyntax syntax, string typeName)
