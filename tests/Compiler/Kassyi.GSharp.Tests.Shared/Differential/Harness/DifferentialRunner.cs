@@ -271,6 +271,7 @@ public static class DifferentialRunner
 
         var activeExPolicy = testCase.ExpectedException?.Invoke(new DiffRandom(at.Seed), at.Shape) ?? testCase.ExceptionPolicy;
         DiffBuffers? expected = null;
+        DiffBuffers? afterException = null;
 
         if (activeExPolicy is null)
         {
@@ -283,13 +284,13 @@ public static class DifferentialRunner
 
             if (hasOracle || hasReference)
             {
-                expected = RunOracle(testCase, at.Initial, at.Shape, at.Seed, out activeExPolicy);
+                expected = RunOracle(testCase, at.Initial, at.Shape, at.Seed, out activeExPolicy, out afterException);
             }
         }
 
         if (activeExPolicy is not null)
         {
-            return EvaluateExceptionExpectation(in run, in at, activeExPolicy, allowSubprocess);
+            return EvaluateExceptionExpectation(in run, in at, activeExPolicy, allowSubprocess, afterException);
         }
 
         var shape = at.Shape;
@@ -332,15 +333,19 @@ public static class DifferentialRunner
         return false;
     }
 
+    // afterException: the outputs of the oracle at its exception, which the paths that throw must match
+    // (DifferentialCase.ComparesOutputsAfterException), or null
     private static bool EvaluateExceptionExpectation(
         in CaseRun run,
         in ShapeRun at,
         ExceptionPolicy policy,
-        bool allowSubprocess
+        bool allowSubprocess,
+        DiffBuffers? afterException
     )
     {
         var testCase = run.Case;
         var cells = new List<PathCell>(run.Paths.Count);
+        var thrownOutputs = new List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)>();
         bool anyDiffers = false;
         bool launchedSubprocess = false;
 
@@ -359,6 +364,7 @@ public static class DifferentialRunner
             }
 
             Exception? thrown = null;
+            DiffBuffers? ranBuffers = null;
             bool skippedBySampling = false;
 
             // [WHY] A failing CUDA thread records its error and exits, so a fault seed runs in this process like on the
@@ -400,6 +406,7 @@ public static class DifferentialRunner
                 var shape = at.Shape;
                 var buffers = at.Initial.Clone();
                 buffers.Shape = shape;
+                ranBuffers = buffers;
                 try
                 {
                     path.Run(() => testCase.Launch(buffers, shape));
@@ -439,7 +446,16 @@ public static class DifferentialRunner
             {
                 var actual = ExceptionPolicy.Unwrap(thrown);
                 cells.Add(new PathCell(path.Path, actual.GetType().Name, Differs: false, Known: null));
+                if (ranBuffers is not null)
+                {
+                    thrownOutputs.Add((path, ranBuffers, null));
+                }
             }
+        }
+
+        if (afterException is not null)
+        {
+            Compare(in run, in at, afterException, thrownOutputs);
         }
 
         if (anyDiffers)
@@ -462,10 +478,12 @@ public static class DifferentialRunner
         DiffBuffers initial,
         LaunchShape shape,
         int seed,
-        out ExceptionPolicy? matchedExceptionPolicy
+        out ExceptionPolicy? matchedExceptionPolicy,
+        out DiffBuffers? afterException
     )
     {
         matchedExceptionPolicy = null;
+        afterException = null;
         var expected = initial.Clone();
         expected.Shape = shape;
         if (testCase.Reference is { } reference)
@@ -515,6 +533,7 @@ public static class DifferentialRunner
             if (firstEx is not null)
             {
                 matchedExceptionPolicy = new ExceptionPolicy(firstEx.GetType(), testCase.ExceptionPaths);
+                afterException = testCase.ComparesOutputsAfterException ? expected : null;
                 return null;
             }
 

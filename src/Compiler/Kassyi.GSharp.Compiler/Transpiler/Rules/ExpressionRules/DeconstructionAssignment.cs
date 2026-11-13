@@ -203,7 +203,9 @@ internal static class DeconstructionAssignment
         ExpressionSyntax expression when model.IsDiscard(expression) => default,
         // A variable declared by the deconstruction: its location is found without evaluating anything
         SingleVariableDesignationSyntax or DeclarationExpressionSyntax => new Target(node, default, default),
-        ExpressionSyntax expression => new Target(expression, ExpressionEffects.OfLocation(expression, model),
+        // An array element of a primitive or reference type is checked when the value is stored, after every value
+        // (ArrayNullCheck.ChecksElementAtStore)
+        ExpressionSyntax expression => new Target(expression, ExpressionEffects.OfAssignmentTarget(expression, model),
             ExpressionEffects.RootOf(expression, model)),
         _ => default
     };

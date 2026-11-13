@@ -217,9 +217,15 @@ internal static class EvaluationOrder
         for (var i = 0; i < arguments.Count; i++)
         {
             // A converted rvalue or non-ref property passed to an in parameter is a value, copied when it is evaluated
-            effects[i + offset] = IsPassedAsLocation(arguments[i], callee?.FindParameter(arguments, i), model)
+            var parameter = callee?.FindParameter(arguments, i);
+            var argument = IsPassedAsLocation(arguments[i], parameter, model)
                 ? ExpressionEffects.OfLocation(arguments[i].Expression, model)
                 : ExpressionEffects.Of(arguments[i].Expression, model);
+
+            // The null check of a non-nullable array argument (ArrayNullCheck.PlanArgument) is written around the
+            // argument, or around its temporary after every argument when the arguments are sequenced
+            effects[i + offset] = argument.WithThrow(
+                parameter != null && ArrayNullCheck.ChecksArgument(arguments[i].Expression, parameter, model));
         }
     }
 

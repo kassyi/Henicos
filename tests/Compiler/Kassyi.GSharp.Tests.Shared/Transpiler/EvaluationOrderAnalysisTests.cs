@@ -60,6 +60,86 @@ public class EvaluationOrderAnalysisTests
     public void LastSpilledOperand_IndependentOperands_IsNone(string method) =>
         Assert.Equal(-1, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 
+    // A check that may throw in one operand and a write to memory in the other: C# decides whether the write is made
+    // before the exception (#1786 (a throwing check in a later operand runs before an earlier call on MSVC))
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("WriteThenLength")]
+    [InlineData("LengthThenWrite")]
+    [InlineData("ElementWriteThenLength")]
+    [InlineData("ElementIncrementThenLength")]
+    [InlineData("WriteThenLengthArgument")]
+    [InlineData("WriteThenDivision")]
+    [InlineData("WriteThenNullableValue")]
+    [InlineData("WriteThenNotNull")]
+    [InlineData("DivisionThenWrite")]
+    public void LastSpilledOperand_CheckAndMemoryWrite_SpillsBothOperands(string method)
+    {
+        var operands = GetOperandEffects(method);
+
+        // mutant: ThrowInterferesWith always false leaves both operands in place
+        Assert.True(operands[0].ThrowInterferesWith(operands[1]));
+        Assert.True(operands[0].MayThrow || operands[1].MayThrow);
+        Assert.Equal(1, EvaluationOrder.LastSpilledOperand(operands));
+    }
+
+    // Only the order against a check is new: the operands read and write nothing the other one touches
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("WriteThenLength")]
+    [InlineData("LengthThenWrite")]
+    [InlineData("ElementWriteThenLength")]
+    [InlineData("WriteThenDivision")]
+    public void DataInterferesWith_CheckAndMemoryWrite_IsFalse(string method)
+    {
+        var operands = GetOperandEffects(method);
+
+        Assert.False(operands[0].DataInterferesWith(operands[1]));
+    }
+
+    // A check next to a read leaves nothing to see after the exception; a write to a local ends with the thread
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ReadThenLength")]
+    [InlineData("LengthThenRead")]
+    [InlineData("LocalWriteThenLength")]
+    [InlineData("WriteThenStackArrayLength")]
+    [InlineData("WriteThenSpanLength")]
+    [InlineData("WriteThenConstantDivision")]
+    public void LastSpilledOperand_CheckWithoutMemoryWrite_IsNone(string method)
+    {
+        var operands = GetOperandEffects(method);
+
+        Assert.False(operands[0].ThrowInterferesWith(operands[1]));
+        Assert.Equal(-1, EvaluationOrder.LastSpilledOperand(operands));
+    }
+
+    // C# on the CLR checks an element of a primitive, an enum or a reference type (stelem) when a simple assignment
+    // stores the value, after the right side; a ref argument or a compound assignment checks it as it names it
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ElementTarget")]
+    [InlineData("EnumElementTarget")]
+    public void OfAssignmentTarget_ArrayElementStoredByStelem_LeavesTheElementCheckToTheStore(string method)
+    {
+        var (element, model) = GetResult(method);
+        var (checkedIndex, checkedModel) = GetResult("ElementTargetWithCheckedIndex");
+
+        Assert.True(ExpressionEffects.OfLocation(element, model).MayThrow);
+        Assert.False(ExpressionEffects.OfAssignmentTarget(element, model).MayThrow);
+        Assert.True(ExpressionEffects.OfAssignmentTarget(checkedIndex, checkedModel).MayThrow);
+    }
+
+    // An element of any other struct is stored through ldelema, which checks it before the right side
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void OfAssignmentTarget_StructElement_ChecksTheElementFirst()
+    {
+        var (element, model) = GetResult("StructElementTarget");
+
+        Assert.True(ExpressionEffects.OfAssignmentTarget(element, model).MayThrow);
+    }
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Constant")]

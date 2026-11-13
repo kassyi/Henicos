@@ -33,9 +33,25 @@ public static class Traps
 
     public static int Field(Pair p) => p.X;
 
-    public static int Length(int[] data) => data.Length;
+    public static int SpanLength(System.Span<int> data) => data.Length;
+
+    public static int Increment(int x) => x++;
+
+    public static int Assignment(int x) => x = 3;
+
+    public static int CompoundAddition(int x) => x += 3;
+
+    // Creating a lambda raises nothing, whatever its body does
+    public static System.Func<int, int> Lambda(int x) => y => 10 / y;
 
     // --- May trap ---
+
+    // NullReferenceException for a null array
+    public static int Length(int[] data) => data.Length;
+
+    public static int NullableValue(int? x) => (int)x;
+
+    public static int CompoundDivision(int x, int y) => x /= y;
 
     public static int VariableDivisor(int x) => 10 / x;
 

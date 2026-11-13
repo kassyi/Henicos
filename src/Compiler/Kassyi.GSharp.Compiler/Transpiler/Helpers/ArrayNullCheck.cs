@@ -151,6 +151,68 @@ internal static class ArrayNullCheck
         var receiver = EvaluationOrder.DeclareTemp(ref context, node.Expression, reference: false);
         var index = EvaluationOrder.DeclareTemp(ref context, argument.Expression, reference: false);
         sequence.Return();
+        AppendElementCall(writer, receiver, index, site);
+        return true;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="node"/> is an element of a one-dimensional C# array at an <c>int</c>-like index (not
+    /// <c>^i</c> or a range): a location whose null and bounds check C# makes when it reads or stores the element.
+    /// </summary>
+    public static bool IsArrayElement(ElementAccessExpressionSyntax node, SemanticModel model) =>
+        IsArrayElementAccess(node, model);
+
+    /// <summary>
+    /// Whether C# checks an element of an array of <paramref name="elementType"/> (null, bounds) when a simple
+    /// assignment stores the value, after the right side, rather than when it names the element.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] G# follows what C# does on the CLR, which the oracle of the differential tests runs. Roslyn stores an
+    /// element of a primitive, an enum or a reference type with <c>stelem</c>, which checks after the right side (as C# spec
+    /// §12.21.2 says), and an element of any other struct through <c>ldelema</c> / <c>stobj</c>, whose <c>ldelema</c>
+    /// checks before the right side. A type parameter is taken as a struct (<c>ldelema</c>).
+    /// </remarks>
+    public static bool ChecksElementAtStore(ITypeSymbol? elementType) =>
+        elementType is { IsReferenceType: true } ||
+        elementType is { TypeKind: TypeKind.Enum } ||
+        elementType?.SpecialType is SpecialType.System_Boolean or SpecialType.System_Char or SpecialType.System_SByte or
+            SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 or
+            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Int64 or
+            SpecialType.System_UInt64 or SpecialType.System_Single or SpecialType.System_Double or
+            SpecialType.System_IntPtr or SpecialType.System_UIntPtr;
+
+    // An element of a one-dimensional C# array at an int-like index
+    private static bool IsArrayElementAccess(ElementAccessExpressionSyntax node, SemanticModel model) =>
+        node.ArgumentList.Arguments is [{ RefKindKeyword.RawKind: (int)SyntaxKind.None } argument] &&
+        model.GetTypeSymbol(node.Expression) is IArrayTypeSymbol { Rank: 1 } &&
+        !IsIndexOrRange(argument.Expression, model);
+
+    /// <summary>
+    /// Writes the element <paramref name="node"/> (<see cref="IsArrayElement"/>) of an array and an index already
+    /// evaluated into the temporaries <paramref name="receiver"/> and <paramref name="index"/>:
+    /// <c>__gsharp_array_at(__gsharp_seq_&lt;receiver&gt;, __gsharp_seq_&lt;index&gt;, &lt;site&gt;)</c> when the array
+    /// needs the null check, otherwise <c>__gsharp_seq_&lt;receiver&gt;[__gsharp_seq_&lt;index&gt;]</c>.
+    /// </summary>
+    public static void AppendElementOfTemps(ElementAccessExpressionSyntax node, int receiver, int index,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        if (NeedsCheck(node.Expression, context.Query.SemanticModel))
+        {
+            AppendElementCall(writer, receiver, index, PlanSite(node.Expression, ref context));
+            return;
+        }
+
+        EvaluationOrder.AppendTempName(writer, receiver);
+        using (writer.Brackets())
+        {
+            EvaluationOrder.AppendTempName(writer, index);
+        }
+    }
+
+    // __gsharp_array_at(__gsharp_seq_<receiver>, __gsharp_seq_<index>, <site>)
+    private static void AppendElementCall(SourceWriter writer, int receiver, int index, NullCheckSite site)
+    {
         writer.Append(GSharpInternalNames.Prelude.ArrayAt);
         using (writer.Parentheses())
         {
@@ -160,8 +222,6 @@ internal static class ArrayNullCheck
             writer.Append(", ");
             AppendSite(writer, site);
         }
-
-        return true;
     }
 
     // __gsharp_array_at(<receiver>, <index>, <site>)
@@ -326,25 +386,27 @@ internal static class ArrayNullCheck
     public static ArgumentCheck PlanArgument(ExpressionSyntax argument, IParameterSymbol parameter,
         ref TranspileContext context)
     {
-        if (!NonNullProof.NeedsBoundaryCheck(parameter))
+        if (!ChecksArgument(argument, parameter, context.Query.SemanticModel))
         {
             return ArgumentCheck.None;
         }
 
-        var model = context.Query.SemanticModel;
-        if (parameter.Type is IArrayTypeSymbol)
-        {
-            return NonNullProof.IsProvenNonNull(argument, model)
-                ? ArgumentCheck.None
-                : new ArgumentCheck(ArgumentCheckKind.Array, PlanArgumentSite(argument, ref context),
-                    ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty);
-        }
-
-        return NonNullProof.IsProvenStruct(argument, model)
-            ? ArgumentCheck.None
+        return parameter.Type is IArrayTypeSymbol
+            ? new ArgumentCheck(ArgumentCheckKind.Array, PlanArgumentSite(argument, ref context),
+                ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty)
             : new ArgumentCheck(ArgumentCheckKind.Struct, PlanArgumentSite(argument, ref context),
                 NonNullProof.GetNonNullableArrayFields(parameter.Type));
     }
+
+    /// <summary>
+    /// Whether <paramref name="argument"/>, passed to <paramref name="parameter"/> of a device function, is checked at
+    /// the call (<see cref="PlanArgument"/>): the parameter asks for it and the argument is not proven.
+    /// </summary>
+    public static bool ChecksArgument(ExpressionSyntax argument, IParameterSymbol parameter, SemanticModel model) =>
+        NonNullProof.NeedsBoundaryCheck(parameter) &&
+        !(parameter.Type is IArrayTypeSymbol
+            ? NonNullProof.IsProvenNonNull(argument, model)
+            : NonNullProof.IsProvenStruct(argument, model));
 
     // The place of a null passed where the parameter is not nullable
     private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context) =>
