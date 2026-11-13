@@ -102,6 +102,7 @@ internal readonly record struct CSharpExecutionPlan
             { IsRefLike: true } => null,
             { RefKind: RefKind.Ref } => PlanReference(parameter, CSharpArgumentKind.Ref, local),
             { RefKind: RefKind.Out } => PlanReference(parameter, CSharpArgumentKind.Out, local),
+            { IsInReference: true } => PlanReference(parameter, CSharpArgumentKind.InReference, local),
             { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } =>
                 new CSharpArgument(parameter.Identifier, CSharpArgumentKind.In, parameter.DeclaredTypeName, local),
             _ => new CSharpArgument(parameter.Identifier, CSharpArgumentKind.Value, parameter.DeclaredTypeName, local)

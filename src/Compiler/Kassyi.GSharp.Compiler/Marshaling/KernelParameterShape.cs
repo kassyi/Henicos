@@ -137,8 +137,27 @@ internal readonly record struct KernelParameterShape
     public bool MarshalsCudaArrays =>
         (IsCustomStruct && HasArrayFields) || (IsCudaConvertedArray && Cuda.ConvertedElementHasArrayFields);
 
-    /// <summary>Whether the parameter is <c>ref</c> or <c>out</c>.</summary>
-    public bool IsByRef => RefKind is RefKind.Ref or RefKind.Out;
+    /// <summary>
+    /// Whether the parameter is an <c>in</c> or <c>ref readonly</c> parameter that the kernel receives by address
+    /// (<c>SymbolExtensions.IsKernelInPassedByAddress</c>): a write through a <c>ref</c> or <c>out</c> parameter that
+    /// refers to the same variable shows through it. The launchers handle it as a <c>ref</c> parameter that is copied
+    /// in and never copied back.
+    /// </summary>
+    public bool IsInReference { get; init; }
+
+    /// <summary>
+    /// Whether the kernel receives the parameter by address: <c>ref</c>, <c>out</c>, or an <c>in</c> parameter that is
+    /// <see cref="IsInReference"/>.
+    /// </summary>
+    public bool IsByRef => RefKind is RefKind.Ref or RefKind.Out || IsInReference;
+
+    /// <summary>
+    /// The argument of a <c>ref</c> parameter of a generated helper that takes this parameter's variable: <c>ref x</c>,
+    /// or <c>ref Unsafe.AsRef(in x)</c> for an <c>in</c> parameter, which C# does not pass as <c>ref</c>.
+    /// </summary>
+    public string RefArgument => IsInReference
+        ? $"ref {HostTypeNames.Unsafe}.AsRef(in {Identifier})"
+        : $"ref {Identifier}";
 
     /// <summary>Whether the parameter is a by-value user struct with <see cref="TransferClass.Identical"/> on CUDA, passed directly via <c>&amp;host</c>.</summary>
     public bool IsDirectCudaValueStruct => IsCustomStruct && !IsByRef && Cuda.IsIdenticalStruct;
@@ -242,7 +261,8 @@ internal readonly record struct KernelParameterShape
             Identifier = parameter.Name.ToCSharpIdentifier(),
             Name = parameter.Name,
             RefKind = parameter.RefKind,
-            Kind = parameter.RefKind is RefKind.Ref or RefKind.Out
+            IsInReference = parameter.IsKernelInPassedByAddress(),
+            Kind = parameter.RefKind is RefKind.Ref or RefKind.Out || parameter.IsKernelInPassedByAddress()
                 ? KernelParameterKind.RefScalar
                 : KernelParameterKind.Scalar,
             Container = ArrayContainerKind.None,

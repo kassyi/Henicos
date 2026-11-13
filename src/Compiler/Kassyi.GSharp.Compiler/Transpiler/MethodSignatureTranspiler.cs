@@ -189,10 +189,11 @@ internal static class MethodSignatureTranspiler
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
                        method.HasAttribute(KnownAttributes.GpuKernel);
-        var isReadOnlyRef = !isKernel &&
-                            (parameterSymbol is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } ||
-                             p.Modifiers.Any(SyntaxKind.InKeyword) ||
-                             p.Modifiers.Any(SyntaxKind.ReadOnlyKeyword));
+        var isReadOnlyRef = parameterSymbol?.IsKernelInPassedByAddress() == true ||
+                            (!isKernel &&
+                             (parameterSymbol is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } ||
+                              p.Modifiers.Any(SyntaxKind.InKeyword) ||
+                              p.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)));
         var isArray = typeSymbol.IsArrayLikeType();
 
         if ((isReadOnly && !isArray) || isReadOnlyRef)

@@ -55,7 +55,8 @@ internal static class IdentifierNameTranspiler
         (owner.ContainingNamespace.IsCoreNamespace() || owner.IsSystemMathType()) &&
         MemberAccessExpressionTranspilerRule.TryTranspileIntrinsic(symbol, ref context);
 
-    // A ref or out parameter, a ref local, or an in / ref readonly parameter of a device function is a C++ pointer
+    // A ref or out parameter, a ref local, an in / ref readonly parameter of a device function, or an in parameter of a
+    // kernel that also has a ref or out parameter of its type (IsKernelInPassedByAddress) is a C++ pointer
     private static bool IsDereferencedReference([NotNullWhen(true)] ISymbol? symbol) =>
         symbol switch
         {
@@ -64,7 +65,7 @@ internal static class IdentifierNameTranspiler
             {
                 RefKind: RefKind.In or RefKind.RefReadOnlyParameter,
                 ContainingSymbol: IMethodSymbol method
-            } => !method.HasAttribute(KnownAttributes.GpuKernel),
+            } inParameter => !method.HasAttribute(KnownAttributes.GpuKernel) || inParameter.IsKernelInPassedByAddress(),
             _ => false
         };
 

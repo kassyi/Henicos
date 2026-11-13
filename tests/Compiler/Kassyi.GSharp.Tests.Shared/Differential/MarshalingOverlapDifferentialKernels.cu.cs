@@ -324,4 +324,39 @@ public static partial class MarshalingOverlapDifferentialKernels
             observed[1] = first.Y;
         }
     }
+
+    // --- An in parameter and a ref or out parameter that receive one variable: the in shows the writes (C# passes
+    // in by reference) ---
+    [GpuKernel]
+    public static void InAndRefOneVariableKernel(in int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            second += 10;
+            observed[0] = first;
+        }
+    }
+
+    [GpuKernel]
+    public static void InAndOutOneVariableKernel(in int first, out int second, [Out] int[] observed)
+    {
+        second = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = first;
+        }
+    }
+
+    [GpuKernel]
+    public static void InAndRefConvertedKernel(
+        in DiffVec2Padded first,
+        ref DiffVec2Padded second,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            second.A += 10f;
+            observed[0] = first.A;
+        }
+    }
 }

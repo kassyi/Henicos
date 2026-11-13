@@ -76,10 +76,12 @@ internal static class WrapperEmitter
                 return new InteropParameterInfo(string.Empty, shape.AotStructPath, false, shape.DefaultValueLiteral);
             default:
             {
+                // An in parameter that the kernel receives by address is the caller's variable, as a ref one is
                 var modifier = shape.RefKind switch
                 {
                     RefKind.Ref => "ref",
                     RefKind.Out => "out",
+                    _ when shape.IsInReference => "in",
                     _ => string.Empty
                 };
 

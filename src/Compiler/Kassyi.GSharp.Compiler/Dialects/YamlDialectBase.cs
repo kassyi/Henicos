@@ -250,7 +250,8 @@ public abstract class YamlDialectBase : ITranspilerDialect
                        method.HasAttribute(KnownAttributes.GpuKernel);
         var isRefPointer = parameterSymbol is not null
             ? parameterSymbol.RefKind is RefKind.Ref or RefKind.Out ||
-              (!isKernel && parameterSymbol.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
+              (!isKernel && parameterSymbol.RefKind is RefKind.In or RefKind.RefReadOnlyParameter) ||
+              parameterSymbol.IsKernelInPassedByAddress()
             : p.Modifiers.Any(SyntaxKind.RefKeyword) ||
               p.Modifiers.Any(SyntaxKind.OutKeyword) ||
               (!isKernel && p.Modifiers.Any(SyntaxKind.InKeyword));

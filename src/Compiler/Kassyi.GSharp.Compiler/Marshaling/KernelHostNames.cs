@@ -197,7 +197,10 @@ internal static class KernelHostNames
 
             if (!typedPointers)
             {
-                AppendRefKind(writer, parameter.RefKind is RefKind.In ? RefKind.None : parameter.RefKind);
+                AppendRefKind(
+                    writer,
+                    parameter.RefKind is RefKind.In && !parameter.IsInReference ? RefKind.None : parameter.RefKind
+                );
             }
 
             writer.Append(parameter.TypeName).Append(';');

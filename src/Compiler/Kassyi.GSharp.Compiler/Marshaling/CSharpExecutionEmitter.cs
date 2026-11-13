@@ -125,6 +125,9 @@ internal static class CSharpExecutionEmitter
             case CSharpArgumentKind.Ref:
                 writer.Append($"ref *{argument.Local}");
                 break;
+            case CSharpArgumentKind.InReference:
+                writer.Append($"in *{argument.Local}");
+                break;
             case CSharpArgumentKind.Out:
                 writer.Append($"out *{argument.Local}");
                 break;
@@ -145,7 +148,8 @@ internal static class CSharpExecutionEmitter
     // [WHY] A ref or out argument is passed through the pinned caller's variable, never a copy: two parameters that
     // receive one variable, or a ref to an element of an array argument, are one memory in C# (#1061)
     private static bool IsPinned(in CSharpArgument argument) =>
-        IsSpan(argument) || argument.Kind is CSharpArgumentKind.Ref or CSharpArgumentKind.Out;
+        IsSpan(argument) ||
+        argument.Kind is CSharpArgumentKind.Ref or CSharpArgumentKind.Out or CSharpArgumentKind.InReference;
 
     private static bool IsSpan(in CSharpArgument argument) =>
         argument.Kind is CSharpArgumentKind.Span or CSharpArgumentKind.ReadOnlySpan;

@@ -18,6 +18,12 @@ internal enum CSharpArgumentKind
     /// <summary>The same for an <c>out</c> argument, which the launcher has set to <c>default</c>.</summary>
     Out,
 
+    /// <summary>
+    /// An <c>in</c> argument that the kernel receives by address, pinned for the run and passed through its pointer
+    /// like <see cref="Ref"/>, so that a write through a <c>ref</c> parameter of the same variable shows through it.
+    /// </summary>
+    InReference,
+
     /// <summary>A <c>Span&lt;T&gt;</c>, pinned for the run and rebuilt in the lambda from pointer and length.</summary>
     Span,
 

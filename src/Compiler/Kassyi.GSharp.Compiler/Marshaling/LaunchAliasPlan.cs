@@ -62,8 +62,8 @@ internal readonly struct LaunchAliasPlan
             var shape = parameters[i];
             if (IsCandidate(shape))
             {
-                var copiesIn = shape.IsArray ? sharing.CopiesIn(i) : shape.RefKind == RefKind.Ref;
-                var copiesBack = !shape.IsArray || sharing.CopiesBack(i);
+                var copiesIn = shape.IsArray ? sharing.CopiesIn(i) : shape.RefKind != RefKind.Out;
+                var copiesBack = shape.IsArray ? sharing.CopiesBack(i) : !shape.IsInReference;
                 builder.Add(i, GetTraits(shape, copiesIn, copiesBack, spanView: false));
             }
         }
@@ -98,7 +98,7 @@ internal readonly struct LaunchAliasPlan
             var readOnly = shape.IsArray && (sharing.NeedsKernelCopy(i) || shape.IsReadOnlyContainer);
             var spanView = shape.Container is ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan;
             copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i));
-            builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly, spanView));
+            builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly && !shape.IsInReference, spanView));
         }
 
         return copies ? builder.ToPlan() : default;
