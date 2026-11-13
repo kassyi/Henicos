@@ -15,6 +15,7 @@ import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
+import { checkBuildSplit } from "./self-test-build-split.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./machine.ts";
 import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
@@ -62,6 +63,7 @@ function checkShellHelpers(): void {
   assert.strictEqual(isTestCommand("just test --filter X"), true);
   assert.strictEqual(isTestCommand("dotnet build Henicos.slnx"), false);
   checkMachineDefaults();
+  checkBuildSplit(assert);
 }
 
 /** The defaults that follow the machine, and the memory a test run needs. */
