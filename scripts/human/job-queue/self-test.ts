@@ -12,6 +12,7 @@ import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
+import { FairnessChecks } from "./scheduler-fairness-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
@@ -118,7 +119,7 @@ function checkCpuOnlyProjects(): void {
 }
 
 export async function selfTest(): Promise<void> {
-  for (const [name, check] of Object.entries({ ...SchedulerChecks, ...JobStateChecks })) {
+  for (const [name, check] of Object.entries({ ...FairnessChecks, ...SchedulerChecks, ...JobStateChecks })) {
     try {
       check(assert);
     } catch (error) {
