@@ -3,7 +3,7 @@ using Kassyi.GSharp.Compiler.Marshaling;
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
-/// Verifies GSH0115: a file-local type named in a body that the managed path copies into a generated file, where the
+/// Verifies GSH0119: a file-local type named in a body that the managed path copies into a generated file, where the
 /// type is not visible (#427). Only the dialect that emits managed bodies reports it, and the generated code compiles.
 /// </summary>
 [Category(TestCategory.Compiler)]
@@ -16,7 +16,7 @@ public class FileLocalTypeDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task ManagedBody_FileLocalTypeNamed_ReportsGSH0115AtEachName()
+    public async Task ManagedBody_FileLocalTypeNamed_ReportsGSH0119AtEachName()
     {
         var diagnostics = await KernelDiagnostics.RunAsync(s_source, "Cpu");
 
@@ -88,7 +88,7 @@ public class FileLocalTypeDiagnosticsTests
             blocked is null
                 ? null
                 : $"{kernel} cannot be launched on the CPU dialect: the managed path cannot copy the body of " +
-                  $"'{blocked}', which names a file-local type (GSH0115).",
+                  $"'{blocked}', which names a file-local type (GSH0119).",
             host.CpuLauncherUnavailableReason);
     }
     // The copy writes what the user's directives resolve as qualified names, so they name the file-local type as well

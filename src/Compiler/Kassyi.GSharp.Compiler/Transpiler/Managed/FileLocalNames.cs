@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// Finds the names of file-local types in the bodies that the managed path copies into generated files (GSH0115): the
+/// Finds the names of file-local types in the bodies that the managed path copies into generated files (GSH0119): the
 /// body of a kernel (its managed fallback), of a suspending device function (its state machine) and of a device
 /// function with a managed version (#711).
 /// </summary>
@@ -89,7 +89,7 @@ internal static class FileLocalNames
         return FindBlockedCallee(body, compilation, visited);
     }
 
-    /// <summary><paramref name="method"/> for a GSH0115 message: <c>N.C.Run(int[])</c>.</summary>
+    /// <summary><paramref name="method"/> for a GSH0119 message: <c>N.C.Run(int[])</c>.</summary>
     public static string FormatMethod(IMethodSymbol method) =>
         TypeLayoutCalculator.FormatTypeName(method.ContainingType) + "." + method.FormatSignature();
 

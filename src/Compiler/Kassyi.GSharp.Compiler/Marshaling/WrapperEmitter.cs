@@ -233,7 +233,7 @@ internal static class WrapperEmitter
                     continue;
                 }
 
-                // GSH0108: the analyzer reports the field type the launcher cannot name; GSH0115 (CPU dialect): the
+                // GSH0108: the analyzer reports the field type the launcher cannot name; GSH0119 (CPU dialect): the
                 // file-local type a copied body names. A launcher that throws keeps the callers compiling, so that the
                 // build shows the analyzer's diagnostic rather than errors in generated code
                 var accessibilities = model.GetLauncherAccessibilities(kernel);

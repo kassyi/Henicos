@@ -10,7 +10,7 @@ file struct FileLocalScale
 
 /// <summary>
 /// A file-local type in a device function that the managed path calls as the user wrote it: no generated file names
-/// the type, so the kernel runs on every dialect (GSH0115 reports only the bodies the managed path copies).
+/// the type, so the kernel runs on every dialect (GSH0119 reports only the bodies the managed path copies).
 /// </summary>
 public static partial class FileLocalTypeKernels
 {

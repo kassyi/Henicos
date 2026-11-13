@@ -84,7 +84,7 @@ internal readonly record struct KernelHostModel
     public string? LauncherUnavailableReason { get; init; }
 
     /// <summary>
-    /// Why the CPU dialect's launcher cannot run the kernel (GSH0115: its managed fallback needs a copy of a body that
+    /// Why the CPU dialect's launcher cannot run the kernel (GSH0119: its managed fallback needs a copy of a body that
     /// names a file-local type, <see cref="FileLocalNames.FindBlockedCopy"/>), as the message of the exception that the
     /// <c>Launch</c> method written in its place throws; <see langword="null"/> otherwise. The CUDA dialect copies no
     /// body and ignores it.
@@ -214,7 +214,7 @@ internal readonly record struct KernelHostModel
         $"({GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher.Id}).";
 
     // <kernel> cannot be launched on the CPU dialect: the managed path cannot copy the body of '<method>', which names
-    // a file-local type (GSH0115); null when the copies the managed fallback needs can be written
+    // a file-local type (GSH0119); null when the copies the managed fallback needs can be written
     private static string? FormatFileLocalReason(IMethodSymbol kernel, SemanticModel? model) =>
         model is not null && FileLocalNames.FindBlockedCopy(kernel, model.Compilation) is { } blocked
             ? $"{kernel.Name} cannot be launched on the CPU dialect: the managed path cannot copy the body of " +

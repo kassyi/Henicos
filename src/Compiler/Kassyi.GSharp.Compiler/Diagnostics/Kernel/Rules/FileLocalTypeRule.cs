@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
 /// Reports a file-local type named in a body that the managed path copies into a generated file, where the type is not
-/// visible (GSH0115, <see cref="FileLocalNames"/>): the body of a kernel, of a suspending device function, or of a device
+/// visible (GSH0119, <see cref="FileLocalNames"/>): the body of a kernel, of a suspending device function, or of a device
 /// function with a managed version, on the dialect that emits managed bodies.
 /// </summary>
 /// <remarks>

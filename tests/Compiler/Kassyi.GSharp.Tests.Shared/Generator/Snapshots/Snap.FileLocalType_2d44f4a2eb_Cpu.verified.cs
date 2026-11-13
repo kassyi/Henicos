@@ -29,7 +29,7 @@ public static partial class AotContexts
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRun(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-throw new global::System.NotSupportedException("Run cannot be launched on the CPU dialect: the managed path cannot copy the body of 'FileLocalDirectives.DirectiveKernels.Run(int[])', which names a file-local type (GSH0115).");
+throw new global::System.NotSupportedException("Run cannot be launched on the CPU dialect: the managed path cannot copy the body of 'FileLocalDirectives.DirectiveKernels.Run(int[])', which names a file-local type (GSH0119).");
 }
 }
 }
