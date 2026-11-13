@@ -1,3 +1,8 @@
+---
+trigger: always_on
+description: Which definition wins when C#, the GPU and the CPU paths disagree; undefined behavior is an error. Every design and compiler change follows it.
+---
+
 # Semantics Charter (decided 2026-10-28)
 
 This rule fixes which definition wins when C#, the GPU (CUDA) and the CPU paths (native C++ and managed) disagree.
