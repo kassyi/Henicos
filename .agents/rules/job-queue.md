@@ -13,7 +13,7 @@ node scripts/human/job-queue.js run --gpu -- "<command>"   # uses the GPU
 node scripts/human/job-queue.js run --after <id> -- "<command>"   # starts once job <id> has ended, if it succeeded
 node scripts/human/job-queue.js status                      # running and waiting jobs: ids, jobs ahead, expected times
 node scripts/human/job-queue.js status <id> --json          # one job: state, ahead, startAt, endAt (ms since epoch)
-node scripts/human/job-queue.js status --watch              # live view for a person (just queue-watch); needs a terminal
+node scripts/human/job-queue.js status --watch              # live view for a person (just queue-watch), in a terminal
 node scripts/human/job-queue.js wait <id>                   # until it ends: exit 0 ok, 1 failed, 4 cancelled, 5 lost
 node scripts/human/job-queue.js move <id> --first           # a waiting job goes first (also --before <id>, --reset)
 node scripts/human/job-queue.js set-weight <id> <n>         # the slots a waiting job takes

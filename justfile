@@ -103,7 +103,7 @@ mutate phase="gpumath" since="" *args="":
 gsharp-demangle log_path="-" symbols_path="":
     dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle "{{log_path}}" "{{symbols_path}}"
 
-# The job queue live, one line per job with its timeline (arrows select, c cancel, s start, m move, w slots, ? keys, q quit)
+# The job queue live, one line per job with its timeline (arrows select, c cancel, s start, m move, w slots, ? keys)
 queue-watch:
     node scripts/human/job-queue.js status --watch
 
