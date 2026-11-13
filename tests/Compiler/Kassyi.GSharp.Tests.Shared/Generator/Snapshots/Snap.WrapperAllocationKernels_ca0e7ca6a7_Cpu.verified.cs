@@ -214,18 +214,14 @@ outVal = default;
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperAllocationKernels.AllocationTestKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::System.Int32 __gsharp_csharp_arg_0 = ioVal;
-global::System.Single __gsharp_csharp_arg_1 = default;
 global::System.Int32[] __gsharp_csharp_arg_2 = arrayVal;
 global::System.UInt32 __gsharp_csharp_arg_3 = constantVal;
-try
+fixed (global::System.Int32* __gsharp_csharp_pin_0 = &ioVal)
+fixed (global::System.Single* __gsharp_csharp_pin_1 = &outVal)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AllocationTestKernel(ref __gsharp_csharp_arg_0, out __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3));
-}
-finally
-{
-ioVal = __gsharp_csharp_arg_0;
-outVal = __gsharp_csharp_arg_1;
+global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::System.Single* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.AllocationTestKernel(ref *__gsharp_csharp_arg_0, out *__gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3));
 }
 return;
 }
@@ -1168,16 +1164,12 @@ public static unsafe void LaunchStructAndTwoArraysKernel(ref global::Kassyi.GSha
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperAllocationKernels.StructAndTwoArraysKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter __gsharp_csharp_arg_0 = counter;
 global::System.Int32[] __gsharp_csharp_arg_1 = a;
 global::System.Int32[] __gsharp_csharp_arg_2 = b;
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter* __gsharp_csharp_pin_0 = &counter)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.StructAndTwoArraysKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
-}
-finally
-{
-counter = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.StructAndTwoArraysKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 }
 return;
 }
@@ -1511,14 +1503,10 @@ public static unsafe void LaunchArrayFreeStructKernel(ref global::Kassyi.GSharp.
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperAllocationKernels.ArrayFreeStructKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter __gsharp_csharp_arg_0 = counter;
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter* __gsharp_csharp_pin_0 = &counter)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.ArrayFreeStructKernel(ref __gsharp_csharp_arg_0));
-}
-finally
-{
-counter = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.ArrayFreeStructKernel(ref *__gsharp_csharp_arg_0));
 }
 return;
 }

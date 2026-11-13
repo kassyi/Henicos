@@ -42,6 +42,8 @@ internal static class CpuNativeCallEmitter
     // The argument in the form that CpuNativeArgumentPlan chose
     // [WHY] A switch statement, not a switch expression: each form is written straight into the writer, so no argument
     // string is built (transpiler-emission.md section 1)
+    // <group> of the argument is the member test and buffer address of a converted member of a group of overlapping
+    // arguments, which the native kernel takes instead of the member's own shadow
     private static void WriteArgument(SourceWriter writer, in KernelParameterShape shape,
         in CpuNativeArgument argument)
     {
@@ -51,9 +53,11 @@ internal static class CpuNativeCallEmitter
                 writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape)}");
                 break;
             case CpuNativeArgumentForm.ArrayProxy:
-                WriteArrayProxy(writer, shape);
+                WriteArrayProxy(writer, shape, argument.Group);
                 break;
             case CpuNativeArgumentForm.ShadowAddress:
+                writer.AppendIf(argument.Group is not null,
+                    $"{argument.Group?.Member} ? ({shape.AotStructPath}*){argument.Group?.Pointer} : ");
                 writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.Native, shape)}");
                 break;
             case CpuNativeArgumentForm.PinnedAddress:
@@ -91,11 +95,14 @@ internal static class CpuNativeCallEmitter
     // A converted array:
     // new GSharpArrayProxy { Data = <null test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }
     // [WHY] The shadow of a null array is an empty rented array, whose pinned address is not null
-    internal static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape)
+    // A converted member of a group: ... : <member> ? <buffer address> : (IntPtr)__gsharp_p_<ord> ...
+    internal static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape,
+        (string Member, string Pointer)? group)
     {
         var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         writer.Append($"new {HostTypeNames.ArrayProxy} {{ Data = ");
         writer.AppendIf(shape.IsCpuConvertedArray, $"{shape.NullTestExpression} ? {HostTypeNames.IntPtr}.Zero : ");
+        writer.AppendIf(group is not null, $"{group?.Member} ? {group?.Pointer} : ");
         writer.Append($"({HostTypeNames.IntPtr}){pinned}, Length = {shape.LengthExpression} }}");
     }
 }

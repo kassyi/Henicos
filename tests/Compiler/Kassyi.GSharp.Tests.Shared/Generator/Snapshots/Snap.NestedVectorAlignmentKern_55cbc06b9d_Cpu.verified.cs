@@ -663,14 +663,10 @@ public static unsafe void LaunchRoundtripKernel(ref global::Kassyi.GSharp.Tests.
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NestedVectorAlignmentKernels.RoundtripKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct __gsharp_csharp_arg_0 = data;
-try
+fixed (global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct* __gsharp_csharp_pin_0 = &data)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.RoundtripKernel(ref __gsharp_csharp_arg_0));
-}
-finally
-{
-data = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.RoundtripKernel(ref *__gsharp_csharp_arg_0));
 }
 return;
 }

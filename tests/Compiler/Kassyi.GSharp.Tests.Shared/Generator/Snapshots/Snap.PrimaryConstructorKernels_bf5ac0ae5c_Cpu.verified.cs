@@ -1390,15 +1390,11 @@ public static unsafe void LaunchCapturedThroughRefKernel(ref global::Kassyi.GSha
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrimaryConstructorKernels.CapturedThroughRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured __gsharp_csharp_arg_0 = data;
 global::System.Int32[] __gsharp_csharp_arg_1 = output;
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured* __gsharp_csharp_pin_0 = &data)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.CapturedThroughRefKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-}
-finally
-{
-data = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcCaptured* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.CapturedThroughRefKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -1748,15 +1744,11 @@ public static unsafe void LaunchMeasureCapturedMixedKernel(ref global::Kassyi.GS
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrimaryConstructorKernels.MeasureCapturedMixedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed __gsharp_csharp_arg_0 = data;
 global::System.Int64[] __gsharp_csharp_arg_1 = layout;
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed* __gsharp_csharp_pin_0 = &data)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.MeasureCapturedMixedKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-}
-finally
-{
-data = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedMixed* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.MeasureCapturedMixedKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -2118,15 +2110,11 @@ public static unsafe void LaunchRoundtripCapturedAutoPropertyKernel(ref global::
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrimaryConstructorKernels.RoundtripCapturedAutoPropertyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty __gsharp_csharp_arg_0 = data;
 global::System.Double[] __gsharp_csharp_arg_1 = output;
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty* __gsharp_csharp_pin_0 = &data)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripCapturedAutoPropertyKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-}
-finally
-{
-data = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcCapturedAutoProperty* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripCapturedAutoPropertyKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -2465,15 +2453,11 @@ public static unsafe void LaunchRoundtripConvertedKernel(ref global::Kassyi.GSha
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrimaryConstructorKernels.RoundtripConvertedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted __gsharp_csharp_arg_0 = data;
 global::System.Single[] __gsharp_csharp_arg_1 = output;
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted* __gsharp_csharp_pin_0 = &data)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripConvertedKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-}
-finally
-{
-data = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcConverted* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripConvertedKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -2831,15 +2815,11 @@ public static unsafe void LaunchRoundtripConvertedOuterKernel(ref global::Kassyi
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrimaryConstructorKernels.RoundtripConvertedOuterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter __gsharp_csharp_arg_0 = data;
 global::System.Single[] __gsharp_csharp_arg_1 = output;
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter* __gsharp_csharp_pin_0 = &data)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripConvertedOuterKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-}
-finally
-{
-data = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedOuter* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripConvertedOuterKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -3582,15 +3562,11 @@ public static unsafe void LaunchRoundtripConvertedPairKernel(ref global::Kassyi.
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrimaryConstructorKernels.RoundtripConvertedPairKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder __gsharp_csharp_arg_0 = data;
 global::System.Single[] __gsharp_csharp_arg_1 = output;
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder* __gsharp_csharp_pin_0 = &data)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripConvertedPairKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-}
-finally
-{
-data = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcConvertedPairHolder* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripConvertedPairKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 }
 return;
 }
@@ -3939,15 +3915,11 @@ public static unsafe void LaunchRoundtripSizedKernel(ref global::Kassyi.GSharp.T
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrimaryConstructorKernels.RoundtripSizedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized __gsharp_csharp_arg_0 = data;
 global::System.Single[] __gsharp_csharp_arg_1 = output;
-try
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized* __gsharp_csharp_pin_0 = &data)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripSizedKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-}
-finally
-{
-data = __gsharp_csharp_arg_0;
+global::Kassyi.GSharp.Tests.Shared.Syntax.PcSized* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrimaryConstructorKernels.RoundtripSizedKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 }
 return;
 }

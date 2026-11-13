@@ -32,6 +32,8 @@ internal static class CpuPointerLaunchEmitter
             WriteManagedExecutionBranch(writer, plan.ManagedExecutionMessage);
             WriteFunctionPointer(writer, kernel.Host, plan.Arguments);
             CpuHostLaunchEmitter.WriteErrorSiteRegistration(writer, kernel);
+            // [WHY] No alias groups (LaunchAliasPlan): the native kernel reads and writes the caller's memory through
+            // the caller's addresses, with no copy or shadow of its own, so overlapping arguments already overlap there
             WriteResultAndCall(writer, kernel.Host, plan.Arguments);
         }
     }

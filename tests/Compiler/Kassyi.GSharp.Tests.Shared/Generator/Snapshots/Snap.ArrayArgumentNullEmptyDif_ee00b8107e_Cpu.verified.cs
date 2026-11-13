@@ -126,12 +126,9 @@ public static unsafe void Unmarshal_DiffDeepBag(ref global::Kassyi.GSharp.Tests.
 {
 host.Tag = native.Tag;
 }
-public static void CopyArrays_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host)
+public static void CopyArrays_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Data != null)
-{
-host.Data = (global::System.Int32[])host.Data.Clone();
-}
+_ = copies.Copy(ref host.Data);
 }
 public static bool HoldsArray_DiffDeepBag(global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, object array)
 {
@@ -1586,14 +1583,19 @@ global::System.Int32[] __gsharp_csharp_arg_2 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.ConvertedArrayKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
+global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies __gsharp_array_copies = new();
+__gsharp_array_copies.Keep(o);
 if (a != null)
 {
 if (!global::System.Object.ReferenceEquals(a, o))
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag[] __gsharp_copy_0 = (global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag[])a.Clone();
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag[] __gsharp_copy_0 = a;
+if (__gsharp_array_copies.Copy(ref __gsharp_copy_0))
+{
 for (int __gsharp_copy_index_0 = 0; __gsharp_copy_index_0 < __gsharp_copy_0.Length; __gsharp_copy_index_0++)
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.AotContexts.CopyArrays_DiffDeepBag(ref __gsharp_copy_0[__gsharp_copy_index_0]);
+global::Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels.AotContexts.CopyArrays_DiffDeepBag(ref __gsharp_copy_0[__gsharp_copy_index_0], __gsharp_array_copies);
+}
 }
 a = __gsharp_copy_0;
 }

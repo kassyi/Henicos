@@ -240,9 +240,9 @@ public static unsafe void Unmarshal_GpuBigIntContext(ref global::Kassyi.GSharp.S
 Unmarshal_OperandContext(ref host.Operands, ref native.Operands, hStream);
 host.NumberOfWords = native.NumberOfWords;
 }
-public static void CopyArrays_GpuBigIntContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext host)
+public static void CopyArrays_GpuBigIntContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-CopyArrays_OperandContext(ref host.Operands);
+CopyArrays_OperandContext(ref host.Operands, copies);
 }
 public static bool HoldsArray_GpuBigIntContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext host, object array)
 {
@@ -351,36 +351,15 @@ native.CarryBuffer.Length = host.CarryBuffer.Length;
 public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, global::System.IntPtr hStream = default)
 {
 }
-public static void CopyArrays_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host)
+public static void CopyArrays_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.LeftOperand != null)
-{
-host.LeftOperand = (global::System.UInt32[])host.LeftOperand.Clone();
-}
-if (host.RightOperand != null)
-{
-host.RightOperand = (global::System.UInt32[])host.RightOperand.Clone();
-}
-if (host.TargetOperand != null)
-{
-host.TargetOperand = (global::System.UInt32[])host.TargetOperand.Clone();
-}
-if (host.ResultBuffer != null)
-{
-host.ResultBuffer = (global::System.UInt32[])host.ResultBuffer.Clone();
-}
-if (host.Constant != null)
-{
-host.Constant = (global::System.UInt32[])host.Constant.Clone();
-}
-if (host.Constant3 != null)
-{
-host.Constant3 = (global::System.UInt32[])host.Constant3.Clone();
-}
-if (host.CarryBuffer != null)
-{
-host.CarryBuffer = (global::System.Int64[])host.CarryBuffer.Clone();
-}
+_ = copies.Copy(ref host.LeftOperand);
+_ = copies.Copy(ref host.RightOperand);
+_ = copies.Copy(ref host.TargetOperand);
+_ = copies.Copy(ref host.ResultBuffer);
+_ = copies.Copy(ref host.Constant);
+_ = copies.Copy(ref host.Constant3);
+_ = copies.Copy(ref host.CarryBuffer);
 }
 public static bool HoldsArray_OperandContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, object array)
 {
