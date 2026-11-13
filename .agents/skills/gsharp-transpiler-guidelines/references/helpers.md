@@ -282,6 +282,12 @@ The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressio
 - Where it goes:
   - Roslyn-only queries with no G# meaning: `Extensions/`.
   - G# meaning shared by analyzers and the transpiler: a named static class at the project root (`GpuExecutionSpace`).
-  - Transpiler-only: `Transpiler/Helpers/`.
+  - Transpiler-only: the subfolder of its feature under `Transpiler/Helpers/` (`NullChecks/`, `Numeric/`, `Literals/`,
+    `StackArrays/`, `Calls/`, `Locals/`, `ResumeLocals/`), with the namespace of that folder added to `GlobalUsings.cs`
+    when the folder is new; `Transpiler/Helpers/` itself only for helpers that belong to no feature
+    (`EvaluationOrder`). A type that only one helper uses goes in the folder of that helper.
+  - Used by one rule only: next to that rule under `Transpiler/Rules/`, not in `Transpiler/Helpers/`.
+  - Used outside the transpiler (generator, marshaling, models): a folder of its own at the project root
+    (`ErrorSites/`), not `Transpiler/Helpers/`.
   - Generator plumbing: `Helpers/`.
 - Then add a row to this file in the same change.
