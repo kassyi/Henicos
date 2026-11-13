@@ -66,6 +66,35 @@ public class CSharpExecutionTests
         Assert.DoesNotContain("__gsharp_statemachine", ex.StackTrace);
     }
 
+    // A failing thread ends there and the others run to their end, as on the GPU; the launch throws the first exception
+    // in the thread order: thread 1 divides by zero, thread 2 reads past the end
+    [Theory]
+    [InlineData(false, typeof(DivideByZeroException))]
+    [InlineData(true, typeof(IndexOutOfRangeException))]
+    [Scenario(TestScenario.SadPath)]
+    public void Launch_CSharpScopeTwoThreadsFail_OtherThreadsRunAndTheFirstExceptionIsThrown(bool reverse, Type expected)
+    {
+        int[] at = [0, 1, 9, 3];
+        int[] divisors = [1, 0, 1, 1];
+        int[] result = [-1, -1, -1, -1, -1, -1, -1, -1];
+
+        var ex = Assert.ThrowsAny<Exception>(() =>
+        {
+            using (CSharpKernelRunner.UseThreadOrder(d => reverse
+                ? Enumerable.Range(0, d.ThreadCount).Reverse().ToArray()
+                : Enumerable.Range(0, d.ThreadCount).ToArray()))
+            using (GpuExecution.Use(KernelExecution.CSharp))
+            {
+                CSharpExecutionKernels.LaunchFailSomeThreadsKernel(at, divisors, result, blockDimX: 4);
+            }
+        });
+
+        Assert.IsType(expected, ex);
+        // mutant: CSharpKernelRunner.RunThread rethrows at once (the run ends at the first failure): threads after it
+        // in the order keep -1
+        Assert.Equal([1, 0, 1, -1, 1, -1, 1, 3], result);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Launch_CSharpScopeValueKernel_ReturnsTheValueOfEachThread()

@@ -26,6 +26,16 @@ public static partial class CSharpExecutionKernels
         result[ThreadIndex.X] = data[at[0]];
     }
 
+    // Thread t writes result[2 t], then result[2 t + 1] = at[at[t]] / divisors[t]: an index out of range or a division
+    // by zero ends thread t before that write
+    [GpuKernel]
+    public static void FailSomeThreadsKernel(int[] at, int[] divisors, int[] result)
+    {
+        int t = ThreadIndex.X;
+        result[2 * t] = 1;
+        result[2 * t + 1] = at[at[t]] / divisors[t];
+    }
+
     // One value per thread, returned into the launcher's auto result
     [GpuKernel]
     public static int ReturnLinearKernel(int scale) => LinearThreadIndex() * scale;

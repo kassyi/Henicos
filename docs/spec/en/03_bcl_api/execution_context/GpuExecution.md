@@ -114,8 +114,11 @@ time: the reference that the GPU, native CPU and managed results are compared wi
 - A `ref` or `out` argument is copied in before the first thread and back after the last one, as the GPU launchers
   copy it to the device and back.
 - A kernel that returns a value fills the launcher's result array, one element per thread.
-- The first exception of a thread ends the launch and reaches the caller as C# throws it, with the kernel method on its
-  stack trace.
+- A thread that throws ends there, and the other threads run to their end, as a failing thread ends on the GPU
+  ([semantics](../../01_language/06_semantics.md#63-undefined-behavior-is-an-error)): the writes of every thread before
+  its exception stay in the output. After the last thread, the first exception in the thread order reaches the caller
+  as C# throws it, with the kernel method on its stack trace. A `CSharpExecutionUnsupportedException` ends the launch
+  at once.
 - Kernels run on the CPU only; no GPU or native library is needed.
 
 ### Kernels That Cannot Run One Thread at a Time
