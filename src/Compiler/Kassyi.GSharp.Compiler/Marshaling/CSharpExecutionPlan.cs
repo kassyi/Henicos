@@ -114,7 +114,7 @@ internal readonly record struct CSharpExecutionPlan
         new(
             parameter.Identifier,
             kind,
-            parameter.ElementTypeName,
+            ConvertedArrayEmitter.GetElementTypeName(parameter),
             local,
             KernelHostNames.GetLocal(LauncherLocal.CSharpPinned, parameter),
             KernelHostNames.GetLocal(LauncherLocal.CSharpLength, parameter)

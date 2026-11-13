@@ -21,6 +21,7 @@ public const string Source = @"#include <cmath>
 #include <cstdlib>
 #include <limits>
 #include <new>
+#include <exception>
 
 // NaN and infinity: a C# constant such as float.NaN has no C++ literal (ConstexprLiteral)
 #define __gsharp_nan_f (std::numeric_limits<float>::quiet_NaN())
@@ -45,6 +46,15 @@ public const string Source = @"#include <cmath>
 #define __noinline__ __attribute__((noinline))
 #else
 #define __noinline__
+#endif
+// A function that only a failing check calls: kept out of line and away from the code that does not fail, as the .NET
+// JIT keeps its throw helpers
+#if defined(_MSC_VER)
+#define __GSHARP_COLD __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#define __GSHARP_COLD __attribute__((noinline, cold))
+#else
+#define __GSHARP_COLD
 #endif
 #define __shared__
 #if defined(_MSC_VER)
@@ -113,7 +123,11 @@ DataRace = 9,
 SwitchExpression = 10,
 ArgumentNull = 11
 };
-inline void __gsharp_trap(GSharpErrorCode code, const char* message);
+// A failed C# check: records the error and ends the thread's kernel step (ErrorChannel.hpp). [[noreturn]] belongs on
+// the first declaration, so that every check below already knows that the call does not return. inline and the cold
+// attributes are on the definition only: GCC warns when a declaration that is not a definition combines inline and
+// noinline
+[[noreturn]] void __gsharp_trap(GSharpErrorCode code, const char* message);
 
 template <GSharpErrorCode ErrorCode>
 inline const char* __gsharp_range_message() {
@@ -169,7 +183,6 @@ template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
 inline GSharpArray<T> Slice(int start, const char* message = nullptr) const {
 if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
 __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
-return GSharpArray<T>();
 }
 return GSharpArray<T>(data + start, length - start);
 }
@@ -178,7 +191,6 @@ inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr)
 if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
 static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
 __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
-return GSharpArray<T>();
 }
 return GSharpArray<T>(data + start, count);
 }
@@ -683,11 +695,14 @@ block_x = blockIdx.x;
 block_yz = (blockIdx.y & 0xFFFFu) | ((blockIdx.z & 0xFFFFu) << 16);
 }
 
-inline void Report(GSharpErrorCode errCode, const char* msg, uint32_t siteId = 0) noexcept {
+// Records the error when the slot has none yet (the first report of a launch wins); true when it did
+inline bool Report(GSharpErrorCode errCode, const char* msg, uint32_t siteId = 0) noexcept {
 int32_t expected = 0;
-if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
+if (!code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
 std::memory_order_acq_rel,
 std::memory_order_relaxed)) {
+return false;
+}
 if (current_launch_slot != nullptr && current_launch_slot != this && current_launch_slot->HasError()) {
 site_id = current_launch_slot->site_id;
 thread_linear = current_launch_slot->thread_linear;
@@ -697,6 +712,21 @@ block_yz = current_launch_slot->block_yz;
 site_id = siteId;
 CaptureCoordinates();
 }
+CopyMessage(msg);
+return true;
+}
+
+// Replaces the error that the calling thread reported before: the failure of a Dispose that runs while an earlier
+// failure of the same thread leaves the using, as C# replaces the exception (__gsharp_using_enter)
+inline void Replace(GSharpErrorCode errCode, const char* msg, uint32_t siteId) noexcept {
+site_id = siteId;
+CaptureCoordinates();
+CopyMessage(msg);
+code.store(static_cast<int32_t>(errCode), std::memory_order_release);
+}
+
+private:
+inline void CopyMessage(const char* msg) noexcept {
 if (msg == nullptr) {
 message = nullptr;
 return;
@@ -712,7 +742,6 @@ while (length > 0 && (static_cast<unsigned char>(msg[length]) & 0xC0u) == 0x80u)
 std::memcpy(text, msg, length);
 text[length] = '\0';
 message = text;
-}
 }
 };
 
@@ -758,92 +787,136 @@ __gsharp_host_last_error.Reset();
 return c;
 }
 
-// Records a runtime failure for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
-// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
-inline void __gsharp_unsupported(const char* message)
-{
-if (__gsharp_active_error_slot != nullptr) {
-__gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
-} else {
-__gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
-}
-}
+// Thrown by a failed check (__gsharp_trap and the functions below) to end the kernel step of the calling thread there,
+// as the thread of the GPU exits: the launcher catches it around the step, and the thread does not run again while the
+// other threads of the launch run on. The failure was recorded before the throw
+struct __gsharp_step_abort {};
 
 // The depth of the comparisons of MemoryExtensions.Sort that the thread is running (Sort.hpp).
 inline thread_local int __gsharp_sort_compare_depth = 0;
+// Whether the last failure the calling OpenMP thread recorded is the one its launch reports: a using that disposes its
+// resource while a failure leaves the using (__gsharp_using_enter) reads it
+inline thread_local bool __gsharp_failure_reported = false;
+// Set while such a Dispose runs after a failure of this thread that its launch reports: a failure of the Dispose then
+// replaces it, as C# replaces the exception
+inline thread_local bool __gsharp_failure_replaces = false;
 
-// Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
-// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+// Records a failure of the calling thread into the slot of its launch (the host slot outside a launch). The first
+// failure of a launch wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline void __gsharp_record_failure(GSharpErrorCode code, const char* message, uint32_t site_id) noexcept
+{
+GSharpErrorSlot& slot =
+__gsharp_active_error_slot != nullptr ? *__gsharp_active_error_slot : __gsharp_host_last_error;
+if (__gsharp_failure_replaces) {
+slot.Replace(code, message, site_id);
+return;
+}
+__gsharp_failure_reported = slot.Report(code, message, site_id);
+}
+
 // [WHY] .NET wraps an exception thrown by the comparison of a sort: IndexOutOfRangeException becomes ArgumentException
 // (the comparer is inconsistent) and any other InvalidOperationException (ArraySortHelper.Sort).
-inline void __gsharp_trap(GSharpErrorCode code, const char* message)
+inline void __gsharp_translate_sort_failure(GSharpErrorCode& code, const char*& message) noexcept
 {
-if (__gsharp_sort_compare_depth > 0)
-{
-if (code == GSharpErrorCode::IndexOutOfRange)
-{
+if (__gsharp_sort_compare_depth <= 0) {
+return;
+}
+if (code == GSharpErrorCode::IndexOutOfRange) {
 code = GSharpErrorCode::Argument;
 message = ""Unable to sort because the IComparer.Compare() method returns inconsistent results."";
-}
-else
-{
+} else {
 code = GSharpErrorCode::InvalidOperation;
 message = ""Failed to compare two elements in the array."";
 }
 }
 
-if (__gsharp_active_error_slot != nullptr) {
-__gsharp_active_error_slot->Report(code, message);
-} else {
-__gsharp_host_last_error.Report(code, message);
-}
+// A construct the CPU dialect cannot execute (e.g. Gpu.InlinePtx): fails with NotSupportedException
+[[noreturn]] __GSHARP_COLD inline void __gsharp_unsupported(const char* message)
+{
+__gsharp_record_failure(GSharpErrorCode::NotSupported, message, 0u);
+throw __gsharp_step_abort{};
 }
 
-inline void __gsharp_trap_site(GSharpErrorCode code, uint32_t site_id)
+// A failed check (e.g. an empty sequence or an index out of range in StackLinq): records the failure and ends the step.
+// Declared in Types.hpp, so that GSharpArray<T> can report its argument errors.
+[[noreturn]] __GSHARP_COLD inline void __gsharp_trap(GSharpErrorCode code, const char* message)
+{
+__gsharp_translate_sort_failure(code, message);
+__gsharp_record_failure(code, message, 0u);
+throw __gsharp_step_abort{};
+}
+
+// The same, with the place of the check in the kernel's error site table
+[[noreturn]] __GSHARP_COLD inline void __gsharp_trap_site(GSharpErrorCode code, uint32_t site_id)
 {
 const char* message = nullptr;
-if (__gsharp_sort_compare_depth > 0)
-{
-if (code == GSharpErrorCode::IndexOutOfRange)
-{
-code = GSharpErrorCode::Argument;
-message = ""Unable to sort because the IComparer.Compare() method returns inconsistent results."";
-}
-else
-{
-code = GSharpErrorCode::InvalidOperation;
-message = ""Failed to compare two elements in the array."";
-}
+__gsharp_translate_sort_failure(code, message);
+__gsharp_record_failure(code, message, site_id);
+throw __gsharp_step_abort{};
 }
 
-if (__gsharp_active_error_slot != nullptr) {
-__gsharp_active_error_slot->Report(code, message, site_id);
-} else {
-__gsharp_host_last_error.Report(code, message, site_id);
-}
-}
-
-inline void __gsharp_trap(GSharpErrorCode code, uint32_t site_id)
+[[noreturn]] inline void __gsharp_trap(GSharpErrorCode code, uint32_t site_id)
 {
 __gsharp_trap_site(code, site_id);
 }
 
-// Thrown by __gsharp_trap_abort to end the kernel step of the current thread; the launcher catches it around the kernel
-// call, inside its OpenMP loop, and stops the launch through the error slot.
-struct __gsharp_step_abort {};
-
-// Records a failure after which the step cannot go on (a shared memory placement that fails: there is no memory to hand
-// out), then ends the step. The launcher stops the launch, and the host throws the exception of the code.
+// A failure after which the step cannot go on (a shared memory placement that fails, no arm of a switch expression
+// matches, a null array read). Every failed check ends the step, so this is __gsharp_trap under the name that the CUDA
+// prelude shares
 [[noreturn]] inline void __gsharp_trap_abort(GSharpErrorCode code, const char* message)
 {
 __gsharp_trap(code, message);
-throw __gsharp_step_abort{};
 }
 
 [[noreturn]] inline void __gsharp_trap_abort(GSharpErrorCode code, uint32_t site_id)
 {
 __gsharp_trap_site(code, site_id);
-throw __gsharp_step_abort{};
+}
+
+// The failure path of a using on the CPU. The transpiler writes the body of a using in a try, and its catch disposes
+// the resource as C# runs Dispose in a finally, then rethrows (UsingCpuEmitter):
+//   catch (...) { int o = __gsharp_using_enter(); try { r.__gsharp_dispose(); } catch (...) {
+//   __gsharp_using_dispose_failed(); } __gsharp_using_leave(o); throw; }
+// A failure of that Dispose ends there: when the failure in flight is a failed check of this thread (recorded) that
+// its launch reports, the new failure replaces it, as the exception of a finally replaces the one in flight in C#.
+// [WHY] The helpers are cold and take no address of the resource, so that the normal path of the using keeps the
+// resource in registers (GCC keeps a local in memory once its address escapes) and is the body followed by the call of
+// Dispose.
+
+// Starts the Dispose of a failure: returns the state to restore (__gsharp_using_leave)
+__GSHARP_COLD inline int __gsharp_using_enter() noexcept
+{
+bool recorded = false;
+try {
+throw;
+} catch (const __gsharp_step_abort&) {
+recorded = true;
+} catch (...) {
+// Any other exception (std::bad_alloc) was not recorded as a failed check; the launcher records it
+}
+int outer = __gsharp_failure_replaces ? 1 : 0;
+__gsharp_failure_replaces = recorded && __gsharp_failure_reported;
+return outer;
+}
+
+// A failure of that Dispose: a failed check was recorded (or replaced) before the throw
+__GSHARP_COLD inline void __gsharp_using_dispose_failed() noexcept
+{
+try {
+throw;
+} catch (const __gsharp_step_abort&) {
+// Recorded before the throw
+} catch (const std::bad_alloc&) {
+__gsharp_record_failure(GSharpErrorCode::InvalidOperation,
+""G#: the native CPU path could not allocate memory for a kernel step"", 0u);
+} catch (...) {
+// No other exception reaches a kernel step
+}
+}
+
+__GSHARP_COLD inline void __gsharp_using_leave(int outer) noexcept
+{
+__gsharp_failure_replaces = outer != 0;
 }
 
 // The array that an array-typed C# expression reads (Length, an element, foreach): a null array ends the step with

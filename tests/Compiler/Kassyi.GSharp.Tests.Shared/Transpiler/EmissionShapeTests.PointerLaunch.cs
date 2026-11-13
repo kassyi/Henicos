@@ -109,18 +109,21 @@ public partial class EmissionShapeTests
         Assert.DoesNotContain("output.DevicePointer", generated, StringComparison.Ordinal);
     }
 
-    private static string PointerLauncher(string generated, string name)
+    private static ReadOnlySpan<char> PointerLauncher(string generated, string name)
     {
         var start = generated.IndexOf($" {name}(", StringComparison.Ordinal);
         Assert.True(start >= 0, $"{name} is not generated.");
-        return generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
+        return LauncherFrom(generated, start);
     }
 
-    private static void AssertCheckBeforeLaunch(string launcher, int launch, params string[] lines)
+    private static void AssertCheckBeforeLaunch(ReadOnlySpan<char> launcher, int launch, params string[] lines)
     {
         var expected = string.Join("\n", lines);
         var at = launcher.IndexOf(expected, StringComparison.Ordinal);
-        Assert.True(at >= 0, "Missing lines:\n" + expected + "\nin:\n" + launcher[..Math.Min(launcher.Length, 3000)]);
+        Assert.True(
+            at >= 0,
+            "Missing lines:\n" + expected + "\nin:\n" + launcher[..Math.Min(launcher.Length, 3000)].ToString()
+        );
         Assert.True(at < launch, "The check comes after the launch begins:\n" + expected);
     }
 }

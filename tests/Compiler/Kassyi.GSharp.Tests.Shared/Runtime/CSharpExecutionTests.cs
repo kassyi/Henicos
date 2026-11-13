@@ -56,8 +56,13 @@ public class CSharpExecutionTests
 
         Assert.Equal(expected.Message, ex.Message);
         // The top frame is the kernel method, not the state machine of the managed path
-        var top = (ex.StackTrace ?? "").Split('\n')[0];
-        Assert.Contains($"{nameof(CSharpExecutionKernels)}.{nameof(CSharpExecutionKernels.ReadAtKernel)}(", top);
+        var lines = (ex.StackTrace ?? "").AsSpan().EnumerateLines();
+        Assert.True(lines.MoveNext(), "The exception has no stack trace.");
+        Assert.Contains(
+            $"{nameof(CSharpExecutionKernels)}.{nameof(CSharpExecutionKernels.ReadAtKernel)}(",
+            lines.Current,
+            StringComparison.Ordinal
+        );
         Assert.DoesNotContain("__gsharp_statemachine", ex.StackTrace);
     }
 

@@ -14,7 +14,7 @@ export const BaseProtocolVersion = 2;
 export const AcceptedProtocolVersions: readonly number[] = [BaseProtocolVersion, ProtocolVersion];
 
 export const DefaultPort = 47117;
-export const DefaultSlots = 6; // measured on 24 cores / 64 GB (test-execution.md, Job queue)
+
 export const IdleExitMs = 30 * 60 * 1000;
 export const NoticeIntervalMs = 5 * 60 * 1000;
 export const StartupGraceMs = 1500;
@@ -56,6 +56,7 @@ export const ShellVariable = "GSHARP_JOB_QUEUE_SHELL";
 export const PolicyVariable = "GSHARP_JOB_QUEUE_POLICY";
 export const PortVariable = "GSHARP_JOB_QUEUE_PORT";
 export const SlotsVariable = "GSHARP_JOB_QUEUE_SLOTS";
+export const MemoryVariable = "GSHARP_JOB_QUEUE_MEMORY_MB";
 
 export const Shells = ["bash", "pwsh", "powershell", "cmd", "sh"] as const;
 export type ShellName = (typeof Shells)[number];

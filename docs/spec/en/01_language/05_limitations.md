@@ -81,7 +81,7 @@ Other differences of the CPU paths:
 * Two `SharedMemory<T>` declarations on one line share a buffer in managed execution
   ([GSH0063](../03_bcl_api/diagnostics/GSH0063.md)).
 * A thread that is inside more than 16 thread-dependent branches and loops at once, in methods that reach
-  `Warp.ActiveMask()`, stops the launch with `InvalidOperationException`: the CPU paths cannot follow which lanes run
+  `Warp.ActiveMask()`, fails with `InvalidOperationException`: the CPU paths cannot follow which lanes run
   together beyond that depth.
 
 ## 5.3 Standard Diagnostics and Warnings

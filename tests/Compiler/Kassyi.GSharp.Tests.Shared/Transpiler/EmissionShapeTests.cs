@@ -461,7 +461,17 @@ public partial class EmissionShapeTests
         var start = generated.IndexOf($"{kernel}_Source = @\"", StringComparison.Ordinal);
         Assert.True(start >= 0, $"{kernel}_Source is not generated.");
         var end = generated.IndexOf("\n\";", start, StringComparison.Ordinal);
-        return generated[start..end];
+        // Most callers match the C++ with regular expressions, which take a string
+#pragma warning disable RS0030 // Category 5: cuts the CUDA C++ source of the kernel out of its string literal
+        return generated.Substring(start, end - start);
+#pragma warning restore RS0030
+    }
+
+    // A launcher of the generated C#, from the text at start (its signature) to the end of its CS8500 suppression
+    private static ReadOnlySpan<char> LauncherFrom(string generated, int start)
+    {
+        var end = generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal);
+        return generated.AsSpan(start, end - start);
     }
 
     private static void AssertContainsLines(string source, params string[] lines)

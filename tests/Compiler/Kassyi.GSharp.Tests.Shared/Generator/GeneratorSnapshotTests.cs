@@ -75,31 +75,35 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
     private async Task VerifyGeneratorSnapshotAsync(string source, string testName, string sourceDir, string dialect)
     {
-#pragma warning disable RS0030
-        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
-#pragma warning restore RS0030
-        var compilation = await BuildCompilationAsync(source, testName, sourceDir, parseOptions);
+        var compilation = await BuildCompilationAsync(source, testName, sourceDir);
+        // The generated trees parse as the test sources do
+        var parseOptions = (CSharpParseOptions)compilation.SyntaxTrees.First().Options;
         var runResult = RunGenerator(compilation, parseOptions, dialect, CreateSnapshotOptions(IsStdlibKernel(sourceDir)));
         await VerifySnapshotAsync(runResult, testName, dialect);
     }
 
-    private async Task<CSharpCompilation> BuildCompilationAsync(
-        string source, string testName, string sourceDir, CSharpParseOptions parseOptions)
+    private async Task<CSharpCompilation> BuildCompilationAsync(string source, string testName, string sourceDir)
     {
         bool isStdlibKernel = IsStdlibKernel(sourceDir);
 
-        var syntaxTrees = await CollectSyntaxTreesAsync(source, testName, sourceDir, parseOptions, isStdlibKernel);
-
-        var compilation = CSharpCompilation.Create("SnapshotTest")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
-            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.RoslynTestUtility.BaseReferences);
+        var (files, otherKernels) = await CollectSourcesAsync(source, testName, sourceDir, isStdlibKernel);
 
         // [WHY] A standard library kernel keeps the standard library's reference: the kernel file uses its other types
         // (BufferContext, ...), which the snapshot does not compile from source. The removal by path that stood here never
         // matched (MegaCompilationCache references the library through an image, without a path), so the snapshots were
         // made with the reference; its records are kept out by GSharpDeviceImportExclude instead (CreateSnapshotOptions)
+        var compilation = Kassyi.GSharp.Tests.Shared.Helpers.RoslynTestUtility.CreateCompilationAt(files.ToArray())
+            .WithAssemblyName("SnapshotTest");
 
-        compilation = compilation.AddSyntaxTrees(syntaxTrees);
+        // The other kernel files of a standard library directory compile as plain C#, without their kernel attributes
+        var rewriter = new GpuAttributeRemover();
+        foreach (var tree in compilation.SyntaxTrees.Where(tree => otherKernels.Contains(tree.FilePath)).ToList())
+        {
+            compilation = compilation.ReplaceSyntaxTree(
+                tree,
+                tree.WithRootAndOptions(rewriter.Visit(tree.GetRoot()), tree.Options)
+            );
+        }
 
         var errors = compilation.GetDiagnostics()
             .Where(d => d.Severity == DiagnosticSeverity.Error && d.Id != "CS8795")
@@ -113,14 +117,13 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         return compilation;
     }
 
-    private static async Task<List<SyntaxTree>> CollectSyntaxTreesAsync(
-        string source, string testName, string sourceDir, CSharpParseOptions parseOptions, bool isStdlibKernel)
+    // The test's source, the GlobalUsings.cs next to it and, for a standard library kernel, the context files and the
+    // other kernel files of its directory (returned again in OtherKernels), as (path, text) in compilation order
+    private static async Task<(List<(string Path, string Source)> Files, HashSet<string> OtherKernels)>
+        CollectSourcesAsync(string source, string testName, string sourceDir, bool isStdlibKernel)
     {
-#pragma warning disable RS0030
-        var syntaxTrees = new List<SyntaxTree>
-        {
-            CSharpSyntaxTree.ParseText(source, options: parseOptions, path: $"{testName}.cs")
-        };
+        var files = new List<(string Path, string Source)> { ($"{testName}.cs", source) };
+        var otherKernels = new HashSet<string>(StringComparer.Ordinal);
 
         var parentDir = Path.GetFullPath(Path.Combine(sourceDir, ".."));
         var globalUsingsPath = Path.Combine(parentDir, "GlobalUsings.cs");
@@ -131,10 +134,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
         if (File.Exists(globalUsingsPath))
         {
-            syntaxTrees.Add(CSharpSyntaxTree.ParseText(
-                await File.ReadAllTextAsync(globalUsingsPath),
-                options: parseOptions,
-                path: globalUsingsPath));
+            files.Add((globalUsingsPath, await File.ReadAllTextAsync(globalUsingsPath)));
         }
 
         if (isStdlibKernel)
@@ -149,32 +149,26 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
             {
                 foreach (var f in Directory.GetFiles(contextsDir, "*.cs"))
                 {
-                    syntaxTrees.Add(CSharpSyntaxTree.ParseText(
-                        await File.ReadAllTextAsync(f),
-                        options: parseOptions,
-                        path: f));
+                    files.Add((f, await File.ReadAllTextAsync(f)));
                 }
             }
 
             if (Directory.Exists(sourceDir))
             {
-                var rewriter = new GpuAttributeRemover();
                 foreach (var f in Directory.GetFiles(sourceDir, "*.cu.cs"))
                 {
-                    var name = Path.GetFileNameWithoutExtension(f).Replace(".cu", "");
+                    // Foo.cu.cs -> Foo
+                    var name = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(f));
                     if (!name.Equals(testName, StringComparison.OrdinalIgnoreCase))
                     {
-                        var text = await File.ReadAllTextAsync(f);
-                        var tree = CSharpSyntaxTree.ParseText(text, options: parseOptions, path: f);
-                        var newRoot = rewriter.Visit(tree.GetRoot());
-                        syntaxTrees.Add(tree.WithRootAndOptions(newRoot, tree.Options));
+                        files.Add((f, await File.ReadAllTextAsync(f)));
+                        otherKernels.Add(f);
                     }
                 }
             }
         }
-#pragma warning restore RS0030
 
-        return syntaxTrees;
+        return (files, otherKernels);
     }
 
     private static GeneratorDriverRunResult RunGenerator(

@@ -4,7 +4,7 @@
 import {
   DefaultPolicy,
   DefaultPort,
-  DefaultSlots,
+  MemoryVariable,
   Policies,
   PolicyVariable,
   PortVariable,
@@ -17,6 +17,7 @@ import {
   type ShellName,
 } from "./constants.ts";
 import { cancel, place, run, status, stop, usageError, wait, type RunOptions } from "./client.ts";
+import { defaultMemoryPoolMb, defaultSlots } from "./machine.ts";
 import { serve } from "./server.ts";
 
 const Usage = [
@@ -30,11 +31,11 @@ const Usage = [
   "  node scripts/human/job-queue.js move <id> (--first | --before <id> | --reset)",
   "  node scripts/human/job-queue.js set-weight <id> <n>",
   "  node scripts/human/job-queue.js stop",
-  "  node scripts/human/job-queue.js serve [--slots <n>] [--policy hrrn|backfill|fifo]",
+  "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
   "  node scripts/human/job-queue.js --self-test",
   "",
   "run         Waits for a slot of the job queue, runs the command in this directory, gives the slot back.",
-  "            --weight <n>           Slots the job takes (default 2 for test runs, 1 otherwise).",
+  "            --weight <n>           Slots the job takes (default 1; a test run also takes its memory budget).",
   "            --gpu                  Wait for the turn at the GPU (one job at a time, in order), then take the GPU",
   "                                   lock (gpu-lock.js); the command's slots are then granted at once.",
   "            --after <id>           Start only after job <id> has ended. When it failed, was cancelled or its",
@@ -54,10 +55,12 @@ const Usage = [
   "            before another waiting job; --reset returns it to the policy order.",
   "set-weight  Changes the slots a waiting job takes.",
   "stop        Stops the scheduler; running jobs keep running and register with the next one.",
-  "serve       Runs the scheduler in the foreground (run starts it on demand).",
+  "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
+  "            slot per 3 cores, at least 2); --memory-mb: the memory the budgets of the running test runs may add up",
+  "            to (tests/memory-budgets.yml; default half the physical memory).",
   "",
-  `Environment: ${PortVariable} (default ${DefaultPort}), ${SlotsVariable} (default ${DefaultSlots}),`,
-  `${PolicyVariable} (default ${DefaultPolicy}; the scheduler keeps the policy it started with).`,
+  `Environment: ${PortVariable} (default ${DefaultPort}), ${SlotsVariable} (--slots), ${MemoryVariable}`,
+  `(--memory-mb), ${PolicyVariable} (default ${DefaultPolicy}; the scheduler keeps the policy it started with).`,
   "Quote the command as one string when it needs pipes or redirection. Steps that belong together (a build and the",
   'test run of what it built) go into one job: run -- "dotnet build X && dotnet test X --no-build".',
 ].join("\n");
@@ -100,7 +103,8 @@ export function parseArgs(argv: string[]): Options {
     weight: 0,
     gpu: false,
     timeoutMinutes: 0,
-    slots: Number(process.env[SlotsVariable]) || DefaultSlots,
+    slots: Number(process.env[SlotsVariable]) || defaultSlots(),
+    memoryMb: Number(process.env[MemoryVariable]) || defaultMemoryPoolMb(),
     policy: isPolicy(policy) ? policy : DefaultPolicy,
     port: Number(process.env[PortVariable]) || DefaultPort,
     commandFromEnv: false,
@@ -176,6 +180,9 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--slots":
         options.slots = parsePositive("--slots", own[++i]);
+        break;
+      case "--memory-mb":
+        options.memoryMb = parsePositive("--memory-mb", own[++i]);
         break;
       case "--policy": {
         const value = own[++i];
