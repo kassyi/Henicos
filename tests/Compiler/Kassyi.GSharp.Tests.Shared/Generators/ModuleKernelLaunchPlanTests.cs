@@ -184,14 +184,14 @@ public class ModuleKernelLaunchPlanTests
         Assert.True(plan.CanLaunch);
         ModuleKernelArgument[] expected =
         [
-            new ModuleKernelArgument("data", ModuleKernelParameterKind.Array, "float", CopyIn: true, CopyOut: true),
-            new ModuleKernelArgument("n", ModuleKernelParameterKind.Value, "int", CopyIn: true, CopyOut: true),
-            new ModuleKernelArgument("p", ModuleKernelParameterKind.Pointer, "float*", CopyIn: true, CopyOut: true),
-            new ModuleKernelArgument("grid", ModuleKernelParameterKind.MultidimensionalArray, "float", true, true,
+            new ModuleKernelArgument(0, "data", ModuleKernelParameterKind.Array, "float", CopyIn: true, CopyOut: true),
+            new ModuleKernelArgument(2, "n", ModuleKernelParameterKind.Value, "int", CopyIn: true, CopyOut: true),
+            new ModuleKernelArgument(3, "p", ModuleKernelParameterKind.Pointer, "float*", CopyIn: true, CopyOut: true),
+            new ModuleKernelArgument(5, "grid", ModuleKernelParameterKind.MultidimensionalArray, "float", true, true,
                 AllowsNull: true),
-            new ModuleKernelArgument("total", ModuleKernelParameterKind.ByReference, "int", true, true),
-            new ModuleKernelArgument("result", ModuleKernelParameterKind.ByReference, "double", false, true),
-            new ModuleKernelArgument("seed", ModuleKernelParameterKind.ByReference, "uint", true, false),
+            new ModuleKernelArgument(6, "total", ModuleKernelParameterKind.ByReference, "int", true, true),
+            new ModuleKernelArgument(7, "result", ModuleKernelParameterKind.ByReference, "double", false, true),
+            new ModuleKernelArgument(8, "seed", ModuleKernelParameterKind.ByReference, "uint", true, false),
         ];
         Assert.Equal(expected, plan.Arguments.AsImmutableArray().ToArray());
         Assert.Equal(new ModuleLaunchConfiguration { GridDimX = "gridDimX", Stream = "stream" }, plan.Launch);
@@ -206,9 +206,9 @@ public class ModuleKernelLaunchPlanTests
         Assert.True(plan.CanLaunch);
         ModuleKernelArgument[] expected =
         [
-            new ModuleKernelArgument("input", ModuleKernelParameterKind.Array, "float", CopyIn: true, CopyOut: false),
-            new ModuleKernelArgument("factor", ModuleKernelParameterKind.Value, "float", CopyIn: true, CopyOut: true),
-            new ModuleKernelArgument("counts", ModuleKernelParameterKind.Pointer, "int*", CopyIn: true, CopyOut: true),
+            new(0, "input", ModuleKernelParameterKind.Array, "float", CopyIn: true, CopyOut: false),
+            new(1, "factor", ModuleKernelParameterKind.Value, "float", CopyIn: true, CopyOut: true),
+            new(2, "counts", ModuleKernelParameterKind.Pointer, "int*", CopyIn: true, CopyOut: true),
         ];
         Assert.Equal(expected, plan.Arguments.AsImmutableArray().ToArray());
         Assert.Equal(new ModuleLaunchConfiguration { GridDimX = "gridDimX", Stream = "stream" }, plan.Launch);
@@ -254,10 +254,10 @@ public class ModuleKernelLaunchPlanTests
     {
         ModuleKernelArgument[] expected =
         [
-            new("callback", ModuleKernelParameterKind.Pointer, "delegate* unmanaged<int, void>", true, true),
-            new("compute", ModuleKernelParameterKind.Pointer, "delegate*<ref int, float>", true, true),
-            new("__gsharp_d_count", ModuleKernelParameterKind.Value, "int", true, true),
-            new("values", ModuleKernelParameterKind.Array, "float", true, true),
+            new(0, "callback", ModuleKernelParameterKind.Pointer, "delegate* unmanaged<int, void>", true, true),
+            new(1, "compute", ModuleKernelParameterKind.Pointer, "delegate*<ref int, float>", true, true),
+            new(0, "__gsharp_d_count", ModuleKernelParameterKind.Value, "int", true, true),
+            new(1, "values", ModuleKernelParameterKind.Array, "float", true, true),
         ];
 
         var arguments = PlanCudaImport("Called").Arguments.Concat(PlanCudaImport("Many").Arguments).ToArray();
@@ -291,16 +291,16 @@ public class ModuleKernelLaunchPlanTests
     {
         ModuleKernelArgument[] expected =
         [
-            new("total", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: true),
-            new("grid", ModuleKernelParameterKind.MultidimensionalArray, "float", CopyIn: true, CopyOut: true),
-            new("result", ModuleKernelParameterKind.ByReference, "int", CopyIn: false, CopyOut: true),
-            new("seed", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: false),
-            new("limit", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: false),
-            new("total", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: true),
-            new("grid", ModuleKernelParameterKind.MultidimensionalArray, "float", true, false, AllowsNull: true),
-            new("values", ModuleKernelParameterKind.Array, "float", false, true, AllowsNull: true),
-            new("result", ModuleKernelParameterKind.ByReference, "double", CopyIn: false, CopyOut: true),
-            new("seed", ModuleKernelParameterKind.ByReference, "global::TestNamespace.Grid", true, false),
+            new(0, "total", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: true),
+            new(1, "grid", ModuleKernelParameterKind.MultidimensionalArray, "float", CopyIn: true, CopyOut: true),
+            new(0, "result", ModuleKernelParameterKind.ByReference, "int", CopyIn: false, CopyOut: true),
+            new(1, "seed", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: false),
+            new(2, "limit", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: false),
+            new(0, "total", ModuleKernelParameterKind.ByReference, "int", CopyIn: true, CopyOut: true),
+            new(1, "grid", ModuleKernelParameterKind.MultidimensionalArray, "float", true, false, AllowsNull: true),
+            new(2, "values", ModuleKernelParameterKind.Array, "float", false, true, AllowsNull: true),
+            new(3, "result", ModuleKernelParameterKind.ByReference, "double", CopyIn: false, CopyOut: true),
+            new(4, "seed", ModuleKernelParameterKind.ByReference, "global::TestNamespace.Grid", true, false),
         ];
 
         var plans = new[] { PlanCudaImport("Counted"), PlanCudaImport("Written"), PlanCudaImport("Packed") };

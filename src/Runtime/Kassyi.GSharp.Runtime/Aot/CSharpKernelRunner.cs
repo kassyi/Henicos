@@ -19,7 +19,7 @@ public static class CSharpKernelRunner
 {
     // The order of the GPU threads in this asynchronous flow: null for the order of their linear index. The
     // differential tests run a kernel in several orders; a result that depends on the order is a data race
-    private static readonly AsyncLocal<Func<int, int[]>?> s_threadOrder = new();
+    private static readonly AsyncLocal<Func<CSharpLaunchDimensions, int[]>?> s_threadOrder = new();
 
     /// <summary>
     /// Runs <paramref name="thread"/> once per GPU thread of the launch, in the order of the linear thread index
@@ -73,18 +73,21 @@ public static class CSharpKernelRunner
     /// <param name="kernel">The kernel, as <c>Type.Method</c>.</param>
     /// <param name="reason">Why the kernel cannot run as C#, as the end of a sentence.</param>
     /// <returns>The exception to throw.</returns>
-    public static InvalidOperationException CannotRun(string kernel, string reason) =>
+    public static CSharpExecutionUnsupportedException CannotRun(string kernel, string reason) =>
         new($"G#: {kernel} cannot run under KernelExecution.CSharp: {reason}. Launch it under " +
             "KernelExecution.Default or KernelExecution.Managed.");
 
     /// <summary>
     /// Runs the GPU threads of the launches of the current asynchronous flow in the order that
-    /// <paramref name="order"/> gives for a thread count (a permutation of the linear indices), until the returned
-    /// scope is disposed. For the differential tests, which run a kernel in several orders.
+    /// <paramref name="order"/> gives for the dimensions of a launch (a permutation of the linear indices), until the
+    /// returned scope is disposed. For the differential tests, which run a kernel in several orders and check that
+    /// each launch has the dimensions they expect.
     /// </summary>
-    /// <param name="order">The linear thread indices in the order to run them, given the number of threads.</param>
+    /// <param name="order">
+    /// The linear thread indices in the order to run them, given the dimensions of the launch.
+    /// </param>
     /// <returns>The scope, which restores the previous order when disposed.</returns>
-    internal static IDisposable UseThreadOrder(Func<int, int[]> order)
+    internal static IDisposable UseThreadOrder(Func<CSharpLaunchDimensions, int[]> order)
     {
         ArgumentNullException.ThrowIfNull(order);
         var previous = s_threadOrder.Value;
@@ -92,7 +95,8 @@ public static class CSharpKernelRunner
         return new ThreadOrderScope(previous);
     }
 
-    private static void RunThreads(in LaunchGeometry shape, Func<int, int[]>? order, Action<long> thread)
+    private static void RunThreads(in LaunchGeometry shape, Func<CSharpLaunchDimensions, int[]>? order,
+        Action<long> thread)
     {
         if (order is null)
         {
@@ -117,7 +121,7 @@ public static class CSharpKernelRunner
     }
 
     // The ids of a custom order, checked to be a permutation, so that an order never skips or repeats a thread
-    private static int[] GetOrder(in LaunchGeometry shape, Func<int, int[]> order)
+    private static int[] GetOrder(in LaunchGeometry shape, Func<CSharpLaunchDimensions, int[]> order)
     {
         if (shape.ThreadCount > int.MaxValue)
         {
@@ -126,7 +130,7 @@ public static class CSharpKernelRunner
         }
 
         var count = (int)shape.ThreadCount;
-        var ids = order(count);
+        var ids = order(shape.Dimensions(count));
         var seen = new bool[count];
         if (ids.Length != count)
         {
@@ -174,6 +178,9 @@ public static class CSharpKernelRunner
 
         public long ThreadCount { get; }
 
+        public CSharpLaunchDimensions Dimensions(int threadCount) => new(
+            (uint)_gridX, (uint)_gridY, (uint)_gridZ, (uint)_blockX, (uint)_blockY, (uint)_blockZ, threadCount);
+
         // The same arrangement as the managed launcher and the GPU: x fastest, for the threads and for the blocks
         public GpuThreadContext ContextOf(long id)
         {
@@ -188,8 +195,26 @@ public static class CSharpKernelRunner
         }
     }
 
-    private sealed class ThreadOrderScope(Func<int, int[]>? previous) : IDisposable
+    private sealed class ThreadOrderScope(Func<CSharpLaunchDimensions, int[]>? previous) : IDisposable
     {
         public void Dispose() => s_threadOrder.Value = previous;
     }
 }
+
+/// <summary>The dimensions of a launch under <see cref="KernelExecution.CSharp"/> and its number of threads.</summary>
+/// <param name="GridDimX">The number of blocks in x.</param>
+/// <param name="GridDimY">The number of blocks in y.</param>
+/// <param name="GridDimZ">The number of blocks in z.</param>
+/// <param name="BlockDimX">The number of threads per block in x.</param>
+/// <param name="BlockDimY">The number of threads per block in y.</param>
+/// <param name="BlockDimZ">The number of threads per block in z.</param>
+/// <param name="ThreadCount">The number of GPU threads of the launch.</param>
+internal readonly record struct CSharpLaunchDimensions(
+    uint GridDimX,
+    uint GridDimY,
+    uint GridDimZ,
+    uint BlockDimX,
+    uint BlockDimY,
+    uint BlockDimZ,
+    int ThreadCount
+);

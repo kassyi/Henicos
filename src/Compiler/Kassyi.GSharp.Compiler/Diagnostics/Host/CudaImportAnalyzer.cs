@@ -3,14 +3,18 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Host;
 using NativeApi;
 
 /// <summary>
-/// Reports the parameters of a <c>[CudaImport]</c> method that its generated launcher cannot pass to the kernel
-/// (GSH0110), from the same plan <see cref="CudaImportGenerator"/> writes.
+/// Reports a <c>[CudaImport]</c> declaration that G# cannot add a generated body to (GSH0113), and otherwise the
+/// parameters that its generated launcher cannot pass to the kernel (GSH0110), from the same decisions
+/// <see cref="CudaImportGenerator"/> reads.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class CudaImportAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(GSharpDiagnostics.CudaImportParameterNotSupported);
+        ImmutableArray.Create(
+            GSharpDiagnostics.CudaImportParameterNotSupported,
+            GSharpDiagnostics.CudaImportDeclarationNotSupported
+        );
 
     public override void Initialize(AnalysisContext context)
     {
@@ -29,18 +33,31 @@ public sealed class CudaImportAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var plan = CudaImportPlanner.Plan(method, context.Compilation);
-        if (plan.CanLaunch)
-        {
-            return;
-        }
-
         var declaration = method.DeclaringSyntaxReferences
             .AsStackEnumerable()
             .Select(static reference => reference.GetSyntax() as MethodDeclarationSyntax)
             .OfType<MethodDeclarationSyntax>()
             .FirstOrDefault();
         var messageName = CudaImportPlanner.GetMessageName(method);
+
+        // A declaration that gets no generated body is reported alone: its parameters are never passed
+        if (CudaImportDeclaration.GetProblem(method) is { } reason)
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.CudaImportDeclarationNotSupported,
+                declaration?.Identifier.GetLocation(),
+                messageName,
+                reason
+            );
+            return;
+        }
+
+        var plan = CudaImportPlanner.Plan(method, context.Compilation);
+        if (plan.CanLaunch)
+        {
+            return;
+        }
+
         foreach (var problem in plan.Problems)
         {
             context.ReportDiagnostic(

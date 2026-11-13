@@ -25,8 +25,7 @@ public class StackLinqLocalQueryDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) =>
-            StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel(b.Get<int>("xs"), b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

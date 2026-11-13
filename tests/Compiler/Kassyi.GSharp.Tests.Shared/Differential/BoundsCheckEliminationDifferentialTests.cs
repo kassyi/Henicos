@@ -44,13 +44,7 @@ public class BoundsCheckEliminationDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationValidKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_boundsCheckEliminationOffByOne = new(
@@ -88,13 +82,7 @@ public class BoundsCheckEliminationDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationOffByOneKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_boundsCheckEliminationWrongSpan = new(
@@ -136,15 +124,7 @@ public class BoundsCheckEliminationDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationWrongSpanKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("otherBacking"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            CanaryLen + 4,
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_boundsCheckEliminationPostIncrement = new(
@@ -182,13 +162,7 @@ public class BoundsCheckEliminationDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationPostIncrementKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_boundsCheckEliminationUpperOnly = new(
@@ -226,13 +200,7 @@ public class BoundsCheckEliminationDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

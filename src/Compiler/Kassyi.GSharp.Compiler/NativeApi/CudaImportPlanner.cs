@@ -54,6 +54,7 @@ internal static class CudaImportPlanner
         {
             // 'out' has no value to copy in; 'in' and 'ref readonly' promise not to change the caller's value
             return new ModuleKernelArgument(
+                parameter.Ordinal,
                 parameter.Name,
                 ModuleKernelParameterKind.ByReference,
                 typeWriter.ToString(),
@@ -73,6 +74,7 @@ internal static class CudaImportPlanner
         var hasIn = parameter.HasAttribute(KnownAttributes.In);
         var hasOut = parameter.HasAttribute(KnownAttributes.Out);
         return new ModuleKernelArgument(
+            parameter.Ordinal,
             parameter.Name,
             kind,
             typeWriter.ToString(),
