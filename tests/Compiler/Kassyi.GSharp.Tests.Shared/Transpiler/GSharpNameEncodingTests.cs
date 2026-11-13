@@ -29,12 +29,31 @@ public class GSharpNameEncodingTests
     [InlineData("__gsharp_id_")]
     [InlineData("__gsharp_mb_")]
     [InlineData("__gsharp_bf_")]
+    [InlineData("__gsharp_gi_")]
+    [InlineData("__gsharp_gi_Scale__Run")]
+    [InlineData("__gsharp_gi_Scale_g1_bSystem__Int32")]
     [InlineData("data")]
     [InlineData("")]
     public void TryDecode_OtherIdentifier_ReturnsFalse(string identifier)
     {
         Assert.False(GSharpNameEncoding.TryDecode(identifier, out var name));
         Assert.Equal(string.Empty, name);
+    }
+
+    // What the demangle mode prints for a log that names generic instances: the entry point of a kernel instance, a
+    // device function instance and the closed copy of the kernel on the host.
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void DecodeText_GenericInstances_ReplacesThemWithTheirTypeArguments()
+    {
+        const string Log = "fault in __gsharp_k_App__Kernels__Scale_g1_bSystem__Int32_e called from " +
+                           "__gsharp_fn_App__Outer_g1_bApp__Vec_e__Kernels__Map_g1_bSystem__Single_r1_e_o2 " +
+                           "(__gsharp_gi_Scale_g1_bSystem__Int32_e)";
+
+        Assert.Equal("fault in App.Kernels.Scale<System.Int32> called from " +
+                     "App.Outer<App.Vec>.Kernels.Map<System.Single[]>#2 (Scale<System.Int32>)",
+            GSharpNameEncoding.DecodeText(Log));
     }
 
     [Fact]
