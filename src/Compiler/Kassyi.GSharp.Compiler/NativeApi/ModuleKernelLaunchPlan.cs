@@ -37,6 +37,15 @@ internal readonly record struct ModuleKernelArgument(
 
     /// <summary>Whether the parameter is an array, one-dimensional or multidimensional.</summary>
     public bool IsArray => Kind is ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray;
+
+    /// <summary>
+    /// Whether the launcher compares the argument with the others for shared memory (<c>HostAliasGroups</c>): an array,
+    /// or a value passed by <c>ref</c> or <c>in</c>. An <c>out</c> value starts from a local of the launcher.
+    /// </summary>
+    public bool IsAliasCandidate => IsArray || (Kind == ModuleKernelParameterKind.ByReference && CopyIn);
+
+    /// <summary>The <c>HostAliasGroups</c> traits of an alias candidate: copied in (1), copied back (2).</summary>
+    public byte AliasTraits => (byte)((CopyIn ? 1 : 0) | (CopyOut ? 2 : 0));
 }
 
 /// <summary>
@@ -97,6 +106,16 @@ internal readonly record struct ModuleKernelLaunchPlan(
     EquatableArray<ModuleKernelProblem> Problems)
 {
     public bool CanLaunch => Problems.IsDefaultOrEmpty;
+
+    /// <summary>
+    /// Whether the launcher compares its arguments for shared memory: two arrays, or an array and a <c>ref</c> value,
+    /// may be one memory in C# (two slices are no module argument, but the same array twice is), and then share one
+    /// device region (#1061).
+    /// </summary>
+    public bool ComparesAliases =>
+        Arguments
+            .AsStackEnumerable()
+            .Count(static a => a.IsAliasCandidate) > 1;
 
     /// <summary>
     /// Whether a kernel argument is a pointer or a function pointer, so the launcher is declared <c>unsafe</c> (CS0214

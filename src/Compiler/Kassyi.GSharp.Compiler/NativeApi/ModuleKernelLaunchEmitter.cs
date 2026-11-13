@@ -114,13 +114,36 @@ internal static class ModuleKernelLaunchEmitter
         writer.AppendLine();
 
         EmitBufferAllocations(writer, plan.Arguments);
+        if (!plan.ComparesAliases)
+        {
+            EmitLaunchAndOutputs(writer, contextTypeName, plan);
+            return;
+        }
+
+        ModuleAliasGroupEmitter.EmitGroups(writer, plan);
+        writer.AppendLine("try");
+        using (writer.Scope())
+        {
+            EmitLaunchAndOutputs(writer, contextTypeName, plan);
+        }
+
+        writer.AppendLine("finally");
+        using (writer.Scope())
+        {
+            ModuleAliasGroupEmitter.EmitFree(writer, plan);
+        }
+    }
+
+    private static void EmitLaunchAndOutputs(SourceWriter writer, string? contextTypeName, ModuleKernelLaunchPlan plan)
+    {
         if (contextTypeName is not null)
         {
-            EmitContextInitialization(writer, contextTypeName, plan.Arguments);
+            EmitContextInitialization(writer, contextTypeName, plan);
         }
 
         EmitKernelLaunch(writer, contextTypeName, plan);
-        EmitBufferOutputs(writer, plan.Arguments);
+        ModuleAliasGroupEmitter.EmitCopyBack(writer, plan);
+        EmitBufferOutputs(writer, plan);
     }
 
     /// <summary>
@@ -240,16 +263,28 @@ internal static class ModuleKernelLaunchEmitter
             : Identifier(argument));
 
     // The parameter as C# source names it (@in for 'in')
-    private static string Identifier(ModuleKernelArgument argument) => argument.Name.ToCSharpIdentifier();
+    internal static string Identifier(ModuleKernelArgument argument) => argument.Name.ToCSharpIdentifier();
 
     // The device buffer local of <argument>, __gsharp_d_<ordinal>
     private static string GetDeviceBuffer(ModuleKernelArgument argument) =>
         KernelHostNames.GetLocal(LauncherLocal.DevicePointer, argument.Ordinal);
 
-    // <d>?.DevicePointer ?? IntPtr.Zero for a nullable array, <d>.DevicePointer otherwise
-    private static string GetDevicePointer(ModuleKernelArgument argument) => argument.AllowsNull
-        ? $"{GetDeviceBuffer(argument)}?.DevicePointer ?? {Zero}"
-        : $"{GetDeviceBuffer(argument)}.DevicePointer";
+    // <d>?.DevicePointer ?? IntPtr.Zero for a nullable array, <d>.DevicePointer otherwise; for an alias candidate,
+    // its address in its group's region first: __gsharp_aliases?.IsMember(<k>) == true ? <group address> : <buffer>
+    private static string GetDevicePointer(ModuleKernelLaunchPlan plan, ModuleKernelArgument argument)
+    {
+        var buffer = argument.AllowsNull
+            ? $"{GetDeviceBuffer(argument)}?.DevicePointer ?? {Zero}"
+            : $"{GetDeviceBuffer(argument)}.DevicePointer";
+        var index = ModuleAliasGroupEmitter.IndexOf(plan, argument);
+        if (index < 0)
+        {
+            return buffer;
+        }
+
+        var member = ModuleAliasGroupEmitter.MemberTest(index);
+        return $"{member} ? {ModuleAliasGroupEmitter.DevicePointer(index)} : {buffer}";
+    }
 
     // The host storage of a value passed by reference: the parameter, or the launcher local __gsharp_out_<ordinal> of
     // an 'out' value
@@ -260,8 +295,9 @@ internal static class ModuleKernelLaunchEmitter
     private static string GetAccess(ModuleKernelArgument argument) => argument.AllowsNull ? "?." : ".";
 
     private static void EmitContextInitialization(SourceWriter writer, string contextTypeName,
-        EquatableArray<ModuleKernelArgument> arguments)
+        ModuleKernelLaunchPlan plan)
     {
+        var arguments = plan.Arguments;
         writer.AppendLine($"{contextTypeName} {NativeContext} = new()");
         using (writer.Scope())
         {
@@ -269,7 +305,7 @@ internal static class ModuleKernelLaunchEmitter
             {
                 var argument = arguments[i];
                 writer.Append(argument.IsStaged
-                    ? $"{Identifier(argument)} = {GetDevicePointer(argument)}"
+                    ? $"{Identifier(argument)} = {GetDevicePointer(plan, argument)}"
                     : $"{Identifier(argument)} = {Identifier(argument)}");
                 writer.AppendLine(i < arguments.Length - 1 ? "," : string.Empty);
             }
@@ -291,7 +327,7 @@ internal static class ModuleKernelLaunchEmitter
             }
             else
             {
-                EmitUnpackedKernelParameters(writer, plan.Arguments);
+                EmitUnpackedKernelParameters(writer, plan);
             }
 
             writer.AppendLine();
@@ -307,14 +343,14 @@ internal static class ModuleKernelLaunchEmitter
     // YAML binding, which the reader cannot tell from a struct, fails to compile there instead of reaching the kernel
     // as the host address of the reference. A pointer cannot be a type argument and is never a reference, so its local
     // is passed by '&'.
-    private static void EmitUnpackedKernelParameters(SourceWriter writer,
-        EquatableArray<ModuleKernelArgument> arguments)
+    private static void EmitUnpackedKernelParameters(SourceWriter writer, ModuleKernelLaunchPlan plan)
     {
+        var arguments = plan.Arguments;
         foreach (var argument in arguments)
         {
             var local = KernelHostNames.GetLocal(LauncherLocal.KernelArgument, argument.Ordinal);
             writer.AppendLine(argument.IsStaged
-                ? $"{HostTypeNames.IntPtr} {local} = {GetDevicePointer(argument)};"
+                ? $"{HostTypeNames.IntPtr} {local} = {GetDevicePointer(plan, argument)};"
                 : $"{argument.TypeName} {local} = {Identifier(argument)};");
         }
 
@@ -358,17 +394,21 @@ internal static class ModuleKernelLaunchEmitter
             : $"{ThrowIfError}({HostTypeNames.CudaDriverApi}.cuCtxSynchronize());");
     }
 
+    // [if (!(__gsharp_aliases?.IsMember(<k>) == true))]   (the group of a member copied it back)
     // Array: <d>[?].CopyToHost(<elements of name>);
     // By reference: <d>.CopyToHost(new Span<<type>>(ref <name> or <out>)); [<name> = <out>;]
-    private static void EmitBufferOutputs(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
+    private static void EmitBufferOutputs(SourceWriter writer, ModuleKernelLaunchPlan plan)
     {
-        foreach (var argument in arguments)
+        foreach (var argument in plan.Arguments)
         {
             if (!argument.IsStaged || !argument.CopyOut)
             {
                 continue;
             }
 
+            var index = ModuleAliasGroupEmitter.IndexOf(plan, argument);
+            writer.AppendLineIf(index >= 0, $"if (!({ModuleAliasGroupEmitter.MemberTest(index)}))");
+            using var notMember = index >= 0 ? writer.Scope() : default;
             var name = Identifier(argument);
             var device = GetDeviceBuffer(argument);
             if (argument.IsArray)
