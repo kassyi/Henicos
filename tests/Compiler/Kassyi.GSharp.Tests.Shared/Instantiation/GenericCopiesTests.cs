@@ -1,6 +1,7 @@
 #nullable enable
 
 using Kassyi.GSharp.Compiler.Instantiation;
+using Kassyi.GSharp.Compiler.Lowering;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Kassyi.GSharp.Tests.Shared.Instantiation;
@@ -99,15 +100,19 @@ public class GenericCopiesTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("Sum", "App.Odd", "implements")]
-    [InlineData("ShiftAssign", "System.Byte", "compound shift")]
-    public void Create_FormWithoutAClosedSpelling_ReportsItsNode(string method, string typeArgument, string reason)
+    [InlineData("Sum", "App.Odd", "implements", "a + b")]
+    [InlineData("ShiftAssign", "System.Byte", "compound shift", "a <<= n")]
+    public void Create_FormWithoutAClosedSpelling_ReportsItsNode(
+        string method,
+        string typeArgument,
+        string reason,
+        string expression)
     {
         var (copy, _) = CreateCopy(method, typeArgument);
 
         var finding = Assert.Single(copy.Findings);
         Assert.Contains(reason, finding.Reason, StringComparison.Ordinal);
-        Assert.Equal(LineOf($" {method}<T>("), finding.Location.GetLineSpan().StartLinePosition.Line);
+        Assert.Equal(expression, SourceText.From(s_source).ToString(finding.Location.SourceSpan));
     }
 
     // A sibling member of a generic type is not pinned to the closed type yet: the check stops the copy

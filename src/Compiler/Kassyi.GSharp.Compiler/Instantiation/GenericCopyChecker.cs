@@ -43,12 +43,14 @@ internal static class GenericCopyChecker
             }
         }
 
-        var pair = new PairCheck(model, copyModel, plan, map, new CopySymbolComparer(map, originalNodes));
+        var pair = new PairCheck(model, copyModel, plan, map, new CopySymbolComparer(map, originalNodes),
+            CollectOperands(nodes, plan));
         var replaced = CollectReplaced(nodes, plan);
         for (var i = 1; i < nodes.Length; i++)
         {
             var node = nodes[i];
             if (node is not (ExpressionSyntax or PatternSyntax) || replaced.Contains(i) ||
+                node is CheckedExpressionSyntax or ParenthesizedExpressionSyntax ||
                 !GenericCopyPlanner.IsCopied(node, declaration))
             {
                 continue;
@@ -93,6 +95,33 @@ internal static class GenericCopyChecker
         }
     }
 
+    // The direct operands of the operators the copy narrows: C# promotes a small operand to int there, where the
+    // generic math operator takes the type itself, so only the type of an operand is compared, not its conversion
+    private static HashSet<int> CollectOperands(SyntaxNode[] nodes, GenericCopyPlan plan)
+    {
+        var operands = new HashSet<int>();
+        foreach (var rewrite in plan.Rewrites.Values)
+        {
+            if (rewrite.Kind is not (CopyRewriteKind.NarrowedOperator or CopyRewriteKind.NarrowedShift or
+                CopyRewriteKind.NarrowedNegation))
+            {
+                continue;
+            }
+
+            var root = nodes[rewrite.NodeIndex];
+            for (var i = rewrite.NodeIndex + 1; i < nodes.Length && root.Span.Contains(nodes[i].Span); i++)
+            {
+                if (nodes[i].Parent == root || nodes[i].Parent is ParenthesizedExpressionSyntax { Parent: var outer } &&
+                    outer == root)
+                {
+                    operands.Add(i);
+                }
+            }
+        }
+
+        return operands;
+    }
+
     // The nodes inside a node the copy writes as a constant: they have no counterpart
     private static HashSet<int> CollectReplaced(SyntaxNode[] nodes, GenericCopyPlan plan)
     {
@@ -119,15 +148,17 @@ internal static class GenericCopyChecker
         SemanticModel copyModel,
         GenericCopyPlan plan,
         InstanceSymbolMap map,
-        CopySymbolComparer comparer)
+        CopySymbolComparer comparer,
+        HashSet<int> operands)
     {
         // The reason the copied node differs, or null
         public string? Compare(int index, SyntaxNode original, SyntaxNode copied)
         {
             var originalType = model.GetTypeInfo(original);
             var copyType = copyModel.GetTypeInfo(copied);
+            var isOperand = operands.Contains(index);
             if (!comparer.SameType(Substitute(originalType.Type), copyType.Type) ||
-                !comparer.SameType(Substitute(originalType.ConvertedType), copyType.ConvertedType))
+                (!isOperand && !comparer.SameType(Substitute(originalType.ConvertedType), copyType.ConvertedType)))
             {
                 return $"the copy has the type '{copyType.Type?.Name}' where the declaration has '{originalType.Type?.Name}'";
             }
@@ -139,7 +170,7 @@ internal static class GenericCopyChecker
                 return CompareWritten(rewrite, copied);
             }
 
-            return CompareSymbols(original, copied) ?? CompareConversions(original, copied) ??
+            return CompareSymbols(original, copied) ?? (isOperand ? null : CompareConversions(original, copied)) ??
                    CompareConstants(original, copied);
         }
 

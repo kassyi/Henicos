@@ -127,23 +127,72 @@ internal static class GenericCopies
             GenericInstanceTable.Register(symbol, prepared.Instance);
         }
 
-        var problems = prepared.Plan.Problems.AddRange(GenericCopyChecker.Check(
-            prepared.Nodes,
-            prepared.Declaration,
-            prepared.Model,
-            copy,
-            copyModel,
-            prepared.Plan,
-            prepared.Map
+        var problems = prepared.Plan.Problems.AddRange(WithoutConsequences(
+            prepared,
+            GenericCopyChecker.Check(
+                prepared.Nodes,
+                prepared.Declaration,
+                prepared.Model,
+                copy,
+                copyModel,
+                prepared.Plan,
+                prepared.Map
+            )
         ));
         var findings = ImmutableArray.CreateBuilder<CopyFinding>(problems.Length);
+        var reported = new HashSet<(TextSpan, string)>();
         foreach (var problem in problems)
         {
             var node = problem.NodeIndex > 0 ? prepared.Nodes[problem.NodeIndex] : prepared.Declaration;
-            findings.Add(new CopyFinding(node.GetLocation(), problem.Reason));
+            // The nodes of one expression (the call, its member access, its name) report one problem once
+            var site = problem.NodeIndex > 0 ? ReportedSite(node) : node;
+            if (reported.Add((site.Span, problem.Reason)))
+            {
+                findings.Add(new CopyFinding(site.GetLocation(), problem.Reason));
+            }
         }
 
-        return new GenericCopy(prepared.Instance, copy, symbol, findings.MoveToImmutable());
+        return new GenericCopy(prepared.Instance, copy, symbol, findings.ToImmutable());
+    }
+
+    // What the check finds inside a node the plan already reported is the consequence of that problem (a copy that does
+    // not compile, a node without a type), not another problem: the user is told the cause once
+    private static ImmutableArray<CopyProblem> WithoutConsequences(
+        PreparedCopy prepared,
+        ImmutableArray<CopyProblem> found)
+    {
+        if (prepared.Plan.Problems.IsEmpty)
+        {
+            return found;
+        }
+
+        var builder = ImmutableArray.CreateBuilder<CopyProblem>(found.Length);
+        foreach (var problem in found)
+        {
+            var span = prepared.Nodes[problem.NodeIndex].Span;
+            if (!prepared.Plan.Problems.AsStackEnumerable()
+                    .Any((prepared.Nodes, span), static (planned, state) =>
+                        state.Nodes[planned.NodeIndex].Span.Contains(state.span)))
+            {
+                builder.Add(problem);
+            }
+        }
+
+        return builder.ToImmutable();
+    }
+
+    // The outermost expression that starts where the node starts and has no sibling around it: the call for its
+    // member access and its name
+    private static SyntaxNode ReportedSite(SyntaxNode node)
+    {
+        var site = node;
+        while (site.Parent is ExpressionSyntax parent && parent.SpanStart == node.SpanStart &&
+               parent is not LambdaExpressionSyntax)
+        {
+            site = parent;
+        }
+
+        return site;
     }
 
     private static SyntaxTree[] CollectTrees(
