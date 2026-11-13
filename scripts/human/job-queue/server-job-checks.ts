@@ -19,6 +19,7 @@ import {
   type JobFacts,
 } from "./server-job-state.ts";
 import { JobServer } from "./server.ts";
+import { checkRecords } from "./server-job.ts";
 import { connectRaw, deadPid, registration, removeDirectory } from "./self-test-support.ts";
 
 type AssertModule = typeof Assert;
@@ -257,7 +258,7 @@ async function withServer(slots: number, body: (server: JobServer, port: number)
 /** One record per id: the records follow the jobs through queue, grant and end, and the invariant holds throughout. */
 export async function checkRecordsFollowTheJobs(assert: AssertModule): Promise<void> {
   await withServer(1, async (server, port) => {
-    const holds = (when: string): void => assert.strictEqual(server.checkInvariant(), null, when);
+    const holds = (when: string): void => assert.strictEqual(checkRecords(server), null, when);
     const a = await connectRaw(port);
     a.send(registration("A", 1, process.pid));
     const granted = await a.until("granted");
@@ -314,9 +315,9 @@ export async function checkObservationEpoch(assert: AssertModule): Promise<void>
     const back = await connectRaw(port);
     back.send({ ...requestA, type: "adopt", id: job.id, ...command });
     assert.strictEqual((await back.until("adopted"))?.id, job.id);
-    server.applyObservations([{ job, epoch, seen: { clientAlive: true, commandAlive: false } }], Date.now());
+    server.observer.apply([{ job, epoch, seen: { clientAlive: true, commandAlive: false } }], Date.now());
     assert.deepStrictEqual([job.phase, job.detached, server.find(job.id) === job], ["running", false, true]);
-    assert.strictEqual(server.checkInvariant(), null);
+    assert.strictEqual(checkRecords(server), null);
     back.close();
   });
 }
@@ -354,7 +355,7 @@ export async function checkCloseCommutes(assert: AssertModule): Promise<void> {
       await new Promise((resolve) => setTimeout(resolve, 100)); // a late close would be handled by now
       const job = server.find(id);
       result = [job?.id, job?.phase, job?.detached, job?.connection?.socket.destroyed, server.scheduler.used];
-      result.push(server.records.size, server.checkInvariant());
+      result.push(server.records.size, checkRecords(server));
       [holder, back].forEach((c) => c.close());
     });
     return result;
@@ -384,7 +385,7 @@ export async function checkFinalOutcomeStays(assert: AssertModule): Promise<void
       ["succeeded", "failed"],
       "final outcomes are never overwritten",
     );
-    assert.strictEqual(server.checkInvariant(), null);
+    assert.strictEqual(checkRecords(server), null);
     [c, report].forEach((x) => x.close());
   });
 }

@@ -5,6 +5,7 @@ import type { JobView, Outcome } from "./protocol.ts";
 import type { SchedulerJob } from "./scheduler.ts";
 import type { Connection } from "./server-connection.ts";
 import type { JobFacts } from "./server-job-state.ts";
+import type { JobServer } from "./server.ts";
 
 /**
  * A job as the server keeps it: the scheduler's view plus the connection and the command. One record per id, from the
@@ -56,4 +57,36 @@ export function describeJob(job: ServerJob): JobView {
     gpuTurn: job.gpuTurn === true,
     memoryMb: job.memoryMb ?? 0,
   };
+}
+
+/**
+ * The invariant of the records, for the self-test: null when it holds, else what breaks it. A record is waiting iff
+ * it is in the scheduler's waiting list, running iff in its running list, ended iff in neither and provisional; an
+ * id is a record or an outcome, never both; detached mirrors a missing connection.
+ */
+export function checkRecords(server: JobServer): string | null {
+  const scheduler = server.scheduler;
+  for (const [id, job] of server.records) {
+    const where = `#${id} (${job.phase})`;
+    if (job.id !== id) {
+      return `${where} is filed under another id`;
+    }
+    if ((job.phase === "waiting") !== scheduler.waiting.includes(job)) {
+      return `${where} and the waiting list disagree`;
+    }
+    if ((job.phase === "running") !== scheduler.running.includes(job)) {
+      return `${where} and the running list disagree`;
+    }
+    if ((job.phase === "ended") !== (job.provisional !== null)) {
+      return `${where} and its provisional outcome disagree`;
+    }
+    if (server.outcomes.has(id)) {
+      return `${where} also has a final outcome`;
+    }
+    if (job.detached !== (job.connection === null) || (job.connection !== null && job.connection.job !== job)) {
+      return `${where} and its connection disagree`;
+    }
+  }
+  const listed = scheduler.waiting.concat(scheduler.running).find((job) => server.records.get(job.id) !== job);
+  return listed === undefined ? null : `#${listed.id} is scheduled without a record`;
 }

@@ -4,7 +4,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { errorCode, errorMessage, isObject, replaceFile } from "./history.ts";
-import type { Outcome } from "./protocol.ts";
+import { idField, type Incoming, type Outcome } from "./protocol.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { Phase } from "./server-job-state.ts";
 import type { JobServer } from "./server.ts";
@@ -76,6 +76,36 @@ export class JobStore {
   }
 
   /**
+   * Restores a saved record as held: detached until its client re-binds it. A running record counts its slots whether
+   * its client lives or not; a waiting one keeps its place (not granted while detached); a provisional one waits for a
+   * report. A stub (an id of an older scheduler's file) waits for its job to come back.
+   */
+  private restoreRecord(saved: Incoming, phase: Phase): void {
+    const server = this.server;
+    const id = idField(saved, "id");
+    if (id === null || server.records.has(id) || server.outcomes.has(id)) {
+      return;
+    }
+    const job = server.createJob(saved, id, phase);
+    job.stub = saved.stub === true;
+    job.startNow = saved.startNow === true; // a placement, kept with pin and before
+    job.detachedAt = Date.now();
+    server.nextId = Math.max(server.nextId, id + 1);
+    server.records.set(id, job);
+    if (phase === "running") {
+      server.scheduler.adopt(job);
+    } else if (phase === "waiting") {
+      server.scheduler.add(job);
+    } else {
+      job.provisional = "lost";
+      job.provisionalAt = Date.now();
+    }
+    server.log(
+      `restored #${id} ${job.stub ? "(id only)" : `${phase} weight ${job.weight} pid ${job.pid}`}: ${job.command}`,
+    );
+  }
+
+  /**
    * Restores the file: every saved record is held (running ones count their slots, waiting ones keep their place,
    * provisional ones wait for a report) until its client re-binds it or the evidence ends it. A file of an older
    * scheduler has only the running jobs as records; its other pending ids become stubs.
@@ -108,7 +138,7 @@ export class JobStore {
     const list = (name: string): unknown[] => (Array.isArray(saved[name]) ? (saved[name] as unknown[]) : []);
     const restore = (phase: Phase) => (record: unknown) => {
       if (isObject(record)) {
-        server.restoreRecord(record, phase);
+        this.restoreRecord(record, phase);
       }
     };
     list("jobs").forEach(restore("running"));
@@ -121,7 +151,7 @@ export class JobStore {
     // keep working until the job comes back or the grace is over
     for (const id of list("pending")) {
       if (typeof id === "number" && Number.isInteger(id) && id > 0 && server.find(id) === undefined) {
-        server.restoreRecord({ id, stub: true }, "waiting");
+        this.restoreRecord({ id, stub: true }, "waiting");
       }
     }
     return "older";

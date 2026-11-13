@@ -25,18 +25,21 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | Module | Responsibility |
 | :- | :- |
 | `cli.ts` | Parses the arguments and runs the mode (`run`, `status`, `wait`, `cancel`, `move`, `serve`, ...) |
-| `client.ts` | `run` and its `QueuedRun`: registers a job, waits for the grant, runs the command, reports its end, re-registers after a scheduler restart |
+| `client.ts` | `run`: checks the options, runs a command inside a queued job at once, and otherwise hands it to a `QueuedRun` |
+| `client-queued-run.ts` | `QueuedRun`: registers a job, waits for the grant, runs the command, reports its end, re-registers after a scheduler restart |
+| `client-run-host.ts` | `RunHost`, the effects of a `QueuedRun` (connection, command, exit), and `ProcessRunHost`, the real one; `commandEnd`, how a command's end is reported after a cancel; the GPU turn's run under `gpu-lock.js` |
 | `client-connect.ts` | One-shot requests to the scheduler, and `SchedulerLauncher`: connects, starts the scheduler on demand, reports a job's end to the next scheduler |
 | `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `wait`, `stop` |
 | `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, and `reduceKey`, the keys as a pure function |
 | `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
-| `server.ts` | `JobServer`, the scheduler process: the TCP server, the job records, outcomes, the settle step, the observation of detached records and the timers |
+| `server.ts` | `JobServer`, the scheduler process: the TCP server, the job records, outcomes, the settle step and the timers |
+| `server-observe.ts` | `DetachedObserver`: every 2 s, what the processes show of the records whose client is away, applied per epoch (`planObservation`) |
 | `server-connection.ts` | `Connection`: one client connection, the dispatch of its messages to one handler per message type, and what its close means for the job |
 | `server-job-messages.ts` | The handlers of the messages about the client's own job: `request`, `adopt`, `started`, `done`, `report` |
 | `server-job-state.ts` | The decisions about one job record as pure functions: identity (`isSameClient`), `planRegistration`, `planClose`, `planObservation`, `planReport`, `outcomeOfEnd`, `cancelTargets` |
 | `server-control-messages.ts` | The handlers of the messages that act on the queue: `status`, `cancel`, `move`, `set-weight`, `start`, `await`, `stop` |
-| `server-job.ts` | The job record the server keeps (`ServerJob`) and how `status` shows it |
-| `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts |
+| `server-job.ts` | The job record the server keeps (`ServerJob`), how `status` shows it, and the invariant of the records (`checkRecords`, for the self-test) |
+| `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts, restoring every record as held |
 | `scheduler.ts` | The scheduling decisions, with no I/O: order, grants, backfilling, GPU turns, the memory pool, the forecast |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts |
@@ -80,7 +83,7 @@ sequenceDiagram
 ## Job records
 
 The server keeps one `ServerJob` per id, from the first `request` (or its restore) until a final outcome is recorded:
-`JobServer.records` is the one index, and an id is either a record or an outcome, never both (`checkInvariant`). A
+`JobServer.records` is the one index, and an id is either a record or an outcome, never both (`checkRecords`). A
 record has a phase (`waiting`, `running`, or `ended` with a provisional outcome) and at most one bound connection.
 
 - **Identity**: a client is the same when its pid, the `queuedAt` it sends in every `request` and `adopt`, and (when
