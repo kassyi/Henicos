@@ -150,7 +150,6 @@ public class FuzzSplitKernelGeneratorTests
             FuzzSeed = 5UL,
             BatchSize = 24,
             SwarmFocus = FuzzSwarmFocus.SplitPoints,
-            AllowedIssues = new HashSet<int> { FuzzSplitKernelEmitter.SplitArgumentOrderIssue },
         }).GenerateBatch();
         var kernelType = FuzzSplitOracleTests.CompileKernelType(batch.KernelsSource, "SplitTwinOrders");
         var shape = LaunchShapes.Grid1D(2, 64);
@@ -173,7 +172,7 @@ public class FuzzSplitKernelGeneratorTests
                 // in any thread order and never throw (a division guard or an index mask that fails would throw here).
                 // mutant: FuzzSplitKernelEmitter shuffle shape 9: inB[(gid & ~3) + (S(e) & 3)] -> inB[(gid & ~3) +
                 // S(e)]
-                // input: SplitPoints focus with #991 allowed, fuzz seed 5, 24 kernels, input seeds 0 .. 2
+                // input: SplitPoints focus, fuzz seed 5, 24 kernels, input seeds 0 .. 2
                 Assert.Null(Record.Exception(() => RunTwin(twin, ThreadOrder.Forward, inA, inB, inC, forward)));
                 Assert.Null(Record.Exception(() => RunTwin(twin, ThreadOrder.Reverse, inA, inB, inC, reverse)));
                 var permutation = ThreadOrder.Permutation(seed);
@@ -219,20 +218,17 @@ public class FuzzSplitKernelGeneratorTests
     public void KnownIssueSwitches_SplitShapes_AreExcludedUntilAllowed()
     {
         var avoided = CountGatedShapes(new HashSet<int>());
-        var allowed = CountGatedShapes(new HashSet<int>
-        {
-            FuzzSplitKernelEmitter.SplitArgumentOrderIssue,
-            FuzzSplitKernelEmitter.StackArrayAcrossSplitIssue,
-        });
+        var allowed = CountGatedShapes(new HashSet<int> { FuzzSplitKernelEmitter.StackArrayAcrossSplitIssue });
 
-        // While #991 and #1554 are open the generator must not emit their shapes (each would fail every run), and
-        // --allow-issue must bring each shape back.
-        // mutant: FuzzSplitKernelBuilder.EmitSplitStatement: avoidArgumentOrder = false
-        // input: SplitPoints focus, profile C, seeds 0 .. 59, with no issue allowed and with 991 and 1554 allowed
-        Assert.Equal(new GatedShapeCounts(0, 0, 0, 0), avoided);
-        Assert.True(allowed.ConditionalArmSplit > 0, "split point in an arm of ?: or right of || / &&");
-        Assert.True(allowed.CompoundWritesTarget > 0, "compound assignment whose split writes the target");
-        Assert.True(allowed.SplitArgumentWrites > 0, "split argument that writes an earlier argument");
+        // While #1554 is open the generator must not emit the stack array (it would fail every run), and
+        // --allow-issue must bring it back. The order shapes are emitted without any switch: the CPU paths evaluate
+        // their operands in C# order since the split pass of the IR runs in the lowering.
+        // mutant: FuzzSplitKernelBuilder: _hasArray = true
+        // input: SplitPoints focus, profile C, seeds 0 .. 59, with no issue allowed and with 1554 allowed
+        Assert.Equal(0, avoided.StackArray);
+        Assert.True(avoided.ConditionalArmSplit > 0, "split point in an arm of ?: or right of || / &&");
+        Assert.True(avoided.CompoundWritesTarget > 0, "compound assignment whose split writes the target");
+        Assert.True(avoided.SplitArgumentWrites > 0, "split argument that writes an earlier argument");
         Assert.True(allowed.StackArray > 0, "stack array");
     }
 

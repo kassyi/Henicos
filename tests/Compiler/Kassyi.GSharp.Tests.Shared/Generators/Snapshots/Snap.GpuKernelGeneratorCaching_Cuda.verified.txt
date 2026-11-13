@@ -8,6 +8,7 @@ SourceOutput(GpuHeldRefLocalsInput): New x1
 SourceOutput(GpuKernelWrapperInput): New x1
 SourceOutput(GpuModuleContextInput): New x1
 SourceOutput(GpuSharedSourcesInput): New x1
+SourceOutput(GpuTargetArchitecturesInput): New x1
 SourceOutput(GpuTypeKeyedSitesRegistrationInput): New x1
 
 ## After adding an unrelated file
@@ -20,6 +21,7 @@ SourceOutput(GpuHeldRefLocalsInput): Unchanged x1
 SourceOutput(GpuKernelWrapperInput): Cached x1
 SourceOutput(GpuModuleContextInput): Cached x1
 SourceOutput(GpuSharedSourcesInput): Cached x1
+SourceOutput(GpuTargetArchitecturesInput): Cached x1
 SourceOutput(GpuTypeKeyedSitesRegistrationInput): Cached x1
 
 ## After editing one kernel body
@@ -32,5 +34,6 @@ SourceOutput(GpuHeldRefLocalsInput): Unchanged x1
 SourceOutput(GpuKernelWrapperInput): Modified x1
 SourceOutput(GpuModuleContextInput): Cached x1
 SourceOutput(GpuSharedSourcesInput): Cached x1
+SourceOutput(GpuTargetArchitecturesInput): Cached x1
 SourceOutput(GpuTypeKeyedSitesRegistrationInput): Cached x1
 

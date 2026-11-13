@@ -49,13 +49,14 @@ internal static class IrSpillRewriter
         var writer = new Writer(plan.Statement);
         var statements = ImmutableArray.CreateBuilder<IrStatement>();
         writer.WriteSteps(plan.Steps, statements, null);
-        if (writer.Remaining() is { } remaining)
+        var remaining = writer.Remaining();
+        if (remaining is not null)
         {
             statements.Add(remaining);
         }
 
-        return IrSpillApplication.Lowered(
-            new IrLoweredStatement(plan.Statement, statements.ToImmutable(), writer.Temporaries.ToImmutable()));
+        return IrSpillApplication.Lowered(new IrLoweredStatement(plan.Statement, statements.ToImmutable(),
+            writer.Temporaries.ToImmutable(), remaining));
     }
 
     // Writes the steps of one statement; holds the temporaries made so far and the nodes they replace

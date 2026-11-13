@@ -904,6 +904,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "TargetArchitectureLimitsUnknown",
+    "id": "GSH0114",
+    "title": "G# has no launch limits for a GSharpTargetArchitectures architecture",
+    "messageFormat": "GSharpTargetArchitectures includes {0}, whose compute capability G# has no launch limits for; the launch limits of the target GPUs are taken from the other architectures only",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "FileLocalTypeInManagedCopy",
     "id": "GSH0115",
     "title": "A file-local type cannot be named by the managed code G# generates",
