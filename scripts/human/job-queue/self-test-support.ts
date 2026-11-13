@@ -4,6 +4,7 @@
 
 import * as assert from "node:assert";
 import * as fs from "node:fs";
+import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -13,11 +14,12 @@ import {
   GpuLockHeldVariable,
   InGpuLockVariable,
   JobVariable,
+  ProtocolVersion,
   ShellVariable,
   StateDirectoryVariable,
 } from "./constants.ts";
 import { connect, request } from "./client-connect.ts";
-import { type StatusJob, type StatusReply } from "./protocol.ts";
+import { onMessages, type Incoming, type StatusJob, type StatusReply } from "./protocol.ts";
 import { ProcessTable } from "./system.ts";
 
 export const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -71,6 +73,67 @@ export function registration(command: string, weight: number, pid: number) {
   };
 }
 
+/** A raw protocol connection for the checks: what it received, and a wait for a message of a type. */
+export interface RawClient {
+  readonly socket: net.Socket;
+  /** Every message received so far, in order. */
+  readonly messages: Incoming[];
+  /** Resolves once the socket has closed. */
+  readonly closed: Promise<void>;
+  /** Sends one message, with protocol version 3 unless another is given. */
+  send(message: Record<string, unknown>, version?: number): void;
+  /** Resolves to the first message of this type, or null once the socket closed or `ms` passed without one. */
+  until(type: string, ms?: number): Promise<Incoming | null>;
+  close(): void;
+}
+
+/** Connects a raw protocol client to a scheduler. */
+export function connectRaw(port: number): Promise<RawClient> {
+  return new Promise((resolve, reject) => {
+    const socket = net.connect(port, "127.0.0.1");
+    const messages: Incoming[] = [];
+    const wakers: (() => void)[] = [];
+    const wake = (): void => wakers.splice(0).forEach((w) => w());
+    const closed = new Promise<void>((done) => socket.on("close", () => done()));
+    void closed.then(wake);
+    onMessages(socket, (message) => {
+      messages.push(message);
+      wake();
+    });
+    socket.once("error", reject);
+    socket.once("connect", () => {
+      socket.removeListener("error", reject);
+      socket.on("error", () => socket.destroy());
+      resolve({
+        socket,
+        messages,
+        closed,
+        send: (message, version = ProtocolVersion) => {
+          socket.write(`${JSON.stringify({ version, ...message })}
+`);
+        },
+        until: async (type, ms = 10000) => {
+          const deadline = Date.now() + ms;
+          for (;;) {
+            const found = messages.find((m) => m.type === type);
+            if (found !== undefined) {
+              return found;
+            }
+            if (socket.destroyed || Date.now() > deadline) {
+              return null;
+            }
+            await new Promise<void>((woken) => {
+              wakers.push(woken);
+              setTimeout(woken, 100);
+            });
+          }
+        },
+        close: () => socket.destroy(),
+      });
+    });
+  });
+}
+
 /**
  * What the self-test runs against: a private state directory and environment, the schedulers and clients it started
  * (stopped by cleanup), and the helpers that start a scheduler, ask its status and wait for a state. The helpers are
@@ -118,6 +181,9 @@ export class QueueFixture {
     }
     return server;
   };
+
+  /** A raw protocol connection to the scheduler on `port`. */
+  readonly rawClient = (port: number): Promise<RawClient> => connectRaw(port);
 
   /** Records a process the test started, so that cleanup stops it. */
   readonly track = <T extends ChildProcess>(child: T): T => {

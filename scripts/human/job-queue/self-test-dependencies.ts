@@ -2,18 +2,17 @@
 
 import * as assert from "node:assert";
 import * as fs from "node:fs";
-import * as net from "node:net";
 import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
-import { GpuLockHeldVariable, EntryScript, JobVariable, ProtocolVersion, StartupGraceMs } from "./constants.ts";
+import { GpuLockHeldVariable, EntryScript, JobVariable, StartupGraceMs } from "./constants.ts";
 import { request } from "./client-connect.ts";
-import { onMessages, type Incoming, type StatusJob } from "./protocol.ts";
+import { type Incoming, type StatusJob } from "./protocol.ts";
 import { ProcessTable } from "./system.ts";
-import { delay, type Client, registration, type QueueFixture } from "./self-test-support.ts";
+import { delay, type Client, registration, type QueueFixture, type RawClient } from "./self-test-support.ts";
 
 export async function checkPlacementAndDependencies(fixture: QueueFixture, port: number): Promise<void> {
   const { env, client, sleeper, exiting, gated, open, dir, ports, startScheduler } = fixture;
-  const { statusOf, usedWithin, waitFor, jobWith, runningWith } = fixture;
+  const { statusOf, usedWithin, waitFor, jobWith, runningWith, rawClient } = fixture;
   ports.push(port);
   await startScheduler(port, 2);
   await delay(StartupGraceMs);
@@ -143,24 +142,13 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
 
   // A dependent that comes back after a restart before its predecessor, past the startup grace, still waits for it;
   // the predecessor's client, whose command ended while no scheduler listened, reports the outcome afterwards
-  const connection = async (
-    message: Record<string, unknown>,
-  ): Promise<{ socket: net.Socket; messages: Incoming[] }> => {
-    const socket = await new Promise<net.Socket>((resolve) => {
-      const s = net.connect(port, "127.0.0.1", () => resolve(s));
-      s.on("error", () => s.destroy());
-    });
-    const messages: Incoming[] = [];
-    onMessages(socket, (m) => messages.push(m));
-    socket.write(`${JSON.stringify({ version: ProtocolVersion, ...message })}\n`);
-    return { socket, messages };
+  const connection = async (message: Record<string, unknown>): Promise<RawClient> => {
+    const c = await rawClient(port);
+    c.send(message);
+    return c;
   };
-  const idOf = async (c: { messages: Incoming[] }): Promise<number> => {
-    for (let i = 0; i < 50 && !c.messages.some((m) => m.type === "queued"); i++) {
-      await delay(100);
-    }
-    return Number(c.messages.find((m) => m.type === "queued")?.id);
-  };
+  const idOf = async (c: RawClient): Promise<number> => Number((await c.until("queued", 5000))?.id);
+  const grantedId = async (c: RawClient): Promise<number> => Number((await c.until("granted", 5000))?.id);
   const holderRaw = await connection(registration("R-holder", 2, 1));
   const predecessor = await connection(registration("R-predecessor", 1, 1));
   const predecessorId = await idOf(predecessor);
@@ -193,14 +181,7 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   });
   const lostRaw = await connection(registration("R-lost", 1, 1));
   const lostId = await idOf(lostRaw);
-  lostRaw.socket.write(
-    `${JSON.stringify({
-      version: ProtocolVersion,
-      type: "started",
-      commandPid: command.pid ?? 0,
-      spawnedAt: Date.now(),
-    })}\n`,
-  );
+  lostRaw.send({ type: "started", commandPid: command.pid ?? 0, spawnedAt: Date.now() });
   const afterLost = await connection({ ...registration("R-after-lost", 1, 1), after: lostId });
   await jobWith(port, "R-after-lost");
   lostRaw.socket.destroy();
@@ -281,9 +262,7 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   const leavingId = await idOf(leaving);
   const waitingOnLeaving = await connection({ ...registration("R-waits-on-leaving", 1, 1), after: leavingId });
   await jobWith(port, "R-waits-on-leaving");
-  leaving.socket.write(
-    `${JSON.stringify({ version: ProtocolVersion, type: "done", completed: false, exitCode: 3 })}\n`,
-  );
+  leaving.send({ type: "done", completed: false, exitCode: 3 });
   leaving.socket.end();
   for (let i = 0; i < 50 && !waitingOnLeaving.messages.some((m) => m.type === "cancelled"); i++) {
     await delay(100);
@@ -307,7 +286,7 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
     if (stopFirst) {
       await request(port, { type: "stop" }).catch(() => null);
     }
-    c.socket.write(`${JSON.stringify({ version: ProtocolVersion, type: "done", completed: true, exitCode: 0 })}\n`);
+    c.send({ type: "done", completed: true, exitCode: 0 });
     await delay(500);
     c.socket.destroy();
     return c.messages.some((m) => m.type === "done-ok");
@@ -322,24 +301,22 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   await delay(StartupGraceMs);
   const outcomeOf = async (id: number): Promise<unknown> => (await request(port, { type: "await", id }))?.outcome;
   const crossing = await connection(registration("R-crossing", 1, process.pid));
-  const crossingId = await idOf(crossing);
+  const crossingId = await grantedId(crossing);
   await request(port, { type: "cancel", id: crossingId });
-  crossing.socket.write(
-    `${JSON.stringify({ version: ProtocolVersion, type: "done", completed: true, exitCode: 0 })}\n`,
-  );
+  crossing.send({ type: "done", completed: true, exitCode: 0 });
   await delay(300);
   assert.strictEqual(await outcomeOf(crossingId), "succeeded", "a success that crosses the cancel wins");
   crossing.socket.destroy();
   // The same through a report, while the old connection is still open here
   const reporting = await connection(registration("R-crossing-report", 1, process.pid));
-  const reportingId = await idOf(reporting);
+  const reportingId = await grantedId(reporting);
   await request(port, { type: "cancel", id: reportingId });
   await request(port, { type: "report", id: reportingId, completed: true, exitCode: 0 });
   reporting.socket.destroy();
   await delay(300);
   assert.strictEqual(await outcomeOf(reportingId), "succeeded", "a reported success that crosses the cancel wins");
   const restarted = await connection(registration("R-cancel-restart", 1, process.pid));
-  const restartedId = await idOf(restarted);
+  const restartedId = await grantedId(restarted);
   await request(port, { type: "stop" });
   restarted.socket.destroy();
   await delay(300);
@@ -351,9 +328,7 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
     spawnedAt: Date.now(),
   });
   await delay(300);
-  again.socket.write(
-    `${JSON.stringify({ version: ProtocolVersion, type: "done", completed: false, exitCode: 4, cancelled: true })}\n`,
-  );
+  again.send({ type: "done", completed: false, exitCode: 4, cancelled: true });
   await delay(StartupGraceMs + 300);
   assert.strictEqual(
     await outcomeOf(restartedId),
