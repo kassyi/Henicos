@@ -1339,10 +1339,11 @@ __gsharp_launch_epoch = __gsharp_epoch;
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__FailingResource __gsharp_id_7_a = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__FailingResource __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Source = __gsharp_id_1_source; __gsharp_tmp.__gsharp_mb_Id = 1; __gsharp_tmp.__gsharp_mb_Fail = __gsharp_id_5_failA; return __gsharp_tmp; }
-()),__gsharp_id_8_b = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__FailingResource __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Source = __gsharp_id_1_source; __gsharp_tmp.__gsharp_mb_Id = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UsingFailureKernels__CheckedId(__gsharp_id_1_source,2,__gsharp_id_3_initFailB); __gsharp_tmp.__gsharp_mb_Fail = __gsharp_id_6_failB; return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__FailingResource> __gsharp_using_guard_0{__gsharp_id_7_a};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__FailingResource __gsharp_id_8_b = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__FailingResource __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Source = __gsharp_id_1_source; __gsharp_tmp.__gsharp_mb_Id = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UsingFailureKernels__CheckedId(__gsharp_id_1_source,2,__gsharp_id_3_initFailB); __gsharp_tmp.__gsharp_mb_Fail = __gsharp_id_6_failB; return __gsharp_tmp; }
+());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__FailingResource> __gsharp_using_guard_1{__gsharp_id_8_b};
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UsingFailureKernels__FailIf(__gsharp_id_4_bodyFail!=0,__gsharp_id_1_source);
 __gsharp_array_at(__gsharp_id_2_outs, 0, 1590812030u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_outs, 0, 1590812030u),1);

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -103,11 +105,7 @@ internal static class UsingTranspiler
         {
             if (node.Declaration != null)
             {
-                StatementPrelude.Emit(node.Declaration, ref context);
-                context.Visitor.Visit(node.Declaration);
-                context.Emitter.Writer.Append(';');
-                WriteGuards(node.Declaration, ref context);
-                context.Emitter.Writer.AppendLine();
+                WriteResourcesWithGuards(node.Declaration, ref context);
             }
             else if (node.Expression != null)
             {
@@ -127,40 +125,56 @@ internal static class UsingTranspiler
     }
 
     /// <summary>
-    /// Writes the guards of a <c>using</c> declaration (<c>using var x = ...;</c>) after the declaration; they dispose
-    /// the variables at the end of the enclosing block, as C# does.
+    /// Writes a <c>using</c> declaration (<c>using var x = ...;</c>) with a guard after each variable; the guards
+    /// dispose the variables at the end of the enclosing block, as C# does. The CPU dialect writes its <c>using</c>
+    /// declarations itself (<see cref="UsingCpuEmitter"/>).
     /// </summary>
     public static void TranspileUsingDeclaration(LocalDeclarationStatementSyntax node, ref TranspileContext context)
     {
         if (node.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, AwaitUsing);
+            WriteDeclaration(node, node.Declaration, ref context);
             return;
         }
 
-        WriteGuards(node.Declaration, ref context);
+        WriteResourcesWithGuards(node.Declaration, ref context);
     }
 
-    // A line break, then __gsharp_using_scope<T> __gsharp_using_guard_<n>{<variable>}; for each variable
-    private static void WriteGuards(VariableDeclarationSyntax declaration, ref TranspileContext context)
+    // <type> <name> = <init>; __gsharp_using_scope<T> __gsharp_using_guard_<n>{<name>}; for each variable
+    // [WHY] C# treats several declarators as nested usings: each variable is protected before the next initializer
+    // runs, so a failure there disposes the variables before it.
+    private static void WriteResourcesWithGuards(VariableDeclarationSyntax declaration, ref TranspileContext context)
     {
         var type = context.Query.SemanticModel.GetTypeSymbol(declaration.Type);
         if (!TryUseDispose(type, declaration.Type, ref context, out var resourceType))
         {
+            WriteDeclaration(declaration.Parent ?? declaration, declaration, ref context);
             return;
         }
 
         foreach (var variable in declaration.Variables)
         {
-            context.Emitter.Writer.AppendLine();
+            StatementPrelude.Emit(variable, ref context);
+            VariableDeclarationTranspilerRule.WriteUsingResource(declaration, variable, ref context);
+            context.Emitter.Writer.AppendLine(";");
             WriteGuardHead(resourceType, ref context);
             using (context.Emitter.Writer.Braces())
             {
                 CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
             }
 
-            context.Emitter.Writer.Append(';');
+            context.Emitter.Writer.AppendLine(";");
         }
+    }
+
+    // <declaration>; without guards
+    private static void WriteDeclaration(SyntaxNode owner, VariableDeclarationSyntax declaration,
+        ref TranspileContext context)
+    {
+        StatementPrelude.Emit(owner, ref context);
+        context.Visitor.Visit(declaration);
+        context.Emitter.Writer.AppendLine(";");
     }
 
     // T __gsharp_using_resource_<n> = <expression>;
