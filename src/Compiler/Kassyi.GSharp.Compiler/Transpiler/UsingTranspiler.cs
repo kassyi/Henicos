@@ -42,11 +42,25 @@ internal static class UsingTranspiler
     public static bool IsUsingDeclaration(StatementSyntax statement) =>
         statement is LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword };
 
-    /// <summary>Whether <paramref name="block"/> declares a resource with a <c>using</c> declaration of its own.</summary>
+    /// <summary>
+    /// Whether <paramref name="block"/> declares a resource with a <c>using</c> declaration of its own, also under a
+    /// label.
+    /// </summary>
     public static bool DeclaresUsing(BlockSyntax block) =>
         block.Statements
             .AsStackEnumerable()
-            .Any(IsUsingDeclaration);
+            .Any(static statement => IsUsingDeclaration(Unlabeled(statement)));
+
+    // The statement under the labels of a labeled statement
+    private static StatementSyntax Unlabeled(StatementSyntax statement)
+    {
+        while (statement is LabeledStatementSyntax labeled)
+        {
+            statement = labeled.Statement;
+        }
+
+        return statement;
+    }
 
     /// <summary>
     /// The method that a <c>using</c> of <paramref name="type"/> calls: the implementation of
@@ -136,6 +150,13 @@ internal static class UsingTranspiler
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, AwaitUsing);
             WriteDeclaration(node, node.Declaration, ref context);
             return;
+        }
+
+        // [WHY] On the CPU a guard would dispose while a failure unwinds, where a failing Dispose ends the process
+        if (!context.Emitter.Dialect.IsCuda)
+        {
+            throw new InvalidOperationException(
+                "A using declaration of the CPU dialect is written with the statements after it (UsingCpuEmitter).");
         }
 
         WriteResourcesWithGuards(node.Declaration, ref context);

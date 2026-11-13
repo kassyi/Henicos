@@ -188,4 +188,182 @@ public static partial class UsingFailureKernels
 
         outs[1] = 7;
     }
+
+    // a using declaration under a label, reached by a forward goto
+    [GpuKernel]
+    public static void LabeledDeclarationKernel(int[] log, int[] source, int[] outs, int bodyFail, int disposeFail)
+    {
+        int n = 0;
+        if (bodyFail == 2)
+        {
+            goto again;
+        }
+
+        n = 10;
+        again:
+        using var r = new FailingResource { Log = log, Source = source, Id = n + 1, Fail = disposeFail };
+        FailIf(bodyFail == 1, source);
+        outs[0] += r.Id;
+        outs[1] = 7;
+    }
+
+    // goto case / goto default / break out of a using in a switch section
+    [GpuKernel]
+    public static void SwitchKernel(int[] log, int[] source, int[] outs, int mode, int bodyFail, int disposeFail)
+    {
+        switch (mode)
+        {
+            case 0:
+                using (var r = new FailingResource { Log = log, Source = source, Id = 1, Fail = disposeFail })
+                {
+                    FailIf(bodyFail != 0, source);
+                    if (outs[1] == 0)
+                    {
+                        goto case 2;
+                    }
+
+                    outs[0] += 100;
+                }
+
+                break;
+            case 1:
+                using (var r = new FailingResource { Log = log, Source = source, Id = 2, Fail = disposeFail })
+                {
+                    outs[0] += 2;
+                    goto default;
+                }
+            case 2:
+                outs[0] += 20;
+                break;
+            case 3:
+                using (var r = new FailingResource { Log = log, Source = source, Id = 3, Fail = disposeFail })
+                {
+                    outs[0] += 3;
+                    break;
+                }
+            default:
+                outs[0] += 50;
+                break;
+        }
+
+        outs[1] = 7;
+    }
+
+    // continue (from a switch inside the body) and break leave two nested usings in a loop
+    [GpuKernel]
+    public static void NestedLoopKernel(int[] log, int[] source, int[] outs, int n, int stop, int disposeFailAt)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            using (var a = new FailingResource { Log = log, Source = source, Id = 10 + i, Fail = 0 })
+            {
+                int fail = i == disposeFailAt ? 1 : 0;
+                using (var b = new FailingResource { Log = log, Source = source, Id = 20 + i, Fail = fail })
+                {
+                    switch (i)
+                    {
+                        case 1:
+                            continue;
+                        case 3:
+                            break;
+                    }
+
+                    if (i == stop)
+                    {
+                        break;
+                    }
+
+                    outs[0] += i + 1;
+                }
+
+                outs[2] += 1;
+            }
+        }
+
+        outs[1] = 7;
+    }
+
+    // gotos out of two usings, two of them to the same label
+    [GpuKernel]
+    public static void GotoKernel(int[] log, int[] source, int[] outs, int mode, int disposeFail)
+    {
+        int pass = 0;
+        retry:
+        pass++;
+        using (var a = new FailingResource { Log = log, Source = source, Id = pass, Fail = 0 })
+        {
+            using (var b = new FailingResource { Log = log, Source = source, Id = 10 + pass, Fail = disposeFail })
+            {
+                if (pass == 1)
+                {
+                    goto retry;
+                }
+
+                if (mode == 1)
+                {
+                    goto done;
+                }
+
+                outs[0] += 1;
+            }
+
+            if (mode == 3)
+            {
+                goto done;
+            }
+        }
+
+        outs[0] += 100;
+        done:
+        outs[1] = 7;
+    }
+
+    // a by-ref return out of a using declaration
+    [GpuDeviceFunction]
+    public static ref int PickRef(int[] log, int[] source, int[] outs, int index, int disposeFail)
+    {
+        using var r = new FailingResource { Log = log, Source = source, Id = 1, Fail = disposeFail };
+        if (index == 0)
+        {
+            return ref outs[0];
+        }
+
+        return ref outs[r.Id];
+    }
+
+    [GpuKernel]
+    public static void RefReturnKernel(int[] log, int[] source, int[] outs, int index, int disposeFail)
+    {
+        PickRef(log, source, outs, index, disposeFail) = 42;
+    }
+
+    // a block lambda that returns a value out of its own using, called in the body of another using
+    [GpuKernel]
+    public static void LambdaKernel(int[] log, int[] source, int[] outs, int mode, int disposeFail)
+    {
+        using (var r = new FailingResource { Log = log, Source = source, Id = 1, Fail = disposeFail })
+        {
+            Func<int, int> pick = v =>
+            {
+                using (var q = new FailingResource { Log = log, Source = source, Id = 5, Fail = 0 })
+                {
+                    if (v == 0)
+                    {
+                        return 9;
+                    }
+                }
+
+                return v;
+            };
+            outs[0] = pick(mode);
+            if (mode == 1)
+            {
+                return;
+            }
+
+            outs[0] += 1;
+        }
+
+        outs[1] = 7;
+    }
 }

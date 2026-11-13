@@ -87,20 +87,31 @@ internal static class JumpStatementTranspilers
     /// </summary>
     public static void TranspileLabeledStatement(LabeledStatementSyntax node, ref TranspileContext context)
     {
+        if (node.Statement is EmptyStatementSyntax)
+        {
+            WriteLabelName(node, ref context);
+            context.Emitter.Writer.AppendLine(":;");
+            return;
+        }
+
+        WriteLabel(node, ref context);
+        context.Visitor.Visit(node.Statement);
+    }
+
+    /// <summary>Writes the label of <paramref name="node"/> (<c>&lt;name&gt;:</c>) without its statement.</summary>
+    public static void WriteLabel(LabeledStatementSyntax node, ref TranspileContext context)
+    {
+        WriteLabelName(node, ref context);
+        context.Emitter.Writer.AppendLine(":");
+    }
+
+    private static void WriteLabelName(LabeledStatementSyntax node, ref TranspileContext context)
+    {
         CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
         if (context.Emitter.LabelSuffix != null && !IsSyntheticLabel(node.Identifier.ValueText))
         {
             context.Emitter.Writer.Append(context.Emitter.LabelSuffix);
         }
-
-        if (node.Statement is EmptyStatementSyntax)
-        {
-            context.Emitter.Writer.AppendLine(":;");
-            return;
-        }
-
-        context.Emitter.Writer.AppendLine(":");
-        context.Visitor.Visit(node.Statement);
     }
 
     // Labels a compiler pass names uniquely by itself: written as they are, without the label suffix of an inlined copy

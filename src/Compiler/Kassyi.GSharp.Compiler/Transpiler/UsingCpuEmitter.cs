@@ -39,7 +39,8 @@ internal static class UsingCpuEmitter
     /// <summary>Writes a <c>using</c> statement.</summary>
     public static void TranspileUsingStatement(UsingStatementSyntax node, ref TranspileContext context)
     {
-        var plan = UsingExitPlan.Create(node, node.Statement, node.Statement);
+        var plan = UsingExitPlan.Create(node, node.Statement, node.Statement, context.Query.SemanticModel,
+            context.Emitter.MethodSymbol);
         var body = new UsingBody(node.Statement, default, 0);
         using (context.Emitter.Writer.Scope())
         {
@@ -59,14 +60,35 @@ internal static class UsingCpuEmitter
     }
 
     /// <summary>
-    /// Writes the <c>using</c> declaration <c>statements[index]</c> with the statements after it, which are its body.
+    /// The <c>using</c> declaration that <paramref name="statement"/> is, also under labels, that the CPU form writes
+    /// (an <c>await using</c> is reported by <see cref="UsingTranspiler"/>).
     /// </summary>
-    public static void TranspileUsingDeclaration(SyntaxList<StatementSyntax> statements, int index,
-        ref TranspileContext context)
+    public static bool TryGetUsingDeclaration(StatementSyntax statement,
+        [NotNullWhen(true)] out LocalDeclarationStatementSyntax? declaration)
     {
-        var node = (LocalDeclarationStatementSyntax)statements[index];
+        while (statement is LabeledStatementSyntax labeled)
+        {
+            statement = labeled.Statement;
+        }
+
+        declaration = statement as LocalDeclarationStatementSyntax;
+        return declaration is
+        {
+            UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword,
+            AwaitKeyword.RawKind: (int)SyntaxKind.None
+        };
+    }
+
+    /// <summary>
+    /// Writes the <c>using</c> declaration <paramref name="node"/>, which is <c>statements[index]</c> or its labeled
+    /// statement, with the statements after it, which are its body.
+    /// </summary>
+    public static void TranspileUsingDeclaration(LocalDeclarationStatementSyntax node,
+        SyntaxList<StatementSyntax> statements, int index, ref TranspileContext context)
+    {
         var first = index + 1 < statements.Count ? statements[index + 1] : null;
-        var plan = UsingExitPlan.Create(node, first, statements[statements.Count - 1]);
+        var plan = UsingExitPlan.Create(node, first, statements[statements.Count - 1], context.Query.SemanticModel,
+            context.Emitter.MethodSymbol);
         var body = new UsingBody(null, statements, index + 1);
         using (context.Emitter.Writer.Scope())
         {
@@ -99,7 +121,7 @@ internal static class UsingCpuEmitter
             // __gsharp_using_return = <value>; or = &(<value>); for a function that returns by reference
             StatementPrelude.Emit(value, ref context);
             writer.Append($"{GSharpInternalNames.Using.ReturnValue} = ");
-            if (scope.ReturnsByRef)
+            if (scope.Plan.ReturnsByRef)
             {
                 writer.Append('&');
                 using (writer.Parentheses())
@@ -133,8 +155,8 @@ internal static class UsingCpuEmitter
             return;
         }
 
-        var returnsByRef = WriteReturnValue(node, plan, ref context);
-        WriteLevel(new UsingLevel(declaration, 0, body), plan, returnsByRef, ref context);
+        WriteReturnValue(node, plan, ref context);
+        WriteLevel(new UsingLevel(declaration, 0, body), plan, ref context);
     }
 
     // T __gsharp_using_resource_<n> = <expression>; protected
@@ -151,18 +173,17 @@ internal static class UsingCpuEmitter
             return;
         }
 
-        var returnsByRef = WriteReturnValue(expression, plan, ref context);
+        WriteReturnValue(expression, plan, ref context);
         var resource = GSharpInternalNames.Using.ResourcePrefix + context.Emitter.UsingCounter++;
         context.Emitter.Dialect.AppendType(ref context, resourceType);
         context.Emitter.Writer.Append($" {resource} = ");
         context.Visitor.Visit(expression);
         context.Emitter.Writer.AppendLine(";");
-        WriteProtected(resource, new UsingLevel(null, 0, body), plan, returnsByRef, ref context);
+        WriteProtected(resource, new UsingLevel(null, 0, body), plan, ref context);
     }
 
     // The declarator of the level and the levels inside it, or the body after the last declarator
-    private static void WriteLevel(UsingLevel level, UsingExitPlan plan, bool returnsByRef,
-        ref TranspileContext context)
+    private static void WriteLevel(UsingLevel level, UsingExitPlan plan, ref TranspileContext context)
     {
         if (level.Declaration is not { } declaration || level.Index >= declaration.Variables.Count)
         {
@@ -177,24 +198,23 @@ internal static class UsingCpuEmitter
         var resource = CppNameResolver
             .Resolve(variable, context.Query.SemanticModel, context.Emitter.Dialect)
             .ToString();
-        WriteProtected(resource, new UsingLevel(declaration, level.Index + 1, level.Body), plan, returnsByRef,
-            ref context);
+        WriteProtected(resource, new UsingLevel(declaration, level.Index + 1, level.Body), plan, ref context);
     }
 
     // try { <inner> } catch (...) { <dispose on a failure> } <exit labels> <done label> <resource>.__gsharp_dispose();
-    private static void WriteProtected(string resource, UsingLevel inner, UsingExitPlan plan, bool returnsByRef,
+    private static void WriteProtected(string resource, UsingLevel inner, UsingExitPlan plan,
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         var number = context.Emitter.UsingCounter++;
         var hasExits = plan.Exits.Length > 0;
         writer.AppendLine("try");
-        context.Emitter.UsingScopes.Add(new UsingCpuScope(number, plan, returnsByRef));
+        context.Emitter.UsingScopes.Add(new UsingCpuScope(number, plan));
         try
         {
             using (writer.Scope())
             {
-                WriteLevel(inner, plan, returnsByRef, ref context);
+                WriteLevel(inner, plan, ref context);
                 writer.AppendLineIf(hasExits, $"goto {GSharpInternalNames.Using.DonePrefix}{number};");
             }
         }
@@ -208,7 +228,7 @@ internal static class UsingCpuEmitter
         {
             writer.AppendLine($"{GSharpInternalNames.Using.ExitPrefix}{number}_{i}:");
             WriteDispose(resource, ref context);
-            WriteExitJump(plan.Exits[i], returnsByRef, ref context);
+            WriteExitJump(plan.Exits[i], plan.ReturnsByRef, ref context);
         }
 
         writer.AppendLineIf(hasExits, $"{GSharpInternalNames.Using.DonePrefix}{number}:");
@@ -271,43 +291,28 @@ internal static class UsingCpuEmitter
     }
 
     // <return type> __gsharp_using_return{}; (a pointer for a function that returns by reference) before the outermost
-    // using of the function that a return with a value leaves; returns whether the function returns by reference
-    private static bool WriteReturnValue(SyntaxNode node, UsingExitPlan plan, ref TranspileContext context)
+    // using of the function that a return with a value leaves (UsingExitPlan.DeclaresReturnValue)
+    private static void WriteReturnValue(SyntaxNode node, UsingExitPlan plan, ref TranspileContext context)
     {
         if (!plan.ReturnsValue)
         {
-            return false;
+            return;
         }
 
-        var model = context.Query.SemanticModel;
-        // A lowered body may be outside any declaration of its tree: its function is the method being transpiled
-        var function = plan.Function switch
-        {
-            null => context.Emitter.MethodSymbol,
-            AnonymousFunctionExpressionSyntax lambda => model.GetSymbolInfo(lambda).Symbol as IMethodSymbol,
-            BaseMethodDeclarationSyntax method => model.GetDeclaredSymbol<IMethodSymbol>(method) ??
-                                                  context.Emitter.MethodSymbol,
-            var other => model.GetDeclaredSymbol<IMethodSymbol>(other)
-        };
-        if (function is null)
+        if (plan.ReturnType is not { } returnType)
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, ReturnTypeUnknown);
-            return false;
+            return;
         }
 
-        var returnsByRef = function.ReturnsByRef || function.ReturnsByRefReadonly;
-        var declaredBefore = context.Emitter.UsingScopes
-            .AsStackEnumerable()
-            .Any(plan.Function, static (scope, f) => scope.Plan.Function == f);
-        if (declaredBefore)
+        if (!plan.DeclaresReturnValue)
         {
-            return returnsByRef;
+            return;
         }
 
-        context.Emitter.Dialect.AppendType(ref context, function.ReturnType);
-        context.Emitter.Writer.AppendIf(returnsByRef, "*");
+        context.Emitter.Dialect.AppendType(ref context, returnType);
+        context.Emitter.Writer.AppendIf(plan.ReturnsByRef, "*");
         context.Emitter.Writer.AppendLine($" {GSharpInternalNames.Using.ReturnValue}{{}};");
-        return returnsByRef;
     }
 
     /// <summary>

@@ -229,7 +229,7 @@ inline void __gsharp_translate_sort_failure(GSharpErrorCode& code, const char*& 
 }
 
 // The failure path of a using on the CPU. The transpiler writes the body of a using in a try, and its catch disposes
-// the resource as C# runs Dispose in a finally, then rethrows (UsingTranspiler):
+// the resource as C# runs Dispose in a finally, then rethrows (UsingCpuEmitter):
 //   catch (...) { int o = __gsharp_using_enter(); try { r.__gsharp_dispose(); } catch (...) {
 //   __gsharp_using_dispose_failed(); } __gsharp_using_leave(o); throw; }
 // A failure of that Dispose ends there: when the failure in flight is a failed check of this thread (recorded) that

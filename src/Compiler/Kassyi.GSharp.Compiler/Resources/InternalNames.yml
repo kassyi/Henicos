@@ -164,7 +164,7 @@ Using:
     The disposal of a C# using in device code. A struct that has a Dispose method declares it as a member under its own
     name. On CUDA the guard of each using calls it when its scope ends. On the CPU the body is written in a try whose
     catch disposes the resource and rethrows, the end of the body calls Dispose, and each jump out of the body goes
-    through an exit label that calls Dispose before it jumps on (UsingTranspiler).
+    through an exit label that calls Dispose before it jumps on (UsingCpuEmitter).
   Names:
     ScopeGuard: { Value: __gsharp_using_scope, Prelude: StandardTypes.hpp }
     Dispose: { Value: __gsharp_dispose, Prelude: StandardTypes.hpp }

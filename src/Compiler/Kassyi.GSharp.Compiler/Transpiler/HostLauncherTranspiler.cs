@@ -103,7 +103,7 @@ internal static class HostLauncherTranspiler
             context.Emitter.Writer.AppendLine($"GSharpErrorSlot {Error};");
             if (step.IsCooperative)
             {
-                WriteCooperativeGrid(contextName, step, ref context);
+                CooperativeLauncherTranspiler.WriteCooperativeGrid(contextName, step, ref context);
             }
             else
             {
@@ -235,126 +235,12 @@ internal static class HostLauncherTranspiler
         }
     }
 
-    // The grid runs in phases; every block keeps its contexts and its shared memory arena across them:
-    // try { <contexts and arenas of the grid> #pragma omp parallel { while (<next phase>) { #pragma omp for <blocks to
-    // their grid sync> #pragma omp single { <end the phase> } } } } catch (const std::bad_alloc&) { <report> }
-    private static void WriteCooperativeGrid(string contextName, in KernelStep step, ref TranspileContext context)
-    {
-        context.Emitter.Writer.AppendLine(
-            $"int32_t {ThreadsPerBlock} = (int32_t)({BlockDimX} * {BlockDimY} * {BlockDimZ});");
-        context.Emitter.Writer.AppendLine("try");
-        using (context.Emitter.Writer.Scope())
-        {
-            context.Emitter.Writer.AppendLine(
-                $"std::vector<{contextName}> {GridContexts}((size_t){TotalBlocks} * {ThreadsPerBlock});");
-            context.Emitter.Writer.AppendLine(
-                $"std::vector<{SharedMemoryArena}> {BlockArenas}((size_t){TotalBlocks});");
-            context.Emitter.Writer.AppendLine($"std::vector<uint8_t> {BlockStatus}((size_t){TotalBlocks});");
-            context.Emitter.Writer.AppendLine(
-                $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
-            using (context.Emitter.Writer.Scope())
-            {
-                context.Emitter.Writer.AppendLine($"{BlockArenas}[{BlockLoopIndex}].reset({SharedMemBytes});");
-                WriteBlockContexts(contextName, ref context);
-                context.Emitter.Writer.AppendLine(
-                    $"for (int32_t {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
-                using (context.Emitter.Writer.Scope())
-                {
-                    context.Emitter.Writer.AppendLine($"{Contexts}[{ThreadLoopIndex}].{AllContexts} = {Contexts};");
-                }
-            }
-
-            context.Emitter.Writer.AppendLine($"bool {NextGridPhase} = true;");
-            context.Emitter.Writer.AppendLine("#pragma omp parallel");
-            using (context.Emitter.Writer.Scope())
-            {
-                // [WHY] Only the omp single below changes the flag, between two barriers, so every OpenMP thread reads the
-                // same value and meets the same worksharing constructs
-                context.Emitter.Writer.AppendLine($"while ({NextGridPhase})");
-                using (context.Emitter.Writer.Scope())
-                {
-                    WriteCooperativePhase(contextName, step, ref context);
-                    context.Emitter.Writer.AppendLine("#pragma omp single");
-                    using (context.Emitter.Writer.Scope())
-                    {
-                        context.Emitter.Writer.Append(
-                            $"{NextGridPhase} = {EndGridPhase}(&{Error}, {BlockStatus}.data(), {TotalBlocks}, {GridDimX}, {GridDimY}, ");
-                        CppStringLiteral.Append(context.Emitter.Writer, step.MessageName);
-                        context.Emitter.Writer.AppendLine(");");
-                    }
-                }
-
-                context.Emitter.Writer.AppendLine($"{BindSharedMemory}(nullptr);");
-            }
-        }
-
-        context.Emitter.Writer.AppendLine("catch (const std::bad_alloc&)");
-        using (context.Emitter.Writer.Scope())
-        {
-            WriteAllocationFailure(ref context);
-        }
-    }
-
-    // #pragma omp for: every block runs until its threads reach the grid sync or finish
-    private static void WriteCooperativePhase(string contextName, in KernelStep step, ref TranspileContext context)
-    {
-        context.Emitter.Writer.AppendLine("#pragma omp for schedule(dynamic)");
-        context.Emitter.Writer.AppendLine(
-            $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
-        using (context.Emitter.Writer.Scope())
-        {
-            context.Emitter.Writer.AppendLine("try");
-            using (context.Emitter.Writer.Scope())
-            {
-                WriteBlockCoordinates(ref context);
-                context.Emitter.Writer.AppendLine($"{BindSharedMemory}(&{BlockArenas}[{BlockLoopIndex}]);");
-                WriteBlockContexts(contextName, ref context);
-                // The threads that wait at the grid sync go on in this phase
-                context.Emitter.Writer.AppendLine(
-                    $"for (int32_t {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
-                using (context.Emitter.Writer.Scope())
-                {
-                    context.Emitter.Writer.AppendLine($"{Contexts}[{ThreadLoopIndex}].{YieldedForGridSync} = false;");
-                }
-
-                context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
-                context.Emitter.Writer.AppendLine($"bool {GridSyncReached} = false;");
-                WriteRoundDeclaration(step, ref context);
-                // [WHY] A thread that reached the grid sync waits there while the other threads of the block go on to
-                // it: they may need more steps (a shuffle or a block barrier before it). The block's part of the phase
-                // ends when no thread can run. A thread that failed has finished; the phase still runs to the grid
-                // sync, where the launch then ends (__gsharp_end_grid_phase), as the GPU lets the waiters leave its
-                // grid barrier
-                context.Emitter.Writer.AppendLine($"while ({AnyActive})");
-                using (context.Emitter.Writer.Scope())
-                {
-                    context.Emitter.Writer.AppendLine($"{AnyActive} = false;");
-                    WriteBlockLoop(step, declaresThreadsPerBlock: false, ref context);
-                }
-
-                context.Emitter.Writer.AppendLine(
-                    $"{BlockStatus}[{BlockLoopIndex}] = {GridSyncReached} ? {BlockAtGridSync} : {BlockFinished};");
-                // The grid sync of the GPU waits for thread 0 of every block
-                context.Emitter.Writer.AppendLine($"if ({GridSyncReached} && {Contexts}[0].{State} == -1)");
-                using (context.Emitter.Writer.Scope())
-                {
-                    context.Emitter.Writer.Append(
-                        $"{ReportRepresentativeFinished}(&{Error}, {BlockX}, {BlockY}, {BlockZ}, ");
-                    CppStringLiteral.Append(context.Emitter.Writer, step.MessageName);
-                    context.Emitter.Writer.AppendLine(");");
-                }
-            }
-
-            WriteStepAbortCatches(ref context);
-        }
-    }
-
     // <context>* __gsharp_contexts = __gsharp_grid_contexts.data() + (size_t)<block> * __gsharp_threads_per_block;
-    private static void WriteBlockContexts(string contextName, ref TranspileContext context) =>
+    internal static void WriteBlockContexts(string contextName, ref TranspileContext context) =>
         context.Emitter.Writer.AppendLine(
             $"{contextName}* {Contexts} = {GridContexts}.data() + (size_t){BlockLoopIndex} * {ThreadsPerBlock};");
 
-    private static void WriteBlockCoordinates(ref TranspileContext context)
+    internal static void WriteBlockCoordinates(ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine($"int32_t {BlockX} = (int32_t)({BlockLoopIndex} % {GridDimX});");
         context.Emitter.Writer.AppendLine(
@@ -363,7 +249,7 @@ internal static class HostLauncherTranspiler
             $"int32_t {BlockZ} = (int32_t)({BlockLoopIndex} / ((int64_t){GridDimX} * {GridDimY}));");
     }
 
-    private static void WriteBlockLoop(in KernelStep step, bool declaresThreadsPerBlock, ref TranspileContext context)
+    internal static void WriteBlockLoop(in KernelStep step, bool declaresThreadsPerBlock, ref TranspileContext context)
     {
         if (declaresThreadsPerBlock)
         {
@@ -427,7 +313,7 @@ internal static class HostLauncherTranspiler
 
     // uint32_t __gsharp_round = 0; in a kernel that reaches a warp collective: the launcher's rounds of the block, which
     // tell when a lane published (#1468)
-    private static void WriteRoundDeclaration(in KernelStep step, ref TranspileContext context)
+    internal static void WriteRoundDeclaration(in KernelStep step, ref TranspileContext context)
     {
         if (step.ReachesWarpShuffle)
         {
@@ -590,7 +476,7 @@ internal static class HostLauncherTranspiler
     // A failure of the launcher itself (a stall of the warps of the block) or memory that cannot be allocated ends the
     // block with an exception, which stops at the try of the block, inside the iteration of the OpenMP loop: catch
     // (const __gsharp_step_abort&) {} catch (const std::bad_alloc&) { <report> }
-    private static void WriteStepAbortCatches(ref TranspileContext context)
+    internal static void WriteStepAbortCatches(ref TranspileContext context)
     {
         // The failure was reported before the throw
         context.Emitter.Writer.AppendLine($"catch (const {StepAbort}&) {{}}");
@@ -603,7 +489,7 @@ internal static class HostLauncherTranspiler
 
     // [WHY] Reported into the slot of the launch itself: memory can run out before a thread of this launch has set the
     // active slot of the OpenMP thread, which may still point at the slot of an earlier launch
-    private static void WriteAllocationFailure(ref TranspileContext context) =>
+    internal static void WriteAllocationFailure(ref TranspileContext context) =>
         context.Emitter.Writer.AppendLine(
             $"{Error}.Report(GSharpErrorCode::InvalidOperation, \"G#: the native CPU path could not allocate memory for a kernel step\");");
 
@@ -618,7 +504,7 @@ internal static class HostLauncherTranspiler
     }
 
     // What the launcher calls for each thread: the kernel, how it is called and how its grid syncs are handled
-    private readonly struct KernelStep(
+    internal readonly struct KernelStep(
         MethodDeclarationSyntax method,
         string methodName,
         bool hasContext,

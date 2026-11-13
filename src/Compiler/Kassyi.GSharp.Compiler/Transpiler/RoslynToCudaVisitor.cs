@@ -293,13 +293,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         for (var i = start; i < statements.Count; i++)
         {
             var statement = statements[i];
-            if (!Context.Emitter.Dialect.IsCuda && statement is LocalDeclarationStatementSyntax
-                {
-                    UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword,
-                    AwaitKeyword.RawKind: (int)SyntaxKind.None
-                })
+            if (!Context.Emitter.Dialect.IsCuda &&
+                UsingCpuEmitter.TryGetUsingDeclaration(statement, out var declaration))
             {
-                UsingCpuEmitter.TranspileUsingDeclaration(statements, i, ref Context);
+                // The labels of a labeled using declaration come first: its body is still the rest of the list
+                for (var labeled = statement as LabeledStatementSyntax; labeled != null;
+                     labeled = labeled.Statement as LabeledStatementSyntax)
+                {
+                    JumpStatementTranspilers.WriteLabel(labeled, ref Context);
+                }
+
+                UsingCpuEmitter.TranspileUsingDeclaration(declaration, statements, i, ref Context);
                 Context.Emitter.Writer.AppendLine();
                 return;
             }
