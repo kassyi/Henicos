@@ -30,11 +30,14 @@ public class OptionalArrayTests : TranspilerTestBase
     [SkippableTheory]
     [InlineData(false)]
     [InlineData(true)]
-    public void IsNullBias_EmptyBias_TreatsAsNull(bool forceManaged)
+    public void IsNullOptional_EmptyAndNullBias_OnlyNullIsNull(bool forceManaged)
     {
-        float[] x = [1f, 2f];
-        Run(forceManaged, () => OptionalArrayKernels.LaunchIsNullBiasKernel(x, [], blockDimX: 2));
-        Assert.Equal([1f, 2f], x);
+        int[] o = [-1];
+        Run(forceManaged, () => OptionalArrayKernels.LaunchIsNullOptionalKernel(o, []));
+        Assert.Equal([0], o);
+
+        Run(forceManaged, () => OptionalArrayKernels.LaunchIsNullOptionalKernel(o, null));
+        Assert.Equal([1], o);
     }
 
     [Scenario(TestScenario.HappyPath)]
@@ -84,16 +87,14 @@ public class OptionalArrayTests : TranspilerTestBase
         Assert.Equal([10f, 20f], y.AsSpan().ToArray());
     }
 
+    // A default Memory<T> passed as Memory<T>? has a value, as in C#: the matrix of
+    // ArrayArgumentNullEmptyDifferentialTests reads it, since its elements are out of range here
     [Scenario(TestScenario.HappyPath)]
     [Fact]
-    public void OptionalMemory_NullDefaultAndValues_ComputesExpectedValues()
+    public void OptionalMemory_NullAndValues_ComputesExpectedValues()
     {
         float[] x = [1f, 2f];
         OptionalArrayKernels.LaunchOptionalMemoryKernel(x, null, blockDimX: 2);
-        Assert.Equal([1f, 2f], x);
-
-        x = [1f, 2f];
-        OptionalArrayKernels.LaunchOptionalMemoryKernel(x, default(Memory<float>), blockDimX: 2);
         Assert.Equal([1f, 2f], x);
 
         x = [1f, 2f];
@@ -114,56 +115,40 @@ public class OptionalArrayTests : TranspilerTestBase
         Assert.Equal([11f, 22f], x);
     }
 
+    // C# does not check the annotation of a parameter: a null non-nullable array reaches the kernel, whose first read
+    // throws
     [Scenario(TestScenario.SadPath)]
-    [Fact]
-    public void IsNullBias_NullInputArray_ThrowsArgumentNullException()
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void IsNullBias_NullInputArray_ThrowsAtTheRead(bool forceManaged)
     {
-        var ex = Assert.Throws<ArgumentNullException>(() =>
-            // Intentionally passing null to assert ArgumentNullException guard; this is the only allowed !.
-            OptionalArrayKernels.LaunchIsNullBiasKernel(null!, [10f, 20f], blockDimX: 2));
-        Assert.Equal("x", ex.ParamName);
+        // Intentionally passing null where the parameter is not nullable, as C# lets a caller do
+        Assert.Throws<NullReferenceException>(() =>
+            Run(forceManaged, () => OptionalArrayKernels.LaunchIsNullBiasKernel(null!, [10f, 20f], blockDimX: 2)));
     }
 
+    // The Length of a null optional array throws, as in C#, on every path
     [Scenario(TestScenario.SadPath)]
-    [Fact]
-    public void IsNullBias_EmptyInputArray_ThrowsArgumentException()
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LengthOptional_NullBias_ThrowsNullReference(bool forceManaged)
     {
-        var ex = Assert.Throws<ArgumentException>(() =>
-            OptionalArrayKernels.LaunchIsNullBiasKernel([], [10f, 20f], blockDimX: 2));
-        Assert.Equal("x", ex.ParamName);
+        var o = new[] { -1, -1 };
+        Assert.Throws<NullReferenceException>(() =>
+            Run(forceManaged, () => OptionalArrayKernels.LaunchLengthOptionalKernel(o, null)));
+        Assert.Equal([-1, -1], o);
     }
 
-    [Scenario(TestScenario.SadPath)]
-    [Fact]
-    public void MemoryAdd_EmptyInputArray_ThrowsArgumentException()
-    {
-        var ex = Assert.Throws<ArgumentException>(() =>
-            OptionalArrayKernels.LaunchMemoryAddKernel(Memory<float>.Empty, new float[] { 10f, 20f }, blockDimX: 2));
-        Assert.Equal("x", ex.ParamName);
-    }
-
-    [Scenario(TestScenario.SadPath)]
-    [Fact]
-    public void Scale_EmptyValues_ThrowsArgumentException()
-    {
-        var ex = Assert.Throws<ArgumentException>(() =>
-            OptionalArrayKernels.LaunchScaleKernel([], blockDimX: 2));
-        Assert.Equal("values", ex.ParamName);
-    }
-
-    // A null optional array and an empty one are the same on the device (its data pointer is null and its length 0), also
-    // on the managed fallback (#806)
+    // An empty optional array is not null and has length 0
     [Scenario(TestScenario.Boundary)]
     [SkippableTheory]
     [InlineData(false)]
     [InlineData(true)]
-    public void LengthOptional_NullAndEmptyBias_ReadsZeroLength(bool forceManaged)
+    public void LengthOptional_EmptyAndFilledBias_ReadsTheirLength(bool forceManaged)
     {
         var o = new[] { -1, -1 };
-        Run(forceManaged, () => OptionalArrayKernels.LaunchLengthOptionalKernel(o, null));
-        Assert.Equal([0, -1], o);
-
-        o = [-1, -1];
         Run(forceManaged, () => OptionalArrayKernels.LaunchLengthOptionalKernel(o, []));
         Assert.Equal([0, -1], o);
 

@@ -304,7 +304,9 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 /// <param name="Namespace">
 /// The namespace as C# source spells it (<c>@event.P3</c>), or empty for the global namespace.
 /// </param>
-/// <param name="Name">The class name as C# source spells it (<c>@class</c>).</param>
+/// <param name="Name">
+/// The class name and type parameters as C# source spells them (<c>@class</c>, <c>G&lt;T&gt;</c>).
+/// </param>
 /// <param name="Keyword">
 /// The keyword of the user's declaration after <c>partial</c> (<c>class</c>, or <c>record</c> for a record class),
 /// which every part must repeat (CS0261).
@@ -338,7 +340,7 @@ internal readonly record struct HostClassHeader(
     public static HostClassHeader Create(INamedTypeSymbol type, Compilation compilation) => new(
         GlobalCppNames.GetHintName(type),
         type.ContainingNamespace.GetCsharpNamespaceName(),
-        type.Name.ToCSharpIdentifier(),
+        type.GetDeclaredTypeName(),
         GetKeyword(type),
         SyntaxFacts.GetText(type.DeclaredAccessibility),
         type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
@@ -346,7 +348,11 @@ internal readonly record struct HostClassHeader(
         type.GetFullyQualifiedCsharpName(),
         RemovedCalls.GetSymbolsToDefine(type, compilation));
 
-    private static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
+    /// <summary>
+    /// The partial declarations of the types that contain <paramref name="type"/>, outermost first
+    /// (<c>partial class Outer&lt;T&gt;</c>), or empty for a type that is not nested.
+    /// </summary>
+    public static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
     {
         if (type.ContainingType == null)
         {
@@ -362,7 +368,11 @@ internal readonly record struct HostClassHeader(
         return declarations.ToImmutable().AsEquatableArray();
     }
 
-    private static string GetKeyword(INamedTypeSymbol type) => type.IsRecord
+    /// <summary>
+    /// The keyword that declares <paramref name="type"/> after <c>partial</c>: <c>class</c>, <c>struct</c>,
+    /// <c>interface</c>, <c>record</c> or <c>record struct</c>.
+    /// </summary>
+    public static string GetKeyword(INamedTypeSymbol type) => type.IsRecord
         ? type.TypeKind == TypeKind.Struct ? "record struct" : "record"
         : type.TypeKind == TypeKind.Struct ? "struct" : type.TypeKind == TypeKind.Interface ? "interface" : "class";
 }

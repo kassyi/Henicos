@@ -94,15 +94,15 @@ Every read of a nullable array (`T[]?`), such as `ctx.Data[i]` or `ctx.Data.Leng
 throws `NullReferenceException` there ([6.4 The cost of following C#](../../01_language/06_semantics.md)).
 `Gpu.NotNull` checks once and hands back an array that the compiler knows is not `null`: a local initialized from the
 call and never assigned afterwards is proven, so its reads and the calls that pass it where a device function parameter
-is not nullable have no check of their own. A call whose argument is already proven (a non-nullable kernel parameter
-that the kernel never writes, for example) emits no check either.
+is not nullable have no check of their own. A call whose argument is already proven (a non-nullable device function
+parameter that the function never writes, for example) emits no check either.
 
 The exception comes at the call, which may be earlier than the first read of the array in the code that does not use
 the method; it is the same exception type.
 
-A `null` optional kernel argument (`T[]?` parameter) reads as an empty array (`Length` is 0), but it is still `null`:
-`Gpu.NotNull` throws for it on every path. The launchers pass an empty optional kernel argument as `null` as well, so
-it throws too. An empty array in a struct field or a local is not `null` and passes.
+A kernel array parameter may be `null` whatever its annotation, as in a C# call, so every read of it is checked;
+`int[] data = Gpu.NotNull(input);` at the top of the kernel checks it once and leaves the later reads of `data`
+without a check. An empty array is not `null` and passes, as an argument, in a struct field or in a local.
 
 The method runs on the host as well, where it is plain C#.
 

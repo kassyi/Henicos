@@ -17,10 +17,11 @@ private static byte[]? s_fatbin;
 /// </summary>
 public static byte[] GetFatbin()
 {
-var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
 if (fatbin is not null) return fatbin;
-var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location)
+?? global::System.AppContext.BaseDirectory;
+string fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
 {
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
@@ -250,6 +251,11 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib
 {
 public partial class BigIntContextOperationKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(710364627u, "BigIntContextOperationKernels.cs", 15, 43, "ShiftLeftKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(319892393u, "BigIntContextOperationKernels.cs", 21, 44, "ShiftRightKernel", "G#: a null array is passed where it is not nullable"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -309,7 +315,7 @@ if (host.LeftOperand != null)
 int size = checked(host.LeftOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.LeftOperand, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.LeftOperand, out global::System.IntPtr region))
 {
 native.LeftOperand.Data = region;
 }
@@ -317,7 +323,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.LeftOperand.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.LeftOperand, native.LeftOperand.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.LeftOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.LeftOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.LeftOperand.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -339,7 +345,7 @@ if (host.RightOperand != null)
 int size = checked(host.RightOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.RightOperand, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.RightOperand, out global::System.IntPtr region))
 {
 native.RightOperand.Data = region;
 }
@@ -347,7 +353,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.RightOperand.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.RightOperand, native.RightOperand.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.RightOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.RightOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.RightOperand.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -369,7 +375,7 @@ if (host.TargetOperand != null)
 int size = checked(host.TargetOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.TargetOperand, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.TargetOperand, out global::System.IntPtr region))
 {
 native.TargetOperand.Data = region;
 }
@@ -377,7 +383,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.TargetOperand.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.TargetOperand, native.TargetOperand.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.TargetOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.TargetOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.TargetOperand.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -399,7 +405,7 @@ if (host.ResultBuffer != null)
 int size = checked(host.ResultBuffer.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.ResultBuffer, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.ResultBuffer, out global::System.IntPtr region))
 {
 native.ResultBuffer.Data = region;
 }
@@ -407,7 +413,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.ResultBuffer.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.ResultBuffer, native.ResultBuffer.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.ResultBuffer, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.ResultBuffer, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.ResultBuffer.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -429,7 +435,7 @@ if (host.Constant != null)
 int size = checked(host.Constant.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.Constant, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Constant, out global::System.IntPtr region))
 {
 native.Constant.Data = region;
 }
@@ -437,7 +443,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.Constant.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.Constant, native.Constant.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Constant, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Constant, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Constant.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -459,7 +465,7 @@ if (host.Constant3 != null)
 int size = checked(host.Constant3.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.Constant3, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.Constant3, out global::System.IntPtr region))
 {
 native.Constant3.Data = region;
 }
@@ -467,7 +473,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.Constant3.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.Constant3, native.Constant3.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Constant3, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Constant3, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.Constant3.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -489,7 +495,7 @@ if (host.CarryBuffer != null)
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
 {
-if (deviceArrays != null && deviceArrays.TryGetRegion(host.CarryBuffer, out var region))
+if (deviceArrays != null && deviceArrays.TryGetRegion(host.CarryBuffer, out global::System.IntPtr region))
 {
 native.CarryBuffer.Data = region;
 }
@@ -497,7 +503,7 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out native.CarryBuffer.Data, (global::System.IntPtr)size, hStream));
 deviceArrays?.Add(host.CarryBuffer, native.CarryBuffer.Data);
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(native.CarryBuffer.Data, handle.AddrOfPinnedObject(), (global::System.IntPtr)size, hStream));
@@ -522,7 +528,7 @@ if (host.LeftOperand != null && native.LeftOperand.Data != global::System.IntPtr
 int size = checked(host.LeftOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.LeftOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.LeftOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.LeftOperand.Data, (global::System.IntPtr)size, hStream));
@@ -538,7 +544,7 @@ if (host.RightOperand != null && native.RightOperand.Data != global::System.IntP
 int size = checked(host.RightOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.RightOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.RightOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.RightOperand.Data, (global::System.IntPtr)size, hStream));
@@ -554,7 +560,7 @@ if (host.TargetOperand != null && native.TargetOperand.Data != global::System.In
 int size = checked(host.TargetOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.TargetOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.TargetOperand, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.TargetOperand.Data, (global::System.IntPtr)size, hStream));
@@ -570,7 +576,7 @@ if (host.ResultBuffer != null && native.ResultBuffer.Data != global::System.IntP
 int size = checked(host.ResultBuffer.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.ResultBuffer, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.ResultBuffer, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.ResultBuffer.Data, (global::System.IntPtr)size, hStream));
@@ -586,7 +592,7 @@ if (host.Constant != null && native.Constant.Data != global::System.IntPtr.Zero)
 int size = checked(host.Constant.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Constant, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Constant, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Constant.Data, (global::System.IntPtr)size, hStream));
@@ -602,7 +608,7 @@ if (host.Constant3 != null && native.Constant3.Data != global::System.IntPtr.Zer
 int size = checked(host.Constant3.Length * sizeof(global::System.UInt32));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Constant3, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Constant3, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.Constant3.Data, (global::System.IntPtr)size, hStream));
@@ -618,7 +624,7 @@ if (host.CarryBuffer != null && native.CarryBuffer.Data != global::System.IntPtr
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
 {
-var handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, global::System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CarryBuffer.Data, (global::System.IntPtr)size, hStream));
@@ -670,23 +676,17 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algo
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntContextOperationKernels__ShiftLeftKernel(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_id_0_ctx, int __gsharp_id_1_wordShift, int __gsharp_id_2_bitShift, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftLeft_o0(__gsharp_id_0_ctx,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
+__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftLeft_o0(__gsharp_struct_ref(__gsharp_id_0_ctx, 710364627u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }),__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShiftLeftKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntContextOperationKernels__ShiftLeftKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerShiftLeftKernel() => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftLeftKernel.Resolve();
+public static void WarmupFunctionPointerShiftLeftKernel() => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftLeftKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchShiftLeftKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, global::System.Int32 wordShift, global::System.Int32 bitShift, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftLeftKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -696,11 +696,11 @@ global::System.Int32 __gsharp_csharp_arg_2 = bitShift;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.ShiftLeftKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftLeftKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftLeftKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.ShiftLeftKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
+global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions __gsharp_device_arrays = new();
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
@@ -740,20 +740,14 @@ __gsharp_device_arrays.Free(hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchShiftLeftKernelPtr(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AotContexts.GpuBigInt ctx, global::System.Int32 wordShift, global::System.Int32 bitShift, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftLeftKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("BigIntContextOperationKernels.ShiftLeftKernel", "LaunchShiftLeftKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchShiftLeftKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftLeftKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftLeftKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.ShiftLeftKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -820,23 +814,17 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algo
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntContextOperationKernels__ShiftRightKernel(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_id_0_ctx, int __gsharp_id_1_wordShift, int __gsharp_id_2_bitShift, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o0(__gsharp_id_0_ctx,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
+__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o0(__gsharp_struct_ref(__gsharp_id_0_ctx, 319892393u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }),__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ShiftRightKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntContextOperationKernels__ShiftRightKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerShiftRightKernel() => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftRightKernel.Resolve();
+public static void WarmupFunctionPointerShiftRightKernel() => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftRightKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchShiftRightKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, global::System.Int32 wordShift, global::System.Int32 bitShift, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftRightKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -846,11 +834,11 @@ global::System.Int32 __gsharp_csharp_arg_2 = bitShift;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.ShiftRightKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftRightKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftRightKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.ShiftRightKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
+global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions __gsharp_device_arrays = new();
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
@@ -890,20 +878,14 @@ __gsharp_device_arrays.Free(hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchShiftRightKernelPtr(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AotContexts.GpuBigInt ctx, global::System.Int32 wordShift, global::System.Int32 bitShift, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftRightKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("BigIntContextOperationKernels.ShiftRightKernel", "LaunchShiftRightKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchShiftRightKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftRightKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_ShiftRightKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.ShiftRightKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -981,12 +963,6 @@ public static void WarmupFunctionPointerAndKernel() => global::Kassyi.GSharp.Tes
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAndKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.AndKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -994,11 +970,11 @@ global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AndKernel(__gsharp_csharp_arg_0));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_AndKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.AndKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
+global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions __gsharp_device_arrays = new();
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
@@ -1034,18 +1010,12 @@ __gsharp_device_arrays.Free(hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAndKernelPtr(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AotContexts.GpuBigInt ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.AndKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("BigIntContextOperationKernels.AndKernel", "LaunchAndKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchAndKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_AndKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.AndKernel");
@@ -1121,12 +1091,6 @@ public static void WarmupFunctionPointerOrKernel() => global::Kassyi.GSharp.Test
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOrKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.OrKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1134,11 +1098,11 @@ global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.OrKernel(__gsharp_csharp_arg_0));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_OrKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.OrKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
+global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions __gsharp_device_arrays = new();
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
@@ -1174,18 +1138,12 @@ __gsharp_device_arrays.Free(hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOrKernelPtr(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AotContexts.GpuBigInt ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.OrKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("BigIntContextOperationKernels.OrKernel", "LaunchOrKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchOrKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_OrKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.OrKernel");
@@ -1261,12 +1219,6 @@ public static void WarmupFunctionPointerXorKernel() => global::Kassyi.GSharp.Tes
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchXorKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.XorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1274,11 +1226,11 @@ global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.XorKernel(__gsharp_csharp_arg_0));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_XorKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.XorKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
+global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions __gsharp_device_arrays = new();
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
@@ -1314,18 +1266,12 @@ __gsharp_device_arrays.Free(hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchXorKernelPtr(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AotContexts.GpuBigInt ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.XorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("BigIntContextOperationKernels.XorKernel", "LaunchXorKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchXorKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_XorKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.XorKernel");
@@ -1401,12 +1347,6 @@ public static void WarmupFunctionPointerNotKernel() => global::Kassyi.GSharp.Tes
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNotKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.NotKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1414,11 +1354,11 @@ global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.NotKernel(__gsharp_csharp_arg_0));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_NotKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.NotKernel");
-var __gsharp_device_arrays = new global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions();
+global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions __gsharp_device_arrays = new();
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
@@ -1454,18 +1394,12 @@ __gsharp_device_arrays.Free(hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNotKernelPtr(global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AotContexts.GpuBigInt ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(ctx), "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.NotKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("BigIntContextOperationKernels.NotKernel", "LaunchNotKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNotKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.__gsharp_hfunc_NotKernel.Resolve();
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BigIntContextOperationKernels.NotKernel");

@@ -17,10 +17,11 @@ private static byte[]? s_fatbin;
 /// </summary>
 public static byte[] GetFatbin()
 {
-var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
 if (fatbin is not null) return fatbin;
-var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location)
+?? global::System.AppContext.BaseDirectory;
+string fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
 {
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
@@ -407,6 +408,24 @@ namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class DeviceDynamicSharedMemoryKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1106941108u, "DeviceDynamicSharedMemoryKernels.cs", 31, 9, "SuspendingCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1777156492u, "DeviceDynamicSharedMemoryKernels.cs", 48, 9, "HelperOnlyKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(688246400u, "DeviceDynamicSharedMemoryKernels.cs", 60, 9, "HelperAndCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1956327994u, "DeviceDynamicSharedMemoryKernels.cs", 81, 9, "PlainCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1322931156u, "DeviceDynamicSharedMemoryKernels.cs", 104, 9, "SuspendingPersistKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(588950664u, "DeviceDynamicSharedMemoryKernels.cs", 126, 9, "PlainPersistKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(166416756u, "DeviceDynamicSharedMemoryKernels.cs", 148, 9, "StaticPersistKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1905345464u, "DeviceDynamicSharedMemoryKernels.cs", 179, 9, "GrowAfterCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1075664808u, "DeviceDynamicSharedMemoryKernels.cs", 206, 9, "RecursiveKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1656761612u, "DeviceDynamicSharedMemoryKernels.cs", 237, 9, "NestedScopeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2102761572u, "DeviceDynamicSharedMemoryKernels.cs", 256, 9, "ZeroThenGrowKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(945141536u, "DeviceDynamicSharedMemoryKernels.cs", 272, 9, "MiddleCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1670171624u, "DeviceDynamicSharedMemoryKernels.cs", 289, 9, "NoParameterCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1040047128u, "DeviceDynamicSharedMemoryKernels.cs", 307, 9, "NestedFunctionCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(75006812u, "DeviceDynamicSharedMemoryKernels.cs", 323, 9, "NegativeCountKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -431,31 +450,25 @@ __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,100);
 __syncthreads();
 int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1106941108u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SuspendingCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerSuspendingCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingCallerKernel.Resolve();
+public static void WarmupFunctionPointerSuspendingCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSuspendingCallerKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.SuspendingCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.SuspendingCallerKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.SuspendingCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -463,10 +476,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -517,22 +530,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchSuspendingCallerKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.SuspendingCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.SuspendingCallerKernel", "LaunchSuspendingCallerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSuspendingCallerKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.SuspendingCallerKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -577,31 +587,25 @@ __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKer
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1777156492u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_HelperOnlyKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerHelperOnlyKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperOnlyKernel.Resolve();
+public static void WarmupFunctionPointerHelperOnlyKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperOnlyKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchHelperOnlyKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.HelperOnlyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.HelperOnlyKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperOnlyKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperOnlyKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.HelperOnlyKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -609,10 +613,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -663,22 +667,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchHelperOnlyKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.HelperOnlyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.HelperOnlyKernel", "LaunchHelperOnlyKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchHelperOnlyKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperOnlyKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperOnlyKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.HelperOnlyKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -728,31 +729,25 @@ __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,100);
 __syncthreads();
 int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 688246400u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_HelperAndCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerHelperAndCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperAndCallerKernel.Resolve();
+public static void WarmupFunctionPointerHelperAndCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperAndCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchHelperAndCallerKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.HelperAndCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.HelperAndCallerKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperAndCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperAndCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.HelperAndCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -760,10 +755,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -814,22 +809,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchHelperAndCallerKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.HelperAndCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.HelperAndCallerKernel", "LaunchHelperAndCallerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchHelperAndCallerKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperAndCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_HelperAndCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.HelperAndCallerKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -879,31 +871,25 @@ __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,100);
 __syncthreads();
 int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1956327994u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PlainCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerPlainCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainCallerKernel.Resolve();
+public static void WarmupFunctionPointerPlainCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchPlainCallerKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.PlainCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.PlainCallerKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.PlainCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -911,10 +897,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -965,22 +951,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchPlainCallerKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.PlainCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.PlainCallerKernel", "LaunchPlainCallerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchPlainCallerKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.PlainCallerKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -1027,31 +1010,25 @@ __gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(__gsharp_id_1_n,__gsharp_add_i32(__gsharp_id_2_tid,1),true,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(__gsharp_id_1_n,0,false,__gsharp_dsmem);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1322931156u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(__gsharp_id_1_n,0,false,__gsharp_dsmem);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SuspendingPersistKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerSuspendingPersistKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingPersistKernel.Resolve();
+public static void WarmupFunctionPointerSuspendingPersistKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingPersistKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSuspendingPersistKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.SuspendingPersistKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.SuspendingPersistKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingPersistKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingPersistKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.SuspendingPersistKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -1059,10 +1036,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -1113,22 +1090,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchSuspendingPersistKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.SuspendingPersistKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.SuspendingPersistKernel", "LaunchSuspendingPersistKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSuspendingPersistKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingPersistKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_SuspendingPersistKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.SuspendingPersistKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -1175,31 +1149,25 @@ __gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(__gsharp_id_1_n,__gsharp_add_i32(__gsharp_id_2_tid,1),true,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(__gsharp_id_1_n,0,false,__gsharp_dsmem);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 588950664u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(__gsharp_id_1_n,0,false,__gsharp_dsmem);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_PlainPersistKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerPlainPersistKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainPersistKernel.Resolve();
+public static void WarmupFunctionPointerPlainPersistKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainPersistKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchPlainPersistKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.PlainPersistKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.PlainPersistKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainPersistKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainPersistKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.PlainPersistKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -1207,10 +1175,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -1261,22 +1229,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchPlainPersistKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.PlainPersistKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.PlainPersistKernel", "LaunchPlainPersistKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchPlainPersistKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainPersistKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_PlainPersistKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.PlainPersistKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -1312,31 +1277,25 @@ __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistHelper(__gsharp_add_i32(__gsharp_id_1_tid,1),true);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistHelper(0,false);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 166416756u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistHelper(0,false);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_StaticPersistKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerStaticPersistKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_StaticPersistKernel.Resolve();
+public static void WarmupFunctionPointerStaticPersistKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_StaticPersistKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchStaticPersistKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.StaticPersistKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.StaticPersistKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_StaticPersistKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_StaticPersistKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.StaticPersistKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -1344,10 +1303,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -1396,22 +1355,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchStaticPersistKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.StaticPersistKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.StaticPersistKernel", "LaunchStaticPersistKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchStaticPersistKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_StaticPersistKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_StaticPersistKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.StaticPersistKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -1460,31 +1416,25 @@ __gsharp_id_5_outer[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_id_3_tid,100);
 __syncthreads();
 int __gsharp_id_6_h2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(__gsharp_id_2_large,__gsharp_id_1_small,__gsharp_id_3_tid,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_5_outer[__gsharp_id_3_tid],__gsharp_id_6_h2),__gsharp_id_4_h1*0);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_3_tid, 1905345464u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_5_outer[__gsharp_id_3_tid],__gsharp_id_6_h2),__gsharp_id_4_h1*0);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_GrowAfterCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerGrowAfterCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_GrowAfterCallerKernel.Resolve();
+public static void WarmupFunctionPointerGrowAfterCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_GrowAfterCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchGrowAfterCallerKernel(global::System.Int32[] output, global::System.Int32 small, global::System.Int32 large, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.GrowAfterCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.GrowAfterCallerKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_GrowAfterCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_GrowAfterCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.GrowAfterCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -1492,10 +1442,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -1548,22 +1498,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchGrowAfterCallerKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 small, global::System.Int32 large, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.GrowAfterCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.GrowAfterCallerKernel", "LaunchGrowAfterCallerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchGrowAfterCallerKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_GrowAfterCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_GrowAfterCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.GrowAfterCallerKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -1613,31 +1560,25 @@ int __gsharp_id_2_tid = (int)threadIdx.x;
 int* __gsharp_id_3_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel::Slot<0x514817400221aa76ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,100);
 int __gsharp_id_4_r = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(__gsharp_id_1_n,2,__gsharp_dsmem);
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_r);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1075664808u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_r);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RecursiveKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerRecursiveKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_RecursiveKernel.Resolve();
+public static void WarmupFunctionPointerRecursiveKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_RecursiveKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRecursiveKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.RecursiveKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.RecursiveKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_RecursiveKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_RecursiveKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.RecursiveKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -1645,10 +1586,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -1699,22 +1640,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchRecursiveKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.RecursiveKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.RecursiveKernel", "LaunchRecursiveKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRecursiveKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_RecursiveKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_RecursiveKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.RecursiveKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -1779,31 +1717,25 @@ int* __gsharp_id_7_b = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp_
 __gsharp_id_7_b[__gsharp_id_2_tid]=__gsharp_add_i32(1000,__gsharp_id_2_tid);
 __gsharp_id_4_outer=__gsharp_id_7_b[__gsharp_id_2_tid];
 }
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_inner,__gsharp_id_4_outer);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1656761612u)=__gsharp_add_i32(__gsharp_id_3_inner,__gsharp_id_4_outer);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedScopeKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerNestedScopeKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedScopeKernel.Resolve();
+public static void WarmupFunctionPointerNestedScopeKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedScopeKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNestedScopeKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.NestedScopeKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.NestedScopeKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedScopeKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedScopeKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NestedScopeKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -1811,10 +1743,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -1865,22 +1797,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchNestedScopeKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.NestedScopeKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.NestedScopeKernel", "LaunchNestedScopeKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNestedScopeKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedScopeKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedScopeKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NestedScopeKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -1934,31 +1863,25 @@ __syncthreads();
 int __gsharp_id_5_h0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(0,0,__gsharp_id_3_tid,__gsharp_dsmem);
 int __gsharp_id_6_h1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(__gsharp_id_2_large,0,__gsharp_id_3_tid,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_add_i32((__gsharp_id_3_tid<__gsharp_id_1_small?__gsharp_id_4_outer[__gsharp_id_3_tid]:0),__gsharp_id_6_h1),__gsharp_id_5_h0);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_3_tid, 2102761572u)=__gsharp_add_i32(__gsharp_add_i32((__gsharp_id_3_tid<__gsharp_id_1_small?__gsharp_id_4_outer[__gsharp_id_3_tid]:0),__gsharp_id_6_h1),__gsharp_id_5_h0);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ZeroThenGrowKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerZeroThenGrowKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_ZeroThenGrowKernel.Resolve();
+public static void WarmupFunctionPointerZeroThenGrowKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_ZeroThenGrowKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchZeroThenGrowKernel(global::System.Int32[] output, global::System.Int32 small, global::System.Int32 large, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.ZeroThenGrowKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.ZeroThenGrowKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_ZeroThenGrowKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_ZeroThenGrowKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.ZeroThenGrowKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -1966,10 +1889,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -2022,22 +1945,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchZeroThenGrowKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 small, global::System.Int32 large, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.ZeroThenGrowKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.ZeroThenGrowKernel", "LaunchZeroThenGrowKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchZeroThenGrowKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_ZeroThenGrowKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_ZeroThenGrowKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.ZeroThenGrowKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -2089,31 +2009,25 @@ __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,100);
 __syncthreads();
 int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Middle(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 945141536u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MiddleCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerMiddleCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_MiddleCallerKernel.Resolve();
+public static void WarmupFunctionPointerMiddleCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_MiddleCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMiddleCallerKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.MiddleCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.MiddleCallerKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_MiddleCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_MiddleCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.MiddleCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -2121,10 +2035,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -2175,22 +2089,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchMiddleCallerKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.MiddleCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.MiddleCallerKernel", "LaunchMiddleCallerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMiddleCallerKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_MiddleCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_MiddleCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.MiddleCallerKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -2235,31 +2146,25 @@ __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKer
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_1_tid = (int)threadIdx.x;
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper(__gsharp_dsmem);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1670171624u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper(__gsharp_dsmem);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NoParameterCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerNoParameterCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NoParameterCallerKernel.Resolve();
+public static void WarmupFunctionPointerNoParameterCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NoParameterCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNoParameterCallerKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.NoParameterCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.NoParameterCallerKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NoParameterCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NoParameterCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NoParameterCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -2267,10 +2172,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -2319,22 +2224,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchNoParameterCallerKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.NoParameterCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.NoParameterCallerKernel", "LaunchNoParameterCallerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNoParameterCallerKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NoParameterCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NoParameterCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NoParameterCallerKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -2391,31 +2293,25 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemor
 int __gsharp_id_7_plain = __gsharp_id_4_CallPlainHelper(__gsharp_id_2_tid);
 int __gsharp_id_8_noParameter = __gsharp_id_6_callNoParameterHelper();
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_7_plain),__gsharp_id_8_noParameter);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1040047128u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_7_plain),__gsharp_id_8_noParameter);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedFunctionCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerNestedFunctionCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedFunctionCallerKernel.Resolve();
+public static void WarmupFunctionPointerNestedFunctionCallerKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedFunctionCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNestedFunctionCallerKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.NestedFunctionCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.NestedFunctionCallerKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedFunctionCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedFunctionCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NestedFunctionCallerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -2423,10 +2319,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -2477,22 +2373,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchNestedFunctionCallerKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.NestedFunctionCallerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.NestedFunctionCallerKernel", "LaunchNestedFunctionCallerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNestedFunctionCallerKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedFunctionCallerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NestedFunctionCallerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NestedFunctionCallerKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -2543,31 +2436,25 @@ int* __gsharp_id_5_second = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GS
 int* __gsharp_id_6_third = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel::Slot<0x0c3a506c39b2a5dbull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_6_third[__gsharp_id_3_tid]=__gsharp_add_i32(1000,__gsharp_id_3_tid);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_first[__gsharp_id_3_tid];
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_3_tid, 75006812u)=__gsharp_id_4_first[__gsharp_id_3_tid];
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NegativeCountKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerNegativeCountKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NegativeCountKernel.Resolve();
+public static void WarmupFunctionPointerNegativeCountKernel() => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NegativeCountKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNegativeCountKernel(global::System.Int32[] output, global::System.Int32 n, global::System.Int32 negative, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.NegativeCountKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.NegativeCountKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NegativeCountKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NegativeCountKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NegativeCountKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -2575,10 +2462,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -2631,22 +2518,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchNegativeCountKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 n, global::System.Int32 negative, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DeviceDynamicSharedMemoryKernels.NegativeCountKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("DeviceDynamicSharedMemoryKernels.NegativeCountKernel", "LaunchNegativeCountKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNegativeCountKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NegativeCountKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_hfunc_NegativeCountKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "DeviceDynamicSharedMemoryKernels.NegativeCountKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try

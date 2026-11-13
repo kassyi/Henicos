@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// <c>Launch{Kernel}Ptr</c> takes each array as a <c>GSharpArrayProxy</c>: the kernel sees the length the proxy carries,
-/// as the array launcher passes the array's length, and the launcher checks the proxies as it checks arrays (#720).
+/// as the array launcher passes the array's length, and the launcher rejects a proxy that describes no array (#720).
 /// </summary>
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -91,15 +91,10 @@ public sealed class PointerLaunchDifferentialTests
                 _ => new[] { 4, 5, 6 }
             })
             .Out<int>("result", 1, OutputPolicy.Exact),
-        Oracle = static (b, _) =>
-        {
-            // The array launcher passes an empty optional array as null
-            int[]? optional = b.GetNullable<int>("optional");
-            PointerLaunchDifferentialKernels.OptionalLengthKernel(
-                optional is { Length: 0 } ? null : optional,
-                b.Get<int>("result")
-            );
-        },
+        Oracle = static (b, _) => PointerLaunchDifferentialKernels.OptionalLengthKernel(
+            b.GetNullable<int>("optional"),
+            b.Get<int>("result")
+        ),
         Launch = static (b, s) => PointerLaunchDifferentialKernels.LaunchOptionalLengthKernel(
             b.GetNullable<int>("optional"),
             b.Get<int>("result"),
@@ -122,45 +117,61 @@ public sealed class PointerLaunchDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void LaunchPtr_OptionalArrays_NullAndEmptyArraysAreNull() => DifferentialRunner.Run(s_optionalLength);
+    public void LaunchPtr_OptionalArrays_NullAndEmptyArraysStayApart() => DifferentialRunner.Run(s_optionalLength);
 
 #if GSHARP_CUDA
     // The checks run before the launch, so they need no GPU
+    // A proxy without data that claims elements describes no array
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.SadPath)]
-    public void LaunchPtr_NullArray_RejectsNullArray()
+    public void LaunchPtr_NoDataWithLength_RejectsProxy()
     {
-        var error = Assert.Throws<ArgumentNullException>(() =>
-            PointerLaunchDifferentialKernels.LaunchTwoLengthsKernelPtr(default, Proxy(4), Proxy(2)));
-        Assert.Equal("a", error.ParamName);
-    }
+        var noData = new GSharpArrayProxy { Length = 3 };
 
-    // A caller's NullReadsAsEmpty flag does not make a null non-optional array optional
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.SadPath)]
-    public void LaunchPtr_CallerFlags_IgnoresCallerFlags()
-    {
-        var nullWithFlag = new GSharpArrayProxy { Flags = GSharpArrayProxy.NullReadsAsEmpty };
-
-        var error = Assert.Throws<ArgumentNullException>(() =>
-            PointerLaunchDifferentialKernels.LaunchTwoLengthsKernelPtr(Proxy(4), nullWithFlag, Proxy(2)));
-        Assert.Equal("b", error.ParamName);
-    }
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.SadPath)]
-    public void LaunchPtr_EmptyArray_RejectsEmptyArray()
-    {
         var error = Assert.Throws<ArgumentException>(() =>
-            PointerLaunchDifferentialKernels.LaunchTwoLengthsKernelPtr(
-                Proxy(4),
-                new GSharpArrayProxy(GSharpArrayProxy.EmptyArrayData, 0),
-                Proxy(2)
-            ));
+            PointerLaunchDifferentialKernels.LaunchTwoLengthsKernelPtr(Proxy(4), noData, Proxy(2)));
         Assert.Equal("b", error.ParamName);
+        var optional = Assert.Throws<ArgumentException>(() =>
+            PointerLaunchDifferentialKernels.LaunchOptionalLengthKernelPtr(noData, Proxy(1)));
+        Assert.Equal("optional", optional.ParamName);
+    }
+
+    // An empty array is passed as one, also where the parameter is not nullable
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LaunchPtr_EmptyArray_PassesLengthZero()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var a = new GpuBuffer<int>(LongLength);
+        using var lengths = new GpuBuffer<int>(2);
+        a.CopyToDevice(new int[LongLength]);
+
+        PointerLaunchDifferentialKernels.LaunchTwoLengthsKernelPtr(
+            a, new GSharpArrayProxy(GSharpArrayProxy.EmptyArrayData, 0), lengths.ToProxy(), blockDimX: 32);
+        GpuKernelLoader.SynchronizeDevice();
+
+        int[] result = new int[2];
+        lengths.CopyToHost(result);
+        Assert.Equal([LongLength, 0], result);
+    }
+
+    // The typed launcher of an overloaded kernel takes a null buffer for a nullable array and passes null
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LaunchPtr_TypedLauncherNullBuffer_PassesNull()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var result = new GpuBuffer<int>(1);
+
+        PointerLaunchDifferentialKernels.LaunchOverloadedOptionalKernelPtr((GpuBuffer<float>?)null, result);
+        GpuKernelLoader.SynchronizeDevice();
+
+        int[] host = new int[1];
+        result.CopyToHost(host);
+        Assert.Equal([-2], host);
     }
 
     // A negative length set through the field, which the constructor would reject; an optional array is checked too

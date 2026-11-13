@@ -13,6 +13,7 @@ internal static class CpuHostLaunchEmitter
     private const string FunctionHandle = GSharpInternalNames.Launcher.FunctionHandle;
     private const string PinnedHandle = GSharpInternalNames.Launcher.PinnedHandle;
     private const string GridBlockCount = GSharpInternalNames.Launcher.GridBlockCount;
+    private const string ArrayPinningType = HostTypeNames.ArrayPinning;
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName)
@@ -30,7 +31,6 @@ internal static class CpuHostLaunchEmitter
         using (writer.Scope())
         {
             WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
-            WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));
@@ -61,7 +61,11 @@ internal static class CpuHostLaunchEmitter
             {
                 writer.Append(", ");
 
-                if (p.IsArray)
+                if (p is { IsArray: true, IsNullableValue: true })
+                {
+                    writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}>* {p.Identifier}");
+                }
+                else if (p.IsArray)
                 {
                     writer.Append($"global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {p.Identifier}");
                 }
@@ -82,19 +86,19 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine();
     }
 
-    // var __gsharp_dll_path = <the native library of the module for this architecture>;
+    // string __gsharp_dll_path = <the native library of the module for this architecture>;
     private static void WriteDllPath(SourceWriter writer, string moduleName)
     {
         var fileStem = AotModuleNames.GetArtifactFileStem(moduleName);
         writer.AppendLine(
-            $"var {ArchSuffix} = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==" +
+            $"string {ArchSuffix} = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==" +
             $" global::System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
         // [WHY] The name goes into an interpolated string: a quote or backslash is escaped, a brace doubled
-        writer.Append($"var {DllName} = $\"");
+        writer.Append($"string {DllName} = $\"");
         AppendInterpolatedStringText(writer, fileStem);
         writer.AppendLine($"{{{ArchSuffix}}}.dll\";");
         writer.AppendLine(
-            $"var {DllPath} = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, {DllName});");
+            $"string {DllPath} = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, {DllName});");
     }
 
     // <text> as the text of a regular interpolated string: escaped as a string literal, each brace doubled.
@@ -115,8 +119,10 @@ internal static class CpuHostLaunchEmitter
     {
         var exportName = kernel.Host.LaunchExportName;
 
-        writer.AppendLine(
-            $"var {FunctionHandle} = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{KernelHostNames.GetDelegateTypeName(kernel)}>(\"{exportName}\", {DllPath});");
+        var delegateType = KernelHostNames.GetDelegateTypeName(kernel);
+        writer.Append($"{delegateType} {FunctionHandle} = ");
+        writer.Append($"global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{delegateType}>");
+        writer.AppendLine($"(\"{exportName}\", {DllPath});");
         if (!kernel.ErrorSites.IsDefaultOrEmpty)
         {
             writer.AppendLine("if (s_errorSites.Length > 0)");
@@ -195,8 +201,9 @@ internal static class CpuHostLaunchEmitter
         AutoResultEmitter.WriteReturn(writer, kernel);
     }
 
-    // <shadow> __gsharp_native_<ord> = default; var __gsharp_allocated_ptrs_<ord> = new List<IntPtr>();                  (converted struct)
-    // byte[]? __gsharp_shadow_<ord> = null; var __gsharp_allocated_ptrs_<ord> = ...; int __gsharp_size_<ord> = checked(...); (converted array)
+    // Converted struct: <shadow> __gsharp_native_<ord> = default; List<IntPtr> __gsharp_allocated_ptrs_<ord> = new();
+    // Converted array: byte[]? __gsharp_shadow_<ord> = null; List<IntPtr> __gsharp_allocated_ptrs_<ord> = new();
+    //   int __gsharp_size_<ord> = checked(...);
     // byte[]? __gsharp_shared_shadow_<ord> = null;                         (a converted T[] that an earlier holder may share)
     // Returns whether it wrote the declarations of a converted parameter. The size is computed before the try block,
     // when nothing is allocated.
@@ -208,11 +215,11 @@ internal static class CpuHostLaunchEmitter
         {
             case { IsCpuConvertedStruct: true, AotStructPath: { } shadow }:
                 writer.AppendLine($"{shadow} {KernelHostNames.GetLocal(LauncherLocal.Native, shape)} = default;");
-                writer.AppendLine($"var {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)} = new global::System.Collections.Generic.List<global::System.IntPtr>();");
+                WriteAllocatedPointerList(writer, shape);
                 return true;
             case { IsCpuConvertedArray: true, Cpu.ConvertedElementAotStructPath: { } element }:
                 writer.AppendLine($"byte[]? {KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)} = null;");
-                writer.AppendLine($"var {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)} = new global::System.Collections.Generic.List<global::System.IntPtr>();");
+                WriteAllocatedPointerList(writer, shape);
                 writer.AppendLine($"int {KernelHostNames.GetLocal(LauncherLocal.Size, shape)} = checked({shape.LengthExpression} * sizeof({element}));");
                 return true;
             default:
@@ -314,7 +321,7 @@ internal static class CpuHostLaunchEmitter
         }
     }
 
-    // foreach (var __gsharp_handle in __gsharp_allocated_ptrs_<ord>) GCHandle.FromIntPtr(__gsharp_handle).Free();
+    // foreach (IntPtr __gsharp_handle in __gsharp_allocated_ptrs_<ord>) GCHandle.FromIntPtr(__gsharp_handle).Free();
     // if (__gsharp_shadow_<ord> != null) ArrayPool<byte>.Shared.Return(__gsharp_shadow_<ord>);                        (converted array)
     // A shared shadow goes back to the pool from its owner only: ... && __gsharp_shared_shadow_<ord> == null
     private static void WriteConvertedRelease(SourceWriter writer, in ArraySharingPlan sharing, int index)
@@ -335,9 +342,18 @@ internal static class CpuHostLaunchEmitter
         }
     }
 
-    private static void WriteHandleRelease(SourceWriter writer, in KernelParameterShape shape) =>
+    // List<IntPtr> __gsharp_allocated_<ord> = new();
+    private static void WriteAllocatedPointerList(SourceWriter writer, in KernelParameterShape shape) =>
         writer.AppendLine(
-            $"foreach (var {PinnedHandle} in {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)}) global::System.Runtime.InteropServices.GCHandle.FromIntPtr({PinnedHandle}).Free();");
+            $"{HostTypeNames.PointerList} {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)} = new();");
+
+    // foreach (IntPtr <handle> in __gsharp_allocated_<ord>) GCHandle.FromIntPtr(<handle>).Free();
+    private static void WriteHandleRelease(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var pointers = KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape);
+        writer.Append($"foreach ({HostTypeNames.IntPtr} {PinnedHandle} in {pointers}) ");
+        writer.AppendLine($"{HostTypeNames.GCHandle}.FromIntPtr({PinnedHandle}).Free();");
+    }
 
     private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
     {
@@ -346,14 +362,17 @@ internal static class CpuHostLaunchEmitter
         foreach (var shape in kernel.Parameters)
         {
             var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
+            // [WHY] fixed (T* p = <array or span>) gives a null pointer for an empty array, which the device would read
+            // as null; the pinnable reference is null only when there is no array (ArrayPinning)
             if (shape.IsCpuConvertedArray)
             {
-                writer.AppendLine($"fixed (byte* {pinned} = {KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)})");
+                var shadow = KernelHostNames.GetLocal(LauncherLocal.Shadow, shape);
+                writer.AppendLine($"fixed (byte* {pinned} = &{ArrayPinningType}.GetPinnableReference({shadow}))");
                 hasFixed = true;
             }
             else if (shape is { IsArray: true, ElementTypeName: { } elementType })
             {
-                writer.AppendLine($"fixed ({elementType}* {pinned} = {shape.SpanExpression})");
+                writer.AppendLine($"fixed ({elementType}* {pinned} = &{shape.PinnableReferenceExpression})");
                 hasFixed = true;
             }
             else if (shape is { IsByRef: true, IsCpuConvertedStruct: false })
@@ -369,12 +388,34 @@ internal static class CpuHostLaunchEmitter
         {
             using (writer.Scope())
             {
+                WriteNullableProxies(writer, kernel);
                 WriteDelegateInvocation(writer, kernel);
             }
         }
         else
         {
             WriteDelegateInvocation(writer, kernel);
+        }
+    }
+
+    // Nullable<GSharpArrayProxy> __gsharp_nullable_<ord> = <name>.HasValue ? <proxy> : null;   (Memory<T>? and the
+    // like)
+    // [WHY] The native launcher takes System_Nullable<GSharpArray<T>> by address; HasValue is the C# value's own, so a
+    // default Memory<T> passes as a null array that has a value
+    private static void WriteNullableProxies(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (shape is not { IsArray: true, IsNullableValue: true })
+            {
+                continue;
+            }
+
+            var local = KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape);
+            writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}> {local} = ");
+            writer.Append($"{shape.Identifier}.HasValue ? ");
+            WriteArrayProxy(writer, shape);
+            writer.AppendLine(" : null;");
         }
     }
 
@@ -412,16 +453,11 @@ internal static class CpuHostLaunchEmitter
         var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         switch (shape)
         {
-            case { IsArray: true, IsNullableReference: true }:
-                // A null optional array reads as an empty one on the device (GSharpArray::flags, #706)
-                writer.Append(
-                    $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (global::System.IntPtr){pinned}, Length = {shape.LengthExpression}, ");
-                writer.Append(
-                    $"Flags = {shape.Identifier} is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0 }}");
+            case { IsArray: true, IsNullableValue: true }:
+                writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape)}");
                 break;
             case { IsArray: true }:
-                writer.Append(
-                    $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (global::System.IntPtr){pinned}, Length = {shape.LengthExpression} }}");
+                WriteArrayProxy(writer, shape);
                 break;
             case { IsCpuConvertedStruct: true }:
                 writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.Native, shape)}");
@@ -437,5 +473,18 @@ internal static class CpuHostLaunchEmitter
                 writer.Append(shape.Identifier);
                 break;
         }
+    }
+
+    // An argument passed as it is:
+    // new GSharpArrayProxy { Data = (IntPtr)__gsharp_p_<ord>, Length = <length> }
+    // A converted array:
+    // new GSharpArrayProxy { Data = <null test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }
+    // [WHY] The shadow of a null array is an empty rented array, whose pinned address is not null
+    private static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
+        writer.Append($"new {HostTypeNames.ArrayProxy} {{ Data = ");
+        writer.AppendIf(shape.IsCpuConvertedArray, $"{shape.NullTestExpression} ? {HostTypeNames.IntPtr}.Zero : ");
+        writer.Append($"({HostTypeNames.IntPtr}){pinned}, Length = {shape.LengthExpression} }}");
     }
 }

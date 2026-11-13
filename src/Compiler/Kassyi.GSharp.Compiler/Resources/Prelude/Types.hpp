@@ -17,7 +17,8 @@ enum class GSharpErrorCode : int32_t {
     DivideByZero = 7,
     Overflow = 8,
     DataRace = 9,
-    SwitchExpression = 10
+    SwitchExpression = 10,
+    ArgumentNull = 11
 };
 inline void __gsharp_trap(GSharpErrorCode code, const char* message);
 
@@ -32,9 +33,31 @@ inline const char* __gsharp_range_message() {
     return "Index was out of range.";
 }
 
+// The message of a view without an array (CheckedSlice, CheckedCopyTo), as .NET words it
+template <GSharpErrorCode ErrorCode>
+inline const char* __gsharp_view_message() {
+    if (ErrorCode == GSharpErrorCode::InvalidOperation) {
+        return "The underlying array is null.";
+    }
+    if (ErrorCode == GSharpErrorCode::ArgumentNull) {
+        return "Value cannot be null. (Parameter 'destinationArray')";
+    }
+    return "Object reference not set to an instance of an object.";
+}
+
+// text[index] of a constant C# string, written as a UTF-16 literal (u"..."): the code unit C# reads, and
+// IndexOutOfRangeException outside the string. N counts the terminating zero, which C# does not have
+template <int N>
+inline char16_t __gsharp_string_char(const char16_t (&text)[N], int index) {
+    if (static_cast<unsigned int>(index) >= static_cast<unsigned int>(N - 1)) {
+        __gsharp_trap(GSharpErrorCode::IndexOutOfRange, "Index was outside the bounds of the array.");
+        return 0;
+    }
+    return text[index];
+}
+
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
-// exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
-// (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
+// exists, also an empty one (#706). flags is the reserved padding after length (16 bytes), always 0
 template <typename T>
 struct GSharpArray {
     T* data;
@@ -110,6 +133,37 @@ struct GSharpArray {
             __gsharp_trap(GSharpErrorCode::Argument, "Destination is too short.");
         }
     }
+    // Slice and CopyTo of an ArraySegment<T> or ImmutableArray<T> (ArrayViewMethods.GetChecks): a default value has no
+    // array (data is nullptr; an empty one has an array), which C# reports first (IfDefault); CopyTo then reports a
+    // destination without an array (IfDestinationNull, None for a span) before it compares the lengths
+    template <GSharpErrorCode IfDefault>
+    inline GSharpArray<T> CheckedSlice(int start) const {
+        if (data == nullptr) {
+            __gsharp_trap(IfDefault, __gsharp_view_message<IfDefault>());
+            return GSharpArray<T>();
+        }
+        return Slice(start);
+    }
+    template <GSharpErrorCode IfDefault>
+    inline GSharpArray<T> CheckedSlice(int start, int count) const {
+        if (data == nullptr) {
+            __gsharp_trap(IfDefault, __gsharp_view_message<IfDefault>());
+            return GSharpArray<T>();
+        }
+        return Slice(start, count);
+    }
+    template <GSharpErrorCode IfDefault, GSharpErrorCode IfDestinationNull, typename U>
+    inline void CheckedCopyTo(GSharpArray<U> destination) const {
+        if (IfDefault != GSharpErrorCode::None && data == nullptr) {
+            __gsharp_trap(IfDefault, __gsharp_view_message<IfDefault>());
+            return;
+        }
+        if (IfDestinationNull != GSharpErrorCode::None && destination.data == nullptr) {
+            __gsharp_trap(IfDestinationNull, __gsharp_view_message<IfDestinationNull>());
+            return;
+        }
+        CopyTo(destination);
+    }
     inline GSharpArray<T> AsSpan() const { return *this; }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
     inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
@@ -134,6 +188,30 @@ struct GSharpArray {
 // A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
 template <typename T, int N>
 inline GSharpArray<T> __gsharp_stackalloc_span(T (&storage)[N]) { return GSharpArray<T>(storage, N); }
+// The array operand of a System.Array method (Array.Fill, Clear, Reverse): ArgumentNullException for a null array,
+// before any other check of the call, as .NET throws it
+template <typename T>
+inline GSharpArray<T> __gsharp_array_argument(GSharpArray<T> array) {
+    if (array.data == nullptr) {
+        __gsharp_trap(GSharpErrorCode::ArgumentNull, "Value cannot be null. (Parameter 'array')");
+        return GSharpArray<T>();
+    }
+    return array;
+}
+// The source operand of Array.Copy, checked with its destination first: ArgumentNullException for a null source, then
+// for a null destination, before the lengths, as .NET checks them
+template <typename T, typename U>
+inline GSharpArray<T> __gsharp_copy_arguments(GSharpArray<T> source, GSharpArray<U> destination) {
+    if (source.data == nullptr) {
+        __gsharp_trap(GSharpErrorCode::ArgumentNull, "Value cannot be null. (Parameter 'sourceArray')");
+        return GSharpArray<T>();
+    }
+    if (destination.data == nullptr) {
+        __gsharp_trap(GSharpErrorCode::ArgumentNull, "Value cannot be null. (Parameter 'destinationArray')");
+        return GSharpArray<T>();
+    }
+    return source;
+}
 // The storage of a stackalloc outside a declaration, declared before the statement: zeroed where the stackalloc is
 // evaluated (every evaluation, as C# allocates a new block each time), then viewed as a span
 template <typename T, int N>

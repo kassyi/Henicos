@@ -17,10 +17,11 @@ private static byte[]? s_fatbin;
 /// </summary>
 public static byte[] GetFatbin()
 {
-var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
 if (fatbin is not null) return fatbin;
-var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location)
+?? global::System.AppContext.BaseDirectory;
+string fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
 {
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
@@ -81,6 +82,14 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class HoistedNameIdentityKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(228537874u, "HoistedNameIdentityKernels.cs", 19, 9, "BarrierLocalSameNameInitializerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(566747892u, "HoistedNameIdentityKernels.cs", 30, 9, "BarrierLocalSameNameWithKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2075959408u, "HoistedNameIdentityKernels.cs", 41, 9, "BarrierLocalSameNameMemberAccessKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(608623376u, "HoistedNameIdentityKernels.cs", 52, 9, "BarrierLocalSameNameLambdaParameterKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(455800478u, "HoistedNameIdentityKernels.cs", 86, 9, "SiblingBlockSameLabelKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -107,31 +116,25 @@ __syncthreads();
 auto __gsharp_id_3_p = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = 1; __gsharp_tmp.__gsharp_mb_Y = 2; return __gsharp_tmp; }
 ());
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_X,100),__gsharp_id_3_p.__gsharp_mb_X);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 228537874u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_X,100),__gsharp_id_3_p.__gsharp_mb_X);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BarrierLocalSameNameInitializerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerBarrierLocalSameNameInitializerKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameInitializerKernel.Resolve();
+public static void WarmupFunctionPointerBarrierLocalSameNameInitializerKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameInitializerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBarrierLocalSameNameInitializerKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.BarrierLocalSameNameInitializerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.BarrierLocalSameNameInitializerKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameInitializerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameInitializerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameInitializerKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -139,10 +142,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -191,22 +194,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchBarrierLocalSameNameInitializerKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.BarrierLocalSameNameInitializerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.BarrierLocalSameNameInitializerKernel", "LaunchBarrierLocalSameNameInitializerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBarrierLocalSameNameInitializerKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameInitializerKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameInitializerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameInitializerKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -261,31 +261,25 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt __gsharp_tmp = __gsha
 __gsharp_tmp.__gsharp_mb_X = 3;
 return __gsharp_tmp;
 }());
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_X,100),__gsharp_id_4_q.__gsharp_mb_X);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 566747892u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_X,100),__gsharp_id_4_q.__gsharp_mb_X);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BarrierLocalSameNameWithKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerBarrierLocalSameNameWithKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameWithKernel.Resolve();
+public static void WarmupFunctionPointerBarrierLocalSameNameWithKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameWithKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBarrierLocalSameNameWithKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.BarrierLocalSameNameWithKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.BarrierLocalSameNameWithKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameWithKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameWithKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameWithKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -293,10 +287,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -345,22 +339,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchBarrierLocalSameNameWithKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.BarrierLocalSameNameWithKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.BarrierLocalSameNameWithKernel", "LaunchBarrierLocalSameNameWithKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBarrierLocalSameNameWithKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameWithKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameWithKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameWithKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -409,31 +400,25 @@ int __gsharp_id_2_X = __gsharp_id_1_tid;
 __syncthreads();
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt __gsharp_id_3_p = {};
 __gsharp_id_3_p.__gsharp_mb_Y=5;
-__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_X,100),__gsharp_id_3_p.__gsharp_mb_X),__gsharp_id_3_p.__gsharp_mb_Y);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 2075959408u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_X,100),__gsharp_id_3_p.__gsharp_mb_X),__gsharp_id_3_p.__gsharp_mb_Y);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BarrierLocalSameNameMemberAccessKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerBarrierLocalSameNameMemberAccessKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameMemberAccessKernel.Resolve();
+public static void WarmupFunctionPointerBarrierLocalSameNameMemberAccessKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameMemberAccessKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBarrierLocalSameNameMemberAccessKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.BarrierLocalSameNameMemberAccessKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.BarrierLocalSameNameMemberAccessKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameMemberAccessKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameMemberAccessKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameMemberAccessKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -441,10 +426,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -493,22 +478,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchBarrierLocalSameNameMemberAccessKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.BarrierLocalSameNameMemberAccessKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.BarrierLocalSameNameMemberAccessKernel", "LaunchBarrierLocalSameNameMemberAccessKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBarrierLocalSameNameMemberAccessKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameMemberAccessKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameMemberAccessKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameMemberAccessKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -553,31 +535,25 @@ __gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,1);
 {
 __gsharp_id_3_sum=__gsharp_add_i32(__gsharp_id_3_sum,2);
 }
-__gsharp_id_0_output[__gsharp_id_1_t]=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_id_2_i);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_t, 608623376u)=__gsharp_add_i32(__gsharp_id_3_sum,__gsharp_id_2_i);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BarrierLocalSameNameLambdaParameterKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameLambdaParameterKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerBarrierLocalSameNameLambdaParameterKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameLambdaParameterKernel.Resolve();
+public static void WarmupFunctionPointerBarrierLocalSameNameLambdaParameterKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameLambdaParameterKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBarrierLocalSameNameLambdaParameterKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.BarrierLocalSameNameLambdaParameterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.BarrierLocalSameNameLambdaParameterKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameLambdaParameterKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameLambdaParameterKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameLambdaParameterKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -585,10 +561,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -637,22 +613,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchBarrierLocalSameNameLambdaParameterKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.BarrierLocalSameNameLambdaParameterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.BarrierLocalSameNameLambdaParameterKernel", "LaunchBarrierLocalSameNameLambdaParameterKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBarrierLocalSameNameLambdaParameterKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameLambdaParameterKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_BarrierLocalSameNameLambdaParameterKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.BarrierLocalSameNameLambdaParameterKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -703,31 +676,25 @@ goto __gsharp_id_6_done;
 }
 __gsharp_id_2_acc=__gsharp_add_i32(__gsharp_id_2_acc,2000);
 __gsharp_id_6_done:;
-__gsharp_id_0_output[__gsharp_id_1_t]=__gsharp_id_2_acc;
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_t, 455800478u)=__gsharp_id_2_acc;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SiblingBlockSameLabelKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__SiblingBlockSameLabelKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerSiblingBlockSameLabelKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_SiblingBlockSameLabelKernel.Resolve();
+public static void WarmupFunctionPointerSiblingBlockSameLabelKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_SiblingBlockSameLabelKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSiblingBlockSameLabelKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.SiblingBlockSameLabelKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.SiblingBlockSameLabelKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_SiblingBlockSameLabelKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_SiblingBlockSameLabelKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.SiblingBlockSameLabelKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -735,10 +702,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -787,22 +754,19 @@ if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.In
 public static unsafe void LaunchSiblingBlockSameLabelKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(output), output.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(output));
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HoistedNameIdentityKernels.SiblingBlockSameLabelKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HoistedNameIdentityKernels.SiblingBlockSameLabelKernel", "LaunchSiblingBlockSameLabelKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSiblingBlockSameLabelKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_SiblingBlockSameLabelKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.__gsharp_hfunc_SiblingBlockSameLabelKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedNameIdentityKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "HoistedNameIdentityKernels.SiblingBlockSameLabelKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try

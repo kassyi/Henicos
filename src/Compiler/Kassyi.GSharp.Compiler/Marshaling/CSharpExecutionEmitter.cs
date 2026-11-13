@@ -41,14 +41,14 @@ internal static class CSharpExecutionEmitter
         }
     }
 
-    // [var __gsharp_csharp_result = __gsharp_auto_result;]
+    // [<return type>[] __gsharp_csharp_result = __gsharp_auto_result;]
     // <type> __gsharp_csharp_arg_<n> = <parameter>;   (value, in, ref)
     // <type> __gsharp_csharp_arg_<n> = default;       (out)
     // [WHY] The lambda captures only locals of the branch: a captured local of the whole launcher (the auto result)
     // would make C# allocate the closure when the launcher starts, on every path
     private static void WriteCopies(SourceWriter writer, in CSharpExecutionPlan plan)
     {
-        writer.AppendLineIf(plan.ReturnsValue, $"var {Result} = {AutoResult};");
+        writer.AppendLineIf(plan.ReturnsValue, $"{plan.ReturnTypeName}[] {Result} = {AutoResult};");
         foreach (var argument in plan.Arguments)
         {
             if (!IsSpan(argument))
@@ -69,10 +69,11 @@ internal static class CSharpExecutionEmitter
         }
     }
 
-    // fixed (<element>* __gsharp_csharp_pin_<n> = <span>) ... { <element>* __gsharp_csharp_arg_<n> = <pin>;
-    //   int __gsharp_csharp_len_<n> = <span>.Length; ... <run> }
+    // fixed (<element>* __gsharp_csharp_pin_<n> = &ArrayPinning.GetPinnableReference(<span>)) ... {
+    //   <element>* __gsharp_csharp_arg_<n> = <pin>; int __gsharp_csharp_len_<n> = <span>.Length; ... <run> }
     // [WHY] A lambda can capture neither a span nor a fixed local; it captures a copy of the pointer, which stays valid
-    // while the caller waits in the fixed statement for the run to end
+    // while the caller waits in the fixed statement for the run to end. The pinned reference is null only for a span
+    // over no array, so a span over an empty array stays one (fixed (T* p = <span>) would make it default)
     private static void WritePinnedRun(SourceWriter writer, in CSharpExecutionPlan plan)
     {
         var pins = 0;
@@ -80,7 +81,8 @@ internal static class CSharpExecutionEmitter
         {
             if (IsSpan(argument))
             {
-                writer.AppendLine($"fixed ({argument.TypeName}* {argument.Pinned} = {argument.Identifier})");
+                writer.Append($"fixed ({argument.TypeName}* {argument.Pinned} = ");
+                writer.AppendLine($"&{HostTypeNames.ArrayPinning}.GetPinnableReference({argument.Identifier}))");
                 pins++;
             }
         }

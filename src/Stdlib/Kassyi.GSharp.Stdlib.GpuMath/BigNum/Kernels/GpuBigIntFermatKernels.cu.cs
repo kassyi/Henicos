@@ -404,13 +404,16 @@ public static partial class GpuBigIntFermatKernels
     [GpuKernel]
     public static void QuadraticFoldPassApplyKernel(QuadraticFoldBlockedApplyContext ctx)
     {
+        // Checked once here, not at each read in the loop
+        uint[] blockCarries = Gpu.NotNull(ctx.BlockCarries);
+        uint[] result = Gpu.NotNull(ctx.Result);
         Gpu.GridStrideLoop(ctx.NumBlocks, globalBlockIdx =>
         {
-            var carry = ctx.BlockCarries[globalBlockIdx];
+            var carry = blockCarries[globalBlockIdx];
             if (carry > 0)
             {
                 int startIdx = (globalBlockIdx + 1) * ctx.ChunkSize;
-                GpuBigIntNttKernels.AtomicAddWithCarry(ctx.Result, startIdx, carry, ctx.ResultWords);
+                GpuBigIntNttKernels.AtomicAddWithCarry(result, startIdx, carry, ctx.ResultWords);
             }
         });
     }

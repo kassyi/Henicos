@@ -233,6 +233,7 @@ public static partial class GpuBigIntVectorKernels
         SharedMemory<uint> overflow = new SharedMemory<uint>(1);
 
         int count = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
+        uint[] destination = Gpu.NotNull(ctx.Destination);
         if (count == 0)
         {
             for (int offset = 0; offset < ctx.ResultWords; offset += bDim)
@@ -240,7 +241,7 @@ public static partial class GpuBigIntVectorKernels
                 int idx = offset + tid;
                 if (idx < ctx.ResultWords)
                 {
-                    ctx.Destination[idx] = 0u;
+                    destination[idx] = 0u;
                 }
             }
 
@@ -287,7 +288,7 @@ public static partial class GpuBigIntVectorKernels
             {
                 if (idx < ctx.ResultWords)
                 {
-                    ctx.Destination[idx] = magnitude;
+                    destination[idx] = magnitude;
                 }
                 else if (magnitude != 0u)
                 {

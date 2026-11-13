@@ -11,6 +11,12 @@ internal enum LauncherLocal
     /// <summary>The stackalloc'd <c>GSharpArrayProxy</c> pointer local of a parameter, <c>__gsharp_proxy_{ordinal}</c>.</summary>
     Proxy,
 
+    /// <summary>
+    /// The stackalloc'd <c>System_Nullable&lt;GSharpArray&lt;T&gt;&gt;</c> of a nullable array-like parameter that
+    /// holds its <see cref="Proxy"/>, <c>__gsharp_nullable_{ordinal}</c>.
+    /// </summary>
+    NullableProxy,
+
     /// <summary>The native shadow struct or span local of a parameter, <c>__gsharp_native_{ordinal}</c>.</summary>
     Native,
 
@@ -66,4 +72,16 @@ internal enum LauncherLocal
 
     /// <summary>The length of a span argument of the C# execution, <c>__gsharp_csharp_len_{ordinal}</c>.</summary>
     CSharpLength,
+
+    /// <summary>
+    /// The local of an external module launcher that holds a kernel argument, whose address the launch passes,
+    /// <c>__gsharp_karg_{ordinal}</c>.
+    /// </summary>
+    KernelArgument,
+
+    /// <summary>
+    /// The local of an external module launcher that holds an <c>out</c> value until the write-back,
+    /// <c>__gsharp_out_{ordinal}</c>.
+    /// </summary>
+    OutValue,
 }

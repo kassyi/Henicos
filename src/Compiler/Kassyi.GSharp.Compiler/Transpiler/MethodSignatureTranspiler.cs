@@ -183,7 +183,7 @@ internal static class MethodSignatureTranspiler
         }
     }
 
-    internal static (bool IsRefPointer, bool IsPointerType, bool HasRestrict) WriteParameterDeclaration(
+    internal static void WriteParameterDeclaration(
         ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol, ref TranspileContext context)
     {
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
@@ -200,13 +200,7 @@ internal static class MethodSignatureTranspiler
             context.Emitter.Writer.Append("const ");
         }
 
-        if (isKernel && typeSymbol.IsNullableArrayLike())
-        {
-            var unwrapped = typeSymbol.UnwrapNullableArrayLike() ?? typeSymbol;
-            return context.Emitter.Dialect.AppendParameter(ref context, p, unwrapped, parameterSymbol);
-        }
-
-        return context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol, parameterSymbol);
+        context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol, parameterSymbol);
     }
 
     /// <param name="parameters">The parameters to write.</param>
@@ -254,33 +248,18 @@ internal static class MethodSignatureTranspiler
 
         var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
 
-        var (_, isPointerType, hasRestrict) =
-            WriteParameterDeclaration(p, typeSymbol, paramSymbol, ref context);
-
-        if (!isDevice && isPointerType && !hasRestrict)
-        {
-            context.Emitter.Writer.Append(" __restrict__");
-        }
+        // No __restrict__ on a pointer parameter: C# lets two pointer arguments address the same memory, and the
+        // kernel then reads through one what it wrote through the other (#979)
+        WriteParameterDeclaration(p, typeSymbol, paramSymbol, ref context);
 
         context.Emitter.Writer.Append(' ');
-        var isKernel = !isDevice && paramSymbol?.ContainingSymbol is IMethodSymbol method &&
-                       method.HasAttribute(KnownAttributes.GpuKernel);
-        if (isKernel && typeSymbol.IsNullableArrayLike())
+        if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
         {
-            context.Emitter.Writer.Append(GSharpInternalNames.Kernel.RawArgumentPrefix);
-            context.Emitter.Writer.AppendCppName(
-                CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
+            context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.CopiedParameterPrefix);
         }
-        else
-        {
-            if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
-            {
-                context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.CopiedParameterPrefix);
-            }
 
-            context.Emitter.Writer.AppendCppName(
-                CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
-        }
+        context.Emitter.Writer.AppendCppName(
+            CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
     }
 
     private static bool Contains(IReadOnlyCollection<string> names, string name)

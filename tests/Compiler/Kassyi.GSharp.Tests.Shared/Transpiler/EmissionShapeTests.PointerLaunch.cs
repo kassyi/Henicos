@@ -8,8 +8,8 @@ public partial class EmissionShapeTests
 {
     private const string ArrayProxyType = "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy";
 
-    // The plan: arrays and spans become proxies (optional or not), a ref parameter stays an address, a by-value struct
-    // its shadow struct and a scalar its value
+    // The plan: arrays and spans become proxies (nullable or not; only a Nullable<array-like> becomes a proxy?), a ref
+    // parameter stays an address, a by-value struct its shadow struct and a scalar its value
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void PointerLaunchPlan_ClassifiesEveryKindOfParameter()
@@ -29,7 +29,7 @@ public partial class EmissionShapeTests
         Assert.Equal(
             [
                 PointerArgumentKind.Array,
-                PointerArgumentKind.OptionalArray,
+                PointerArgumentKind.Array,
                 PointerArgumentKind.Array,
                 PointerArgumentKind.Reference,
                 PointerArgumentKind.ShadowStruct,
@@ -56,46 +56,40 @@ public partial class EmissionShapeTests
             Assert.Contains($" + 1))[0] = {name}.Length;", launcher, StringComparison.Ordinal);
         }
 
-        // The launcher decides the flags: NullReadsAsEmpty for the null optional array only
-        Assert.Contains(
-            " + 1))[1] = extra.Data == global::System.IntPtr.Zero ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;",
-            launcher,
-            StringComparison.Ordinal
-        );
+        // The reserved word after the length is 0 for every array; the caller's Flags never reach the device
+        foreach (var ordinal in (int[])[0, 1, 2])
+        {
+            Assert.Contains($"((int*)(__gsharp_proxy_{ordinal} + 1))[1] = 0;", launcher, StringComparison.Ordinal);
+        }
+
         Assert.DoesNotContain(".Flags", launcher, StringComparison.Ordinal);
         Assert.DoesNotContain("Length is unknown", launcher, StringComparison.Ordinal);
     }
 
-    // The checks of the array launcher, on the proxy, before the launch: a negative length for every array, null and
-    // empty for a non-optional one, and an empty optional one passed as null
+    // The checks of a proxy, before the launch: one with a negative length, or with no data and a length, describes no
+    // array; a null or empty proxy is passed as it is, optional or not, as a C# call passes a null or empty array
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void PointerLauncher_ChecksProxiesAsTheArrayLauncherChecksArrays()
+    public void PointerLauncher_RejectsOnlyProxiesThatDescribeNoArray()
     {
         var launcher = PointerLauncher(Generate("PointerLaunchShapeKernels", "Cuda"), "LaunchEveryKindKernelPtr");
-        var launch = launcher.IndexOf("CudaContextScope()", StringComparison.Ordinal);
+        var launch = launcher.IndexOf("CudaContextScope __gsharp", StringComparison.Ordinal);
 
-        foreach (var name in (string[])["values", "words"])
+        foreach (var name in (string[])["values", "extra", "words"])
         {
             AssertCheckBeforeLaunch(launcher, launch,
                 $"if ({name}.Length < 0){{",
-                $"throw new global::System.ArgumentOutOfRangeException(nameof({name}), {name}.Length, \"The array length must not be negative.\");",
+                $"throw new global::System.ArgumentOutOfRangeException(\"{name}\", {name}.Length, " +
+                "\"The array length must not be negative.\");",
                 "}",
-                $"if ({name}.Data == global::System.IntPtr.Zero){{",
-                $"throw new global::System.ArgumentNullException(nameof({name}));",
-                "}",
-                $"if ({name}.Length == 0){{",
-                "throw new global::System.ArgumentException(\"Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.\", nameof(" + name + "));");
+                $"if ({name}.Data == global::System.IntPtr.Zero && {name}.Length != 0){{",
+                "throw new global::System.ArgumentException(" +
+                $"\"A null array has no elements, so its length must be 0.\", \"{name}\");",
+                "}");
         }
 
-        AssertCheckBeforeLaunch(launcher, launch,
-            "if (extra.Length < 0){",
-            "throw new global::System.ArgumentOutOfRangeException(nameof(extra), extra.Length, \"The array length must not be negative.\");",
-            "}",
-            "if (extra.Data == global::System.IntPtr.Zero || extra.Length == 0){",
-            "extra = default;",
-            "}");
-        Assert.DoesNotContain("nameof(extra))", launcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("ArgumentNullException", launcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("= default;", launcher, StringComparison.Ordinal);
         Assert.DoesNotContain("total.Length", launcher, StringComparison.Ordinal);
     }
 

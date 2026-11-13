@@ -37,12 +37,14 @@ internal static class AotModuleNames
     public static string GetModuleContextName(string moduleName) => GSharpNameEncoding.GetModuleContextName(moduleName);
 
     /// <summary>
-    /// Returns <paramref name="name"/> with every character that cannot be part of a C# identifier replaced by
-    /// <c>_</c>, for an identifier that a fixed prefix starts (so a first character that only a part may be, such as a
-    /// digit, is kept); the input itself when it has no such character.
+    /// The static field of a class that holds the bytes of the external module <paramref name="moduleName"/>
+    /// (<c>[CudaImport]</c>, YAML <c>moduleName</c>): <c>__gsharp_module_</c> and the module name escaped by
+    /// <see cref="GSharpNameEncoding.EscapeName"/>, which is injective, so <c>a.gfatbin</c> and <c>a_gfatbin</c> get
+    /// fields of their own. Both generators name the field this way: the methods of one module in one class share one
+    /// field, which a YAML binding of the class declares when it binds that module.
     /// </summary>
-    public static string ToIdentifierPart(string name) =>
-        ReplaceWithUnderscore(name, SyntaxFacts.IsIdentifierPartCharacter);
+    public static string GetModuleFieldName(string moduleName) =>
+        GSharpInternalNames.Launcher.ModuleFieldPrefix + GSharpNameEncoding.EscapeName(moduleName);
 
     // <name> with each character that keeps rejects replaced by '_'; the input itself when keeps accepts them all
     private static string ReplaceWithUnderscore(string name, Func<char, bool> keeps)

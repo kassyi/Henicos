@@ -17,10 +17,11 @@ private static byte[]? s_fatbin;
 /// </summary>
 public static byte[] GetFatbin()
 {
-var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
 if (fatbin is not null) return fatbin;
-var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location)
+?? global::System.AppContext.BaseDirectory;
+string fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
 {
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
@@ -200,6 +201,31 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class StackLinqSumDifferentialKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1576878719u, "StackLinqSumDifferentialKernels.cs", 55, 22, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1980104752u, "StackLinqSumDifferentialKernels.cs", 61, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1037500494u, "StackLinqSumDifferentialKernels.cs", 62, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(896941564u, "StackLinqSumDifferentialKernels.cs", 63, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2074061638u, "StackLinqSumDifferentialKernels.cs", 64, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1623649016u, "StackLinqSumDifferentialKernels.cs", 65, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1534428860u, "StackLinqSumDifferentialKernels.cs", 65, 50, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(240324742u, "StackLinqSumDifferentialKernels.cs", 66, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1170886551u, "StackLinqSumDifferentialKernels.cs", 66, 35, "FloatSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1379112652u, "StackLinqSumDifferentialKernels.cs", 67, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(88280963u, "StackLinqSumDifferentialKernels.cs", 67, 45, "FloatSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(628238559u, "StackLinqSumDifferentialKernels.cs", 74, 22, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(852901670u, "StackLinqSumDifferentialKernels.cs", 80, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1384585328u, "StackLinqSumDifferentialKernels.cs", 81, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(533107718u, "StackLinqSumDifferentialKernels.cs", 82, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1001814716u, "StackLinqSumDifferentialKernels.cs", 83, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1285884470u, "StackLinqSumDifferentialKernels.cs", 84, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(888229108u, "StackLinqSumDifferentialKernels.cs", 84, 50, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(63396192u, "StackLinqSumDifferentialKernels.cs", 85, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(235858114u, "StackLinqSumDifferentialKernels.cs", 85, 36, "DoubleSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(59508374u, "StackLinqSumDifferentialKernels.cs", 86, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1386245048u, "StackLinqSumDifferentialKernels.cs", 86, 46, "DoubleSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -208,12 +234,12 @@ public static partial class AotContexts
 public const string FloatSumMatrixKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__FloatSumMatrixKernel(GSharpArray<float> __gsharp_id_0_data, GSharpArray<float> __gsharp_id_1_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_mul_i32(__gsharp_id_2_t,7)>=__gsharp_id_1_r.length)
+if(__gsharp_mul_i32(__gsharp_id_2_t,7)>=__gsharp_array_ref(__gsharp_id_1_r, 1576878719u).length)
 {
 return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_t,7);
-__gsharp_id_1_r[__gsharp_id_3_o+0]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o+0, 1980104752u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -225,7 +251,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return (float)__gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 1037500494u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -240,7 +266,7 @@ return __gsharp_id_4_x*1.0f;
 }
 return (float)__gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,2)]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,2), 896941564u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -256,7 +282,7 @@ __gsharp_fusion_res += __gsharp_val_1;
 }
 return (float)__gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,3)]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,3), 2074061638u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -274,9 +300,9 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return (float)__gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,4)]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,4), 1623649016u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_stage_0_n = __gsharp_id_0_data.length;
+int __gsharp_stage_0_n = __gsharp_array_ref(__gsharp_id_0_data, 1534428860u).length;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -288,38 +314,26 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return (float)__gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceFloatSum(__gsharp_id_0_data);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,6)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceFloatSumTransitive(__gsharp_id_0_data);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,5), 240324742u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceFloatSum(__gsharp_array_ref(__gsharp_id_0_data, 1170886551u));
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,6), 1379112652u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceFloatSumTransitive(__gsharp_array_ref(__gsharp_id_0_data, 88280963u));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FloatSumMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__FloatSumMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerFloatSumMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_FloatSumMatrixKernel.Resolve();
+public static void WarmupFunctionPointerFloatSumMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_FloatSumMatrixKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchFloatSumMatrixKernel(global::System.Single[] data, global::System.Single[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (data is null){
-throw new global::System.ArgumentNullException(nameof(data));
-}
-if (data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(data));
-}
-if (r is null){
-throw new global::System.ArgumentNullException(nameof(r));
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqSumDifferentialKernels.FloatSumMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqSumDifferentialKernels.FloatSumMatrixKernel", "it reaches a float or double StackLinq Sum, which only the generated code sums in order");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_FloatSumMatrixKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_FloatSumMatrixKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqSumDifferentialKernels.FloatSumMatrixKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -328,10 +342,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: data
-int __gsharp_size_0 = checked(data.Length * sizeof(global::System.Single));
+int __gsharp_size_0 = checked((data?.Length ?? 0) * sizeof(global::System.Single));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = data.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(data) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (data?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -345,10 +359,10 @@ __gsharp_proxy_0[0] = __gsharp_d_0;
 }
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal array: r
-int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Single));
+int __gsharp_size_1 = checked((r?.Length ?? 0) * sizeof(global::System.Single));
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+__gsharp_proxy_1[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(r) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_1 + 1))[0] = (r?.Length ?? 0);
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 if (__gsharp_size_1 > 0)
 {
@@ -414,31 +428,25 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 public static unsafe void LaunchFloatSumMatrixKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(data), data.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
 }
-if (data.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(data));
-}
-if (data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(data));
+if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
 }
 if (r.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("r", r.Length, "The array length must not be negative.");
 }
-if (r.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(r));
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqSumDifferentialKernels.FloatSumMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqSumDifferentialKernels.FloatSumMatrixKernel", "LaunchFloatSumMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFloatSumMatrixKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_FloatSumMatrixKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_FloatSumMatrixKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqSumDifferentialKernels.FloatSumMatrixKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -476,12 +484,12 @@ finally
 public const string DoubleSumMatrixKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DoubleSumMatrixKernel(GSharpArray<double> __gsharp_id_0_data, GSharpArray<double> __gsharp_id_1_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_mul_i32(__gsharp_id_2_t,7)>=__gsharp_id_1_r.length)
+if(__gsharp_mul_i32(__gsharp_id_2_t,7)>=__gsharp_array_ref(__gsharp_id_1_r, 628238559u).length)
 {
 return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_t,7);
-__gsharp_id_1_r[__gsharp_id_3_o+0]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o+0, 852901670u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -493,7 +501,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 1384585328u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -508,7 +516,7 @@ return __gsharp_id_4_x*1.0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,2)]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,2), 533107718u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -524,7 +532,7 @@ __gsharp_fusion_res += __gsharp_val_1;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,3)]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,3), 1001814716u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -542,9 +550,9 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,4)]=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,4), 1285884470u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_stage_0_n = __gsharp_id_0_data.length;
+int __gsharp_stage_0_n = __gsharp_array_ref(__gsharp_id_0_data, 888229108u).length;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -556,38 +564,26 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceDoubleSum(__gsharp_id_0_data);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,6)]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceDoubleSumTransitive(__gsharp_id_0_data);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,5), 63396192u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceDoubleSum(__gsharp_array_ref(__gsharp_id_0_data, 235858114u));
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,6), 59508374u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DeviceDoubleSumTransitive(__gsharp_array_ref(__gsharp_id_0_data, 1386245048u));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_DoubleSumMatrixKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__StackLinqSumDifferentialKernels__DoubleSumMatrixKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerDoubleSumMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_DoubleSumMatrixKernel.Resolve();
+public static void WarmupFunctionPointerDoubleSumMatrixKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_DoubleSumMatrixKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchDoubleSumMatrixKernel(global::System.Double[] data, global::System.Double[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (data is null){
-throw new global::System.ArgumentNullException(nameof(data));
-}
-if (data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(data));
-}
-if (r is null){
-throw new global::System.ArgumentNullException(nameof(r));
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqSumDifferentialKernels.DoubleSumMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqSumDifferentialKernels.DoubleSumMatrixKernel", "it reaches a float or double StackLinq Sum, which only the generated code sums in order");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_DoubleSumMatrixKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_DoubleSumMatrixKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqSumDifferentialKernels.DoubleSumMatrixKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -596,10 +592,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: data
-int __gsharp_size_0 = checked(data.Length * sizeof(global::System.Double));
+int __gsharp_size_0 = checked((data?.Length ?? 0) * sizeof(global::System.Double));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = data.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(data) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (data?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -613,10 +609,10 @@ __gsharp_proxy_0[0] = __gsharp_d_0;
 }
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal array: r
-int __gsharp_size_1 = checked(r.Length * sizeof(global::System.Double));
+int __gsharp_size_1 = checked((r?.Length ?? 0) * sizeof(global::System.Double));
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_1 + 1))[0] = r.Length;
+__gsharp_proxy_1[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(r) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_1 + 1))[0] = (r?.Length ?? 0);
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 if (__gsharp_size_1 > 0)
 {
@@ -682,31 +678,25 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 public static unsafe void LaunchDoubleSumMatrixKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(data), data.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
 }
-if (data.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(data));
-}
-if (data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(data));
+if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
 }
 if (r.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(r), r.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("r", r.Length, "The array length must not be negative.");
 }
-if (r.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(r));
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(r));
+if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqSumDifferentialKernels.DoubleSumMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqSumDifferentialKernels.DoubleSumMatrixKernel", "LaunchDoubleSumMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchDoubleSumMatrixKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_DoubleSumMatrixKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.__gsharp_hfunc_DoubleSumMatrixKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.StackLinqSumDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "StackLinqSumDifferentialKernels.DoubleSumMatrixKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try

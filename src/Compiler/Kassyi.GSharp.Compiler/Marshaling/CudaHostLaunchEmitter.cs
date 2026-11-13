@@ -5,6 +5,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits the CUDA host launch members of a kernel wrapper class and the per-assembly module context.</summary>
 internal static class CudaHostLaunchEmitter
 {
+
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName,
         bool isCheckedBuild = false)
@@ -30,7 +31,6 @@ internal static class CudaHostLaunchEmitter
             {
                 WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
                 WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
-                WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             }
             else
             {
@@ -42,7 +42,7 @@ internal static class CudaHostLaunchEmitter
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr));
 
             writer.AppendLine(
-                $"using (var {GSharpInternalNames.Launcher.CudaContextScope} = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
+                $"using ({HostTypeNames.CudaContextScope} {GSharpInternalNames.Launcher.CudaContextScope} = new())");
             using (writer.Scope())
             {
                 WriteCudaKernelCompilationCall(writer, kernel);
@@ -83,12 +83,8 @@ internal static class CudaHostLaunchEmitter
             {
                 if (p.TryAppendTypedBuffer(writer))
                 {
-                    var isOptional = p.HasExplicitDefault;
-                    writer.Append(isOptional ? "? " : " ").Append(p.Identifier);
-                    if (isOptional)
-                    {
-                        writer.Append(" = null");
-                    }
+                    writer.Append(TakesNullBuffer(p) ? "? " : " ").Append(p.Identifier);
+                    writer.AppendIf(p.HasExplicitDefault, " = null");
                 }
                 else
                 {
@@ -111,8 +107,11 @@ internal static class CudaHostLaunchEmitter
                 if (p.BufferElementTypeName is not null)
                 {
                     // An array carries the buffer's length (#720); a ref / out parameter is the address alone
-                    writer.Append((PointerLaunchPlan.IsProxy(PointerLaunchPlan.Classify(p)), p.HasExplicitDefault) switch
+                    var kind = PointerLaunchPlan.Classify(p);
+                    writer.Append((PointerLaunchPlan.IsProxy(kind), TakesNullBuffer(p)) switch
                     {
+                        // A GSharpArrayProxy? of a Memory<T>? has no value for a null buffer
+                        (true, true) when kind == PointerArgumentKind.NullableArray => "?.ToProxy()",
                         (true, true) => "?.ToProxy() ?? default",
                         (true, false) => ".ToProxy()",
                         (false, true) => "?.DevicePointer ?? global::System.IntPtr.Zero",
@@ -129,6 +128,12 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine(";");
         writer.AppendLine();
     }
+
+    // A buffer parameter that accepts null: one with a default value, or a nullable array (T[]?, Memory<T>?), which a
+    // null buffer passes as null
+    private static bool TakesNullBuffer(in KernelParameterShape parameter) =>
+        parameter.HasExplicitDefault ||
+        parameter.IsOptional && PointerLaunchPlan.IsProxy(PointerLaunchPlan.Classify(parameter));
 
     // private static readonly CudaKernelFunction <field> = new CudaKernelFunction("<kernel>", <context>.GetFatbin);
     private static void WriteFunctionField(SourceWriter writer, in KernelEmission kernel, string moduleName)
@@ -213,10 +218,11 @@ internal static class CudaHostLaunchEmitter
             /// </summary>
             public static byte[] GetFatbin()
             {
-            var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+            byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
             if (fatbin is not null) return fatbin;
-            var baseDir = global::System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-            var fatbinPath = global::System.IO.Path.Combine(baseDir, {{fatbinLiteral}});
+            string baseDir = global::System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location)
+            ?? global::System.AppContext.BaseDirectory;
+            string fatbinPath = global::System.IO.Path.Combine(baseDir, {{fatbinLiteral}});
             if (!global::System.IO.File.Exists(fatbinPath))
             {
             throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");

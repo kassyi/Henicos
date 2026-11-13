@@ -61,20 +61,6 @@ public partial class MethodAttributesTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Execute_EmptyArray_ThrowsArgumentException()
-    {
-        int[] input = [];
-        int[] result = [];
-
-        // Empty array arguments are rejected instead of silently skipping the launch
-        var exception = Assert.Throws<ArgumentException>(() =>
-            MethodAttributesKernels.LaunchMethodAttributesKernel(input, result, blockDimX: 1));
-
-        Assert.Equal("input", exception.ParamName);
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Execute_SingleElement_DoublesInputValue()
     {
         int[] input = [42];

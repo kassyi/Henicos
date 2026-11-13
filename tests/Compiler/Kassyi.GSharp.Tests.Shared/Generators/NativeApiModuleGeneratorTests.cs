@@ -106,22 +106,103 @@ public class NativeApiModuleGeneratorTests
         Assert.True(problems.Length == 0, string.Join(Environment.NewLine, problems));
         var source = Assert.Single(output.SyntaxTrees, t => t.FilePath.EndsWith("StagedKernels.NativeApi.g.cs"))
             .ToString();
-        Assert.Contains("var h_result = default(double);", source);
-        Assert.Contains("d_result.CopyToHost(new global::System.Span<double>(ref h_result));", source);
-        Assert.Contains("result = h_result;", source);
-        Assert.DoesNotContain("result = default;", source);
-        Assert.Contains("d_total.CopyToHost(new global::System.Span<int>(ref total));", source);
-        Assert.DoesNotContain("d_seed.CopyToHost", source);
-        Assert.DoesNotContain("d_limit.CopyToHost", source);
+        Assert.Contains("double __gsharp_out_1 = default;", source);
+        Assert.Contains("__gsharp_d_1.CopyToHost(new global::System.Span<double>(ref __gsharp_out_1));", source);
+        Assert.Contains("result = __gsharp_out_1;", source);
+        Assert.DoesNotContain("\nresult = default;", source);
+        Assert.Contains("__gsharp_d_0.CopyToHost(new global::System.Span<int>(ref total));", source);
+        Assert.DoesNotContain("__gsharp_d_2.CopyToHost", source);
+        Assert.DoesNotContain("__gsharp_d_3.CopyToHost", source);
         Assert.Contains(
-            "d_grid.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<float>(grid));",
+            "__gsharp_d_5.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<float>(grid));",
             source);
         Assert.Contains(
-            "d_cube?.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<int>(cube));",
+            "__gsharp_d_6?.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<int>(cube));",
             source);
-        Assert.Contains("throw new global::System.ArgumentNullException(nameof(grid));", source);
-        Assert.DoesNotContain("nameof(cube)", source);
-        Assert.DoesNotContain("nameof(values)", source);
+        Assert.Contains("throw new global::System.ArgumentNullException(\"grid\");", source);
+        Assert.DoesNotContain("ArgumentNullException(\"cube\")", source);
+        Assert.DoesNotContain("ArgumentNullException(\"values\")", source);
+    }
+
+    // The launcher that YAML bindings share with [CudaImport] declares no local that a parameter name can collide with,
+    // and names the runtime types from global::, so types of the binding's namespace with the same names change
+    // nothing (#1131)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ModuleDefinition_ParameterNamesAndTypesOfTheNamespace_Compile()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: CollidingKernels
+            moduleName: ./native/colliding.fatbin
+            methods:
+              - name: Run
+                parameters:
+                  - { name: a, type: "float[]" }
+                  - { name: d_a, type: "float[]" }
+                  - { name: p_a, type: int }
+                  - { name: kernel, type: int }
+                  - { name: scope, type: int }
+                  - { name: kernelParams, type: int }
+                  - { name: result, type: out int }
+                  - { name: h_result, type: int }
+                  - { name: gridDimX, type: uint }
+            """;
+        var userTypes = CSharpSyntaxTree.ParseText(
+            """
+            namespace MyApp.Native;
+            public struct GpuKernelLoader;
+            public struct GpuBuffer<T>;
+            public struct CudaException;
+            public struct CudaDriverApi;
+            public class Lazy<T>;
+            public class AppContext;
+            """,
+            new CSharpParseOptions(LanguageVersion.Latest));
+        var compilation = CreateCompilation().AddSyntaxTrees(userTypes);
+        var driver = CreateDriver(Api("colliding.yml", Yaml));
+
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
+
+        Assert.Empty(generatorDiagnostics);
+        var errors = output.GetDiagnostics()
+            .Where(d => d.Severity == DiagnosticSeverity.Error)
+            .Select(d => d.ToString())
+            .ToArray();
+        Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
+    }
+
+    // A YAML method named nameof, in a namespace with a nameof segment, still compiles: the null check names the
+    // parameter with a string literal, not nameof(<parameter>); a class named var still compiles: every launcher local
+    // has an explicit type, which 'var' would otherwise resolve to the class
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("My.nameof", "Kernels", "nameof")]
+    [InlineData("My.Native", "var", "Run")]
+    public void ModuleDefinition_ContextualKeywordNames_Compile(string namespaceName, string className,
+        string methodName)
+    {
+        var yaml = $$"""
+            namespace: {{namespaceName}}
+            className: {{className}}
+            moduleName: ./native/keyword.fatbin
+            methods:
+              - name: {{methodName}}
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: result, type: out int }
+                  - { name: grid, type: "float[,]?" }
+                  - { name: scale, type: float }
+                  - { name: gridDimX, type: uint }
+            """;
+        var compilation = CreateCompilation();
+        var driver = CreateDriver(Api("keyword.yml", yaml));
+
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
+
+        Assert.Empty(generatorDiagnostics);
+        var errors = GetErrors(output);
+        Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
     }
 
     // A class named in YAML cannot be told from a struct without the compilation; the launcher takes the address of
@@ -179,7 +260,7 @@ public class NativeApiModuleGeneratorTests
         var source = FindSource(result, "StreamKernels");
         Assert.Contains($"{DriverApi}.cuStreamSynchronize(stream)", source);
         Assert.DoesNotContain("cuCtxSynchronize", source);
-        Assert.Contains(", stream, kernelParams,", source);
+        Assert.Contains(", stream, __gsharp_kernel_params,", source);
     }
 
     [Fact]
@@ -252,10 +333,11 @@ public class NativeApiModuleGeneratorTests
         Assert.Empty(result.Diagnostics);
         var source = FindSource(result, "SharedKernels");
         const string Prepare = "global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(" +
-            "kernel, sharedMemBytes, \"SharedKernels.LaunchShared\");";
-        var loadIndex = source.IndexOf($"var kernel = {KernelLoader}.LoadAotKernel(", StringComparison.Ordinal);
+            "__gsharp_hfunc, sharedMemBytes, \"SharedKernels.LaunchShared\");";
+        var loadIndex = source.IndexOf(
+            $"global::System.IntPtr __gsharp_hfunc = {KernelLoader}.LoadAotKernel(", StringComparison.Ordinal);
         var prepareIndex = source.IndexOf(Prepare, StringComparison.Ordinal);
-        var allocationIndex = source.IndexOf($"new {GpuBuffer}<float>(", StringComparison.Ordinal);
+        var allocationIndex = source.IndexOf($"using {GpuBuffer}<float> __gsharp_d_0 = new(", StringComparison.Ordinal);
 
         Assert.NotEqual(-1, loadIndex);
         Assert.True(loadIndex < prepareIndex, "Prepare must follow the function lookup");
@@ -281,7 +363,7 @@ public class NativeApiModuleGeneratorTests
         Assert.Empty(result.Diagnostics);
         var source = FindSource(result, "NoSharedKernels");
         Assert.DoesNotContain("DynamicSharedMemoryOptIn", source);
-        Assert.Contains("0, global::System.IntPtr.Zero, kernelParams, global::System.IntPtr.Zero));", source);
+        Assert.Contains("0, global::System.IntPtr.Zero, __gsharp_kernel_params, global::System.IntPtr.Zero));", source);
     }
 
     // The module launcher checks its dimensions against the limits of every GPU (#799) before the context, the
@@ -310,7 +392,8 @@ public class NativeApiModuleGeneratorTests
         const string Check = "global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(" +
             "gridDimX, 1, 1, blockDimX, 1, blockDimZ, \"GridKernels.LaunchGrid\");";
         var checkIndex = source.IndexOf(Check, StringComparison.Ordinal);
-        var scopeIndex = source.IndexOf($"using var scope = new {KernelLoader}.CudaContextScope();",
+        var scopeIndex = source.IndexOf(
+            $"using {KernelLoader}.CudaContextScope __gsharp_cuda_context_scope = new();",
             StringComparison.Ordinal);
 
         Assert.NotEqual(-1, checkIndex);

@@ -35,25 +35,23 @@ public class ObjectLifecycleTests
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Execute_LifecycleUpdateWithEmptyArray_ThrowsArgumentException()
+    public void Execute_LifecycleUpdateWithEmptyArray_RunsWithNoElement()
     {
-        // Empty array arguments are rejected instead of silently skipping the launch
+        // An empty array argument is passed as one, as a C# call passes it
         LifecycleObjectState[] emptyStates = [];
-        var ex = Assert.Throws<ArgumentException>(() =>
-            ObjectLifecycleKernels.LaunchKernel_LifecycleUpdate(emptyStates, 0, 2, blockDimX: 1));
-        Assert.Equal("states", ex.ParamName);
+        ObjectLifecycleKernels.LaunchKernel_LifecycleUpdate(emptyStates, 0, 2, blockDimX: 1);
+        Assert.Empty(emptyStates);
     }
 
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Execute_FactoryInitializationWithEmptyArray_ThrowsArgumentException()
+    public void Execute_FactoryInitializationWithEmptyArray_RunsWithNoElement()
     {
         int[] inputs = [];
         LifecycleObjectState[] outputs = [];
-        // Empty array arguments are rejected instead of silently skipping the launch
-        var ex = Assert.Throws<ArgumentException>(() =>
-            ObjectLifecycleKernels.LaunchKernel_FactoryInitialization(inputs, outputs, 0, blockDimX: 1));
-        Assert.Equal("inputValues", ex.ParamName);
+        // An empty array argument is passed as one, as a C# call passes it
+        ObjectLifecycleKernels.LaunchKernel_FactoryInitialization(inputs, outputs, 0, blockDimX: 1);
+        Assert.Empty(outputs);
     }
 
     [Fact]

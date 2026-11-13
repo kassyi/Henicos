@@ -28,6 +28,21 @@ public class GSharpArrayProxyTests
         Assert.Equal(0, proxy.Flags);
     }
 
+    // A Memory<T>? kernel argument goes to the device as System_Nullable<GSharpArray<T>> (bool HasValue, then the array
+    // at byte 8, 24 bytes): the launchers pass a Nullable<GSharpArrayProxy> as it is, so its layout must be that one
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public unsafe void NullableProxy_HasTheLayoutOfTheDeviceNullable()
+    {
+        GSharpArrayProxy? value = new GSharpArrayProxy(new IntPtr(0x1000), 3);
+        byte* bytes = (byte*)&value;
+
+        Assert.Equal(24, sizeof(GSharpArrayProxy?));
+        Assert.Equal(1, bytes[0]);
+        Assert.Equal(new IntPtr(0x1000), *(IntPtr*)(bytes + 8));
+        Assert.Equal(3, *(int*)(bytes + 16));
+    }
+
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Constructor_ANullArrayOfNoElementsIsTheDefault()
