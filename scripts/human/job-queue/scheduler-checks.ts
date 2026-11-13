@@ -493,6 +493,25 @@ export function checkRunHistory(assert: AssertModule): void {
   }
 }
 
+/** start <id>: granted at once over the slots and the memory pool, never as a GPU turn or before its predecessor. */
+export function checkStartNow(assert: AssertModule): void {
+  const s = new Scheduler<SchedulerJob>(2, 0, "hrrn", 1000);
+  const a = Object.assign(job(1, 2, 1), { memoryMb: 800 });
+  const b = Object.assign(job(2, 1, 2), { memoryMb: 800 });
+  assert.deepStrictEqual(s.enqueue(a), [a]);
+  assert.deepStrictEqual(s.enqueue(b), [], "no free slot");
+  b.startNow = true;
+  assert.deepStrictEqual(s.grant(), [b], "started by hand: granted over the slots and the memory pool");
+  assert.strictEqual(s.used, 3);
+  assert.strictEqual(s.memoryUsed, 1600);
+  const turn = Object.assign(job(3, 1, 3), { gpuTurn: true, startNow: true });
+  const holder = job(4, 1, 4, true);
+  s.enqueue(holder);
+  assert.deepStrictEqual(s.enqueue(turn), [], "a GPU turn waits for the GPU even when started by hand");
+  const blocked = Object.assign(job(5, 1, 5), { after: 99, startNow: true });
+  assert.deepStrictEqual(s.enqueue(blocked), [], "and so does a job whose predecessor has not ended");
+}
+
 export const SchedulerChecks: Record<string, (assert: AssertModule) => void> = {
   checkBasics,
   checkBackfill,
@@ -502,5 +521,6 @@ export const SchedulerChecks: Record<string, (assert: AssertModule) => void> = {
   checkDependencies,
   checkGpuTurns,
   checkMemory,
+  checkStartNow,
   checkRunHistory,
 };

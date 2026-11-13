@@ -12,8 +12,10 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// <summary>
 /// What a statement evaluates before its split points, as a list of tokens in the order the lowered code runs them:
 /// <c>spill(&lt;source&gt;)</c> (an operand evaluated into a temporary), <c>split(&lt;source&gt;)</c> (a call that
-/// splits) and <c>cond{&lt;branch&gt;|&lt;branch&gt;}</c> (a conditional expression written as an <c>if</c>). Read
-/// from the output of the syntax-based passes and from the split plan of the IR, so that the two can be compared.
+/// splits), <c>check(&lt;source&gt;)</c> (a location evaluated for its checks only, which the syntax-based passes
+/// never write) and <c>cond{&lt;branch&gt;|&lt;branch&gt;}</c> (a conditional expression written as an <c>if</c>).
+/// Read from the output of the syntax-based passes and from the split plan of the IR, so that the two can be
+/// compared. The store that completes a compound assignment evaluates nothing new and has no token.
 /// </summary>
 internal static class IrSpillTrace
 {
@@ -37,10 +39,16 @@ internal static class IrSpillTrace
         var tokens = new List<Token>();
         foreach (var step in steps)
         {
+            if (step is IrSpillCompoundStore)
+            {
+                continue;
+            }
+
             tokens.Add(step switch
             {
                 IrSpillValue => Leaf("spill", step.Node.Source.Span, text),
                 IrSpillSplit => Leaf("split", step.Node.Source.Span, text),
+                IrSpillCheck => Leaf("check", step.Node.Source.Span, text),
                 IrSpillConditional conditional => Conditional(
                     conditional.Branches.Select(branch => Of(branch, text)).ToList(), step.Node.Source.Span),
                 _ => throw new InvalidOperationException("Unknown step " + step.GetType().Name)
@@ -54,7 +62,7 @@ internal static class IrSpillTrace
     /// The tokens of the plan as the syntax-based passes decide it: without the spills they do not make (an earlier
     /// operand, a target part, a compound read, a spill before a split inside a conditional) and with every
     /// conditional written as an <c>if</c> before the rest of its statement or branch, except <c>??</c>, which they do
-    /// not lower.
+    /// not lower. They make no check either.
     /// </summary>
     public static List<Token> AsSyntaxPassesDo(ImmutableArray<IrSpillStep> steps, SourceText text)
     {

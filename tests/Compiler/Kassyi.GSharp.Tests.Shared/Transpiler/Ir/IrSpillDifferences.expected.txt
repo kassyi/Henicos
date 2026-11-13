@@ -1,4 +1,8 @@
 #927 a ?? with a split on its right is written as an if
+  IrSpillPlannerCases.cs Cases.CoalesceRight: data[t] = cached[t] ?? Warp.ShuffleSync(0xffffffffu, data[t], 0);
+    ir:     cond{spill(data[t]) split(Warp.ShuffleSync(0xffffffffu, data[t], 0))}
+    syntax: spill(data[t]) split(Warp.ShuffleSync(0xffffffffu, data[t], 0))
+#927 a ?? with a split on its right is written as an if
   WarpShuffleInUnsplitContextKernels.cu.cs WarpShuffleInUnsplitContextKernels.CoalesceKernel: data[tid] = cached ?? Warp.ShuffleSync(0xFFFFFFFFu, data[tid], 0);
     ir:     cond{spill(data[tid]) split(Warp.ShuffleSync(0xFFFFFFFFu, data[tid], 0))}
     syntax: spill(data[tid]) split(Warp.ShuffleSync(0xFFFFFFFFu, data[tid], 0))
@@ -6,6 +10,10 @@
   ExtensionCallDiagnostics.cs ExtensionCallKernels.SuspendingExtensionKernel: data[ThreadIndex.X] = data[ThreadIndex.X].AfterBarrier();
     ir:     spill(data[ThreadIndex.X]) split(data[ThreadIndex.X].AfterBarrier())
     syntax: split(data[ThreadIndex.X].AfterBarrier())
+#927 the receiver of an extension call that splits
+  IrSpillPlannerCases.cs Cases.ExtensionReceiverOfASplit: data[0] = (x - 1).AfterBarrier();
+    ir:     spill(x - 1) split((x - 1).AfterBarrier())
+    syntax: split((x - 1).AfterBarrier())
 #927 the receiver of an extension call that splits
   RecursiveExtensionBarrierKernels.cu.cs RecursiveExtensionBarrierKernels.DirectRec: (x - 1).DirectRec();
     ir:     spill(x - 1) split((x - 1).DirectRec())
@@ -22,13 +30,153 @@
   IrSpillPlannerCases.cs Cases.ArgumentLeftOfAConditionalSplit: result[0] = SuspendWith(a[0], c ? Suspend() : 0);
     ir:     spill(a[0]) cond{split(Suspend())|} split(SuspendWith(a[0], c ? Suspend() : 0))
     syntax: cond{split(Suspend())|} spill(a[0]) split(SuspendWith(a[0], c ? Suspend() : 0))
-#991 a part of a target location that the split may change
+#991 a conditional is written as an if before the operands to its left
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.OperandOrderKernel: output[o + 6] = SyncSum(Bump(e, l), flag ? SyncThen(e[l]) : -1);
+    ir:     spill(Bump(e, l)) cond{spill(e[l]) split(SyncThen(e[l]))|} split(SyncSum(Bump(e, l), flag ? SyncThen(e[l]) : -1))
+    syntax: cond{spill(e[l]) split(SyncThen(e[l]))|} spill(Bump(e, l)) split(SyncSum(Bump(e, l), flag ? SyncThen(e[l]) : -1))
+#991 a location C# checks before the split
+  CrossBarrierFlowKernels.cu.cs CrossBarrierFlowKernels.ShuffleInValueKernel: span[0] = Warp.ShuffleDownSync(0xFFFFFFFFu, span[1], 1u);
+    ir:     check(span[0]) spill(span[1]) split(Warp.ShuffleDownSync(0xFFFFFFFFu, span[1], 1u))
+    syntax: spill(span[1]) split(Warp.ShuffleDownSync(0xFFFFFFFFu, span[1], 1u))
+#991 a location C# checks before the split
+  CrossBarrierRefStructParameterKernels.cu.cs CrossBarrierRefStructParameterKernels.WriteElementByConditionalSuspendingCall: s[0] = c ? 1 : Broadcast(99);
+    ir:     check(s[0]) cond{|split(Broadcast(99))}
+    syntax: cond{|split(Broadcast(99))}
+#991 a location C# checks before the split
+  DeviceFunctionBarrierEdgeCaseKernels.cu.cs DeviceFunctionBarrierEdgeCaseKernels.RefElementArgumentKernel: IncrementAcrossBarrier(ref data[cursor++], published);
+    ir:     spill(cursor++) check(data[cursor++]) split(IncrementAcrossBarrier(ref data[cursor++], published))
+    syntax: spill(cursor++) split(IncrementAcrossBarrier(ref data[cursor++], published))
+#991 a location C# checks before the split
+  IrSpillPlannerCases.cs Cases.RefElementOfASplit: SuspendRef(ref a[i], 1);
+    ir:     check(a[i]) split(SuspendRef(ref a[i], 1))
+    syntax: split(SuspendRef(ref a[i], 1))
+#991 a location C# checks before the split
+  IrSpillPlannerCases.cs Cases.SpanElementTarget: s[i] = Suspend();
+    ir:     check(s[i]) split(Suspend())
+    syntax: split(Suspend())
+#991 a location C# checks before the split
+  IrSpillPlannerCases.cs Cases.StructMethodOfElement: result[0] = cells[i].Add(Suspend());
+    ir:     check(cells[i]) split(Suspend())
+    syntax: split(Suspend())
+#991 a location C# checks before the split
+  MemoryUniformityKernels.cu.cs MemoryUniformityKernels.RefWriteThenSyncKernel: IncrementAndSync(ref buffer[0]);
+    ir:     check(buffer[0]) split(IncrementAndSync(ref buffer[0]))
+    syntax: split(IncrementAndSync(ref buffer[0]))
+#991 a location C# checks before the split
+  MemoryUniformityKernels.cu.cs MemoryUniformityKernels.SyncThenRefWriteKernel: SyncAndIncrement(ref buffer[0]);
+    ir:     check(buffer[0]) split(SyncAndIncrement(ref buffer[0]))
+    syntax: split(SyncAndIncrement(ref buffer[0]))
+#991 a location C# checks before the split
+  NonRecursiveDeviceFunctionBarrierKernels.cu.cs NonRecursiveDeviceFunctionBarrierKernels.ReverseWarp: data[lane] = Warp.ShuffleSync(0xFFFFFFFFu, data[lane], 31 - lane);
+    ir:     check(data[lane]) spill(data[lane]) spill(31 - lane) split(Warp.ShuffleSync(0xFFFFFFFFu, data[lane], 31 - lane))
+    syntax: spill(data[lane]) spill(31 - lane) split(Warp.ShuffleSync(0xFFFFFFFFu, data[lane], 31 - lane))
+#991 a location C# checks before the split
+  RefArgumentOrderKernels.cu.cs RefArgumentOrderKernels.ArrayFieldReplacedByLaterArgumentKernel: AddAfterBarrier(ref holder.Data[ThreadIndex.X], (holder.Data = other).Length);
+    ir:     spill(holder.Data) spill(ThreadIndex.X) check(holder.Data[ThreadIndex.X]) spill((holder.Data = other).Length) split(AddAfterBarrier(ref holder.Data[ThreadIndex.X], (holder.Data = other).Length))
+    syntax: spill(holder.Data) spill(ThreadIndex.X) spill((holder.Data = other).Length) split(AddAfterBarrier(ref holder.Data[ThreadIndex.X], (holder.Data = other).Length))
+#991 a location C# checks before the split
+  RefArgumentOrderKernels.cu.cs RefArgumentOrderKernels.ArrayReplacedByLaterArgumentKernel: AddAfterBarrier(ref d[ThreadIndex.X], (d = other).Length);
+    ir:     spill(d) spill(ThreadIndex.X) check(d[ThreadIndex.X]) spill((d = other).Length) split(AddAfterBarrier(ref d[ThreadIndex.X], (d = other).Length))
+    syntax: spill(d) spill(ThreadIndex.X) spill((d = other).Length) split(AddAfterBarrier(ref d[ThreadIndex.X], (d = other).Length))
+#991 a location C# checks before the split
+  RefArgumentOrderKernels.cu.cs RefArgumentOrderKernels.FieldOfElementIndexWrittenLaterKernel: AddAfterBarrier(ref cells[j].F, j++);
+    ir:     spill(j) check(cells[j]) spill(j++) split(AddAfterBarrier(ref cells[j].F, j++))
+    syntax: spill(j) spill(j++) split(AddAfterBarrier(ref cells[j].F, j++))
+#991 a location C# checks before the split
+  RefArgumentOrderKernels.cu.cs RefArgumentOrderKernels.InParameterOfElementKernel: WriteElementThenReadIn(data[ThreadIndex.X], data, result);
+    ir:     spill(ThreadIndex.X) check(data[ThreadIndex.X]) split(WriteElementThenReadIn(data[ThreadIndex.X], data, result))
+    syntax: spill(ThreadIndex.X) split(WriteElementThenReadIn(data[ThreadIndex.X], data, result))
+#991 a location C# checks before the split
+  RefArgumentOrderKernels.cu.cs RefArgumentOrderKernels.IndexFromMemoryChangedByCalleeKernel: AddAfterChangingIndex(ref cells[idx[ThreadIndex.X]].F, idx);
+    ir:     spill(idx[ThreadIndex.X]) check(cells[idx[ThreadIndex.X]]) split(AddAfterChangingIndex(ref cells[idx[ThreadIndex.X]].F, idx))
+    syntax: spill(idx[ThreadIndex.X]) split(AddAfterChangingIndex(ref cells[idx[ThreadIndex.X]].F, idx))
+#991 a location C# checks before the split
+  RefArgumentOrderKernels.cu.cs RefArgumentOrderKernels.IndexPassedByRefEarlierKernel: IncrementFirstThenAdd(ref i, ref data[i]);
+    ir:     spill(i) check(data[i]) split(IncrementFirstThenAdd(ref i, ref data[i]))
+    syntax: spill(i) split(IncrementFirstThenAdd(ref i, ref data[i]))
+#991 a location C# checks before the split
+  RefArgumentOrderKernels.cu.cs RefArgumentOrderKernels.IndexPassedByRefLaterKernel: IncrementSecondThenAdd(ref data[i], ref i);
+    ir:     spill(i) check(data[i]) split(IncrementSecondThenAdd(ref data[i], ref i))
+    syntax: spill(i) split(IncrementSecondThenAdd(ref data[i], ref i))
+#991 a location C# checks before the split
+  RefArgumentOrderKernels.cu.cs RefArgumentOrderKernels.NestedCallWritesIndexKernel: AddAfterBarrier(ref data[i], WaitAndReturnInt(i++));
+    ir:     spill(i) check(data[i]) spill(i++) split(WaitAndReturnInt(i++)) split(AddAfterBarrier(ref data[i], WaitAndReturnInt(i++)))
+    syntax: spill(i) spill(i++) split(WaitAndReturnInt(i++)) split(AddAfterBarrier(ref data[i], WaitAndReturnInt(i++)))
+#991 a location C# checks before the split
+  RefArgumentOrderKernels.cu.cs RefArgumentOrderKernels.ValueReadThroughRefParameterKernel: PassOn(ref data[ThreadIndex.X], data, result);
+    ir:     spill(ThreadIndex.X) check(data[ThreadIndex.X]) split(PassOn(ref data[ThreadIndex.X], data, result))
+    syntax: spill(ThreadIndex.X) split(PassOn(ref data[ThreadIndex.X], data, result))
+#991 a location C# checks before the split
+  RefParameterAliasKernels.cu.cs RefParameterAliasKernels.RefGlobalBarrierNeighborWriteKernel: ReadRefAcrossBarrierNeighborWrite(ref buf[tid], buf, o, tid);
+    ir:     check(buf[tid]) split(ReadRefAcrossBarrierNeighborWrite(ref buf[tid], buf, o, tid))
+    syntax: split(ReadRefAcrossBarrierNeighborWrite(ref buf[tid], buf, o, tid))
+#991 a location C# checks before the split
+  RefParameterAliasKernels.cu.cs RefParameterAliasKernels.RefReadOnlySharedBarrierNeighborWriteKernel: ReadSharedRefReadOnlyAcrossBarrierNeighborWrite(in shared[tid], shared, o, tid);
+    ir:     check(shared[tid]) split(ReadSharedRefReadOnlyAcrossBarrierNeighborWrite(in shared[tid], shared, o, tid))
+    syntax: split(ReadSharedRefReadOnlyAcrossBarrierNeighborWrite(in shared[tid], shared, o, tid))
+#991 a location C# checks before the split
+  RefParameterAliasKernels.cu.cs RefParameterAliasKernels.RefSharedBarrierNeighborWriteKernel: ReadSharedRefAcrossBarrierNeighborWrite(ref shared[tid], shared, o, tid);
+    ir:     check(shared[tid]) split(ReadSharedRefAcrossBarrierNeighborWrite(ref shared[tid], shared, o, tid))
+    syntax: split(ReadSharedRefAcrossBarrierNeighborWrite(ref shared[tid], shared, o, tid))
+#991 a location C# checks before the split
+  RefReturnMemberArgumentKernels.cu.cs RefReturnMemberArgumentKernels.RefReturnMemberArgumentKernel: AddAfterBarrier(ref cells[j].F, 1);
+    ir:     check(cells[j]) split(AddAfterBarrier(ref cells[j].F, 1))
+    syntax: split(AddAfterBarrier(ref cells[j].F, 1))
+#991 a location C# checks before the split
+  RefReturnMemberArgumentKernels.cu.cs RefReturnMemberArgumentKernels.RefReturnMemberArgumentKernel: ReadInAfterBarrier(buffer[j], result);
+    ir:     check(buffer[j]) split(ReadInAfterBarrier(buffer[j], result))
+    syntax: split(ReadInAfterBarrier(buffer[j], result))
+#991 a location C# checks before the split
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.FieldOfElementBeforeDivisionKernel: cells[i].F = SyncThenDivide(counts, zero);
+    ir:     check(cells[i]) split(SyncThenDivide(counts, zero))
+    syntax: split(SyncThenDivide(counts, zero))
+#991 a location C# checks before the split
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstKernel: cells[i].F = SyncThenCount(counts);
+    ir:     check(cells[i]) split(SyncThenCount(counts))
+    syntax: split(SyncThenCount(counts))
+#991 a location C# checks before the split
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstKernel: StoreValue(ref data[i], SyncThenCount(counts));
+    ir:     check(data[i]) split(SyncThenCount(counts))
+    syntax: split(SyncThenCount(counts))
+#991 a location C# checks before the split
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstKernel: s[i] = SyncThenCount(counts);
+    ir:     check(s[i]) split(SyncThenCount(counts))
+    syntax: split(SyncThenCount(counts))
+#991 a location C# checks before the split
+  WarpShuffleArgumentOrderKernels.cu.cs WarpShuffleArgumentOrderKernels.RefElementIndexWrittenLaterKernel: AddAfterBarrier(ref data[i], i++);
+    ir:     spill(i) check(data[i]) spill(i++) split(AddAfterBarrier(ref data[i], i++))
+    syntax: spill(i) spill(i++) split(AddAfterBarrier(ref data[i], i++))
+#991 a location C# checks before the split + #991 a part of a target location that the split may change
+  IrSpillPlannerCases.cs Cases.CheckReadsTheIndexOnce: cells[b[0]].F = Suspend();
+    ir:     spill(b[0]) check(cells[b[0]]) split(Suspend())
+    syntax: split(Suspend())
+#991 a location C# checks before the split + #991 a part of a target location that the split may change
   IrSpillPlannerCases.cs Cases.RefElementArgumentOfACallThatDoesNotSplit: result[0] = Store(ref a[b[i]], Suspend());
-    ir:     spill(b[i]) split(Suspend())
+    ir:     spill(b[i]) check(a[b[i]]) split(Suspend())
+    syntax: split(Suspend())
+#991 a location C# checks before the split + #991 a part of a target location that the split may change
+  IrSpillPlannerCases.cs Cases.StructElementFieldTarget: cells[b[i]].F = Suspend();
+    ir:     spill(b[i]) check(cells[b[i]]) split(Suspend())
+    syntax: split(Suspend())
+#991 a location C# checks before the split + #991 a part of a target location that the split may change
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.OperandOrderKernel: cells[NextIndex(counter, l)].F = SyncThen(l + 1);
+    ir:     spill(NextIndex(counter, l)) check(cells[NextIndex(counter, l)]) spill(l + 1) split(SyncThen(l + 1))
+    syntax: spill(l + 1) split(SyncThen(l + 1))
+#991 a part of a target location that the split may change
+  IrSpillPlannerCases.cs Cases.IndexArrayRead: r[idx[0]] = Suspend();
+    ir:     spill(idx[0]) split(Suspend())
     syntax: split(Suspend())
 #991 a part of a target location that the split may change
-  IrSpillPlannerCases.cs Cases.StructElementFieldTarget: cells[b[i]].F = Suspend();
-    ir:     spill(b[i]) split(Suspend())
+  IrSpillPlannerCases.cs Cases.IndexCheckedArithmetic: r[checked(t + u)] = Suspend();
+    ir:     spill(t + u) split(Suspend())
+    syntax: split(Suspend())
+#991 a part of a target location that the split may change
+  IrSpillPlannerCases.cs Cases.IndexNullableConversion: r[(int)n] = Suspend();
+    ir:     spill((int)n) split(Suspend())
+    syntax: split(Suspend())
+#991 a part of a target location that the split may change
+  IrSpillPlannerCases.cs Cases.IndexUnboxing: r[(int)o] = Suspend();
+    ir:     spill((int)o) split(Suspend())
     syntax: split(Suspend())
 #991 a part of a target location that the split may change
   IrSpillPlannerCases.cs Cases.TargetIndexThatCanThrow: r[t / u] = Suspend();
@@ -46,6 +194,22 @@
   IrSpillPlannerCases.cs Cases.EarlierOperandBeforeAnUnconditionalSplit: result[0] = Triple(a[0], Warp.ShuffleSync(0xffffffffu, x, 0), c ? Suspend() : 0);
     ir:     spill(a[0]) split(Warp.ShuffleSync(0xffffffffu, x, 0)) cond{split(Suspend())|}
     syntax: cond{split(Suspend())|} split(Warp.ShuffleSync(0xffffffffu, x, 0))
+#991 an earlier operand of an operation that does not split
+  IrSpillPlannerCases.cs Cases.UserDefinedConversionBeforeASplit: result[0] = Take(a[0], Suspend());
+    ir:     spill(a[0]) split(Suspend())
+    syntax: split(Suspend())
+#991 an earlier operand of an operation that does not split
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.OperandOrderKernel: output[o + 3] = Triple(Add3(d, l), Double(d, l), Warp.ShuffleSync(Full, d[l], l));
+    ir:     spill(Add3(d, l)) spill(Double(d, l)) spill(d[l]) split(Warp.ShuffleSync(Full, d[l], l))
+    syntax: spill(d[l]) split(Warp.ShuffleSync(Full, d[l], l))
+#991 an earlier operand of an operation that does not split + #991 the read of a compound assignment target
+  IrSpillPlannerCases.cs Cases.CompoundThenReadSameElement: r[l] = Triple(a[l] += Warp.ShuffleSync(0xffffffffu, x, 0), a[l], Warp.ShuffleSync(0xffffffffu, y, 0));
+    ir:     spill(a[l]) split(Warp.ShuffleSync(0xffffffffu, x, 0)) spill(a[l] += Warp.ShuffleSync(0xffffffffu, x, 0)) spill(a[l]) split(Warp.ShuffleSync(0xffffffffu, y, 0))
+    syntax: split(Warp.ShuffleSync(0xffffffffu, x, 0)) split(Warp.ShuffleSync(0xffffffffu, y, 0))
+#991 an earlier operand of an operation that does not split + #991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: output[o + 2] = Triple(b[l] += Warp.ShuffleSync(Full, x, l), b[l], Warp.ShuffleSync(Full, y, l));
+    ir:     spill(b[l]) split(Warp.ShuffleSync(Full, x, l)) spill(b[l] += Warp.ShuffleSync(Full, x, l)) spill(b[l]) split(Warp.ShuffleSync(Full, y, l))
+    syntax: split(Warp.ShuffleSync(Full, x, l)) split(Warp.ShuffleSync(Full, y, l))
 #991 an operand before a split inside ?: / && / || is evaluated before it
   IrSpillPlannerCases.cs Cases.LeftOperandOfAConditionalSplit: result[0] = a[0] + (c ? Suspend() : 0);
     ir:     spill(a[0]) cond{split(Suspend())|}
@@ -55,6 +219,58 @@
     ir:     spill(a[l]) spill(Bump(a, l)) split(Warp.ShuffleSync(0xffffffffu, Bump(a, l), 0))
     syntax: spill(Bump(a, l)) split(Warp.ShuffleSync(0xffffffffu, Bump(a, l), 0))
 #991 the read of a compound assignment target
+  IrSpillPlannerCases.cs Cases.CompoundFieldOfElement: cells[i].F += Suspend();
+    ir:     spill(cells[i].F) split(Suspend())
+    syntax: split(Suspend())
+#991 the read of a compound assignment target
   IrSpillPlannerCases.cs Cases.CompoundLocalTarget: x += Warp.ShuffleSync(0xffffffffu, Inc(ref x), 0);
     ir:     spill(x) spill(Inc(ref x)) split(Warp.ShuffleSync(0xffffffffu, Inc(ref x), 0))
     syntax: spill(Inc(ref x)) split(Warp.ShuffleSync(0xffffffffu, Inc(ref x), 0))
+#991 the read of a compound assignment target
+  IrSpillPlannerCases.cs Cases.NestedCompound: a[l] += b[l] += Warp.ShuffleSync(0xffffffffu, x, 0);
+    ir:     spill(a[l]) spill(b[l]) split(Warp.ShuffleSync(0xffffffffu, x, 0))
+    syntax: split(Warp.ShuffleSync(0xffffffffu, x, 0))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: a[l] += Warp.ShuffleSync(Full, Bump(a, l), l);
+    ir:     spill(a[l]) spill(Bump(a, l)) split(Warp.ShuffleSync(Full, Bump(a, l), l))
+    syntax: spill(Bump(a, l)) split(Warp.ShuffleSync(Full, Bump(a, l), l))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: both &= SyncThenBool(SetToBool(ref both, true));
+    ir:     spill(both) spill(SetToBool(ref both, true)) split(SyncThenBool(SetToBool(ref both, true)))
+    syntax: spill(SetToBool(ref both, true)) split(SyncThenBool(SetToBool(ref both, true)))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: c[l] += d[l] += Warp.ShuffleSync(Full, BumpBoth(c, d, l), l);
+    ir:     spill(c[l]) spill(d[l]) spill(BumpBoth(c, d, l)) split(Warp.ShuffleSync(Full, BumpBoth(c, d, l), l))
+    syntax: spill(BumpBoth(c, d, l)) split(Warp.ShuffleSync(Full, BumpBoth(c, d, l), l))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: difference -= SyncThen(SetTo(ref difference, 5));
+    ir:     spill(difference) spill(SetTo(ref difference, 5)) split(SyncThen(SetTo(ref difference, 5)))
+    syntax: spill(SetTo(ref difference, 5)) split(SyncThen(SetTo(ref difference, 5)))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: i32 += SyncThen(SetTo(ref i32, 1000));
+    ir:     spill(i32) spill(SetTo(ref i32, 1000)) split(SyncThen(SetTo(ref i32, 1000)))
+    syntax: spill(SetTo(ref i32, 1000)) split(SyncThen(SetTo(ref i32, 1000)))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: i64 += SyncThenLong(SetToLong(ref i64, 1L << 40));
+    ir:     spill(i64) spill(SetToLong(ref i64, 1L << 40)) split(SyncThenLong(SetToLong(ref i64, 1L << 40)))
+    syntax: spill(SetToLong(ref i64, 1L << 40)) split(SyncThenLong(SetToLong(ref i64, 1L << 40)))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: local += Warp.ShuffleSync(Full, SetTo(ref local, 50), l);
+    ir:     spill(local) spill(SetTo(ref local, 50)) split(Warp.ShuffleSync(Full, SetTo(ref local, 50), l))
+    syntax: spill(SetTo(ref local, 50)) split(Warp.ShuffleSync(Full, SetTo(ref local, 50), l))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: narrow += (byte)SyncThen(SetToByte(ref narrow, 3));
+    ir:     spill(narrow) spill(SetToByte(ref narrow, 3)) split(SyncThen(SetToByte(ref narrow, 3)))
+    syntax: spill(SetToByte(ref narrow, 3)) split(SyncThen(SetToByte(ref narrow, 3)))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: remainder %= SyncThenFloat(SetToFloat(ref remainder, 1.25f));
+    ir:     spill(remainder) spill(SetToFloat(ref remainder, 1.25f)) split(SyncThenFloat(SetToFloat(ref remainder, 1.25f)))
+    syntax: spill(SetToFloat(ref remainder, 1.25f)) split(SyncThenFloat(SetToFloat(ref remainder, 1.25f)))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: shifted <<= SyncThen(SetTo(ref shifted, 3));
+    ir:     spill(shifted) spill(SetTo(ref shifted, 3)) split(SyncThen(SetTo(ref shifted, 3)))
+    syntax: spill(SetTo(ref shifted, 3)) split(SyncThen(SetTo(ref shifted, 3)))
+#991 the read of a compound assignment target
+  SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: unsignedShifted >>>= SyncThen(SetTo(ref unsignedShifted, 64));
+    ir:     spill(unsignedShifted) spill(SetTo(ref unsignedShifted, 64)) split(SyncThen(SetTo(ref unsignedShifted, 64)))
+    syntax: spill(SetTo(ref unsignedShifted, 64)) split(SyncThen(SetTo(ref unsignedShifted, 64)))

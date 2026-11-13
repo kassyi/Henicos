@@ -1,4 +1,4 @@
-// The client modes other than run: status, cancel, move and set-weight, wait and stop, and how they print a job.
+// The client modes other than run: status, cancel, move and set-weight, start, wait and stop, and how they print a job.
 
 import { CancelledExitCode, LostExitCode, UsageExitCode } from "./constants.ts";
 import { OlderSchedulerHint, SchedulerLauncher, delay, exchange, request, type Endpoint } from "./client-connect.ts";
@@ -143,6 +143,26 @@ export async function place(
   process.stdout.write(
     position > 0 ? `#${String(reply.id)} is now at position ${position}\n` : `#${String(reply.id)} was granted\n`,
   );
+}
+
+/** start: grants a waiting job at once, over the slots and the memory pool; prints the refusal otherwise (exit 1). */
+export async function startNow(port: number, id: number): Promise<void> {
+  const reply = await request(port, { type: "start", id });
+  if (reply === null) {
+    process.stdout.write("no scheduler running (no jobs)\n");
+    process.exitCode = 1;
+    return;
+  }
+  if (reply.type === "error" && typeof reply.message === "string" && reply.message.startsWith("unknown message type")) {
+    process.stdout.write(`scheduler: ${reply.message}; ${OlderSchedulerHint}\n`);
+    process.exitCode = 1;
+    return;
+  }
+  if (reply.type !== "start-result") {
+    printReplyError(reply);
+    return;
+  }
+  process.stdout.write(`#${String(reply.id)} started over the pool\n`);
 }
 
 /**

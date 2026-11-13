@@ -41,9 +41,11 @@ function skipHeredocBody(command, index, word, stripTabs) {
 
 /**
  * Splits a command into segments at &&, ||, ;, |, & and line breaks outside quotes. Heredoc bodies and PowerShell
- * here-strings are left out.
+ * here-strings are left out. When `found` is an array, each separator and each form left out is added to it as
+ * { kind, index }: kind is the separator ('&&', '||', ';', '|', '&') or 'newline', 'continuation', 'comment',
+ * 'heredoc' or 'here-string', and index its position in the command.
  */
-function splitSegments(command) {
+function splitSegments(command, found = null) {
   const segments = [];
   const heredocs = [];
   let current = '';
@@ -51,6 +53,11 @@ function splitSegments(command) {
   const push = () => {
     segments.push(current);
     current = '';
+  };
+  const note = (kind, index) => {
+    if (found !== null) {
+      found.push({ kind, index });
+    }
   };
   let i = 0;
   while (i < command.length) {
@@ -74,6 +81,7 @@ function splitSegments(command) {
       // PowerShell here-string: up to the line that starts with the closing '@ or "@
       const closing = `\n${next}@`;
       const end = command.indexOf(closing, i + 2);
+      note('here-string', i);
       current += '@here-string';
       i = end < 0 ? command.length : end + closing.length;
       continue;
@@ -86,12 +94,14 @@ function splitSegments(command) {
     }
     // Line continuation (bash \, PowerShell `): the next line belongs to the same command
     if ((ch === '\\' || ch === '`') && (next === '\n' || (next === '\r' && command[i + 2] === '\n'))) {
+      note('continuation', i);
       current += ' ';
       i += next === '\r' ? 3 : 2;
       continue;
     }
     // A comment (# at the start of a word) runs to the end of the line
     if (ch === '#' && (i === 0 || /\s/.test(command[i - 1]))) {
+      note('comment', i);
       while (i < command.length && command[i] !== '\n' && command[i] !== '\r') {
         i++;
       }
@@ -101,12 +111,14 @@ function splitSegments(command) {
       const match = /^<<(-?)[ \t]*(?:'([^']*)'|"([^"]*)"|\\?([A-Za-z_][\w-]*))/.exec(command.slice(i));
       if (match !== null) {
         heredocs.push({ word: match[2] || match[3] || match[4], stripTabs: match[1] === '-' });
+        note('heredoc', i);
         current += '<<heredoc';
         i += match[0].length;
         continue;
       }
     }
     if (ch === '\n' || ch === '\r') {
+      note('newline', i);
       push();
       i += ch === '\r' && next === '\n' ? 2 : 1;
       while (heredocs.length > 0) {
@@ -116,6 +128,7 @@ function splitSegments(command) {
       continue;
     }
     if ((ch === '&' && next === '&') || (ch === '|' && next === '|')) {
+      note(ch + next, i);
       push();
       i += 2;
       continue;
@@ -125,6 +138,7 @@ function splitSegments(command) {
     // ... also after = ( { or , : $o = & "x.exe" test, { & "x.exe" test }, (& "x.exe" test)
     const callOperator = ch === '&' && dialect === 'pwsh' && /(^|[=({,])\s*$/.test(current);
     if (ch === ';' || ch === '|' || (ch === '&' && !callOperator && command[i - 1] !== '>' && next !== '>')) {
+      note(ch, i);
       push();
       i++;
       continue;

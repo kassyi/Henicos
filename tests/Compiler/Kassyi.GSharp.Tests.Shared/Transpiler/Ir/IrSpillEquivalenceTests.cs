@@ -37,6 +37,20 @@ public class IrSpillEquivalenceTests(ITestOutputHelper output)
             output.WriteLine($"left to the syntax passes, {reason}: {count}");
         }
 
+        output.WriteLine($"{equivalence.StatementsRewritten} planned statements rewritten, " +
+                         $"{equivalence.StatementsWithACheck} with a check before the split");
+        foreach (var (reason, count) in equivalence.Skips.OrderBy(static p => p.Key, StringComparer.Ordinal))
+        {
+            output.WriteLine($"rewrite skipped, {reason}: {count}");
+        }
+
+        output.WriteLine($"{equivalence.MixedMethods.Count} methods mix rewritten statements and statements left to " +
+                         "the syntax passes:");
+        foreach (var method in equivalence.MixedMethods.OrderBy(static m => m, StringComparer.Ordinal))
+        {
+            output.WriteLine("  " + method);
+        }
+
         var actual = IrExpectedFiles.SortedLines(equivalence.Known);
         WriteReceived(equivalence, actual);
 
@@ -44,6 +58,8 @@ public class IrSpillEquivalenceTests(ITestOutputHelper output)
             $"Only {equivalence.StatementsCompared} planned statements.");
         Assert.True(equivalence.Unexplained.Count == 0,
             string.Join("\n", equivalence.Unexplained.OrderBy(static m => m, StringComparer.Ordinal).Take(30)));
+        Assert.True(equivalence.Violations.Count == 0,
+            string.Join("\n", equivalence.Violations.OrderBy(static m => m, StringComparer.Ordinal).Take(30)));
         IrExpectedFiles.AssertMatches(ExpectedFile, actual, output);
     }
 
