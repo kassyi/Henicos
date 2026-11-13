@@ -184,7 +184,11 @@ public static partial class GpuBigIntVectorKernels
         int maxNonZeroWordA = FindMaxNonZeroWordWarp(op.Left.Limbs, offsetA, op.Left.NumWords, laneId);
         if (maxNonZeroWordA < 0)
         {
-            if (laneId == 0) op.Result.Signs[batchIdx] = 0u;
+            if (laneId == 0)
+            {
+                op.Result.Signs[batchIdx] = 0u;
+            }
+
             return 0;
         }
 
