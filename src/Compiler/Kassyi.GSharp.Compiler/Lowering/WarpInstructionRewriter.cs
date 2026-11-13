@@ -11,10 +11,15 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// writes the variable that an earlier one reads (<see cref="ExpressionEffects"/>) and which arguments are constant.
 /// Without it, the arguments are compared by name and only literals count as constant.
 /// </param>
-public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter, IBlockLoweringPass
+/// <param name="names">
+/// The names of the temporaries of the method, shared with the other passes that declare temporaries; a new set when
+/// omitted.
+/// </param>
+public class WarpInstructionRewriter(SemanticModel? semanticModel = null, LoweringTempNames? names = null)
+    : CSharpSyntaxRewriter, IBlockLoweringPass
 {
     private readonly SemanticModel? _semanticModel = semanticModel;
-    private int _tempCounter;
+    private readonly LoweringTempNames _names = names ?? new LoweringTempNames();
 
     /// <summary>Rewrites expressions containing warp primitives by hoisting them into prior statements.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
@@ -36,6 +41,13 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
 
         foreach (var original in statements)
         {
+            // [WHY] A statement the split pass of the IR wrote out has nothing left to hoist
+            if (original.HasAnnotations(LoweringAnnotations.IrLoweredAnnotationKind))
+            {
+                newStatements.Add(original);
+                continue;
+            }
+
             var hoistedAssignments = ImmutableArray.CreateBuilder<StatementSyntax>();
             var statement = StoreDiscardedResult(original);
 
@@ -56,19 +68,13 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
     private StatementSyntax StoreDiscardedResult(StatementSyntax statement) =>
         statement is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax call } &&
         BarrierHelper.IsValueReturningSuspendingCall(call)
-            ? StatementRewriter.CreateTempDeclaration(
-                    GetNextCallTempName(),
+            ? LoweringSyntax.DeclareTemporary(
+                    _names.NextCall(),
                     call.WithoutTrivia().WithSpilledTypeSpanFrom(call, _semanticModel?.Compilation),
                     call,
                     _semanticModel?.Compilation)
                 .WithTriviaFrom(statement)
             : statement;
-
-    private string GetNextTempName() => $"{GSharpInternalNames.Lowering.WarpTempPrefix}{_tempCounter++}";
-
-    private string GetNextCallTempName() => $"{GSharpInternalNames.Lowering.CallTempPrefix}{_tempCounter++}";
-
-    private string GetNextArgumentTempName() => $"{GSharpInternalNames.Lowering.ArgumentTempPrefix}{_tempCounter++}";
 
     private static bool IsWarpPrimitive(InvocationExpressionSyntax inv) =>
         BarrierHelper.IsWarpShuffle(inv) || BarrierHelper.IsSuspendingCall(inv);
@@ -160,11 +166,11 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
                     return visitedNode;
             }
 
-            var tempName = isSuspendingCall ? parent.GetNextCallTempName() : parent.GetNextTempName();
+            var tempName = isSuspendingCall ? parent._names.NextCall() : parent._names.NextWarp();
             var compilation = parent._semanticModel?.Compilation;
 
             // Create: var <temp> = <invocation>;
-            hoistedAssignments.Add(CreateTempDeclaration(
+            hoistedAssignments.Add(LoweringSyntax.DeclareTemporary(
                 tempName,
                 visitedNode.WithSpilledTypeSpanFrom(node, compilation),
                 node,
@@ -266,24 +272,9 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             {
                 // 'out int x' declares a local that the callee writes on its last resume, so it is declared before the
                 // call. The declarator and the reference keep the span of the designation, which names the local.
-                var annotations = ImmutableArray.CreateRange(
-                    designation.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
-                );
-                var identifier = designation.Identifier.WithoutTrivia();
-                // <type> x;
-                var declarator = SyntaxFactory.VariableDeclarator(identifier).WithAdditionalAnnotations(annotations);
-                hoistedAssignments.Add(
-                    SyntaxFactory.LocalDeclarationStatement(
-                        SyntaxFactory.VariableDeclaration(
-                            declarationExpression.Type.WithoutTrivia(),
-                            SyntaxFactory.SingletonSeparatedList(declarator)
-                        )
-                    ).NormalizeWhitespace()
-                );
-
-                return argument.WithExpression(SyntaxFactory.IdentifierName(identifier)
-                    .WithAdditionalAnnotations(annotations)
-                    .WithTriviaFrom(declarationExpression));
+                var (declaration, reference) = LoweringSyntax.DeclareOutVariable(declarationExpression, designation);
+                hoistedAssignments.Add(declaration);
+                return argument.WithExpression(reference);
             }
 
             var model = parent._semanticModel;
@@ -369,9 +360,9 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
 
         private IdentifierNameSyntax Spill(ExpressionSyntax expression)
         {
-            var tempName = parent.GetNextArgumentTempName();
+            var tempName = parent._names.NextArgument();
             var compilation = parent._semanticModel?.Compilation;
-            hoistedAssignments.Add(CreateTempDeclaration(
+            hoistedAssignments.Add(LoweringSyntax.DeclareTemporary(
                 tempName,
                 expression.WithoutTrivia().WithSpilledTypeSpanFrom(expression, compilation),
                 expression,
@@ -380,25 +371,6 @@ public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSha
             return SyntaxFactory.IdentifierName(tempName)
                 .WithSpilledTypeSpanFrom(expression, compilation)
                 .WithTriviaFrom(expression);
-        }
-
-        // var <tempName> = <value>;
-        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(
-            string tempName,
-            ExpressionSyntax value,
-            SyntaxNode? spilledSource = null,
-            Compilation? compilation = null,
-            params SyntaxAnnotation[] declaratorAnnotations)
-        {
-            var declarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(tempName))
-                .WithInitializer(SyntaxFactory.EqualsValueClause(value))
-                .WithAdditionalAnnotations(declaratorAnnotations);
-            if (spilledSource != null)
-            {
-                declarator = declarator.WithSpilledTypeSpanFrom(spilledSource, compilation);
-            }
-
-            return LoweringSyntax.DeclareLocal(declarator).NormalizeWhitespace();
         }
     }
 }

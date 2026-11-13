@@ -15,7 +15,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     /// JIT-compiles on GPUs the SASS cannot run on (compute capability 9.0 and newer). Both are generated from the same
     /// compute_86 PTX, so the PTX costs only its space in the fatbin. 7.5 and 8.0 GPUs need their own entries.
     /// </summary>
-    public const string DefaultTargetArchitectures = "compute_86,sm_86;compute_86,compute_86";
+    public const string DefaultTargetArchitectures = CudaArchitectureList.DefaultTargetArchitectures;
 
     /// <summary>
     /// Gets or sets the target GPU architectures separated by <c>;</c>. An <c>arch,code</c> pair becomes
