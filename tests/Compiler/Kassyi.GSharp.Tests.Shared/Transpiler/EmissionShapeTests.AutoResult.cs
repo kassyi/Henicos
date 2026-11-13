@@ -13,7 +13,7 @@ public partial class EmissionShapeTests
         var generated = Generate("SignatureShapeKernels", "Cuda");
         var start = generated.IndexOf("public static unsafe global::System.Int32[] LaunchExpressionResultKernel(", StringComparison.Ordinal);
         Assert.True(start >= 0, "The array launcher of ExpressionResultKernel is not generated.");
-        var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
+        var launcher = LauncherFrom(generated, start);
 
         Assert.Contains(
             "int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::System.Int32));",

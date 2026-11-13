@@ -1,3 +1,4 @@
+#nullable enable
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 [Category(TestCategory.Compiler)]

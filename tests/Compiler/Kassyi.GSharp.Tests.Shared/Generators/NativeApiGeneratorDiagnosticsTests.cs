@@ -171,7 +171,7 @@ public class NativeApiGeneratorDiagnosticsTests
     {
         // The second run sees one more file that declares an unrelated class
         var updated = RoslynTestUtility.CreateCompilationAt("Unrelated.cs", "namespace Other { class Unrelated { } }")
-            .WithAssemblyName(CreateCompilation().AssemblyName);
+            .WithAssemblyName(NativeApiGeneratorTestHelpers.AssemblyName);
         var compilation = updated.RemoveAllSyntaxTrees();
         var driver = CreateDriver(Api("mylib.yml", LibraryYaml));
 
