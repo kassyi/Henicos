@@ -134,8 +134,8 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         DeclarationTranspilerHelper.WriteDeclaratorInitializer(variable, ref context);
     }
 
-    // <type> <name> = <initializer>, or <type> <name>; <name> = <initializer> for a local that a goto jumps over; a fixed
-    // declarator that pins through GetPinnableReference writes the copy of its receiver first, then the call
+    // <type> <name> = <initializer>, or <type> <name>; <name> = <initializer> for a local that a goto jumps over; a
+    // fixed declarator that pins through GetPinnableReference writes the copy of its receiver first, then the call
     private static void WriteSplitDeclarator(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol, bool isVar,
         ref TranspileContext context)
     {
