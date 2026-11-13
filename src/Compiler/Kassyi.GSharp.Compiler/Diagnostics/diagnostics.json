@@ -915,10 +915,10 @@
   {
     "name": "FileLocalTypeInManagedCopy",
     "id": "GSH0119",
-    "title": "A file-local type cannot be named by the managed code G# generates",
-    "messageFormat": "'{0}' is a file-local type; the managed path copies the body of '{1}' into a generated file, where it is not visible. Declare the type without 'file', for example as a private type nested in the class that uses it.",
+    "title": "A file-local type cannot be named by the managed copy that G# generates",
+    "messageFormat": "'{0}' is a file-local type, which generated code cannot name. The managed path of the CPU dialect copies the body of '{1}' into a generated file because {2}, so a kernel that needs that copy cannot run on the managed path: its managed launch throws. The GPU, the native CPU path and the C# execution are not affected. Declare the type without 'file', for example as a private type nested in the class that uses it.",
     "category": "GSharpCompiler",
-    "defaultSeverity": "Error",
+    "defaultSeverity": "Warning",
     "isEnabledByDefault": true
   },
   {

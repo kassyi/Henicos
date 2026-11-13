@@ -84,12 +84,16 @@ internal readonly record struct KernelHostModel
     public string? LauncherUnavailableReason { get; init; }
 
     /// <summary>
-    /// Why the CPU dialect's launcher cannot run the kernel (GSH0119: its managed fallback needs a copy of a body that
-    /// names a file-local type, <see cref="FileLocalNames.FindBlockedCopy"/>), as the message of the exception that the
-    /// <c>Launch</c> method written in its place throws; <see langword="null"/> otherwise. The CUDA dialect copies no
-    /// body and ignores it.
+    /// How the managed fallback of the CPU launcher runs the kernel. The C# execution, the native module and the CUDA
+    /// launchers are written as for any kernel.
     /// </summary>
-    public string? CpuLauncherUnavailableReason { get; init; }
+    public ManagedKernelMode ManagedMode { get; init; }
+
+    /// <summary>
+    /// For <see cref="ManagedKernelMode.Unavailable"/>, the message of the exception that the managed launch throws
+    /// (GSH0119); <see langword="null"/> otherwise.
+    /// </summary>
+    public string? ManagedUnavailableReason { get; init; }
 
     /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
     public string MessageName { get; init; }
@@ -158,6 +162,7 @@ internal readonly record struct KernelHostModel
             ? FormatUnavailableReason(kernel, found)
             : null;
         var hasLauncher = unavailableReason is null;
+        var (managedMode, managedReason) = PlanManagedMode(kernel, model);
 
         return new KernelHostModel
         {
@@ -199,7 +204,8 @@ internal readonly record struct KernelHostModel
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
             Parameters = parameters,
             LauncherUnavailableReason = unavailableReason,
-            CpuLauncherUnavailableReason = FormatFileLocalReason(kernel, model),
+            ManagedMode = managedMode,
+            ManagedUnavailableReason = managedReason,
             Structs = hasLauncher ? structs : default,
             CudaLayoutGuards = hasLauncher ? CollectLayoutGuards(kernel, HostDialects.Cuda) : default,
             CpuLayoutGuards = hasLauncher ? CollectLayoutGuards(kernel, HostDialects.Cpu) : default
@@ -213,14 +219,30 @@ internal readonly record struct KernelHostModel
         $"'{found.FieldPath}' is not accessible from '{TypeLayoutCalculator.FormatTypeName(kernel.ContainingType)}' " +
         $"({GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher.Id}).";
 
-    // <kernel> cannot be launched on the CPU dialect: the managed path cannot copy the body of '<method>', which names
-    // a file-local type (GSH0119); null when the copies the managed fallback needs can be written
-    private static string? FormatFileLocalReason(IMethodSymbol kernel, SemanticModel? model) =>
-        model is not null && FileLocalNames.FindBlockedCopy(kernel, model.Compilation) is { } blocked
-            ? $"{kernel.Name} cannot be launched on the CPU dialect: the managed path cannot copy the body of " +
-              $"'{FileLocalNames.FormatMethod(blocked)}', which names a file-local type " +
-              $"({GSharpDiagnostics.FileLocalTypeInManagedCopy.Id})."
-            : null;
+    // The copy of a kernel that names a file-local type, or whose copy needs a body that does, cannot be written: the
+    // user's method runs when no copy is needed, and the managed launch throws otherwise (GSH0119)
+    private static (ManagedKernelMode Mode, string? Reason) PlanManagedMode(IMethodSymbol kernel,
+        SemanticModel? model)
+    {
+        if (model is null)
+        {
+            return (ManagedKernelMode.Copy, null);
+        }
+
+        if (FileLocalNames.FindBlock(kernel, model.Compilation) is { } block)
+        {
+            // <kernel> cannot run on the managed path of the CPU dialect: it needs a copy of '<method>', which names
+            // the file-local type '<T>' (GSH0119).
+            return (ManagedKernelMode.Unavailable,
+                $"{kernel.Name} cannot run on the managed path of the CPU dialect: it needs a copy of " +
+                $"'{FileLocalNames.FormatMethod(block.Body)}' ({block.Reason}), which names the file-local type " +
+                $"'{TypeLayoutCalculator.FormatTypeName(block.Type)}' ({GSharpDiagnostics.FileLocalTypeInManagedCopy.Id}).");
+        }
+
+        return FileLocalNames.FindOwnName(kernel, model.Compilation) is null
+            ? (ManagedKernelMode.Copy, null)
+            : (ManagedKernelMode.UserMethod, null);
+    }
 
     // The managed state machine keeps pointers in its context, so the context becomes an unsafe struct pinned by the launcher
     private static bool NeedsUnsafeContext(IMethodSymbol kernel)

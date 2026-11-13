@@ -9,8 +9,10 @@ file struct FileLocalScale
 }
 
 /// <summary>
-/// A file-local type in a device function that the managed path calls as the user wrote it: no generated file names
-/// the type, so the kernel runs on every dialect (GSH0119 reports only the bodies the managed path copies).
+/// File-local types in bodies that the managed path does not copy (a device function called as written, a kernel that
+/// runs as the user's method), so no generated file names the type and the kernel runs on every dialect and path; and in
+/// a kernel that waits at a barrier, whose managed copy cannot name it (GSH0119): it runs on the native path and the
+/// GPU, and its managed launch throws.
 /// </summary>
 public static partial class FileLocalTypeKernels
 {
@@ -26,5 +28,22 @@ public static partial class FileLocalTypeKernels
     {
         int i = ThreadIndex.X;
         values[i] = Apply(values[i], factor);
+    }
+
+    [GpuKernel]
+    public static void ScaleKernel(int[] values, int factor)
+    {
+        int i = ThreadIndex.X;
+        FileLocalScale scale = new FileLocalScale { Factor = factor, Offset = 1 };
+        values[i] = values[i] * scale.Factor + scale.Offset;
+    }
+
+    [GpuKernel]
+    public static void BarrierScaleKernel(int[] values, int factor)
+    {
+        int i = ThreadIndex.X;
+        FileLocalScale scale = new FileLocalScale { Factor = factor, Offset = 1 };
+        Gpu.SyncThreads();
+        values[i] = values[i] * scale.Factor + scale.Offset;
     }
 }

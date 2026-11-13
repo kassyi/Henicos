@@ -233,12 +233,10 @@ internal static class WrapperEmitter
                     continue;
                 }
 
-                // GSH0108: the analyzer reports the field type the launcher cannot name; GSH0119 (CPU dialect): the
-                // file-local type a copied body names. A launcher that throws keeps the callers compiling, so that the
-                // build shows the analyzer's diagnostic rather than errors in generated code
+                // GSH0108: the analyzer reports the field type the launcher cannot name; a launcher that throws keeps
+                // the callers compiling, so that the build shows GSH0108 rather than errors in generated code
                 var accessibilities = model.GetLauncherAccessibilities(kernel);
-                if ((kernel.Host.LauncherUnavailableReason ??
-                     (config.IsCuda ? null : kernel.Host.CpuLauncherUnavailableReason)) is { } reason)
+                if (kernel.Host.LauncherUnavailableReason is { } reason)
                 {
                     WriteUnavailableLaunchMethod(writer, kernel, accessibilities.Launcher, reason);
                     continue;

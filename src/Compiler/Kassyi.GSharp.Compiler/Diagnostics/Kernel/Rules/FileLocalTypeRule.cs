@@ -1,17 +1,20 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
-/// Reports a file-local type named in a body that the managed path copies into a generated file, where the type is not
-/// visible (GSH0119, <see cref="FileLocalNames"/>): the body of a kernel, of a suspending device function, or of a device
-/// function with a managed version, on the dialect that emits managed bodies.
+/// Warns about a file-local type that a body names when the managed path has to copy that body into a generated file,
+/// where the type is not visible (GSH0119, <see cref="FileLocalNames"/>): a body that suspends or holds a construct
+/// that only the managed path rewrites, and a kernel or function whose copy needs such a body.
 /// </summary>
 /// <remarks>
-/// The CUDA dialect transpiles the bodies to C++ and needs no copy. An assembly on it that exports its device code still
-/// emits the state machines and managed versions for its consumers; one that cannot be written is left out and its
-/// record says so, as for the other reasons a copy cannot compile (<see cref="ManagedStateMachineAvailability"/>).
+/// A body that is not copied (the managed path calls the user's method) may name a file-local type, and so may every
+/// body on the CUDA dialect, the native CPU path and the C# execution, which copy no C#. An assembly on the CUDA dialect
+/// that exports its device code still leaves out the state machines and managed versions that cannot be written, and its
+/// records say so (<see cref="ManagedStateMachineAvailability"/>).
 /// </remarks>
 internal sealed class FileLocalTypeRule : ISyntaxValidationRule<IdentifierNameSyntax>,
-    ISyntaxValidationRule<GenericNameSyntax>
+    ISyntaxValidationRule<GenericNameSyntax>,
+    ISyntaxValidationRule<AssignmentExpressionSyntax>,
+    ISyntaxValidationRule<MethodDeclarationSyntax>
 {
     public static readonly FileLocalTypeRule Instance = new();
 
@@ -22,29 +25,48 @@ internal sealed class FileLocalTypeRule : ISyntaxValidationRule<IdentifierNameSy
     {
     }
 
-    public void Analyze(IdentifierNameSyntax node, ref ValidationContext context) => Check(node, ref context);
+    public void Analyze(IdentifierNameSyntax node, ref ValidationContext context) =>
+        CheckName(node, FileLocalNames.Find(node, context.SemanticModel), ref context);
 
-    public void Analyze(GenericNameSyntax node, ref ValidationContext context) => Check(node, ref context);
+    public void Analyze(GenericNameSyntax node, ref ValidationContext context) =>
+        CheckName(node, FileLocalNames.Find(node, context.SemanticModel), ref context);
 
-    private static void Check(SimpleNameSyntax node, ref ValidationContext context)
+    // var (a, b) = p; calls an extension Deconstruct that no name of the body binds to
+    public void Analyze(AssignmentExpressionSyntax node, ref ValidationContext context) =>
+        CheckName(node.Left, FileLocalNames.FindDeconstructor(node, context.SemanticModel), ref context);
+
+    // The copy of a kernel or function needs the copy of a function that names a file-local type: reported at the
+    // method, since no name of its own body names it
+    public void Analyze(MethodDeclarationSyntax node, ref ValidationContext context)
     {
         if (context.Dialect.IsCuda ||
-            !IsCopied(context.MethodSymbol, context.SemanticModel.Compilation) ||
-            FileLocalNames.Find(node, context.SemanticModel) is not { } type)
+            FileLocalNames.FindBlock(context.MethodSymbol, context.SemanticModel.Compilation) is not { } block ||
+            SymbolEqualityComparer.Default.Equals(block.Body, context.MethodSymbol.OriginalDefinition))
         {
             return;
         }
 
-        context.ReportDiagnostic(
-            GSharpDiagnostics.FileLocalTypeInManagedCopy,
-            node.GetLocation(),
-            TypeLayoutCalculator.FormatTypeName(type),
-            FileLocalNames.FormatMethod(context.MethodSymbol));
+        Report(node.Identifier.GetLocation(), block.Type, block.Body, block.Reason, ref context);
     }
 
-    // A kernel has a managed fallback; a device function is copied when it suspends or needs a managed version
-    private static bool IsCopied(IMethodSymbol method, Compilation compilation) =>
-        method.HasAttribute(KnownAttributes.GpuKernel) ||
-        SuspensionAnalysis.RequiresStateMachine(method, compilation) ||
-        ManagedVersionAnalysis.Needs(method, compilation);
+    private static void CheckName(SyntaxNode node, INamedTypeSymbol? type, ref ValidationContext context)
+    {
+        if (type is null ||
+            context.Dialect.IsCuda ||
+            FileLocalNames.GetCopyReason(context.MethodSymbol, context.SemanticModel.Compilation) is not { } reason)
+        {
+            return;
+        }
+
+        Report(node.GetLocation(), type, context.MethodSymbol, reason, ref context);
+    }
+
+    private static void Report(Location location, INamedTypeSymbol type, IMethodSymbol body, string reason,
+        ref ValidationContext context) =>
+        context.ReportDiagnostic(
+            GSharpDiagnostics.FileLocalTypeInManagedCopy,
+            location,
+            TypeLayoutCalculator.FormatTypeName(type),
+            FileLocalNames.FormatMethod(body),
+            reason);
 }

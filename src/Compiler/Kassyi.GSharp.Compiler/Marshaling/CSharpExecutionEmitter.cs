@@ -27,18 +27,28 @@ internal static class CSharpExecutionEmitter
         writer.AppendLine($"if ({GpuExecutionType}.Current == {KernelExecutionType}.CSharp)");
         using (writer.Scope())
         {
-            if (plan.CannotRunReason is { } reason)
-            {
-                var kernel = SymbolDisplay.FormatLiteral(plan.MessageName, quote: true);
-                var because = SymbolDisplay.FormatLiteral(reason, quote: true);
-                writer.AppendLine($"throw {RunnerType}.CannotRun({kernel}, {because});");
-                return;
-            }
-
-            WriteCopies(writer, plan);
-            WritePinnedRun(writer, plan);
-            writer.AppendLine(plan.ReturnsValue ? $"return {AutoResult};" : "return;");
+            WriteBranchBody(writer, plan);
         }
+    }
+
+    /// <summary>
+    /// Writes the run of <paramref name="plan"/> and the return that ends it, or the throw of a kernel that cannot run
+    /// as C#: the body of <see cref="WriteBranch"/>, which the managed fallback of a kernel that names a file-local type
+    /// writes in the branch of its own (GSH0119).
+    /// </summary>
+    public static void WriteBranchBody(SourceWriter writer, in CSharpExecutionPlan plan)
+    {
+        if (plan.CannotRunReason is { } reason)
+        {
+            var kernel = SymbolDisplay.FormatLiteral(plan.MessageName, quote: true);
+            var because = SymbolDisplay.FormatLiteral(reason, quote: true);
+            writer.AppendLine($"throw {RunnerType}.CannotRun({kernel}, {because});");
+            return;
+        }
+
+        WriteCopies(writer, plan);
+        WritePinnedRun(writer, plan);
+        writer.AppendLine(plan.ReturnsValue ? $"return {AutoResult};" : "return;");
     }
 
     // [<return type>[] __gsharp_csharp_result = __gsharp_auto_result;]
