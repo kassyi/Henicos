@@ -20,6 +20,20 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     private readonly Span<T> _span;
 
     /// <summary>
+    /// Always fails: shared memory has no size until it is declared with an element count, so a parameterless creation
+    /// has no meaning.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Always.</exception>
+    /// <remarks>
+    /// The attribute makes <c>new SharedMemory&lt;T&gt;()</c> and the target-typed <c>new()</c> a compile error (CS0619).
+    /// <see langword="default"/> cannot be blocked by the language; the G# analyzer reports it (GSH0003).
+    /// </remarks>
+    [Obsolete("A SharedMemory<T> needs an element count: use new SharedMemory<T>(count).", error: true)]
+    public SharedMemory() =>
+        throw new InvalidOperationException(
+            "A SharedMemory<T> needs an element count: use new SharedMemory<T>(count).");
+
+    /// <summary>
     /// Declares static or dynamic shared memory with the specified element capacity.
     /// </summary>
     /// <param name="size">The number of elements allocated in shared memory.</param>

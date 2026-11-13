@@ -194,6 +194,13 @@ internal static class GpuCodeConstraints
         "ref local that the CPU state machine keeps across a barrier or a call that may suspend " +
         "(rebound with '= ref', used in another switch section, or a ref foreach variable)";
 
+    /// <summary>
+    /// The GSH0003 text for <c>default</c> of <c>SharedMemory&lt;T&gt;</c>: the language cannot block it, and shared
+    /// memory has no size until it is declared with a count.
+    /// </summary>
+    public const string SharedMemoryWithoutCount =
+        "SharedMemory<T> without an element count (default); declare it with new SharedMemory<T>(count)";
+
     /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
     public const string DynamicArraySize = "dynamic array size";
 
