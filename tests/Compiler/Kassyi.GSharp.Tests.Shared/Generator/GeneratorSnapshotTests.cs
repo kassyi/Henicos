@@ -273,7 +273,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
         var src = @"using Kassyi.GSharp.Core; partial class Dummy { [GpuKernel] public static void Kernel() {} }";
-        var compilation = RoslynTestUtility.CreateCompilation(src);
+        var compilation = RoslynTestUtility.CreateCompilation(src).WithAssemblyName("DummyCompilation");
 
         var generator = new GpuKernelGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
@@ -378,8 +378,9 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
             }
             """;
         var compilation = RoslynTestUtility.CreateCompilationAt("WarningCheckKernels.cu.cs", src);
-        compilation = compilation.WithOptions(
-            compilation.Options.WithNullableContextOptions(NullableContextOptions.Enable));
+        compilation = compilation
+            .WithAssemblyName("WarningCheckCompilation")
+            .WithOptions(compilation.Options.WithNullableContextOptions(NullableContextOptions.Enable));
 
         var generator = new GpuKernelGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(

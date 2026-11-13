@@ -149,7 +149,8 @@ public class NativeApiModuleGeneratorTests
                   - { name: gridDimX, type: uint }
             """;
         var compilation = RoslynTestUtility.CreateCompilationAt(
-                "UserTypes.cs",
+                LanguageVersion.Latest,
+                ("UserTypes.cs",
                 """
             namespace MyApp.Native;
             public struct GpuKernelLoader;
@@ -158,11 +159,9 @@ public class NativeApiModuleGeneratorTests
             public struct CudaDriverApi;
             public class Lazy<T>;
             public class AppContext;
-            """)
+            """))
             .WithAssemblyName(CreateCompilation().AssemblyName);
-        // The generated trees parse as the test sources do
-        var driver = CreateDriver(Api("colliding.yml", Yaml))
-            .WithUpdatedParseOptions((CSharpParseOptions)compilation.SyntaxTrees.First().Options);
+        var driver = CreateDriver(Api("colliding.yml", Yaml));
 
         driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
 
@@ -228,12 +227,10 @@ public class NativeApiModuleGeneratorTests
                   - { name: callback, type: "{{type}}" }
             """;
         var compilation = RoslynTestUtility.CreateCompilationAt(
-                "UserClass.cs",
-                "namespace MyApp.Native; public sealed class UserClass { }")
+                LanguageVersion.Latest,
+                ("UserClass.cs", "namespace MyApp.Native; public sealed class UserClass { }"))
             .WithAssemblyName(CreateCompilation().AssemblyName);
-        // The generated trees parse as the test sources do
-        var driver = CreateDriver(Api("class.yml", yaml))
-            .WithUpdatedParseOptions((CSharpParseOptions)compilation.SyntaxTrees.First().Options);
+        var driver = CreateDriver(Api("class.yml", yaml));
 
         driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
 

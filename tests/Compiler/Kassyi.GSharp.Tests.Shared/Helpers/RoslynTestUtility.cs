@@ -186,6 +186,15 @@ public static class RoslynTestUtility
     public static CSharpCompilation CreateCompilationAt(params (string Path, string Source)[] files) =>
         CreateCompilationAt(s_parseOptions, files);
 
+    /// <summary>
+    /// Creates a Roslyn compilation of several source texts parsed as C# <paramref name="languageVersion"/>, for a test
+    /// that checks what a project of that version compiles (a generator's output added to it parses the same way).
+    /// </summary>
+    public static CSharpCompilation CreateCompilationAt(
+        LanguageVersion languageVersion,
+        params (string Path, string Source)[] files) =>
+        CreateCompilationAt(s_parseOptions.WithLanguageVersion(languageVersion), files);
+
     private static CSharpCompilation CreateCompilationAt(
         CSharpParseOptions options,
         (string Path, string Source)[] files)

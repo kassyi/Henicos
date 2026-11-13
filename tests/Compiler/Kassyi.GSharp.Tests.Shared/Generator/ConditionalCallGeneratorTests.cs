@@ -19,7 +19,8 @@ public class ConditionalCallGeneratorTests
     {
         var compilation = RoslynTestUtility.CreateCompilationAt(
             ("defines.cs", RoslynTestUtility.ReadTestCase("Generators/ConditionalCallDefines.cs")),
-            ("iterators.cs", RoslynTestUtility.ReadTestCase("Generators/ConditionalCallIterators.cs")));
+            ("iterators.cs", RoslynTestUtility.ReadTestCase("Generators/ConditionalCallIterators.cs")))
+            .WithAssemblyName("ConditionalCallTest");
         var driver = CSharpGeneratorDriver.Create(
                 generators: [new GpuKernelGenerator().AsSourceGenerator()],
                 additionalTexts: null,
