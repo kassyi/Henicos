@@ -479,25 +479,25 @@ public class UnsupportedConstructDiagnosticsTests
                 "Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable"));
     }
 
-    // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 4096 doubles (exactly 32768 bytes) and 10000
-    // bytes are not reported. ComprehensiveSpecKernel: SharedMemory<int>(10000); the dynamic size is not checked.
+    // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 300,000,000 doubles (line 129) and 2^29
+    // doubles (line 138) are 2,400,000,000 and 2^32 bytes, which wrap in int to a negative number and to 0 (#1280);
+    // 4096 doubles (exactly 32768 bytes) and 10000 bytes are not reported. ComprehensiveSpecKernel:
+    // SharedMemory<int>(10000); the dynamic size is not checked.
     [Theory]
-    [InlineData("Analyzers/StructSizeDiagnostics.cs", "Cpu", 104, 63, 104, 67)]
-    [InlineData("Analyzers/StructSizeDiagnostics.cs", "Cuda", 104, 63, 104, 67)]
-    [InlineData("ComprehensiveSpecKernel.cu.cs", "Cpu", 107, 63, 107, 68)]
-    [InlineData("ComprehensiveSpecKernel.cu.cs", "Cuda", 107, 63, 107, 68)]
+    [InlineData("Analyzers/StructSizeDiagnostics.cs", "Cpu")]
+    [InlineData("Analyzers/StructSizeDiagnostics.cs", "Cuda")]
+    [InlineData("ComprehensiveSpecKernel.cu.cs", "Cpu")]
+    [InlineData("ComprehensiveSpecKernel.cu.cs", "Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task LargeStaticSharedMemory_ExceedingLimit_ReportsGsh0013AtSize(
-        string testCase,
-        string dialect,
-        int startLine,
-        int startColumn, int endLine, int endColumn)
+    public async Task LargeStaticSharedMemory_ExceedingLimit_ReportsGsh0013AtSize(string testCase, string dialect)
     {
+        (DiagnosticOrigin, int, int, int, int)[] expected = testCase == "ComprehensiveSpecKernel.cu.cs"
+            ? [(Analyzer, 107, 63, 107, 68)]
+            : [(Analyzer, 104, 63, 104, 67), (Analyzer, 129, 63, 129, 74), (Analyzer, 138, 63, 138, 74)];
+
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(testCase, dialect);
 
-        Assert.Equal(
-            [(Analyzer, startLine, startColumn, endLine, endColumn)],
-            diagnostics.Ranges(GSharpDiagnostics.ExcessiveSharedMemoryWarning.Id));
+        Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.ExcessiveSharedMemoryWarning.Id));
     }
 
     // #439: the getter of a computed property (line 12) is a member of the emitted struct and the method group (line 37)
