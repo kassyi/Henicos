@@ -114,12 +114,10 @@ public class ScopeIndependentNameGeneratorTests
                   - { name: blockDimX, type: uint }
             """;
         // The driver of the YAML generator parses with the latest language version, which every tree must share
-        var compilation = NativeApiGeneratorTestHelpers.CreateCompilation().AddSyntaxTrees(
-            CSharpSyntaxTree.ParseText(
-                RoslynTestUtility.ReadTestCase(ShadowingSource),
-                new CSharpParseOptions(LanguageVersion.Latest)
-            )
-        );
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+                LanguageVersion.Latest,
+                ("", RoslynTestUtility.ReadTestCase(ShadowingSource))
+            ).WithAssemblyName(NativeApiGeneratorTestHelpers.CreateCompilation().AssemblyName);
         var driver = NativeApiGeneratorTestHelpers.CreateDriver(NativeApiGeneratorTestHelpers.Api("shadow.yml", Yaml))
             .RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
 

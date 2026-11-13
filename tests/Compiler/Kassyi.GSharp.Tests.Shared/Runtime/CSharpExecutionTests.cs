@@ -56,7 +56,9 @@ public class CSharpExecutionTests
 
         Assert.Equal(expected.Message, ex.Message);
         // The top frame is the kernel method, not the state machine of the managed path
-        var top = (ex.StackTrace ?? "").Split('\n')[0];
+        var trace = (ex.StackTrace ?? "").AsSpan();
+        var end = trace.IndexOf('\n');
+        var top = (end < 0 ? trace : trace[..end]).ToString();
         Assert.Contains($"{nameof(CSharpExecutionKernels)}.{nameof(CSharpExecutionKernels.ReadAtKernel)}(", top);
         Assert.DoesNotContain("__gsharp_statemachine", ex.StackTrace);
     }
