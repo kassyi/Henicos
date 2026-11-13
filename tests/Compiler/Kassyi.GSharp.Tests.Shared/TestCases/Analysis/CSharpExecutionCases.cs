@@ -110,6 +110,10 @@ public static partial class Kernels
         return e.Length + f.Length + (g?.Length ?? 0);
     }
 
+    // The in parameter is a value: no ref or out parameter has its type
+    [GpuKernel]
+    public static void InParameter(in int b, int[] data) => data[ThreadIndex.X] = b;
+
     [GpuDeviceFunction]
     public static void Add(ref Value result, Value left, Value right) => result.V = left.V + right.V;
 
