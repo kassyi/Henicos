@@ -71,6 +71,7 @@ internal static class NativeBindingEmitter
     public static string EmitModuleBindings(NativeApiDefinition def)
     {
         var moduleName = def.ModuleName ?? string.Empty;
+        var moduleField = AotModuleNames.GetModuleFieldName(moduleName);
 
         using var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
@@ -85,7 +86,7 @@ internal static class NativeBindingEmitter
         WriteClassDeclaration(writer, def.ClassName);
         using (writer.Scope())
         {
-            ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, moduleName);
+            ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, moduleField, moduleName);
 
             foreach (var m in def.Methods)
             {
@@ -98,8 +99,8 @@ internal static class NativeBindingEmitter
                 writer.AppendLine();
                 using (writer.Scope())
                 {
-                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleName, GetEntryPoint(m), m.Name,
-                        $"{def.ClassName}.{m.Name}", plan, packContext: false);
+                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleField, GetEntryPoint(m),
+                        $"{def.ClassName}.{m.Name}", plan, contextTypeName: null);
                 }
 
                 writer.AppendLine();

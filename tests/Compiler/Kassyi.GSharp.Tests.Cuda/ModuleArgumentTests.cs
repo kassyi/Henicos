@@ -188,6 +188,7 @@ public class ModuleArgumentTests
     [InlineData(Binding.Yaml)]
     [InlineData(Binding.Import)]
     [InlineData(Binding.ImportReadOnly)]
+    [InlineData(Binding.ImportNested)]
     public void Launch_ValuesByReference_CopiesRefAndOutBack(Binding binding)
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
@@ -202,6 +203,9 @@ public class ModuleArgumentTests
                 break;
             case Binding.Import:
                 ModuleArgumentImports.UpdateByReference(ref total, in seed, out result);
+                break;
+            case Binding.ImportNested:
+                ModuleArgumentNestedImports<long>.Keywords.Update(ref total, in seed, out result);
                 break;
             default:
                 ModuleArgumentImports.UpdateByReadOnlyReference(ref total, in seed, out result);
@@ -285,6 +289,9 @@ public class ModuleArgumentTests
         Yaml,
         Import,
         ImportReadOnly,
+
+        // [CudaImport] in a class nested in a generic struct, with parameters named with keywords
+        ImportNested,
     }
 
     private static void UpdateBounded(Binding binding, ref int total, int seed, out int result, uint blockDimX)

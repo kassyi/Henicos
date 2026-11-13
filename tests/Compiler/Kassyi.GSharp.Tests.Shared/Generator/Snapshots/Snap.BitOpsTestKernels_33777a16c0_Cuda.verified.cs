@@ -17,10 +17,11 @@ private static byte[]? s_fatbin;
 /// </summary>
 public static byte[] GetFatbin()
 {
-var fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
+byte[]? fatbin = global::System.Threading.Volatile.Read(ref s_fatbin);
 if (fatbin is not null) return fatbin;
-var baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? global::System.AppContext.BaseDirectory;
-var fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
+string baseDir = global::System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location)
+?? global::System.AppContext.BaseDirectory;
+string fatbinPath = global::System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.gfatbin");
 if (!global::System.IO.File.Exists(fatbinPath))
 {
 throw new global::System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
@@ -77,6 +78,23 @@ namespace Kassyi.GSharp.Tests
 {
 public partial class BitOpsTestKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1292825297u, "BitOpsTestKernels.cs", 12, 27, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1326080543u, "BitOpsTestKernels.cs", 13, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(863456767u, "BitOpsTestKernels.cs", 14, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1380786199u, "BitOpsTestKernels.cs", 15, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1497391871u, "BitOpsTestKernels.cs", 16, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1821899703u, "BitOpsTestKernels.cs", 17, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1816023879u, "BitOpsTestKernels.cs", 18, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1998285823u, "BitOpsTestKernels.cs", 20, 28, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1336561499u, "BitOpsTestKernels.cs", 21, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1857357743u, "BitOpsTestKernels.cs", 22, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(532696767u, "BitOpsTestKernels.cs", 23, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(774784843u, "BitOpsTestKernels.cs", 24, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1178120115u, "BitOpsTestKernels.cs", 25, 13, "BitOpsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1974563263u, "BitOpsTestKernels.cs", 26, 13, "BitOpsKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -84,42 +102,30 @@ public static partial class AotContexts
 }
 public const string BitOpsKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__BitOpsTestKernels__BitOpsKernel(GSharpArray<unsigned int> __gsharp_id_0_u32Data, GSharpArray<unsigned long long> __gsharp_id_1_u64Data, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-unsigned int __gsharp_id_2_u32Val = __gsharp_id_0_u32Data[0];
-__gsharp_id_0_u32Data[1]=(unsigned int)__gsharp_lzc_32(__gsharp_id_2_u32Val);
-__gsharp_id_0_u32Data[2]=(unsigned int)__popc((unsigned int)(__gsharp_id_2_u32Val));
-__gsharp_id_0_u32Data[3]=(unsigned int)__gsharp_tzc_32(__gsharp_id_2_u32Val);
-__gsharp_id_0_u32Data[4]=(unsigned int)__gsharp_log2_32(__gsharp_id_2_u32Val);
-__gsharp_id_0_u32Data[5]=__gsharp_rotl32(__gsharp_id_2_u32Val,5);
-__gsharp_id_0_u32Data[6]=__gsharp_rotr32(__gsharp_id_2_u32Val,3);
-unsigned long long __gsharp_id_3_u64Val = __gsharp_id_1_u64Data[0];
-__gsharp_id_1_u64Data[1]=(unsigned long long)__gsharp_lzc_64(__gsharp_id_3_u64Val);
-__gsharp_id_1_u64Data[2]=(unsigned long long)__popcll((unsigned long long int)(__gsharp_id_3_u64Val));
-__gsharp_id_1_u64Data[3]=(unsigned long long)__gsharp_tzc_64(__gsharp_id_3_u64Val);
-__gsharp_id_1_u64Data[4]=(unsigned long long)__gsharp_log2_64(__gsharp_id_3_u64Val);
-__gsharp_id_1_u64Data[5]=__gsharp_rotl64(__gsharp_id_3_u64Val,10);
-__gsharp_id_1_u64Data[6]=__gsharp_rotr64(__gsharp_id_3_u64Val,7);
+unsigned int __gsharp_id_2_u32Val = __gsharp_array_at(__gsharp_id_0_u32Data, 0, 1292825297u);
+__gsharp_array_at(__gsharp_id_0_u32Data, 1, 1326080543u)=(unsigned int)__gsharp_lzc_32(__gsharp_id_2_u32Val);
+__gsharp_array_at(__gsharp_id_0_u32Data, 2, 863456767u)=(unsigned int)__popc((unsigned int)(__gsharp_id_2_u32Val));
+__gsharp_array_at(__gsharp_id_0_u32Data, 3, 1380786199u)=(unsigned int)__gsharp_tzc_32(__gsharp_id_2_u32Val);
+__gsharp_array_at(__gsharp_id_0_u32Data, 4, 1497391871u)=(unsigned int)__gsharp_log2_32(__gsharp_id_2_u32Val);
+__gsharp_array_at(__gsharp_id_0_u32Data, 5, 1821899703u)=__gsharp_rotl32(__gsharp_id_2_u32Val,5);
+__gsharp_array_at(__gsharp_id_0_u32Data, 6, 1816023879u)=__gsharp_rotr32(__gsharp_id_2_u32Val,3);
+unsigned long long __gsharp_id_3_u64Val = __gsharp_array_at(__gsharp_id_1_u64Data, 0, 1998285823u);
+__gsharp_array_at(__gsharp_id_1_u64Data, 1, 1336561499u)=(unsigned long long)__gsharp_lzc_64(__gsharp_id_3_u64Val);
+__gsharp_array_at(__gsharp_id_1_u64Data, 2, 1857357743u)=(unsigned long long)__popcll((unsigned long long int)(__gsharp_id_3_u64Val));
+__gsharp_array_at(__gsharp_id_1_u64Data, 3, 532696767u)=(unsigned long long)__gsharp_tzc_64(__gsharp_id_3_u64Val);
+__gsharp_array_at(__gsharp_id_1_u64Data, 4, 774784843u)=(unsigned long long)__gsharp_log2_64(__gsharp_id_3_u64Val);
+__gsharp_array_at(__gsharp_id_1_u64Data, 5, 1178120115u)=__gsharp_rotl64(__gsharp_id_3_u64Val,10);
+__gsharp_array_at(__gsharp_id_1_u64Data, 6, 1974563263u)=__gsharp_rotr64(__gsharp_id_3_u64Val,7);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BitOpsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__BitOpsTestKernels__BitOpsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerBitOpsKernel() => global::Kassyi.GSharp.Tests.BitOpsTestKernels.__gsharp_hfunc_BitOpsKernel.Resolve();
+public static void WarmupFunctionPointerBitOpsKernel() => global::Kassyi.GSharp.Tests.BitOpsTestKernels.__gsharp_hfunc_BitOpsKernel.Resolve(global::Kassyi.GSharp.Tests.BitOpsTestKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBitOpsKernel(global::System.UInt32[] u32Data, global::System.UInt64[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (u32Data is null){
-throw new global::System.ArgumentNullException(nameof(u32Data));
-}
-if (u32Data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u32Data));
-}
-if (u64Data is null){
-throw new global::System.ArgumentNullException(nameof(u64Data));
-}
-if (u64Data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u64Data));
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOpsTestKernels.BitOpsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -128,9 +134,9 @@ global::System.UInt64[] __gsharp_csharp_arg_1 = u64Data;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.BitOpsTestKernels.BitOpsKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 return;
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.BitOpsTestKernels.__gsharp_hfunc_BitOpsKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.BitOpsTestKernels.__gsharp_hfunc_BitOpsKernel.Resolve(global::Kassyi.GSharp.Tests.BitOpsTestKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BitOpsTestKernels.BitOpsKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
@@ -139,10 +145,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[3];
 // Marshal array: u32Data
-int __gsharp_size_0 = checked(u32Data.Length * sizeof(global::System.UInt32));
+int __gsharp_size_0 = checked((u32Data?.Length ?? 0) * sizeof(global::System.UInt32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = u32Data.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(u32Data) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (u32Data?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -156,10 +162,10 @@ __gsharp_proxy_0[0] = __gsharp_d_0;
 }
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal array: u64Data
-int __gsharp_size_1 = checked(u64Data.Length * sizeof(global::System.UInt64));
+int __gsharp_size_1 = checked((u64Data?.Length ?? 0) * sizeof(global::System.UInt64));
 global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_1[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_1 + 1))[0] = u64Data.Length;
+__gsharp_proxy_1[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(u64Data) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_1 + 1))[0] = (u64Data?.Length ?? 0);
 ((int*)(__gsharp_proxy_1 + 1))[1] = 0;
 if (__gsharp_size_1 > 0)
 {
@@ -225,31 +231,25 @@ if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) 
 public static unsafe void LaunchBitOpsKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy u32Data, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (u32Data.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(u32Data), u32Data.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("u32Data", u32Data.Length, "The array length must not be negative.");
 }
-if (u32Data.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(u32Data));
-}
-if (u32Data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u32Data));
+if (u32Data.Data == global::System.IntPtr.Zero && u32Data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "u32Data");
 }
 if (u64Data.Length < 0){
-throw new global::System.ArgumentOutOfRangeException(nameof(u64Data), u64Data.Length, "The array length must not be negative.");
+throw new global::System.ArgumentOutOfRangeException("u64Data", u64Data.Length, "The array length must not be negative.");
 }
-if (u64Data.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException(nameof(u64Data));
-}
-if (u64Data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u64Data));
+if (u64Data.Data == global::System.IntPtr.Zero && u64Data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "u64Data");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOpsTestKernels.BitOpsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("BitOpsTestKernels.BitOpsKernel", "LaunchBitOpsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBitOpsKernel");
 }
-using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.BitOpsTestKernels.__gsharp_hfunc_BitOpsKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.BitOpsTestKernels.__gsharp_hfunc_BitOpsKernel.Resolve(global::Kassyi.GSharp.Tests.BitOpsTestKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "BitOpsTestKernels.BitOpsKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try

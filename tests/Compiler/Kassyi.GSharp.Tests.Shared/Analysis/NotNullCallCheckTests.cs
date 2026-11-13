@@ -16,16 +16,18 @@ public class NotNullCallCheckTests
         RoslynTestUtility.ReadTestCase("Analysis/NonNullProofCases.cs")
     );
 
+    // A kernel parameter may be null whatever its annotation, as in a C# call, so the call checks it
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Plan_ProvenKernelParameter_HasNoSite()
+    public void Plan_NonNullableKernelParameter_RegistersTheCallSite()
     {
         var table = new ErrorSiteTable();
 
         var check = Plan("KernelNotNullOfParameter", table, "KernelNotNullOfParameter");
 
-        Assert.Null(check.Site);
-        Assert.Equal(0, table.Count);
+        var site = Assert.NotNull(check.Site);
+        Assert.NotEqual(0u, site.SiteId);
+        Assert.Equal(1, table.Count);
     }
 
     [Fact]

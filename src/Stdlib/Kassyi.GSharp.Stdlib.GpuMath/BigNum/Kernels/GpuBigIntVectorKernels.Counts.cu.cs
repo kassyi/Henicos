@@ -7,7 +7,11 @@ public static partial class GpuBigIntVectorKernels
     /// <c>Result[0]</c> first, so an empty vector gives false, as System.Linq's <c>Any</c>.
     /// </summary>
     [GpuKernel]
-    public static void VectorAnyTrueKernel(VectorBoolReductionContext ctx)
+    public static void VectorAnyTrueKernel(VectorBoolReductionContext ctx) => AnyTrue(ctx);
+
+    // The call checks the arrays of the context once; the loop then reads them without a check
+    [GpuDeviceFunction]
+    private static void AnyTrue(VectorBoolReductionContext ctx)
     {
         int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -26,7 +30,11 @@ public static partial class GpuBigIntVectorKernels
     /// so an empty vector gives true, as System.Linq's <c>All</c>.
     /// </summary>
     [GpuKernel]
-    public static void VectorAllTrueKernel(VectorBoolReductionContext ctx)
+    public static void VectorAllTrueKernel(VectorBoolReductionContext ctx) => AllTrue(ctx);
+
+    // The call checks the arrays of the context once; the loop then reads them without a check
+    [GpuDeviceFunction]
+    private static void AllTrue(VectorBoolReductionContext ctx)
     {
         int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -48,9 +56,10 @@ public static partial class GpuBigIntVectorKernels
     public static void WriteElementCountKernel(ElementCountWriteContext ctx)
     {
         int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
+        uint[] destination = Gpu.NotNull(ctx.Destination);
         for (int w = ThreadIndex.X; w < ctx.DestinationWords; w += BlockDimension.X)
         {
-            ctx.Destination[w] = w == 0 ? (uint)n : 0u;
+            destination[w] = w == 0 ? (uint)n : 0u;
         }
     }
 
@@ -60,7 +69,11 @@ public static partial class GpuBigIntVectorKernels
     /// the caller's target without reading the count on the host.
     /// </summary>
     [GpuKernel]
-    public static void CopyCountedElementsKernel(CountedCopyContext ctx)
+    public static void CopyCountedElementsKernel(CountedCopyContext ctx) => CopyCountedElements(ctx);
+
+    // The call checks the arrays of the context once; the loop then reads them without a check
+    [GpuDeviceFunction]
+    private static void CopyCountedElements(CountedCopyContext ctx)
     {
         int words = GpuStreamCompactionKernels.ResolveCount(ctx.Count) * ctx.WordsPerElement;
         int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;

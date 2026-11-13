@@ -182,7 +182,7 @@ public class NativeApiEscapingTests
         var errors = GetErrors(output);
         Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
         var tree = Assert.Single(output.SyntaxTrees,
-            static t => t.FilePath.EndsWith("_CudaImport.g.cs", StringComparison.Ordinal));
+            static t => t.FilePath.EndsWith(".CudaImport.g.cs", StringComparison.Ordinal));
         var strings = StringValues(output, tree);
         Assert.Contains("m" + LineSeparator + "odule.gfatbin", strings);
         Assert.Contains("k" + ParagraphSeparator + "er" + NextLine + "nel", strings);

@@ -12,7 +12,6 @@ Kernel:
     LaunchExportPrefix: __gsharp_launch_
     ContextPrefix: __gsharp_context_
     StateMachinePrefix: __gsharp_statemachine_
-    RawArgumentPrefix: __gsharp_raw_arg_
 
 StateMachine:
   Summary: Per-thread state machine context (CPU dialects).
@@ -118,6 +117,9 @@ Lowering:
     # The raw element of a C++ range-for whose loop variable converts it with a .NET conversion helper (#995):
     # for (auto __gsharp_foreach_e_<n> : <source>) { int x = __gsharp_to_i32(__gsharp_foreach_e_<n>); ... }
     ForEachElementPrefix: __gsharp_foreach_e_
+    # The index of a foreach over a constant string, which reads each UTF-16 code unit (ConstantStringForEach):
+    # for(int __gsharp_foreach_s_<n> = 0; ...) { char c = __gsharp_string_char(u"...", __gsharp_foreach_s_<n>); ... }
+    ForEachStringIndexPrefix: __gsharp_foreach_s_
     UnrollIndexPrefix: __gsharp_unroll_
     # The unsigned index of a Gpu.GridStrideLoop and its count and step, each read once before the loop (__gsharp_gsl_<n>,
     # __gsharp_gsl_n_<n>, __gsharp_gsl_s_<n>); the C++ emitter and the managed rewrite both spell them
@@ -237,6 +239,7 @@ Launcher:
     DelegateTypePrefix: __gsharp_delegate_
     DevicePointerPrefix: __gsharp_d_
     ProxyPrefix: __gsharp_proxy_
+    NullableProxyPrefix: __gsharp_nullable_
     NativePrefix: __gsharp_native_
     PinnedPrefix: __gsharp_p_
     PinnedTempPrefix: __gsharp_p_temp_
@@ -259,6 +262,15 @@ Launcher:
     CSharpArgumentPrefix: __gsharp_csharp_arg_
     CSharpPinnedPrefix: __gsharp_csharp_pin_
     CSharpLengthPrefix: __gsharp_csharp_len_
+    # The launchers of external modules ([CudaImport], YAML moduleName): the static field that holds the bytes of a
+    # module, followed by its number in the class; the struct that packs the arguments of a method (PackContext),
+    # followed by the method's number in the class, and its local; the local of each kernel argument and of an 'out'
+    # value, followed by the parameter ordinal
+    ModuleFieldPrefix: __gsharp_module_
+    NativeContextTypePrefix: __gsharp_native_context_
+    NativeContext: __gsharp_native_context
+    KernelArgumentPrefix: __gsharp_karg_
+    OutValuePrefix: __gsharp_out_
 
 ReturnValue:
   Summary: The buffer that a kernel returning a value writes into, the device-side locals that fill it, and the launcher locals that convert a returned struct whose layouts differ.
@@ -274,7 +286,6 @@ ReturnValue:
 Prelude:
   Summary: Functions and globals that the Prelude declares, used by the emitters or by the runtime loader.
   Names:
-    ArrayNullReadsEmpty: { Value: __gsharp_array_null_reads_empty, Prelude: ErrorChannel.hpp }
     HostLastError: { Value: __gsharp_host_last_error, Prelude: ErrorChannel.hpp }
     ActiveErrorSlot: { Value: __gsharp_active_error_slot, Prelude: ErrorChannel.hpp }
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
@@ -288,8 +299,7 @@ Prelude:
     ArrayRef: { Value: __gsharp_array_ref, Prelude: ErrorChannel.hpp }
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
-    # The array of a Gpu.NotNull call: a null array fails with NullReferenceException, also a null optional kernel
-    # argument, which reads as an empty array but is null
+    # The array of a Gpu.NotNull call: a null array fails with NullReferenceException, a null kernel argument included
     ArrayNotNull: { Value: __gsharp_array_not_null, Prelude: ErrorChannel.hpp }
     # A by-value struct argument of a device function: the non-nullable array fields it reaches, checked at the call
     StructRef: { Value: __gsharp_struct_ref, Prelude: ErrorChannel.hpp }
@@ -377,8 +387,15 @@ Prelude:
     TempAddress: { Value: __gsharp_temp_address, Prelude: StandardTypes.hpp }
     # A stack array viewed as a span (StackArrayLocals.AppendView). Declared by Types.hpp and by the CUDA prelude.
     StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
+    # The null checks of the array operands of System.Array methods (SpanMemberTranspilerRule). Declared by Types.hpp and
+    # by the CUDA prelude.
+    ArrayArgument: { Value: __gsharp_array_argument, Prelude: Types.hpp }
+    CopyArguments: { Value: __gsharp_copy_arguments, Prelude: Types.hpp }
     # The zero fill of a stackalloc outside a declaration (StackAllocEmitter). Declared by Types.hpp and by the CUDA prelude.
     StackAllocZero: { Value: __gsharp_stackalloc_zero, Prelude: Types.hpp }
+    # The UTF-16 code unit at a run-time index of a constant string (ConstantStringElement, ConstantStringForEach).
+    # Declared by Types.hpp and by the CUDA prelude.
+    StringChar: { Value: __gsharp_string_char, Prelude: Types.hpp }
     # NaN and infinity of float and double, which have no C++ literal (ConstexprLiteral). Declared by Platform.hpp for
     # the CPU dialects and by the CUDA prelude (../Prelude.cu).
     NaNSingle: { Value: __gsharp_nan_f, Prelude: Platform.hpp }

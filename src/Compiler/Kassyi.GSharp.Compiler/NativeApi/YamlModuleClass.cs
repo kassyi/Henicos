@@ -1,9 +1,9 @@
 namespace Kassyi.GSharp.Compiler.NativeApi;
 
 /// <summary>
-/// A class that a YAML <c>moduleName</c> binding extends, and the module whose field (<c>s_fatbin_&lt;module&gt;</c>)
-/// the binding declares in it. <c>[CudaImport]</c> methods of the same module in that class use that field instead
-/// of declaring a second one.
+/// A class that a YAML <c>moduleName</c> binding extends, and the module whose field
+/// (<see cref="AotModuleNames.GetModuleFieldName"/>) the binding declares in it. <c>[CudaImport]</c>
+/// methods of the same module in that class use that field instead of declaring a second one.
 /// </summary>
 /// <param name="TypeName">
 /// The metadata name of the class (<see cref="GetTypeName"/>): <c>&lt;namespace&gt;.&lt;class&gt;</c>, keywords not

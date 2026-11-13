@@ -51,9 +51,7 @@ public static partial class InArrayCopyKernels
     {
         if (ThreadIndex.X == 0)
         {
-#pragma warning disable CS8602 // The device reads a null array as one of length 0
-            o[0] = bags.Length;
-#pragma warning restore CS8602
+            o[0] = bags is null ? -2 : bags.Length;
         }
     }
 

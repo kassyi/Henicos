@@ -424,7 +424,7 @@ public static partial class MarshalingAliasingDifferentialKernels
         }
     }
 
-    // --- Non-nullable vs Nullable top-level array null / empty (#806, #838) ---
+    // --- Non-nullable vs Nullable top-level array null / empty: each as C# passes it ---
     [GpuKernel]
     public static void NonNullableArrayKernel(int[] input, [Out] int[] output)
     {
@@ -501,6 +501,20 @@ public static partial class MarshalingAliasingDifferentialKernels
 #pragma warning disable CS8602
             output[0] = bag.Data.Length + bag.Fallback;
 #pragma warning restore CS8602
+        }
+    }
+
+    // --- Overlapping raw pointers (#979): dst == src + 1, so each iteration reads what the one before wrote ---
+    [GpuKernel]
+    public static unsafe void OverlappingPointerShiftKernel(int* src, int* dst, int n)
+    {
+        int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
+        if (tid == 0)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                dst[i] = src[i] + 1;
+            }
         }
     }
 }

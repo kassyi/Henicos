@@ -10,7 +10,7 @@ internal static class PointerLaunchPlan
     /// <summary>Classifies <paramref name="shape"/> for the pointer launcher.</summary>
     public static PointerArgumentKind Classify(in KernelParameterShape shape) => shape switch
     {
-        { IsArray: true, IsOptional: true } => PointerArgumentKind.OptionalArray,
+        { IsArray: true, IsNullableValue: true } => PointerArgumentKind.NullableArray,
         { IsArray: true } => PointerArgumentKind.Array,
         { IsByRef: true } => PointerArgumentKind.Reference,
         { IsCustomStruct: true } => PointerArgumentKind.ShadowStruct,
@@ -19,5 +19,14 @@ internal static class PointerLaunchPlan
 
     /// <summary>Whether the pointer launcher takes <paramref name="kind"/> as a <c>GSharpArrayProxy</c>.</summary>
     public static bool IsProxy(PointerArgumentKind kind) =>
-        kind is PointerArgumentKind.Array or PointerArgumentKind.OptionalArray;
+        kind is PointerArgumentKind.Array or PointerArgumentKind.NullableArray;
+
+    /// <summary>
+    /// The proxy that the pointer launcher reads for <paramref name="shape"/>: the parameter, or its value (a
+    /// <c>GSharpArrayProxy?</c> without a value reads as a null proxy).
+    /// </summary>
+    public static string GetProxyExpression(in KernelParameterShape shape) =>
+        Classify(shape) == PointerArgumentKind.NullableArray
+            ? $"{shape.Identifier}.GetValueOrDefault()"
+            : shape.Identifier;
 }

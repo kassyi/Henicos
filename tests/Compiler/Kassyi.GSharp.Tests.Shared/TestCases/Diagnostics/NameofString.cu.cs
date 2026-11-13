@@ -1,3 +1,4 @@
+using System;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Diagnostics;
@@ -9,8 +10,8 @@ public static partial class NameofStringKernels
     [SkipSnapshotConsistency("Diagnostics case")]
     public static void NameofStringKernel(int[] r)
     {
-        int c = nameof(NameofStringKernels)[0];
-        r[0] = c;
+        ReadOnlySpan<char> c = nameof(NameofStringKernels);
+        r[0] = c.Length + nameof(NameofStringKernels)[0];
         r[1] = nameof(r).Length + (nameof(r) == "r" ? 1 : 0);
     }
 

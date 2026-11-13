@@ -71,6 +71,44 @@ internal static class ArrayViewMethods
             .Any((original, type), static (member, m) => member.Matches(m.original, m.type));
     }
 
+    /// <summary>
+    /// What a call of <paramref name="method"/>, a listed method (<see cref="IsViewMember"/>), checks before the view's
+    /// member acts, as C# does: a default <c>ArraySegment&lt;T&gt;</c> or <c>ImmutableArray&lt;T&gt;</c> has no array,
+    /// which <c>Slice</c> and <c>CopyTo</c> report first, and <c>CopyTo</c> then reports a destination without an array
+    /// before it compares the lengths. <see cref="ViewCheckPlan.None"/> for any other method (a <c>Memory&lt;T&gt;</c>
+    /// is never null, and <c>ImmutableArray&lt;T&gt;.AsSpan</c> of a default value is an empty span).
+    /// </summary>
+    public static ViewCheckPlan GetChecks(IMethodSymbol method)
+    {
+        var original = method.OriginalDefinition;
+        var ifDefault = GetViewType(original.ContainingType) switch
+        {
+            // ArraySegment<T>.ThrowInvalidOperationIfDefault ("The underlying array is null.")
+            ViewType.ArraySegment => ViewCheck.InvalidOperation,
+            // ImmutableArray<T>.ThrowNullRefIfNotInitialized
+            ViewType.ImmutableArray => ViewCheck.NullReference,
+            _ => ViewCheck.None,
+        };
+        if (ifDefault == ViewCheck.None || original.Name is not ("Slice" or "CopyTo"))
+        {
+            return ViewCheckPlan.None;
+        }
+
+        var ifDestinationNull = original is { Name: "CopyTo", Parameters: [var destination] }
+            ? GetDestinationCheck(destination.Type)
+            : ViewCheck.None;
+        return new ViewCheckPlan(ifDefault, ifDestinationNull);
+    }
+
+    // Array.Copy throws ArgumentNullException for a null destination array, ArraySegment<T>.CopyTo(ArraySegment<T>)
+    // InvalidOperationException for a default destination; a span destination is never null
+    private static ViewCheck GetDestinationCheck(ITypeSymbol destination) =>
+        destination is IArrayTypeSymbol
+            ? ViewCheck.ArgumentNull
+            : GetViewType(destination as INamedTypeSymbol) == ViewType.ArraySegment
+                ? ViewCheck.InvalidOperation
+                : ViewCheck.None;
+
     private static ViewType GetViewType(INamedTypeSymbol? type) =>
         type is not { IsGenericType: true, TypeArguments.Length: 1 }
             ? ViewType.None

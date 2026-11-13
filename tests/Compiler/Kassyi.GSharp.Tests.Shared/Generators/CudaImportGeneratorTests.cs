@@ -52,7 +52,7 @@ public class CudaImportGeneratorTests
         CreateDriver().RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
 
         Assert.Empty(generatorDiagnostics);
-        var source = Assert.Single(output.SyntaxTrees, static t => t.FilePath.EndsWith("_CudaImport.g.cs")).ToString();
+        var source = Assert.Single(output.SyntaxTrees, static t => t.FilePath.EndsWith(".CudaImport.g.cs")).ToString();
         var text = MethodBody(source, "public static partial void Text(string text)");
         Assert.Equal(
             "throw new global::System.NotSupportedException(\"Parameter 'text' of [CudaImport] method " +
@@ -84,7 +84,7 @@ public class CudaImportGeneratorTests
 
         CreateDriver().RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
 
-        var source = Assert.Single(output.SyntaxTrees, static t => t.FilePath.EndsWith("_CudaImport.g.cs")).ToString();
+        var source = Assert.Single(output.SyntaxTrees, static t => t.FilePath.EndsWith(".CudaImport.g.cs")).ToString();
         Assert.Contains($"public static partial void {signature}", source);
     }
 
@@ -126,6 +126,102 @@ public class CudaImportGeneratorTests
         Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
         var generated = driver.GetRunResult().GeneratedTrees.Single().GetText().ToString();
         Assert.Contains("namespace @event.Imports;", generated, StringComparison.Ordinal);
+    }
+
+    // The launcher declares no local that a parameter name can collide with (a, d_a, kernel, scope, ctx, kernelParams,
+    // p_input, h_result) and names every type it uses from global::, so a type of the user's namespace (IntPtr,
+    // GpuKernelLoader, GpuBuffer<T>, CudaException, CudaDriverApi, Lazy<T>, AppContext, System, Span<T>) changes
+    // nothing and no using of the runtime is needed (#1131). Two module names that map to the same identifier part, and
+    // overloads that pack their arguments into a struct, get members of their own.
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LauncherNames_ParametersAndTypesOfTheUserScope_Compile()
+    {
+        var output = RunGenerator("NativeApi/CudaImportNameCollisions.cs", out var generatorDiagnostics, out var trees);
+
+        Assert.Empty(generatorDiagnostics);
+        AssertNoErrors(output);
+        Assert.Equal(13, trees.Length);
+        Assert.All(trees, static t => Assert.DoesNotContain(
+            t.GetRoot().DescendantNodes(),
+            static node => node is UsingDirectiveSyntax));
+    }
+
+    // The generated part repeats the declaration (#1290): the ref kinds, params, keyword names with @, an unsafe
+    // container, nested, generic, struct, ref struct, record struct and record containers. Classes of the same name in
+    // other namespaces (#1288) or in another type of the same namespace each get a part of their own.
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Declarations_ModifiersKeywordsAndContainers_Compile()
+    {
+        var output = RunGenerator("NativeApi/CudaImportDeclarations.cs", out var generatorDiagnostics, out var trees);
+
+        Assert.Empty(generatorDiagnostics);
+        AssertNoErrors(output);
+        Assert.Equal(13, trees.Length);
+        var hintNames = trees.Select(static t => Path.GetFileName(t.FilePath)).ToArray();
+        Assert.Equal(hintNames.Length, hintNames.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.All(hintNames, static n => Assert.EndsWith(".CudaImport.g.cs", n, StringComparison.Ordinal));
+    }
+
+    // A declaration that G# reports with GSH0113 gets no generated part: the generator neither fails (CS8785) nor
+    // adds a second body or a part of a type that is not partial; the other methods of the class are still generated
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Declarations_GeneratorCannotImplement_GenerateNothingForThem()
+    {
+        RunGenerator("NativeApi/CudaImportDeclarationDiagnostics.cs", out var generatorDiagnostics, out var trees);
+
+        Assert.Empty(generatorDiagnostics);
+        var source = Assert.Single(trees).GetText().ToString();
+        Assert.Contains(" Passable(", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(" External(", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(" Bodied(", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(" Generic", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(" Counted(", source, StringComparison.Ordinal);
+        Assert.DoesNotContain(" Implemented(", source, StringComparison.Ordinal);
+    }
+
+    // A parameter named nameof does not capture the name of the null check, which is a string literal (with
+    // nameof(data), every nameof bound to the parameter: CS0149)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ParameterNamedNameof_Compiles()
+    {
+        var output = RunGenerator(
+            "NativeApi/CudaImportNameofParameter.cs",
+            out var generatorDiagnostics,
+            out var trees
+        );
+
+        Assert.Empty(generatorDiagnostics);
+        AssertNoErrors(output);
+        Assert.Contains(
+            "throw new global::System.ArgumentNullException(\"data\");",
+            Assert.Single(trees).GetText().ToString(),
+            StringComparison.Ordinal);
+    }
+
+    private static Compilation RunGenerator(string testCase, out ImmutableArray<Diagnostic> generatorDiagnostics,
+        out ImmutableArray<SyntaxTree> generatedTrees)
+    {
+        var driver = CreateDriver()
+            .RunGeneratorsAndUpdateCompilation(
+                CreateCompilation(RoslynTestUtility.ReadTestCase(testCase)),
+                out var output,
+                out generatorDiagnostics
+            );
+        generatedTrees = driver.GetRunResult().GeneratedTrees;
+        return output;
+    }
+
+    private static void AssertNoErrors(Compilation output)
+    {
+        var errors = output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error || d.Id == "CS8500")
+            .Select(static d => d.ToString())
+            .ToArray();
+        Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
     }
 
     private static CSharpCompilation CreateCompilation(string source)

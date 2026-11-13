@@ -16,6 +16,11 @@ namespace Kassyi.GSharp.Tests.Shared.Generators;
 [Category(TestCategory.Compiler)]
 public class NativeApiSharedModuleClassTests
 {
+    // The module fields: __gsharp_module_ and the module name with '.' escaped as _x00002e
+    private const string SharedField = "__gsharp_module_shared_x00002egfatbin";
+    private const string OtherField = "__gsharp_module_other_x00002egfatbin";
+    private const string YamlField = "__gsharp_module_yaml_x00002egfatbin";
+
     // A YAML module binding of My.Native.Shared: Fill(int[] data, <valueType> value) of <moduleName>
     private static string SharedYaml(string moduleName = "shared.gfatbin", string valueType = "int") => $$"""
         namespace: My.Native
@@ -34,8 +39,8 @@ public class NativeApiSharedModuleClassTests
     {
         var output = Compile(Api("shared.yml", SharedYaml()));
 
-        Assert.Equal(new[] { "s_fatbin_other_gfatbin", "s_fatbin_shared_gfatbin" }, ModuleFields(output, "Shared"));
-        Assert.Equal(new[] { "s_fatbin_shared_gfatbin" }, ModuleFields(output, "Separate"));
+        Assert.Equal(new[] { OtherField, SharedField }, ModuleFields(output, "Shared"));
+        Assert.Equal(new[] { SharedField }, ModuleFields(output, "Separate"));
         var shared = output.GetTypeByMetadataName("My.Native.Shared");
         Assert.NotNull(shared);
         Assert.Single(shared.GetMembers("Fill"));
@@ -49,8 +54,7 @@ public class NativeApiSharedModuleClassTests
     {
         var output = Compile(Api("shared.yml", SharedYaml(moduleName: "yaml.gfatbin")));
 
-        Assert.Equal(new[] { "s_fatbin_other_gfatbin", "s_fatbin_shared_gfatbin", "s_fatbin_yaml_gfatbin" },
-            ModuleFields(output, "Shared"));
+        Assert.Equal(new[] { OtherField, SharedField, YamlField }, ModuleFields(output, "Shared"));
     }
 
     // A YAML definition that is not read (GSH0053) declares nothing, so the [CudaImport] part declares the field
@@ -59,7 +63,7 @@ public class NativeApiSharedModuleClassTests
     public void YamlThatFailsToRead_KeepsTheCudaImportField()
     {
         var yaml = SharedYaml(valueType: "int[][]");
-        var compilation = CreateTestCaseCompilation();
+        var compilation = CreateTestCaseCompilation("NativeApi/CudaImportSharedModuleClass.cs");
 
         CreateDriverWithCudaImport(compilation, Api("shared.yml", yaml))
             .RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
@@ -67,12 +71,40 @@ public class NativeApiSharedModuleClassTests
         Assert.Equal("GSH0053", Assert.Single(diagnostics).Id);
         var errors = GetErrors(output);
         Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
-        Assert.Equal(new[] { "s_fatbin_other_gfatbin", "s_fatbin_shared_gfatbin" }, ModuleFields(output, "Shared"));
+        Assert.Equal(new[] { OtherField, SharedField }, ModuleFields(output, "Shared"));
     }
 
-    private static Compilation Compile(params TestFile[] files)
+    // a.gfatbin and a_gfatbin get fields of their own (the module name is escaped injectively): the YAML binding
+    // declares the one of a.gfatbin, which the [CudaImport] method of a.gfatbin uses, and the [CudaImport] part
+    // declares the one of a_gfatbin
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ModulesDifferingInPunctuation_GetFieldsOfTheirOwn()
     {
-        var compilation = CreateTestCaseCompilation();
+        const string Yaml = """
+            namespace: My.Native
+            className: Dotted
+            moduleName: a.gfatbin
+            methods:
+              - name: Fill
+                parameters:
+                  - { name: data, type: "int[]" }
+            """;
+
+        var output = Compile(Api("dotted.yml", Yaml), "NativeApi/CudaImportEscapedModuleNames.cs");
+
+        Assert.Equal(new[] { "__gsharp_module_a_ugfatbin", "__gsharp_module_a_x00002egfatbin" },
+            ModuleFields(output, "Dotted"));
+    }
+
+    private static Compilation Compile(params TestFile[] files) =>
+        Compile(files, "NativeApi/CudaImportSharedModuleClass.cs");
+
+    private static Compilation Compile(TestFile file, string testCase) => Compile([file], testCase);
+
+    private static Compilation Compile(TestFile[] files, string testCase)
+    {
+        var compilation = CreateTestCaseCompilation(testCase);
 
         CreateDriverWithCudaImport(compilation, files)
             .RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
@@ -83,10 +115,8 @@ public class NativeApiSharedModuleClassTests
         return output;
     }
 
-    private static Compilation CreateTestCaseCompilation() =>
-        RoslynTestUtility.CreateCompilation(
-            RoslynTestUtility.ReadTestCase("NativeApi/CudaImportSharedModuleClass.cs")
-        );
+    private static Compilation CreateTestCaseCompilation(string testCase) =>
+        RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(testCase));
 
     // The module fields that the generated parts declare in My.Native.<className>, in name order
     private static string[] ModuleFields(Compilation compilation, string className)
@@ -96,7 +126,7 @@ public class NativeApiSharedModuleClassTests
         return type.GetMembers()
             .OfType<IFieldSymbol>()
             .Select(static f => f.Name)
-            .Where(static n => n.StartsWith("s_fatbin_", StringComparison.Ordinal))
+            .Where(static n => n.StartsWith("__gsharp_module_", StringComparison.Ordinal))
             .OrderBy(static n => n, StringComparer.Ordinal)
             .ToArray();
     }
