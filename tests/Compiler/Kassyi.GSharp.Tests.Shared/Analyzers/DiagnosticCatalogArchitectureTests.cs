@@ -14,7 +14,7 @@ public class DiagnosticCatalogArchitectureTests
 {
     // The build-time generator executable cannot link the generated GSharpDiagnostics, so this file mirrors
     // the NativeApi YAML IDs (see NativeApiReadError.DiagnosticId); NativeApiReadErrorIds_MatchCatalog pins them.
-    private const string MirroredIdFile = "NativeApiDefinition.cs";
+    private const string MirroredIdFile = "NativeApiReadError.cs";
 
     // The catalog generator itself cites an example ID in its schema-error message.
     private const string CatalogGeneratorFile = "DiagnosticGenerator.cs";

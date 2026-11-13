@@ -35,12 +35,29 @@
     <Using Include="Microsoft.CodeAnalysis.CSharp.Syntax" />
     <!-- Shared with the NativeApiGenerator source generator so built-in and user YAML are handled identically. -->
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiDefinition.cs" Link="NativeApi\NativeApiDefinition.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiBindingKind.cs" Link="NativeApi\NativeApiBindingKind.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeLibraryNames.cs" Link="NativeApi\NativeLibraryNames.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\ApiMethodDefinition.cs" Link="NativeApi\ApiMethodDefinition.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\ClassDocumentationDefinition.cs" Link="NativeApi\ClassDocumentationDefinition.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\TypeTemplateDefinition.cs" Link="NativeApi\TypeTemplateDefinition.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\TypeParameterDefinition.cs" Link="NativeApi\TypeParameterDefinition.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\ParameterDefinition.cs" Link="NativeApi\ParameterDefinition.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiReadErrorKind.cs" Link="NativeApi\NativeApiReadErrorKind.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiReadError.cs" Link="NativeApi\NativeApiReadError.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiReadException.cs" Link="NativeApi\NativeApiReadException.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\YamlSubsetParser.cs" Link="NativeApi\YamlSubsetParser.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\YamlNode.cs" Link="NativeApi\YamlNode.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\YamlScalar.cs" Link="NativeApi\YamlScalar.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\YamlSequence.cs" Link="NativeApi\YamlSequence.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\YamlMapping.cs" Link="NativeApi\YamlMapping.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\YamlInlineParser.cs" Link="NativeApi\YamlInlineParser.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiYamlReader.cs" Link="NativeApi\NativeApiYamlReader.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiMethodReader.cs" Link="NativeApi\NativeApiMethodReader.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiYamlValues.cs" Link="NativeApi\NativeApiYamlValues.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\ModuleKernelParameterTypes.cs" Link="NativeApi\ModuleKernelParameterTypes.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\ModuleKernelParameterKind.cs" Link="NativeApi\ModuleKernelParameterKind.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\ModuleLaunchSetting.cs" Link="NativeApi\ModuleLaunchSetting.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\ModuleParameterType.cs" Link="NativeApi\ModuleParameterType.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeIntrinsicEmitter.cs" Link="NativeApi\NativeIntrinsicEmitter.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiDocumentation.cs" Link="NativeApi\NativeApiDocumentation.cs" />
   </ItemGroup>
