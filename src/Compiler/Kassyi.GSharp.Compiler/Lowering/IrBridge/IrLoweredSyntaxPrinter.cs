@@ -174,6 +174,8 @@ internal sealed class IrLoweredSyntaxPrinter(IrSyntaxIndex index, LoweringTempNa
             value = DeclareOutArguments(call, output);
         }
 
+        value = WithParentheses(origin, value);
+
         var name = Name(declaration.Variable, made.Kind, origin);
         output.Add(made.Kind == IrTemporaryKind.Argument
             ? LoweringSyntax.DeclareTemporary(name, value.WithoutTrivia().WithSpilledTypeSpanFrom(origin, compilation),
@@ -455,10 +457,33 @@ internal sealed class IrLoweredSyntaxPrinter(IrSyntaxIndex index, LoweringTempNa
                 return false;
             }
 
-            replacements[replaced] = Reference(temporary);
+            replacements[OutermostParentheses(replaced, syntax)] = Reference(temporary);
         }
 
         return true;
+    }
+
+    // [WHY] An operation has the syntax inside the parentheses written around it; the syntax passes spill and replace
+    // the parenthesized expression, so the temporary takes the parentheses with it as they do
+    private static SyntaxNode OutermostParentheses(SyntaxNode node, SyntaxNode within)
+    {
+        while (node != within && node.Parent is ParenthesizedExpressionSyntax parenthesized)
+        {
+            node = parenthesized;
+        }
+
+        return node;
+    }
+
+    // value in the parentheses written around origin, each a copy that keeps its original span
+    private static ExpressionSyntax WithParentheses(SyntaxNode origin, ExpressionSyntax value)
+    {
+        for (var parent = origin.Parent; parent is ParenthesizedExpressionSyntax parenthesized; parent = parent.Parent)
+        {
+            value = parenthesized.WithExpression(value);
+        }
+
+        return value;
     }
 
     // A temporary of an operand, a warp operation or a call carries the spilled type span of what it holds; the one of

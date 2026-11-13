@@ -165,10 +165,10 @@
     public void LeftOperandWrittenBeforeShuffle()
 {
     int l = ThreadIndex.X;
-    var __gsharp_arg_temp_0 = a[l] = l + 100;
+    var __gsharp_arg_temp_0 = (a[l] = l + 100);
     var __gsharp_arg_temp_1 = a[l];
     var __gsharp_warp_temp_2 = Warp.ShuffleSync(0xffffffffu, __gsharp_arg_temp_1, 0);
-    result[l] = (__gsharp_arg_temp_0) + __gsharp_warp_temp_2;
+    result[l] = __gsharp_arg_temp_0 + __gsharp_warp_temp_2;
 }
 
     // result[0] = x + Warp.ShuffleSync(0xffffffffu, y, 0); -> written by the IR
@@ -302,7 +302,7 @@
         __gsharp_cond_temp_0 = 0;
     }
 
-    result[0] = __gsharp_arg_temp_0 + (__gsharp_cond_temp_0);
+    result[0] = __gsharp_arg_temp_0 + __gsharp_cond_temp_0;
 }
 
     // r[t + 32] = Warp.ActiveMask(); -> written by the IR
