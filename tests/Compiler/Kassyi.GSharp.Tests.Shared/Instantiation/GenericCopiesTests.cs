@@ -121,7 +121,8 @@ public class GenericCopiesTests
     public void Create_SiblingOfGenericType_IsRejectedNotEmitted()
     {
         var compilation = CreateCompilation();
-        var outer = compilation.GetTypeByMetadataName("App.Outer`1") ?? throw new InvalidOperationException("No Outer.");
+        var outer = compilation.GetTypeByMetadataName("App.Outer`1") ??
+                    throw new InvalidOperationException("No Outer.");
         var run = outer.Construct(compilation.GetSpecialType(SpecialType.System_Int32)).GetTypeMembers("Kernels")[0]
             .GetMembers("Run").OfType<IMethodSymbol>().Single();
 
@@ -159,8 +160,10 @@ public class GenericCopiesTests
         foreach (var node in declaration.DescendantNodesAndSelf())
         {
             var annotation = Assert.Single(node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
-            Assert.True(LoweringAnnotations.TryParseOriginalSpanData(annotation.Data, out var start, out var length, out _, out _));
-            Assert.True(original.Contains(new TextSpan(start, length)), $"{node.Kind()} points outside the declaration");
+            Assert.True(LoweringAnnotations.TryParseOriginalSpanData(
+                annotation.Data, out var start, out var length, out _, out _));
+            Assert.True(original.Contains(new TextSpan(start, length)),
+                $"{node.Kind()} points outside the declaration");
         }
     }
 
@@ -200,7 +203,7 @@ public class GenericCopiesTests
         var emitted = set.Compilation.Emit(stream);
         Assert.True(emitted.Success, string.Join("\n", emitted.Diagnostics));
 
-#pragma warning disable RS0030 // Reflection calls the assembly this test compiled at run time (test-architecture 3.10, case 9)
+#pragma warning disable RS0030 // Reflection calls an assembly this test compiled at run time
         var kernels = System.Reflection.Assembly.Load(stream.ToArray()).GetType("App.Kernels") ??
                       throw new InvalidOperationException("No App.Kernels in the emitted assembly.");
         var type = Type.GetType(typeArgument) ?? throw new InvalidOperationException(typeArgument);
@@ -224,7 +227,7 @@ public class GenericCopiesTests
     {
         try
         {
-#pragma warning disable RS0030 // Reflection calls the assembly this test compiled at run time (test-architecture 3.10, case 9)
+#pragma warning disable RS0030 // Reflection calls an assembly this test compiled at run time
             return method.Invoke(null, arguments)?.ToString() ?? "null";
 #pragma warning restore RS0030
         }
@@ -268,17 +271,17 @@ public class GenericCopiesTests
 
         if (type == typeof(short))
         {
-            return Enumerable.Range(0, 65536).Where(i => i % 61 == 0 || i < 8 || i > 65528).Select(i => (object)(short)i);
+            return Spread().Select(i => (object)(short)i);
         }
 
         if (type == typeof(ushort))
         {
-            return Enumerable.Range(0, 65536).Where(i => i % 61 == 0 || i < 8 || i > 65528).Select(i => (object)(ushort)i);
+            return Spread().Select(i => (object)(ushort)i);
         }
 
         if (type == typeof(char))
         {
-            return Enumerable.Range(0, 65536).Where(i => i % 61 == 0 || i < 8 || i > 65528).Select(i => (object)(char)i);
+            return Spread().Select(i => (object)(char)i);
         }
 
         if (type == typeof(uint))
@@ -304,7 +307,10 @@ public class GenericCopiesTests
         return CreateCopy(compilation, method, type);
     }
 
-    private static (GenericCopy Copy, GenericCopySet Set) CreateCopy(Compilation compilation, string method, ITypeSymbol type)
+    private static (GenericCopy Copy, GenericCopySet Set) CreateCopy(
+        Compilation compilation,
+        string method,
+        ITypeSymbol type)
     {
         var set = GenericCopies.Create(compilation, [Instance(compilation, method, type)]);
         return (set.Copies.Single(), set);
@@ -319,20 +325,29 @@ public class GenericCopiesTests
         var pinned = plan.Rewrites.Values.Where(r => r.Kind == kind).Select(r => r.NodeIndex).ToArray();
         Assert.NotEmpty(pinned);
 
-        return GenericCopies.Create(compilation, [plan with { Rewrites = plan.Rewrites.RemoveRange(pinned) }]).Copies.Single();
+        var withoutPins = plan with { Rewrites = plan.Rewrites.RemoveRange(pinned) };
+        return GenericCopies.Create(compilation, [withoutPins]).Copies.Single();
     }
 
     private static GenericInstance Instance(Compilation compilation, string method, ITypeSymbol type)
     {
-        var kernels = compilation.GetTypeByMetadataName("App.Kernels") ?? throw new InvalidOperationException("No Kernels.");
+        var kernels = compilation.GetTypeByMetadataName("App.Kernels") ??
+                      throw new InvalidOperationException("No Kernels.");
         var definition = kernels.GetMembers(method).OfType<IMethodSymbol>().Single(m => m.IsGenericMethod);
         return GenericInstance.Of(definition.Construct(type));
     }
 
     private static TNode Single<TNode>(GenericCopy copy) where TNode : SyntaxNode =>
-        Assert.Single(Assert.IsAssignableFrom<MethodDeclarationSyntax>(copy.Declaration).DescendantNodes().OfType<TNode>());
+        Assert.Single(Assert.IsAssignableFrom<MethodDeclarationSyntax>(copy.Declaration)
+            .DescendantNodes()
+            .OfType<TNode>());
 
-    private static ISymbol? SymbolOf(GenericCopySet set, SyntaxNode node) => ModelOf(set, node).GetSymbolInfo(node).Symbol;
+    private static ISymbol? SymbolOf(GenericCopySet set, SyntaxNode node) =>
+        ModelOf(set, node).GetSymbolInfo(node).Symbol;
+
+    // Every 61st value of a 16-bit type, and its edges
+    private static IEnumerable<int> Spread() =>
+        Enumerable.Range(0, 65536).Where(i => i % 61 == 0 || i < 8 || i > 65528);
 
     private static SemanticModel ModelOf(GenericCopySet set, SyntaxNode node) =>
         set.Compilation.GetSemanticModel(node.SyntaxTree);

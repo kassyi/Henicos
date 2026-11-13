@@ -52,7 +52,9 @@ internal static class BuiltinNumerics
     /// </summary>
     public static int GetSignShift(ITypeSymbol type) => GetShiftMask(type) == 7 ? 24 : 16;
 
-    /// <summary>The value of <c>Zero</c> and <c>AdditiveIdentity</c> (0) or <c>One</c> and <c>MultiplicativeIdentity</c> (1).</summary>
+    /// <summary>
+    /// The value of <c>Zero</c> and <c>AdditiveIdentity</c> (0) or <c>One</c> and <c>MultiplicativeIdentity</c> (1).
+    /// </summary>
     public static bool TryGetIdentity(string propertyName, out int value)
     {
         switch (propertyName)

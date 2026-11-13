@@ -4,7 +4,8 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// <param name="Kind">How the copy binds it.</param>
 /// <param name="ClosedType">The type argument the member is reached through.</param>
 /// <param name="Implementation">The implementing member (<see cref="ConstrainedMemberKind.Member"/>).</param>
-/// <param name="OperatorName">The metadata name of the operator (<see cref="ConstrainedMemberKind.BuiltinOperator"/>).</param>
+/// <param name="OperatorName">The metadata name of the operator
+/// (<see cref="ConstrainedMemberKind.BuiltinOperator"/>).</param>
 /// <param name="Constant">The value (<see cref="ConstrainedMemberKind.IdentityConstant"/>), 0 or 1.</param>
 /// <param name="Reason">Why it is unsupported.</param>
 internal sealed record ConstrainedMember(

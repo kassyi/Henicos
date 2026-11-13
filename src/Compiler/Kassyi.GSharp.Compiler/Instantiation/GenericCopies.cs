@@ -37,7 +37,9 @@ internal static class GenericCopies
             new InstanceSymbolMap(instance, compilation), instance);
     }
 
-    /// <summary>Writes the copies that <paramref name="plans"/> describe into one derived compilation and checks them.</summary>
+    /// <summary>
+    /// Writes the copies that <paramref name="plans"/> describe into one derived compilation and checks them.
+    /// </summary>
     public static GenericCopySet Create(Compilation compilation, ImmutableArray<GenericCopyPlan> plans)
     {
         var prepared = new PreparedCopy?[plans.Length];
