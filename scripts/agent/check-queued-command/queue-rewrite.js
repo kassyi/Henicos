@@ -125,7 +125,8 @@ function testGpu(segment, root) {
 function recipeBodies(justfile, recipe) {
   const lines = justfile.split(/\r?\n/);
   const bodies = [];
-  const header = new RegExp(`^@?${recipe.replace(/[-.]/g, '\\$&')}(\\s[^\\n]*)?:\\s*$`);
+  // Every regular-expression character of the name escaped, backslash included (only - and . were before)
+  const header = new RegExp(`^@?${recipe.replace(/[\\^$.*+?()[\]{}|-]/g, '\\$&')}(\\s[^\\n]*)?:\\s*$`);
   for (let i = 0; i < lines.length; i++) {
     if (!header.test(lines[i]) || /:=/.test(lines[i])) {
       continue;
