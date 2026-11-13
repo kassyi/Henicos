@@ -5,7 +5,8 @@ namespace Kassyi.GSharp.Compiler.Generators;
 /// <summary>
 /// Replaces renamed G# identifiers (<c>__gsharp_k_*</c>, <c>__gsharp_fn_*</c>, <c>__gsharp_ty_*</c>, <c>__gsharp_id_*</c>,
 /// <c>__gsharp_mb_*</c>, <c>__gsharp_tp_*</c> and hash-shortened <c>_h</c> names) in a compiler or runtime log with their C#
-/// names.
+/// names, and the module name in the generated <c>GSharpModuleContext_*</c> class and <c>__gsharp_module_*</c> field
+/// (<c>GSharpModuleContext_My_x00002eLib</c> becomes <c>GSharpModuleContext(My.Lib)</c>).
 /// </summary>
 /// <remarks>
 /// Decoding goes through <see cref="GSharpNameEncoding"/>, the same source the compiler encodes with, so the two cannot drift.
