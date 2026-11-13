@@ -83,6 +83,14 @@ internal readonly record struct KernelHostModel
     /// </summary>
     public string? LauncherUnavailableReason { get; init; }
 
+    /// <summary>
+    /// Why the CPU dialect's launcher cannot run the kernel (GSH0115: its managed fallback needs a copy of a body that
+    /// names a file-local type, <see cref="FileLocalNames.FindBlockedCopy"/>), as the message of the exception that the
+    /// <c>Launch</c> method written in its place throws; <see langword="null"/> otherwise. The CUDA dialect copies no
+    /// body and ignores it.
+    /// </summary>
+    public string? CpuLauncherUnavailableReason { get; init; }
+
     /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
     public string MessageName { get; init; }
 
@@ -191,6 +199,7 @@ internal readonly record struct KernelHostModel
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
             Parameters = parameters,
             LauncherUnavailableReason = unavailableReason,
+            CpuLauncherUnavailableReason = FormatFileLocalReason(kernel, model),
             Structs = hasLauncher ? structs : default,
             CudaLayoutGuards = hasLauncher ? CollectLayoutGuards(kernel, HostDialects.Cuda) : default,
             CpuLayoutGuards = hasLauncher ? CollectLayoutGuards(kernel, HostDialects.Cpu) : default
@@ -203,6 +212,15 @@ internal readonly record struct KernelHostModel
         "of field " +
         $"'{found.FieldPath}' is not accessible from '{TypeLayoutCalculator.FormatTypeName(kernel.ContainingType)}' " +
         $"({GSharpDiagnostics.StructFieldTypeInaccessibleToLauncher.Id}).";
+
+    // <kernel> cannot be launched on the CPU dialect: the managed path cannot copy the body of '<method>', which names
+    // a file-local type (GSH0115); null when the copies the managed fallback needs can be written
+    private static string? FormatFileLocalReason(IMethodSymbol kernel, SemanticModel? model) =>
+        model is not null && FileLocalNames.FindBlockedCopy(kernel, model.Compilation) is { } blocked
+            ? $"{kernel.Name} cannot be launched on the CPU dialect: the managed path cannot copy the body of " +
+              $"'{FileLocalNames.FormatMethod(blocked)}', which names a file-local type " +
+              $"({GSharpDiagnostics.FileLocalTypeInManagedCopy.Id})."
+            : null;
 
     // The managed state machine keeps pointers in its context, so the context becomes an unsafe struct pinned by the launcher
     private static bool NeedsUnsafeContext(IMethodSymbol kernel)

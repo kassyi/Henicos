@@ -904,6 +904,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "FileLocalTypeInManagedCopy",
+    "id": "GSH0115",
+    "title": "A file-local type cannot be named by the managed code G# generates",
+    "messageFormat": "'{0}' is a file-local type; the managed path copies the body of '{1}' into a generated file, where it is not visible. Declare the type without 'file', for example as a private type nested in the class that uses it.",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",
