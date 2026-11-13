@@ -103,6 +103,19 @@ mutate phase="gpumath" since="" *args="":
 gsharp-demangle log_path="-" symbols_path="":
     dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle "{{log_path}}" "{{symbols_path}}"
 
+# The job queue live, one line per job with its timeline (arrows select, c cancel, s start, m move, w slots, ? keys, q quit)
+queue-watch:
+    node scripts/human/job-queue.js status --watch
+
+# The same view in a new Windows Terminal window
+[windows]
+queue-window:
+    wt -w new --title "job queue" -d "{{justfile_directory()}}" node scripts/human/job-queue.js status --watch
+
+[unix]
+queue-window:
+    @echo "Run just queue-watch in a terminal window of its own."
+
 # Print the environment of a bug report (OS, GPU, CUDA, host C++, .NET) as Markdown; e.g. `just env-info --json`. Same source on Windows and Unix; needs the .NET SDK 10.0.300 or later (`#:include`)
 env-info *args="":
     dotnet run tools/collect-env/collect-env.cs -- {{args}}
