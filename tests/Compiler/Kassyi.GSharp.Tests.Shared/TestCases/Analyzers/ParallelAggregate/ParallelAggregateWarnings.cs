@@ -322,4 +322,15 @@ public static partial class ParallelAggregateWarnings
         var parallel = data.AsStackEnumerable().AsParallel();
         result[ThreadIndex.X] = parallel.Sum();
     }
+
+    // A branch on the result of a delegate call: the delegate may return a different value in each thread
+    [GpuKernel]
+    public static void DelegateConditionKernel(int[] data, int[] result)
+    {
+        Func<int> lane = () => ThreadIndex.X;
+        if (lane() < 16)
+        {
+            result[0] = data.AsStackEnumerable().AsParallel().Sum();
+        }
+    }
 }
