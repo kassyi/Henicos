@@ -451,4 +451,49 @@ public static void LocalFunctionCall()
         int Bump() => i++;
         var result = Bump();
     }
+
+    // --- A check that may throw next to a write to memory: interfere ---
+
+    public static void WriteThenLength(int[] d, int[] a) { var result = Store(d, 5) + a.Length; }
+    public static void LengthThenWrite(int[] d, int[] a) { var result = a.Length + Store(d, 5); }
+    public static void ElementWriteThenLength(int[] d, int[] a) { var result = (d[1] = 5) + a.Length; }
+    public static void ElementIncrementThenLength(int[] d, int[] a) { var result = d[1]++ + a.Length; }
+    public static void WriteThenLengthArgument(int[] d, int[] a) { var result = Sub(Store(d, 5), a.Length); }
+    public static void WriteThenDivision(int[] d, int x) { var result = Store(d, 5) + 10 / x; }
+    public static void WriteThenNullableValue(int[] d, int? n) { var result = Store(d, 5) + (int)n; }
+    public static void WriteThenNotNull(int[] d, int[] a) { var result = Store(d, 5) + Gpu.NotNull(a).Length; }
+    public static void DivisionThenWrite(int[] d, int x) { var result = 10 / x + Store(d, 5); }
+
+    // --- A check next to a read, or next to a write to a local: do not interfere ---
+
+    public static void ReadThenLength(int[] d, int[] a) { var result = d[1] + a.Length; }
+    public static void LengthThenRead(int[] d, int[] a) { var result = a.Length + d[1]; }
+
+    public static void LocalWriteThenLength(int[] a)
+    {
+        int i = 0;
+        var result = i++ + a.Length;
+    }
+
+    public static void WriteThenStackArrayLength(int[] d)
+    {
+        int[] s = new int[4];
+        var result = Store(d, 5) + s.Length;
+    }
+
+    public static void WriteThenSpanLength(int[] d, System.Span<int> s) { var result = Store(d, 5) + s.Length; }
+    public static void WriteThenConstantDivision(int[] d, int x) { var result = Store(d, 5) + x / 2; }
+
+    // --- The target of an assignment: the expression is the target ---
+
+    public static void ElementTarget(int[] d, int i) { var result = d[i]; }
+    public static void EnumElementTarget(System.DayOfWeek[] d, int i) { var result = d[i]; }
+    public static void StructElementTarget(OrderInner[] d, int i) { var result = d[i]; }
+
+    public static void StackArrayElementTarget(int i)
+    {
+        int[] s = new int[4];
+        var result = s[i];
+    }
+    public static void ElementTargetWithCheckedIndex(int[] d, int[] a) { var result = d[a.Length]; }
 }

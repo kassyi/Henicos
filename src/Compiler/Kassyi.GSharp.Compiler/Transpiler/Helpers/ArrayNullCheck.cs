@@ -151,6 +151,57 @@ internal static class ArrayNullCheck
         var receiver = EvaluationOrder.DeclareTemp(ref context, node.Expression, reference: false);
         var index = EvaluationOrder.DeclareTemp(ref context, argument.Expression, reference: false);
         sequence.Return();
+        AppendElementCall(writer, receiver, index, site);
+        return true;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="node"/> is an element of a one-dimensional C# array at an <c>int</c>-like index (not
+    /// <c>^i</c> or a range): a location whose null and bounds check C# makes when it reads or stores the element.
+    /// </summary>
+    public static bool IsArrayElement(ElementAccessExpressionSyntax node, SemanticModel model) =>
+        node.ArgumentList.Arguments is [{ RefKindKeyword.RawKind: (int)SyntaxKind.None } argument] &&
+        model.GetTypeSymbol(node.Expression) is IArrayTypeSymbol { Rank: 1 } &&
+        !IsIndexOrRange(argument.Expression, model);
+
+    /// <summary>
+    /// The plan of a store into the element <paramref name="node"/> (<see cref="IsArrayElement"/>) through an array and
+    /// an index in temporaries: a stack array is bound by reference, and an array that may be null is checked at the
+    /// store, with a site of <paramref name="table"/> (or a message naming the place when the method has no table).
+    /// </summary>
+    public static ElementStorePlan PlanElementStore(ElementAccessExpressionSyntax node, SemanticModel model,
+        ErrorSiteTable? table, string? currentMemberName) =>
+        new(
+            StackArrayLocals.IsStackArrayReference(node.Expression, model),
+            NeedsCheck(node.Expression, model)
+                ? PlanSite(node.Expression, null, SiteMessage, TrapKind, model, table, currentMemberName)
+                : null
+        );
+
+    /// <summary>
+    /// Writes the element of an array and an index already evaluated into the temporaries <paramref name="receiver"/>
+    /// and <paramref name="index"/>, as <paramref name="plan"/> says:
+    /// <c>__gsharp_array_at(__gsharp_seq_&lt;receiver&gt;, __gsharp_seq_&lt;index&gt;, &lt;site&gt;)</c> with a check,
+    /// otherwise <c>__gsharp_seq_&lt;receiver&gt;[__gsharp_seq_&lt;index&gt;]</c>.
+    /// </summary>
+    public static void AppendElementOfTemps(in ElementStorePlan plan, int receiver, int index, SourceWriter writer)
+    {
+        if (plan.Site is { } site)
+        {
+            AppendElementCall(writer, receiver, index, site);
+            return;
+        }
+
+        EvaluationOrder.AppendTempName(writer, receiver);
+        using (writer.Brackets())
+        {
+            EvaluationOrder.AppendTempName(writer, index);
+        }
+    }
+
+    // __gsharp_array_at(__gsharp_seq_<receiver>, __gsharp_seq_<index>, <site>)
+    private static void AppendElementCall(SourceWriter writer, int receiver, int index, NullCheckSite site)
+    {
         writer.Append(GSharpInternalNames.Prelude.ArrayAt);
         using (writer.Parentheses())
         {
@@ -160,8 +211,6 @@ internal static class ArrayNullCheck
             writer.Append(", ");
             AppendSite(writer, site);
         }
-
-        return true;
     }
 
     // __gsharp_array_at(<receiver>, <index>, <site>)
@@ -326,25 +375,27 @@ internal static class ArrayNullCheck
     public static ArgumentCheck PlanArgument(ExpressionSyntax argument, IParameterSymbol parameter,
         ref TranspileContext context)
     {
-        if (!NonNullProof.NeedsBoundaryCheck(parameter))
+        if (!ChecksArgument(argument, parameter, context.Query.SemanticModel))
         {
             return ArgumentCheck.None;
         }
 
-        var model = context.Query.SemanticModel;
-        if (parameter.Type is IArrayTypeSymbol)
-        {
-            return NonNullProof.IsProvenNonNull(argument, model)
-                ? ArgumentCheck.None
-                : new ArgumentCheck(ArgumentCheckKind.Array, PlanArgumentSite(argument, ref context),
-                    ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty);
-        }
-
-        return NonNullProof.IsProvenStruct(argument, model)
-            ? ArgumentCheck.None
+        return parameter.Type is IArrayTypeSymbol
+            ? new ArgumentCheck(ArgumentCheckKind.Array, PlanArgumentSite(argument, ref context),
+                ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty)
             : new ArgumentCheck(ArgumentCheckKind.Struct, PlanArgumentSite(argument, ref context),
                 NonNullProof.GetNonNullableArrayFields(parameter.Type));
     }
+
+    /// <summary>
+    /// Whether <paramref name="argument"/>, passed to <paramref name="parameter"/> of a device function, is checked at
+    /// the call (<see cref="PlanArgument"/>): the parameter asks for it and the argument is not proven.
+    /// </summary>
+    public static bool ChecksArgument(ExpressionSyntax argument, IParameterSymbol parameter, SemanticModel model) =>
+        NonNullProof.NeedsBoundaryCheck(parameter) &&
+        !(parameter.Type is IArrayTypeSymbol
+            ? NonNullProof.IsProvenNonNull(argument, model)
+            : NonNullProof.IsProvenStruct(argument, model));
 
     // The place of a null passed where the parameter is not nullable
     private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context) =>

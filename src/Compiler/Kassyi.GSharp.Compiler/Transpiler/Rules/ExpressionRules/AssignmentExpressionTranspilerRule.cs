@@ -34,14 +34,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         var isAccessorProperty = PropertyAccessorCall.IsAccessorPropertyTarget(node.Left, ref context);
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
-            if (isAccessorProperty)
-            {
-                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, CoalesceAssignmentToAccessorProperty);
-                context.Visitor.AppendUnsupportedPlaceholder(node);
-                return;
-            }
-
-            NullRepresentation.AppendCoalesceAssignment(node.Left, node.Right, ref context);
+            TranspileCoalesceAssignment(node, isAccessorProperty, ref context);
             return;
         }
 
@@ -54,18 +47,46 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         if (node.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
-            if (!isAccessorProperty &&
-                node.Right is not RefExpressionSyntax &&
-                OperandsInterfere(node, readsTarget: false, ref context, out _))
-            {
-                TranspileSequencedAssignment(node, ref context);
-                return;
-            }
-
-            PropertyAccessorCall.TranspileAssignment(node, node.OperatorToken.Text, ref context);
+            TranspileSimpleAssignment(node, isAccessorProperty, ref context);
             return;
         }
 
+        TranspileCompoundAssignment(node, isAccessorProperty, ref context);
+    }
+
+    // x ??= y; GSH0003 for a computed property
+    private static void TranspileCoalesceAssignment(AssignmentExpressionSyntax node, bool isAccessorProperty,
+        ref TranspileContext context)
+    {
+        if (isAccessorProperty)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, CoalesceAssignmentToAccessorProperty);
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
+        NullRepresentation.AppendCoalesceAssignment(node.Left, node.Right, ref context);
+    }
+
+    // x = y, in the C# order when the operands interfere
+    private static void TranspileSimpleAssignment(AssignmentExpressionSyntax node, bool isAccessorProperty,
+        ref TranspileContext context)
+    {
+        if (!isAccessorProperty &&
+            node.Right is not RefExpressionSyntax &&
+            OperandsInterfere(node, readsTarget: false, ref context, out _))
+        {
+            TranspileSequencedAssignment(node, ref context);
+            return;
+        }
+
+        PropertyAccessorCall.TranspileAssignment(node, node.OperatorToken.Text, ref context);
+    }
+
+    // x op= y
+    private static void TranspileCompoundAssignment(AssignmentExpressionSyntax node, bool isAccessorProperty,
+        ref TranspileContext context)
+    {
         // A user-defined compound operator has no C++ operator unless it is a macro, which its own rule expands
         // (GSH0060)
         if (CallTargetEmitter.TryFailOperator(node, ref context))
@@ -86,11 +107,10 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             ? operation
             : null;
         var compoundOperator = CompoundOperator.ForAssignment(node, compound);
-        var helper = compoundOperator?.Helper;
-        var shiftMask = compoundOperator?.ShiftMask ?? 0;
 
         // C++ has no >>>=; the integer types are handled here (nint and nuint are not)
-        if (node.IsKind(SyntaxKind.UnsignedRightShiftAssignmentExpression) && helper == null && shiftMask == 0)
+        if (node.IsKind(SyntaxKind.UnsignedRightShiftAssignmentExpression) && compoundOperator?.Helper == null &&
+            (compoundOperator?.ShiftMask ?? 0) == 0)
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
             context.Visitor.AppendUnsupportedPlaceholder(node);
@@ -108,6 +128,14 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
+        AppendCompoundInPlace(node, compound, compoundOperator?.Helper, compoundOperator?.ShiftMask ?? 0,
+            ref context);
+    }
+
+    // <helper>(...) for int and long arithmetic, <left> <<= / >>= <masked count> for a shift, else <left> op= <right>
+    private static void AppendCompoundInPlace(AssignmentExpressionSyntax node, ICompoundAssignmentOperation? compound,
+        string? helper, int shiftMask, ref TranspileContext context)
+    {
         if (compound != null && helper != null)
         {
             IntegerSemanticsEmitter.AppendCompound(compound, node, helper, ref context);
@@ -135,7 +163,11 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         out ExpressionEffects value)
     {
         var model = context.Query.SemanticModel;
-        var target = ExpressionEffects.OfLocation(node.Left, model, readsTarget);
+        // A simple assignment checks an array element when it stores the value, after the right side
+        // (C# spec §12.21.2)
+        var target = readsTarget
+            ? ExpressionEffects.OfLocation(node.Left, model, readsValue: true)
+            : ExpressionEffects.OfAssignmentTarget(node.Left, model);
         value = ExpressionEffects.Of(node.Right, model);
         return EvaluationOrder.LastSpilledOperand([target, value]) >= 0;
     }
@@ -144,6 +176,13 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     // The value is converted to the type of the target when it is evaluated (C# spec §12.21.2)
     private static void TranspileSequencedAssignment(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
+        if (node.Left is ElementAccessExpressionSyntax element &&
+            ArrayNullCheck.IsArrayElement(element, context.Query.SemanticModel))
+        {
+            TranspileSequencedElementAssignment(node, element, ref context);
+            return;
+        }
+
         using var sequence = EvaluationOrder.BeginSequence(context.Emitter.Writer);
         var target = EvaluationOrder.DeclareTemp(ref context, node.Left, reference: true);
         var value = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false,
@@ -152,6 +191,32 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         EvaluationOrder.AppendTempName(context.Emitter.Writer, target);
         context.Emitter.Writer.Append(" = ");
         EvaluationOrder.AppendTempName(context.Emitter.Writer, value);
+    }
+
+    // ([&]() { auto __gsharp_seq_0 = <array>; auto __gsharp_seq_1 = <index>; <T> __gsharp_seq_2 = <right>;
+    //   return <element __gsharp_seq_1 of __gsharp_seq_0> = __gsharp_seq_2; }())
+    // [WHY] C# evaluates the array and the index, then the right side, and checks the element (null, bounds) only when
+    // it stores the value (C# spec §12.21.2; the CLR does so for an element of every type, a struct included), so the
+    // element is not bound before the right side. A stack array is bound by reference: a copy of a C array would
+    // decay to a pointer
+    private static void TranspileSequencedElementAssignment(AssignmentExpressionSyntax node,
+        ElementAccessExpressionSyntax element, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        var plan = ArrayNullCheck.PlanElementStore(element, model, context.Emitter.ErrorSites,
+            context.Emitter.CurrentMemberName);
+        var valueType = model.GetTypeSymbol(node.Left);
+
+        var writer = context.Emitter.Writer;
+        using var sequence = EvaluationOrder.BeginSequence(writer);
+        var array = EvaluationOrder.DeclareTemp(ref context, element.Expression, plan.BindsArrayByReference);
+        var index = EvaluationOrder.DeclareTemp(ref context, element.ArgumentList.Arguments[0].Expression,
+            reference: false);
+        var value = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false, valueType);
+        sequence.Return();
+        ArrayNullCheck.AppendElementOfTemps(plan, array, index, writer);
+        writer.Append(" = ");
+        EvaluationOrder.AppendTempName(writer, value);
     }
 
     // ([&]() { auto&& __gsharp_seq_0 = <left>; auto __gsharp_seq_1 = __gsharp_seq_0; auto __gsharp_seq_2 = <right>;

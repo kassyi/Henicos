@@ -138,6 +138,14 @@ public sealed record DifferentialCase(string name)
     public DiffPath ExceptionPaths { get; init; } = DiffPaths.CheckedPaths();
 
     /// <summary>
+    /// Gets or initializes whether the outputs are compared also when the oracle throws
+    /// (<see cref="OracleExceptionMode.MatchOracle"/>): every path that throws the matching exception must leave the
+    /// writes the oracle made before its exception, and none it did not make. Only for a case whose writes before the
+    /// exception do not depend on the thread order (one thread).
+    /// </summary>
+    public bool ComparesOutputsAfterException { get; init; }
+
+    /// <summary>
     /// Gets or initializes the subprocess sampling granularity when executing CUDA <c>trap;</c> fault seeds.
     /// </summary>
     public CudaTrapSampling CudaTrapSampling { get; init; } = CudaTrapSampling.FirstFaultPerCase;
