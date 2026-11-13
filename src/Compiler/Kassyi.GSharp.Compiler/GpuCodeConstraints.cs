@@ -12,6 +12,8 @@ namespace Kassyi.GSharp.Compiler;
 /// </remarks>
 internal static class GpuCodeConstraints
 {
+    private const string ExpressionTypeMetadataName = "System.Linq.Expressions.Expression";
+
     /// <summary>
     /// Whether a GPU function returns <see langword="void"/>, an unmanaged type with a device representation, or is a
     /// valid device iterator (GSH0004). A kernel cannot return a ref struct: its launcher returns the result of each
@@ -71,6 +73,34 @@ internal static class GpuCodeConstraints
         type is null or IErrorTypeSymbol ||
         type.TypeKind is TypeKind.Error or TypeKind.Struct ||
         type.IsSharedMemoryType();
+
+    /// <summary>
+    /// The GSH0003 text for a lambda converted to an expression tree, which builds objects of
+    /// <c>System.Linq.Expressions</c> on the heap.
+    /// </summary>
+    public const string ExpressionTreeLambda = "lambda converted to an expression tree (heap allocation)";
+
+    /// <summary>
+    /// Whether <paramref name="lambda"/> is converted to an expression tree (<c>Expression&lt;Func&lt;int&gt;&gt; e =
+    /// () =&gt; 1</c>, also <c>LambdaExpression</c> and <c>Expression</c>) rather than a delegate (GSH0003).
+    /// </summary>
+    public static bool IsExpressionTreeLambda(AnonymousFunctionExpressionSyntax lambda, SemanticModel model)
+    {
+        if (model.Compilation.GetTypeByMetadataName(ExpressionTypeMetadataName) is not { } expression)
+        {
+            return false;
+        }
+
+        for (var type = model.GetConvertedTypeSymbol(lambda); type is not null; type = type.BaseType)
+        {
+            if (type.OriginalDefinition.IsEqualTo(expression))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>The GSH0003 text for <c>with</c> on a class or record class, which allocates a new object.</summary>
     public const string WithOnReferenceType = "with expression on a reference type (heap allocation)";

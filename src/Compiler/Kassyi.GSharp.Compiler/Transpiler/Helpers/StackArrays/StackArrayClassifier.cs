@@ -15,8 +15,9 @@ internal static class StackArrayClassifier
     public const string SpreadElement = "spread element in a collection expression";
 
     /// <summary>
-    /// Whether <paramref name="node"/> is a <c>stackalloc</c>, or a collection expression converted to a span or an
-    /// array, that is not the initializer of a stack array local declaration.
+    /// Whether <paramref name="node"/> is a <c>stackalloc</c>, or a collection expression converted to a span, an array
+    /// or a <c>[CollectionBuilder]</c> type (whose builder takes the elements as a span), that is not the initializer
+    /// of a stack array local declaration.
     /// </summary>
     public static bool NeedsStorage(SyntaxNode node, SemanticModel model)
     {
@@ -25,8 +26,10 @@ internal static class StackArrayClassifier
             case StackAllocArrayCreationExpressionSyntax or ImplicitStackAllocArrayCreationExpressionSyntax:
                 return !IsStackArrayDeclarationInitializer(node, model);
             case CollectionExpressionSyntax:
+                var target = ConvertedType(node, model);
                 return !IsStackArrayDeclarationInitializer(node, model) &&
-                       InitializationSyntaxExtractor.TryGetArrayElementType(ConvertedType(node, model), out _, out _);
+                       (InitializationSyntaxExtractor.TryGetArrayElementType(target, out _, out _) ||
+                        CollectionBuilderMethod.Find(target) is not null);
             default:
                 return false;
         }
@@ -45,11 +48,14 @@ internal static class StackArrayClassifier
 
         var target = ConvertedType(node, model);
         var isPointer = target is IPointerTypeSymbol;
+        // A collection expression of a [CollectionBuilder] type is the span that its builder takes
+        var builder = node is CollectionExpressionSyntax ? CollectionBuilderMethod.Find(target) : null;
+        var storageType = builder is { Parameters: [var span] } ? span.Type : target;
         var elementType = node is StackAllocArrayCreationExpressionSyntax { Type: ArrayTypeSyntax arrayType }
             ? model.GetTypeSymbol(arrayType.ElementType)
-            : target is IPointerTypeSymbol pointer
+            : storageType is IPointerTypeSymbol pointer
                 ? pointer.PointedAtType
-                : InitializationSyntaxExtractor.TryGetArrayElementType(target, out var element, out _)
+                : InitializationSyntaxExtractor.TryGetArrayElementType(storageType, out var element, out _)
                     ? element
                     : null;
         if (elementType == null)
@@ -105,7 +111,7 @@ internal static class StackArrayClassifier
             return false;
         }
 
-        allocation = new StackAllocation(elementType, length, elements, isPointer);
+        allocation = new StackAllocation(elementType, length, elements, isPointer, builder);
         return true;
     }
 

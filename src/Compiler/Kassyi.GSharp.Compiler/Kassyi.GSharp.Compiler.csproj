@@ -9,7 +9,7 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <!-- Compiles the encoder half of the shared GSharpNameEncoding, which writes through SourceWriter. -->
     <DefineConstants>$(DefineConstants);GSHARP_COMPILER</DefineConstants>
-    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.SkipLocalsInitAttribute;System.Runtime.CompilerServices.CallerArgumentExpressionAttribute;System.Runtime.CompilerServices.ModuleInitializerAttribute</PolySharpExcludeGeneratedTypes>
+    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.SkipLocalsInitAttribute;System.Runtime.CompilerServices.CallerArgumentExpressionAttribute;System.Runtime.CompilerServices.ModuleInitializerAttribute;System.Runtime.CompilerServices.CollectionBuilderAttribute</PolySharpExcludeGeneratedTypes>
   </PropertyGroup>
 
   <ItemGroup>

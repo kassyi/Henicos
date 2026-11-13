@@ -41,7 +41,12 @@ internal static class StackAllocEmitter
     /// Len(stackalloc int[0])            ->  Len(GSharpArray&lt;int&gt;())     (nullptr for a pointer)
     /// </code>
     /// Under <c>[SkipLocalsInit]</c> a <c>stackalloc</c> without an initializer is not zeroed:
-    /// <c>__gsharp_stackalloc_span(storage)</c>.
+    /// <c>__gsharp_stackalloc_span(storage)</c>. A collection expression of a <c>[CollectionBuilder]</c> type passes
+    /// the span to its builder, as C# does:
+    /// <code>
+    /// Coll c = [A(), B()]  ->  Coll c = Create((__gsharp_stackalloc_2[0]=A(),__gsharp_stackalloc_2[1]=B(),
+    ///                                           __gsharp_stackalloc_span(__gsharp_stackalloc_2)))
+    /// </code>
     /// </remarks>
     public static bool TryEmit(SyntaxNode node, ref TranspileContext context)
     {
@@ -57,24 +62,46 @@ internal static class StackAllocEmitter
             return true;
         }
 
+        if (allocation.Builder is not { } builder)
+        {
+            AppendSpan(node, allocation, ref context);
+            return true;
+        }
+
+        // <builder>(<span>)
+        if (ImplicitDeviceCall.CheckCallable(node, builder, ref context))
+        {
+            ImplicitDeviceCall.AppendName(builder, ref context);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                AppendSpan(node, allocation, ref context);
+            }
+        }
+
+        return true;
+    }
+
+    // The span, pointer or array view of <allocation>, filled with its elements
+    private static void AppendSpan(SyntaxNode node, StackAllocation allocation, ref TranspileContext context)
+    {
         if (allocation.Length == 0)
         {
             if (allocation.IsPointer)
             {
                 context.Emitter.Writer.Append("nullptr");
-                return true;
+                return;
             }
 
             context.Emitter.Writer.Append("GSharpArray<");
             context.Emitter.Dialect.AppendType(ref context, allocation.ElementType);
             context.Emitter.Writer.Append(">()");
-            return true;
+            return;
         }
 
         if (!context.Emitter.StackAllocStorages.TryGetValue(node, out var number))
         {
             Fail(node, node, StackArrayClassifier.OutsideStatement, ref context);
-            return true;
+            return;
         }
 
         if (allocation.Elements is { } elements)
@@ -106,14 +133,13 @@ internal static class StackAllocEmitter
                 context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.StackAllocSpan}({StoragePrefix}{number})");
             }
 
-            return true;
+            return;
         }
 
-        var view = model.AreLocalsZeroedAt(node)
+        var view = context.Query.SemanticModel.AreLocalsZeroedAt(node)
             ? GSharpInternalNames.Prelude.StackAllocZero
             : GSharpInternalNames.Prelude.StackAllocSpan;
         context.Emitter.Writer.Append($"{view}({StoragePrefix}{number})");
-        return true;
     }
 
     // <storage>[<index>]=<element>,

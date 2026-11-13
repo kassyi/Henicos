@@ -142,7 +142,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
             }
 
-            DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
+            // fixed (int* p = s) pins what s.GetPinnableReference() returns
+            if (!PinnableReferenceMethod.TryWriteInitializer(v, typeSymbol, ref context))
+            {
+                DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
+            }
         }
     }
 
