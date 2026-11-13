@@ -2,12 +2,13 @@
 // Reads the Windows kernel memory pools and the number of NVIDIA driver Event 153 entries, so that a GPU run can show
 // whether the pools grew while the GPU faulted.
 //
-// Measured on one Windows 11 machine (driver 610.88, WDDM): a plain CUDA program whose kernel ends in `trap;` grew the
-// nonpaged pool by 474 MB and the paged pool by 1,098 MB over 200 runs, unevenly, and the pools were not freed when the
-// processes exited, only by a reboot. Whether the driver or the live kernel dump that Windows writes per fault holds
-// the memory is not known, and faults on an illegal address were not measured. Reported as NVIDIA bug 7077284
-// (https://developer.nvidia.com/bugs/7077284, needs an NVIDIA developer login). Each such fault logs System events of
-// the provider nvlddmkm with the ID 153: one per fault for the plain program, two per fault for a G# test process.
+// A first measurement on one Windows 11 machine read only these two counters and took their growth during repeated GPU
+// faults for a driver leak (reported as NVIDIA bug 7077284). A second measurement that also read the pool tag table
+// found the growth in file system and filter caches from unrelated disk activity: 200 faults of a plain CUDA program
+// whose kernel ends in `trap;` (driver 621.24) grew the tags of the GPU driver by 2 MB and the memory outside any tag
+// not at all. The counters therefore show only that the pools grew, not why; look at the pool tags (poolmon) before
+// blaming a fault. Each fault logs System events of the provider nvlddmkm with the ID 153: one per fault for the plain
+// program, two per fault for a G# test process.
 //
 // This script reads:
 //   - the raw pool sizes PoolNonpagedBytes and PoolPagedBytes of Win32_PerfRawData_PerfOS_Memory, through a JScript WMI
@@ -43,8 +44,6 @@ const DefaultNonpagedWarnBytes = 6 * 1024 * MiB;
 
 /** Two readings belong to the same boot when their boot times differ by less than this. */
 const SameBootToleranceMs = 60 * 1000;
-
-const BugUrl = 'https://developer.nvidia.com/bugs/7077284';
 
 const QueryTimeoutMs = 5000;
 
@@ -246,7 +245,7 @@ function applyResult(reading, result, field) {
   }
 }
 
-/** Since the last boot: the pools were freed only by a reboot, so these are the entries that may still count. */
+/** Since the last boot: the pools of this boot are the ones the reading shows, so these are the entries that match. */
 function sinceBootMs() {
   return os.uptime() * 1000 + SameBootToleranceMs;
 }
@@ -369,8 +368,9 @@ function describe(reading) {
 }
 
 const RebootAdvice =
-  'In a measurement with a plain CUDA trap program on Windows, the kernel pools grew after GPU faults and were freed ' +
-  `only by a reboot (NVIDIA bug 7077284, ${BugUrl}); consider a reboot before the machine runs short of memory.`;
+  'The pool counters do not say what holds the memory: before blaming the GPU faults, list the pool tags that grew ' +
+  '(poolmon); file system and filter caches are a common cause. A reboot frees the pools; consider one before the ' +
+  'machine runs short of memory.';
 
 /** The warning for a comparison whose `warn` is true: the observed values, and the reboot advice when it applies. */
 function warningText(comparison) {
@@ -486,7 +486,7 @@ function selfTest() {
   assert.strictEqual(isNonpagedHigh(reading(6200, 2000, 0)), true);
   assert.strictEqual(isNonpagedHigh(reading(6144, 2000, 0)), false);
   assert.strictEqual(isNonpagedHigh(reading(null, null, 0)), false);
-  assert.match(startWarningText(reading(6200, 2000, 40)), /already 6200 MB before this run \(40 nvlddmkm .*7077284/);
+  assert.match(startWarningText(reading(6200, 2000, 40)), /already 6200 MB before this run \(40 nvlddmkm .*poolmon/);
 
   assert.match(describe(reading(1973, 2190, 12)), /nonpaged 1973 MB, paged 2190 MB; .* since boot: 12$/);
   const unread = describe({ ...reading(null, null, 3), errors: ['wevtutil timed out'] });
@@ -494,7 +494,7 @@ function selfTest() {
   assert.match(describe({ ...reading(1, 1, 0), supported: false }), /not supported/);
   assert.match(describe({ ...reading(1, 1, 0), supported: false, disabled: true }), /GSHARP_GPU_POOL_WATCH=0/);
   const grown = compare(reading(2000, 2000, 0), reading(2500, 3000, 200));
-  assert.match(warningText(grown), /grew by 1500 MB .*with 200 nvlddmkm Event 153 entries\. .*7077284/);
+  assert.match(warningText(grown), /grew by 1500 MB .*with 200 nvlddmkm Event 153 entries\. .*poolmon/);
 
   // The live readings never throw, on any platform
   const live = measure();
