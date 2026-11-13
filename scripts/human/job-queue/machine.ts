@@ -1,5 +1,5 @@
-// The defaults that follow the machine: the slots from its cores, the memory pool for test runs from its memory, and
-// the memory a test run needs, read from the budgets of tests/memory-budgets.yml.
+// The defaults that follow the machine (MachineProfile): the slots from its cores, the memory pool for test runs from
+// its memory, and the memory a test run needs, read from the budgets of tests/memory-budgets.yml.
 //
 // Measured on 24 cores / 64 GB (a mix of 4 forced rebuilds and 4 test runs of Tests.Cpu): 8 slots (3 cores each) with
 // a test run weighing 1 slot finished soonest; 6 slots with test runs weighing 2 left a quarter of the CPU idle. Each
@@ -10,6 +10,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { errorCode, errorMessage } from "./history.ts";
+import { isTestCommand } from "./shell.ts";
 import { prefix } from "./system.ts";
 
 /** The cores a slot stands for. */
@@ -20,20 +21,50 @@ export const MemoryPoolShare = 0.5;
 
 const BudgetsFile = path.join(import.meta.dirname, "..", "..", "..", "tests", "memory-budgets.yml");
 
-/** The default slots: one per CoresPerSlot cores, at least MinimumSlots. */
-export function defaultSlots(cores = os.availableParallelism()): number {
-  return Math.max(MinimumSlots, Math.round(cores / CoresPerSlot));
-}
-
-/** The default memory pool in MB: MemoryPoolShare of the physical memory. */
-export function defaultMemoryPoolMb(totalBytes = os.totalmem()): number {
-  return Math.floor((totalBytes / (1024 * 1024)) * MemoryPoolShare);
-}
-
 /** The budgets of one test assembly, in MB: for a normal run, and for a run with Stress or Benchmark tests. */
 export interface Budget {
   normal: number;
   stress: number;
+}
+
+/** The machine the queue runs on: its cores, its memory and the test budgets of the checkout. */
+export class MachineProfile {
+  readonly cores: number;
+  readonly totalBytes: number;
+  private readonly budgetsFile: string;
+  private loaded: Map<string, Budget> | null = null;
+
+  constructor(cores = os.availableParallelism(), totalBytes = os.totalmem(), budgetsFile = BudgetsFile) {
+    this.cores = cores;
+    this.totalBytes = totalBytes;
+    this.budgetsFile = budgetsFile;
+  }
+
+  /** The default slots: one per CoresPerSlot cores, at least MinimumSlots. */
+  get slots(): number {
+    return Math.max(MinimumSlots, Math.round(this.cores / CoresPerSlot));
+  }
+
+  /** The default memory pool in MB: MemoryPoolShare of the physical memory. */
+  get memoryPoolMb(): number {
+    return Math.floor((this.totalBytes / (1024 * 1024)) * MemoryPoolShare);
+  }
+
+  /**
+   * The budgets of this checkout, read on first use; empty when the file cannot be read (no test runs are then held
+   * back by memory).
+   */
+  get budgets(): ReadonlyMap<string, Budget> {
+    if (this.loaded === null) {
+      this.loaded = readBudgets(this.budgetsFile);
+    }
+    return this.loaded;
+  }
+
+  /** The memory a command takes from the pool, in MB (see testMemoryMb). */
+  testMemoryMb(command: string): number {
+    return testMemoryMb(command, isTestCommand(command), this.budgets);
+  }
 }
 
 /** Reads `<assembly>: <MB>[, stress <MB>]` lines; anything else (comments, blank lines) is skipped. */
@@ -49,8 +80,7 @@ export function parseBudgets(text: string): Map<string, Budget> {
   return budgets;
 }
 
-/** The budgets of this checkout; empty when the file cannot be read (no test runs are then held back by memory). */
-export function readBudgets(file = BudgetsFile): Map<string, Budget> {
+function readBudgets(file: string): Map<string, Budget> {
   try {
     return parseBudgets(fs.readFileSync(file, "utf8"));
   } catch (error) {
