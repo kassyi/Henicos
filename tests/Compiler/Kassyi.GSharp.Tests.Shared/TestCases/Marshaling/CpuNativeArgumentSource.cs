@@ -49,5 +49,5 @@ public static partial class Arguments
     public static int ScalarResult(int x) => x;
 
     [GpuKernel]
-    public static Shuffled ConvertedResult(int x) => new Shuffled { On = 1, Value = x };
+    public static Shuffled ConvertedResult(int x) => default;
 }
