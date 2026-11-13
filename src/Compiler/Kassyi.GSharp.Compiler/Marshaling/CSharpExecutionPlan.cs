@@ -30,14 +30,6 @@ internal readonly record struct CSharpExecutionPlan
     /// <summary>Whether the kernel returns a value.</summary>
     public bool ReturnsValue => ReturnTypeName is not null;
 
-    /// <summary>
-    /// Whether a <see langword="ref"/> or <see langword="out"/> argument is copied back to the caller after the run,
-    /// also when a GPU thread throws.
-    /// </summary>
-    public bool CopiesBack => !Arguments.IsDefault && Arguments
-        .AsStackEnumerable()
-        .Any(static a => a.Kind is CSharpArgumentKind.Ref or CSharpArgumentKind.Out);
-
     /// <summary>The plan of the launcher of <paramref name="kernel"/>.</summary>
     /// <param name="kernel">The kernel.</param>
     /// <param name="isDevicePtr">Whether the launcher takes device pointers (<c>Launch{Kernel}Ptr</c>).</param>
@@ -95,9 +87,9 @@ internal readonly record struct CSharpExecutionPlan
     }
 
     // [WHY] The lambda captures locals of the branch, never the launcher's parameters: a captured parameter would live
-    // in a closure for the whole launcher, whose other paths take its address (CS1686). A ref or out argument is copied
-    // back after the run; a span, which no lambda can capture, goes through its pinned pointer and length; any other
-    // ref struct cannot run (null)
+    // in a closure for the whole launcher, whose other paths take its address (CS1686). A ref or out argument goes
+    // through its pinned pointer, which keeps it the caller's variable; a span, which no lambda can capture, goes
+    // through its pinned pointer and length; any other ref struct cannot run (null)
     private static CSharpArgument? PlanArgument(in KernelParameterShape parameter)
     {
         var local = KernelHostNames.GetLocal(LauncherLocal.CSharpArgument, parameter);
@@ -108,15 +100,24 @@ internal readonly record struct CSharpExecutionPlan
             { IsRefLike: true, IsByRef: false, Container: ArrayContainerKind.ReadOnlySpan } =>
                 PlanSpan(parameter, CSharpArgumentKind.ReadOnlySpan, local),
             { IsRefLike: true } => null,
-            { RefKind: RefKind.Ref } =>
-                new CSharpArgument(parameter.Identifier, CSharpArgumentKind.Ref, parameter.DeclaredTypeName, local),
-            { RefKind: RefKind.Out } =>
-                new CSharpArgument(parameter.Identifier, CSharpArgumentKind.Out, parameter.DeclaredTypeName, local),
+            { RefKind: RefKind.Ref } => PlanReference(parameter, CSharpArgumentKind.Ref, local),
+            { RefKind: RefKind.Out } => PlanReference(parameter, CSharpArgumentKind.Out, local),
             { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } =>
                 new CSharpArgument(parameter.Identifier, CSharpArgumentKind.In, parameter.DeclaredTypeName, local),
             _ => new CSharpArgument(parameter.Identifier, CSharpArgumentKind.Value, parameter.DeclaredTypeName, local)
         };
     }
+
+    // The pointer type has no nullable annotation (int[]?* is no type)
+    private static CSharpArgument PlanReference(in KernelParameterShape parameter, CSharpArgumentKind kind,
+        string local) =>
+        new(
+            parameter.Identifier,
+            kind,
+            parameter.TypeName,
+            local,
+            KernelHostNames.GetLocal(LauncherLocal.CSharpPinned, parameter)
+        );
 
     private static CSharpArgument PlanSpan(in KernelParameterShape parameter, CSharpArgumentKind kind, string local) =>
         new(

@@ -24,6 +24,8 @@
 //   - just <recipe>: the options the recipe itself passes to {{queue}} in the justfile (--gpu, --weight <n>); a recipe
 //     that picks them from its arguments, or does not queue itself, is undecided.
 // An undecided command is denied as before, with a sentence saying that it may need --gpu.
+// A --gpu command of builds then tests that all pass --no-build becomes two queued runs joined by &&, the builds
+// without --gpu and the tests with it, so that the GPU turn is not held while the build runs (splitBuilds).
 //
 // Usage: require('./queue-rewrite.js').planRewrite(command, dialect, cwd) returns { command, gpu } for a rewrite,
 // { note } for a denial with a sentence to add, or null for the plain denial; queuedText(rewritten, dialect) returns
@@ -268,7 +270,42 @@ function planRewrite(command, kind, cwd) {
         `(${undecided.join('; ')}): add --gpu when it does.`,
     };
   }
-  return { command: queuedCommand(kind, body, gpu ? ['--gpu', ...options] : options, comment), gpu, queued: body };
+  const split = gpu ? splitBuilds(segments, kind) : null;
+  if (split !== null) {
+    // The builds take CPU slots only; the GPU turn waits for them and is held for the tests alone
+    const builds = queuedCommand(kind, split.builds, options, '');
+    const tests = queuedCommand(kind, split.tests, ['--gpu', ...options], comment);
+    return { command: `${builds} && ${tests}`, gpu, split: true };
+  }
+  return { command: queuedCommand(kind, body, gpu ? ['--gpu', ...options] : options, comment), gpu };
+}
+
+/**
+ * The builds and the tests of `dotnet build <P> && dotnet test <P> --no-build` (several builds, then several tests,
+ * joined by &&; environment assignments before a segment allowed), each part joined by && again: { builds, tests }, or
+ * null for any other shape. A test without --no-build would build under the GPU turn again.
+ */
+function splitBuilds(segments, kind) {
+  const builds = [];
+  const tests = [];
+  for (const raw of segments) {
+    const segment = raw.trim();
+    let list = withDialect(kind, () => words(segment)).map(unquote);
+    while (kind === 'bash' && list.length > 1 && /^[A-Za-z_]\w*=/.test(list[0])) {
+      list = list.slice(1);
+    }
+    if (!/^dotnet(\.exe)?$/i.test(list[0] || '')) {
+      return null;
+    }
+    if (list[1] === 'build' && tests.length === 0) {
+      builds.push(segment);
+    } else if (list[1] === 'test' && list.includes('--no-build')) {
+      tests.push(segment);
+    } else {
+      return null;
+    }
+  }
+  return builds.length > 0 && tests.length > 0 ? { builds: builds.join(' && '), tests: tests.join(' && ') } : null;
 }
 
 module.exports = { planRewrite, queuedText, quote };

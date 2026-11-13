@@ -121,4 +121,22 @@ public static partial class StructSizeDiagnosticKernels
         cache[0] = 1;
         data[0] = cache[0];
     }
+
+    // 300,000,000 doubles are 2,400,000,000 bytes, above int.MaxValue (#1280)
+    [GpuKernel]
+    public static void HugeSharedKernel(int[] data)
+    {
+        SharedMemory<double> cache = new SharedMemory<double>(300_000_000);
+        cache[0] = 1.0;
+        data[0] = (int)cache[0];
+    }
+
+    // 2^29 doubles are 2^32 bytes, which an int product wraps to exactly 0
+    [GpuKernel]
+    public static void WrapToZeroSharedKernel(int[] data)
+    {
+        SharedMemory<double> cache = new SharedMemory<double>(536_870_912);
+        cache[0] = 1.0;
+        data[0] = (int)cache[0];
+    }
 }

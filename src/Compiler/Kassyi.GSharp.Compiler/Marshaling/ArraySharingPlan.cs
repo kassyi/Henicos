@@ -24,7 +24,19 @@ internal readonly struct ArraySharingPlan
         _parameters = parameters;
         _isCuda = isCuda;
         Mode = mode;
+        Aliases = default;
     }
+
+    private ArraySharingPlan(in ArraySharingPlan plan, LaunchAliasPlan aliases)
+    {
+        _parameters = plan._parameters;
+        _isCuda = plan._isCuda;
+        Mode = plan.Mode;
+        Aliases = aliases;
+    }
+
+    /// <summary>The arguments that the launcher compares by address, beside the identity sharing above.</summary>
+    public LaunchAliasPlan Aliases { get; }
 
     /// <summary>How the launcher finds the holders of one array.</summary>
     public ArraySharingMode Mode { get; }
@@ -50,18 +62,26 @@ internal readonly struct ArraySharingPlan
             .AsStackEnumerable()
             .Any(static shape => shape.MarshalsCudaArrays))
         {
-            return new ArraySharingPlan(parameters, true, ArraySharingMode.Table);
+            return WithAliases(new ArraySharingPlan(parameters, true, ArraySharingMode.Table));
         }
 
         var sharable = parameters
             .AsStackEnumerable()
             .Count(static shape => shape.IsSharableArray);
-        return new ArraySharingPlan(parameters, true, sharable > 1 ? ArraySharingMode.Pairwise : ArraySharingMode.None);
+        return WithAliases(
+            new ArraySharingPlan(parameters, true, sharable > 1 ? ArraySharingMode.Pairwise : ArraySharingMode.None)
+        );
+
+        static ArraySharingPlan WithAliases(in ArraySharingPlan plan) =>
+            new(plan, LaunchAliasPlan.ForCuda(plan, isDevicePtr: false));
     }
 
     /// <summary>The plan of the CPU launchers (native and managed), which compare the holders pairwise.</summary>
-    public static ArraySharingPlan ForCpu(in KernelHostModel kernel) =>
-        new(kernel.Parameters, false, ArraySharingMode.Pairwise);
+    public static ArraySharingPlan ForCpu(in KernelHostModel kernel)
+    {
+        var plan = new ArraySharingPlan(kernel.Parameters, false, ArraySharingMode.Pairwise);
+        return new ArraySharingPlan(plan, LaunchAliasPlan.ForCpu(plan));
+    }
 
     /// <summary>Whether parameter <paramref name="index"/> is an array argument that may hold the array of another holder.</summary>
     public bool IsShared(int index) => Mode != ArraySharingMode.None && _parameters[index].IsSharableArray;
@@ -148,6 +168,26 @@ internal readonly struct ArraySharingPlan
             (shape.IsReadOnlyContainer
                 ? shape.Cpu.ConvertedElementCopyArraysMethodName is not null
                 : !shape.IsCopiedOut);
+    }
+
+    /// <summary>
+    /// CPU: whether the launcher copies through a <c>HostArrayCopies</c> table: some argument that the kernel gets a
+    /// copy of has elements that hold arrays, which every holder of one array must share (#985).
+    /// </summary>
+    public bool UsesCopyTable
+    {
+        get
+        {
+            for (var i = 0; i < _parameters.Length; i++)
+            {
+                if (NeedsKernelCopy(i) && _parameters[i].Cpu.ConvertedElementCopyArraysMethodName is not null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     /// <summary>

@@ -28,6 +28,10 @@ function checkRewrites(assert) {
     ['Bash', 'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj', true, []],
     ['Bash', 'dotnet build Henicos.slnx -nodeReuse:false', false, []],
     ['Bash', 'dotnet build X && dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --no-build', false, []],
+    // Not split: the test builds again (no --no-build), or a segment is not a build or a test
+    ['Bash', 'dotnet build Kassyi.GSharp.Tests.Cuda && dotnet test Kassyi.GSharp.Tests.Cuda', true, []],
+    ['Bash', 'cd x && dotnet build A && dotnet test Kassyi.GSharp.Tests.Cuda --no-build', true, []],
+    ['Bash', 'dotnet test Kassyi.GSharp.Tests.Cuda --no-build && dotnet build A', true, []],
     ['Bash', 'cd x && dotnet test ../Kassyi.GSharp.Tests.Cpu && dotnet test Kassyi.GSharp.Tests.Cuda', true, []],
     ['Bash', `dotnet test Kassyi.GSharp.Tests.Cpu --filter "A|B" -p:X='it'"'"'s' > tmp/log.txt 2>&1`, false, []],
     ['Bash', 'DiffEngine_Disabled=true dotnet test Kassyi.GSharp.Tests.Cpu', false, []],
@@ -60,6 +64,8 @@ function checkRewrites(assert) {
   const intent = answer('Bash', 'dotnet test Kassyi.GSharp.Tests.Cpu # intent: run the CPU tests').hookSpecificOutput;
   assert.ok(intent.updatedInput.command.endsWith("Kassyi.GSharp.Tests.Cpu' # intent: run the CPU tests"));
   assert.strictEqual(queuedText(intent.updatedInput.command, 'bash'), 'dotnet test Kassyi.GSharp.Tests.Cpu');
+
+  checkSplitBuilds(assert);
 
   // Denied as before: the same message, no rewrite
   const plain = [
@@ -123,6 +129,54 @@ function checkRewrites(assert) {
     const denial = answer('Bash', command).hookSpecificOutput;
     assert.strictEqual(denial.updatedInput, undefined, `should not queue: ${command}`);
     assert.ok(/--gpu when it does/.test(denial.permissionDecisionReason), `should mention --gpu: ${command}`);
+  }
+}
+
+/**
+ * A build and the tests of a GPU project: two queued runs, the builds without --gpu and then the tests with --gpu, so
+ * that the GPU turn is not held while the build runs.
+ */
+function checkSplitBuilds(assert) {
+  const cuda = 'tests/Compiler/Kassyi.GSharp.Tests.Cuda';
+  // [tool, command, the builds, the tests]
+  const split = [
+    [
+      'Bash',
+      `dotnet build ${cuda} -c Release && dotnet test ${cuda} -c Release --no-build --filter "A|B"`,
+      `dotnet build ${cuda} -c Release`,
+      `dotnet test ${cuda} -c Release --no-build --filter "A|B"`,
+    ],
+    [
+      'Bash',
+      `DiffEngine_Disabled=true dotnet build A && dotnet build ${cuda} && ` +
+        `dotnet test ${cuda} --no-build && dotnet test Kassyi.GSharp.Tests.Cpu --no-build -p:X='it'"'"'s'`,
+      `DiffEngine_Disabled=true dotnet build A && dotnet build ${cuda}`,
+      `dotnet test ${cuda} --no-build && dotnet test Kassyi.GSharp.Tests.Cpu --no-build -p:X='it'"'"'s'`,
+    ],
+    [
+      'PowerShell',
+      `dotnet build ${cuda} && dotnet test ${cuda} --no-build --filter "Name~it's"`,
+      `dotnet build ${cuda}`,
+      `dotnet test ${cuda} --no-build --filter "Name~it's"`,
+    ],
+  ];
+  for (const [tool, command, builds, tests] of split) {
+    const kind = tool === 'PowerShell' ? 'pwsh' : 'bash';
+    const intent = ' # intent: run the GPU tests';
+    const output = answer(tool, command + intent).hookSpecificOutput;
+    assert.ok(output.updatedInput !== undefined, `should queue in ${kind}: ${command}`);
+    const queued = output.updatedInput.command;
+    assert.deepStrictEqual(check(queued, kind), [], `the queued form passes the hook: ${queued}`);
+    const at = queued.indexOf(` && ${Queue}`);
+    assert.ok(queued.startsWith(Queue) && at > 0, `two queued runs joined by &&: ${queued}`);
+    const first = queued.slice(0, at);
+    const second = queued.slice(at + ' && '.length);
+    assert.deepStrictEqual(queueOptions(first), ['--shell', kind], `the builds take no GPU: ${queued}`);
+    assert.deepStrictEqual(queueOptions(second), ['--gpu', '--shell', kind], `the tests take the GPU: ${queued}`);
+    assert.strictEqual(queuedText(first, kind), builds, `the builds round-trip in ${kind}: ${queued}`);
+    assert.ok(second.endsWith(intent), `the intent comment stays at the end, outside the quotes: ${queued}`);
+    assert.strictEqual(queuedText(second, kind), tests, `the tests round-trip in ${kind}: ${queued}`);
+    assert.ok(/held only for the tests/.test(output.additionalContext), `the agent is told of the split: ${command}`);
   }
 }
 

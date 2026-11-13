@@ -91,9 +91,18 @@ internal static class ModuleKernelLaunchEmitter
             throw new InvalidOperationException($"The launcher of '{launcherName}' has parameters it cannot pass.");
         }
 
-        var launch = plan.Launch;
         WriteNullChecks(writer, plan.Arguments);
-        WriteLaunchLimitCheck(writer, launcherName, launch);
+        WriteLaunchLimitCheck(writer, launcherName, plan.Launch);
+        EmitFunctionLoad(writer, moduleField, entryPoint, launcherName, plan.Launch);
+        EmitArgumentsAndLaunch(writer, contextTypeName, plan);
+    }
+
+    // using CudaContextScope __gsharp_cuda_context_scope = new();
+    // IntPtr __gsharp_hfunc = GpuKernelLoader.LoadAotKernel(<module>.Value, "<entry point>");
+    // [DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, <sharedMemBytes>, "<launcher>");]
+    private static void EmitFunctionLoad(SourceWriter writer, string moduleField, string entryPoint,
+        string launcherName, ModuleLaunchConfiguration launch)
+    {
         // [WHY] Every launcher local has an explicit type: in a class named 'var', 'var' names that class
         writer.AppendLine(
             $"using {HostTypeNames.CudaContextScope} {CudaContextScope} = new();");
@@ -112,15 +121,48 @@ internal static class ModuleKernelLaunchEmitter
         }
 
         writer.AppendLine();
+    }
 
-        EmitBufferAllocations(writer, plan.Arguments);
+    // <buffers> <launch> <outputs>, or, when the launcher compares its arguments for shared memory:
+    // HostAliasGroups? __gsharp_aliases = null; try { <groups> <buffers> <launch> <outputs> } finally { <free> }
+    private static void EmitArgumentsAndLaunch(SourceWriter writer, string? contextTypeName,
+        ModuleKernelLaunchPlan plan)
+    {
+        if (!plan.ComparesAliases)
+        {
+            EmitBufferAllocations(writer, plan);
+            EmitLaunchAndOutputs(writer, contextTypeName, plan);
+            return;
+        }
+
+        // [WHY] The groups are found and their regions filled inside the try block, so that a failed copy still
+        // frees the regions already allocated; a member then needs no buffer of its own
+        ModuleAliasGroupEmitter.EmitDeclaration(writer);
+        writer.AppendLine("try");
+        using (writer.Scope())
+        {
+            ModuleAliasGroupEmitter.EmitGroups(writer, plan);
+            EmitBufferAllocations(writer, plan);
+            EmitLaunchAndOutputs(writer, contextTypeName, plan);
+        }
+
+        writer.AppendLine("finally");
+        using (writer.Scope())
+        {
+            ModuleAliasGroupEmitter.EmitFree(writer, plan);
+        }
+    }
+
+    private static void EmitLaunchAndOutputs(SourceWriter writer, string? contextTypeName, ModuleKernelLaunchPlan plan)
+    {
         if (contextTypeName is not null)
         {
-            EmitContextInitialization(writer, contextTypeName, plan.Arguments);
+            EmitContextInitialization(writer, contextTypeName, plan);
         }
 
         EmitKernelLaunch(writer, contextTypeName, plan);
-        EmitBufferOutputs(writer, plan.Arguments);
+        ModuleAliasGroupEmitter.EmitCopyBack(writer, plan);
+        EmitBufferOutputs(writer, plan);
     }
 
     /// <summary>
@@ -189,7 +231,7 @@ internal static class ModuleKernelLaunchEmitter
     internal static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
 
     // Array: using var <d> = new GpuBuffer<<element>>(<name>.Length); <d>.CopyToDevice(<elements of name>);
-    // Nullable array: using var <d> = <name> is null ? null : new GpuBuffer<<element>>(<name>.Length);
+    // Nullable array or alias candidate: using var <d> = <name is null or member of a group> ? null : new(...);
     //                 <d>?.CopyToDevice(<elements of name>);
     // By reference: [var <out> = default(<type>);] using var <d> = new GpuBuffer<<type>>(1);
     //               <d>.CopyToDevice(new ReadOnlySpan<<type>>(in <name> or <out>));
@@ -198,22 +240,24 @@ internal static class ModuleKernelLaunchEmitter
     // launcher (<out>): C# cannot read the parameter before it is assigned, the kernel starts from a known value
     // instead of what the device memory held, and the caller's variable changes only in the write-back, so a launch
     // that throws leaves it as it was and a 'ref' parameter that aliases it is copied in with the caller's value.
-    private static void EmitBufferAllocations(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
+    private static void EmitBufferAllocations(SourceWriter writer, ModuleKernelLaunchPlan plan)
     {
-        foreach (var argument in arguments)
+        foreach (var argument in plan.Arguments)
         {
             var name = Identifier(argument);
             var device = GetDeviceBuffer(argument);
             var buffer = $"{HostTypeNames.GpuBuffer}<{argument.TypeName}>";
+            var access = GetAccess(plan, argument);
+            var noBuffer = ModuleAliasGroupEmitter.NoBufferCondition(plan, argument);
             switch (argument.Kind)
             {
                 case ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray:
-                    writer.AppendLine(argument.AllowsNull
-                        ? $"using {buffer}? {device} = {name} is null ? null : new({name}.Length);"
+                    writer.AppendLine(noBuffer is not null
+                        ? $"using {buffer}? {device} = {noBuffer} ? null : new({name}.Length);"
                         : $"using {buffer} {device} = new({name}.Length);");
                     if (argument.CopyIn)
                     {
-                        writer.Append($"{device}{GetAccess(argument)}CopyToDevice(");
+                        writer.Append($"{device}{access}CopyToDevice(");
                         WriteHostElements(writer, argument);
                         writer.AppendLine(");");
                     }
@@ -223,15 +267,18 @@ internal static class ModuleKernelLaunchEmitter
                     var host = GetHostValue(argument);
                     var type = argument.TypeName;
                     writer.AppendLineIf(!argument.CopyIn, $"{type} {host} = default;");
-                    writer.AppendLine($"using {buffer} {device} = new(1);");
+                    writer.AppendLine(noBuffer is not null
+                        ? $"using {buffer}? {device} = {noBuffer} ? null : new(1);"
+                        : $"using {buffer} {device} = new(1);");
                     writer.AppendLine(
-                        $"{device}.CopyToDevice(new {HostTypeNames.ReadOnlySpan}<{argument.TypeName}>(in {host}));");
+                        $"{device}{access}CopyToDevice(new {HostTypeNames.ReadOnlySpan}<{type}>(in {host}));");
                     break;
             }
         }
 
         writer.AppendLine();
     }
+
 
     // <name>, or ModuleKernelArguments.Flatten<<element>>(<name>): the elements of an array as one span
     private static void WriteHostElements(SourceWriter writer, ModuleKernelArgument argument) =>
@@ -246,22 +293,36 @@ internal static class ModuleKernelLaunchEmitter
     private static string GetDeviceBuffer(ModuleKernelArgument argument) =>
         KernelHostNames.GetLocal(LauncherLocal.DevicePointer, argument.Ordinal);
 
-    // <d>?.DevicePointer ?? IntPtr.Zero for a nullable array, <d>.DevicePointer otherwise
-    private static string GetDevicePointer(ModuleKernelArgument argument) => argument.AllowsNull
-        ? $"{GetDeviceBuffer(argument)}?.DevicePointer ?? {Zero}"
-        : $"{GetDeviceBuffer(argument)}.DevicePointer";
+    // <d>?.DevicePointer ?? IntPtr.Zero for a buffer that may be null, <d>.DevicePointer otherwise; for an alias
+    // candidate, its address in its group's region first: __gsharp_aliases?.IsMember(<k>) == true ? <group> : <buffer>
+    private static string GetDevicePointer(ModuleKernelLaunchPlan plan, ModuleKernelArgument argument)
+    {
+        var buffer = ModuleAliasGroupEmitter.NoBufferCondition(plan, argument) is not null
+            ? $"{GetDeviceBuffer(argument)}?.DevicePointer ?? {Zero}"
+            : $"{GetDeviceBuffer(argument)}.DevicePointer";
+        var index = ModuleAliasGroupEmitter.IndexOf(plan, argument);
+        if (index < 0)
+        {
+            return buffer;
+        }
+
+        var member = ModuleAliasGroupEmitter.MemberTest(index);
+        return $"{member} ? {ModuleAliasGroupEmitter.DevicePointer(index)} : {buffer}";
+    }
 
     // The host storage of a value passed by reference: the parameter, or the launcher local __gsharp_out_<ordinal> of
     // an 'out' value
     private static string GetHostValue(ModuleKernelArgument argument) =>
         argument.CopyIn ? Identifier(argument) : KernelHostNames.GetLocal(LauncherLocal.OutValue, argument.Ordinal);
 
-    // The member access on the buffer of <argument>: '?.' when a nullable array leaves it null
-    private static string GetAccess(ModuleKernelArgument argument) => argument.AllowsNull ? "?." : ".";
+    // The member access on the buffer of <argument>: '?.' when it may have none (GetNoBufferCondition)
+    private static string GetAccess(ModuleKernelLaunchPlan plan, ModuleKernelArgument argument) =>
+        ModuleAliasGroupEmitter.NoBufferCondition(plan, argument) is not null ? "?." : ".";
 
     private static void EmitContextInitialization(SourceWriter writer, string contextTypeName,
-        EquatableArray<ModuleKernelArgument> arguments)
+        ModuleKernelLaunchPlan plan)
     {
+        var arguments = plan.Arguments;
         writer.AppendLine($"{contextTypeName} {NativeContext} = new()");
         using (writer.Scope())
         {
@@ -269,7 +330,7 @@ internal static class ModuleKernelLaunchEmitter
             {
                 var argument = arguments[i];
                 writer.Append(argument.IsStaged
-                    ? $"{Identifier(argument)} = {GetDevicePointer(argument)}"
+                    ? $"{Identifier(argument)} = {GetDevicePointer(plan, argument)}"
                     : $"{Identifier(argument)} = {Identifier(argument)}");
                 writer.AppendLine(i < arguments.Length - 1 ? "," : string.Empty);
             }
@@ -291,7 +352,7 @@ internal static class ModuleKernelLaunchEmitter
             }
             else
             {
-                EmitUnpackedKernelParameters(writer, plan.Arguments);
+                EmitUnpackedKernelParameters(writer, plan);
             }
 
             writer.AppendLine();
@@ -307,14 +368,14 @@ internal static class ModuleKernelLaunchEmitter
     // YAML binding, which the reader cannot tell from a struct, fails to compile there instead of reaching the kernel
     // as the host address of the reference. A pointer cannot be a type argument and is never a reference, so its local
     // is passed by '&'.
-    private static void EmitUnpackedKernelParameters(SourceWriter writer,
-        EquatableArray<ModuleKernelArgument> arguments)
+    private static void EmitUnpackedKernelParameters(SourceWriter writer, ModuleKernelLaunchPlan plan)
     {
+        var arguments = plan.Arguments;
         foreach (var argument in arguments)
         {
             var local = KernelHostNames.GetLocal(LauncherLocal.KernelArgument, argument.Ordinal);
             writer.AppendLine(argument.IsStaged
-                ? $"{HostTypeNames.IntPtr} {local} = {GetDevicePointer(argument)};"
+                ? $"{HostTypeNames.IntPtr} {local} = {GetDevicePointer(plan, argument)};"
                 : $"{argument.TypeName} {local} = {Identifier(argument)};");
         }
 
@@ -358,29 +419,35 @@ internal static class ModuleKernelLaunchEmitter
             : $"{ThrowIfError}({HostTypeNames.CudaDriverApi}.cuCtxSynchronize());");
     }
 
+    // [if (!(__gsharp_aliases?.IsMember(<k>) == true))]   (the group of a member copied it back)
     // Array: <d>[?].CopyToHost(<elements of name>);
     // By reference: <d>.CopyToHost(new Span<<type>>(ref <name> or <out>)); [<name> = <out>;]
-    private static void EmitBufferOutputs(SourceWriter writer, EquatableArray<ModuleKernelArgument> arguments)
+    private static void EmitBufferOutputs(SourceWriter writer, ModuleKernelLaunchPlan plan)
     {
-        foreach (var argument in arguments)
+        foreach (var argument in plan.Arguments)
         {
             if (!argument.IsStaged || !argument.CopyOut)
             {
                 continue;
             }
 
+            var index = ModuleAliasGroupEmitter.IndexOf(plan, argument);
+            writer.AppendLineIf(index >= 0, $"if (!({ModuleAliasGroupEmitter.MemberTest(index)}))");
+            using var notMember = index >= 0 ? writer.Scope() : default;
             var name = Identifier(argument);
             var device = GetDeviceBuffer(argument);
             if (argument.IsArray)
             {
-                writer.Append($"{device}{GetAccess(argument)}CopyToHost(");
+                writer.Append($"{device}{GetAccess(plan, argument)}CopyToHost(");
                 WriteHostElements(writer, argument);
                 writer.AppendLine(");");
             }
             else
             {
                 var host = GetHostValue(argument);
-                writer.AppendLine($"{device}.CopyToHost(new {HostTypeNames.Span}<{argument.TypeName}>(ref {host}));");
+                var access = GetAccess(plan, argument);
+                writer.AppendLine(
+                    $"{device}{access}CopyToHost(new {HostTypeNames.Span}<{argument.TypeName}>(ref {host}));");
                 writer.AppendLineIf(!argument.CopyIn, $"{name} = {host};");
             }
         }

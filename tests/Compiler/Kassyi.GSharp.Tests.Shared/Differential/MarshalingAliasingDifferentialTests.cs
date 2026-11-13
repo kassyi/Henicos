@@ -177,18 +177,8 @@ public sealed class MarshalingAliasingDifferentialTests
         Inputs = static (_, _) => new DiffBuffers()
             .RefScalar("sharedRef", 100)
             .Out<int>("observed", 2, OutputPolicy.Exact),
-        // C# passes the one variable to both ref parameters, so b sees the write through a (a += 10; b += 20). The C#
-        // run of the launcher copies each ref argument into a local of its own and loses the alias, so the reference
-        // states the C# result
-        Reference = static (b, _) =>
-        {
-            ref int sharedRef = ref b.GetScalarRef<int>("sharedRef");
-            int[] observed = b.Get<int>("observed");
-            sharedRef += 10;
-            sharedRef += 20;
-            observed[0] = sharedRef;
-            observed[1] = sharedRef;
-        },
+        // C# passes the one variable to both ref parameters, so b sees the write through a (a += 10; b += 20)
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             ref int sharedRef = ref b.GetScalarRef<int>("sharedRef");
@@ -367,12 +357,12 @@ public sealed class MarshalingAliasingDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void SpanSliceAliasing_OverlappingSlices_MatchesOracleExceptKnownCudaIssue() =>
+    public void SpanSliceAliasing_OverlappingSlices_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_overlappingSpanSlice);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void ScalarAliasing_AliasedRefScalars_MatchesOracleExceptKnownCudaIssue() =>
+    public void ScalarAliasing_AliasedRefScalars_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_aliasedRefScalars);
 
     [SkippableFact]

@@ -60,6 +60,9 @@ public class ParallelAggregateAnalyzerTests : TranspilerTestBase
             // #1176: the sequence is stored in a local, so the chain is not fused and each thread sums it
             // mutant: ParallelAggregateRule without the check of an unfused AsParallel() sequence (no warning)
             (322, 41, 46, ParallelAggregateFallback.UnfusedChain),
+            // #1414: a condition on the result of a delegate call
+            // mutant: UniformityValueReader.IsThreadVariantCall without DelegateInvoke (the aggregate is shared)
+            (332, 62, 67, ParallelAggregateFallback.DivergentCall),
         ];
         var actual = diagnostics
             .Where(static d => d.Id == GSharpDiagnostics.ParallelAggregateRunsSequentially.Id)

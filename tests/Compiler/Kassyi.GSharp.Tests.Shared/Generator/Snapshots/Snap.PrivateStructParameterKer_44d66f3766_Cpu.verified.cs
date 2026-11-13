@@ -66,12 +66,9 @@ public static unsafe void Unmarshal_PrivateStructParameterKernels_Bag(ref global
 {
 host.Scale = native.Scale;
 }
-public static void CopyArrays_PrivateStructParameterKernels_Bag(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host)
+public static void CopyArrays_PrivateStructParameterKernels_Bag(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Values != null)
-{
-host.Values = (global::System.Int32[])host.Values.Clone();
-}
+_ = copies.Copy(ref host.Values);
 }
 public static bool HoldsArray_PrivateStructParameterKernels_Bag(global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, object array)
 {

@@ -98,12 +98,9 @@ public static unsafe void Unmarshal_NotNullHolder(ref global::Kassyi.GSharp.Test
 {
 host.Offset = native.Offset;
 }
-public static void CopyArrays_NotNullHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host)
+public static void CopyArrays_NotNullHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Data != null)
-{
-host.Data = (global::System.Int32[])host.Data.Clone();
-}
+_ = copies.Copy(ref host.Data);
 }
 public static bool HoldsArray_NotNullHolder(global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host, object array)
 {

@@ -166,9 +166,10 @@ export class QueueFixture {
     // The test commands below are written for cmd / sh; the shells themselves are checked in part 6.
     env[ShellVariable] = process.platform === "win32" ? "cmd" : "sh";
     // --gpu jobs take a private GPU lock, never the machine's (gpu-lock.js reads GSHARP_GPU_LOCK_PATH), without the
-    // pool readings
+    // pool readings and the GPU hold record
     env.GSHARP_GPU_LOCK_PATH = path.join(this.dir, "gpu-lock");
     env.GSHARP_GPU_POOL_WATCH = "0";
+    env.GSHARP_GPU_HOLD_WATCH = "0";
     this.env = env;
   }
 

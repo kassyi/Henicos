@@ -33,8 +33,28 @@ public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, in
   wrote through `b`, and `x` gets the writes. The CPU paths give the kernel the caller's array in that case; they copy
   an `[In]` array only when no other holder that sends the writes back holds it: an array argument that copies back, a
   struct argument with the array in a field at any depth, or an element of an array argument that copies back. `[In]`
-  arguments that hold one array share that copy. A span, `Memory<T>` or `ArraySegment<T>` over an array is a slice with
-  no identity of its own; such arguments are not shared.
+  arguments that hold one array share that copy, also when one of them is a field of an element of an `[In]` container.
+- **Arguments that overlap one memory**: Slices (`Span<T>`, `ReadOnlySpan<T>`, `Memory<T>`, `ArraySegment<T>`) of one
+  array, a `ref` to an element and the array, or one variable passed to two `ref` parameters are one memory in C# as
+  well. When a launch has such an argument beside another one, the launcher compares their addresses: arguments whose
+  bytes overlap form a group, which gets one device region that each member addresses at its offset. The group is one
+  holder: it is copied in when any member copies in and copied back when any member copies back, so an `[In]` member
+  keeps the kernel's writes from the caller only when every member of its group is `[In]`. Views with different element
+  types share the bytes as on the host. A group of elements whose host and device layouts differ (a struct that the
+  launcher converts) is converted as a whole, element by element, into one buffer in the device layout, which every
+  member addresses at its element offset; a struct passed to two `ref` parameters is the same. A launch without
+  overlapping arguments allocates and copies as before. Three forms cannot share one region and throw
+  `NotSupportedException` naming the arguments: converted members of different element types, or a converted member
+  beside one whose bytes the device reads as they are (their layouts differ in different ways); converted members that
+  do not start at element boundaries of each other; and members that overlap at offsets no device address can align
+  for all of their element types (the device alignment of each element type counts, not its size). The CPU paths pass
+  the caller's memory, and give the `[In]` members of a group of `[In]` arguments one shared copy, which members of
+  different element types view as on the device: a `Span<T>` or `ReadOnlySpan<T>` reinterprets its bytes, a
+  `Memory<T>` or `ReadOnlyMemory<T>` views them through a `MemoryManager<T>`, and a `T[]` of another element type
+  of the same size (an `int[]` passed as a `uint[]`) is the same copy. The copy is typed by the members that need an
+  array (`T[]`, `ArraySegment<T>`, `ImmutableArray<T>`); those members must agree on the size of their elements, and
+  elements that hold references are never reinterpreted. A group that breaks this throws `NotSupportedException` on
+  the CPU paths only.
 
 Using these attributes appropriately is highly recommended for performance-critical kernels, as redundant PCIe transfers can drastically degrade performance compared to native C++ CUDA.
 

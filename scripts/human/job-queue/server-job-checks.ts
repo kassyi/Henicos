@@ -213,7 +213,7 @@ export function checkReport(assert: AssertModule): void {
   );
 }
 
-/** A cancel of a GPU holder reaches the --gpu run that started it. */
+/** A cancel of a GPU holder reaches the --gpu run that started it, and a cancel of the run reaches its holder. */
 export function checkCancelTargets(assert: AssertModule): void {
   const turn = { id: 1, turn: null };
   const holder = { id: 2, turn: 1 };
@@ -221,7 +221,7 @@ export function checkCancelTargets(assert: AssertModule): void {
   const older = { id: 4, turn: null }; // a holder of an older client names no turn
   const all = [turn, holder, other, older];
   assert.deepStrictEqual(cancelTargets([holder], all), [holder, turn]);
-  assert.deepStrictEqual(cancelTargets([turn], all), [turn], "a turn alone adds nothing");
+  assert.deepStrictEqual(cancelTargets([turn], all), [turn, holder], "a turn reaches the holder it started");
   assert.deepStrictEqual(cancelTargets([holder, turn], all), [holder, turn], "no job twice");
   assert.deepStrictEqual(cancelTargets([older], all), [older]);
 }
