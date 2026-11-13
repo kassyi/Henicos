@@ -160,8 +160,8 @@ Iterator:
 Using:
   Summary: >-
     The disposal of a C# using in device code. A struct that has a Dispose method declares it as a member under its own
-    name; the guard of each using calls it when its scope ends. On the CPU a catch around the body tells the guards
-    that a failure leaves the using.
+    name; the guard of each using calls it when its scope ends. On the CPU a catch around the body disposes the
+    resources when a failure leaves the using.
   Names:
     ScopeGuard: { Value: __gsharp_using_scope, Prelude: StandardTypes.hpp }
     Failed: { Value: __gsharp_using_failed, Prelude: ErrorChannel.hpp }

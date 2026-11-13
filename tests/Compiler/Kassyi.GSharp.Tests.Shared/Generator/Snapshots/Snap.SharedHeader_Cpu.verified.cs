@@ -99,36 +99,24 @@ __device__ inline System_Nullable(const System_Nullable<U>& other)
 : HasValue(other.HasValue), Value(static_cast<T>(other.Value)) {}
 };
 
-#if !defined(__CUDACC__)
-// ErrorChannel.hpp
-template <typename T>
-inline void __gsharp_dispose_unwinding(T& resource, bool recorded) noexcept;
-// The values of __gsharp_using_scope::failure (__gsharp_using_failed)
-constexpr unsigned char __gsharp_using_recorded_failure = 1;
-constexpr unsigned char __gsharp_using_other_failure = 2;
-#endif
-
 // The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
 // goto). Guards of one block are destroyed in reverse order, as C# disposes nested usings.
 // [WHY] On the CPU a failed check ends the step with an exception (ErrorChannel.hpp), and C# disposes the resource as
-// the exception leaves the using (a finally), so the guard disposes it while the exception unwinds too: the catch
-// around the body of the using sets failure (__gsharp_using_failed) and rethrows. A failure of that Dispose cannot
-// leave a destructor during unwinding and is recorded there instead (__gsharp_dispose_unwinding). When the block ends
-// without a failure, a failure of Dispose leaves the destructor like any failed check. On CUDA the failing thread exits
-// and does not dispose.
+// the exception leaves the using (a finally): the catch around the body of the using disposes it there and clears the
+// guard (__gsharp_using_failed), then rethrows. When the block ends without a failure, a failure of Dispose leaves the
+// destructor like any failed check. On CUDA the failing thread exits and does not dispose.
 template <typename T>
 struct __gsharp_using_scope {
-T& resource;
 #if defined(__CUDACC__)
+T& resource;
 __device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 #else
-// 0, __gsharp_using_recorded_failure or __gsharp_using_other_failure
-unsigned char failure = 0;
+// Null once a failure disposed the resource
+T* resource;
+inline __gsharp_using_scope(T& r) noexcept : resource(&r) {}
 inline ~__gsharp_using_scope() noexcept(false) {
-if (failure == 0) {
-resource.__gsharp_dispose();
-} else {
-__gsharp_dispose_unwinding(resource, failure == __gsharp_using_recorded_failure);
+if (resource != nullptr) {
+resource->__gsharp_dispose();
 }
 }
 #endif
@@ -823,12 +811,11 @@ __gsharp_trap_site(code, site_id);
 }
 
 // Disposes the resource of a using while a failure of the thread leaves the using (StandardTypes.hpp), as C# runs
-// Dispose in a finally. [WHY] A destructor that runs while an exception unwinds must not throw, so a failure of the
-// Dispose ends here: when the failure being unwound is a failed check of this thread (recorded) that its launch
-// reports, the new failure replaces it, as the exception of a finally replaces the one in flight in C#. The unwinding
-// then goes on.
+// Dispose in a finally. A failure of the Dispose ends here: when the failure in flight is a failed check of this
+// thread (recorded) that its launch reports, the new failure replaces it, as the exception of a finally replaces the
+// one in flight in C#. The failure in flight then goes on.
 template <typename T>
-inline void __gsharp_dispose_unwinding(T& resource, bool recorded) noexcept
+__GSHARP_COLD inline void __gsharp_dispose_unwinding(T& resource, bool recorded) noexcept
 {
 bool outer = __gsharp_failure_replaces;
 __gsharp_failure_replaces = recorded && __gsharp_failure_reported;
@@ -843,22 +830,23 @@ __gsharp_record_failure(GSharpErrorCode::InvalidOperation,
 __gsharp_failure_replaces = outer;
 }
 
-// Called by the catch that the CPU dialect writes around the body of a using (UsingTranspiler) before it rethrows: the
-// guards then dispose their resources as the failure unwinds (__gsharp_dispose_unwinding). [WHY] The guard learns of
-// the failure here instead of asking std::uncaught_exceptions() and a thread-local counter when it is created and
-// destroyed, which made every using that ends normally pay for the failure path.
+// Called by the catch that the CPU dialect writes around the body of a using (UsingTranspiler) before it rethrows,
+// with the guards of the using in the order C# disposes them (the last declared first): disposes each resource
+// (__gsharp_dispose_unwinding) and clears its guard, which then has nothing to dispose. [WHY] The failure path does
+// all the work, so the guard of a using that ends normally only tests its pointer before the call of Dispose; asking
+// std::uncaught_exceptions() or keeping a flag in the guard made every using pay for the failure path.
 template <typename... G>
-inline void __gsharp_using_failed(G&... guards) noexcept
+__GSHARP_COLD inline void __gsharp_using_failed(G&... guards) noexcept
 {
-unsigned char failure = __gsharp_using_other_failure;
+bool recorded = false;
 try {
 throw;
 } catch (const __gsharp_step_abort&) {
-failure = __gsharp_using_recorded_failure;
+recorded = true;
 } catch (...) {
 // Any other exception (std::bad_alloc) was not recorded as a failed check; the launcher records it
 }
-((guards.failure = failure), ...);
+((__gsharp_dispose_unwinding(*guards.resource, recorded), guards.resource = nullptr), ...);
 }
 
 // GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)

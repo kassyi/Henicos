@@ -138,8 +138,8 @@ internal static class UsingTranspiler
 
     /// <summary>
     /// Whether the code after the guards written since <paramref name="firstGuard"/> runs in a <c>try</c> whose catch
-    /// tells them that a failure leaves the <c>using</c> (<see cref="WriteFailureCatch"/>): on the CPU, where a failed
-    /// check ends the step with an exception and C# disposes the resource as it leaves.
+    /// disposes their resources when a failure leaves the <c>using</c> (<see cref="WriteFailureCatch"/>): on the CPU,
+    /// where a failed check ends the step with an exception and C# disposes the resource as it leaves.
     /// </summary>
     public static bool CatchesFailures(int firstGuard, ref TranspileContext context) =>
         !context.Emitter.Dialect.IsCuda && context.Emitter.UsingCounter > firstGuard;
@@ -148,9 +148,10 @@ internal static class UsingTranspiler
     /// Writes the catch after the <c>try</c> that holds the body of a <c>using</c>, for the guards numbered from
     /// <paramref name="firstGuard"/> up to <paramref name="endGuard"/> (exclusive).
     /// </summary>
-    // catch (...) { __gsharp_using_failed(__gsharp_using_guard_<first>, ...); throw; }
-    // [WHY] The guard learns of the failure here and reads only its flag when it is destroyed (StandardTypes.hpp), so a
-    // using that ends normally costs no more than the call of Dispose.
+    // catch (...) { __gsharp_using_failed(__gsharp_using_guard_<last>, ..., __gsharp_using_guard_<first>); throw; }
+    // [WHY] The catch disposes the resources, the last declared first as C# does, and clears the guards, so a guard
+    // only tests its pointer when the using ends normally (StandardTypes.hpp) and costs no more than the call of
+    // Dispose.
     public static void WriteFailureCatch(int firstGuard, int endGuard, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
@@ -160,9 +161,9 @@ internal static class UsingTranspiler
             writer.Append(GSharpInternalNames.Using.Failed);
             using (writer.Parentheses())
             {
-                for (var guard = firstGuard; guard < endGuard; guard++)
+                for (var guard = endGuard - 1; guard >= firstGuard; guard--)
                 {
-                    writer.AppendIf(guard > firstGuard, ", ");
+                    writer.AppendIf(guard < endGuard - 1, ", ");
                     writer.Append($"{GSharpInternalNames.Using.GuardPrefix}{guard}");
                 }
             }

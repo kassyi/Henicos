@@ -285,8 +285,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     }
 
     // The statements of a block from start on. On the CPU the statements after a using declaration are the body of the
-    // try that tells its guards about a failure (UsingTranspiler.WriteFailureCatch); C# forbids a goto into that part
-    // (CS8648), so the try has no jump into it.
+    // try whose catch disposes the resources on a failure (UsingTranspiler.WriteFailureCatch); C# forbids a goto into
+    // that part (CS8648), so the try has no jump into it.
     private void VisitStatements(SyntaxList<StatementSyntax> statements, int start)
     {
         for (var i = start; i < statements.Count; i++)

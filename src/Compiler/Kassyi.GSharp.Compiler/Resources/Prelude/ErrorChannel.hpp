@@ -229,12 +229,11 @@ inline void __gsharp_translate_sort_failure(GSharpErrorCode& code, const char*& 
 }
 
 // Disposes the resource of a using while a failure of the thread leaves the using (StandardTypes.hpp), as C# runs
-// Dispose in a finally. [WHY] A destructor that runs while an exception unwinds must not throw, so a failure of the
-// Dispose ends here: when the failure being unwound is a failed check of this thread (recorded) that its launch
-// reports, the new failure replaces it, as the exception of a finally replaces the one in flight in C#. The unwinding
-// then goes on.
+// Dispose in a finally. A failure of the Dispose ends here: when the failure in flight is a failed check of this
+// thread (recorded) that its launch reports, the new failure replaces it, as the exception of a finally replaces the
+// one in flight in C#. The failure in flight then goes on.
 template <typename T>
-inline void __gsharp_dispose_unwinding(T& resource, bool recorded) noexcept
+__GSHARP_COLD inline void __gsharp_dispose_unwinding(T& resource, bool recorded) noexcept
 {
     bool outer = __gsharp_failure_replaces;
     __gsharp_failure_replaces = recorded && __gsharp_failure_reported;
@@ -249,22 +248,23 @@ inline void __gsharp_dispose_unwinding(T& resource, bool recorded) noexcept
     __gsharp_failure_replaces = outer;
 }
 
-// Called by the catch that the CPU dialect writes around the body of a using (UsingTranspiler) before it rethrows: the
-// guards then dispose their resources as the failure unwinds (__gsharp_dispose_unwinding). [WHY] The guard learns of
-// the failure here instead of asking std::uncaught_exceptions() and a thread-local counter when it is created and
-// destroyed, which made every using that ends normally pay for the failure path.
+// Called by the catch that the CPU dialect writes around the body of a using (UsingTranspiler) before it rethrows,
+// with the guards of the using in the order C# disposes them (the last declared first): disposes each resource
+// (__gsharp_dispose_unwinding) and clears its guard, which then has nothing to dispose. [WHY] The failure path does
+// all the work, so the guard of a using that ends normally only tests its pointer before the call of Dispose; asking
+// std::uncaught_exceptions() or keeping a flag in the guard made every using pay for the failure path.
 template <typename... G>
-inline void __gsharp_using_failed(G&... guards) noexcept
+__GSHARP_COLD inline void __gsharp_using_failed(G&... guards) noexcept
 {
-    unsigned char failure = __gsharp_using_other_failure;
+    bool recorded = false;
     try {
         throw;
     } catch (const __gsharp_step_abort&) {
-        failure = __gsharp_using_recorded_failure;
+        recorded = true;
     } catch (...) {
         // Any other exception (std::bad_alloc) was not recorded as a failed check; the launcher records it
     }
-    ((guards.failure = failure), ...);
+    ((__gsharp_dispose_unwinding(*guards.resource, recorded), guards.resource = nullptr), ...);
 }
 
 // GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)

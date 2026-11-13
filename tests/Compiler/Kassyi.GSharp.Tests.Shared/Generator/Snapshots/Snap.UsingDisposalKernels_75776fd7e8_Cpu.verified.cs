@@ -1172,7 +1172,7 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_2, __gsharp_using_guard_3);
+__gsharp_using_failed(__gsharp_using_guard_3, __gsharp_using_guard_2);
 throw;
 }
 }
