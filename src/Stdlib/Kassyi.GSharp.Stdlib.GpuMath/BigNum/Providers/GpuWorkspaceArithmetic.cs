@@ -27,5 +27,5 @@ internal static class GpuWorkspaceArithmetic
     /// <param name="workspace">The workspace.</param>
     /// <returns>The execution context.</returns>
     internal static GpuBigIntExecutionContext CreateContext(GpuWorkspace workspace) =>
-        new(workspace, workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), workspace.Stream);
+        new(workspace, workspace.MemoryManager, default(LegacyProviderArithmeticAdapter), workspace.Stream);
 }

@@ -115,4 +115,4 @@ optional, and send a higher version only on the messages that need it (`wireVers
    [job-queue.md](../../../.agents/rules/job-queue.md) with a change of behavior.
 
 The PreToolUse hook that sends build and test commands through the queue is a separate script,
-`scripts/agent/check-queued-command.js`; the GPU lock is `scripts/agent/gpu-lock.js`.
+`scripts/agent/check-queued-command.js`; the GPU lock is `scripts/human/gpu-lock.js`.
