@@ -59,8 +59,9 @@ internal static class SharedMemorySiteKey
     /// Appends the CPU allocation of a <c>SharedMemory&lt;T&gt;</c> creation (#544). A constant count (or none) is a
     /// static declaration, as on CUDA (<c>__shared__</c>, not counted in <c>sharedMemBytes</c>):
     /// <c>(&lt;T&gt;*)__gsharp_allocate_smem_static(&lt;siteKey&gt;, (&lt;n&gt;) * sizeof(&lt;T&gt;), alignof(&lt;T&gt;))</c>.
-    /// Any other count is a dynamic declaration, placed in the launch's <c>sharedMemBytes</c>:
-    /// <c>(&lt;T&gt;*)__gsharp_allocate_smem_dynamic(&lt;siteKey&gt;, (&lt;n&gt;) * sizeof(&lt;T&gt;), alignof(&lt;T&gt;), "&lt;place&gt;")</c>.
+    /// Any other count is a dynamic declaration, placed in the launch's <c>sharedMemBytes</c>; its count is passed
+    /// alone, so that a negative one is reported with its value:
+    /// <c>(&lt;T&gt;*)__gsharp_allocate_smem_dynamic(&lt;siteKey&gt;, (long long)(&lt;n&gt;), sizeof(&lt;T&gt;), alignof(&lt;T&gt;), "&lt;place&gt;")</c>.
     /// The decision is <see cref="DynamicSharedMemoryAnalysis.TryGetCount(BaseObjectCreationExpressionSyntax, SemanticModel, out ExpressionSyntax?, out int?)"/>,
     /// the one that chooses between <c>__shared__</c> and the dynamic placement on CUDA.
     /// </summary>
@@ -86,6 +87,7 @@ internal static class SharedMemorySiteKey
         using (context.Emitter.Writer.Parentheses())
         {
             context.Emitter.Writer.Append($"{siteKey}, ");
+            context.Emitter.Writer.AppendIf(isDynamic, "(long long)");
             using (context.Emitter.Writer.Parentheses())
             {
                 if (count != null)
@@ -98,7 +100,7 @@ internal static class SharedMemorySiteKey
                 }
             }
 
-            context.Emitter.Writer.Append(" * sizeof");
+            context.Emitter.Writer.Append(isDynamic ? ", sizeof" : " * sizeof");
             using (context.Emitter.Writer.Parentheses())
             {
                 context.Emitter.Dialect.AppendType(ref context, elementType);

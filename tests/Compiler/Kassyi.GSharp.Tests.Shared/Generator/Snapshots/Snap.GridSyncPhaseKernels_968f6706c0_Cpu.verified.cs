@@ -159,7 +159,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_staticCopy={ (int*)__gsharp_allocate_smem_static(0xa87fc7c9cb75d112ull, (32) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_4_dynamicCopy={ (int*)__gsharp_allocate_smem_dynamic(0xa87fc8c9cb75d2c5ull, (__gsharp_ctx->__gsharp_id_2_n) * sizeof(int), alignof(int), ""GridSyncPhaseKernels.cs(20,27)"") };
+__gsharp_ctx->__gsharp_id_4_dynamicCopy={ (int*)__gsharp_allocate_smem_dynamic(0xa87fc8c9cb75d2c5ull, (long long)(__gsharp_ctx->__gsharp_id_2_n), sizeof(int), alignof(int), ""GridSyncPhaseKernels.cs(20,27)"") };
 __gsharp_ctx->__gsharp_id_5_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 __gsharp_ctx->__gsharp_id_6_local=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_staticCopy[__gsharp_ctx->__gsharp_id_6_local]=__gsharp_add_i32(__gsharp_mul_i32(1000,(int)blockIdx.x),__gsharp_ctx->__gsharp_id_6_local);
