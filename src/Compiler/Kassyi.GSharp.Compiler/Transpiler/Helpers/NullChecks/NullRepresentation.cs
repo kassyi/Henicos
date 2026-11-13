@@ -26,15 +26,22 @@ internal static class NullRepresentation
             return null;
         }
 
-        if (node.Left.IsKind(SyntaxKind.NullLiteralExpression) && IsNullComparable(model.GetTypeSymbol(node.Right)))
+        if (IsNullValue(node.Left, model) && IsNullComparable(model.GetTypeSymbol(node.Right)))
         {
             return node.Right;
         }
 
-        return node.Right.IsKind(SyntaxKind.NullLiteralExpression) && IsNullComparable(model.GetTypeSymbol(node.Left))
+        return IsNullValue(node.Right, model) && IsNullComparable(model.GetTypeSymbol(node.Left))
             ? node.Left
             : null;
     }
+
+    // null, the default literal and default(T) of a null-comparable type: n == default is the lifted comparison with
+    // null, the HasValue test of n, and arr == default compares the array with null, as C# converts the literal to
+    // object there. The caller checks that the other operand is null-comparable, so the literal needs no type here.
+    private static bool IsNullValue(ExpressionSyntax operand, SemanticModel model) =>
+        operand.IsKind(SyntaxKind.NullLiteralExpression, SyntaxKind.DefaultLiteralExpression) ||
+        (operand is DefaultExpressionSyntax && IsNullComparable(model.GetTypeSymbol(operand)));
 
     /// <summary>
     /// Emits <c>(&lt;operand&gt;.data == nullptr)</c> (or <c>(!&lt;operand&gt;.HasValue)</c> for a

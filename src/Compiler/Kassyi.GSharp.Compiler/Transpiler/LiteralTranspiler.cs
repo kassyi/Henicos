@@ -25,42 +25,6 @@ internal static class LiteralTranspiler
         return true;
     }
 
-    /// <summary>
-    /// Writes <c>default(T)</c> or the <c>default</c> literal. <c>{}</c> is C++ only where a braced list may stand: the
-    /// initializer of a declaration (<c>T x = {};</c>) and the right side of a simple assignment (<c>x = {};</c>). Every
-    /// other position gets the typed value <c>T{}</c>, with <c>T</c> from the semantic model (<c>c ? a : int{}</c>,
-    /// <c>x == int{}</c>, <c>auto z = int{}</c>, <c>T{}.Field</c>).
-    /// </summary>
-    public static void AppendDefault(ExpressionSyntax node, ref TranspileContext context)
-    {
-        var type = node is DefaultExpressionSyntax
-            ? context.Query.SemanticModel.GetTypeSymbol(node)
-            : context.Query.SemanticModel.GetConvertedTypeSymbol(node);
-        if (type is null || IsBracedListPosition(node))
-        {
-            context.Emitter.Writer.Append("{}");
-            return;
-        }
-
-        context.Emitter.Dialect.AppendType(ref context, type);
-        context.Emitter.Writer.Append("{}");
-    }
-
-    // An initializer of a declaration with a written type (not var), the right side of x = value, or a returned value
-    private static bool IsBracedListPosition(ExpressionSyntax node) =>
-        node.Parent switch
-        {
-            EqualsValueClauseSyntax
-            {
-                Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration }
-            } => !declaration.Type.IsVar,
-            AssignmentExpressionSyntax assignment => assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) &&
-                                                     assignment.Right == node,
-            // return default; and => default are written as return <value>; or <result buffer>[<thread>] = <value>;
-            ReturnStatementSyntax or ArrowExpressionClauseSyntax => true,
-            _ => false
-        };
-
     /// <summary>Writes <paramref name="node"/> as a C++ literal.</summary>
     public static void Transpile(LiteralExpressionSyntax node, SourceWriter writer)
     {

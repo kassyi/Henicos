@@ -423,7 +423,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (node.IsKind(SyntaxKind.DefaultLiteralExpression))
         {
-            LiteralTranspiler.AppendDefault(node, ref Context);
+            DefaultValue.Append(node, ref Context);
         }
         else if (!LiteralTranspiler.TryAppendArrayNull(node, ref Context))
         {
@@ -432,7 +432,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     }
 
     public override void VisitDefaultExpression(DefaultExpressionSyntax node) =>
-        LiteralTranspiler.AppendDefault(node, ref Context);
+        DefaultValue.Append(node, ref Context);
 
     public override void VisitDeclarationExpression(DeclarationExpressionSyntax node)
         => Visit(node.Designation);

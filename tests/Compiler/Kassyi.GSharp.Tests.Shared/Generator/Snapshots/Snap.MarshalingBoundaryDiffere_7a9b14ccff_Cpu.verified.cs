@@ -1509,7 +1509,7 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_3_tid>=__gsharp_array_ref(__gsharp_id_0_arr, 1995871006u).length)
 {
-__gsharp_auto_result[__gsharp_global_tid] = {};
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_type<System_Nullable<int>>{};
 __gsharp_state = -1;return;
 }
 System_Nullable<int> __gsharp_id_4_elem = __gsharp_array_at(__gsharp_id_0_arr, __gsharp_id_3_tid, 217716478u);
@@ -2666,7 +2666,7 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_5_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_5_tid>=__gsharp_array_ref(__gsharp_id_2_gArr, 963721657u).length)
 {
-__gsharp_auto_result[__gsharp_global_tid] = {};
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFloatUintUnion>{};
 __gsharp_state = -1;return;
 }
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffExplicitGapped __gsharp_id_6_gElem = __gsharp_array_at(__gsharp_id_2_gArr, __gsharp_id_5_tid, 1217641600u);
@@ -3431,7 +3431,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffAutoMixed __gsharp_
 ());
 if(__gsharp_id_7_tid>=__gsharp_array_ref(__gsharp_id_4_arr, 1619929524u).length)
 {
-__gsharp_auto_result[__gsharp_global_tid] = {};
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffAutoMixed>{};
 __gsharp_state = -1;return;
 }
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffAutoMixed __gsharp_id_8_elem = __gsharp_array_at(__gsharp_id_4_arr, __gsharp_id_7_tid, 1292318110u);
@@ -4158,7 +4158,7 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_6_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_6_tid>=__gsharp_array_ref(__gsharp_id_2_vecArr, 1888783947u).length)
 {
-__gsharp_auto_result[__gsharp_global_tid] = {};
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineVec2Padded3>{};
 __gsharp_state = -1;return;
 }
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffInlineVec2Padded3 __gsharp_id_7_elemVecs = __gsharp_array_at(__gsharp_id_2_vecArr, __gsharp_id_6_tid, 1276780659u);
@@ -5069,7 +5069,7 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_7_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_7_tid>=__gsharp_array_ref(__gsharp_id_2_tortArr, 1238420878u).length)
 {
-__gsharp_auto_result[__gsharp_global_tid] = {};
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__OuterPacket>{};
 __gsharp_state = -1;return;
 }
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffVecAlignTorture __gsharp_id_8_tElem = __gsharp_array_at(__gsharp_id_2_tortArr, __gsharp_id_7_tid, 1536924911u);

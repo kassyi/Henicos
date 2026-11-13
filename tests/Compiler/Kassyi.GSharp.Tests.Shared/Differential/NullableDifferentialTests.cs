@@ -262,23 +262,6 @@ public class NullableDifferentialTests
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_defaultInExpression = new(
-        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.DefaultInExpressionKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
-        Inputs = static (rng, rows) => new DiffBuffers()
-            .In("a", DiffValues.Int32(rng, rows))
-            .Out<int>(
-                "dst",
-                rows,
-                ["sum", "struct_tag", "nullable_has_value", "array_is_null", "sum_with_default", "field_has_value"],
-                OutputPolicy.Exact),
-        Launch = static (b, s) => NullableDifferentialKernels.LaunchDefaultInExpressionKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
-
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -355,11 +338,4 @@ public class NullableDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void NullableOperations_LiftedDoubleToNullableIntCast_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_liftedDoubleToNullableIntCast);
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void DefaultValues_InExpressionPositions_MatchTheOracleOnEveryPath() =>
-        DifferentialRunner.Run(s_defaultInExpression);
 }

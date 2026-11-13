@@ -23,7 +23,7 @@ UnsupportedOperation	InterpolatedString	InterpolatedStringExpression	1
 UnsupportedOperation	None	ElementAccessExpression	93
 UnsupportedOperation	None	IdentifierName	4
 UnsupportedOperation	None	MakeRefExpression	1
-UnsupportedOperation	None	PointerIndirectionExpression	37
+UnsupportedOperation	None	PointerIndirectionExpression	38
 UnsupportedOperation	None	StackAllocArrayCreationExpression	68
 UnsupportedOperation	Range	RangeExpression	1
 UnsupportedOperation	SwitchExpression	SwitchExpression	45
@@ -34,6 +34,8 @@ UnsupportedOperation	With	WithExpression	14
 UnsupportedShape	ArrayCreation	ArrayCreationExpression	2
 UnsupportedShape	ArrayElementReference	ElementAccessExpression	8
 UnsupportedShape	Binary	AddExpression	1
+UnsupportedShape	Binary	EqualsExpression	2
+UnsupportedShape	Binary	NotEqualsExpression	1
 UnsupportedShape	CompoundAssignment	AddAssignmentExpression	1
 UnsupportedShape	Invocation	InvocationExpression	85
 UnsupportedShape	IsPattern	IsPatternExpression	2
