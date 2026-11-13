@@ -29,4 +29,13 @@ public static partial class ModuleArgumentImports
 
     [CudaImport(Module)]
     public static partial void ShiftMatrix(float[,] x, int rows, int cols, uint blockDimX);
+
+    [CudaImport(Module)]
+    public static partial void AddTwo(ref int a, ref int b);
+
+    [CudaImport(Module, EntryPoint = "AddToFirstOfTwo")]
+    public static partial void FirstOfTwoVectors(float[] a, float[] b);
+
+    [CudaImport(Module, EntryPoint = "AddToFirstOfTwo")]
+    public static partial void FirstOfTwoMatrices(float[,] a, float[,] b);
 }

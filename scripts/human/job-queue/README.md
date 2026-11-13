@@ -13,7 +13,33 @@ node scripts/human/job-queue.js run -- "dotnet build X && dotnet test X --no-bui
 node scripts/human/job-queue.js run --gpu -- "just test"
 node scripts/human/job-queue.js status
 node scripts/human/job-queue.js wait <id>
+node scripts/human/job-queue.js --screenshots scripts/human/job-queue/images
 ```
+
+## Live view
+
+`status --watch` (`just queue-watch`) shows the queue in the terminal, one line per job with its timeline. The images
+below are drawn by `--screenshots` from a fixed sample status at a fixed time (`screenshot.ts`), not from a real
+terminal, so they are the same on every run. A change to what the view shows regenerates them with
+`node scripts/human/job-queue.js --screenshots scripts/human/job-queue/images` in the same change.
+
+A terminal of 120 columns: running jobs first (green run so far, red past the usual run time, a `G` for the GPU job and
+its holder under the GPU lock as one line), then the waiting jobs with what each waits for, left of now:
+
+![The live view, 120 columns](images/wide.svg)
+
+A split pane of 70 columns and 13 rows: a shorter timeline, and the jobs that do not fit counted on the rule:
+
+![The live view, 70 columns](images/small.svg)
+
+A job selected with the arrows: the line in reverse video and its details at the bottom (weight, memory, the holder it
+runs as, the full command):
+
+![A selected job](images/selected.svg)
+
+The help (`?`): the keys and what the marks of the timeline and the wait reasons mean, drawn in their screen colors:
+
+![The help page](images/help.svg)
 
 ## Layout
 
@@ -33,6 +59,8 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, and `reduceKey`, the keys as a pure function |
 | `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
 | `screen-line.ts` | Styled text for the live view: the styles, the width of a string in terminal cells, `ScreenLine` |
+| `screenshot.ts` | `--screenshots`: the ANSI lines of the live view as an SVG of a terminal, and the sample screens of this README |
+| `view-sample.ts` | The fixed sample status the view's self-test and the screenshots draw from |
 | `server.ts` | `JobServer`, the scheduler process: the TCP server, the job records, outcomes, the settle step and the timers |
 | `server-observe.ts` | `DetachedObserver`: every 2 s, what the processes show of the records whose client is away, applied per epoch (`planObservation`) |
 | `server-connection.ts` | `Connection`: one client connection, the dispatch of its messages to one handler per message type, and what its close means for the job |
@@ -48,7 +76,7 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
-| `self-test*.ts`, `scheduler-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys |
+| `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys |
 
 ## How a job runs
 
@@ -73,8 +101,12 @@ sequenceDiagram
   lost, grants once and saves the state. Nothing is granted while an event is still changing the jobs.
 - **Dependencies grant on evidence**: a job `--after` another is granted only when that job has a recorded outcome
   that lets it run (`succeeded`, or any outcome with `--keep-if-failed`), never because the other job is gone.
-- **Order**: response ratio (`hrrn`, the default), with EASY backfilling that reserves the first job's start;
-  `move` and `--before` place jobs ahead of that order. The forecast replays the same grants on copies of the jobs.
+- **Order**: response ratio (`hrrn`, the default), then two fairness rules (`fairOrder`): a job that has waited longer
+  than max(`OverdueMs`, its typical run time) goes ahead, oldest first, and the others are taken round-robin across
+  worktrees (one job per worktree per round, the worktree served longest ago first; the slots and the GPU turns keep
+  separate rotations, in memory only). EASY backfilling reserves the start of the first job of that order; `move`
+  and `--before` place jobs ahead of all of it. `backfill` and `fifo` keep arrival order without the fairness rules.
+  The forecast replays the same grants on copies of the jobs and of the rotation.
 - **Resources**: CPU slots (one per 3 cores by default), a memory pool that test runs take their budget of
   `tests/memory-budgets.yml` from, and one GPU turn at a time. A GPU holder (the command under `gpu-lock.js`) is
   granted at once, over the pools, so it never deadlocks with a job that holds a slot and waits for the GPU.
@@ -150,7 +182,9 @@ their old meaning.
 5. After the merge, the running scheduler keeps the old code until it exits (30 idle minutes) or is stopped:
    `node scripts/human/job-queue.js stop` from an updated checkout, then any `run` from that checkout starts the new
    one. Running jobs keep running and re-register.
-6. Update the usage text in `cli.ts`, the header of `job-queue.js`, the catalog row in
+6. After a change to the live view, regenerate the images: `node scripts/human/job-queue.js --screenshots
+   scripts/human/job-queue/images`.
+7. Update the usage text in `cli.ts`, the header of `job-queue.js`, the catalog row in
    [agent-scripts.md](../../../.agents/rules/agent-scripts.md) and
    [job-queue.md](../../../.agents/rules/job-queue.md) with a change of behavior.
 

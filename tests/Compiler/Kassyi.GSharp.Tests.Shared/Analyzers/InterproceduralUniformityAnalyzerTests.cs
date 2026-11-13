@@ -92,6 +92,29 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
+    public async Task DelegateResults_ThreadVariantTargets_ReportLikeTheDirectLane()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/DelegateVarianceKernels.cu.cs");
+
+        var warning = GSharpDiagnostics.LaunchDependentDivergentBarrier.Id;
+
+        // 19: a lambda that returns the lane. 31: the same lambda deciding an early exit. 49: a local function
+        // converted to a delegate, called through Invoke. 64: a lambda that leaves the lane in an out argument. 81: a
+        // device function that calls the delegate it receives. 95: the control, the lane read directly
+        Assert.Equal(
+            [
+                (warning, 19, 13, 19, 30),
+                (GSharpDiagnostics.BarrierAfterDivergentExit.Id, 31, 13, 31, 25),
+                (warning, 49, 13, 49, 30),
+                (warning, 64, 13, 64, 30),
+                (warning, 81, 13, 81, 30),
+                (warning, 95, 13, 95, 30)
+            ],
+            actual);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
     public async Task PropertyResults_GettersWithBodies_FollowTheGetterBody()
     {
         var actual = await RunAsync("Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs");
