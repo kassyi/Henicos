@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Naming;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -98,5 +99,83 @@ public class GSharpNameEncodingTests
             GSharpNameEncoding.ParseSymbolFile(GsymContent, expectedHash: "fedcba9876543210"));
 
         Assert.Contains("Symbol file hash '0123456789abcdef' does not match source hash 'fedcba9876543210'.", ex.Message);
+    }
+
+    // The module context class and the module field name the module escaped injectively, and the demangle tool turns
+    // them back into the module name, for every character an assembly or module name may hold
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Henicos.Benchmarks")]
+    [InlineData("Kassyi.GSharp.Tests.Cuda")]
+    [InlineData("a_b_")]
+    [InlineData("my-lib")]
+    [InlineData("a{b}\"c")]
+    [InlineData("été")]
+    [InlineData("日本")]
+    [InlineData("🚀")]
+    [InlineData("1lib")]
+    public void ModuleNames_EncodedThenDecoded_GiveTheModuleNameBack(string moduleName)
+    {
+        AssertModuleNamesRoundTrip(moduleName);
+    }
+
+    // The empty name (a [CudaImport] module named "") and lone UTF-16 surrogates, which the encoder escapes as their
+    // code unit, decode as well; a surrogate pair stays one code point
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void ModuleNames_EmptyOrLoneSurrogates_GiveTheModuleNameBack()
+    {
+        Assert.Equal("GSharpModuleContext_", GSharpNameEncoding.GetModuleContextName(""));
+        Assert.Equal("GSharpModuleContext__x00d800", GSharpNameEncoding.GetModuleContextName("\uD800"));
+        Assert.Equal("GSharpModuleContext_a_x00dc00b", GSharpNameEncoding.GetModuleContextName("a\uDC00b"));
+        Assert.Equal("GSharpModuleContext__x01f680", GSharpNameEncoding.GetModuleContextName("🚀"));
+        foreach (var moduleName in (string[])["", "\uD800", "a\uDC00b", "\uDC00\uD800", "\uD800x\uDBFF"])
+        {
+            AssertModuleNamesRoundTrip(moduleName);
+        }
+    }
+
+    private static void AssertModuleNamesRoundTrip(string moduleName)
+    {
+        var contextName = GSharpNameEncoding.GetModuleContextName(moduleName);
+        var fieldName = AotModuleNames.GetModuleFieldName(moduleName);
+
+        Assert.True(SyntaxFacts.IsValidIdentifier(contextName), contextName);
+        Assert.True(GSharpNameEncoding.TryDecode(contextName, out var decodedContext));
+        Assert.Equal($"GSharpModuleContext({moduleName})", decodedContext);
+        Assert.True(SyntaxFacts.IsValidIdentifier(fieldName), fieldName);
+        Assert.True(GSharpNameEncoding.TryDecode(fieldName, out var decodedField));
+        Assert.Equal($"__gsharp_module({moduleName})", decodedField);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void DecodeText_ModuleContextAndModuleField_ReplacesThemWithTheModuleName()
+    {
+        const string Log = "CS0103: GSharpModuleContext_Henicos_x00002eBenchmarks.GetOrLoadModule(); " +
+            "__gsharp_module__x00002e_x00002fk_x00002efatbin.Value; MyGSharpModuleContext_a stays";
+        const string Expected = "CS0103: GSharpModuleContext(Henicos.Benchmarks).GetOrLoadModule(); " +
+            "__gsharp_module(./k.fatbin).Value; MyGSharpModuleContext_a stays";
+
+        Assert.Equal(Expected, GSharpNameEncoding.DecodeText(Log));
+        Assert.Equal(Expected, GSharpNameEncoding.DecodeText(Log, new Dictionary<string, string>()));
+    }
+
+    // A name in the replacing spelling of earlier versions ('_' for '.') is not an escaped name and stays as it is;
+    // neither is a surrogate pair escaped as two code units, which would be a second spelling of the pair
+    [Theory]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("GSharpModuleContext__x00d83d_x00de80")]
+    [InlineData("GSharpModuleContext_Henicos_Benchmarks")]
+    [InlineData("GSharpModuleContext_a_x00002")]
+    [InlineData("GSharpModuleContext__x000041")]
+    public void TryDecode_NotAnEscapedModuleName_ReturnsFalse(string identifier)
+    {
+        Assert.False(GSharpNameEncoding.TryDecode(identifier, out var name));
+        Assert.Equal(string.Empty, name);
     }
 }
