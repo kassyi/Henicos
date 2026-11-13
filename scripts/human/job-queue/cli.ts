@@ -52,7 +52,7 @@ const Usage = [
   "            with <id>, only that job (exit 1 when it ended or is unknown); --json prints the same as JSON.",
   "            --watch shows the queue live in the terminal, one line per job with its timeline: arrows select a job,",
   "            c cancels it, s starts, m moves and w re-weights a waiting one, ? lists the keys, q quits",
-  "            (just queue-watch).",
+  "            (just queue-watch). Below the jobs, the agent chats that wait for you (chat-status.js); a hides them.",
   "wait        Waits until job <id> has ended (also across a scheduler restart) and exits with its outcome: 0",
   "            succeeded, 1 failed, 4 cancelled, 5 lost (its client died; the result is unknown), 2 for an unknown",
   "            id. Run it in the background to be told when a job ends; --json prints {id, outcome}.",
@@ -75,7 +75,8 @@ const Usage = [
   `Environment: ${PortVariable} (default ${DefaultPort}), ${SlotsVariable} (--slots), ${MemoryVariable}`,
   `(--memory-mb), ${PolicyVariable} (default ${DefaultPolicy}; the scheduler keeps the policy it started with).`,
   "Quote the command as one string when it needs pipes or redirection. Steps that belong together (a build and the",
-  'test run of what it built) go into one job: run -- "dotnet build X && dotnet test X --no-build".',
+  'test run of what it built) go into one job: run -- "dotnet build X && dotnet test X --no-build". Under --gpu,',
+  "run builds a plain dotnet build / dotnet test command first as a job of its own, without the GPU turn.",
 ].join("\n");
 
 const Modes = [
