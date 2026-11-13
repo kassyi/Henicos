@@ -36,6 +36,16 @@ export function displayWidth(text: string): number {
   return width;
 }
 
+/** A span of time in a few cells: "42s", "12m", "1h05m". */
+export function duration(ms: number): string {
+  const seconds = Math.max(0, Math.round(ms / 1000));
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+  const minutes = Math.floor(seconds / 60);
+  return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}m`;
+}
+
 /** The text cut to `width` cells (with "…" when cut) and padded with spaces to exactly `width`. */
 export function fit(text: string, width: number): string {
   if (width <= 0) {
@@ -55,6 +65,27 @@ export function fit(text: string, width: number): string {
     used += w;
   }
   return `${out}…${" ".repeat(width - 1 - used)}`;
+}
+
+/** The text cut to `width` cells from its start (with "…" first when cut), keeping its end, padded to `width`. */
+export function fitEnd(text: string, width: number): string {
+  if (width <= 0) {
+    return "";
+  }
+  if (displayWidth(text) <= width) {
+    return text + " ".repeat(width - displayWidth(text));
+  }
+  let out = "";
+  let used = 0;
+  for (const char of [...text].reverse()) {
+    const w = charWidth(char.codePointAt(0) ?? 0);
+    if (used + w > width - 1) {
+      break;
+    }
+    out = char + out;
+    used += w;
+  }
+  return `…${out}${" ".repeat(width - 1 - used)}`;
 }
 
 /** One line of the screen: styled parts, clipped at the width of the terminal. */

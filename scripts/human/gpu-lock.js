@@ -15,10 +15,13 @@
 //                      command it started are gone), release
 //   gpu-lock/pools.js  the kernel pool readings while the command starts and before the lock is released
 //                      (gpu-fault-watch.js, appended to gpu-pool-log.tsv next to the lock directory)
+//   gpu-lock/holds.js  the GPU hold record: held time, sampled GPU utilization and memory (one nvidia-smi process),
+//                      appended to gpu-hold-log.tsv next to the lock directory, and its summary (--holds)
 //
 // Usage:
 //   node scripts/human/gpu-lock.js [--poll-seconds <n>] [--timeout-minutes <n>] [--lock-path <dir>]
 //                                  -- <command> [args...]
+//   node scripts/human/gpu-lock.js --holds [--since <date>] [--log <file>]
 //   node scripts/human/gpu-lock.js --help
 //   node scripts/human/gpu-lock.js --self-test
 //
@@ -30,6 +33,9 @@
 //   --timeout-minutes <n>  Give up waiting after n minutes, print the owner and exit with 3 (default 0 = wait forever).
 //   --lock-path <dir>      Use this lock directory instead of <main checkout>/tmp/gpu-test-lock. For tests of this
 //                          script only; real runs must share the default.
+//   --holds                Summarize the recorded GPU holds (gpu-hold-log.tsv next to the lock directory) and exit.
+//   --since <date>         With --holds: only the holds that started at or after this date.
+//   --log <file>           With --holds: read this file instead.
 //   --help                 Show this help.
 //
 // Exit codes: the exit code of the command; 2 on a usage error; 3 when the wait timed out; 130 / 143 on SIGINT /
@@ -41,6 +47,7 @@ const os = require('os');
 const { spawn, spawnSync } = require('child_process');
 const { faultWatch, createPoolWatch } = require('./gpu-lock/pools.js');
 const { createLock, readOwner, readOwnerRecord } = require('./gpu-lock/lock.js');
+const holds = require('./gpu-lock/holds.js');
 
 const usage = [
   'Usage: node scripts/human/gpu-lock.js [--poll-seconds <n>] [--timeout-minutes <n>] [--lock-path <dir>] ' +
@@ -50,13 +57,20 @@ const usage = [
   '  --timeout-minutes <n>  Give up waiting after n minutes and exit with 3 (default 0 = wait forever).',
   '  --lock-path <dir>      Lock directory to use instead of <main checkout>/tmp/gpu-test-lock ' +
     '(for tests of this script only).',
+  '  --holds                Summarize the recorded GPU holds and exit (--since <date>, --log <file>).',
   '  --help                 Show this help.',
-  '  --self-test            Check that a run killed while it reads the kernel pools leaves a lock that is taken over.',
+  '  --self-test            Check the hold record and summary, and that a run killed while it reads the kernel',
+  '                         pools leaves a lock that is taken over.',
   '',
   'Windows: the kernel pools and the nvlddmkm Event 153 entries are read after the command starts and before the lock',
   'is released (about 0.1 s each), printed, appended to gpu-pool-log.tsv next to the lock directory, and a warning is',
   'printed when the pools grew by more than 1 GB or the nonpaged pool is above 6 GB. GSHARP_GPU_POOL_WATCH=0 turns',
   'this off.',
+  '',
+  'While the lock is held, one nvidia-smi process samples the GPU utilization and memory every second; at release one',
+  'line is printed and a row appended to gpu-hold-log.tsv next to the lock directory (held time, mean utilization,',
+  `share of samples at or above ${holds.BusyThresholdPercent}%, baseline and peak memory). ` +
+    `${holds.DisableVariable}=0 turns this off.`,
   '',
   'A lock whose owner is on this host and platform and no longer running, together with the command it started, is',
   'taken over while waiting.',
@@ -82,6 +96,7 @@ function parseArgs(argv) {
   const own = separator < 0 ? argv : argv.slice(0, separator);
   const command = separator < 0 ? [] : argv.slice(separator + 1);
   const options = { pollSeconds: 10, timeoutMinutes: 0, lockPath: '', command, selfTest: false };
+  Object.assign(options, { holds: false, since: '', log: '' });
   for (let i = 0; i < own.length; i++) {
     switch (own[i]) {
       case '--help':
@@ -92,6 +107,18 @@ function parseArgs(argv) {
       case '--self-test':
         options.selfTest = true;
         break;
+      case '--holds':
+        options.holds = true;
+        break;
+      case '--since':
+      case '--log': {
+        const name = own[i];
+        options[name.slice(2)] = own[++i] || '';
+        if (options[name.slice(2)] === '') {
+          usageError(`${name} needs a value.`);
+        }
+        break;
+      }
       case '--poll-seconds':
         options.pollSeconds = parseNumber('--poll-seconds', own[++i]);
         break;
@@ -111,7 +138,10 @@ function parseArgs(argv) {
   if (options.pollSeconds <= 0) {
     usageError('--poll-seconds must be greater than 0.');
   }
-  if (command.length === 0 && !options.selfTest) {
+  if ((options.since !== '' || options.log !== '') && !options.holds) {
+    usageError('--since and --log go with --holds.');
+  }
+  if (command.length === 0 && !options.selfTest && !options.holds) {
     usageError('No command given. Put it after "--".');
   }
   return options;
@@ -143,6 +173,7 @@ const lockPath = lockOverride === '' ? resolveLockPath() : path.resolve(lockOver
 const commandText = options.command.join(' ');
 const lock = createLock(lockPath, commandText);
 const pools = createPoolWatch(lockPath, commandText);
+const hold = holds.createHoldWatch(lockPath, commandText);
 
 let child = null;
 
@@ -169,6 +200,7 @@ function killChild() {
 function onSignal(signal, code) {
   process.stderr.write(`[gpu-lock] ${signal}: stopping the command and releasing the lock\n`);
   killChild();
+  hold.reportSync(code);
   lock.releaseLock();
   process.exit(code);
 }
@@ -177,9 +209,15 @@ process.on('SIGINT', () => onSignal('SIGINT', 130));
 process.on('SIGTERM', () => onSignal('SIGTERM', 143));
 // A detached command no longer gets the terminal's hangup itself.
 process.on('SIGHUP', () => onSignal('SIGHUP', 129));
-process.on('exit', lock.releaseLock);
+process.on('exit', () => {
+  hold.stop();
+  lock.releaseLock();
+});
 
 function runCommand() {
+  // The sampler starts first, so that its first sample (the memory baseline) comes before the command reaches the GPU;
+  // spawning it does not wait for it
+  hold.start();
   const spawnedAt = Date.now();
   // Unix: detached makes the command the leader of a new session and process group (pgid = its pid), so the group
   // outlives a hard kill of this script and a waiter can see that the command still runs. Windows keeps the console.
@@ -193,11 +231,12 @@ function runCommand() {
   pools.start();
   child.on('error', (error) => {
     process.stderr.write(`[gpu-lock] could not start the command: ${error.message}\n`);
+    hold.stop();
     lock.releaseLock();
     process.exit(1);
   });
   child.on('close', (code) => {
-    pools.report(code).then(() => {
+    Promise.all([pools.report(code), hold.report(code)]).then(() => {
       lock.releaseLock();
       process.exit(code === null ? 1 : code);
     });
@@ -251,6 +290,7 @@ async function waitFor(what, timeoutMs, check) {
  */
 async function selfTest() {
   const assert = require('assert');
+  holds.selfTest();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gpu-lock-self-test-'));
   const testLock = path.join(dir, 'lock');
   const delayVariable = faultWatch === null ? 'GSHARP_GPU_POOL_WATCH_TEST_DELAY_MS' : faultWatch.DelayVariable;
@@ -260,7 +300,7 @@ async function selfTest() {
     {
       stdio: 'ignore',
       windowsHide: true,
-      env: { ...process.env, [delayVariable]: '30000', GSHARP_GPU_POOL_WATCH: '1' },
+      env: { ...process.env, [delayVariable]: '30000', GSHARP_GPU_POOL_WATCH: '1', [holds.DisableVariable]: '0' },
     },
   );
   try {
@@ -294,11 +334,20 @@ async function selfTest() {
         '--',
         'node -e "process.exit(5)"',
       ],
-      { encoding: 'utf8', windowsHide: true, env: { ...process.env, GSHARP_GPU_POOL_WATCH: '0' } },
+      {
+        encoding: 'utf8',
+        windowsHide: true,
+        env: { ...process.env, GSHARP_GPU_POOL_WATCH: '0', [holds.DisableVariable]: '1' },
+      },
     );
     assert.strictEqual(second.status, 5, second.stderr);
     assert.match(second.stderr, /took over a stale lock/);
     assert.ok(!fs.existsSync(testLock), 'the second run released the lock');
+    // The hold is recorded next to the lock, with or without nvidia-smi, and the console has its one line
+    assert.match(second.stderr, /\[gpu-lock\] GPU hold \d+\.\d s/);
+    const rows = fs.readFileSync(path.join(dir, holds.LogName), 'utf8').trim().split(/\r?\n/);
+    assert.strictEqual(rows.length, 2);
+    assert.match(rows[1], /^\S+\t\d+\.\d\t5\t1000\t\d+\t/);
   } finally {
     if (first.exitCode === null && first.signalCode === null) {
       first.kill('SIGKILL');
@@ -308,7 +357,10 @@ async function selfTest() {
   process.stdout.write('gpu-lock self-test passed\n');
 }
 
-if (options.selfTest) {
+if (options.holds) {
+  const logPath = options.log === '' ? path.join(path.dirname(lockPath), holds.LogName) : path.resolve(options.log);
+  process.exitCode = holds.printHolds(logPath, options.since);
+} else if (options.selfTest) {
   selfTest().then(
     () => process.exit(0),
     (error) => {
