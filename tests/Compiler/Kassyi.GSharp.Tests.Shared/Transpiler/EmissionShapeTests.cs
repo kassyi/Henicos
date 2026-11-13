@@ -461,7 +461,7 @@ public partial class EmissionShapeTests
         var start = generated.IndexOf($"{kernel}_Source = @\"", StringComparison.Ordinal);
         Assert.True(start >= 0, $"{kernel}_Source is not generated.");
         var end = generated.IndexOf("\n\";", start, StringComparison.Ordinal);
-        // The callers match the C++ with regular expressions, which take a string
+        // Most callers match the C++ with regular expressions, which take a string
 #pragma warning disable RS0030 // Category 5: cuts the CUDA C++ source of the kernel out of its string literal
         return generated.Substring(start, end - start);
 #pragma warning restore RS0030

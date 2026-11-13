@@ -117,7 +117,7 @@ public class ScopeIndependentNameGeneratorTests
         var compilation = RoslynTestUtility.CreateCompilationAt(
                 LanguageVersion.Latest,
                 ("", RoslynTestUtility.ReadTestCase(ShadowingSource))
-            ).WithAssemblyName(NativeApiGeneratorTestHelpers.CreateCompilation().AssemblyName);
+            ).WithAssemblyName(NativeApiGeneratorTestHelpers.AssemblyName);
         var driver = NativeApiGeneratorTestHelpers.CreateDriver(NativeApiGeneratorTestHelpers.Api("shadow.yml", Yaml))
             .RunGeneratorsAndUpdateCompilation(compilation, out var output, out var diagnostics);
 
