@@ -153,8 +153,8 @@ internal static class SymbolExtensions
     // The same type, or one that holds the other as a field, directly or through the fields of its fields
     private static bool MayShareMemory(ITypeSymbol first, ITypeSymbol second) =>
         SymbolEqualityComparer.Default.Equals(first, second) ||
-        HoldsAsField(first, second, []) ||
-        HoldsAsField(second, first, []);
+        HoldsAsField(first, second, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)) ||
+        HoldsAsField(second, first, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default));
 
     // A struct is a value that holds its instance fields, so a field of a field type is memory inside it, at any depth.
     // No struct holds itself, but a primitive type declares a field of its own type (and a type with an error may be
@@ -175,6 +175,7 @@ internal static class SymbolExtensions
                 (SymbolEqualityComparer.Default.Equals(member.Type, state.field) ||
                     HoldsAsField(member.Type, state.field, state.entered))
             );
+    }
 
     /// <summary>T of <see cref="Nullable{T}"/>, or <paramref name="type"/> itself.</summary>
     public static ITypeSymbol UnwrapNullable(this ITypeSymbol type) =>
