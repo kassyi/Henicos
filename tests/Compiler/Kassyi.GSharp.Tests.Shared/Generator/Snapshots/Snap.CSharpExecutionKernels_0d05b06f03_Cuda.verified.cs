@@ -188,6 +188,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(597053405u, "CSharpExecuti
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1346481842u, "CSharpExecutionKernels.cs", 94, 9, "SharedMemoryKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(716926214u, "CSharpExecutionKernels.cs", 116, 9, "FailSomeThreadsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1532911038u, "CSharpExecutionKernels.cs", 117, 9, "FailSomeThreadsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(252099933u, "CSharpExecutionKernels.cs", 117, 29, "FailSomeThreadsKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2012151110u, "CSharpExecutionKernels.cs", 117, 29, "FailSomeThreadsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(656630245u, "CSharpExecutionKernels.cs", 117, 32, "FailSomeThreadsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1103115039u, "CSharpExecutionKernels.cs", 117, 41, "FailSomeThreadsKernel", "G#: a null array is read"),
@@ -2003,7 +2004,7 @@ public const string FailSomeThreadsKernel_Source = @"extern ""C"" __global__ voi
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_t = (int)threadIdx.x;
 __gsharp_array_at(__gsharp_id_2_result, __gsharp_mul_i32(2,__gsharp_id_3_t), 716926214u)=1;
-__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_3_t),1), 1532911038u)=__gsharp_array_at(__gsharp_id_0_at, __gsharp_array_at(__gsharp_id_0_at, __gsharp_id_3_t, 656630245u), 2012151110u)/__gsharp_array_at(__gsharp_id_1_divisors, __gsharp_id_3_t, 1103115039u);
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_3_t),1), 1532911038u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_at, __gsharp_array_at(__gsharp_id_0_at, __gsharp_id_3_t, 656630245u), 2012151110u),__gsharp_array_at(__gsharp_id_1_divisors, __gsharp_id_3_t, 1103115039u),252099933u);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FailSomeThreadsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__CSharpExecutionKernels__FailSomeThreadsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

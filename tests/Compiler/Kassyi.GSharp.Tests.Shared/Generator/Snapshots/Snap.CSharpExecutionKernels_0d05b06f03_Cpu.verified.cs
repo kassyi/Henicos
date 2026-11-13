@@ -158,6 +158,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(597053405u, "CSharpExecuti
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1346481842u, "CSharpExecutionKernels.cs", 94, 9, "SharedMemoryKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(716926214u, "CSharpExecutionKernels.cs", 116, 9, "FailSomeThreadsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1532911038u, "CSharpExecutionKernels.cs", 117, 9, "FailSomeThreadsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(252099933u, "CSharpExecutionKernels.cs", 117, 29, "FailSomeThreadsKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2012151110u, "CSharpExecutionKernels.cs", 117, 29, "FailSomeThreadsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(656630245u, "CSharpExecutionKernels.cs", 117, 32, "FailSomeThreadsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1103115039u, "CSharpExecutionKernels.cs", 117, 41, "FailSomeThreadsKernel", "G#: a null array is read"),
@@ -3572,7 +3573,7 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_t = (int)threadIdx.x;
 __gsharp_array_at(__gsharp_id_2_result, __gsharp_mul_i32(2,__gsharp_id_3_t), 716926214u)=1;
-__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_3_t),1), 1532911038u)=__gsharp_array_at(__gsharp_id_0_at, __gsharp_array_at(__gsharp_id_0_at, __gsharp_id_3_t, 656630245u), 2012151110u)/__gsharp_array_at(__gsharp_id_1_divisors, __gsharp_id_3_t, 1103115039u);
+__gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32(2,__gsharp_id_3_t),1), 1532911038u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_at, __gsharp_array_at(__gsharp_id_0_at, __gsharp_id_3_t, 656630245u), 2012151110u),__gsharp_array_at(__gsharp_id_1_divisors, __gsharp_id_3_t, 1103115039u),252099933u);
 __gsharp_state=-1;
 return;
 }
@@ -3676,7 +3677,7 @@ case 0:
 {
 int t = global::Kassyi.GSharp.Core.ThreadIndex.X;
 result[2 * t] = 1;
-result[2 * t + 1] = at[at[t]] / divisors[t];
+result[2 * t + 1] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(at[at[t]], divisors[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

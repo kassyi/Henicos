@@ -494,7 +494,7 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_counts, 0, ""G#: a null array is read at SplitOperandOrderDifferentialKernels.cs(282,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_counts, 0, ""G#: a null array is read at SplitOperandOrderDifferentialKernels.cs(282,9)""),1);
-*__gsharp_result = 1/__gsharp_ctx->__gsharp_id_1_zero;
+*__gsharp_result = __gsharp_div_i32(1,__gsharp_ctx->__gsharp_id_1_zero,""Attempted to divide by zero. at SplitOperandOrderDifferentialKernels.cs(283,16)"");
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
