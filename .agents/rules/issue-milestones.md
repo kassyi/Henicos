@@ -1,3 +1,8 @@
+---
+trigger: always_on
+description: Issue priority by milestone (M1 to M5, Future), how to assign one, the order of work, and what agents may change without approval.
+---
+
 # Issue Priority (GitHub Milestones)
 
 Issue priority is managed with GitHub milestones. Labels (`bug`, `feature`, ...) describe the kind of issue; the milestone describes the order in which issues are handled.

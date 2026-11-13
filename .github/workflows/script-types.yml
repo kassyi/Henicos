@@ -1,18 +1,24 @@
 name: Script types
 
-# Type-checks the TypeScript scripts (scripts/**/*.ts) with tsc and runs the job queue's self-test on Ubuntu and
-# Windows. Node runs the scripts as they are by stripping the types, so a type error would otherwise only show when the
-# code runs. It needs no .NET build, only Node.
+# Type-checks the TypeScript scripts (scripts/**/*.ts) with tsc, checks the frontmatter of the agent rule files, and
+# runs the job queue's self-test on Ubuntu and Windows. Node runs the scripts as they are by stripping the types, so
+# a type error would otherwise only show when the code runs. It needs no .NET build, only Node.
 on:
   push:
     branches: ["main"]
     paths:
       - "scripts/**"
+      - ".agents/rules/**"
+      - "AGENTS.md"
+      - "CLAUDE.md"
       - ".github/workflows/script-types.yml"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - "scripts/**"
+      - ".agents/rules/**"
+      - "AGENTS.md"
+      - "CLAUDE.md"
       - ".github/workflows/script-types.yml"
 
 permissions:
@@ -45,6 +51,13 @@ jobs:
       - name: Type check
         if: matrix.os == 'ubuntu-latest'
         run: node scripts/human/check-types.js
+
+      # Antigravity loads a rule file only with valid frontmatter; a file without it is dropped silently
+      - name: Rule file frontmatter
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          node scripts/human/check-rule-frontmatter.js --self-test
+          node scripts/human/check-rule-frontmatter.js
 
       - name: Job queue self-test
         run: node scripts/human/job-queue.js --self-test

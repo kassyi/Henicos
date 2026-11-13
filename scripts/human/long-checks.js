@@ -12,8 +12,8 @@
 //   <step>.log            full output of the step
 //   bench/generator/      BenchmarkDotNet reports of the generator benchmark (input of `just bench-compare`)
 //   summary.md            one row per step: exit code, duration, log; on Windows also the kernel pools after the
-//                         step and the nvlddmkm Event 153 entries during it (gpu-fault-watch.js): the kernel pools
-//                         grew after GPU faults and were freed only by a reboot
+//                         step and the nvlddmkm Event 153 entries during it (gpu-fault-watch.js), so that pool
+//                         growth during a step with GPU faults shows
 //
 // Usage:
 //   node scripts/human/long-checks.js [--steps <list>] [--fuzz-minutes <n>] [--stability <count|duration>]

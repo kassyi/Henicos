@@ -426,7 +426,7 @@ public struct GpuBigUInt<TSize> : IGpuNumber<GpuBigUInt<TSize>> where TSize : un
     public readonly override int GetHashCode()
     {
         var span = GetSpan();
-        var hash = new HashCode();
+        var hash = default(HashCode);
         foreach (var t in span)
         {
             hash.Add(t);

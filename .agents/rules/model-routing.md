@@ -1,3 +1,8 @@
+---
+trigger: always_on
+description: When to use Fable for the hardest design and verification work, and handing math problems to the user.
+---
+
 # Routing Hard Problems (Fable / Deep Think)
 
 Ordinary delegation (the `pro` / `flash` mapping) follows `agent-tool-mapping.md`. This file covers problems harder than that.

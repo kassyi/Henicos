@@ -1107,7 +1107,7 @@ internal static class GSharpNameEncoding
             else if (MatchesMarkerAt(s, index, 'x'))
             {
                 if (!TryParseCodePoint(s, index + 2, out var codePoint) ||
-                    IsLowSurrogate(codePoint) && name.Length > 0 && char.IsHighSurrogate(name[name.Length - 1]))
+                    (IsLowSurrogate(codePoint) && name.Length > 0 && char.IsHighSurrogate(name[name.Length - 1])))
                 {
                     // A high and a low surrogate escaped one by one would be a second spelling of their pair
                     return false;
