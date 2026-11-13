@@ -75,7 +75,8 @@ const Usage = [
   `Environment: ${PortVariable} (default ${DefaultPort}), ${SlotsVariable} (--slots), ${MemoryVariable}`,
   `(--memory-mb), ${PolicyVariable} (default ${DefaultPolicy}; the scheduler keeps the policy it started with).`,
   "Quote the command as one string when it needs pipes or redirection. Steps that belong together (a build and the",
-  'test run of what it built) go into one job: run -- "dotnet build X && dotnet test X --no-build".',
+  'test run of what it built) go into one job: run -- "dotnet build X && dotnet test X --no-build". Under --gpu,',
+  "run builds a plain dotnet build / dotnet test command first as a job of its own, without the GPU turn.",
 ].join("\n");
 
 const Modes = [
