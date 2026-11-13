@@ -92,8 +92,9 @@ export interface Expected {
  *     in turn (one job per worktree per round, the worktree served longest ago first), separately for the CPU slots
  *     and for the GPU turns.
  * The manual places (move --first, --before) go ahead of all of that, under every policy. Backfilling reserves the
- * start of the first job of that order as if every running job took its longest recorded time, and backfills nothing while a running job has no recorded time or has run longer than all of them. Nothing is granted
- * before `holdUntil` (re-registration after a restart).
+ * start of the first job of that order as if every running job took its longest recorded time, and backfills nothing
+ * while a running job has no recorded time or has run longer than all of them. Nothing is granted before `holdUntil`
+ * (re-registration after a restart).
  *
  * Test runs also take their memory budget from a memory pool: a test run is granted only while the budgets of the
  * running jobs and its own fit in `memoryCapacity`, or when no running job holds memory (a run larger than the pool
