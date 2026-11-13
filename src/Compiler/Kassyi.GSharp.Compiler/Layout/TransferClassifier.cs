@@ -5,10 +5,18 @@ public static class TransferClassifier
 {
     /// <summary>
     /// Describes the first difference between the host and device layouts of a <see cref="TransferClass.Convert"/>
-    /// struct, as the <c>{1}</c> of GSH0080 (<c>field 'V' is at offset 4 on the host and 8 on the device</c>).
+    /// struct or of a converted <c>Nullable&lt;T&gt;</c>, as the <c>{1}</c> of GSH0080 (<c>field 'V' is at offset 4 on
+    /// the host and 8 on the device</c>, <c>the value is at offset 4 on the host and 8 on the device</c>).
     /// </summary>
-    public static string DescribeLayoutDifference(INamedTypeSymbol structType, ITranspilerDialect dialect)
+    public static string DescribeLayoutDifference(ITypeSymbol type, ITranspilerDialect dialect)
     {
+        if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
+            TransferPlanner.Plan(type, dialect) is TransferPlan.Nullable nullable)
+        {
+            return DescribeNullableDifference(type.UnwrapNullable(), nullable, dialect);
+        }
+
+        var structType = (INamedTypeSymbol)type;
         var layout = TypeLayoutCalculator.GetStructLayout(structType, dialect);
         if (layout.Kind == TypeLayoutKind.Auto)
         {
@@ -63,6 +71,26 @@ public static class TransferClassifier
         return $"the struct is {layout.Host.Size} bytes on the host and {layout.Device.Size} bytes on the device";
     }
 
+    // The value of a Nullable whose plan is not identical: its own difference, or where it sits
+    private static string DescribeNullableDifference(ITypeSymbol valueType, TransferPlan.Nullable nullable,
+        ITranspilerDialect dialect)
+    {
+        if (nullable.Value is not TransferPlan.Blit &&
+            valueType is INamedTypeSymbol { TypeKind: TypeKind.Struct } value)
+        {
+            return $"the value of type '{TypeLayoutCalculator.FormatTypeName(value)}': " +
+                   DescribeLayoutDifference(value, dialect);
+        }
+
+        if (nullable.ValueHostOffset != nullable.ValueDeviceOffset)
+        {
+            return $"the value is at offset {nullable.ValueHostOffset} on the host " +
+                   $"and {nullable.ValueDeviceOffset} on the device";
+        }
+
+        return $"it is {nullable.HostSize} bytes on the host and {nullable.DeviceSize} bytes on the device";
+    }
+
     /// <summary>
     /// Finds the first array-like member of <paramref name="structType"/>, its nested structs and inline array
     /// elements, as a dotted path (<c>Inner.Values</c>): the arrays that the launcher allocates and copies for each element.
@@ -77,7 +105,8 @@ public static class TransferClassifier
                 return true;
             }
 
-            if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+            // A Nullable<S> holds the arrays of S (#972)
+            if (member.Type.UnwrapNullable() is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
                 TypeLayoutCalculator.IsUserStruct(nested) &&
                 TryFindArrayField(nested, out var nestedPath))
             {
@@ -132,18 +161,14 @@ public static class TransferClassifier
 
     internal static bool IsMemberTransferIdentical(ITypeSymbol memberType, ITranspilerDialect dialect)
     {
+        // [WHY] A Nullable is identical only when its value is and sits at the same offset: Vector2? has an 8-byte
+        // value on both sides, at 4 on the host and at 8 on CUDA (#961)
         if (memberType is INamedTypeSymbol
             {
                 OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
-            } nullableType)
+            })
         {
-            var elemD = TypeLayoutCalculator.GetDeviceLayout(nullableType.TypeArguments[0], dialect);
-            if (!HostLayoutCalculator.TryGetHostLayout(nullableType.TypeArguments[0], out var elemH) || elemD.Size != elemH.Size)
-            {
-                return false;
-            }
-
-            return IsMemberTransferIdentical(nullableType.TypeArguments[0], dialect);
+            return TransferPlanner.Plan(memberType, dialect) is TransferPlan.Nullable { IsIdentical: true };
         }
 
         if (dialect.TryGetTypeLayout(memberType, out var mappedD))

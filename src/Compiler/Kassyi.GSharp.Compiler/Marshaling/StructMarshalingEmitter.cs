@@ -53,7 +53,7 @@ internal static class StructMarshalingEmitter
                 AotHostNames.GetAotStructPath(s),
                 RenderStructForDialect(s, HostDialects.Cuda, launcherAssembly),
                 cpuStructs.Contains(s) ? RenderStructForDialect(s, HostDialects.Cpu, launcherAssembly) : string.Empty,
-                GeneratedMemberAccessibility.OfStruct(s).ChooseIn(kernel.ContainingType)));
+                GeneratedMemberAccessibility.OfShadowed(s).ChooseIn(kernel.ContainingType)));
         }
 
         return sources.MoveToImmutable().AsEquatableArray();
@@ -62,6 +62,11 @@ internal static class StructMarshalingEmitter
     private static string RenderStructForDialect(INamedTypeSymbol s, ITranspilerDialect dialect,
         IAssemblySymbol launcherAssembly)
     {
+        if (HostShadowStructs.TryGetNullableValue(s, out _))
+        {
+            return NullableShadowEmitter.Render(NullableShadowPlan.Create(s, dialect));
+        }
+
         var structLayout = TypeLayoutCalculator.GetStructLayout(s, dialect);
         using var writer = new SourceWriter();
         NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout, launcherAssembly);
@@ -120,7 +125,7 @@ internal static class StructMarshalingEmitter
     private static void CollectParameterStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
     {
         var marshaledType = type.UnwrapNullableArrayLike() ?? type;
-        TypeLayoutCalculator.CollectStructs(
+        HostShadowStructs.Collect(
             marshaledType.TryGetArrayLikeElementType(out var element) &&
             (KernelParameterShape.IsConvertedOnCuda(element) || KernelParameterShape.IsConverted(element, HostDialects.Cpu))
                 ? element
@@ -133,21 +138,22 @@ internal static class StructMarshalingEmitter
         HashSet<INamedTypeSymbol> structs)
     {
         var marshaledType = type.UnwrapNullableArrayLike() ?? type;
-        TypeLayoutCalculator.CollectStructs(
+        HostShadowStructs.Collect(
             marshaledType.TryGetArrayLikeElementType(out var element) && KernelParameterShape.IsConverted(element, dialect)
                 ? element
                 : type,
             structs);
     }
 
-    // [WHY] The auto result array of a kernel that returns a user struct is read back like an [Out] array: element by
-    // element through Unmarshal_ when the struct lays out differently on the dialect's device (#704), otherwise as it is
+    // [WHY] The auto result array of a kernel that returns a user struct or a Nullable<T> is read back like an [Out]
+    // array: element by element through Unmarshal_ when it lays out differently on the dialect's device (#704, #961),
+    // otherwise as it is
     private static void CollectReturnStruct(ITypeSymbol returnType, ITranspilerDialect dialect,
         HashSet<INamedTypeSymbol> structs)
     {
         if (KernelParameterShape.IsConvertedReturn(returnType, dialect))
         {
-            TypeLayoutCalculator.CollectStructs(returnType, structs);
+            HostShadowStructs.Collect(returnType, structs);
         }
     }
 

@@ -60,7 +60,7 @@ internal static class StructUnmarshalMethodEmitter
             var name = member.Name.ToCSharpIdentifier();
             WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
         }
-        else if (TypeLayoutCalculator.IsUserStruct(member.Type))
+        else if (HostShadowStructs.Has(member.Type))
         {
             writer.AppendUnmarshalMethodName(member.Type);
             using (writer.Parentheses())
@@ -107,7 +107,7 @@ internal static class StructUnmarshalMethodEmitter
             writer.AppendLine("if (size > 0)");
             using (writer.Scope())
             {
-                if (TypeLayoutCalculator.IsUserStruct(elementType))
+                if (HostShadowStructs.Has(elementType))
                 {
                     StructMarshalMethodEmitter.WriteShadowArray(writer, "tempArray", host, elementType);
 

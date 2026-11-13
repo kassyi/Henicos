@@ -77,6 +77,26 @@ public class CpuNativeArgumentPlanTests
         );
     }
 
+    // A Nullable<T> by value goes by address, never through the runtime marshaller, which refuses a generic struct
+    // (MarshalDirectiveException, #961): the host value when its layouts agree, its shadow when they differ
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Create_NullableParameters_PassAddresses()
+    {
+        var plan = CreatePlan("NullableKinds");
+
+        Assert.Equal(
+            [
+                new CpuNativeArgument("global::System.Nullable<" + Int32 + ">*", CpuNativeArgumentForm.ValueAddress),
+                new CpuNativeArgument(
+                    "global::Native.Arguments.AotContexts.__gsharp_nullable_of_Holder*",
+                    CpuNativeArgumentForm.ShadowAddress),
+                new CpuNativeArgument("global::System.Nullable<" + Int32 + ">*", CpuNativeArgumentForm.PinnedAddress)
+            ],
+            plan.Arguments.ToArray()
+        );
+    }
+
     // The auto result goes as a pointer to its elements: the declared type, or the shadow of a returned struct whose
     // layouts differ; a void kernel has none
     [Theory]

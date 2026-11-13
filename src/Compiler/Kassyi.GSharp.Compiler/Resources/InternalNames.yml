@@ -278,6 +278,9 @@ Launcher:
     DevicePointerPrefix: __gsharp_d_
     ProxyPrefix: __gsharp_proxy_
     NullableProxyPrefix: __gsharp_nullable_
+    # The AotContexts shadow struct of a Nullable<T>, and the key of its Marshal_ / Unmarshal_ methods; the rest of the
+    # name is the marshal key of T
+    NullableShadowPrefix: __gsharp_nullable_of_
     NativePrefix: __gsharp_native_
     PinnedPrefix: __gsharp_p_
     PinnedTempPrefix: __gsharp_p_temp_

@@ -233,7 +233,7 @@ internal static class NativeStructEmitter
         {
             writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {field.Name.ToCSharpIdentifier()};");
         }
-        else if (TypeLayoutCalculator.IsUserStruct(field.Type))
+        else if (HostShadowStructs.Has(field.Type))
         {
             writer.Append("public ");
             writer.AppendAotStructPath(field.Type);

@@ -16,6 +16,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
     private const string TestCase = "Diagnostics/MarshalingBoundaryDiagnostics.cs";
     private const string MultiDimParamTestCase = "Diagnostics/MultidimensionalParameterDiagnostics.cs";
     private const string NullableVector2DirectTestCase = "Diagnostics/NullableVector2DirectDiagnostics.cs";
+    private const string NullableStructValueTestCase = "Diagnostics/NullableStructValueDiagnostics.cs";
 
     // Multidimensional array (int[,]) in kernel body -> GSH0003
     [Theory]
@@ -192,6 +193,43 @@ public sealed class MarshalingBoundaryDiagnosticsTests
         Assert.Contains("System_Nullable<float2>* __gsharp_id_1_rv", generated, System.StringComparison.Ordinal);
         Assert.Contains("GSharpArray<System_Nullable<float2>> __gsharp_id_2_arr", generated, System.StringComparison.Ordinal);
         Assert.Contains("System_Nullable<float2>* __restrict__ __gsharp_auto_result", generated, System.StringComparison.Ordinal);
+    }
+
+    // A Vector2? array and return value are converted element by element on CUDA (#961), where the value is at 8
+    [Theory]
+    [InlineData("Cpu", false)]
+    [InlineData("Cuda", true)]
+    [Scenario(TestScenario.Boundary)]
+    public async Task NullableVector2ArrayAndReturn_ValueAlignedDifferently_ReportsGsh0080OnCuda(
+        string dialect,
+        bool converted)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(NullableVector2DirectTestCase, dialect);
+
+        (DiagnosticOrigin, int, int, int, int)[] expected = converted
+            ? [(DiagnosticOrigin.Analyzer, 10, 19, 10, 27), (DiagnosticOrigin.Analyzer, 13, 9, 13, 19)]
+            : [];
+        Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.StructArrayConvertedPerElement.Id));
+        Assert.All(
+            diagnostics.Where(static d => d.Id == GSharpDiagnostics.StructArrayConvertedPerElement.Id),
+            static d => Assert.Contains(
+                "'System.Numerics.Vector2?': the value is at offset 4 on the host and 8 on the device",
+                d.Message,
+                System.StringComparison.Ordinal));
+    }
+
+    // The value of a Nullable<S> parameter is checked like S: a reference field is GSH0078 (#972)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task NullableStructParameter_ValueWithReferenceField_ReportsGsh0078(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(NullableStructValueTestCase, dialect);
+
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 14, 53, 14, 72)],
+            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id, "NullableNameHolder"));
     }
 
     // LayoutKind.Auto array/return -> GSH0080 warning; DeepStruct[] -> GSH0080 (CPU) / GSH0080 + GSH0081 (CUDA)

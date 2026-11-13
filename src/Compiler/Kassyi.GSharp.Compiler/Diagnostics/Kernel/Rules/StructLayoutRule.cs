@@ -41,28 +41,30 @@ internal sealed class StructLayoutRule :
         var parameters = node.ParameterList.Parameters;
         for (var i = 0; i < parameters.Count && i < method.Parameters.Length; i++)
         {
-            if (parameters[i].Type is not { } typeSyntax ||
-                !TryGetUserStruct(method.Parameters[i].Type, out var structType, out var isArray))
+            if (parameters[i].Type is not { } typeSyntax)
             {
                 continue;
             }
 
-            if (ReportIfUnsupported(structType, typeSyntax, ref context) ||
-                ReportInaccessibleFieldType(structType, typeSyntax, ref context))
+            var marshaledType = GetMarshaledType(method.Parameters[i].Type, out var isArray);
+            var structType = AsUserStruct(marshaledType);
+            if (structType is not null &&
+                (ReportIfUnsupported(structType, typeSyntax, ref context) ||
+                 ReportInaccessibleFieldType(structType, typeSyntax, ref context)))
             {
                 continue;
             }
 
-            var transfer = TypeLayoutCalculator.GetStructLayout(structType, context.Dialect).Transfer;
             if (isArray)
             {
-                if (transfer == TransferClass.Convert)
+                if (HostShadowStructs.IsConverted(marshaledType, context.Dialect))
                 {
-                    ReportConverted(structType, typeSyntax, ref context);
+                    ReportConverted(marshaledType, typeSyntax, ref context);
                 }
 
                 // [WHY] The CUDA launcher allocates and copies the array fields of each element; the CPU one pins them
-                if (context.Dialect.IsCuda && TransferClassifier.TryFindArrayField(structType, out var arrayField))
+                if (structType is not null && context.Dialect.IsCuda &&
+                    TransferClassifier.TryFindArrayField(structType, out var arrayField))
                 {
                     context.ReportDiagnostic(
                         GSharpDiagnostics.StructArrayFieldAllocatedPerElement,
@@ -71,21 +73,27 @@ internal sealed class StructLayoutRule :
                         arrayField);
                 }
             }
-            else if (TryFindConvertedInlineArrayElement(structType, context.Dialect, depth: 0, out var element))
+            else if (structType is not null &&
+                     TryFindConvertedInlineArrayElement(structType, context.Dialect, depth: 0, out var element))
             {
                 ReportConverted(element, typeSyntax, ref context);
             }
         }
 
         // The returned values come back as an array with one element per thread, converted like an array parameter's
-        // (#704). A managed return type is GSH0004 (KernelSignatureRule).
-        if (method.ReturnType.IsUnmanagedType &&
-            TryGetUserStruct(method.ReturnType, out var returnStruct, out _) &&
-            !ReportIfUnsupported(returnStruct, node.ReturnType, ref context) &&
-            !ReportInaccessibleFieldType(returnStruct, node.ReturnType, ref context) &&
-            TypeLayoutCalculator.GetStructLayout(returnStruct, context.Dialect).Transfer == TransferClass.Convert)
+        // (#704, #961). A managed return type is GSH0004 (KernelSignatureRule).
+        if (!method.ReturnType.IsUnmanagedType || node.ReturnType is not { } returnSyntax)
         {
-            ReportConverted(returnStruct, node.ReturnType, ref context);
+            return;
+        }
+
+        var returnStruct = AsUserStruct(GetMarshaledType(method.ReturnType, out _));
+        if ((returnStruct is null ||
+             (!ReportIfUnsupported(returnStruct, returnSyntax, ref context) &&
+              !ReportInaccessibleFieldType(returnStruct, returnSyntax, ref context))) &&
+            HostShadowStructs.IsConverted(method.ReturnType, context.Dialect))
+        {
+            ReportConverted(method.ReturnType, returnSyntax, ref context);
         }
     }
 
@@ -98,19 +106,32 @@ internal sealed class StructLayoutRule :
         }
     }
 
-    // The user struct of a parameter or local: the type itself, or the element of an array-like type
+    // The user struct of a parameter or local: the type itself, or the element of an array-like type, or the value of
+    // a Nullable of either (#972)
     private static bool TryGetUserStruct(ITypeSymbol type, [NotNullWhen(true)] out INamedTypeSymbol? structType,
         out bool isArray)
     {
+        structType = AsUserStruct(GetMarshaledType(type, out isArray));
+        return structType is not null;
+    }
+
+    // The type that crosses the boundary one value at a time: the element of an array-like type (a Memory<T>?
+    // included), otherwise the type itself
+    private static ITypeSymbol GetMarshaledType(ITypeSymbol type, out bool isArray)
+    {
         var marshaledType = type.UnwrapNullableArrayLike() ?? type;
         isArray = marshaledType.TryGetArrayLikeElementType(out var element);
-        structType = (isArray ? element : marshaledType) as INamedTypeSymbol;
-
-        // A StackLinq enumerable is a StackLinq.cuh template on the device, not a struct laid out from its C# fields
-        // (#1086)
-        return structType is not null && TypeLayoutCalculator.IsUserStruct(structType) &&
-               !StackLinqHelper.IsStackLinqType(structType);
+        return isArray ? element : marshaledType;
     }
+
+    // The user struct of a marshaled type or of its Nullable. A StackLinq enumerable is a StackLinq.cuh template on the
+    // device, not a struct laid out from its C# fields (#1086)
+    private static INamedTypeSymbol? AsUserStruct(ITypeSymbol marshaledType) =>
+        marshaledType.UnwrapNullable() is INamedTypeSymbol structType &&
+        TypeLayoutCalculator.IsUserStruct(structType) &&
+        !StackLinqHelper.IsStackLinqType(structType)
+            ? structType
+            : null;
 
     // GSH0079 when a member type has no device representation, GSH0078 for any other reason. Returns whether it
     // reported.
@@ -170,13 +191,12 @@ internal sealed class StructLayoutRule :
         return true;
     }
 
-    private static void ReportConverted(INamedTypeSymbol structType, SyntaxNode typeSyntax,
-        ref ValidationContext context) =>
+    private static void ReportConverted(ITypeSymbol type, SyntaxNode typeSyntax, ref ValidationContext context) =>
         context.ReportDiagnostic(
             GSharpDiagnostics.StructArrayConvertedPerElement,
             typeSyntax,
-            TypeLayoutCalculator.FormatTypeName(structType),
-            TransferClassifier.DescribeLayoutDifference(structType, context.Dialect));
+            TypeLayoutCalculator.FormatTypeName(type),
+            TransferClassifier.DescribeLayoutDifference(type, context.Dialect));
 
     // The element of the first [InlineArray] in the struct, its nested structs included, that is converted element by
     // element

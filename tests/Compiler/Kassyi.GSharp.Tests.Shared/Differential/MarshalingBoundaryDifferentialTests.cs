@@ -422,26 +422,6 @@ public sealed class MarshalingBoundaryDifferentialTests
         },
         Launch = static (b, s) =>
         {
-#if GSHARP_CPU
-            try
-            {
-                MarshalingBoundaryDifferentialKernels.LaunchNullableBlitScalarArgKernel(
-                    b.GetScalar<int?>("v"),
-                    ref b.GetScalarRef<byte?>("rb"),
-                    out char? oc,
-                    b.Get<int>("probe"),
-                    gridDimX: s.GridX,
-                    blockDimX: s.BlockX
-                );
-                b.SetScalar("oc", oc);
-            }
-            // smell-scan: ignore swallowed-exception -- #961 (A Nullable<T> whose host and device layouts differ is
-            // copied with the host layout): the native CPU P/Invoke delegate cannot marshal System.Nullable<T>;
-            // probe/rb/oc keep their initial values so KnownDivergences reports the mismatch
-            catch (MarshalDirectiveException) when (GpuExecution.Current != KernelExecution.Managed)
-            {
-            }
-#else
             MarshalingBoundaryDifferentialKernels.LaunchNullableBlitScalarArgKernel(
                 b.GetScalar<int?>("v"),
                 ref b.GetScalarRef<byte?>("rb"),
@@ -451,7 +431,6 @@ public sealed class MarshalingBoundaryDifferentialTests
                 blockDimX: s.BlockX
             );
             b.SetScalar("oc", oc);
-#endif
         },
     };
 
@@ -935,20 +914,20 @@ public sealed class MarshalingBoundaryDifferentialTests
     public void TypeMarshaling_NullableBlitPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_nullableBlitPositions);
 
-    // Nullable<T> scalar/byref parameter (#961 throws MarshalDirectiveException on Native CPU)
+    // Nullable<T> scalar/byref parameter (the native CPU launcher passes it by address, #961)
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void TypeMarshaling_NullableBlitScalarArg_MatchesOracleExceptKnownNativeIssue() =>
+    public void TypeMarshaling_NullableBlitScalarArg_MatchesOracle() =>
         DifferentialRunner.Run(s_nullableBlitScalarArg);
 
-    // Nullable<Vector2> (H != D, #961 12B host vs 16B CUDA layout divergence)
+    // Nullable<Vector2> (12 bytes on the host, 16 on CUDA: converted through its shadow struct, #961)
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void TypeMarshaling_NullableConvertPositions_MatchesOracleExceptKnownCudaIssue() =>
+    public void TypeMarshaling_NullableConvertPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_nullableConvertPositions);
 
     // LayoutKind.Explicit (non-overlapping with gaps & Size=24, plus identical bit union)
@@ -983,12 +962,12 @@ public sealed class MarshalingBoundaryDifferentialTests
     public void TypeMarshaling_InlineArrayAndFixedBufferPositions_MatchesOracle() =>
         DifferentialRunner.Run(s_inlineArrayAndFixedBufferPositions);
 
-    // [InlineArray(2)] of Vector2? (#961 block-copy corruption on CUDA)
+    // [InlineArray(2)] of Vector2? (converted element by element on CUDA, #961)
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void TypeMarshaling_InlineArrayNullableVec2_MatchesOracleExceptKnownCudaIssue() =>
+    public void TypeMarshaling_InlineArrayNullableVec2_MatchesOracle() =>
         DifferentialRunner.Run(s_inlineArrayNullableVec2);
 
     // Vector2/3/4 alignment torture + InnerPair/OuterPacket + External assembly structs (DeviceLibrary)

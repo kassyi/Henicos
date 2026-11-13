@@ -33,6 +33,13 @@ internal static class GeneratedMemberAccessibility
     }
 
     /// <summary>
+    /// The types that the shadow struct and the marshaling methods of <paramref name="type"/> name: those of
+    /// <see cref="OfStruct"/> for a user struct, and the <c>Nullable&lt;T&gt;</c> itself, with <c>T</c>, otherwise.
+    /// </summary>
+    public static NamedTypes OfShadowed(INamedTypeSymbol type) =>
+        TypeLayoutCalculator.IsUserStruct(type) ? OfStruct(type) : default(NamedTypes).With(type);
+
+    /// <summary>
     /// <paramref name="structType"/> and the types of its members, which its shadow struct, host mirror and marshaling
     /// methods name.
     /// </summary>
