@@ -100,8 +100,15 @@ export async function checkGpuTurnsEndToEnd(fixture: QueueFixture, port: number)
     (await statusOf(port)).waiting.some((j) => j.command === gated(0, gate("d"))),
     "the later job still waits",
   );
-  // A cancel of the running turn stops the command under the lock, and gpu-lock.js releases the lock
-  await request(port, { type: "cancel", id: secondTurn.id });
+  // A cancel of the running turn reaches its GPU holder too, so the holder's client stops the command itself and
+  // gpu-lock.js releases the lock (a tree kill under gpu-lock.js alone could leave the holder running)
+  const secondHolder = (await statusOf(port)).running.find((j) => j.command === gated(0, gate("b")) && j.gpu);
+  const cancelledTurn = await request(port, { type: "cancel", id: secondTurn.id });
+  assert.deepStrictEqual(
+    (cancelledTurn?.cancelled as number[]).sort((x, y) => x - y),
+    [secondTurn.id, secondHolder?.id].sort((x = 0, y = 0) => x - y),
+    "a cancel of the running turn lists its holder",
+  );
   assert.strictEqual(await second.done, 4, "a cancelled running --gpu job exits with 4");
   open(gate("d"));
   assert.strictEqual(await fourth.done, 0);
