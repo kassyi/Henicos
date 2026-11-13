@@ -30,6 +30,7 @@ import { MachineProfile } from "./machine.ts";
 import { Scheduler, type Expected } from "./scheduler.ts";
 import { Connection } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
+import { outcomeOfEnd } from "./server-job-state.ts";
 import { JobStore } from "./server-store.ts";
 import { ProcessTable, resolveStateDirectory } from "./system.ts";
 
@@ -288,10 +289,8 @@ export class JobServer {
     if (this.scheduler.waiting.includes(job)) {
       return "cancelled";
     }
-    if (!job.done || job.exitCode === null) {
-      return "lost";
-    }
-    return job.completed && job.exitCode === 0 ? "succeeded" : "failed";
+    // Without "done" the exit code is null: lost
+    return outcomeOfEnd({ ...job, cancelled: false }, false);
   }
 
   /** Cancels one job: a waiting job leaves at once; a running one keeps its slot until its client has stopped it. */

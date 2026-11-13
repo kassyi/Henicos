@@ -2,11 +2,12 @@
 // handler per message type (server-job-messages.ts, server-control-messages.ts), and what its close means for the job.
 
 import type * as net from "node:net";
-import { AcceptedProtocolVersions, ExpectedJobsMs, ProtocolVersion } from "./constants.ts";
+import { AcceptedProtocolVersions, ClientGraceMs, ProtocolVersion } from "./constants.ts";
 import { onMessages, type Incoming, type ServerMessage } from "./protocol.ts";
 import { ControlMessages } from "./server-control-messages.ts";
 import type { ServerJob } from "./server-job.ts";
 import { JobMessages } from "./server-job-messages.ts";
+import { outcomeOfEnd } from "./server-job-state.ts";
 import type { JobServer } from "./server.ts";
 import { ProcessTable } from "./system.ts";
 
@@ -83,18 +84,18 @@ export class Connection {
       // As in "done": a command that succeeded before the cancel reached it (its report said so) stays succeeded
       const cancelled = job;
       this.job = null;
-      const succeeded = cancelled.done && cancelled.completed && cancelled.exitCode === 0;
-      cancelled.cancelled = !succeeded;
-      server.release(cancelled, "cancelled", succeeded ? "succeeded" : "cancelled");
+      const outcome = outcomeOfEnd({ ...cancelled, cancelled: false }, true);
+      cancelled.cancelled = outcome === "cancelled";
+      server.release(cancelled, "cancelled", outcome);
       return;
     }
     if (scheduler.waiting.includes(job) && !job.done && ProcessTable.isAlive(job.pid)) {
       // Only the connection dropped; the client queues again under the same id. It has not ended: no outcome, and
-      // the jobs that wait for it keep waiting until it is back (or counts as lost after ExpectedJobsMs)
+      // the jobs that wait for it keep waiting until it is back (or counts as lost after ClientGraceMs)
       const reconnecting = job;
       this.job = null;
       reconnecting.socket = null;
-      server.expect(reconnecting.id, Date.now() + ExpectedJobsMs);
+      server.expect(reconnecting.id, Date.now() + ClientGraceMs);
       server.release(reconnecting, "its client reconnects", null);
       return;
     }

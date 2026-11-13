@@ -11,6 +11,7 @@ import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
+import { JobStateChecks } from "./server-job-checks.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots, parseBudgets, testMemoryMb } from "./machine.ts";
 import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
@@ -82,7 +83,7 @@ function checkMachineDefaults(): void {
 }
 
 export async function selfTest(): Promise<void> {
-  for (const [name, check] of Object.entries(SchedulerChecks)) {
+  for (const [name, check] of Object.entries({ ...SchedulerChecks, ...JobStateChecks })) {
     try {
       check(assert);
     } catch (error) {

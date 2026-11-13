@@ -2,9 +2,20 @@
 // (the end of a job whose command ended while no scheduler listened).
 
 import { ProtocolVersion } from "./constants.ts";
-import { idField, numberField, send, type Incoming, type Outcome } from "./protocol.ts";
+import { idField, numberField, send, type Incoming } from "./protocol.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
+import { outcomeOfEnd, type CommandEnd } from "./server-job-state.ts";
+
+/** How the command ended, as "done" and "report" say it. */
+function endOf(message: Incoming): CommandEnd {
+  return {
+    completed: message.completed === true,
+    // Protocol 2 clients send no exit code: their outcome is unknown ('lost')
+    exitCode: typeof message.exitCode === "number" ? message.exitCode : null,
+    cancelled: message.cancelled === true,
+  };
+}
 
 /** request: a new job, or a waiting job that queues again after a restart under its id. */
 function request(connection: Connection, message: Incoming): void {
@@ -110,9 +121,7 @@ function done(connection: Connection, message: Incoming): void {
     connection.job = null;
     // Cancelled: the client says so (also to a scheduler that restarted meanwhile and has no cancelPending), or this
     // scheduler cancelled it and the command did not succeed first (a success that crosses the cancel wins)
-    const succeeded = ended.completed && ended.exitCode === 0;
-    const cancelled = message.cancelled === true || (ended.cancelPending && !succeeded);
-    const outcome: Outcome = cancelled ? "cancelled" : server.closedOutcome(ended);
+    const outcome = outcomeOfEnd(endOf(message), ended.cancelPending);
     ended.cancelled = outcome === "cancelled"; // a cancel the client carried out: no run time
     server.release(ended, "done", outcome);
     send(socket, { type: "done-ok", id: ended.id });
@@ -129,12 +138,7 @@ function report(connection: Connection, message: Incoming): void {
   const scheduler = server.scheduler;
   const id = idField(message, "id");
   const held = id === null ? undefined : scheduler.find(id);
-  const outcome: Outcome =
-    message.cancelled === true
-      ? "cancelled"
-      : message.completed === true && message.exitCode === 0
-        ? "succeeded"
-        : "failed";
+  const outcome = outcomeOfEnd(endOf(message), false);
   if (id !== null && held === undefined && !server.outcomes.has(id)) {
     server.log(`report #${id}: ${outcome}`);
     server.recordOutcome(id, outcome);

@@ -3,7 +3,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { ExpectedJobsMs } from "./constants.ts";
+import { ClientGraceMs } from "./constants.ts";
 import { errorCode, errorMessage, isObject, replaceFile } from "./history.ts";
 import { idField, numberField, type Outcome } from "./protocol.ts";
 import { describeJob } from "./server-job.ts";
@@ -84,7 +84,7 @@ export class JobStore {
     if (Array.isArray(saved.pending)) {
       for (const id of saved.pending as unknown[]) {
         if (typeof id === "number" && Number.isInteger(id) && id > 0 && !server.outcomes.has(id)) {
-          server.expect(id, Date.now() + ExpectedJobsMs);
+          server.expect(id, Date.now() + ClientGraceMs);
         }
       }
     }
