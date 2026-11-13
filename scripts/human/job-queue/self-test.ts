@@ -24,7 +24,8 @@ import { request } from "./client.ts";
 import { RunHistory } from "./history.ts";
 import { onMessages, send, type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
-import { defaultWeight, gitBashPath, limitMsbuildNodes, quoteArgument } from "./shell.ts";
+import { gitBashPath, isTestCommand, limitMsbuildNodes, quoteArgument } from "./shell.ts";
+import { defaultMemoryPoolMb, defaultSlots, MinimumSlots, parseBudgets, testMemoryMb } from "./machine.ts";
 import {
   delay,
   stopChild,
@@ -46,7 +47,7 @@ import { checkGpuTurnsEndToEnd, checkRegrant, checkWait } from "./self-test-part
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
 const OrphanReleaseMs = 30000;
 
-/** Checks of the pure helpers: the node limit, quoting, the default weight. */
+/** Checks of the pure helpers: the node limit, quoting, which commands run tests. */
 function checkShellHelpers(): void {
   assert.strictEqual(
     limitMsbuildNodes("dotnet test X.csproj && dotnet build", 6),
@@ -71,8 +72,33 @@ function checkShellHelpers(): void {
   assert.strictEqual(quoteArgument("pwsh", "x,"), "'x,'", "PowerShell reads a trailing comma as an array");
   assert.strictEqual(quoteArgument("bash", "-p:Foo.Bar=1"), "-p:Foo.Bar=1");
   assert.strictEqual(quoteArgument("bash", "it's"), "'it'\\''s'");
-  assert.strictEqual(defaultWeight("just test --filter X"), 2);
-  assert.strictEqual(defaultWeight("dotnet build Henicos.slnx"), 1);
+  assert.strictEqual(isTestCommand("just test --filter X"), true);
+  assert.strictEqual(isTestCommand("dotnet build Henicos.slnx"), false);
+  checkMachineDefaults();
+}
+
+/** The defaults that follow the machine, and the memory a test run needs. */
+function checkMachineDefaults(): void {
+  assert.strictEqual(defaultSlots(24), 8);
+  assert.strictEqual(defaultSlots(8), 3);
+  assert.strictEqual(defaultSlots(4), MinimumSlots, "a small machine still runs a build beside a test run");
+  assert.strictEqual(defaultMemoryPoolMb(64 * 1024 ** 3), 32 * 1024);
+  const budgets = parseBudgets(
+    ["# comment", "Kassyi.GSharp.Tests.Cpu: 2880, stress 6720", "Kassyi.GSharp.Tests.Integration: 128", ""].join("\n"),
+  );
+  assert.deepStrictEqual(budgets.get("Kassyi.GSharp.Tests.Cpu"), { normal: 2880, stress: 6720 });
+  assert.deepStrictEqual(budgets.get("Kassyi.GSharp.Tests.Integration"), { normal: 128, stress: 128 });
+  const memory = (command: string): number => testMemoryMb(command, isTestCommand(command), budgets);
+  assert.strictEqual(memory("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu"), 2880);
+  assert.strictEqual(memory('just test-category Stress "--project" kassyi.gsharp.tests.cpu'), 6720);
+  assert.strictEqual(memory("just test"), 2880 + 128, "a whole-solution run counts every test host");
+  assert.strictEqual(
+    memory('dotnet test --filter "Category!=Stress&Category!=Benchmark"'),
+    2880 + 128,
+    "a filter that leaves the stress tests out counts the normal budgets",
+  );
+  assert.strictEqual(memory("dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu"), 0, "a build takes no memory");
+  assert.strictEqual(testMemoryMb("just test", true, new Map()), 0, "without budgets nothing is held back");
 }
 
 export async function selfTest(): Promise<void> {

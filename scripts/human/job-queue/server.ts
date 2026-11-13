@@ -30,7 +30,9 @@ import {
   type Outlook,
   type ServerMessage,
 } from "./protocol.ts";
+import { readBudgets, testMemoryMb } from "./machine.ts";
 import { Scheduler, type Expected, type SchedulerJob } from "./scheduler.ts";
+import { isTestCommand } from "./shell.ts";
 import {
   isProcessAlive,
   isProcessGroupAlive,
@@ -42,6 +44,8 @@ import {
 
 export interface ServeOptions {
   slots: number;
+  /** The memory pool for test runs, in MB. */
+  memoryMb: number;
   policy: Policy;
   port: number;
   /** '' for the default (resolveStateDirectory); a scheduler started through WMI gets it on its command line. */
@@ -87,12 +91,15 @@ function describeJob(job: ServerJob): JobView {
     after: job.after,
     keepIfFailed: job.keepIfFailed,
     gpuTurn: job.gpuTurn === true,
+    memoryMb: job.memoryMb ?? 0,
   };
 }
 
 export function serve(options: ServeOptions): void {
   // nothing is granted before listening (see listen)
-  const scheduler = new Scheduler<ServerJob>(options.slots, Infinity, options.policy);
+  const scheduler = new Scheduler<ServerJob>(options.slots, Infinity, options.policy, options.memoryMb);
+  // The budgets of the checkout the scheduler runs from: the memory each test run takes from the pool
+  const budgets = readBudgets();
   // Several schedulers may write to one log for a moment (one stopping, the next starting): tag each line
   const log = (text: string): void => {
     process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`);
@@ -197,6 +204,7 @@ export function serve(options: ServeOptions): void {
       after: idField(message, "after"),
       keepIfFailed: message.keepIfFailed === true,
       gpuTurn: message.gpuTurn === true,
+      memoryMb: testMemoryMb(command, isTestCommand(command), budgets),
       lastPosition: -1,
       lastStartAt: null,
       done: false,
@@ -699,6 +707,8 @@ export function serve(options: ServeOptions): void {
             policy: scheduler.policy,
             capacity: scheduler.capacity,
             used: scheduler.used,
+            memoryCapacity: scheduler.memoryCapacity,
+            memoryUsed: scheduler.memoryUsed,
             running: scheduler.running.map(view),
             waiting: scheduler.waiting.map(view),
           });
@@ -805,7 +815,8 @@ export function serve(options: ServeOptions): void {
   server.listen(options.port, "127.0.0.1", () => {
     log(
       `scheduler pid ${process.pid} on 127.0.0.1:${options.port}, ${scheduler.capacity} slots, ` +
-        `${os.cpus().length} cores, policy ${scheduler.policy}`,
+        `${os.cpus().length} cores, ${Math.round(scheduler.memoryCapacity)} MB for test runs ` +
+        `(${budgets.size} budgets), policy ${scheduler.policy}`,
     );
     // The grace for re-registration starts once clients can connect; only the scheduler that owns the port restores.
     // It ends in the timer, not at a time: nothing is granted (holdUntil stays Infinity) before settle has run with the

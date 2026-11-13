@@ -1,5 +1,5 @@
 // How a queued command runs: the shell that runs it, the quoting of words already split by the caller's shell, the
-// default weight of a command and the MSBuild node limit added to its dotnet invocations.
+// commands that run tests and the MSBuild node limit added to its dotnet invocations.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -17,9 +17,9 @@ const TestCommandPattern = new RegExp(
   ].join("|"),
 );
 
-/** 2 slots for a test run (dotnet test, just test*, the long test scripts), 1 for anything else. */
-export function defaultWeight(command: string): number {
-  return TestCommandPattern.test(command) ? 2 : 1;
+/** A test run (dotnet test, just test*, the long test scripts): it takes its memory budget from the pool. */
+export function isTestCommand(command: string): boolean {
+  return TestCommandPattern.test(command);
 }
 
 const NodeLimitPattern = /(^|\s)(--?|\/)(m|maxcpucount|max-cpu-count)([:=\s]|$)/i;

@@ -379,6 +379,76 @@ export function checkGpuTurns(assert: AssertModule): void {
   }
 }
 
+/** A test run for the memory checks: weight 1 and a memory budget. */
+const testRun = (id: number, memoryMb: number, queuedAt: number, estimate: Estimate | null = null): SchedulerJob =>
+  Object.assign(job(id, 1, queuedAt, false, estimate), { memoryMb });
+
+/**
+ * The memory pool: test runs start while their budgets fit, a build passes a test run held back by memory, a run
+ * larger than the pool runs alone, and backfilling leaves the first job's budget free.
+ */
+export function checkMemory(assert: AssertModule): void {
+  {
+    const s = new Scheduler<SchedulerJob>(8, 0, "fifo", 6000);
+    const [a, b, c] = [testRun(1, 2880, 1), testRun(2, 2880, 2), testRun(3, 2880, 3)];
+    assert.deepStrictEqual(s.enqueue(a), [a]);
+    assert.deepStrictEqual(s.enqueue(b), [b]);
+    assert.deepStrictEqual(s.enqueue(c), [], "a third budget does not fit in the pool");
+    assert.strictEqual(s.memoryUsed, 5760);
+    assert.deepStrictEqual(s.remove(a), [c]);
+    assert.strictEqual(s.memoryUsed, 5760, "an ended run gives its budget back");
+  }
+  {
+    const s = new Scheduler<SchedulerJob>(8, 0, "backfill", 6000);
+    const a = testRun(1, 4000, 1, times(100, 100));
+    const b = testRun(2, 4000, 2);
+    const build = job(3, 1, 3);
+    s.enqueue(a, 3);
+    assert.deepStrictEqual(s.enqueue(b, 3), []);
+    assert.deepStrictEqual(s.enqueue(build, 3), [build], "a build takes no memory and passes the held test run");
+  }
+  {
+    const s = new Scheduler<SchedulerJob>(8, 0, "fifo", 1000);
+    const [a, b] = [testRun(1, 2880, 1), testRun(2, 2880, 2)];
+    assert.deepStrictEqual(s.enqueue(a), [a], "a run larger than the pool runs when it is alone");
+    assert.deepStrictEqual(s.enqueue(b), []);
+    assert.deepStrictEqual(s.remove(a), [b]);
+  }
+  {
+    // The first job waits for slots; a long test run must not take the memory it will need, a build may run
+    const s = new Scheduler<SchedulerJob>(4, 0, "backfill", 6000);
+    const a = job(1, 3, 0, false, times(100, 100));
+    const first = Object.assign(job(2, 2, 1), { memoryMb: 3000 });
+    const long = testRun(3, 3500, 2, times(400, 500));
+    const build = job(4, 1, 3, false, times(400, 500));
+    s.enqueue(a, 0);
+    s.enqueue(first, 1);
+    assert.deepStrictEqual(s.enqueue(long, 2), [], "a backfilled run leaves the first job's budget free");
+    assert.deepStrictEqual(s.enqueue(build, 3), [build]);
+  }
+  {
+    // A short test run that would end in time is still not backfilled when its budget does not fit now
+    const s = new Scheduler<SchedulerJob>(4, 0, "backfill", 6000);
+    const a = Object.assign(job(1, 3, 0, false, times(100, 100)), { memoryMb: 4000 });
+    const first = job(2, 2, 1);
+    const short = testRun(3, 3000, 2, times(10, 10));
+    s.enqueue(a, 0);
+    s.enqueue(first, 1);
+    assert.deepStrictEqual(s.enqueue(short, 2), [], "a backfilled run must fit in the pool now");
+  }
+  {
+    const s = new Scheduler<SchedulerJob>(8, 0, "fifo", 6000);
+    const turn = Object.assign(testRun(1, 2880, 1), { gpuTurn: true });
+    s.enqueue(turn);
+    assert.strictEqual(s.memoryUsed, 0, "a GPU turn takes no memory; its command registers its own");
+    const [a, b] = [testRun(2, 4000, 2), testRun(3, 4000, 3)];
+    s.enqueue(a, 3);
+    s.enqueue(b, 3);
+    const forecast = s.forecast(3);
+    assert.strictEqual(forecast.get(b)?.startAt, forecast.get(a)?.endAt, "the forecast waits for the memory too");
+  }
+}
+
 /** Run history: median and longest of the last runs per command, kept on disk. */
 export function checkRunHistory(assert: AssertModule): void {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-history-"));
@@ -431,5 +501,6 @@ export const SchedulerChecks: Record<string, (assert: AssertModule) => void> = {
   checkPlacement,
   checkDependencies,
   checkGpuTurns,
+  checkMemory,
   checkRunHistory,
 };
