@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Dialects;
+namespace Kassyi.GSharp.Compiler.Dialects;
 
 /// <summary>
 /// Defines the contract for an execution target dialect in the GSharp transpiler (e.g., NVIDIA CUDA, Unreal Engine 5 C++, WebAssembly).

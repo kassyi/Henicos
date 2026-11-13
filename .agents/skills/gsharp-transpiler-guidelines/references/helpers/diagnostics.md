@@ -1,0 +1,32 @@
+# Compiler Helper Catalog: Diagnostics
+
+Part of the [helper catalog](../helpers.md), which also explains how to read the tables (paths, and a method called on
+a receiver written with a leading dot) and where a new helper goes.
+
+| Intent | Use | Do not write |
+| ----- | ----- | ----- |
+| Define a diagnostic | an entry in `Diagnostics/diagnostics.json` (generates `GSharpDiagnostics`) | `new DiagnosticDescriptor(...)` |
+| Report from an analyzer | `.ReportDiagnostic` (`context.ReportDiagnostic(descriptor, node, args)`) | `Diagnostic.Create(...)` plus `context.ReportDiagnostic` |
+| Does a host rule look at this operation: host code that runs (not in a kernel or device function, not G#'s own output, not under `nameof`, not in a call C# removes)? (GSH0018, GSH0031) | `HostReferences.IsHostReference` | the four checks written again in a host analyzer |
+| The transpiler cannot emit a construct | `context.Reporter.Fail` (an unhandled syntax kind already fails in `DefaultVisit`); `TranspilerFailureCheck.AddFailures` runs the transpiler in `GpuKernelAnalyzer` and reports the failures | throwing, emitting nothing, a diagnostic from the transpiler, or a list of rejected syntax kinds in a rule |
+| Check a syntax rule inside kernels | implement `ISyntaxValidationRule` and register it in `DiagnosticRuleRegistry` (`CopyAsyncRule.IsSharedMemoryLocation`, `CopyAsyncRule.IsGlobalMemorySourceLocation`) | a new analyzer that walks kernel bodies again |
+| Decide a G# restriction that the analyzer reports and the transpiler must also respect (return type, instance device function, function pointer, `string`, `new`, switch expression arm) | `GpuCodeConstraints.HasSupportedReturnType`, `GpuCodeConstraints.IsInstanceDeviceFunction`, `GpuCodeConstraints.IsFunctionPointer`, `GpuCodeConstraints.IsString`, `GpuCodeConstraints.IsSupportedObjectCreation`, `GpuCodeConstraints.GetWithMemberProblem`, `GpuCodeConstraints.IsSupportedSwitchArmPattern` | the same condition written again in the rule and in the transpiler |
+| A G# restriction on a type that only the .NET runtime can use | `GpuCodeConstraints.GetRuntimeOnlyTypeName` | |
+| A G# restriction on a stack array size and shape (multidimensional, zero length), a multidimensional array parameter or struct field | `GpuCodeConstraints.FindDynamicArraySize`, `GpuCodeConstraints.IsConstantArraySize`, `GpuCodeConstraints.GetStackArrayShapeProblem`, `GpuCodeConstraints.ContainsMultidimensionalArray` | |
+| A G# restriction on a user-defined operator without a device definition (GSH0060) | `GpuCodeConstraints.GetUserDefinedOperator`, `GpuCodeConstraints.GetOperatorProblem` | |
+| A G# restriction on an operator macro target, where an operator macro is expanded and whether its target and context are assigned | `OperatorMacroResolver.TryResolve`, `OperatorMacroPosition.GetPositionFailure`, `OperatorMacroAssignment.GetUnassignedTargetFailure`, `OperatorMacroAssignment.GetUnassignedContextFailure` | |
+| A G# restriction on `Gpu.InlinePtx` text and `Gpu.InlinePtx` support | `GpuCodeConstraints.SupportsInlinePtx`, `GpuCodeConstraints.IsInlinePtxText` | |
+| A G# restriction on a host static member | `GpuCodeConstraints.IsHostStaticMember`, `GpuCodeConstraints.IsHostStaticMemberReference` | |
+| A G# restriction on the unroll factor and loop, `Gpu.ForUnroll` constants, a loop macro variable | `GpuCodeConstraints.TryGetUnrollFactor`, `GpuCodeConstraints.TryGetMacroConstantInt`, `GpuCodeConstraints.GetMacroLoopParameter`, `GpuCodeConstraints.GetUnrolledLoop` | |
+| A G# restriction on a `Gpu.SyncGrid` body | `GpuCodeConstraints.TryGetSyncGridBody` | |
+| Is a barrier, or a call that reaches one, divergent (only some of the threads of the block or grid reach it, and the others reach another split point, or only leave the method)? (GSH0037, GSH0083, GSH0084, GSH0077, GSH0099, GSH0100; the reconvergence points of `ReconvergenceInserter`) | `.GetBarrierDivergence` (`BarrierDivergence`, by `SyncScope`) | a walk over the syntactic ancestors for `if` / loop / `?:` conditions |
+| Does a call diverge because of its arguments or an early exit in the callee? | `.GetCallSiteDivergence`, `.GetExitBranches` and `.IsExitOnlyCall` (GSH0084) | |
+| What does an exported device function record about its divergence? | `UniformityAnalysis.GetExportedDivergence` (`ExportedBarrierDivergence`) | |
+| Does only some of a block or of the grid reach a call or object creation? | `.IsReachedByPartOfBlock`, `.IsReachedByPartOfGrid` | |
+| What is the variance of an expression at its point (with or without lambda parameters fixed as uniform), an element read included (thread-variant when the same array or shared memory may have been written since the last barrier, C9)? | `.GetVariance` (`ThreadVariance`, also with uniform parameters), `.IsThreadVariant` | a check of `ThreadIndex` / `BlockIndex` names in an expression or condition |
+| Which branches are thread-variant | `.GetDivergentBranches` (`DivergentBranch`: the thread-variant branches with their post-dominator calls) | |
+| Where these queries are asked | on the `UniformityAnalysis` from `.TryGetUniformity` of a `MethodFlowGraph` (one per method, on the control flow graph) | |
+| The project's dialect (`GSharpTargetDialect`) in an analyzer or the generator; a rule reads it from `ValidationContext.Dialect` | `TranspilerDialects.GetName`, `TranspilerDialects.Create` | `build_property.GSharpTargetDialect` read by hand, `"Cuda"` compared by hand |
+| A type in the text of a diagnostic: the short C# spelling (`uint[]`, `OverloadCtx`), or the fully qualified one; a method with its parameter types (`Abs(long)`, `Shift(ref OverloadCtx, uint[])`) or a parameter modifier (`ref `) | `IteratorTypeResolver.FormatType`, `TypeLayoutCalculator.FormatTypeName`, `.FormatSignature`, `.FormatRefKind` (`SymbolExtensions`) | `ToDisplayString()` with a `#pragma warning disable RS0030` of its own |
+| Diagnostic stored in an incremental pipeline model | `.AsEquatable` | a raw `Diagnostic` field |
+| Deprecate a diagnostic (the GSH0021 form) | keep its `diagnostics.json` entry (`name`, `id`, `category`, `defaultSeverity`); add `(Deprecated)` to `title`, ` (Deprecated, replaced by GSHxxxx)` to the end of `messageFormat`, `isEnabledByDefault: false` and `isObsolete: true`; remove every code reference (the generated `GSharpDiagnostics.<Name>` becomes `[Obsolete]`); keep the doc page with a deprecation note at the top and mark its index and spec rows `(Deprecated)` | deleting the entry, or reusing its ID |

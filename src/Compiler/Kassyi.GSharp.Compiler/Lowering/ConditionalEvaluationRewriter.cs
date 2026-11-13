@@ -14,9 +14,13 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The temporary of a conditional operator is initialized with <c>default</c> carrying the span of the original
 /// operator, which is how <see cref="Transpiler.HoistedFieldTypeResolver"/> finds its type.
 /// </remarks>
-public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter, IBlockLoweringPass
+/// <param name="names">
+/// The names of the temporaries of the method, shared with the other passes that declare temporaries; a new set when
+/// omitted.
+/// </param>
+public class ConditionalEvaluationRewriter(LoweringTempNames? names = null) : CSharpSyntaxRewriter, IBlockLoweringPass
 {
-    private int _tempCounter;
+    private readonly LoweringTempNames _names = names ?? new LoweringTempNames();
 
     /// <summary>Rewrites the conditional operators in the block that need it.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) =>
@@ -68,6 +72,13 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter, IBlockLowerin
         while (pending.Count > 0)
         {
             var statement = pending.Pop();
+            // [WHY] A statement the split pass of the IR wrote out has no conditional left that holds a split
+            if (statement.HasAnnotations(LoweringAnnotations.IrLoweredAnnotationKind))
+            {
+                newStatements.Add(statement);
+                continue;
+            }
+
             if (FindConditional(statement) is not { } conditional)
             {
                 newStatements.Add(Visit(statement) as StatementSyntax
@@ -89,7 +100,7 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter, IBlockLowerin
 
     private (ImmutableArray<StatementSyntax> Prefix, IdentifierNameSyntax Temp) Lower(ExpressionSyntax conditional)
     {
-        var name = $"{GSharpInternalNames.Lowering.ConditionTempPrefix}{_tempCounter++}";
+        var name = _names.NextCondition();
         var temp = SyntaxFactory.IdentifierName(name);
 
         switch (conditional)

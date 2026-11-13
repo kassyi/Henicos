@@ -6,8 +6,10 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// </summary>
 /// <remarks>
 /// The constructed symbol is the identity: the C++ name of the instance derives from it
-/// (<see cref="GenericInstanceNames.GetInstancePath"/>), so a call to <c>F&lt;int&gt;</c> and the closed copy of
-/// <c>F</c> made for <c>int</c> (<see cref="GenericInstanceTable"/>) name the same function.
+/// (<see cref="GenericInstanceNames.GetInstancePath"/>), and the closed copy of <c>F</c> made for <c>int</c>
+/// (<see cref="GenericInstanceTable"/>) gets that name. A call of the constructed method still gets the name of the
+/// definition from <see cref="GlobalCppNames.GetFunctionName"/>; the calls move to the instance name when the copies
+/// are emitted.
 /// </remarks>
 internal sealed class GenericInstance
 {
@@ -84,6 +86,11 @@ internal sealed class GenericInstance
             ITypeParameterSymbol => true,
             IArrayTypeSymbol array => ContainsTypeParameter(array.ElementType),
             IPointerTypeSymbol pointer => ContainsTypeParameter(pointer.PointedAtType),
+            IFunctionPointerTypeSymbol functionPointer =>
+                ContainsTypeParameter(functionPointer.Signature.ReturnType) ||
+                functionPointer.Signature.Parameters
+                    .AsStackEnumerable()
+                    .Any(static parameter => ContainsTypeParameter(parameter.Type)),
             INamedTypeSymbol named => named.TypeArguments
                     .AsStackEnumerable()
                     .Any(ContainsTypeParameter) ||

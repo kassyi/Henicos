@@ -1,3 +1,5 @@
+#nullable enable
+
 using Kassyi.GSharp.Compiler.Instantiation;
 using Kassyi.GSharp.Naming;
 
@@ -16,7 +18,7 @@ public class GenericInstanceNamesTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void GetFunctionInstanceName_ConstructedMethod_EncodesTheTypeArgumentsAndDecodesBack()
+    public void GetFunctionName_ConstructedMethod_EncodesTheTypeArgumentsAndDecodesBack()
     {
         var compilation = CreateCompilation();
         var instance = GenericInstance.Of(Method(compilation, "Functions.G", "Scale").Construct(Int(compilation)));
@@ -29,8 +31,8 @@ public class GenericInstanceNamesTests
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void GetFunctionInstanceName_DifferentTypeArguments_GiveDistinctNames()
+    [Scenario(TestScenario.Boundary)]
+    public void GetFunctionName_DifferentTypeArguments_GiveDistinctNames()
     {
         var compilation = CreateCompilation();
         var scale = Method(compilation, "Functions.G", "Scale");
@@ -57,7 +59,7 @@ public class GenericInstanceNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void GetFunctionInstanceName_TwoTypeParameters_KeepsTheirOrder()
+    public void GetFunctionName_TwoTypeParameters_KeepsTheirOrder()
     {
         var compilation = CreateCompilation();
         var convert = Method(compilation, "Functions.G", "Convert");
@@ -75,7 +77,7 @@ public class GenericInstanceNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void GetFunctionInstanceName_OverloadedGenericMethod_CarriesTheOrdinalOfTheDeclaration()
+    public void GetFunctionName_OverloadedGenericMethod_CarriesTheOrdinalOfTheDeclaration()
     {
         var compilation = CreateCompilation();
         var pickTwo = Methods(compilation, "Functions.G", "Pick")[1];
@@ -89,7 +91,7 @@ public class GenericInstanceNamesTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void GetKernelInstanceName_MemberOfConstructedType_EncodesEveryLevel()
+    public void GetKernelName_MemberOfConstructedType_EncodesEveryLevel()
     {
         var compilation = CreateCompilation();
         var kernels = Type(compilation, "Functions.Outer`1").Construct(Int(compilation)).GetTypeMembers("Kernels")[0];
@@ -204,7 +206,7 @@ public class GenericInstanceNamesTests
 
     // The copy of a member of Outer<T> is declared in Outer<T> itself, so the arguments of Outer tell the copies apart.
     [Fact]
-    [Scenario(TestScenario.SadPath)]
+    [Scenario(TestScenario.Boundary)]
     public void GetCopyName_MembersOfDifferentConstructions_GiveDistinctNames()
     {
         var compilation = CreateCompilation();
@@ -216,6 +218,88 @@ public class GenericInstanceNamesTests
 
         Assert.Equal("__gsharp_gi_Run_g1_bSystem__Int32_e", CopyName(SpecialType.System_Int32));
         Assert.Equal("__gsharp_gi_Run_g1_bSystem__Single_e", CopyName(SpecialType.System_Single));
+    }
+
+    // Shapes that a change to the encoder could make collide: array ranks in either order, an array inside or outside
+    // a type argument, a user type named like the markers, a type nested in two constructions of one type
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("int[][,]", "int[,][]")]
+    [InlineData("Vec<int>[]", "Vec<int[]>")]
+    [InlineData("S_g1_bX_e", "S<X>")]
+    [InlineData("Holder<int>.Inner", "Holder<float>.Inner")]
+    public void GetFunctionName_TypeArgumentsThatLookAlike_GiveDistinctNamesThatDecode(string first, string second)
+    {
+        var compilation = CreateCompilation();
+        var scale = Method(compilation, "Functions.G", "Scale");
+        var firstInstance = GenericInstance.Of(scale.Construct(BuildType(compilation, first)));
+        var secondInstance = GenericInstance.Of(scale.Construct(BuildType(compilation, second)));
+
+        var firstName = GenericInstanceNames.GetFunctionName(firstInstance);
+        var secondName = GenericInstanceNames.GetFunctionName(secondInstance);
+
+        Assert.NotEqual(firstName, secondName);
+        Assert.Equal(GenericInstanceNames.GetInstancePath(firstInstance), DecodeFunctionName(firstName));
+        Assert.Equal(GenericInstanceNames.GetInstancePath(secondInstance), DecodeFunctionName(secondName));
+    }
+
+    // The name grammar has no form for a signature: an instance over a function pointer type fails loudly, naming it
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void GetFunctionName_FunctionPointerTypeArgument_ThrowsNamingTheType()
+    {
+        var compilation = CreateCompilation();
+        var pointer = compilation.CreateArrayTypeSymbol(FunctionPointer(compilation, Int(compilation)));
+        var instance = GenericInstance.Of(Method(compilation, "Functions.G", "Scale").Construct(pointer));
+
+        var error = Assert.Throws<InvalidOperationException>(() => GenericInstanceNames.GetFunctionName(instance));
+        Assert.Contains("delegate*", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Of_FunctionPointerOverATypeParameter_Throws()
+    {
+        var compilation = CreateCompilation();
+        var parameter = Method(compilation, "Functions.G", "Open").TypeParameters[0];
+        var pointer = compilation.CreateArrayTypeSymbol(FunctionPointer(compilation, parameter));
+
+        Assert.Throws<ArgumentException>(() =>
+            GenericInstance.Of(Method(compilation, "Functions.G", "Scale").Construct(pointer)));
+    }
+
+    // delegate*<parameter, void>
+    private static IFunctionPointerTypeSymbol FunctionPointer(Compilation compilation, ITypeSymbol parameter) =>
+        compilation.CreateFunctionPointerTypeSymbol(
+            compilation.GetSpecialType(SpecialType.System_Void),
+            RefKind.None,
+            [parameter],
+            [RefKind.None]
+        );
+
+    private static GlobalNamePath? DecodeFunctionName(string name)
+    {
+        var body = name.AsSpan(GSharpNameEncoding.FunctionPrefix.Length).ToString();
+        Assert.True(GSharpNameEncoding.TryDecodePath(body, out var path), name);
+        return path;
+    }
+
+    private static ITypeSymbol BuildType(Compilation compilation, string shape)
+    {
+        var intType = Int(compilation);
+        return shape switch
+        {
+            "int[][,]" => compilation.CreateArrayTypeSymbol(compilation.CreateArrayTypeSymbol(intType, 2)),
+            "int[,][]" => compilation.CreateArrayTypeSymbol(compilation.CreateArrayTypeSymbol(intType), 2),
+            "Vec<int>[]" => compilation.CreateArrayTypeSymbol(Type(compilation, "Repro.Vec`1").Construct(intType)),
+            "Vec<int[]>" => Type(compilation, "Repro.Vec`1").Construct(compilation.CreateArrayTypeSymbol(intType)),
+            "S_g1_bX_e" => Type(compilation, "Repro.S_g1_bX_e"),
+            "S<X>" => Type(compilation, "Repro.S`1").Construct(Type(compilation, "Repro.X")),
+            "Holder<int>.Inner" => Type(compilation, "Repro.Holder`1").Construct(intType).GetTypeMembers("Inner")[0],
+            "Holder<float>.Inner" => Type(compilation, "Repro.Holder`1")
+                .Construct(compilation.GetSpecialType(SpecialType.System_Single)).GetTypeMembers("Inner")[0],
+            _ => throw new ArgumentOutOfRangeException(nameof(shape), shape, "No such shape."),
+        };
     }
 
     private static INamedTypeSymbol Int(Compilation compilation) =>

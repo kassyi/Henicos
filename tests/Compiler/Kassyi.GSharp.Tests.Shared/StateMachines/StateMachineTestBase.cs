@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.GSharp.Compiler.Transpiler.Dialects;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

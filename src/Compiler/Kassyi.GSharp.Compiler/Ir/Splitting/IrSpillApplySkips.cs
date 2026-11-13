@@ -28,6 +28,7 @@ internal static class IrSpillApplySkips
                     IrSpillApplySkip.UserDefinedImplicitConversionSpill,
                 IrSpillValue { Role: IrSpillRole.SplitReceiver } or IrSpillCheck
                     when IsBelowAny(step.Node, receivers) => IrSpillApplySkip.SplitExtensionReceiver,
+                _ when HasNoSyntax(step.Node) => IrSpillApplySkip.SynthesizedOperand,
                 _ => IrSpillApplySkip.None
             };
             if (skip != IrSpillApplySkip.None)
@@ -71,6 +72,11 @@ internal static class IrSpillApplySkips
 
         return receivers;
     }
+
+    // [WHY] An implicit conversion without an operator has the syntax of its operand, and the emitter writes it from
+    // the context; any other node made for no syntax (a default argument, a params array) has none to copy
+    private static bool HasNoSyntax(IrExpression node) =>
+        node.Source.Synthesized && node is not IrConversion { IsImplicit: true, Conversion.Method: null };
 
     private static bool IsBelowAny(IrExpression node, List<IrExpression> receivers) =>
         receivers

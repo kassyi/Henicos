@@ -26,6 +26,8 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   commandPid: number;
   spawnedAt: number;
   cwd: string;
+  /** The round-robin key: the root of the job's worktree, resolved once by its client (or its cwd). */
+  worktree: string;
   command: string;
   keepIfFailed: boolean;
   lastPosition: number;
@@ -46,6 +48,7 @@ export function describeJob(job: ServerJob): JobView {
     commandPid: job.commandPid || null,
     orphan: job.connection === null,
     cwd: job.cwd,
+    worktree: job.worktree,
     command: job.command,
     queuedAt: job.queuedAt,
     grantedAt: job.grantedAt || null,

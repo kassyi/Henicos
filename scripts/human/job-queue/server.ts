@@ -33,7 +33,7 @@ import type { ServerJob } from "./server-job.ts";
 import { cancelTargets, type Phase } from "./server-job-state.ts";
 import { commandProcesses, DetachedObserver } from "./server-observe.ts";
 import { JobStore } from "./server-store.ts";
-import { ProcessTable, resolveStateDirectory } from "./system.ts";
+import { ProcessTable, resolveStateDirectory, worktreeKey } from "./system.ts";
 
 export interface ServeOptions {
   slots: number;
@@ -233,6 +233,8 @@ export class JobServer {
       commandPid: numberField(message, "commandPid"),
       spawnedAt: numberField(message, "spawnedAt"),
       cwd: String(message.cwd ?? ""),
+      // Resolved once by the client; an older client sends none, and its directory stands for its worktree
+      worktree: worktreeKey(String(message.worktree ?? "") || String(message.cwd ?? "")),
       command,
       queuedAt: numberField(message, "queuedAt") || Date.now(),
       grantedAt: numberField(message, "grantedAt"),

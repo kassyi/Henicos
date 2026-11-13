@@ -5,7 +5,6 @@ using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.GSharp.Compiler.Transpiler.Dialects;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;

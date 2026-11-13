@@ -7,6 +7,7 @@ using GSharpCompiler::Kassyi.GSharp.Compiler;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Building;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Classifying;
+using GSharpCompiler::Kassyi.GSharp.Compiler.Lowering;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Marshaling;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -160,6 +161,19 @@ public class GeneratorBenchmark
 
     [Benchmark]
     public int RunGenerator_Cpu() => RunGenerator(State.Cpu);
+
+    /// <summary>
+    /// <see cref="RunGenerator_Cpu"/> with the split pass of the IR left out of the lowering, so that the syntax passes
+    /// alone hoist the split points: the cost the split pass adds to a CPU generator run.
+    /// </summary>
+    [Benchmark]
+    public int RunGeneratorCpuWithoutIrSplitLowering()
+    {
+        using (AstLoweringPipeline.WithoutIrSplitLowering())
+        {
+            return RunGenerator(State.Cpu);
+        }
+    }
 
     [Benchmark]
     public int RunAnalyzers()

@@ -26,5 +26,39 @@ internal enum IrSpillApplySkip
     /// An operand evaluated before a split is an implicit user-defined conversion, which a copy of the operand's syntax
     /// would run after the split.
     /// </summary>
-    UserDefinedImplicitConversionSpill
+    UserDefinedImplicitConversionSpill,
+
+    /// <summary>
+    /// A node evaluated before a split, or replaced by a temporary, stands for no syntax of its own (a default
+    /// argument, the array of a <see langword="params"/> argument, an implicit receiver), other than an implicit
+    /// conversion without a user-defined operator: a copy of its syntax would be a different expression.
+    /// </summary>
+    SynthesizedOperand,
+
+    /// <summary>
+    /// An operand evaluated before a split has no type of its own (a target-typed <c>new()</c> or conditional, a
+    /// collection expression, <c>default</c>): <c>var t = &lt;operand&gt;;</c> would not compile.
+    /// </summary>
+    NoNaturalType,
+
+    /// <summary>
+    /// An operand evaluated before a split lies inside a <c>checked(...)</c> or <c>unchecked(...)</c> expression, whose
+    /// overflow context a copy of the operand out of its statement would not keep.
+    /// </summary>
+    OverflowContextOperand,
+
+    /// <summary>
+    /// The statement of the prepared body is not the statement of the source the plan was made for: an expansion, a
+    /// removal or Stryker's switches changed it.
+    /// </summary>
+    PreparedSyntaxDiffers,
+
+    /// <summary>
+    /// The split annotations of the syntax do not agree with the splits of the IR: a call the plan splits has no
+    /// matching annotation, or an annotated call is left inside an expression.
+    /// </summary>
+    SplitAnnotationMismatch,
+
+    /// <summary>A node of the rewritten statement has no syntax in the prepared statement to copy.</summary>
+    NotMapped
 }

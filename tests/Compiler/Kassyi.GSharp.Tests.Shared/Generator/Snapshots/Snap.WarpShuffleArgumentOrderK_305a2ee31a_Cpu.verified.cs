@@ -2896,7 +2896,7 @@ GSharpArray<int> __gsharp_id_0_data;
 GSharpArray<int> __gsharp_id_1_afterI;
 int __gsharp_id_2_i;
 int __gsharp_arg_temp_0;
-int __gsharp_arg_temp_1;
+int __gsharp_arg_temp_2;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier __gsharp_call_frame_0;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_data, GSharpArray<int> __gsharp_in___gsharp_id_1_afterI, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel* __gsharp_ctx){
@@ -2915,13 +2915,14 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_i=__gsharp_mul_i32((int)threadIdx.x,2);
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_2_i;
-__gsharp_ctx->__gsharp_arg_temp_1=__gsharp_sub_i32((__gsharp_ctx->__gsharp_id_2_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_i,1)),1);
+auto __gsharp_arg_temp_1 = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_arg_temp_0, 306958613u);
+__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_sub_i32((__gsharp_ctx->__gsharp_id_2_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_i,1)),1);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(&__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_arg_temp_0, 306958613u),__gsharp_ctx->__gsharp_arg_temp_1,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(&__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_arg_temp_0, 306958613u),__gsharp_ctx->__gsharp_arg_temp_2,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
 {
 __gsharp_state=1;
 return;
@@ -3020,7 +3021,7 @@ public int[] data;
 public int[] afterI;
 public int i;
 public int __gsharp_arg_temp_0;
-public int __gsharp_arg_temp_1;
+public int __gsharp_arg_temp_2;
 internal global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier __gsharp_call_frame_0 = new();
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;
@@ -3041,13 +3042,17 @@ case 0:
 {
 __gsharp_ctx.i = global::Kassyi.GSharp.Core.ThreadIndex.X * 2;
 __gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.i;
-__gsharp_ctx.__gsharp_arg_temp_1 = __gsharp_ctx.i++;
+{
+int __gsharp_arg_temp_1 = __gsharp_ctx.data[__gsharp_ctx.__gsharp_arg_temp_0];
+}
+
+__gsharp_ctx.__gsharp_arg_temp_2 = __gsharp_ctx.i++;
 goto case 1;
 }
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(ref __gsharp_ctx.data[__gsharp_ctx.__gsharp_arg_temp_0], __gsharp_ctx.__gsharp_arg_temp_1, __gsharp_ctx.__gsharp_call_frame_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Core.WarpShuffleArgumentOrderKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__AddAfterBarrier(ref __gsharp_ctx.data[__gsharp_ctx.__gsharp_arg_temp_0], __gsharp_ctx.__gsharp_arg_temp_2, __gsharp_ctx.__gsharp_call_frame_0))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return;

@@ -32,6 +32,7 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `wait`, `stop` |
 | `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, and `reduceKey`, the keys as a pure function |
 | `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
+| `screen-line.ts` | Styled text for the live view: the styles, the width of a string in terminal cells, `ScreenLine` |
 | `server.ts` | `JobServer`, the scheduler process: the TCP server, the job records, outcomes, the settle step and the timers |
 | `server-observe.ts` | `DetachedObserver`: every 2 s, what the processes show of the records whose client is away, applied per epoch (`planObservation`) |
 | `server-connection.ts` | `Connection`: one client connection, the dispatch of its messages to one handler per message type, and what its close means for the job |
@@ -47,7 +48,7 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
-| `self-test*.ts`, `scheduler-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys |
+| `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys |
 
 ## How a job runs
 
@@ -72,8 +73,12 @@ sequenceDiagram
   lost, grants once and saves the state. Nothing is granted while an event is still changing the jobs.
 - **Dependencies grant on evidence**: a job `--after` another is granted only when that job has a recorded outcome
   that lets it run (`succeeded`, or any outcome with `--keep-if-failed`), never because the other job is gone.
-- **Order**: response ratio (`hrrn`, the default), with EASY backfilling that reserves the first job's start;
-  `move` and `--before` place jobs ahead of that order. The forecast replays the same grants on copies of the jobs.
+- **Order**: response ratio (`hrrn`, the default), then two fairness rules (`fairOrder`): a job that has waited longer
+  than max(`OverdueMs`, its typical run time) goes ahead, oldest first, and the others are taken round-robin across
+  worktrees (one job per worktree per round, the worktree served longest ago first; the slots and the GPU turns keep
+  separate rotations, in memory only). EASY backfilling reserves the start of the first job of that order; `move`
+  and `--before` place jobs ahead of all of it. `backfill` and `fifo` keep arrival order without the fairness rules.
+  The forecast replays the same grants on copies of the jobs and of the rotation.
 - **Resources**: CPU slots (one per 3 cores by default), a memory pool that test runs take their budget of
   `tests/memory-budgets.yml` from, and one GPU turn at a time. A GPU holder (the command under `gpu-lock.js`) is
   granted at once, over the pools, so it never deadlocks with a job that holds a slot and waits for the GPU.

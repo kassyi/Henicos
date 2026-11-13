@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Dialects;
+namespace Kassyi.GSharp.Compiler.Dialects;
 
 internal static class TranspilerDialectExtensions
 {

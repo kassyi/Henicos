@@ -15,7 +15,7 @@ All future development and code generation by AI agents must strictly adhere to 
 
 This rule covers the C# names that users write and the compiler generates for the host. The C++ names emitted into
 generated device code (renamed user identifiers via `CppNameResolver`, compiler-internal `__gsharp_*` names via
-`GSharpInternalNames`) are covered in [helpers.md §3](../skills/gsharp-transpiler-guidelines/references/helpers.md#3-emitting-code).
+`GSharpInternalNames`) are covered in [helpers/emitting.md](../skills/gsharp-transpiler-guidelines/references/helpers/emitting.md).
 
 The only C# members that may contain underscores:
 

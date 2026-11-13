@@ -140,7 +140,7 @@ public static class YamlDialectGenerator
         writer.Line("using System.Collections.Generic;");
         writer.Line("using Kassyi.GSharp.Compiler.Layout;");
         writer.Line("using Kassyi.GSharp.Compiler.Transpiler;");
-        writer.Line("using Kassyi.GSharp.Compiler.Transpiler.Dialects;");
+        writer.Line("using Kassyi.GSharp.Compiler.Dialects;");
         writer.Line();
         writer.Line("namespace Kassyi.GSharp.Compiler.Dialects;");
         writer.Line();
@@ -175,7 +175,7 @@ public static class YamlDialectGenerator
         if (capabilities != null)
         {
             writer.Line(
-                $"public override Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities Capabilities => " +
+                $"public override Kassyi.GSharp.Compiler.Dialects.DialectCapabilities Capabilities => " +
                 $"{FormatCapabilityFlags(capabilities)};");
         }
     }
@@ -295,7 +295,7 @@ public static class YamlDialectGenerator
     // Converts YAML flags such as "HardwareAtomics, SharedMemory" (',' or '|' separated) into a C# flags OR expression.
     private static string FormatCapabilityFlags(string capabilities)
     {
-        const string EnumType = "Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities";
+        const string EnumType = "Kassyi.GSharp.Compiler.Dialects.DialectCapabilities";
         using var expression = new SourceWriter();
         var start = 0;
         for (var i = 0; i <= capabilities.Length; i++)

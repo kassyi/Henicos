@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Checks that every `Type.Member` and `.Method` in references/helpers.md still exists in the compiler, and that a method
-// called on a receiver (extension or instance) is written `.Method` rather than `Type.Method`.
+// Checks that every `Type.Member` and `.Method` in references/helpers.md and references/helpers/*.md still exists in the
+// compiler, and that a method called on a receiver (extension or instance) is written `.Method` rather than `Type.Method`.
 // A type that the compiler does not declare (a Roslyn type, for example) is skipped.
 // Usage: node .agents/skills/gsharp-transpiler-guidelines/scripts/check-helpers.js
 'use strict';
@@ -10,7 +10,8 @@ const path = require('path');
 
 const skillDir = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(skillDir, '..', '..', '..');
-const catalog = path.join(skillDir, 'references', 'helpers.md');
+const catalogIndex = path.join(skillDir, 'references', 'helpers.md');
+const catalogDir = path.join(skillDir, 'references', 'helpers');
 const compiler = path.join(repoRoot, 'src', 'Compiler', 'Kassyi.GSharp.Compiler');
 
 function listSources(dir, out = []) {
@@ -43,7 +44,16 @@ function isReceiverMethod(source, member) {
 }
 
 const sources = listSources(compiler);
-const text = fs.readFileSync(catalog, 'utf8');
+const sectionFiles = fs.existsSync(catalogDir)
+    ? fs.readdirSync(catalogDir).filter(name => name.endsWith('.md')).sort()
+    : [];
+if (sectionFiles.length === 0) {
+    console.log(`missing or empty catalog folder: ${catalogDir}`);
+    process.exit(1);
+}
+const text = [catalogIndex, ...sectionFiles.map(name => path.join(catalogDir, name))]
+    .map(file => fs.readFileSync(file, 'utf8'))
+    .join('\n');
 const unique = matches => [...new Set(matches)].sort();
 const qualified = unique([...text.matchAll(/`([A-Z][A-Za-z0-9]*)\.([A-Z][A-Za-z0-9]*)/g)].map(m => `${m[1]}.${m[2]}`));
 const extensions = unique([...text.matchAll(/`\.([A-Z][A-Za-z0-9]*)/g)].map(m => m[1]));
