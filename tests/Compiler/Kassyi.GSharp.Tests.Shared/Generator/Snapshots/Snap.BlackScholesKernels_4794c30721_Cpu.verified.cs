@@ -147,28 +147,13 @@ host.R = native.R;
 host.V = native.V;
 host.N = native.N;
 }
-public static void CopyArrays_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host)
+public static void CopyArrays_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.S != null)
-{
-host.S = (global::System.Single[])host.S.Clone();
-}
-if (host.X != null)
-{
-host.X = (global::System.Single[])host.X.Clone();
-}
-if (host.T != null)
-{
-host.T = (global::System.Single[])host.T.Clone();
-}
-if (host.CallResult != null)
-{
-host.CallResult = (global::System.Single[])host.CallResult.Clone();
-}
-if (host.PutResult != null)
-{
-host.PutResult = (global::System.Single[])host.PutResult.Clone();
-}
+_ = copies.Copy(ref host.S);
+_ = copies.Copy(ref host.X);
+_ = copies.Copy(ref host.T);
+_ = copies.Copy(ref host.CallResult);
+_ = copies.Copy(ref host.PutResult);
 }
 public static bool HoldsArray_BlackScholesKernels_BlackScholesContext(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, object array)
 {

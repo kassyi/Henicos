@@ -84,4 +84,21 @@ internal enum LauncherLocal
     /// <c>__gsharp_out_{ordinal}</c>.
     /// </summary>
     OutValue,
+
+    /// <summary>
+    /// The <c>fixed</c> pointer of an argument that the launcher compares for overlaps,
+    /// <c>__gsharp_alias_pin_{ordinal}</c>.
+    /// </summary>
+    AliasPinned,
+
+    /// <summary>
+    /// The copy that the <c>[In]</c> members of an overlap group share on the CPU,
+    /// <c>__gsharp_alias_copy_{ordinal}</c>.
+    /// </summary>
+    AliasCopy,
+
+    /// <summary>
+    /// The element index of a member in its group's copy on the CPU, <c>__gsharp_alias_start_{ordinal}</c>.
+    /// </summary>
+    AliasStart,
 }
