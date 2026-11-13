@@ -111,12 +111,9 @@ native.Data.Length = host.Data.Length;
 public static unsafe void Unmarshal_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, global::System.IntPtr hStream = default)
 {
 }
-public static void CopyArrays_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host)
+public static void CopyArrays_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Data != null)
-{
-host.Data = (global::System.Int32[])host.Data.Clone();
-}
+_ = copies.Copy(ref host.Data);
 }
 public static bool HoldsArray_KernelParameterHolder(global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, object array)
 {

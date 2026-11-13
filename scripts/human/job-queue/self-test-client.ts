@@ -6,9 +6,10 @@ import { EventEmitter } from "node:events";
 import * as net from "node:net";
 import type { ChildProcess } from "node:child_process";
 import type { RunOptions } from "./client.ts";
+import { runBuildStep } from "./client-build-step.ts";
 import { QueuedRun } from "./client-queued-run.ts";
 import { commandEnd, type RunHost } from "./client-run-host.ts";
-import { CancelledExitCode, ProtocolVersion } from "./constants.ts";
+import { CancelledExitCode, JobVariable, ProtocolVersion } from "./constants.ts";
 import { onMessages, type Incoming } from "./protocol.ts";
 import type { ShellResult } from "./shell.ts";
 
@@ -248,8 +249,59 @@ export async function checkCancelCrossesEnd(assert: AssertModule): Promise<void>
   }
 }
 
+/**
+ * The build step of run --gpu: the builds queue as a job without the GPU turn, and the step resolves to their exit code
+ * instead of ending the process; a cancel while it waits resolves to the cancel's code.
+ */
+export async function checkBuildStep(assert: AssertModule): Promise<void> {
+  const scheduler = new FakeScheduler();
+  await scheduler.listen();
+  const job = process.env[JobVariable];
+  delete process.env[JobVariable]; // the self-test may itself run as a queued job
+  try {
+    const host = new FakeHost();
+    const gpuOptions = { ...options, gpu: true, after: 7 };
+    const placement = { weight: 2, pin: null, before: null };
+    const failed = runBuildStep(gpuOptions, placement, "dotnet build P", host);
+    await until("the step connects", () => host.connects.length === 1);
+    host.connects[0]?.resolve(await scheduler.connect());
+    await until("the fake scheduler accepts", () => scheduler.accepted.length === 1);
+    const first = scheduler.accepted[0] as Accepted;
+    await until("the request arrives", () => first.messages.some((m) => m.type === "request"));
+    const request = first.messages.find((m) => m.type === "request");
+    assert.deepStrictEqual(
+      [request?.command, request?.gpuTurn, request?.gpu, request?.weight, request?.after],
+      ["dotnet build P", false, false, 2, 7],
+      "the builds queue on CPU slots, after the run's predecessor",
+    );
+    FakeScheduler.send(first, { type: "granted", id: 8, cpus: 1, capacity: 2, protocol: ProtocolVersion });
+    await until("the build starts", () => host.commands.length === 1);
+    host.commands[0]?.end({ code: 2, signaled: false });
+    await until("the client sends done", () => first.messages.some((m) => m.type === "done"));
+    FakeScheduler.send(first, { type: "done-ok", id: 8 });
+    assert.strictEqual(await failed, 2, "the step resolves to the build's exit code");
+    assert.deepStrictEqual(host.exits, [], "the step never ends the process");
+
+    const cancelled = runBuildStep(gpuOptions, placement, "dotnet build P", host);
+    await until("the second step connects", () => host.connects.length === 2);
+    host.connects[1]?.resolve(await scheduler.connect());
+    await until("the fake scheduler accepts again", () => scheduler.accepted.length === 2);
+    const second = scheduler.accepted[1] as Accepted;
+    await until("the second request arrives", () => second.messages.some((m) => m.type === "request"));
+    FakeScheduler.send(second, { type: "cancelled", id: 9, reason: "cancel requested" });
+    assert.strictEqual(await cancelled, CancelledExitCode, "a cancel while the build waits ends the run");
+    assert.strictEqual(host.commands.length, 1, "the cancelled build never ran");
+  } finally {
+    if (job !== undefined) {
+      process.env[JobVariable] = job;
+    }
+    scheduler.close();
+  }
+}
+
 export const ClientChecks: Record<string, (assert: AssertModule) => Promise<void>> = {
   checkClientReconnect: (assert) => quietly(() => checkClientReconnect(assert)),
   checkCancelCrossesEnd: (assert) => quietly(() => checkCancelCrossesEnd(assert)),
   checkCommandEnd: async (assert) => checkCommandEnd(assert),
+  checkBuildStep: (assert) => quietly(() => checkBuildStep(assert)),
 };
