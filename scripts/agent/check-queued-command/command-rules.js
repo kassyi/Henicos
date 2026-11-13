@@ -305,7 +305,8 @@ function denialText(reasons) {
     'read the expected start and end with `node scripts/human/job-queue.js status <id> --json` (`status` lists every ' +
     'job); `node scripts/human/job-queue.js wait <id>` run in the background calls you when it ends ' +
     '(exit 0 succeeded). Steps that belong together go into one job as one quoted string, ' +
-    '`run -- "dotnet build X && dotnet test X --no-build"`: it waits once, and nothing runs between the steps. ' +
+    '`run -- "dotnet build X && dotnet test X --no-build"`: it waits once, and nothing runs between the steps; ' +
+    'with --gpu, queue the build as a job of its own without --gpu, so that the GPU is held only for the tests. ' +
     'Long waits: run it in the background. Text that only names such a command (a message, a search ' +
     'pattern) passes when it is quoted. ' +
     'The queued command runs in the shell you call `run` from (Git Bash, PowerShell; ' +
@@ -344,6 +345,10 @@ function hookAnswer(payload) {
         updatedInput: { ...toolInput, command: plan.command },
         additionalContext:
           `check-queued-command.js sent this command through the job queue as: ${plan.command} . ` +
+          (plan.split
+            ? 'The build was queued as a job of its own, without --gpu, so that the GPU is held only for the ' +
+              'tests: two `queued #<id>` lines, the build first; the tests run only when the build succeeded. '
+            : '') +
           'Its output starts with `queued #<id>`; `node scripts/human/job-queue.js status <id>` and ' +
           '`node scripts/human/job-queue.js wait <id>` follow the job.',
       },

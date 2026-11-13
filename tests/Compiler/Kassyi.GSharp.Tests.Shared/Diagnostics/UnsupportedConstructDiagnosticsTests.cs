@@ -479,24 +479,35 @@ public class UnsupportedConstructDiagnosticsTests
                 "Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable"));
     }
 
-    // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 4096 doubles (exactly 32768 bytes) and 10000
-    // bytes are not reported. ComprehensiveSpecKernel: SharedMemory<int>(10000); the dynamic size is not checked.
+    // StructSizeDiagnostics: DoubleSharedKernel, SharedMemory<double>(5000), is 40000 bytes; HugeSharedKernel and
+    // WrapToZeroSharedKernel are 2,400,000,000 and 2^32 bytes, which wrap in int to a negative number and to 0 (#1280);
+    // DoubleAtLimitKernel (exactly 32768 bytes) and ByteSharedKernel (10000 bytes) are not reported.
+    // ComprehensiveSpecKernel: SharedMemory<int>(10000); the dynamic size is not checked.
+    public static TheoryData<string, string, (int, int, int, int)[]> LargeStaticSharedMemoryCases()
+    {
+        (int, int, int, int)[] structSize = [(104, 63, 104, 67), (129, 63, 129, 74), (138, 63, 138, 74)];
+        (int, int, int, int)[] comprehensive = [(107, 63, 107, 68)];
+        return new TheoryData<string, string, (int, int, int, int)[]>
+        {
+            { "Analyzers/StructSizeDiagnostics.cs", "Cpu", structSize },
+            { "Analyzers/StructSizeDiagnostics.cs", "Cuda", structSize },
+            { "ComprehensiveSpecKernel.cu.cs", "Cpu", comprehensive },
+            { "ComprehensiveSpecKernel.cu.cs", "Cuda", comprehensive }
+        };
+    }
+
     [Theory]
-    [InlineData("Analyzers/StructSizeDiagnostics.cs", "Cpu", 104, 63, 104, 67)]
-    [InlineData("Analyzers/StructSizeDiagnostics.cs", "Cuda", 104, 63, 104, 67)]
-    [InlineData("ComprehensiveSpecKernel.cu.cs", "Cpu", 107, 63, 107, 68)]
-    [InlineData("ComprehensiveSpecKernel.cu.cs", "Cuda", 107, 63, 107, 68)]
+    [MemberData(nameof(LargeStaticSharedMemoryCases))]
     [Scenario(TestScenario.Boundary)]
     public async Task LargeStaticSharedMemory_ExceedingLimit_ReportsGsh0013AtSize(
         string testCase,
         string dialect,
-        int startLine,
-        int startColumn, int endLine, int endColumn)
+        (int StartLine, int StartColumn, int EndLine, int EndColumn)[] expected)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(testCase, dialect);
 
         Assert.Equal(
-            [(Analyzer, startLine, startColumn, endLine, endColumn)],
+            expected.Select(static r => (Analyzer, r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)),
             diagnostics.Ranges(GSharpDiagnostics.ExcessiveSharedMemoryWarning.Id));
     }
 
