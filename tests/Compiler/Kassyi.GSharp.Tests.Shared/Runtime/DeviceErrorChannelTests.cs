@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Kassyi.GSharp.Compiler;
+using Kassyi.GSharp.Compiler.ErrorSites;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Naming;
 using Kassyi.GSharp.Runtime.Aot;

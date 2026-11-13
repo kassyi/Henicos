@@ -3,111 +3,9 @@
 // state into lines, with no I/O, so that the self-test checks it.
 
 import type { StatusJob, StatusReply } from "./protocol.ts";
+import { type Style, ScreenLine, displayWidth, fit } from "./screen-line.ts";
 
-export type Style = "" | "bold" | "dim" | "run" | "rest" | "late" | "wait" | "gpu" | "warn" | "now";
-
-const StyleCodes: Record<Exclude<Style, "">, string> = {
-  bold: "1",
-  dim: "2",
-  run: "32",
-  rest: "2;32",
-  late: "31",
-  wait: "36",
-  gpu: "35",
-  warn: "33",
-  now: "1;33",
-};
-
-/** East Asian wide and fullwidth characters take two cells in a terminal. */
-function charWidth(code: number): number {
-  const wide =
-    (code >= 0x1100 && code <= 0x115f) ||
-    (code >= 0x2e80 && code <= 0xa4cf) ||
-    (code >= 0xac00 && code <= 0xd7a3) ||
-    (code >= 0xf900 && code <= 0xfaff) ||
-    (code >= 0xfe30 && code <= 0xfe4f) ||
-    (code >= 0xff00 && code <= 0xff60) ||
-    (code >= 0xffe0 && code <= 0xffe6);
-  return wide ? 2 : 1;
-}
-
-export function displayWidth(text: string): number {
-  let width = 0;
-  for (const char of text) {
-    width += charWidth(char.codePointAt(0) ?? 0);
-  }
-  return width;
-}
-
-/** The text cut to `width` cells (with "…" when cut) and padded with spaces to exactly `width`. */
-export function fit(text: string, width: number): string {
-  if (width <= 0) {
-    return "";
-  }
-  if (displayWidth(text) <= width) {
-    return text + " ".repeat(width - displayWidth(text));
-  }
-  let out = "";
-  let used = 0;
-  for (const char of text) {
-    const w = charWidth(char.codePointAt(0) ?? 0);
-    if (used + w > width - 1) {
-      break;
-    }
-    out += char;
-    used += w;
-  }
-  return `${out}…${" ".repeat(width - 1 - used)}`;
-}
-
-/** One line of the screen: styled parts, clipped at the width of the terminal. */
-export class ScreenLine {
-  readonly parts: { text: string; style: Style }[] = [];
-  width = 0;
-  readonly limit: number;
-
-  constructor(limit: number) {
-    this.limit = limit;
-  }
-
-  add(text: string, style: Style = ""): this {
-    let kept = "";
-    for (const char of text) {
-      const w = charWidth(char.codePointAt(0) ?? 0);
-      if (this.width + w > this.limit) {
-        break;
-      }
-      kept += char;
-      this.width += w;
-    }
-    if (kept !== "") {
-      this.parts.push({ text: kept, style });
-    }
-    return this;
-  }
-
-  /** Spaces up to column `column` (or to the end of the line). */
-  padTo(column = this.limit): this {
-    return this.add(" ".repeat(Math.max(0, column - this.width)));
-  }
-
-  get text(): string {
-    return this.parts.map((part) => part.text).join("");
-  }
-
-  /** The line with ANSI colors (when `color`), the whole line in reverse video when `selected`. */
-  render(color: boolean, selected = false): string {
-    if (!color) {
-      return this.text;
-    }
-    return this.parts
-      .map(({ text, style }) => {
-        const codes = [selected ? "7" : "", style === "" ? "" : StyleCodes[style]].filter((c) => c !== "").join(";");
-        return codes === "" ? text : `\x1b[${codes}m${text}\x1b[0m`;
-      })
-      .join("");
-  }
-}
+export { type Style, ScreenLine, displayWidth, fit };
 
 /** What the person is typing: a confirmation, or a number for move / set-weight. */
 export type Prompt =
@@ -124,11 +22,14 @@ export interface ViewState {
   prompt: Prompt | null;
   /** The result of the last action, shown on the bottom line until `until`. */
   message: { text: string; until: number; style: Style } | null;
-  help: boolean;
+  /** The help page shown: 0 for none, else 1 to `helpPages`. */
+  help: number;
+  /** How many pages the help takes at the current width (set by renderScreen: 1 when both columns fit). */
+  helpPages: number;
 }
 
 export function initialViewState(): ViewState {
-  return { selectedId: null, offset: 0, prompt: null, message: null, help: false };
+  return { selectedId: null, offset: 0, prompt: null, message: null, help: 0, helpPages: 2 };
 }
 
 export interface Screen {
@@ -147,22 +48,26 @@ export interface ScreenJob extends StatusJob {
   reason: string;
 }
 
-/** What a waiting job waits for: "after #821", "GPU", "slots", "memory", or "order" (an earlier job goes first). */
+/**
+ * What a waiting job waits for, in words a person reads without the docs: "after #821" (its --after job), "GPU busy"
+ * (another job has the GPU), "CPU full" (every slot in use), "mem full" (the memory pool of the test runs), or
+ * "in line" (there is room, but an earlier job goes first).
+ */
 function waitReason(job: StatusJob, reply: StatusReply): string {
   if (job.blockedBy != null) {
     return `after #${job.blockedBy}`;
   }
   if (job.gpuTurn) {
-    return "GPU";
+    return "GPU busy";
   }
   if (reply.used + job.weight > reply.capacity) {
-    return "slots";
+    return "CPU full";
   }
   const memory = job.memoryMb ?? 0;
   if (reply.memoryCapacity != null && reply.memoryUsed != null && reply.memoryUsed + memory > reply.memoryCapacity) {
-    return "memory";
+    return "mem full";
   }
-  return "order";
+  return "in line";
 }
 
 /** The jobs in screen order: running first, then waiting in queue order; a --gpu job and its holder as one. */
@@ -277,7 +182,7 @@ function isLate(job: StatusJob, now: number): boolean {
   );
 }
 
-/** "72% ends ~14:36", "overrun +2m", "6m, no history", "starts ~14:35 ends ~14:38, waits for GPU, 1 ahead". */
+/** "72% ends ~14:36", "overrun +2m", "6m, no history", "starts ~14:35 ends ~14:38, waits: GPU busy, 1 ahead". */
 export function describeProgress(job: ScreenJob, now: number): string {
   if (job.state === "running") {
     const elapsed = now - (job.grantedAt ?? now);
@@ -292,7 +197,7 @@ export function describeProgress(job: ScreenJob, now: number): string {
   }
   const times =
     finite(job.startAt) && finite(job.endAt) ? `starts ~${clock(job.startAt)} ends ~${clock(job.endAt)}, ` : "";
-  return `${times}waits for ${job.reason}, ${job.ahead} ahead`;
+  return `${times}waits: ${job.reason}, ${job.ahead} ahead`;
 }
 
 /** The progress in a few cells, for a terminal too narrow for the timeline: "72% ~14:36", "14m +4m", "after #821". */
@@ -422,19 +327,80 @@ function headerLine(reply: StatusReply | null, jobs: ScreenJob[], columns: numbe
   return line.width + keys.length <= columns ? line.padTo(columns - keys.length).add(keys, "dim") : line.padTo();
 }
 
-export const HelpLines = [
-  "↑↓ / j k   select a job",
-  "c          cancel the selected job (asks y/n)",
-  "s          start a waiting job now, beside the running ones (y/n)",
-  "m          move a waiting job: f first, r reset, or an id + Enter",
-  "           to put it before that job",
-  "w          set the slots of a waiting job: a number + Enter",
-  "Esc        clear the selection    r  refresh now",
-  "q / Ctrl+C quit                    Esc / ? close this help",
-  "",
-  "█ run so far (red: past its typical time)  ▓ expected rest  ┃ now",
-  "? no recorded run time  ▒ expected run  ⋯ waits; left of ┃: for what",
+/** A key and what it does, for the Keys column of the help. */
+const HelpKeys: [string, string][] = [
+  ["↑↓ j k", "select a job"],
+  ["c", "cancel it (y/n)"],
+  ["s", "start it now, over the pool (y/n)"],
+  ["m", "move it: f first, r reset,"],
+  ["", "or an id + Enter (before that job)"],
+  ["w", "its slots: a number + Enter"],
+  ["r", "refresh now"],
+  ["Esc", "clear the selection"],
+  ["?", "next help page / close"],
+  ["q", "quit (also Ctrl+C)"],
 ];
+
+/** A sample drawn in its screen style and what it means, for the legend column of the help. */
+const HelpLegend: ({ heading: string } | { sample: string; style: Style; text: string })[] = [
+  { heading: "Timeline" },
+  { sample: "█", style: "run", text: "run so far" },
+  { sample: "█", style: "late", text: "past its usual run time" },
+  { sample: "▓", style: "rest", text: "expected rest" },
+  { sample: "?", style: "rest", text: "no run time recorded yet" },
+  { sample: "▒", style: "wait", text: "expected run of a waiting job" },
+  { sample: "┃", style: "now", text: "now" },
+  { heading: "Waits for (left of now)" },
+  { sample: "CPU full", style: "warn", text: "every slot in use" },
+  { sample: "mem full", style: "warn", text: "the memory pool is full" },
+  { sample: "GPU busy", style: "warn", text: "another job has the GPU" },
+  { sample: "in line", style: "warn", text: "an earlier job goes first" },
+  { sample: "after #n", style: "warn", text: "until job n has ended" },
+];
+
+/** The keys column fits in this many cells; the legend column starts after it. */
+const HelpKeysWidth = 46;
+
+function helpKeyLines(columns: number): ScreenLine[] {
+  const lines = [new ScreenLine(columns).add(" Keys", "bold")];
+  for (const [key, text] of HelpKeys) {
+    lines.push(new ScreenLine(columns).add(` ${key.padEnd(9)}`, "bold").add(text));
+  }
+  return lines;
+}
+
+function helpLegendLine(line: ScreenLine, entry: (typeof HelpLegend)[number]): ScreenLine {
+  if ("heading" in entry) {
+    return line.add(entry.heading, "bold");
+  }
+  const width = entry.sample.length === 1 ? 2 : 10;
+  return line
+    .add(entry.sample, entry.style)
+    .add(" ".repeat(width - entry.sample.length))
+    .add(entry.text);
+}
+
+/** The legend column needs this many cells beside the keys. */
+const HelpLegendWidth = 34;
+
+/**
+ * The whole help as lines: the keys and the legend (samples drawn in the colors of the screen) side by side when both
+ * fit, else the keys, a blank line and the legend; the screen shows it a page of its job rows at a time.
+ */
+export function helpLines(columns: number): ScreenLine[] {
+  const keys = helpKeyLines(columns);
+  if (columns >= HelpKeysWidth + HelpLegendWidth) {
+    const rows = Math.max(keys.length, HelpLegend.length);
+    return Array.from({ length: rows }, (_, i) => {
+      const line = keys[i] ?? new ScreenLine(columns);
+      const entry = HelpLegend[i];
+      line.padTo(HelpKeysWidth);
+      return entry === undefined ? line : helpLegendLine(line, entry);
+    });
+  }
+  const legend = HelpLegend.map((entry) => helpLegendLine(new ScreenLine(columns).add(" "), entry));
+  return [...keys, new ScreenLine(columns), ...legend];
+}
 
 function promptText(prompt: Prompt, jobs: ScreenJob[]): string {
   const job = jobs.find((j) => j.id === prompt.id);
@@ -442,7 +408,7 @@ function promptText(prompt: Prompt, jobs: ScreenJob[]): string {
     case "cancel":
       return `cancel #${prompt.id}${job?.state === "running" ? " (stops its command)" : ""}? y/n`;
     case "start":
-      return `start #${prompt.id} now, over the pool (it waits for ${job?.reason ?? "?"})? y/n`;
+      return `start #${prompt.id} now, over the pool (it waits: ${job?.reason ?? "?"})? y/n`;
     case "move":
       return `move #${prompt.id}: f first, r reset, or id + Enter to go before it: ${prompt.digits}_  (Esc)`;
     case "weight":
@@ -484,7 +450,7 @@ function detailLine(job: ScreenJob | undefined, jobs: ScreenJob[], columns: numb
     job.pin != null ? "pinned" : "",
     job.before != null ? `before #${job.before}` : "",
     job.after != null ? `after #${job.after}` : "",
-    job.orphan ? "client-lost" : "",
+    job.orphan ? "client-away" : "",
     job.holderId !== null ? `runs as #${job.holderId}` : "",
   ].filter((f) => f !== "");
   return line
@@ -561,10 +527,14 @@ export function renderScreen(reply: StatusReply | null, state: ViewState, screen
     axis.add(axisLine(window, now), "dim");
   }
   const lines: string[] = [header.render(color), axis.padTo().render(color)];
-  if (state.help) {
-    HelpLines.slice(0, listRows).forEach((text) =>
-      lines.push(new ScreenLine(columns).add(` ${text}`).padTo().render(color)),
-    );
+  // The help takes the job rows, a page at a time; ? turns the page and closes it after the last
+  const help = helpLines(columns);
+  state.helpPages = Math.max(1, Math.ceil(help.length / listRows));
+  const helpPage = Math.min(state.help, state.helpPages);
+  if (helpPage > 0) {
+    help
+      .slice((helpPage - 1) * listRows, helpPage * listRows)
+      .forEach((line) => lines.push(line.padTo().render(color)));
   } else {
     // Keep the selected job on screen; without one, keep the scroll position as far as the jobs still fill it
     const last = Math.max(0, jobs.length - listRows);
@@ -580,8 +550,13 @@ export function renderScreen(reply: StatusReply | null, state: ViewState, screen
   while (lines.length < rows - 2) {
     lines.push(new ScreenLine(columns).padTo().render(color));
   }
-  const hidden = state.help ? 0 : jobs.length - Math.min(listRows, jobs.length);
-  const rule = hidden > 0 ? `── +${hidden} more ` : "";
+  const hidden = helpPage > 0 ? 0 : jobs.length - Math.min(listRows, jobs.length);
+  const rule =
+    helpPage > 0 && state.helpPages > 1
+      ? `── help ${helpPage}/${state.helpPages}, ? next `
+      : hidden > 0
+        ? `── +${hidden} more `
+        : "";
   lines.push(new ScreenLine(columns).add(rule + "─".repeat(Math.max(0, columns - rule.length)), "dim").render(color));
   lines.push(bottom.render(color));
   return lines;

@@ -30,8 +30,10 @@ import { MachineProfile } from "./machine.ts";
 import { Scheduler, type Expected } from "./scheduler.ts";
 import { Connection } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
+import { cancelTargets, type Phase } from "./server-job-state.ts";
+import { commandProcesses, DetachedObserver } from "./server-observe.ts";
 import { JobStore } from "./server-store.ts";
-import { ProcessTable, resolveStateDirectory } from "./system.ts";
+import { ProcessTable, resolveStateDirectory, worktreeKey } from "./system.ts";
 
 export interface ServeOptions {
   slots: number;
@@ -41,6 +43,8 @@ export interface ServeOptions {
   port: number;
   /** '' for the default (resolveStateDirectory); a scheduler started through WMI gets it on its command line. */
   stateDir: string;
+  /** Where the log lines go; stdout (server.log) by default. The self-test's in-process schedulers drop them. */
+  log?: (text: string) => void;
 }
 
 export function serve(options: ServeOptions): void {
@@ -57,26 +61,32 @@ export class JobServer {
   readonly store: JobStore;
   nextId: number;
   idleSince = Date.now();
+  /**
+   * Every job record without a final outcome, by id: the one index of the jobs (the scheduler's lists hold the waiting
+   * and running ones). An id is here or in `outcomes`, never in both.
+   */
+  readonly records = new Map<number, ServerJob>();
   /** How the jobs that ended went, oldest first, for --after (also across a restart, through jobs-<port>.json). */
   readonly outcomes = new Map<number, Outcome>();
   /** The connections waiting for a job to end (await, wait). */
   readonly awaiters = new Map<number, net.Socket[]>();
   /**
-   * The jobs that are not here but have not ended (an earlier scheduler's, or a waiting job whose connection dropped),
-   * until when they are waited for. Their dependents are blocked anyway (no outcome); this only bounds the wait: an id
-   * that does not come back in time is recorded as lost.
+   * Connections that asked to await a job during the startup grace (a start without a current state file), when it
+   * may not have re-registered yet.
    */
-  readonly expectedUntil = new Map<number, number>();
-  /** Connections that asked to await a job during the startup grace, when it may not have re-registered yet. */
   readonly pendingAwaits: { socket: net.Socket; id: number }[] = [];
   /** Set by stop: the connections that close from then on were ended by the stop itself. */
   stopping = false;
-  // A running job whose client is gone keeps its slot until its command has exited.
-  private polling = false;
+  /** Ends, frees or keeps the records whose client is away, on what the processes show (server-observe.ts). */
+  readonly observer: DetachedObserver;
   readonly server: net.Server;
 
   constructor(options: ServeOptions) {
     this.options = options;
+    // Several schedulers may write to one log for a moment (one stopping, the next starting): tag each line
+    this.log =
+      options.log ??
+      ((text: string): void => void process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`));
     // nothing is granted before listening (see listen)
     this.scheduler = new Scheduler<ServerJob>(options.slots, Infinity, options.policy, options.memoryMb);
     this.machine = new MachineProfile();
@@ -87,20 +97,49 @@ export class JobServer {
     // The scheduler grants a job --after another on this record alone
     this.scheduler.outcomes = this.outcomes;
     this.store = new JobStore(this, stateDirectory, options.port);
+    this.observer = new DetachedObserver(this);
     this.server = net.createServer((socket) => new Connection(this, socket));
   }
 
-  // Several schedulers may write to one log for a moment (one stopping, the next starting): tag each line
-  readonly log = (text: string): void => {
-    process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`);
-  };
+  readonly log: (text: string) => void;
 
-  expect(id: number, until: number): void {
-    this.expectedUntil.set(id, until);
+  /** The record of a job that has no final outcome yet. */
+  find(id: number): ServerJob | undefined {
+    return this.records.get(id);
   }
 
-  forget(id: number): void {
-    this.expectedUntil.delete(id);
+  /** Sends a message to the client of a job, when one is bound. */
+  tell(job: ServerJob, message: ServerMessage): void {
+    send(job.connection?.socket ?? null, message);
+  }
+
+  /**
+   * Binds a connection to a record: the connection bound before (a re-registration that came before its close) is
+   * unbound and ended, so that its close changes nothing.
+   */
+  bind(job: ServerJob, connection: Connection): void {
+    const old = job.connection;
+    if (old !== null && old !== connection) {
+      old.job = null;
+      old.socket.destroy();
+    }
+    job.connection = connection;
+    connection.job = job;
+    job.detached = false;
+    job.detachedAt = 0;
+    job.epoch++;
+  }
+
+  /** The client of a record is away: the record keeps its place or its slots until evidence ends it. */
+  unbind(job: ServerJob): void {
+    const connection = job.connection;
+    if (connection !== null && connection.job === job) {
+      connection.job = null;
+    }
+    job.connection = null;
+    job.detached = true;
+    job.detachedAt = Date.now();
+    job.epoch++;
   }
 
   /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
@@ -113,7 +152,7 @@ export class JobServer {
       position: index + 1,
       startAt: expected ? expected.startAt : null,
       endAt: expected ? expected.endAt : null,
-      blockedBy: this.scheduler.isBlocked(job) ? job.after : null,
+      blockedBy: this.scheduler.awaitsPredecessor(job) ? job.after : null,
     };
   }
 
@@ -130,7 +169,7 @@ export class JobServer {
       if (job.lastPosition !== index || moved) {
         job.lastPosition = index;
         job.lastStartAt = view.startAt;
-        send(job.socket, { type: "waiting", id: job.id, ...view, used: scheduler.used, capacity: scheduler.capacity });
+        this.tell(job, { type: "waiting", id: job.id, ...view, used: scheduler.used, capacity: scheduler.capacity });
       }
     });
   }
@@ -139,17 +178,24 @@ export class JobServer {
     return Math.max(1, Math.floor((os.cpus().length / this.scheduler.capacity) * job.weight));
   }
 
+  /** The grant message of a job (also sent again to a client that never saw it). */
+  grantMessage(job: ServerJob): ServerMessage {
+    return {
+      type: "granted",
+      id: job.id,
+      cpus: this.cpus(job),
+      capacity: this.scheduler.capacity,
+      protocol: ProtocolVersion,
+    };
+  }
+
   private announce(granted: ServerJob[]): void {
     for (const job of granted) {
+      job.phase = "running";
+      job.epoch++;
       const flags = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${job.backfilled ? " backfilled" : ""}`;
       this.log(`grant #${job.id} weight ${job.weight}${flags} pid ${job.pid}: ${job.command}`);
-      send(job.socket, {
-        type: "granted",
-        id: job.id,
-        cpus: this.cpus(job),
-        capacity: this.scheduler.capacity,
-        protocol: ProtocolVersion,
-      });
+      this.tell(job, this.grantMessage(job));
     }
     this.notifyWaiting();
     if (!this.scheduler.isIdle()) {
@@ -160,24 +206,35 @@ export class JobServer {
   // Job ids stay the same across a scheduler restart, so that `cancel <id>` read from an earlier `status` never hits
   // another job: a re-registering client brings its id, and the next new id continues from the saved one.
   chooseId(wanted: number | null): number {
-    if (wanted !== null && this.scheduler.find(wanted) === undefined) {
+    if (wanted !== null && !this.records.has(wanted)) {
       this.nextId = Math.max(this.nextId, wanted + 1);
       return wanted;
     }
     return this.nextId++;
   }
 
-  createJob(socket: net.Socket | null, message: Incoming, id: number): ServerJob {
+  /** A record from a registration or a saved record, not bound to a connection yet (bind attaches it). */
+  createJob(message: Incoming, id: number, phase: Phase): ServerJob {
     const command = String(message.command ?? "");
     return {
       id,
-      socket,
+      phase,
+      connection: null,
+      detached: true,
+      detachedAt: 0,
+      provisional: null,
+      provisionalAt: 0,
+      epoch: 0,
+      turn: idField(message, "turn"),
+      stub: false,
       weight: numberField(message, "weight", 1) || 1,
       gpu: message.gpu === true,
       pid: numberField(message, "pid"),
       commandPid: numberField(message, "commandPid"),
       spawnedAt: numberField(message, "spawnedAt"),
       cwd: String(message.cwd ?? ""),
+      // Resolved once by the client; an older client sends none, and its directory stands for its worktree
+      worktree: worktreeKey(String(message.worktree ?? "") || String(message.cwd ?? "")),
       command,
       queuedAt: numberField(message, "queuedAt") || Date.now(),
       grantedAt: numberField(message, "grantedAt"),
@@ -193,7 +250,6 @@ export class JobServer {
       done: false,
       completed: false,
       exitCode: null,
-      cancelled: false,
       cancelPending: false,
     };
   }
@@ -214,32 +270,54 @@ export class JobServer {
       socket.end();
     }
     this.awaiters.delete(id);
-    this.forget(id);
   }
 
   /**
-   * Ends a job: records its outcome (null when the same job lives on, re-registered) and frees its slots. It grants
-   * nothing: settle does, once per event.
+   * Ends a job with a final outcome: frees its slots, removes its record, unbinds its connection and tells the
+   * connections that wait for it. It grants nothing: settle does, once per event.
    */
-  release(job: ServerJob, why: string, outcome: Outcome | null): void {
-    this.log(`end #${job.id} (${why})`);
+  finish(job: ServerJob, outcome: Outcome, why: string): void {
+    this.log(`end #${job.id}: ${outcome} (${why})`);
+    if (this.records.get(job.id) === job) {
+      this.records.delete(job.id);
+    }
+    const connection = job.connection;
+    if (connection !== null && connection.job === job) {
+      connection.job = null;
+    }
+    job.connection = null;
     // Only a run seen from its grant to its end: the command ended by itself (not stopped by a signal or a cancel), and
     // the job was not lost or adopted after a restart. Not a GPU turn: its time includes the wait for the GPU lock, and
     // the command under the lock records its own run under the same command text.
     if (
       (why === "done" || why === "client closed") &&
+      job.phase === "running" &&
       !job.gpuTurn &&
       job.completed &&
-      !job.cancelled &&
+      outcome !== "cancelled" &&
       !job.adopted &&
       job.grantedAt > 0
     ) {
       this.history.record(job.command, Date.now() - job.grantedAt, this.nextId);
     }
-    if (outcome !== null) {
-      this.recordOutcome(job.id, outcome);
-    }
     this.scheduler.detach(job);
+    this.recordOutcome(job.id, outcome);
+    if (this.scheduler.isIdle()) {
+      this.idleSince = Date.now();
+    }
+  }
+
+  /**
+   * The command of a detached running record is gone, but its client may still report how it ended: free the slots and
+   * keep the record as provisionally lost (not an outcome: dependents and wait keep waiting).
+   */
+  freeSlots(job: ServerJob, why: string): void {
+    this.log(`#${job.id}: ${why}; lost unless its client reports`);
+    this.scheduler.detach(job);
+    job.phase = "ended";
+    job.provisional = "lost";
+    job.provisionalAt = Date.now();
+    job.epoch++;
     if (this.scheduler.isIdle()) {
       this.idleSince = Date.now();
     }
@@ -258,16 +336,11 @@ export class JobServer {
     for (let changed = true; changed; ) {
       changed = false;
       for (const job of [...scheduler.waiting]) {
-        if (job.after === null || job.cancelled || !scheduler.waiting.includes(job)) {
+        if (job.after === null || !scheduler.waiting.includes(job)) {
           continue;
         }
         const after = job.after;
-        if (
-          !this.outcomes.has(after) &&
-          Date.now() >= scheduler.holdUntil &&
-          scheduler.find(after) === undefined &&
-          !this.expectedUntil.has(after)
-        ) {
+        if (!this.outcomes.has(after) && Date.now() >= scheduler.holdUntil && this.find(after) === undefined) {
           // Not here, not ended, not expected back (a state file that was lost, an outcome dropped as too old)
           this.log(`#${after} is unknown; counting it as lost for #${job.id}`);
           this.recordOutcome(after, "lost");
@@ -283,87 +356,32 @@ export class JobServer {
     this.store.persist();
   }
 
-  /** How a job whose client closed went: by its exit code when it ran, cancelled when it never started. */
-  closedOutcome(job: ServerJob): Outcome {
-    if (this.scheduler.waiting.includes(job)) {
-      return "cancelled";
-    }
-    if (!job.done || job.exitCode === null) {
-      return "lost";
-    }
-    return job.completed && job.exitCode === 0 ? "succeeded" : "failed";
-  }
-
   /** Cancels one job: a waiting job leaves at once; a running one keeps its slot until its client has stopped it. */
   cancelJob(job: ServerJob, reason: string): void {
-    const scheduler = this.scheduler;
     this.log(`cancel #${job.id} (${reason}): ${job.command}`);
-    send(job.socket, { type: "cancelled", id: job.id, reason });
-    if (scheduler.running.includes(job) && job.socket !== null && !job.socket.destroyed) {
+    this.tell(job, { type: "cancelled", id: job.id, reason });
+    if (job.phase === "running" && job.connection !== null && !job.connection.socket.destroyed) {
       // The client stops its command and then closes: keep the slot until then, so that the next job does not start
       // beside a command that is still being stopped
       job.cancelPending = true;
       return;
     }
-    job.cancelled = true;
-    if (scheduler.running.includes(job) || scheduler.waiting.includes(job)) {
-      this.release(job, "cancelled", "cancelled");
-    }
-  }
-
-  /** The live processes of each orphan's command (Unix: its process group id), or null per job when unsure. */
-  private async orphanProcesses(orphans: ServerJob[]): Promise<(number[] | null)[]> {
-    if (orphans.length === 0) {
-      return [];
-    }
-    const table = process.platform === "win32" ? await ProcessTable.query() : null;
-    return orphans.map((job) => {
-      if (job.commandPid <= 0) {
-        return [];
-      }
-      if (process.platform !== "win32") {
-        return ProcessTable.isGroupAlive(job.commandPid) ? [job.commandPid] : [];
-      }
-      return table === null ? null : table.commandProcesses(job.commandPid, job.spawnedAt);
-    });
-  }
-
-  /** Releases the slots of lost clients whose command has exited. */
-  private async pollOrphans(): Promise<void> {
-    const scheduler = this.scheduler;
-    const orphans = scheduler.running.filter((job) => job.socket === null);
-    if (this.polling || orphans.length === 0) {
-      return;
-    }
-    this.polling = true;
-    try {
-      const live = await this.orphanProcesses(orphans);
-      orphans.forEach((job, index) => {
-        const processes = live[index];
-        if (
-          processes !== null &&
-          processes !== undefined &&
-          processes.length === 0 &&
-          scheduler.running.includes(job)
-        ) {
-          this.release(job, "the command of a lost client exited", "lost");
-        }
-      });
-      this.settle();
-    } finally {
-      this.polling = false;
+    if (job.phase === "running" || job.phase === "waiting") {
+      this.finish(job, "cancelled", "cancelled");
     }
   }
 
   /** Cancels jobs and resolves to the ids it cancelled: a job that ended meanwhile (while the processes of lost
    * clients were read) is left out. */
   async cancel(requested: ServerJob[]): Promise<number[]> {
-    const scheduler = this.scheduler;
-    const orphans = requested.filter((job) => job.socket === null && scheduler.running.includes(job));
-    const live = await this.orphanProcesses(orphans);
+    // A GPU holder is cancelled with the --gpu run whose turn started it, so that the run ends as cancelled
+    requested = cancelTargets(requested, this.scheduler.running.concat(this.scheduler.waiting));
+    const orphans = requested.filter((job) => job.connection === null && job.phase === "running");
+    const live = await commandProcesses(orphans);
     orphans.forEach((_, index) => (live[index] ?? []).forEach(ProcessTable.killTree));
+    // A job that ended meanwhile has no record; a provisional one has no command left to stop
     const jobs = requested.filter(
-      (job) => !job.cancelled && (scheduler.running.includes(job) || scheduler.waiting.includes(job)),
+      (job) => this.records.get(job.id) === job && (job.phase === "running" || job.phase === "waiting"),
     );
     jobs.forEach((job) => this.cancelJob(job, "cancel requested"));
     this.settle();
@@ -373,7 +391,7 @@ export class JobServer {
   awaitJob(socket: net.Socket, id: number): void {
     // The job first: a job that runs or waits has not ended, whatever an older record says
     const outcome = this.outcomes.get(id);
-    if (this.scheduler.find(id) !== undefined || this.expectedUntil.has(id)) {
+    if (this.find(id) !== undefined) {
       this.awaiters.set(id, [...(this.awaiters.get(id) ?? []), socket]);
     } else if (outcome !== undefined) {
       send(socket, { type: "ended", id, outcome });
@@ -396,26 +414,15 @@ export class JobServer {
 
   /** Tells the client its job's new placement, grants by the new order and answers with the job's place. */
   placed(job: ServerJob): ServerMessage {
-    send(job.socket, { type: "updated", id: job.id, weight: job.weight, pin: job.pin, before: job.before });
+    this.tell(job, { type: "updated", id: job.id, weight: job.weight, pin: job.pin, before: job.before });
     this.settle();
     return { type: "move-result", id: job.id, position: this.scheduler.waiting.indexOf(job) + 1 };
-  }
-
-  /** A job that did not come back in time is lost: its dependents follow that outcome. */
-  private expireExpected(): void {
-    const now = Date.now();
-    for (const [id, until] of [...this.expectedUntil]) {
-      if (until <= now && this.scheduler.find(id) === undefined) {
-        this.log(`#${id} did not come back`);
-        this.recordOutcome(id, "lost");
-      }
-    }
   }
 
   /** Starts the timers and listens; the state file is restored once the port is ours. */
   start(): void {
     const { options, scheduler } = this;
-    setInterval(() => void this.pollOrphans(), OrphanPollMs).unref();
+    setInterval(() => void this.observer.observe(), OrphanPollMs).unref();
     this.server.on("error", (error: NodeJS.ErrnoException) => {
       if (error.code === "EADDRINUSE") {
         this.log(`port ${options.port} is in use; another scheduler runs`);
@@ -430,10 +437,16 @@ export class JobServer {
           `${os.cpus().length} cores, ${Math.round(scheduler.memoryCapacity)} MB for test runs ` +
           `(${this.machine.budgets.size} budgets), policy ${scheduler.policy}`,
       );
-      // The grace for re-registration starts once clients can connect; only the scheduler that owns the port restores.
-      // It ends in the timer, not at a time: nothing is granted (holdUntil stays Infinity) before settle has run with
-      // the re-registered jobs.
-      this.store.restore();
+      // Only the scheduler that owns the port restores. A current state file holds every job: the slots of the running
+      // ones count from the first event, so nothing needs to wait.
+      if (this.store.restore() === "current") {
+        scheduler.holdUntil = Date.now();
+        this.settle();
+        return;
+      }
+      // Without one (a first start, a deleted file, an older scheduler's file) nothing is known about the running jobs:
+      // nothing is granted on that absence while they re-register. The grace ends in the timer, not at a time, so that
+      // nothing is granted (holdUntil stays Infinity) before settle has run with the re-registered jobs.
       setTimeout(() => {
         scheduler.holdUntil = Date.now();
         this.pendingAwaits.splice(0).forEach(({ socket, id }) => this.awaitJob(socket, id));
@@ -442,10 +455,7 @@ export class JobServer {
     });
     // The response ratios change with time alone: a waiting job can overtake the first one and fit in the free slots
     // between two events, so grant again now and then while jobs wait
-    setInterval(() => {
-      this.expireExpected();
-      this.settle();
-    }, RegrantMs).unref();
+    setInterval(() => this.settle(), RegrantMs).unref();
     setInterval(() => {
       if (scheduler.isIdle() && Date.now() - this.idleSince >= IdleExitMs) {
         this.log("idle; exiting");

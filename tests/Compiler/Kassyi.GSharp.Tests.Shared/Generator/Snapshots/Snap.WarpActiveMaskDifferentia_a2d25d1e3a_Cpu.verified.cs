@@ -4421,7 +4421,7 @@ uint32_t __gsharp_warp_visits[3] = {};
 GSharpArray<unsigned int> __gsharp_id_0_result;
 int __gsharp_id_1_t;
 int __gsharp_id_2_k;
-unsigned int __gsharp_warp_temp_0;
+unsigned int __gsharp_warp_temp_1;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__BreakInLoopKernel(GSharpArray<unsigned int> __gsharp_in___gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__BreakInLoopKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -4459,8 +4459,8 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,1,""WarpActiveMaskDifferentialKernels.cs(191,33)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_t,4),__gsharp_ctx->__gsharp_id_2_k), 751603387u)=__gsharp_ctx->__gsharp_warp_temp_0;
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,1,""WarpActiveMaskDifferentialKernels.cs(191,33)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_t,4),__gsharp_ctx->__gsharp_id_2_k), 751603387u)=__gsharp_ctx->__gsharp_warp_temp_1;
 __gsharp_ctx->__gsharp_id_2_k=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_k,1);
 goto __gsharp_switch_1_state_3;
 }
@@ -4488,8 +4488,8 @@ return;
 case 6:
 __gsharp_switch_1_state_6:
 {
-auto __gsharp_warp_temp_1 = __gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,2,""WarpActiveMaskDifferentialKernels.cs(195,29)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_t,4),3), 1633506426u)=__gsharp_warp_temp_1;
+auto __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,2,""WarpActiveMaskDifferentialKernels.cs(195,29)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_t,4),3), 1633506426u)=__gsharp_warp_temp_0;
 __gsharp_state=-1;
 return;
 }
@@ -4593,7 +4593,7 @@ public uint __gsharp_warp_path;
 public uint[] result;
 public int t;
 public int k;
-public uint __gsharp_warp_temp_0;
+public uint __gsharp_warp_temp_1;
 public uint[] __gsharp_warp_visits = new uint[3];
 uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
 uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
@@ -4635,8 +4635,8 @@ return;
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 1, "WarpActiveMaskDifferentialKernels.cs(191,33)");
-__gsharp_ctx.result[__gsharp_ctx.t * 4 + __gsharp_ctx.k] = __gsharp_ctx.__gsharp_warp_temp_0;
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 1, "WarpActiveMaskDifferentialKernels.cs(191,33)");
+__gsharp_ctx.result[__gsharp_ctx.t * 4 + __gsharp_ctx.k] = __gsharp_ctx.__gsharp_warp_temp_1;
 __gsharp_ctx.k++;
 goto case 3;
 }
@@ -4664,8 +4664,8 @@ return;
 
 case 6:
 {
-uint __gsharp_warp_temp_1 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 2, "WarpActiveMaskDifferentialKernels.cs(195,29)");
-__gsharp_ctx.result[__gsharp_ctx.t * 4 + 3] = __gsharp_warp_temp_1;
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 2, "WarpActiveMaskDifferentialKernels.cs(195,29)");
+__gsharp_ctx.result[__gsharp_ctx.t * 4 + 3] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -4849,9 +4849,9 @@ bool __gsharp_yielded_for_block_barrier = false;
 uint32_t __gsharp_warp_visits[5] = {};
 GSharpArray<unsigned int> __gsharp_id_0_result;
 int __gsharp_id_1_t;
-unsigned int __gsharp_warp_temp_0;
 unsigned int __gsharp_warp_temp_1;
 unsigned int __gsharp_warp_temp_2;
+unsigned int __gsharp_warp_temp_3;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__SwitchKernel(GSharpArray<unsigned int> __gsharp_in___gsharp_id_0_result, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__SwitchKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -4890,8 +4890,8 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,1,""WarpActiveMaskDifferentialKernels.cs(205,29)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_ctx->__gsharp_id_1_t, 2070368862u)=__gsharp_ctx->__gsharp_warp_temp_0;
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,1,""WarpActiveMaskDifferentialKernels.cs(205,29)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_ctx->__gsharp_id_1_t, 2070368862u)=__gsharp_ctx->__gsharp_warp_temp_1;
 goto __gsharp_switch_1_state_7;
 goto __gsharp_switch_1_state_3;
 }
@@ -4905,8 +4905,8 @@ return;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,2,""WarpActiveMaskDifferentialKernels.cs(208,29)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_ctx->__gsharp_id_1_t, 155043720u)=__gsharp_ctx->__gsharp_warp_temp_1|0u;
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,2,""WarpActiveMaskDifferentialKernels.cs(208,29)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_ctx->__gsharp_id_1_t, 155043720u)=__gsharp_ctx->__gsharp_warp_temp_2|0u;
 goto __gsharp_switch_1_state_7;
 goto __gsharp_switch_1_state_5;
 }
@@ -4920,8 +4920,8 @@ return;
 case 6:
 __gsharp_switch_1_state_6:
 {
-__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,3,""WarpActiveMaskDifferentialKernels.cs(211,29)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_ctx->__gsharp_id_1_t, 1484246708u)=__gsharp_ctx->__gsharp_warp_temp_2^0u;
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,3,""WarpActiveMaskDifferentialKernels.cs(211,29)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_ctx->__gsharp_id_1_t, 1484246708u)=__gsharp_ctx->__gsharp_warp_temp_3^0u;
 goto __gsharp_switch_1_state_7;
 goto __gsharp_switch_1_state_7;
 }
@@ -4943,8 +4943,8 @@ return;
 case 9:
 __gsharp_switch_1_state_9:
 {
-auto __gsharp_warp_temp_3 = __gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,4,""WarpActiveMaskDifferentialKernels.cs(215,26)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_t,32), 825310226u)=__gsharp_warp_temp_3;
+auto __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,4,""WarpActiveMaskDifferentialKernels.cs(215,26)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_t,32), 825310226u)=__gsharp_warp_temp_0;
 __gsharp_state=-1;
 return;
 }
@@ -5047,9 +5047,9 @@ public int __gsharp_state;
 public uint __gsharp_warp_path;
 public uint[] result;
 public int t;
-public uint __gsharp_warp_temp_0;
 public uint __gsharp_warp_temp_1;
 public uint __gsharp_warp_temp_2;
+public uint __gsharp_warp_temp_3;
 public uint[] __gsharp_warp_visits = new uint[5];
 uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
 uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
@@ -5092,8 +5092,8 @@ return;
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 1, "WarpActiveMaskDifferentialKernels.cs(205,29)");
-__gsharp_ctx.result[__gsharp_ctx.t] = __gsharp_ctx.__gsharp_warp_temp_0;
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 1, "WarpActiveMaskDifferentialKernels.cs(205,29)");
+__gsharp_ctx.result[__gsharp_ctx.t] = __gsharp_ctx.__gsharp_warp_temp_1;
 goto case 7;
 goto case 3;
 }
@@ -5107,8 +5107,8 @@ return;
 
 case 4:
 {
-__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 2, "WarpActiveMaskDifferentialKernels.cs(208,29)");
-__gsharp_ctx.result[__gsharp_ctx.t] = __gsharp_ctx.__gsharp_warp_temp_1 | 0u;
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 2, "WarpActiveMaskDifferentialKernels.cs(208,29)");
+__gsharp_ctx.result[__gsharp_ctx.t] = __gsharp_ctx.__gsharp_warp_temp_2 | 0u;
 goto case 7;
 goto case 5;
 }
@@ -5122,8 +5122,8 @@ return;
 
 case 6:
 {
-__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 3, "WarpActiveMaskDifferentialKernels.cs(211,29)");
-__gsharp_ctx.result[__gsharp_ctx.t] = __gsharp_ctx.__gsharp_warp_temp_2 ^ 0u;
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 3, "WarpActiveMaskDifferentialKernels.cs(211,29)");
+__gsharp_ctx.result[__gsharp_ctx.t] = __gsharp_ctx.__gsharp_warp_temp_3 ^ 0u;
 goto case 7;
 goto case 7;
 }
@@ -5145,8 +5145,8 @@ return;
 
 case 9:
 {
-uint __gsharp_warp_temp_3 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 4, "WarpActiveMaskDifferentialKernels.cs(215,26)");
-__gsharp_ctx.result[__gsharp_ctx.t + 32] = __gsharp_warp_temp_3;
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 4, "WarpActiveMaskDifferentialKernels.cs(215,26)");
+__gsharp_ctx.result[__gsharp_ctx.t + 32] = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
