@@ -474,6 +474,16 @@ public partial class EmissionShapeTests
     // withPath: the tree carries the test case's file name, so that places in the output name it
     private static string Generate(string testCase, string dialect, bool withPath = false)
     {
+        var trees = GenerateTrees(testCase, dialect, withPath);
+        var source = string.Join("\n", trees.Select(static t => t.GetText().ToString()))
+            .Replace("\r\n", "\n", StringComparison.Ordinal);
+        Assert.DoesNotContain("#error", source, StringComparison.Ordinal);
+        return source;
+    }
+
+    // The trees the generator adds for the test case, after checking that the output compiles
+    private static ImmutableArray<SyntaxTree> GenerateTrees(string testCase, string dialect, bool withPath = false)
+    {
         var text = RoslynTestUtility.ReadTestCase($"Transpiler/Emission/{testCase}.cu.cs");
         var compilation = withPath
             ? RoslynTestUtility.CreateCompilationAt($"{testCase}.cu.cs", text)
@@ -484,10 +494,6 @@ public partial class EmissionShapeTests
             .Where(static d => d.Severity == DiagnosticSeverity.Error)
             .ToList();
         Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
-
-        var source = string.Join("\n", driver.GetRunResult().GeneratedTrees.Select(static t => t.GetText().ToString()))
-            .Replace("\r\n", "\n", StringComparison.Ordinal);
-        Assert.DoesNotContain("#error", source, StringComparison.Ordinal);
-        return source;
+        return driver.GetRunResult().GeneratedTrees;
     }
 }
