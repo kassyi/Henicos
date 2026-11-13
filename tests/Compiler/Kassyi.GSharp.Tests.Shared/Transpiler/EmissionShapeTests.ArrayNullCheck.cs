@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -116,23 +117,33 @@ public partial class EmissionShapeTests
     [InlineData("Cuda")]
     public void ArrayNullCheck_KernelBody_ReportsASiteOfTheErrorSiteTable(string dialect)
     {
-        var generated = Generate("ArrayNullCheckShapeKernels", dialect, withPath: true);
-        var kernel = KernelSource(generated, "CheckedKernel");
+        var trees = GenerateTrees("ArrayNullCheckShapeKernels", dialect, withPath: true);
+        var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect, withPath: true), "CheckedKernel");
 
         Assert.DoesNotContain("G#: a null array is read at", kernel, StringComparison.Ordinal);
 #pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         var check = Regex.Match(kernel, Regex.Escape(ArrayRef) + @"__gsharp_id_0_h\.__gsharp_mb_Data, (\d+)u\)\.length");
 #pragma warning restore RS0030
         Assert.True(check.Success, "h.Data.Length does not go through a site of the error site table.");
-#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
-        var entry = Regex.Match(generated, @"new global::Kassyi\.GSharp\.Runtime\.Aot\.GSharpErrorSite\(" + check.Groups[1].Value + @"u, [^\n]*");
-#pragma warning restore RS0030
-        Assert.True(entry.Success, "The error site table has no entry for the site of h.Data.Length.");
-        Assert.True(
-            entry.Value.EndsWith(
-                "u, \"ArrayNullCheckShapeKernels.cu.cs\", 44, 16, \"CheckedKernel\", \"G#: a null array is read\"),",
-                StringComparison.Ordinal),
-            entry.Value);
+        var siteId = uint.Parse(check.Groups[1].Value, CultureInfo.InvariantCulture);
+
+        // new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(<site>u, <file>, <line>, <column>, <member>, <message>)
+        var entry = Assert.Single(
+            trees
+                .SelectMany(static tree => tree.GetRoot().DescendantNodes().OfType<ObjectCreationExpressionSyntax>())
+                .Where(static creation => creation.Type is QualifiedNameSyntax
+                {
+                    Right.Identifier.ValueText: nameof(GSharpErrorSite)
+                }),
+            creation => creation.ArgumentList?.Arguments[0].Expression is
+                LiteralExpressionSyntax { Token.Value: uint id } && id == siteId);
+        var arguments = Assert.IsType<ArgumentListSyntax>(entry.ArgumentList).Arguments;
+        object[] expected =
+            [siteId, "ArrayNullCheckShapeKernels.cu.cs", 44, 16, "CheckedKernel", "G#: a null array is read"];
+        Assert.Equal(
+            expected,
+            arguments.Select(static argument =>
+                Assert.IsType<LiteralExpressionSyntax>(argument.Expression).Token.Value));
     }
 
     // The Ptr launcher passes IntPtr.Zero as a null array, optional or not, as the array launcher passes null; only a
