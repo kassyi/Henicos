@@ -913,6 +913,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "ReadOnlyArrayWritten",
+    "id": "GSH0118",
+    "title": "A [GpuReadOnly] array is written",
+    "messageFormat": "The [GpuReadOnly] array '{0}' is written: {1}. [GpuReadOnly] promises that no thread writes the array while the kernel runs, through any alias. Remove the write, or remove the attribute.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

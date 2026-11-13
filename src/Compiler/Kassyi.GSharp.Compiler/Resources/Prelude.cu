@@ -453,9 +453,11 @@ struct GSharpArray {
     
     // Implicit conversion from GSharpArray<U> to GSharpArray<T> where U and T differ only in const: T to const T, and
     // const T back to T. C# converts a [GpuReadOnly] array (const elements here) to every array and span type of its
-    // element (#1709, #1071), so the const is removed here; it is the C# program that decides whether to write
+    // element, so the const is removed here and the code that only reads builds. [GpuReadOnly] promises that no
+    // thread writes the array during the launch, through any alias; G# reports the writes it sees (GSH0118)
     template <typename U>
-    __device__ inline GSharpArray(const GSharpArray<U>& other) : data(const_cast<T*>(other.data)), length(other.length), flags(other.flags) {}
+    __device__ inline GSharpArray(const GSharpArray<U>& other)
+        : data(const_cast<T*>(other.data)), length(other.length), flags(other.flags) {}
 
     __device__ inline T* begin() { return data; }
     __device__ inline T* end() { return data + length; }

@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
-/// <summary>A struct argument with <c>[GpuReadOnly]</c> array fields, which the device holds with const elements.</summary>
+/// <summary>A struct argument with <c>[GpuReadOnly]</c> array fields, held with const elements on the device.</summary>
 public struct ReadOnlyArrayHolder
 {
     [GpuReadOnly] public uint[] Fixed;
@@ -13,8 +13,8 @@ public struct ReadOnlyArrayHolder
 
 /// <summary>
 /// Kernels that convert a <c>[GpuReadOnly]</c> array (a field or a parameter, const on the device) to every array and
-/// span type C# converts it to: a typed local, <c>Gpu.NotNull</c>, a reassigned local, a parameter of a device function,
-/// <c>Span&lt;T&gt;</c> and <c>ReadOnlySpan&lt;T&gt;</c> (#1709, #1071).
+/// span type C# converts it to: a typed local, <c>Gpu.NotNull</c>, a reassigned local, a parameter of a device
+/// function, <c>Span&lt;T&gt;</c> and <c>ReadOnlySpan&lt;T&gt;</c> (#1709, #1071).
 /// </summary>
 public static partial class ReadOnlyArrayConversionKernels
 {
