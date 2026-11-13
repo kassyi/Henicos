@@ -567,10 +567,11 @@ public class FatbinParserTests
     [SkippableTheory]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData("Kassyi.GSharp.Kernels_Kassyi_GSharp_Tests_Cuda.gfatbin")]
-    [InlineData("Kassyi.GSharp.Kernels_Kassyi_GSharp_Stdlib_GpuMath.gfatbin")]
-    public void BuiltFatbin_DefaultArchitectures_HoldsSass86AndPtx86(string fileName)
+    [InlineData("Kassyi.GSharp.Tests.Cuda")]
+    [InlineData("Kassyi.GSharp.Stdlib.GpuMath")]
+    public void BuiltFatbin_DefaultArchitectures_HoldsSass86AndPtx86(string moduleName)
     {
+        var fileName = Kassyi.GSharp.Compiler.Marshaling.AotModuleNames.GetArtifactFileStem(moduleName) + ".gfatbin";
         // The default GSharpTargetArchitectures keeps the sm_86 SASS and adds compute_86 PTX, so that GPUs newer than
         // the 8.x family JIT-compile the module instead of failing to load it.
         // The build skips the fatbins only without nvcc or with GSHARP_TEST_NO_CUDA=1; otherwise a missing file is a failure
