@@ -1,5 +1,6 @@
 // The defaults that follow the machine (MachineProfile): the slots from its cores, the memory pool for test runs from
-// its memory, and the memory a test run needs, read from the budgets of tests/memory-budgets.yml.
+// its memory, and the memory a test run needs, read from the budgets of tests/memory-budgets.yml; and which test
+// projects run on the CPU only (their csproj sets GSharpTargetDialect to Cpu), for the hint of run --gpu.
 //
 // Measured on 24 cores / 64 GB (a mix of 4 forced rebuilds and 4 test runs of Tests.Cpu): 8 slots (3 cores each) with
 // a test run weighing 1 slot finished soonest; 6 slots with test runs weighing 2 left a quarter of the CPU idle. Each
@@ -19,7 +20,8 @@ export const MinimumSlots = 2;
 /** The share of the physical memory that the budgets of the running test runs may add up to. */
 export const MemoryPoolShare = 0.5;
 
-const BudgetsFile = path.join(import.meta.dirname, "..", "..", "..", "tests", "memory-budgets.yml");
+const TestsDirectory = path.join(import.meta.dirname, "..", "..", "..", "tests");
+const BudgetsFile = path.join(TestsDirectory, "memory-budgets.yml");
 
 /** The budgets of one test assembly, in MB: for a normal run, and for a run with Stress or Benchmark tests. */
 export interface Budget {
@@ -65,6 +67,44 @@ export class MachineProfile {
   testMemoryMb(command: string): number {
     return testMemoryMb(command, isTestCommand(command), this.budgets);
   }
+
+  /** The test projects a command names when every one of them runs on the CPU only (see cpuOnlyTestProjects). */
+  cpuOnlyTestProjects(command: string): string[] {
+    return cpuOnlyTestProjects(command, this.budgets.keys(), path.dirname(this.budgetsFile));
+  }
+}
+
+/**
+ * The test projects (`names`: those of the budgets file) that the command names, when it names at least one and each of
+ * them sets `<GSharpTargetDialect>Cpu</GSharpTargetDialect>` in `<testsDir>/<category>/<name>/<name>.csproj`; else
+ * none. A command that names a project whose csproj cannot be read, or that says nothing of the dialect, gets none:
+ * the hint only speaks when the project file itself says the tests do not use the GPU.
+ */
+export function cpuOnlyTestProjects(command: string, names: Iterable<string>, testsDir: string): string[] {
+  const lower = command.toLowerCase();
+  const named = [...names].filter((name) => lower.includes(name.toLowerCase()));
+  if (named.length === 0) {
+    return [];
+  }
+  let categories: string[];
+  try {
+    categories = fs
+      .readdirSync(testsDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+  } catch (error) {
+    prefix(`could not read ${testsDir}: ${errorMessage(error)}`);
+    return [];
+  }
+  const runsOnCpu = (name: string): boolean =>
+    categories.some((category) => {
+      const project = path.join(testsDir, category, name, `${name}.csproj`);
+      return (
+        fs.existsSync(project) &&
+        /<GSharpTargetDialect>\s*Cpu\s*<\/GSharpTargetDialect>/i.test(fs.readFileSync(project, "utf8"))
+      );
+    });
+  return named.every(runsOnCpu) ? named : [];
 }
 
 /** Reads `<assembly>: <MB>[, stress <MB>]` lines; anything else (comments, blank lines) is skipped. */

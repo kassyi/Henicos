@@ -9,5 +9,8 @@ internal enum IrPrintOptions
 
     /// <summary>The span after each expression, <c>[start..end]</c>, or <c>[~start..end]</c> when
     /// synthesized.</summary>
-    Sources = 1
+    Sources = 1,
+
+    /// <summary>No <c>[split=..., writes=...]</c> after a classified call.</summary>
+    WithoutClassifications = 2
 }

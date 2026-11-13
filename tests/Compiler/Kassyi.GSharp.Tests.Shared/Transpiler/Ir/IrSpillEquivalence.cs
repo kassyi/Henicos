@@ -20,13 +20,20 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// The full plan may differ from their output only by the rules they lack; each such statement is recorded with its
 /// reason and both traces (<see cref="Known"/>), which the test compares line by line with an expected file. A
 /// difference of the position of a conditional alone is recognized only when everything else matches.
+/// Every planned statement is also rewritten (<see cref="IrSpillRewriter"/>): the statements it skips are counted by
+/// reason, and the invariants of the others (<see cref="IrLoweredInvariants"/>) must hold.
 /// </remarks>
 internal sealed class IrSpillEquivalence
 {
     private readonly ConcurrentBag<string> _unexplained = [];
     private readonly ConcurrentBag<string> _known = [];
     private readonly ConcurrentDictionary<string, int> _fallbacks = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, int> _skips = new(StringComparer.Ordinal);
+    private readonly ConcurrentBag<string> _violations = [];
+    private readonly ConcurrentBag<string> _mixedMethods = [];
     private int _statementsCompared;
+    private int _statementsWithACheck;
+    private int _statementsRewritten;
 
     /// <summary>Statements where the reduced plan and the syntax passes differ.</summary>
     public IReadOnlyCollection<string> Unexplained => _unexplained;
@@ -40,6 +47,24 @@ internal sealed class IrSpillEquivalence
 
     /// <summary>The planned statements compared, each a statement of the source that holds a split.</summary>
     public int StatementsCompared => _statementsCompared;
+
+    /// <summary>The planned statements the rewrite skips, by reason (reported, not asserted).</summary>
+    public IReadOnlyDictionary<string, int> Skips => _skips;
+
+    /// <summary>The violations of the invariants of the rewritten statements.</summary>
+    public IReadOnlyCollection<string> Violations => _violations;
+
+    /// <summary>
+    /// The methods where some statements that hold a split are rewritten on the IR and others stay on the syntax
+    /// passes (a fallback or a skip): their temporaries are numbered in a different order once both run.
+    /// </summary>
+    public IReadOnlyCollection<string> MixedMethods => _mixedMethods;
+
+    /// <summary>The planned statements of the IR whose plan checks a location before a split.</summary>
+    public int StatementsWithACheck => _statementsWithACheck;
+
+    /// <summary>The planned statements of the IR that the rewrite writes out.</summary>
+    public int StatementsRewritten => _statementsRewritten;
 
     /// <summary>Compares every GPU method and emitted struct member of <paramref name="trees"/>.</summary>
     public void CompareAll(Compilation compilation, SyntaxTree[] trees)
@@ -74,7 +99,52 @@ internal sealed class IrSpillEquivalence
         }
 
         ReportUnplanned(built, method, syntax, planned, fallbacks);
+        Rewrite(plan, method.Where, compilation);
     }
+
+    // Rewrites every planned statement; a method is mixed when it has rewritten statements and statements left to the
+    // syntax passes
+    private void Rewrite(IrSpillPlan plan, string where, Compilation compilation)
+    {
+        var (rewritten, left) = (0, 0);
+        foreach (var statement in plan.Statements)
+        {
+            if (statement.Fallback != IrSpillFallback.None)
+            {
+                left++;
+                continue;
+            }
+
+            if (HasCheck(statement.Steps))
+            {
+                Interlocked.Increment(ref _statementsWithACheck);
+            }
+
+            var application = IrSpillRewriter.Apply(statement);
+            if (!application.TryGetLowered(out var lowered))
+            {
+                left++;
+                _skips.AddOrUpdate(application.Skip.ToString(), 1, static (_, count) => count + 1);
+                continue;
+            }
+
+            rewritten++;
+            Interlocked.Increment(ref _statementsRewritten);
+            foreach (var violation in IrLoweredInvariants.Verify(statement, lowered, compilation))
+            {
+                _violations.Add($"{where}: {violation}");
+            }
+        }
+
+        if (rewritten > 0 && left > 0)
+        {
+            _mixedMethods.Add(where);
+        }
+    }
+
+    private static bool HasCheck(ImmutableArray<IrSpillStep> steps) =>
+        steps.Any(static step => step is IrSpillCheck ||
+                                 (step is IrSpillConditional conditional && conditional.Branches.Any(HasCheck)));
 
     // The plans by the statement of the source they belong to (a declaration of several locals has one per local)
     private (Dictionary<TextSpan, StatementPlan> Planned, HashSet<TextSpan> Fallbacks) PlanByStatement(
@@ -192,6 +262,9 @@ internal sealed class IrSpillEquivalence
                     break;
                 case IrSpillValue spill when !IrSpillTrace.IsMadeBySyntaxPasses(spill):
                     reasons.Add(ReasonOf(spill));
+                    break;
+                case IrSpillCheck:
+                    reasons.Add("#991 a location C# checks before the split");
                     break;
             }
         }

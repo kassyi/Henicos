@@ -273,7 +273,11 @@ public static partial class DifferentialRunner
         DiffBuffers? expected = null;
         DiffBuffers? afterException = null;
 
-        if (activeExPolicy is null)
+        if (activeExPolicy is not null && hasOracle)
+        {
+            afterException = RunOracleExpecting(testCase, in at, activeExPolicy);
+        }
+        else if (activeExPolicy is null)
         {
             if (!hasOracle && !hasReference && at.Initial.All.Any(static b => b.IsOutput && b.Policy.Kind != OutputPolicyKind.Ignore))
             {
@@ -353,53 +357,21 @@ public static partial class DifferentialRunner
         }
 
         var oracle = testCase.EffectiveOracle ?? throw new DifferentialHarnessException($"{testCase.Name}: no oracle");
-        var orders = testCase.OracleOrders ?? [ThreadOrder.Forward, ThreadOrder.Reverse, ThreadOrder.Permutation(seed)];
-        var firstOrder = orders.Count > 0 ? orders[0] : ThreadOrder.Forward;
-
         if (testCase.OracleExceptions == OracleExceptionMode.MatchOracle)
         {
-            Exception? firstEx = TryRunOrder(shape, firstOrder, () => oracle(expected, shape));
-            for (int i = 1; i < orders.Count; i++)
+            expected = RunOracleOrders(testCase, oracle, initial, shape, seed, out var thrown);
+            if (thrown is not null)
             {
-                var order = orders[i];
-                var other = initial.Clone();
-                other.Shape = shape;
-                Exception? otherEx = TryRunOrder(shape, order, () => oracle(other, shape));
-                if ((firstEx is null) != (otherEx is null))
-                {
-                    throw new DifferentialHarnessException(
-                        $"{testCase.Name}: oracle exception depends on thread order for seed {seed}: " +
-                        $"{firstOrder} {(firstEx is null ? "succeeded" : $"threw {firstEx.GetType().Name}")}, " +
-                        $"but {order} {(otherEx is null ? "succeeded" : $"threw {otherEx.GetType().Name}")}"
-                    );
-                }
-
-                if (firstEx is not null && otherEx is not null)
-                {
-                    if (firstEx.GetType() != otherEx.GetType())
-                    {
-                        throw new DifferentialHarnessException(
-                            $"{testCase.Name}: oracle threw {firstEx.GetType().Name} in {firstOrder} order " +
-                            $"but {otherEx.GetType().Name} in {order} order for seed {seed}"
-                        );
-                    }
-                }
-                else
-                {
-                    CheckOrderIndependence(testCase, seed, expected, other, order);
-                }
-            }
-
-            if (firstEx is not null)
-            {
-                matchedExceptionPolicy = new ExceptionPolicy(firstEx.GetType(), testCase.ExceptionPaths);
-                afterException = testCase.ComparesOutputsAfterException ? expected : null;
+                matchedExceptionPolicy = new ExceptionPolicy(thrown.GetType(), testCase.ExceptionPaths);
+                afterException = expected;
                 return null;
             }
 
             return expected;
         }
 
+        var orders = testCase.OracleOrders ?? [ThreadOrder.Forward, ThreadOrder.Reverse, ThreadOrder.Permutation(seed)];
+        var firstOrder = orders.Count > 0 ? orders[0] : ThreadOrder.Forward;
         Guard(testCase, seed, $"oracle ({firstOrder})", () => SequentialOracle.Run(shape, firstOrder, () => oracle(expected, shape)));
 
         for (int i = 1; i < orders.Count; i++)

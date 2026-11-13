@@ -1,5 +1,5 @@
 // The handlers of the messages that act on the queue rather than on the client's own job: status, cancel, move,
-// set-weight, await (wait) and stop.
+// set-weight, start, await (wait) and stop.
 
 import type * as net from "node:net";
 import { idField, numberField, send, type Incoming, type ServerMessage } from "./protocol.ts";
@@ -85,6 +85,45 @@ function setWeight(connection: Connection, message: Incoming): void {
   connection.reply(reweigh(connection.server, message));
 }
 
+/**
+ * start: grants a waiting job at once, over the pools; refused for a GPU turn, for a job whose client is away (nobody
+ * would receive the grant) and before its predecessor ended.
+ */
+function startNow(server: JobServer, message: Incoming): ServerMessage {
+  const id = idField(message, "id") ?? 0;
+  const job = server.find(id);
+  if (job === undefined || job.phase !== "waiting") {
+    return { type: "error", code: "not-waiting", message: `no waiting job #${id}` };
+  }
+  if (job.gpuTurn) {
+    return {
+      type: "error",
+      code: "not-started",
+      message: `#${id} waits for the GPU, which runs one job at a time; move ${id} --first puts it next`,
+    };
+  }
+  if (job.detached) {
+    return {
+      type: "error",
+      code: "not-started",
+      message:
+        `the client of #${id} is away (its connection dropped or the scheduler restarted): nobody would receive ` +
+        "the grant; start it once its client is back",
+    };
+  }
+  if (server.scheduler.awaitsPredecessor(job)) {
+    return { type: "error", code: "not-started", message: `#${id} waits for #${String(job.after)} to end` };
+  }
+  job.startNow = true;
+  server.log(`start #${job.id} over the pools`);
+  // Granted by the settle that follows every message (Connection), like a move
+  return { type: "start-result", id: job.id };
+}
+
+function start(connection: Connection, message: Incoming): void {
+  connection.reply(startNow(connection.server, message));
+}
+
 function awaitEnd(connection: Connection, message: Incoming): void {
   const id = idField(message, "id");
   if (id === null) {
@@ -135,6 +174,7 @@ export const ControlMessages: Readonly<Record<string, MessageHandler>> = {
   cancel,
   move,
   "set-weight": setWeight,
+  start,
   await: awaitEnd,
   stop,
 };

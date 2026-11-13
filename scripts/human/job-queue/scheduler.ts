@@ -40,6 +40,11 @@ export interface SchedulerJob {
   keepIfFailed?: boolean;
   /** The memory budget a test run takes from the memory pool, in MB; 0 or absent for a job that runs no tests. */
   memoryMb?: number;
+  /**
+   * start <id>: granted at once, over the slots and the memory pool, like a GPU holder, for a job a person wants to run
+   * beside the running ones. It still waits for its predecessor (--after); a GPU turn never takes it.
+   */
+  startNow?: boolean;
   backfilled?: boolean;
   /** Its run started before this scheduler (re-registered after a restart): no run time is recorded for it. */
   adopted?: boolean;
@@ -299,7 +304,10 @@ export class Scheduler<J extends SchedulerJob> {
       this.start(job);
       granted.push(job);
     };
-    this.waiting.filter((job) => job.gpu && !job.gpuTurn && !this.isBlocked(job)).forEach(take);
+    // GPU holders and the jobs started by hand, over the pools
+    this.waiting
+      .filter((job) => (job.gpu || job.startNow === true) && !job.gpuTurn && !this.isBlocked(job))
+      .forEach(take);
     this.order(now);
     // The GPU goes to the waiting turns one at a time, in the same order as the slots, so that none is passed for ever
     const turn = this.gpuBusy() ? undefined : this.waiting.find((job) => job.gpuTurn === true && !this.isBlocked(job));

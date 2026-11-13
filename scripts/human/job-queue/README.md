@@ -28,21 +28,23 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `client.ts` | `run` and its `QueuedRun`: registers a job, waits for the grant, runs the command, reports its end, re-registers after a scheduler restart |
 | `client-connect.ts` | One-shot requests to the scheduler, and `SchedulerLauncher`: connects, starts the scheduler on demand, reports a job's end to the next scheduler |
 | `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `wait`, `stop` |
+| `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, and `reduceKey`, the keys as a pure function |
+| `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
 | `server.ts` | `JobServer`, the scheduler process: the TCP server, the job records, outcomes, the settle step, the observation of detached records and the timers |
 | `server-connection.ts` | `Connection`: one client connection, the dispatch of its messages to one handler per message type, and what its close means for the job |
 | `server-job-messages.ts` | The handlers of the messages about the client's own job: `request`, `adopt`, `started`, `done`, `report` |
 | `server-job-state.ts` | The decisions about one job record as pure functions: identity (`isSameClient`), `planRegistration`, `planClose`, `planObservation`, `planReport`, `outcomeOfEnd`, `cancelTargets` |
-| `server-control-messages.ts` | The handlers of the messages that act on the queue: `status`, `cancel`, `move`, `set-weight`, `await`, `stop` |
+| `server-control-messages.ts` | The handlers of the messages that act on the queue: `status`, `cancel`, `move`, `set-weight`, `start`, `await`, `stop` |
 | `server-job.ts` | The job record the server keeps (`ServerJob`) and how `status` shows it |
 | `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts |
 | `scheduler.ts` | The scheduling decisions, with no I/O: order, grants, backfilling, GPU turns, the memory pool, the forecast |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts |
-| `machine.ts` | `MachineProfile`, the defaults that follow the machine: slots from the cores, the memory pool, test budgets |
+| `machine.ts` | `MachineProfile`, the defaults that follow the machine: slots from the cores, the memory pool, test budgets; the CPU-only test projects (`GSharpTargetDialect` Cpu) for the hint of `run --gpu` |
 | `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
-| `self-test*.ts`, `scheduler-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process |
+| `self-test*.ts`, `scheduler-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys |
 
 ## How a job runs
 
@@ -87,7 +89,7 @@ record has a phase (`waiting`, `running`, or `ended` with a provisional outcome)
   is unbound and ended, so that its late close changes nothing. Another client's record is never touched. A final
   outcome is never overwritten: the client gets a new id, or `cancelled` when its job was cancelled while it was away.
 - **Close** (`planClose`): a closed connection only detaches the record: a waiting one keeps its place (it is not
-  granted while detached), a running one its slots. Nothing ends on a close alone, except a waiting job whose client
+  granted while detached, and `start` refuses it), a running one its slots. Nothing ends on a close alone, except a waiting job whose client
   process is gone, or a job whose client said `done`.
 - **Observation** (`planObservation`, every 2 s): for each detached record the client's liveness and, for a running one,
   whether a process of its command is left. A command that is gone frees the slots; the outcome is a final `lost` when

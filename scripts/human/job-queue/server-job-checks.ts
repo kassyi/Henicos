@@ -389,9 +389,50 @@ export async function checkFinalOutcomeStays(assert: AssertModule): Promise<void
   });
 }
 
+/**
+ * start refuses a waiting record whose client is away (nobody would receive the grant). A start is kept in the state
+ * file with the other placement fields; a restored record that carries one is still not granted while detached.
+ */
+export async function checkStartAndRestore(assert: AssertModule): Promise<void> {
+  await withServer(1, async (server, port) => {
+    const holder = await connectRaw(port);
+    holder.send(registration("holder", 1, process.pid));
+    assert.ok((await holder.until("granted")) !== null);
+    const away = await connectRaw(port);
+    away.send(registration("away", 1, process.pid));
+    const awayId = Number((await away.until("queued"))?.id);
+    away.close();
+    await until("its record is detached", () => server.find(awayId)?.detached === true);
+    const refused = await connectRaw(port);
+    refused.send({ type: "start", id: awayId });
+    assert.match(String((await refused.until("error"))?.message), /away/, "start refuses a job whose client is away");
+    const record = server.find(awayId);
+    assert.ok(record !== undefined && record.startNow !== true && record.phase === "waiting");
+    // The flag as a start leaves it (it lives until the settle of its event), saved and restored with the record
+    record.startNow = true;
+    server.store.persist();
+    const next = new JobServer({
+      slots: 1,
+      memoryMb: 1e9,
+      policy: "fifo",
+      port: 0,
+      stateDir: path.dirname(server.store.path),
+      log: () => {},
+    });
+    assert.strictEqual(next.store.restore(), "current");
+    const restored = next.find(awayId);
+    assert.deepStrictEqual([restored?.startNow, restored?.detached, restored?.phase], [true, true, "waiting"]);
+    next.scheduler.holdUntil = 0;
+    const granted = next.scheduler.grant();
+    assert.ok(restored !== undefined && !granted.includes(restored), "not granted while its client is away");
+    [holder, refused].forEach((c) => c.close());
+  });
+}
+
 export const JobServerChecks: Record<string, (assert: AssertModule) => Promise<void>> = {
   checkRecordsFollowTheJobs,
   checkObservationEpoch,
   checkCloseCommutes,
   checkFinalOutcomeStays,
+  checkStartAndRestore,
 };

@@ -187,24 +187,26 @@ async function checkAdoptOfAnotherClient(fixture: QueueFixture, port: number): P
   await waitFor(port, "the first client is seen lost", (s) =>
     s.running.some((j) => j.id === granted.id && j.orphan) ? true : undefined,
   );
+  // Its own id, not one the scheduler gave out yet (ids continue across the self-test through history.json)
+  const ownId = Number(granted.id) + 1000;
   const other = await rawClient(port);
   other.send({
     ...registration("R6-second", 1, process.pid),
     type: "adopt",
     queuedAt: 2000,
-    id: 77,
+    id: ownId,
     commandPid: otherCommand.pid ?? 0,
     spawnedAt: Date.now(),
   });
   const adopted = await other.until("adopted");
-  assert.strictEqual(adopted?.id, 77, "the other client keeps the id it asked for");
+  assert.strictEqual(adopted?.id, ownId, "the other client keeps the id it asked for");
   const status = await statusOf(port);
   assert.deepStrictEqual(
     [status.used, status.running.map((j) => [j.id, j.command, j.orphan]).sort()],
     [
       2,
       [
-        [77, "R6-second", false],
+        [ownId, "R6-second", false],
         [granted.id, "R6-first", true],
       ].sort(),
     ],

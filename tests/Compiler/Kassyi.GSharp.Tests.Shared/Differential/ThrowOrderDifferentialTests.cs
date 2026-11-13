@@ -11,8 +11,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// A write to memory and a check that may throw in two operands of one expression happen in the C# order on every
 /// path (#1786 (a throwing check in a later operand runs before an earlier call on MSVC)): the write of an earlier
 /// operand is kept when a later operand throws, and a later operand writes nothing when an earlier one throws. The
-/// oracle is the kernel's own C#; the outputs are compared after the exception too
-/// (<see cref="DifferentialCase.ComparesOutputsAfterException"/>). Seed 0 passes a null array, seed 1 a populated one.
+/// oracle is the kernel's own C#, and the outputs are compared after the exception too. Seed 0 passes a null array,
+/// seed 1 a populated one.
 /// </summary>
 /// <remarks>
 /// Only the null check is exercised. An index out of range orders the same way in C# (a simple assignment checks the
@@ -117,7 +117,6 @@ public sealed class ThrowOrderDifferentialTests
             Shape = LaunchShapes.SingleThread(),
             Seeds = seeds,
             OracleExceptions = OracleExceptionMode.MatchOracle,
-            ComparesOutputsAfterException = true,
             Inputs = static (rng, _) => new DiffBuffers()
                 .In("o", new[] { -1, -1 }, OutputPolicy.Exact)
                 .In("isNull", new[] { rng.Seed == 0 ? 1 : 0 }, OutputPolicy.Exact, readOnly: true),

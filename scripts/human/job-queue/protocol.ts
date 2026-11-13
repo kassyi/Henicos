@@ -38,6 +38,8 @@ export type ClientMessage =
   | { type: "stop" }
   | { type: "move"; id: number; first?: boolean; before?: number; reset?: boolean }
   | { type: "set-weight"; id: number; weight: number }
+  /** Grants a waiting job at once, over the slots and the memory pool (not a GPU turn, not before its predecessor). */
+  | { type: "start"; id: number }
   /**
    * Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock).
    */
@@ -125,6 +127,7 @@ export type ServerMessage =
   | { type: "cancel-result"; cancelled: number[] }
   | { type: "stopping"; running: number; waiting: number }
   | { type: "move-result"; id: number; position: number }
+  | { type: "start-result"; id: number }
   | { type: "ended"; id: number; outcome: Outcome }
   | { type: "reported"; id: number }
   /** The scheduler has recorded and saved the outcome of a "done". */
@@ -141,6 +144,7 @@ export function wireVersion(message: ClientMessage): number {
   switch (message.type) {
     case "move":
     case "set-weight":
+    case "start":
     case "await":
     case "report":
       return ProtocolVersion;

@@ -20,7 +20,8 @@
 // (backfilling): it ends before the first job could start, counting every running job at its longest recorded time,
 // or it fits in the slots the first job leaves free. `backfill` keeps arrival order with backfilling; `fifo` keeps
 // arrival order without it. `move <id> --first` / `--before <id>` put a waiting job ahead of that order (backfilling
-// still reserves the first job's start); `set-weight` changes the slots a waiting job takes.
+// still reserves the first job's start); `set-weight` changes the slots a waiting job takes; `start <id>` grants a
+// waiting job at once, over the slots and the memory pool, like a GPU holder (not a GPU turn, not before --after).
 //
 // Dependencies: `run --after <id>` starts once that job's recorded outcome lets it (succeeded, or any outcome with
 // --keep-if-failed); when it failed, was cancelled or its client was lost, the job is cancelled too (exit 4). The

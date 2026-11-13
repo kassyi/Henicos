@@ -4,6 +4,7 @@
 
 import * as assert from "node:assert";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { EntryScript, OrphanPollMs, StartupGraceMs } from "./constants.ts";
@@ -14,12 +15,13 @@ import { SchedulerChecks } from "./scheduler-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
-import { MachineProfile, MinimumSlots, parseBudgets, testMemoryMb } from "./machine.ts";
+import { MachineProfile, MinimumSlots, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./machine.ts";
 import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
-import { checkGpuTurnsEndToEnd, checkRegrant, checkWait } from "./self-test-parts.ts";
+import { checkGpuTurnsEndToEnd, checkRegrant, checkStart, checkWait } from "./self-test-parts.ts";
 import { checkReconnects } from "./self-test-reconnect.ts";
 import { checkRestarts } from "./self-test-restart.ts";
+import { checkView } from "./self-test-view.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
@@ -83,6 +85,36 @@ function checkMachineDefaults(): void {
   );
   assert.strictEqual(memory("dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu"), 0, "a build takes no memory");
   assert.strictEqual(testMemoryMb("just test", true, new Map()), 0, "without budgets nothing is held back");
+  checkCpuOnlyProjects();
+}
+
+/** The hint of run --gpu: only when every named test project's csproj says it runs on the CPU. */
+function checkCpuOnlyProjects(): void {
+  const tests = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-tests-"));
+  try {
+    const project = (category: string, name: string, body: string): void => {
+      fs.mkdirSync(path.join(tests, category, name), { recursive: true });
+      fs.writeFileSync(
+        path.join(tests, category, name, `${name}.csproj`),
+        `<Project><PropertyGroup>${body}</PropertyGroup></Project>`,
+      );
+    };
+    project("Compiler", "Suite.Cpu", "<GSharpTargetDialect>Cpu</GSharpTargetDialect>");
+    project("Compiler", "Suite.Cuda", "<GSharpTargetDialect>Cuda</GSharpTargetDialect>");
+    project("Stdlib", "Suite.Math", "<CudaCapability>89</CudaCapability>");
+    const names = ["Suite.Cpu", "Suite.Cuda", "Suite.Math", "Suite.Missing"];
+    const cpuOnly = (command: string): string[] => cpuOnlyTestProjects(command, names, tests);
+    assert.deepStrictEqual(cpuOnly("dotnet test tests/Compiler/Suite.Cpu --no-build"), ["Suite.Cpu"]);
+    assert.deepStrictEqual(
+      cpuOnly("dotnet test tests/Compiler/Suite.Cpu && dotnet test tests/Compiler/Suite.Cuda"),
+      [],
+    );
+    assert.deepStrictEqual(cpuOnly("dotnet test tests/Stdlib/Suite.Math"), [], "no dialect in the csproj: no hint");
+    assert.deepStrictEqual(cpuOnly("dotnet test Suite.Missing"), [], "no csproj: no hint");
+    assert.deepStrictEqual(cpuOnly("just test"), [], "a command that names no project: no hint");
+  } finally {
+    fs.rmSync(tests, { recursive: true, force: true });
+  }
 }
 
 export async function selfTest(): Promise<void> {
@@ -103,6 +135,7 @@ export async function selfTest(): Promise<void> {
       throw error;
     }
   }
+  checkView();
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;
@@ -419,12 +452,15 @@ export async function selfTest(): Promise<void> {
     //     ended one, with 2 for an unknown id.
     await checkWait(fixture, port + 4);
 
-    // 13. A client that comes back: re-registrations that race with the old connection's close or the observation of
-    //     its processes, and another process that reuses its pid.
-    await checkReconnects(fixture, port + 5);
+    // 13. start <id> runs a waiting job beside the running ones, over the pool.
+    await checkStart(fixture, port + 5);
 
-    // 14. A restarted scheduler holds every job of its state file from the first event; an older file keeps the grace.
-    await checkRestarts(fixture, port + 9);
+    // 14. A client that comes back: re-registrations that race with the old connection's close or the observation of
+    //     its processes, and another process that reuses its pid.
+    await checkReconnects(fixture, port + 6);
+
+    // 15. A restarted scheduler holds every job of its state file from the first event; an older file keeps the grace.
+    await checkRestarts(fixture, port + 10);
   } finally {
     await fixture.cleanup();
   }

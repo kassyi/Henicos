@@ -1,10 +1,12 @@
-// Parts 9, 11 and 12 of the job queue self-test: the hrrn re-grant, GPU turns (and a cancel of a GPU holder) and wait.
+// Parts 9, 11, 12 and 13 of the job queue self-test: the hrrn re-grant, GPU turns (and a cancel of a GPU holder),
+// wait and start.
 
 import * as assert from "node:assert";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { RegrantMs, StartupGraceMs, StateDirectoryVariable } from "./constants.ts";
+import { spawnSync } from "node:child_process";
+import { EntryScript, RegrantMs, StartupGraceMs, StateDirectoryVariable } from "./constants.ts";
 import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
 import { delay, removeDirectory, type QueueFixture } from "./self-test-support.ts";
@@ -196,5 +198,35 @@ export async function checkWait(fixture: QueueFixture, port: number): Promise<vo
   assert.strictEqual(await failing.done, 3);
   assert.strictEqual(await waiter(failingJob.id).done, 1, "wait exits 1 for a job that failed");
   assert.strictEqual(await waiter(999999).done, 2, "wait exits 2 for an unknown id");
+  await request(port, { type: "stop" });
+}
+
+/** start <id> grants a waiting job over the full pool; it refuses an unknown id. */
+export async function checkStart(fixture: QueueFixture, port: number): Promise<void> {
+  const { env, client, gated, open, dir, ports, startScheduler, jobWith, runningWith, statusOf } = fixture;
+  ports.push(port);
+  await startScheduler(port, 1);
+  await delay(StartupGraceMs);
+  const holdGate = path.join(dir, "gate-13a");
+  const queuedGate = path.join(dir, "gate-13b");
+  const holder = client(port, gated(0, holdGate));
+  await runningWith(port, gated(0, holdGate));
+  const queued = client(port, gated(0, queuedGate));
+  const queuedJob = await jobWith(port, gated(0, queuedGate));
+  assert.strictEqual(queuedJob.state, "waiting", "one slot: the second job waits");
+  const started = spawnSync(process.execPath, [EntryScript, "start", String(queuedJob.id), "--port", String(port)], {
+    env,
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  assert.strictEqual(started.status, 0, started.stdout + started.stderr);
+  assert.strictEqual(started.stdout.trim(), `#${queuedJob.id} started over the pool`);
+  await runningWith(port, gated(0, queuedGate));
+  assert.strictEqual((await statusOf(port)).used, 2, "it runs beside the first job, over the one slot");
+  const unknown = await request(port, { type: "start", id: 999999 });
+  assert.strictEqual(unknown?.code, "not-waiting");
+  open(holdGate);
+  open(queuedGate);
+  assert.deepStrictEqual(await Promise.all([holder.done, queued.done]), [0, 0]);
   await request(port, { type: "stop" });
 }

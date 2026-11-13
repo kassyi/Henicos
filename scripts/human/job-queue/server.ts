@@ -159,6 +159,7 @@ export class JobServer {
     }
     const job = this.createJob(saved, id, phase);
     job.stub = saved.stub === true;
+    job.startNow = saved.startNow === true; // a placement, kept with pin and before
     job.detachedAt = Date.now();
     this.nextId = Math.max(this.nextId, id + 1);
     this.records.set(id, job);

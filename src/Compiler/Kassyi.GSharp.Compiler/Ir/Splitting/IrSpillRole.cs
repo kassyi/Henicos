@@ -37,7 +37,9 @@ internal enum IrSpillRole
 
     /// <summary>
     /// The value of the target of a compound assignment, which C# reads before it evaluates the right operand. The
-    /// assignment is then written as <c>target = temporary op value</c>, with the conversions of the compound form.
+    /// assignment is then completed by <see cref="IrSpillCompoundStore"/> as <c>temporary op= value; target =
+    /// temporary;</c>: the compound form on the temporary keeps the conversions and the overflow context of the
+    /// original.
     /// </summary>
     CompoundRead
 }

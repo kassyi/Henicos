@@ -177,17 +177,29 @@ internal sealed class IrSpillPlanner
                 // A ref assignment or an address whose operand holds a split
                 Fail(IrSpillFallback.LocationNotRebuildable);
                 return;
+            case IrPropertyReference property when IrReadOnlyReceivers.IsCopiedBeforeTheCall(property.Receiver,
+                property.Property.GetMethod) && HoldsAny(property.Arguments):
+                Fail(IrSpillFallback.ReadOnlyVariableReceiver);
+                return;
         }
 
         var (operands, role) = IrOperandLists.Of(expression) ?? throw new InvalidOperationException(
             $"The split pass has no case for an expression of kind {expression.GetType().Name}.");
-        PlanOperands(operands, role, steps);
+        PlanOperands(operands, role, steps, expression is IrAssignment { IsRef: false } assignment
+            ? assignment.Target
+            : null);
     }
 
     // A call that splits evaluates each argument once before it (it runs again on every resume); any other call
     // evaluates the operands before its last split-holding one before the split
     private void PlanCall(IrCall call, ImmutableArray<IrSpillStep>.Builder steps)
     {
+        if (IrReadOnlyReceivers.IsCopiedBeforeTheCall(call.Receiver, call.Method) && HoldsAny(call.Arguments))
+        {
+            Fail(IrSpillFallback.ReadOnlyVariableReceiver);
+            return;
+        }
+
         var operands = IrOperandLists.Of(call.Receiver, call.Arguments);
         if (!call.Classification.Split.IsSplit)
         {
@@ -212,7 +224,13 @@ internal sealed class IrSpillPlanner
     /// Plans a list of operands: every operand before the last one that holds a split is evaluated before it, that
     /// one is planned in turn, and the ones after it run after the split, where they stand.
     /// </summary>
-    public void PlanOperands(IrExpression[] operands, IrSpillRole role, ImmutableArray<IrSpillStep>.Builder steps)
+    /// <param name="operands">The operands in the C# order of evaluation.</param>
+    /// <param name="role">The role of a spill of an operand before the last one that holds a split.</param>
+    /// <param name="steps">The steps planned so far.</param>
+    /// <param name="storeTarget">The operand that is the target of a simple assignment, which C# checks when it
+    /// stores the value (<see cref="IrLocationCheck.AtStore"/>).</param>
+    public void PlanOperands(IrExpression[] operands, IrSpillRole role, ImmutableArray<IrSpillStep>.Builder steps,
+        IrExpression? storeTarget = null)
     {
         var last = Array.FindLastIndex(operands, _marks.Holds);
         if (last < 0)
@@ -225,7 +243,8 @@ internal sealed class IrSpillPlanner
         {
             var rest = IrOperandLists.Union(effects, index + 1, last + 1);
             var forced = IsForcedByConditional(operands, index, last);
-            PlanBefore(operands[index], new IrSpillContext(rest, rest, role, forced), steps);
+            var check = operands[index] == storeTarget ? IrLocationCheck.AtStore : IrLocationCheck.WhereSelected;
+            PlanBefore(operands[index], new IrSpillContext(rest, rest, role, forced), steps, check);
         }
 
         var holder = operands[last];
@@ -239,12 +258,16 @@ internal sealed class IrSpillPlanner
         }
     }
 
-    /// <summary>Plans an operand evaluated before a split: a location spills its parts, a value its value.</summary>
-    public void PlanBefore(IrExpression operand, in IrSpillContext context, ImmutableArray<IrSpillStep>.Builder steps)
+    /// <summary>
+    /// Plans an operand evaluated before a split: a location spills its parts and is checked where
+    /// <paramref name="check"/> says, a value spills its value.
+    /// </summary>
+    public void PlanBefore(IrExpression operand, in IrSpillContext context, ImmutableArray<IrSpillStep>.Builder steps,
+        IrLocationCheck check = IrLocationCheck.WhereSelected)
     {
         if (IsLocation(operand))
         {
-            IrLocationSpills.PlanParts(this, operand, context.ForParts(), steps);
+            IrLocationSpills.PlanParts(this, operand, context.ForParts(), steps, check);
         }
         else
         {
@@ -302,7 +325,8 @@ internal sealed class IrSpillPlanner
     }
 
     // C# finds the target, reads it, then evaluates the value: with a split in the value, the parts of the target and
-    // its value are evaluated before the split
+    // its value are evaluated before the split, and the operator and the store complete it right after the value,
+    // before anything C# evaluates after the compound assignment
     private void PlanCompoundAssignment(IrCompoundAssignment compound, ImmutableArray<IrSpillStep>.Builder steps)
     {
         var target = compound.Target;
@@ -322,13 +346,16 @@ internal sealed class IrSpillPlanner
 
         var rest = IrStayInPlace.EffectsOf(value, Compilation);
         var context = new IrSpillContext(rest, rest, IrSpillRole.TargetPart, !_marks.HoldsOutsideConditional(value));
-        IrLocationSpills.PlanParts(this, target, context, steps);
-        if (!IrStayInPlace.Stays(target, rest, rest, Compilation))
+        IrLocationSpills.PlanParts(this, target, context, steps, IrLocationCheck.ByRead);
+        if (IrStayInPlace.Stays(target, rest, rest, Compilation))
         {
-            Spill(target, context with { Role = IrSpillRole.CompoundRead }, steps);
+            PlanValue(value, steps);
+            return;
         }
 
+        Spill(target, context with { Role = IrSpillRole.CompoundRead }, steps);
         PlanValue(value, steps);
+        steps.Add(new IrSpillCompoundStore(compound));
     }
 
     // The condition (or left operand) is evaluated where it stands; a conditionally evaluated operand that holds a
@@ -386,6 +413,11 @@ internal sealed class IrSpillPlanner
             IrCoalesce coalesce => _marks.Holds(coalesce.WhenNull),
             _ => false
         };
+
+    private bool HoldsAny(ImmutableArray<IrArgument> arguments) =>
+        arguments
+            .AsStackEnumerable()
+            .Any(_marks, static (argument, marks) => marks.Holds(argument.Value));
 
     private static bool IsLocation(IrExpression operand) =>
         operand.Category is IrCategory.Location or IrCategory.ReadOnlyLocation;

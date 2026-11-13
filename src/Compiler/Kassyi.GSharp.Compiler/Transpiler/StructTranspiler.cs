@@ -53,7 +53,7 @@ internal static class StructTranspiler
     public static bool IsExportedOnItsOwn(INamedTypeSymbol type, Compilation compilation)
     {
         if (!GlobalCppNames.IsEmittedUserType(type) || type.IsGenericType || type.IsRefLikeType ||
-            !IsVisibleToOtherAssemblies(type) ||
+            !GeneratedMemberAccessibility.IsAtLeastInternal(type) ||
             !type.TryGetDeclaringSyntax<TypeDeclarationSyntax>(out var declaration) ||
             !compilation.ContainsSyntaxTree(declaration.SyntaxTree))
         {
@@ -71,21 +71,6 @@ internal static class StructTranspiler
                        (member is IMethodSymbol conversion &&
                         StructConversionEmitter.IsEmittedStructConversion(conversion, c))) ||
                UsingTranspiler.FindDisposeMethod(type, compilation) != null;
-    }
-
-    // Public or internal, and so are the types that contain it
-    private static bool IsVisibleToOtherAssemblies(INamedTypeSymbol type)
-    {
-        for (INamedTypeSymbol? current = type; current != null; current = current.ContainingType)
-        {
-            if (current.DeclaredAccessibility is not (Accessibility.Public or Accessibility.Internal
-                or Accessibility.ProtectedOrInternal))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /// <summary>
