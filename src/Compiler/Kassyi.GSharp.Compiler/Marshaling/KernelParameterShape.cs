@@ -152,12 +152,16 @@ internal readonly record struct KernelParameterShape
     public bool IsByRef => RefKind is RefKind.Ref or RefKind.Out || IsInReference;
 
     /// <summary>
-    /// The argument of a <c>ref</c> parameter of a generated helper that takes this parameter's variable: <c>ref x</c>,
-    /// or <c>ref Unsafe.AsRef(in x)</c> for an <c>in</c> parameter, which C# does not pass as <c>ref</c>.
+    /// The argument of a <c>ref</c> parameter of a generated helper that takes this parameter's variable, spelled
+    /// <c>ref</c> <see cref="ReferenceExpression"/>.
     /// </summary>
-    public string RefArgument => IsInReference
-        ? $"ref {HostTypeNames.Unsafe}.AsRef(in {Identifier})"
-        : $"ref {Identifier}";
+    public string RefArgument => $"ref {ReferenceExpression}";
+
+    /// <summary>
+    /// The variable of a by-reference parameter as a <c>ref</c> value: the parameter, or <c>Unsafe.AsRef(in x)</c> for
+    /// an <c>in</c> parameter, which C# does not pass as <c>ref</c> or take a <c>ref</c> to.
+    /// </summary>
+    public string ReferenceExpression => IsInReference ? $"{HostTypeNames.Unsafe}.AsRef(in {Identifier})" : Identifier;
 
     /// <summary>Whether the parameter is a by-value user struct with <see cref="TransferClass.Identical"/> on CUDA, passed directly via <c>&amp;host</c>.</summary>
     public bool IsDirectCudaValueStruct => IsCustomStruct && !IsByRef && Cuda.IsIdenticalStruct;

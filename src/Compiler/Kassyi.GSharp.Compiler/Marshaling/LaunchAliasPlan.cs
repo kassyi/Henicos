@@ -170,7 +170,7 @@ internal readonly struct LaunchAliasPlan
             _traits.Add(traits);
             _ranges.Add(shape.IsArray
                 ? AliasRange.ForArray(pinned, shape.SpanExpression, shape.LengthExpression, element, traits, shape.Name)
-                : AliasRange.ForReference(pinned, shape.Identifier, element, traits, shape.Name));
+                : AliasRange.ForReference(pinned, shape.ReferenceExpression, element, traits, shape.Name));
         }
 
         public LaunchAliasPlan ToPlan() =>
