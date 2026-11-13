@@ -1,3 +1,9 @@
+---
+trigger: glob
+globs: "**/*.cs"
+description: Naming at the GPU / C# boundary - kernels, device functions, generated launch wrappers, no underscores or prefixes.
+---
+
 # GSharp (Henicos) Naming Conventions: GPU/C# Boundary
 
 This rule defines the strict naming conventions for the boundary between C# code and GPU kernels (CUDA) within the Henicos project.

@@ -1,3 +1,9 @@
+---
+trigger: glob
+globs: "**/src/Compiler/**"
+description: Rules for code that emits C# or CUDA C++ - no reflection, SourceWriter and scoped brackets, dense output, plan then emit.
+---
+
 # Transpiler Emission Rules (SourceWriter / Generated Output)
 
 Mandatory rules for any code that emits C# (Source Generators) or CUDA C++ (`.cu`, e.g. `RoslynToCudaVisitor.cs`).
