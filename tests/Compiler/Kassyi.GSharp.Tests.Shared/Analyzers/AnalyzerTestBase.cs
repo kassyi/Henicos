@@ -11,9 +11,12 @@ public abstract class AnalyzerTestBase
     protected async Task VerifyAnalyzerFromFileAsync(string relativeFilePath, DiagnosticAnalyzer analyzer,
         string testName, string assemblyName = "TestAssembly")
     {
-        var compilation = RoslynTestUtility.GetTestCaseContext("Analyzers/" + relativeFilePath)
-            .Compilation
-            .WithAssemblyName(assemblyName);
+        // The test case alone, without the global usings of the shared test sources, as an assembly without unsafe code
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/" + relativeFilePath));
+        compilation = compilation
+            .WithAssemblyName(assemblyName)
+            .WithOptions(compilation.Options.WithAllowUnsafe(false));
 
         var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer));
         var diagnostics = await compilationWithAnalyzers.GetAllDiagnosticsAsync();
