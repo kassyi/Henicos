@@ -1,3 +1,4 @@
+#nullable enable
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -40,6 +41,8 @@ internal static class BuildProcessRunner
     /// Runs <c>dotnet build &lt;projectFile&gt; -c Debug</c> in <paramref name="workingDirectory"/> with a binary log and
     /// without build servers, and returns its exit code and captured output.
     /// </summary>
+    /// <param name="workingDirectory">The directory the build runs in.</param>
+    /// <param name="projectFile">The project to build, relative to <paramref name="workingDirectory"/>.</param>
     /// <param name="environment">Environment variables set (or, with a <see langword="null"/> value, removed) for the
     /// build only.</param>
     /// <exception cref="TimeoutException">

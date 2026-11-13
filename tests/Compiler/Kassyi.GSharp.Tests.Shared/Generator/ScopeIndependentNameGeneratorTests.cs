@@ -1,3 +1,4 @@
+#nullable enable
 using Kassyi.GSharp.Compiler.NativeApi;
 using Kassyi.GSharp.Tests.Shared.Generators;
 using Kassyi.GSharp.Tests.Shared.Helpers;
