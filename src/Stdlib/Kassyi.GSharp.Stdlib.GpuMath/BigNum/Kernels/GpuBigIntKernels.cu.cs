@@ -292,7 +292,7 @@ public static partial class GpuBigIntKernels
     // array reads as zero
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ShiftedLeftWord(uint[] dA, int i, int wordShift, int bitShift, int numWords)
+    public static uint ShiftedLeftWord([GpuReadOnly] uint[] dA, int i, int wordShift, int bitShift, int numWords)
     {
         var srcIdx0 = i - wordShift;
         var srcIdx1 = srcIdx0 - 1;
@@ -317,7 +317,7 @@ public static partial class GpuBigIntKernels
     // array reads as zero
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ShiftedRightWord(uint[] dA, int i, int wordShift, int bitShift, int numWords)
+    public static uint ShiftedRightWord([GpuReadOnly] uint[] dA, int i, int wordShift, int bitShift, int numWords)
     {
         var srcIdx0 = i + wordShift;
         var srcIdx1 = srcIdx0 + 1;
@@ -382,23 +382,7 @@ public static partial class GpuBigIntKernels
         var left = Gpu.NotNull(ctx.Operands.LeftOperand);
         Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
-            var srcIdx0 = i - wordShift;
-            var srcIdx1 = srcIdx0 - 1;
-
-            var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
-            var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
-
-            var w0 = left[safeIdx0];
-            var w1 = left[safeIdx1];
-
-            var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-            var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-
-            w0 &= mask0;
-            w1 &= mask1;
-
-            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
-            ctx.Operands.ResultBuffer[i] = (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
+            ctx.Operands.ResultBuffer[i] = ShiftedLeftWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
         });
     }
 
@@ -408,23 +392,7 @@ public static partial class GpuBigIntKernels
         var left = Gpu.NotNull(ctx.Operands.LeftOperand);
         Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
-            var srcIdx0 = i + wordShift;
-            var srcIdx1 = srcIdx0 + 1;
-
-            var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
-            var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
-
-            var w0 = left[safeIdx0];
-            var w1 = left[safeIdx1];
-
-            var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-            var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-
-            w0 &= mask0;
-            w1 &= mask1;
-
-            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
-            ctx.Operands.ResultBuffer[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
+            ctx.Operands.ResultBuffer[i] = ShiftedRightWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
         });
     }
 
@@ -494,23 +462,7 @@ public static partial class GpuBigIntKernels
         var bitShift = shiftBits % 32;
         for (int i = 0; i < ctx.NumberOfWords; i++)
         {
-            var srcIdx0 = i - wordShift;
-            var srcIdx1 = srcIdx0 - 1;
-
-            var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
-            var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
-
-            var w0 = left[safeIdx0];
-            var w1 = left[safeIdx1];
-
-            var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-            var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-
-            w0 &= mask0;
-            w1 &= mask1;
-
-            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
-            result[i] = (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
+            result[i] = ShiftedLeftWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
         }
     }
 
@@ -521,23 +473,7 @@ public static partial class GpuBigIntKernels
         var bitShift = shiftBits % 32;
         for (int i = 0; i < ctx.NumberOfWords; i++)
         {
-            var srcIdx0 = i + wordShift;
-            var srcIdx1 = srcIdx0 + 1;
-
-            var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
-            var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
-
-            var w0 = left[safeIdx0];
-            var w1 = left[safeIdx1];
-
-            var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-            var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-
-            w0 &= mask0;
-            w1 &= mask1;
-
-            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
-            result[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
+            result[i] = ShiftedRightWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
         }
     }
 

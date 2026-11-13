@@ -32,6 +32,8 @@ public static class GpuBigIntMath
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the sum.</param>
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than the wider operand; nothing
     /// is written.</exception>
+    /// <remarks><paramref name="resultBuffer"/> may be an operand or overlap one; the result is the one of a separate
+    /// buffer.</remarks>
     public static void Add(
         scoped GpuBigUIntView leftOperand,
         scoped GpuBigUIntView rightOperand,
@@ -69,8 +71,8 @@ public static class GpuBigIntMath
     /// contents of <paramref name="resultBuffer"/> are then unspecified.
     /// </para>
     /// <para>
-    /// <paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself (in place); a buffer that only
-    /// partly overlaps it is not supported.
+    /// <paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself (in place) or overlap it in any
+    /// other way; the result is the one of a separate buffer.
     /// </para>
     /// </remarks>
     public static void Add(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer) =>
@@ -78,7 +80,8 @@ public static class GpuBigIntMath
 
     // Add on the owned type; the public method above takes views and borrows them
     private static void AddCore(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
-        leftOperand.Workspace.Provider.Add(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
+        WriteElementwise(leftOperand, resultBuffer, rightOperand, static (scalar, operand, result) =>
+            operand.Workspace.Provider.Add(operand.Workspace, operand, scalar, result));
 
     /// <summary>
     /// Performs signed-magnitude addition of two signed big integers and returns the resulting sign.
@@ -138,6 +141,8 @@ public static class GpuBigIntMath
     /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the difference.</param>
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than <paramref
     /// name="leftOperand"/>; nothing is written. A difference below zero is a domain error.</exception>
+    /// <remarks><paramref name="resultBuffer"/> may be an operand or overlap one; the result is the one of a separate
+    /// buffer.</remarks>
     public static void Sub(
         scoped GpuBigUIntView leftOperand,
         scoped GpuBigUIntView rightOperand,
@@ -174,8 +179,8 @@ public static class GpuBigIntMath
     /// contents of <paramref name="resultBuffer"/> are then unspecified.
     /// </para>
     /// <para>
-    /// <paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself (in place); a buffer that only
-    /// partly overlaps it is not supported.
+    /// <paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself (in place) or overlap it in any
+    /// other way; the result is the one of a separate buffer.
     /// </para>
     /// </remarks>
     public static void Sub(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer) =>
@@ -183,7 +188,8 @@ public static class GpuBigIntMath
 
     // Sub on the owned type; the public method above takes views and borrows them
     private static void SubCore(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
-        leftOperand.Workspace.Provider.Sub(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
+        WriteElementwise(leftOperand, resultBuffer, rightOperand, static (scalar, operand, result) =>
+            operand.Workspace.Provider.Sub(operand.Workspace, operand, scalar, result));
 
     /// <summary>
     /// Computes the full arbitrary-precision product of two big integers on the GPU (<c>resultBuffer = leftOperand * rightOperand</c>).
@@ -238,8 +244,8 @@ public static class GpuBigIntMath
     /// contents of <paramref name="resultBuffer"/> are then unspecified.
     /// </para>
     /// <para>
-    /// <paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself (in place); a buffer that only
-    /// partly overlaps it is not supported.
+    /// <paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself (in place) or overlap it in any
+    /// other way; the result is the one of a separate buffer.
     /// </para>
     /// </remarks>
     public static void Mul(scoped GpuBigUIntView leftOperand, uint rightOperand, scoped GpuBigUIntView resultBuffer) =>
@@ -247,7 +253,8 @@ public static class GpuBigIntMath
 
     // Mul on the owned type; the public method above takes views and borrows them
     private static void MulCore(GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
-        leftOperand.Workspace.Provider.Mul(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
+        WriteElementwise(leftOperand, resultBuffer, rightOperand, static (scalar, operand, result) =>
+            operand.Workspace.Provider.Mul(operand.Workspace, operand, scalar, result));
 
     /// <summary>
     /// Computes the full arbitrary-precision product of two big integers on the GPU using the Number Theoretic Transform (NTT) algorithm
@@ -318,8 +325,7 @@ public static class GpuBigIntMath
 
         // A quotient buffer that overlaps the dividend gets the quotient through a temporary, as for separate buffers;
         // the words above the quotient are cleared after the division, so a failed one leaves the buffer as it was
-        if (quotientBuffer.DevicePointer != dividend.DevicePointer &&
-            DeviceRanges.Overlaps(quotientBuffer.Handle, dividend.Handle))
+        if (BigIntWideOps.PartlyOverlaps(quotientBuffer, dividend))
         {
             using var staging = workspace.RentTemp(words);
             remainder = workspace.Provider.DivideByUInt32(workspace, dividend, divisor, staging);
@@ -435,8 +441,8 @@ public static class GpuBigIntMath
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than <paramref
     /// name="leftOperand"/>; nothing is written. A buffer narrower than the shifted value is the checked form: a
     /// shifted-out bit is a domain error.</exception>
-    /// <remarks><paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself or overlap it; the result is
-    /// the one of a separate buffer.</remarks>
+    /// <remarks><paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself or overlap it; the result
+    /// is the one of a separate buffer.</remarks>
     public static void ShiftLeft(
         scoped GpuBigUIntView leftOperand,
         int shiftBits,
@@ -516,8 +522,8 @@ public static class GpuBigIntMath
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than the bits that remain (<c>32
     /// * leftOperand.NumWords - shiftBits</c>, at least one word), or <paramref name="shiftBits"/> is <see
     /// cref="int.MinValue"/>.</exception>
-    /// <remarks><paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself or overlap it; the result is
-    /// the one of a separate buffer.</remarks>
+    /// <remarks><paramref name="resultBuffer"/> may be <paramref name="leftOperand"/> itself or overlap it; the result
+    /// is the one of a separate buffer.</remarks>
     public static void ShiftRight(
         scoped GpuBigUIntView leftOperand,
         int shiftBits,
@@ -662,6 +668,8 @@ public static class GpuBigIntMath
     /// <param name="resultBuffer">The destination buffer receiving the bitwise AND result.</param>
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than the narrower operand;
     /// nothing is written.</exception>
+    /// <remarks><paramref name="resultBuffer"/> may be an operand or overlap one; the result is the one of a separate
+    /// buffer.</remarks>
     public static void BitwiseAnd(
         scoped GpuBigUIntView leftOperand,
         scoped GpuBigUIntView rightOperand,
@@ -690,6 +698,8 @@ public static class GpuBigIntMath
     /// <param name="resultBuffer">The destination buffer receiving the bitwise OR result.</param>
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than the wider operand; nothing
     /// is written.</exception>
+    /// <remarks><paramref name="resultBuffer"/> may be an operand or overlap one; the result is the one of a separate
+    /// buffer.</remarks>
     public static void BitwiseOr(
         scoped GpuBigUIntView leftOperand,
         scoped GpuBigUIntView rightOperand,
@@ -718,6 +728,8 @@ public static class GpuBigIntMath
     /// <param name="resultBuffer">The destination buffer receiving the bitwise XOR result.</param>
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than the wider operand; nothing
     /// is written.</exception>
+    /// <remarks><paramref name="resultBuffer"/> may be an operand or overlap one; the result is the one of a separate
+    /// buffer.</remarks>
     public static void BitwiseXor(
         scoped GpuBigUIntView leftOperand,
         scoped GpuBigUIntView rightOperand,
@@ -744,6 +756,8 @@ public static class GpuBigIntMath
     /// <param name="leftOperand">The operand to invert.</param>
     /// <param name="resultBuffer">The destination buffer receiving the bitwise NOT result.</param>
     /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
+    /// <remarks><paramref name="resultBuffer"/> may be an operand or overlap one; the result is the one of a separate
+    /// buffer.</remarks>
     public static void BitwiseNot(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView resultBuffer) =>
         BitwiseNotCore(leftOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
 
@@ -751,7 +765,24 @@ public static class GpuBigIntMath
     private static void BitwiseNotCore(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
-        leftOperand.Workspace.Provider.BitwiseNot(leftOperand.Workspace, leftOperand, resultBuffer);
+        WriteElementwise(leftOperand, resultBuffer, 0, static (_, operand, result) =>
+            operand.Workspace.Provider.BitwiseNot(operand.Workspace, operand, result));
+    }
+
+    // Runs an element-wise operation of operand into resultBuffer, or into a temporary copied into resultBuffer when
+    // the two partly overlap (BigIntWideOps.PartlyOverlaps)
+    private static void WriteElementwise<TState>(GpuBigUInt operand, GpuBigUInt resultBuffer, TState state,
+        Action<TState, GpuBigUInt, GpuBigUInt> write)
+    {
+        if (!BigIntWideOps.PartlyOverlaps(resultBuffer, operand))
+        {
+            write(state, operand, resultBuffer);
+            return;
+        }
+
+        using var staging = operand.Workspace.RentTemp(resultBuffer.NumWords);
+        write(state, operand, staging);
+        resultBuffer.CopyFrom(staging);
     }
 
     /// <summary>

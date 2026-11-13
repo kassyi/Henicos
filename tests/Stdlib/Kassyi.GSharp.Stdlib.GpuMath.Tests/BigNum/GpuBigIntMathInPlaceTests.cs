@@ -26,6 +26,9 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
     // The largest operand that a shift runs in place in one block; a larger one is copied first
     private const int InPlaceMaxWords = KernelBasicMathHandler.InPlaceShiftMaxWords;
 
+    // A warp, a block of 1024 threads and two passes of it, each with its neighbours
+    private static readonly int[] BoundaryWords = [31, 32, 33, 1023, 1024, 1025, 2047, 2048, 2049];
+
     private readonly GpuKernelLoader.CudaContextScope _scope;
     private readonly GpuWorkspace _workspace;
 
@@ -95,6 +98,18 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
             { Operation.ShiftLeft, LargeWords, 0, false },
             { Operation.ShiftRight, LargeWords, 0, false }
         };
+
+        // Sizes at a warp, a block of 1024 threads and two passes of it, each shifted by multiples of 32 and by the
+        // width and its neighbours (a shift by the width or more gives zero)
+        foreach (var words in BoundaryWords)
+        {
+            var width = 32 * words;
+            foreach (var shift in new[] { 32, 64, width - 1, width, width + 1 })
+            {
+                data.Add(Operation.ShiftLeft, words, shift, false);
+                data.Add(Operation.ShiftRight, words, shift, false);
+            }
+        }
 
         foreach (var operation in new[]
                  {
@@ -181,7 +196,8 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
         var seed = 7010 + ((int)overlap * 97) + words;
         var random = new Random(seed);
         var wordBits = 32 * words;
-        var source0 = RandomValue(random, overlap == PartialOverlap.LeftIntoTheWordsAbove ? wordBits - shift : wordBits);
+        var sourceBits = overlap == PartialOverlap.LeftIntoTheWordsAbove ? wordBits - shift : wordBits;
+        var source0 = RandomValue(random, sourceBits);
         var other0 = RandomValue(random, 32);
         var onTop = overlap != PartialOverlap.LeftIntoTheWordsAbove;
         var buffer0 = onTop ? (source0 << 32) | other0 : (other0 << wordBits) | source0;
@@ -267,6 +283,101 @@ public sealed class GpuBigIntMathInPlaceTests : IDisposable
 
         var expected = operation == Operation.ShiftLeft ? value0 << (Shift * Count) : value0 >> (Shift * Count);
         Assert.True(expected == value.ToBigInteger(), $"{operation} seed {seed}");
+    }
+
+    /// <summary>
+    /// The element-wise operations, the operand that shares words with the result (the left, or the right of a
+    /// two-operand form), the word count, and how many words the result starts above (positive) or below the operand.
+    /// </summary>
+    public static TheoryData<Operation, bool, int, int> ElementwiseOverlapCases()
+    {
+        var data = new TheoryData<Operation, bool, int, int>();
+        var sizes = new[] { (2048, 1), (2048, 1024), (5000, 2500) };
+        foreach (var operation in new[]
+                 {
+                     Operation.Add, Operation.Sub, Operation.AddScalar, Operation.SubScalar, Operation.MulScalar,
+                     Operation.BitwiseAnd, Operation.BitwiseOr, Operation.BitwiseXor, Operation.BitwiseNot,
+                     Operation.DivideByUInt32
+                 })
+        {
+            var twoOperands = operation is Operation.Add or Operation.Sub or Operation.BitwiseAnd or
+                Operation.BitwiseOr or Operation.BitwiseXor;
+            foreach (var (words, offset) in sizes)
+            {
+                foreach (var shared in twoOperands ? new[] { false, true } : new[] { false })
+                {
+                    data.Add(operation, shared, words, offset);
+                    data.Add(operation, shared, words, -offset);
+                }
+            }
+        }
+
+        return data;
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ElementwiseOverlapCases))]
+    public void Elementwise_ResultPartlyOverlapsAnOperand_GivesTheSeparateBufferResult(Operation operation,
+        bool rightIsShared, int words, int offset)
+    {
+        // P1: the result words of the buffer hold the BigInteger result of the original operands, as with a separate
+        // result buffer; the words of the buffer outside the result keep their value.
+        // P2: the operand that does not share the buffer keeps its value.
+        // Coverage: from 2048 words the single-block kernels of Add and Sub walk the words in passes of 1024, so a
+        // result one word above the operand reads in its second pass a word the first pass wrote.
+        // mutant: BigIntWideOps.PartlyOverlaps returns false (no temporary): 35 of the 90 cases fail, every Add, Sub
+        //         and scalar case with the result above the operand, and some bitwise and DivideByUInt32 cases
+        var seed = 7013 + ((int)operation * 1_000_003) + (words * 31) + offset + (rightIsShared ? 7 : 0);
+        var random = new Random(seed);
+        var (a0, b0) = Operands(operation, words, 0, random);
+        const uint Scalar = 0x9E3779B9u;
+        var gap = Math.Abs(offset);
+        var filler0 = RandomValue(random, 32 * gap);
+        var shared0 = rightIsShared ? b0 : a0;
+
+        // The shared operand at words [0, n) with the filler above, or at [gap, n + gap) with the filler below; the
+        // result at the other end
+        var buffer0 = offset > 0 ? (filler0 << (32 * words)) | shared0 : (shared0 << (32 * gap)) | filler0;
+        using var buffer = GpuBigUInt.FromBigInteger(_workspace, buffer0, words + gap);
+        GpuBigUIntView view = buffer;
+        var operandView = view.Slice(offset > 0 ? 0 : gap, words);
+        var resultView = view.Slice(offset > 0 ? gap : 0, words);
+        using var other = GpuBigUInt.FromBigInteger(_workspace, rightIsShared ? a0 : b0, words);
+        var operand = operandView.AsBorrowedBigUInt();
+        var (a, b) = rightIsShared ? (other, operand) : (operand, other);
+
+        var value = Run(operation, a, b, resultView.AsBorrowedBigUInt(), 0, Scalar, a0, b0, words);
+
+        var below = offset > 0 ? buffer0 & ((BigInteger.One << (32 * gap)) - 1) : BigInteger.Zero;
+        var above = offset > 0 ? BigInteger.Zero : buffer0 >> (32 * words);
+        var expected = offset > 0 ? (value << (32 * gap)) | below : (above << (32 * words)) | value;
+        var message = $"{operation} words {words} offset {offset} shared {(rightIsShared ? "right" : "left")}, " +
+                      $"seed {seed}";
+        Assert.True(expected == buffer.ToBigInteger(), $"buffer: {message}");
+        Assert.True((rightIsShared ? a0 : b0) == other.ToBigInteger(), $"other operand changed: {message}");
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(SmallWords, 37)]
+    [InlineData(SmallWords, (32 * 300) + 7)]
+    [InlineData(InPlaceMaxWords, (32 * 4096) + 5)]
+    [InlineData(LargeWords, (32 * 4096) + 5)]
+    public void ProviderShiftLeft_InPlaceWithHighBitsSet_DropsTheBitsShiftedOut(int words, int shift)
+    {
+        // P1: the provider's left shift (no overflow check) of a value with its top words set gives the shifted value
+        // modulo 2^(32 n), in place as with a separate buffer.
+        // Coverage: the public ShiftLeft rejects a set bit shifted out, so only the provider runs the in-place kernel
+        // on words that leave the top.
+        var seed = 7014 + (words * 31) + shift;
+        var value0 = RandomValue(new Random(seed), 32 * words);
+        using var value = GpuBigUInt.FromBigInteger(_workspace, value0, words);
+
+        _workspace.Provider.ShiftLeft(_workspace, value, shift, value);
+
+        var mask = (BigInteger.One << (32 * words)) - 1;
+        Assert.True(((value0 << shift) & mask) == value.ToBigInteger(), $"words {words} shift {shift} seed {seed}");
     }
 
     // Runs the operation into result and returns the expected value
