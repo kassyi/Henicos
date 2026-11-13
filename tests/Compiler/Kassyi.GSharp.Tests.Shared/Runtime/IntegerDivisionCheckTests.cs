@@ -150,6 +150,23 @@ public class IntegerDivisionCheckTests : TranspilerTestBase
         Assert.Equal([3u, 9u], a);
     }
 
+    // mutant: ManagedDivision.PlanCompound with AssignByReference for every target (a[1] and x read after the value: 1)
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Compound_ValueThatWrites_ReadsTheTargetFirst(bool forceManaged)
+    {
+        int[] a = [int.MinValue, int.MinValue, int.MinValue];
+        int[] d = [-1, -1, -1];
+        var o = new int[2];
+
+        Run(forceManaged, () => IntegerDivisionCheckKernels.LaunchValueWritingCompoundKernel(a, d, o, blockDimX: 1));
+
+        Assert.Equal([int.MinValue, int.MinValue, int.MinValue], a);
+        Assert.Equal([int.MinValue, 1], o);
+    }
+
     // The managed execution path exists only on the CPU dialects
     private void Run(bool forceManaged, Action launch)
     {

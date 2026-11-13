@@ -82,11 +82,11 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__CSharp
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__CSharpExecutionKernels__Exchange(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_t){
 __syncthreads();
-return __gsharp_array_at(__gsharp_id_0_data, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_1_t,1),(int)blockDim.x,""Attempted to divide by zero. at CSharpExecutionKernels.cs(101,21)""), ""G#: a null array is read at CSharpExecutionKernels.cs(101,16)"");
+return __gsharp_array_at(__gsharp_id_0_data, (__gsharp_add_i32(__gsharp_id_1_t,1))%(int)blockDim.x, ""G#: a null array is read at CSharpExecutionKernels.cs(101,16)"");
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__CSharpExecutionKernels__LinearThreadIndex(){
-return __gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.z,(int)gridDim.y),(int)blockIdx.y),(int)gridDim.x),(int)blockIdx.x),__gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z)),__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.z,(int)blockDim.y),(int)threadIdx.y),(int)blockDim.x)),(int)threadIdx.x);
+return __gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.z,(int)gridDim.y),(int)blockIdx.y),(int)gridDim.x),(int)blockIdx.x),__gsharp_mul_i32((int)blockDim.x*(int)blockDim.y,(int)blockDim.z)),__gsharp_mul_i32(__gsharp_add_i32((int)threadIdx.z*(int)blockDim.y,(int)threadIdx.y),(int)blockDim.x)),(int)threadIdx.x);
 }
 
 ";
@@ -136,7 +136,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = __gsharp_ctx.data[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.t + 1), global::Kassyi.GSharp.Core.BlockDimension.X)];
+__gsharp_result = __gsharp_ctx.data[(__gsharp_ctx.t + 1) % global::Kassyi.GSharp.Core.BlockDimension.X];
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
@@ -182,7 +182,6 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(23195841u, "CSharpExecutio
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(707707086u, "CSharpExecutionKernels.cs", 76, 9, "BarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(644839098u, "CSharpExecutionKernels.cs", 78, 9, "BarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(929926629u, "CSharpExecutionKernels.cs", 78, 20, "BarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(28481916u, "CSharpExecutionKernels.cs", 78, 25, "BarrierKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1177960142u, "CSharpExecutionKernels.cs", 85, 9, "BarrierThroughDeviceFunctionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(597053405u, "CSharpExecutionKernels.cs", 93, 31, "SharedMemoryKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1346481842u, "CSharpExecutionKernels.cs", 94, 9, "SharedMemoryKernel", "G#: a null array is read"),
@@ -272,7 +271,7 @@ int __gsharp_id_3_id = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__CShar
 int __gsharp_id_4_slot = __gsharp_array_at(__gsharp_id_1_next, 0, 275461285u);
 __gsharp_array_at(__gsharp_id_1_next, 0, 1665346940u)=__gsharp_add_i32(__gsharp_id_4_slot,1);
 __gsharp_array_at(__gsharp_id_0_order, __gsharp_id_4_slot, 48956135u)=__gsharp_id_3_id;
-__gsharp_array_at(__gsharp_id_2_coordinates, __gsharp_id_3_id, 598362998u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32(10,(int)threadIdx.y)),__gsharp_mul_i32(100,(int)blockIdx.x)),__gsharp_mul_i32(1000,(int)blockIdx.y));
+__gsharp_array_at(__gsharp_id_2_coordinates, __gsharp_id_3_id, 598362998u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x,10*(int)threadIdx.y),__gsharp_mul_i32(100,(int)blockIdx.x)),__gsharp_mul_i32(1000,(int)blockIdx.y));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RecordOrderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__CSharpExecutionKernels__RecordOrderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -1637,7 +1636,7 @@ __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_t = (int)threadIdx.x;
 __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 707707086u)=__gsharp_id_1_t;
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 644839098u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 644839098u),__gsharp_array_at(__gsharp_id_0_data, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_1_t,1),(int)blockDim.x,28481916u), 929926629u));
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 644839098u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 644839098u),__gsharp_array_at(__gsharp_id_0_data, (__gsharp_add_i32(__gsharp_id_1_t,1))%(int)blockDim.x, 929926629u));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__CSharpExecutionKernels__BarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

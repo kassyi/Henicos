@@ -60,32 +60,69 @@ internal static class ManagedDivision
             return null;
         }
 
-        // [WHY] C# reads the target before it evaluates the value; the call reads it after, through the reference, so a
-        // value that writes something (x /= (x = 5)) keeps the C# operator
-        if (operation.Value.Syntax is not ExpressionSyntax value || !ExpressionEffects.Of(value, model).Writes.IsEmpty)
+        if (operation.Value.Syntax is not ExpressionSyntax value ||
+            operation.Target.Syntax is not ExpressionSyntax target)
         {
             return null;
         }
 
+        // C# finds the location, reads the target, then evaluates the value (C# spec §12.21.4). A value that writes the
+        // variable of the target (x /= (x = 5)) must not run before that read
+        var valueWrites = ExpressionEffects.Of(value, model).Writes;
         var divide = operation.OperatorKind == BinaryOperatorKind.Divide;
-        if (IsReferenceable(operation.Target))
+        var helper = Pick(divide, type, Names.DivideInt32, Names.DivideInt64, Names.RemainderInt32,
+            Names.RemainderInt64);
+        if (operation.Target is IPropertyReferenceOperation { Property.ReturnsByRef: false } property)
+        {
+            return PlanProperty(property, valueWrites, helper, model);
+        }
+
+        if (!IsReferenceable(operation.Target))
+        {
+            return null;
+        }
+
+        if (!valueWrites.Overlaps(ExpressionEffects.RootOf(target, model)))
         {
             var assign = Pick(divide, type, Names.DivideAssignInt32, Names.DivideAssignInt64,
                 Names.RemainderAssignInt32, Names.RemainderAssignInt64);
             return new ManagedDivisionPlan(assign, ManagedDivisionForm.AssignByReference);
         }
 
-        // A property: get once, divide, set once, as the compound assignment does; its receiver is written twice, so it
-        // must neither write nor throw
-        if (operation.Target is IPropertyReferenceOperation { Instance: var instance } &&
-            (instance is null || IsRepeatable(instance, model)))
+        // The value writes the target's variable: a local or a by-value parameter is read as the first argument, before
+        // the value; a location in memory is found once and read before the value through a reference
+        if (operation.Target is ILocalReferenceOperation { Local.RefKind: RefKind.None } or
+            IParameterReferenceOperation { Parameter.RefKind: RefKind.None })
         {
-            var helper = Pick(divide, type, Names.DivideInt32, Names.DivideInt64, Names.RemainderInt32,
-                Names.RemainderInt64);
             return new ManagedDivisionPlan(helper, ManagedDivisionForm.Reassign);
         }
 
-        return null;
+        var store = Pick(divide, type, Names.DivideStoreInt32, Names.DivideStoreInt64, Names.RemainderStoreInt32,
+            Names.RemainderStoreInt64);
+        var read = type == SpecialType.System_Int32 ? Names.ReadReferenceInt32 : Names.ReadReferenceInt64;
+        return new ManagedDivisionPlan(store, ManagedDivisionForm.ReadFirst, read);
+    }
+
+    // A property or indexer: get once, divide, set once, as the compound assignment does. The receiver and the arguments
+    // are written twice (for the get and for the set), so they must neither write nor throw, and the value must not
+    // write what they read
+    private static ManagedDivisionPlan? PlanProperty(IPropertyReferenceOperation property, VariableSet valueWrites,
+        string helper, SemanticModel model)
+    {
+        if (property.Instance is { } instance && !IsRepeatable(instance, valueWrites, model))
+        {
+            return null;
+        }
+
+        foreach (var argument in property.Arguments)
+        {
+            if (!IsRepeatable(argument.Value, valueWrites, model))
+            {
+                return null;
+            }
+        }
+
+        return new ManagedDivisionPlan(helper, ManagedDivisionForm.Reassign);
     }
 
     private static bool MayDivideMinimumByMinusOne(SpecialType type, IOperation dividend, IOperation divisor)
@@ -107,10 +144,19 @@ internal static class ManagedDivision
         _ => false
     };
 
-    private static bool IsRepeatable(IOperation instance, SemanticModel model) =>
-        instance.Syntax is ExpressionSyntax receiver &&
-        ExpressionEffects.Of(receiver, model).Writes.IsEmpty &&
-        !ExpressionTraps.MayTrap(receiver, model);
+    // An expression written twice: it writes nothing, throws nothing, and reads nothing that the value writes
+    private static bool IsRepeatable(IOperation operation, VariableSet valueWrites, SemanticModel model)
+    {
+        if (operation.Syntax is not ExpressionSyntax expression)
+        {
+            return false;
+        }
+
+        var effects = ExpressionEffects.Of(expression, model);
+        return effects.Writes.IsEmpty &&
+               !valueWrites.Overlaps(effects.Reads) &&
+               !ExpressionTraps.MayTrap(expression, model);
+    }
 
     private static string Pick(bool divide, SpecialType type, string divide32, string divide64, string remainder32,
         string remainder64) =>
@@ -137,12 +183,23 @@ internal enum ManagedDivisionForm
     AssignByReference,
 
     /// <summary>
-    /// <c>&lt;target&gt; = ManagedGpuContext.&lt;helper&gt;(&lt;target&gt;, &lt;value&gt;)</c>, for a property.
+    /// <c>&lt;target&gt; = ManagedGpuContext.&lt;helper&gt;(&lt;target&gt;, &lt;value&gt;)</c>, for a property, an
+    /// indexer, or a local or by-value parameter whose value writes it.
     /// </summary>
-    Reassign
+    Reassign,
+
+    /// <summary>
+    /// <c>ManagedGpuContext.&lt;helper&gt;(ref ManagedGpuContext.&lt;reader&gt;(ref &lt;target&gt;, out var c), c,
+    /// &lt;value&gt;)</c>: a location in memory found once and read before a value that writes it, as
+    /// <c>ref var t = ref &lt;target&gt;; t = t / &lt;value&gt;;</c> does.
+    /// </summary>
+    ReadFirst
 }
 
 /// <summary>The <c>ManagedGpuContext</c> function of a division and the form it is written in.</summary>
 /// <param name="Helper">The name of the function (<c>__gsharp_div_i32</c>, <c>__gsharp_div_assign_i32</c>, ...).</param>
 /// <param name="Form">How the call is written.</param>
-internal readonly record struct ManagedDivisionPlan(string Helper, ManagedDivisionForm Form);
+/// <param name="Reader">
+/// The function that reads the target first (<see cref="ManagedDivisionForm.ReadFirst"/>), or null.
+/// </param>
+internal readonly record struct ManagedDivisionPlan(string Helper, ManagedDivisionForm Form, string? Reader = null);

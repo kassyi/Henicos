@@ -332,7 +332,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum __gsharp_i
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNumOps__AddWithContext(&__gsharp_id_5_ctx,&__gsharp_id_8_pre,__gsharp_id_6_a,__gsharp_id_7_b);
 __gsharp_id_0_scratch[__gsharp_id_1_localTid]=__gsharp_id_8_pre.__gsharp_mb_Value;
 __syncthreads();
-int __gsharp_id_9_neighbor = __gsharp_id_0_scratch[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_1_localTid,1),(int)(int)blockDim.x,""Attempted to divide by zero. at LanguageConversionsAndMacrosDifferentialKernels.cs(177,32)"")];
+int __gsharp_id_9_neighbor = __gsharp_id_0_scratch[(__gsharp_add_i32(__gsharp_id_1_localTid,1))%(int)(int)blockDim.x];
 __syncthreads();
 auto __gsharp_id_10_n = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum(__gsharp_id_9_neighbor);
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMacroNum __gsharp_id_11_post = {};
@@ -425,7 +425,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.neighbor = __gsharp_ctx.scratch[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.localTid + 1), (int)global::Kassyi.GSharp.Core.BlockDimension.X)];
+__gsharp_ctx.neighbor = __gsharp_ctx.scratch[(__gsharp_ctx.localTid + 1) % (int)global::Kassyi.GSharp.Core.BlockDimension.X];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
@@ -516,7 +516,6 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(248305208u, "LanguageConve
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(376381546u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 341, 51, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is passed where it is not nullable"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(44509624u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 344, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1610070458u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 346, 24, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(346955434u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 346, 32, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1905599566u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 359, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(410388266u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 360, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1540718082u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 361, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
@@ -1890,7 +1889,7 @@ int __gsharp_id_8_macroCalls;
 int __gsharp_id_7_suspendedVal = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageConversionsAndMacrosDifferentialKernels__SuspendAndCombineMacro(__gsharp_array_ref(__gsharp_id_1_scratch, 376381546u),__gsharp_id_3_localTid,__gsharp_id_5_x,__gsharp_id_6_y,&__gsharp_id_8_macroCalls);
 __gsharp_array_at(__gsharp_id_1_scratch, __gsharp_id_3_localTid, 44509624u)=__gsharp_add_i32(__gsharp_id_5_x,__gsharp_id_3_localTid);
 __syncthreads();
-int __gsharp_id_9_neighbor = __gsharp_array_at(__gsharp_id_1_scratch, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_3_localTid,3),(int)(int)blockDim.x,346955434u), 1610070458u);
+int __gsharp_id_9_neighbor = __gsharp_array_at(__gsharp_id_1_scratch, (__gsharp_add_i32(__gsharp_id_3_localTid,3))%(int)(int)blockDim.x, 1610070458u);
 __syncthreads();
 int __gsharp_id_10_laneZeroX = __shfl_sync(0xFFFFFFFFu,__gsharp_id_5_x,0,32);
 int __gsharp_id_11_lzc = __gsharp_lzc_32((unsigned int)__gsharp_id_5_x|1u);

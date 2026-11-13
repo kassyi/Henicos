@@ -1019,7 +1019,7 @@ __gsharp_array_at(__gsharp_id_1_wide, __gsharp_id_2_i, 638653234u)=__gsharp_sub_
 __gsharp_array_at(__gsharp_id_1_wide, __gsharp_add_i32(2,__gsharp_id_2_i), 89156918u)=__gsharp_sub_i32(__gsharp_id_3_b,1);
 __gsharp_array_at(__gsharp_id_1_wide, __gsharp_add_i32(4,__gsharp_id_2_i), 1782820514u)=__gsharp_sub_i32(__gsharp_id_4_d,3);
 __gsharp_array_at(__gsharp_id_1_wide, __gsharp_add_i32(6,__gsharp_id_2_i), 1515916030u)=__gsharp_sub_i32(__gsharp_id_5_g,2);
-__gsharp_array_at(__gsharp_id_1_wide, __gsharp_add_i32(8,__gsharp_id_2_i), 686489874u)=__gsharp_sub_i32((int)threadIdx.x,2);
+__gsharp_array_at(__gsharp_id_1_wide, __gsharp_add_i32(8,__gsharp_id_2_i), 686489874u)=(int)threadIdx.x-2;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SignedBuiltInsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__SignedBuiltInsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

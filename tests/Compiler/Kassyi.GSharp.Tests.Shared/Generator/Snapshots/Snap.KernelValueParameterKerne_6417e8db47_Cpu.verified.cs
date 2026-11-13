@@ -2395,7 +2395,7 @@ goto __gsharp_switch_1_state_4;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, (int)threadIdx.x, 22597650u)=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_value,__gsharp_mul_i32((int)threadIdx.x,100));
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, (int)threadIdx.x, 22597650u)=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_value,(int)threadIdx.x*100);
 __gsharp_state=-1;
 return;
 }

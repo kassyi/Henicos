@@ -329,7 +329,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_3_next=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_buffer, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1),(int)blockDim.x,""Attempted to divide by zero. at LibMath.cu.cs(245,27)""), ""G#: a null array is read at LibMath.cu.cs(245,20)"");
+__gsharp_ctx->__gsharp_id_3_next=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_buffer, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1))%(int)blockDim.x, ""G#: a null array is read at LibMath.cu.cs(245,20)"");
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;

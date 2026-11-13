@@ -66,7 +66,8 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
   result, `MinValue` and `0`, on every path: the native CPU build tests for `-1`, and the managed path calls a G#
   function for a division that may reach that case, in a kernel and in a device function alike, where the C# operator
   would throw `OverflowException`. The C# execution (`KernelExecution.CSharp`) runs the user's C# as it is and throws
-  it.
+  it. So does the managed path in a device function declared in a type nested in a type that is not `partial`: the
+  rewritten copy of the function is written into a partial declaration of its types, and such a function has none.
 - The null check of an array read is removed where the array cannot be `null`: a stack array, and a parameter of a
   device function that is declared non-nullable (`T[]` in a `#nullable enable` context, or a struct that holds such an
   array) and never assigned. A call of a device function checks an argument that may be `null` once, at the call, for

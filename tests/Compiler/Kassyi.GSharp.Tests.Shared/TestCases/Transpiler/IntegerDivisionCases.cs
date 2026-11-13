@@ -53,11 +53,37 @@ public static class Divisions
     // The Length of an array is never negative, so it is never -1 (it may be 0)
     public static int LengthDivisor(int x, int[] a) => x % a.Length;
 
-    // The value writes the target's variable before the division, which the call by reference would read after
+    // A block dimension is 1 to 1024: neither 0 nor -1
+    public static int LaunchDimensionDivisor(int x) => x % Kassyi.GSharp.Core.BlockDimension.X;
+
+    // The value writes another variable (y), not the target: the call by reference reads x after the value, which
+    // changes nothing
     public static int CompoundWithWritingValue(int x, int y) => x /= (y = -1);
+
+    // The value writes the target local: x is read as the first argument, before the value
+    public static int CompoundWritingItsLocal(int x) => x /= (x = -1);
+
+    // The value writes the target element: the location is found once and read before the value
+    public static int CompoundWritingItsElement(int[] a) => a[0] /= (a[0] = -1);
+
+    // An indexer whose argument writes (k++) would be evaluated twice by the get and the set
+    public static int IndexerWithWritingArgument(Grid g, int k) => g[k++] /= -1;
+
+    public static int IndexerWithRepeatableArgument(Grid g, int k) => g[k] /= -1;
 }
 
 public static class Holder
 {
     public static int Value { get; set; }
+}
+
+public struct Grid
+{
+    private int _a;
+
+    public int this[int i]
+    {
+        get => _a + i;
+        set => _a = value - i;
+    }
 }

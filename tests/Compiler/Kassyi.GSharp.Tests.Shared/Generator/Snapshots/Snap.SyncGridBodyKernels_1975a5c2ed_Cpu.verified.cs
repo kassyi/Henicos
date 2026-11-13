@@ -51,8 +51,8 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_2_lane=__gsharp_rem_i32(__gsharp_ctx->__gsharp_id_1_tid,(int)blockDim.x,""Attempted to divide by zero. at SyncGridBodyKernels.cs(246,20)"");
-__gsharp_ctx->__gsharp_id_3_next=__gsharp_add_i32(__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_1_tid,__gsharp_ctx->__gsharp_id_2_lane),__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_lane,1),(int)blockDim.x,""Attempted to divide by zero. at SyncGridBodyKernels.cs(247,33)""));
+__gsharp_ctx->__gsharp_id_2_lane=__gsharp_ctx->__gsharp_id_1_tid%(int)blockDim.x;
+__gsharp_ctx->__gsharp_id_3_next=__gsharp_add_i32(__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_1_tid,__gsharp_ctx->__gsharp_id_2_lane),(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_lane,1))%(int)blockDim.x);
 __gsharp_ctx->__gsharp_id_4_value=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_c, __gsharp_ctx->__gsharp_id_3_next, ""G#: a null array is read at SyncGridBodyKernels.cs(248,21)"");
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
@@ -340,8 +340,8 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.lane = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_ctx.tid, global::Kassyi.GSharp.Core.BlockDimension.X);
-__gsharp_ctx.next = __gsharp_ctx.tid - __gsharp_ctx.lane + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.lane + 1), global::Kassyi.GSharp.Core.BlockDimension.X);
+__gsharp_ctx.lane = __gsharp_ctx.tid % global::Kassyi.GSharp.Core.BlockDimension.X;
+__gsharp_ctx.next = __gsharp_ctx.tid - __gsharp_ctx.lane + (__gsharp_ctx.lane + 1) % global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.value = __gsharp_ctx.c[__gsharp_ctx.next];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;

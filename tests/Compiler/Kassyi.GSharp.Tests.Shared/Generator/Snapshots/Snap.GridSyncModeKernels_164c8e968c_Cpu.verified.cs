@@ -57,7 +57,6 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2118355718u, "GridSyncMode
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1938393024u, "GridSyncModeKernels.cs", 111, 20, "FastSyncAfterFailKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(968737018u, "GridSyncModeKernels.cs", 117, 17, "FastSyncAfterFailKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(118710180u, "GridSyncModeKernels.cs", 121, 20, "FastSyncAfterFailKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(253775895u, "GridSyncModeKernels.cs", 121, 32, "FastSyncAfterFailKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(487349301u, "GridSyncModeKernels.cs", 125, 9, "FastSyncAfterFailKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -2469,7 +2468,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_id_6_sum=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_sum,__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_blockValues, __gsharp_rem_i32(__gsharp_add_i32((int)blockIdx.x,1),(int)gridDim.x,253775895u), 118710180u));
+__gsharp_ctx->__gsharp_id_6_sum=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_sum,__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_blockValues, (__gsharp_add_i32((int)blockIdx.x,1))%(int)gridDim.x, 118710180u));
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=3;
 return;
@@ -2670,7 +2669,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.sum += __gsharp_ctx.blockValues[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((global::Kassyi.GSharp.Core.BlockIndex.X + 1), global::Kassyi.GSharp.Core.GridDimension.X)];
+__gsharp_ctx.sum += __gsharp_ctx.blockValues[(global::Kassyi.GSharp.Core.BlockIndex.X + 1) % global::Kassyi.GSharp.Core.GridDimension.X];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
 return;

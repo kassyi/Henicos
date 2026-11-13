@@ -6022,8 +6022,8 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_bx = (int)(__gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)gridDim.x,__gsharp_add_i32((int)blockIdx.y,__gsharp_mul_i32((int)gridDim.y,(int)blockIdx.z)))));
-int __gsharp_id_4_tx = (int)(__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockDim.x,__gsharp_add_i32((int)threadIdx.y,__gsharp_mul_i32((int)blockDim.y,(int)threadIdx.z)))));
-int __gsharp_id_5_bsize = (int)(__gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z));
+int __gsharp_id_4_tx = (int)(__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockDim.x,__gsharp_add_i32((int)threadIdx.y,(int)blockDim.y*(int)threadIdx.z))));
+int __gsharp_id_5_bsize = (int)(__gsharp_mul_i32((int)blockDim.x*(int)blockDim.y,(int)blockDim.z));
 int __gsharp_id_6_t = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_bx,__gsharp_id_5_bsize),__gsharp_id_4_tx);
 if(__gsharp_id_6_t>=__gsharp_id_2_rows)
 {
@@ -6333,8 +6333,8 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_4_bx = (int)(__gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)gridDim.x,__gsharp_add_i32((int)blockIdx.y,__gsharp_mul_i32((int)gridDim.y,(int)blockIdx.z)))));
-int __gsharp_id_5_tx = (int)(__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockDim.x,__gsharp_add_i32((int)threadIdx.y,__gsharp_mul_i32((int)blockDim.y,(int)threadIdx.z)))));
-int __gsharp_id_6_bsize = (int)(__gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z));
+int __gsharp_id_5_tx = (int)(__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockDim.x,__gsharp_add_i32((int)threadIdx.y,(int)blockDim.y*(int)threadIdx.z))));
+int __gsharp_id_6_bsize = (int)(__gsharp_mul_i32((int)blockDim.x*(int)blockDim.y,(int)blockDim.z));
 int __gsharp_id_7_t = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_bx,__gsharp_id_6_bsize),__gsharp_id_5_tx);
 if(__gsharp_id_7_t>=__gsharp_id_3_rows)
 {

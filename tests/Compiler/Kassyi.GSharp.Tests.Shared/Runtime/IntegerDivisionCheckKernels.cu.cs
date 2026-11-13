@@ -39,4 +39,19 @@ public static partial class IntegerDivisionCheckKernels
         int i = (int)ThreadIndex.X;
         a[i] /= d[i];
     }
+
+    // Compound assignments whose value writes something: another variable, the target local, the target element. C#
+    // reads the target before the value runs, so int.MinValue /= (-1 written into the target) is the GPU result of
+    // int.MinValue / -1, not -1 / -1
+    [GpuKernel]
+    public static void ValueWritingCompoundKernel(int[] a, int[] d, int[] o)
+    {
+        int j = 0;
+        a[0] /= d[j++];
+        int x = a[2];
+        x /= (x = d[1]);
+        o[0] = x;
+        o[1] = j;
+        a[1] /= (a[1] = d[2]);
+    }
 }

@@ -416,7 +416,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=__gsharp_mul_i32(__gsharp_add_i32((int)threadIdx.x,1),10);
+__gsharp_ctx->__gsharp_id_2_v=__gsharp_mul_i32((int)threadIdx.x+1,10);
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_sub_i32((__gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_v,1)),1);
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_arg_temp_0,""Warp.ShuffleDownSync"",""WarpShuffleArgumentOrderKernels.cs(17,17)"");
 __gsharp_state=1;
@@ -2151,7 +2151,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=__gsharp_mul_i32((int)threadIdx.x,100);
+__gsharp_ctx->__gsharp_id_2_v=(int)threadIdx.x*100;
 __gsharp_ctx->__gsharp_id_3_n=0;
 goto __gsharp_switch_1_state_1;
 }
@@ -2542,7 +2542,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_i=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_3_i=(int)threadIdx.x+1;
 __gsharp_ctx->__gsharp_id_4_u=(unsigned int)(int)threadIdx.x+100u;
 __gsharp_ctx->__gsharp_arg_temp_0=(__gsharp_ctx->__gsharp_id_2_flag!=0?(long long)__gsharp_ctx->__gsharp_id_3_i:(long long)__gsharp_ctx->__gsharp_id_4_u);
 goto __gsharp_switch_1_state_1;
@@ -2913,7 +2913,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_i=__gsharp_mul_i32((int)threadIdx.x,2);
+__gsharp_ctx->__gsharp_id_2_i=(int)threadIdx.x*2;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_2_i;
 __gsharp_ctx->__gsharp_arg_temp_1=__gsharp_sub_i32((__gsharp_ctx->__gsharp_id_2_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_i,1)),1);
 goto __gsharp_switch_1_state_1;

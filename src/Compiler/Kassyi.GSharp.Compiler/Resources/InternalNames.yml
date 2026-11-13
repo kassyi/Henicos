@@ -519,3 +519,12 @@ IntegerSemantics:
     DivideAssignInt64: { Value: __gsharp_div_assign_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
     RemainderAssignInt32: { Value: __gsharp_rem_assign_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
     RemainderAssignInt64: { Value: __gsharp_rem_assign_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
+    # A compound assignment of a location in memory whose value writes it: the reader finds the location once and reads
+    # it before the value (out into a local DivisionCurrentPrefix<n>), the store divides and stores
+    ReadReferenceInt32: { Value: __gsharp_read_ref_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
+    ReadReferenceInt64: { Value: __gsharp_read_ref_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DivideStoreInt32: { Value: __gsharp_div_store_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DivideStoreInt64: { Value: __gsharp_div_store_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderStoreInt32: { Value: __gsharp_rem_store_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderStoreInt64: { Value: __gsharp_rem_store_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DivisionCurrentPrefix: __gsharp_div_current_

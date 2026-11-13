@@ -351,9 +351,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_5_localTid=__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)threadIdx.y,(int)blockDim.x));
+__gsharp_ctx->__gsharp_id_5_localTid=__gsharp_add_i32((int)threadIdx.x,(int)threadIdx.y*(int)blockDim.x);
 __gsharp_ctx->__gsharp_id_6_blockId=__gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)blockIdx.y,(int)gridDim.x));
-__gsharp_ctx->__gsharp_id_7_blockSize=__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y);
+__gsharp_ctx->__gsharp_id_7_blockSize=(int)blockDim.x*(int)blockDim.y;
 __gsharp_ctx->__gsharp_id_8_numBlocks=__gsharp_mul_i32((int)gridDim.x,(int)gridDim.y);
 __gsharp_ctx->__gsharp_id_9_gid=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_6_blockId,__gsharp_ctx->__gsharp_id_7_blockSize),__gsharp_ctx->__gsharp_id_5_localTid);
 __gsharp_ctx->__gsharp_id_10_sBlock={ (int*)__gsharp_allocate_smem_dynamic(0x3f2ece35a2ed3acdull, (__gsharp_ctx->__gsharp_id_4_dynBlockCap) * sizeof(int), alignof(int), ""GridSyncAndSingleThreadDifferentialKernels.cs(91,22)"") };
@@ -2010,8 +2010,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_localTid=__gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)threadIdx.y,(int)blockDim.x)),__gsharp_mul_i32(__gsharp_mul_i32((int)threadIdx.z,(int)blockDim.x),(int)blockDim.y));
-__gsharp_ctx->__gsharp_id_4_blockSize=__gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z);
+__gsharp_ctx->__gsharp_id_3_localTid=__gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x,(int)threadIdx.y*(int)blockDim.x),__gsharp_mul_i32((int)threadIdx.z*(int)blockDim.x,(int)blockDim.y));
+__gsharp_ctx->__gsharp_id_4_blockSize=__gsharp_mul_i32((int)blockDim.x*(int)blockDim.y,(int)blockDim.z);
 __gsharp_ctx->__gsharp_id_5_blockId=__gsharp_add_i32(__gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)blockIdx.y,(int)gridDim.x)),__gsharp_mul_i32(__gsharp_mul_i32((int)blockIdx.z,(int)gridDim.x),(int)gridDim.y));
 __gsharp_ctx->__gsharp_id_6_gid=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_5_blockId,__gsharp_ctx->__gsharp_id_4_blockSize),__gsharp_ctx->__gsharp_id_3_localTid);
 __gsharp_ctx->__gsharp_id_7_sBroadcast={ (int*)__gsharp_allocate_smem_static(0x694a980f5e16bfedull, (1) * sizeof(int), alignof(int)) };

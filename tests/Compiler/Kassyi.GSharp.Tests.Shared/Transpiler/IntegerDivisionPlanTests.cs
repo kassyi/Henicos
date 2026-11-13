@@ -70,12 +70,23 @@ public class IntegerDivisionPlanTests
     [InlineData("LongMinusOneRemainder", "__gsharp_rem_i64", "Call")]
     [InlineData("CompoundDivision", "__gsharp_div_assign_i32", "AssignByReference")]
     [InlineData("PropertyCompound", "__gsharp_div_i32", "Reassign")]
+    [InlineData("IndexerWithRepeatableArgument", "__gsharp_div_i32", "Reassign")]
+    [InlineData("CompoundWithWritingValue", "__gsharp_div_assign_i32", "AssignByReference")]
+    [InlineData("CompoundWritingItsLocal", "__gsharp_div_i32", "Reassign")]
+    [InlineData("CompoundWritingItsElement", "__gsharp_div_store_i32", "ReadFirst")]
     public void ManagedPlan_DivisionThatMayDivideMinimumByMinusOne_CallsTheContext(string name, string helper,
-        string form) =>
-        Assert.Equal(new ManagedDivisionPlan(helper, Enum.Parse<ManagedDivisionForm>(form)), GetManagedPlan(name));
+        string form)
+    {
+        var plan = Assert.IsType<ManagedDivisionPlan>(GetManagedPlan(name));
 
-    // .NET already gives the GPU result there: a divisor that cannot be -1 (0 included, which throws as in C#), a
-    // dividend that cannot be the minimum, an unsigned or narrow operator, or a value that writes before the read
+        Assert.Equal(helper, plan.Helper);
+        Assert.Equal(Enum.Parse<ManagedDivisionForm>(form), plan.Form);
+        Assert.Equal(plan.Form == ManagedDivisionForm.ReadFirst ? "__gsharp_read_ref_i32" : null, plan.Reader);
+    }
+
+    // .NET already gives the GPU result there: a divisor that cannot be -1 (0 included, which throws as in C#; a
+    // length or a block dimension), a dividend that cannot be the minimum, an unsigned or narrow operator. An indexer
+    // whose argument writes keeps the operator: the get and the set would evaluate it twice
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("ByteDivisor")]
@@ -85,8 +96,9 @@ public class IntegerDivisionPlanTests
     [InlineData("NarrowDividendByMinusOne")]
     [InlineData("UnsignedDividendByMinusOne")]
     [InlineData("NarrowCompoundRemainder")]
-    [InlineData("CompoundWithWritingValue")]
+    [InlineData("IndexerWithWritingArgument")]
     [InlineData("LengthDivisor")]
+    [InlineData("LaunchDimensionDivisor")]
     public void ManagedPlan_DivisionThatCannotDivideMinimumByMinusOne_KeepsTheOperator(string name) =>
         Assert.Null(GetManagedPlan(name));
 

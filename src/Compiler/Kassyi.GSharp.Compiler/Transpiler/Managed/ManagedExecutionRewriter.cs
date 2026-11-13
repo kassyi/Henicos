@@ -37,6 +37,9 @@ internal sealed partial class ManagedExecutionRewriter(
     // The number of the next hidden variable that a using (<variable>) statement declares
     private int _nextUsingResourceId;
 
+    // The number of the next variable that holds the target of a division read before its value (ManagedDivision)
+    private int _nextDivisionCurrentId;
+
     public override SyntaxNode? Visit(SyntaxNode? node)
     {
         if (_nextUnrollId < 0 && node is not null)
@@ -101,9 +104,12 @@ internal sealed partial class ManagedExecutionRewriter(
         var value = SyntaxFactory.Argument(rewritten.Right.WithoutTrivia());
         if (plan.Form == ManagedDivisionForm.AssignByReference)
         {
-            var byReference = SyntaxFactory.Argument(target)
-                .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword));
-            return CallContext(plan.Helper, byReference, value).WithTriviaFrom(node);
+            return CallContext(plan.Helper, ByReference(target), value).WithTriviaFrom(node);
+        }
+
+        if (plan is { Form: ManagedDivisionForm.ReadFirst, Reader: { } reader })
+        {
+            return ReadFirst(plan.Helper, reader, target, value).WithTriviaFrom(node);
         }
 
         return SyntaxFactory.AssignmentExpression(
@@ -119,6 +125,38 @@ internal sealed partial class ManagedExecutionRewriter(
             ManagedNames.CreateMemberAccess(member),
             SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([first, second]))
         );
+
+    // ref <expression>
+    private static ArgumentSyntax ByReference(ExpressionSyntax expression) =>
+        SyntaxFactory.Argument(expression).WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword));
+
+    // [WHY] C# finds the location of the target, reads it, then evaluates the value. The location is found once and
+    // read by the reader before the value runs, as ref var t = ref <target>; t = t / <value>; does, in one expression:
+    // ManagedGpuContext.<store>(ref ManagedGpuContext.<reader>(ref <target>, out var <current>), <current>, <value>)
+    private ExpressionSyntax ReadFirst(string store, string reader, ExpressionSyntax target, ArgumentSyntax value)
+    {
+        var current = GSharpInternalNames.IntegerSemantics.DivisionCurrentPrefix +
+                      _nextDivisionCurrentId++.ToString(CultureInfo.InvariantCulture);
+        var declaration = SyntaxFactory.DeclarationExpression(
+            SyntaxFactory.IdentifierName("var"),
+            SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(current))
+        );
+        var outCurrent = SyntaxFactory.Argument(declaration)
+            .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.OutKeyword));
+        var read = SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(reader),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([ByReference(target), outCurrent]))
+        );
+        var arguments = SyntaxFactory.SeparatedList([
+            ByReference(read),
+            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(current)),
+            value
+        ]);
+        return SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(store),
+            SyntaxFactory.ArgumentList(arguments)
+        );
+    }
 
     public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
         VisitCreation(node, base.VisitObjectCreationExpression(node));

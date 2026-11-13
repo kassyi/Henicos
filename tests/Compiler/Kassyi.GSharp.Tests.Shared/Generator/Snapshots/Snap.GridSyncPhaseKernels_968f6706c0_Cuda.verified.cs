@@ -143,8 +143,6 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1428883215u, "GridSyncPhas
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(59976150u, "GridSyncPhaseKernels.cs", 27, 20, "SharedMemoryAcrossGridSyncKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(513708000u, "GridSyncPhaseKernels.cs", 27, 27, "SharedMemoryAcrossGridSyncKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2137500311u, "GridSyncPhaseKernels.cs", 29, 9, "SharedMemoryAcrossGridSyncKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1330422123u, "GridSyncPhaseKernels.cs", 29, 41, "SharedMemoryAcrossGridSyncKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(984601444u, "GridSyncPhaseKernels.cs", 29, 87, "SharedMemoryAcrossGridSyncKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1345708947u, "GridSyncPhaseKernels.cs", 46, 9, "ShuffleBeforeGridSyncKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2094314749u, "GridSyncPhaseKernels.cs", 48, 9, "ShuffleBeforeGridSyncKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2079991532u, "GridSyncPhaseKernels.cs", 48, 23, "ShuffleBeforeGridSyncKernel", "G#: a null array is read"),
@@ -184,7 +182,7 @@ __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_5_tid, 1428883215u)=__gsharp
 __gsharp_grid_sync();
 int __gsharp_id_7_next = __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_5_tid,(int)blockDim.x),__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x),513708000u), 59976150u);
 __gsharp_grid_sync();
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_5_tid, 2137500311u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_7_next,__gsharp_id_3_staticCopy[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_6_local,1),(int)blockDim.x,1330422123u)]),__gsharp_id_4_dynamicCopy[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_6_local,2),(int)blockDim.x,984601444u)]);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_5_tid, 2137500311u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_7_next,__gsharp_id_3_staticCopy[(__gsharp_add_i32(__gsharp_id_6_local,1))%(int)blockDim.x]),__gsharp_id_4_dynamicCopy[(__gsharp_add_i32(__gsharp_id_6_local,2))%(int)blockDim.x]);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SharedMemoryAcrossGridSyncKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__GridSyncPhaseKernels__SharedMemoryAcrossGridSyncKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

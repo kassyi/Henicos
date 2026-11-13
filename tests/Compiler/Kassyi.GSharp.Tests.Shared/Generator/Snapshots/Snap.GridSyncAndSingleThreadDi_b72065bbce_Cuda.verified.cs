@@ -305,9 +305,9 @@ __gsharp_launch_epoch = __gsharp_epoch;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__CooperativeMultiPhaseReduceNormalizeKernel __gsharp_dsmem_storage;
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__CooperativeMultiPhaseReduceNormalizeKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
-int __gsharp_id_5_localTid = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)threadIdx.y,(int)blockDim.x));
+int __gsharp_id_5_localTid = __gsharp_add_i32((int)threadIdx.x,(int)threadIdx.y*(int)blockDim.x);
 int __gsharp_id_6_blockId = __gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)blockIdx.y,(int)gridDim.x));
-int __gsharp_id_7_blockSize = __gsharp_mul_i32((int)blockDim.x,(int)blockDim.y);
+int __gsharp_id_7_blockSize = (int)blockDim.x*(int)blockDim.y;
 int __gsharp_id_8_numBlocks = __gsharp_mul_i32((int)gridDim.x,(int)gridDim.y);
 int __gsharp_id_9_gid = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_blockId,__gsharp_id_7_blockSize),__gsharp_id_5_localTid);
 int* __gsharp_id_10_sBlock = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__CooperativeMultiPhaseReduceNormalizeKernel::Slot<0x3f2ece35a2ed3acdull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_4_dynBlockCap) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
@@ -1165,8 +1165,8 @@ finally
 #pragma warning restore CS8500
 public const string SingleThreadMultiDimAndReturnKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__GridSyncAndSingleThreadDifferentialKernels__SingleThreadMultiDimAndReturnKernel(GSharpArray<int> __gsharp_id_0_counters, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_seedArg, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_3_localTid = __gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)threadIdx.y,(int)blockDim.x)),__gsharp_mul_i32(__gsharp_mul_i32((int)threadIdx.z,(int)blockDim.x),(int)blockDim.y));
-int __gsharp_id_4_blockSize = __gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z);
+int __gsharp_id_3_localTid = __gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x,(int)threadIdx.y*(int)blockDim.x),__gsharp_mul_i32((int)threadIdx.z*(int)blockDim.x,(int)blockDim.y));
+int __gsharp_id_4_blockSize = __gsharp_mul_i32((int)blockDim.x*(int)blockDim.y,(int)blockDim.z);
 int __gsharp_id_5_blockId = __gsharp_add_i32(__gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)blockIdx.y,(int)gridDim.x)),__gsharp_mul_i32(__gsharp_mul_i32((int)blockIdx.z,(int)gridDim.x),(int)gridDim.y));
 int __gsharp_id_6_gid = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_blockId,__gsharp_id_4_blockSize),__gsharp_id_3_localTid);
 __shared__ int __gsharp_id_7_sBroadcast[1];

@@ -148,9 +148,9 @@ public sealed class GpuDeviceExportAttribute : Attribute
 
     /// <summary>
     /// Gets or sets whether the assembly holds the managed version of a function that does not suspend and holds a
-    /// managed-only rewrite (an operator macro, a float or double StackLinq Sum, Gpu.InlinePtx, or an int or long division
-    /// that may divide the minimum by -1), directly or through a call, which the managed path of a consumer calls instead
-    /// of the function.
+    /// managed-only rewrite (an operator macro, a float or double StackLinq Sum, Gpu.InlinePtx, or an int or long
+    /// division that may divide the minimum by -1), directly or through a call, which the managed path of a consumer
+    /// calls instead of the function.
     /// </summary>
     public bool ManagedVersion { get; set; }
 
@@ -188,7 +188,9 @@ public sealed class GpuDeviceExportAttribute : Attribute
     /// <summary>
     /// Gets or sets whether the device function reaches code whose C# meaning only the generated code gives (an operator
     /// macro, a float or double StackLinq Sum, Gpu.InlinePtx); a kernel that calls it cannot run as C#
-    /// (<c>KernelExecution.CSharp</c>).
+    /// (<c>KernelExecution.CSharp</c>). Unlike <see cref="ManagedVersion"/>, it does not count an int or long division
+    /// that may divide the minimum by -1, whose C# meaning the C# execution keeps; a record without it reads
+    /// <see cref="ManagedVersion"/> in its place.
     /// </summary>
     public bool ReachesGeneratedMeaning { get; set; }
 }

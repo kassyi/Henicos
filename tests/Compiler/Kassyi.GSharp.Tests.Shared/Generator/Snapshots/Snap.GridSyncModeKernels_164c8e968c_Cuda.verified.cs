@@ -112,7 +112,6 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2118355718u, "GridSyncMode
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1938393024u, "GridSyncModeKernels.cs", 111, 20, "FastSyncAfterFailKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(968737018u, "GridSyncModeKernels.cs", 117, 17, "FastSyncAfterFailKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(118710180u, "GridSyncModeKernels.cs", 121, 20, "FastSyncAfterFailKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(253775895u, "GridSyncModeKernels.cs", 121, 32, "FastSyncAfterFailKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(487349301u, "GridSyncModeKernels.cs", 125, 9, "FastSyncAfterFailKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -1047,7 +1046,7 @@ if((int)threadIdx.x==1)
 __gsharp_array_at(__gsharp_id_2_blockValues, (int)blockIdx.x, 968737018u)=__gsharp_add_i32(__gsharp_id_7_round,__gsharp_id_5_step);
 }
 __gsharp_grid_sync_fast();
-__gsharp_id_6_sum=__gsharp_add_i32(__gsharp_id_6_sum,__gsharp_array_at(__gsharp_id_2_blockValues, __gsharp_rem_i32(__gsharp_add_i32((int)blockIdx.x,1),(int)gridDim.x,253775895u), 118710180u));
+__gsharp_id_6_sum=__gsharp_add_i32(__gsharp_id_6_sum,__gsharp_array_at(__gsharp_id_2_blockValues, (__gsharp_add_i32((int)blockIdx.x,1))%(int)gridDim.x, 118710180u));
 __gsharp_grid_sync_fast();
 }
 __gsharp_array_at(__gsharp_id_3_result, __gsharp_id_4_tid, 487349301u)=__gsharp_id_6_sum;
