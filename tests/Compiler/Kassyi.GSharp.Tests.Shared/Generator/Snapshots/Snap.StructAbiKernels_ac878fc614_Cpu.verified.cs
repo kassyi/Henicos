@@ -688,8 +688,14 @@ long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.Ch
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct __gsharp_csharp_arg_0 = data;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.RoundtripPackedKernel(ref __gsharp_csharp_arg_0));
+}
+finally
+{
 data = __gsharp_csharp_arg_0;
+}
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -1318,8 +1324,14 @@ long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.Ch
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct __gsharp_csharp_arg_0 = data;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.RoundtripInlineArrayKernel(ref __gsharp_csharp_arg_0));
+}
+finally
+{
 data = __gsharp_csharp_arg_0;
+}
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -1935,8 +1947,14 @@ long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.Ch
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct __gsharp_csharp_arg_0 = data;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.RoundtripCoreFieldKernel(ref __gsharp_csharp_arg_0));
+}
+finally
+{
 data = __gsharp_csharp_arg_0;
+}
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -2565,8 +2583,14 @@ long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.Ch
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct __gsharp_csharp_arg_0 = data;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.RoundtripPrivateInlineArrayKernel(ref __gsharp_csharp_arg_0));
+}
+finally
+{
 data = __gsharp_csharp_arg_0;
+}
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -3152,8 +3176,14 @@ long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.Ch
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct __gsharp_csharp_arg_0 = data;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.RoundtripFixedBufferKernel(ref __gsharp_csharp_arg_0));
+}
+finally
+{
 data = __gsharp_csharp_arg_0;
+}
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -3739,8 +3769,14 @@ long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.Ch
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct __gsharp_csharp_arg_0 = data;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.RoundtripAutoPropertyKernel(ref __gsharp_csharp_arg_0));
+}
+finally
+{
 data = __gsharp_csharp_arg_0;
+}
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -4342,8 +4378,14 @@ long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.Ch
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct __gsharp_csharp_arg_0 = data;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.RoundtripComputedPropertyKernel(ref __gsharp_csharp_arg_0));
+}
+finally
+{
 data = __gsharp_csharp_arg_0;
+}
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -4951,8 +4993,14 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct __gsharp_csharp_arg_0 = data;
 global::System.Int32[] __gsharp_csharp_arg_1 = result;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructAbiKernels.ReadComputedPropertyThroughRefKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+}
+finally
+{
 data = __gsharp_csharp_arg_0;
+}
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";

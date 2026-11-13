@@ -116,4 +116,13 @@ public static partial class CSharpExecutionKernels
         result[2 * t] = 1;
         result[2 * t + 1] = at[at[t]] / divisors[t];
     }
+
+    // Writes total and last, then reads at[0], which throws when at is empty
+    [GpuKernel]
+    public static void RefOutThenFailKernel(ref int total, out int last, int[] at)
+    {
+        total += 1;
+        last = 7;
+        total += at[0];
+    }
 }

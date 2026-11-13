@@ -166,6 +166,83 @@ public class DifferentialExceptionTests
         Assert.Equal(differs, report.Mismatches.Any(static m => m.ColumnName == "r"));
     }
 
+    // When the oracle throws, its outputs must still not depend on the thread order: every thread writes r[0] and
+    // thread 0 throws, so r[0] is the value of the thread that ran last (a race on the GPU)
+    // mutant: DifferentialRunner.RunOracleOrders skips CheckOrderIndependence when the oracle throws
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ExceptionSeed_OutputDependsOnTheThreadOrder_ReportsHarnessError()
+    {
+        var testCase = ThrowingProbeCase(
+            "HarnessTests.RacingWriteThenThrowKernel",
+            [-1, 1, 2, 3],
+            2,
+            static (b, s) => HarnessProbeKernels.LaunchRacingWriteThenThrowKernel(
+                b.Get<int>("idx"),
+                b.Get<int>("r"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            )
+        );
+
+        var ex = Assert.Throws<DifferentialHarnessException>(() =>
+            DifferentialRunner.Evaluate(testCase, [1], NativeOnly, NoEntries));
+
+        Assert.Contains("kernel output depends on thread order", ex.Message);
+    }
+
+    // The first exception of the oracle must not depend on the thread order: thread 0 throws
+    // IndexOutOfRangeException, thread 3 DivideByZeroException
+    // mutant: DifferentialRunner.RunOracleOrders compares only whether each order threw, not the exception types
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ExceptionSeed_ExceptionTypeDependsOnTheThreadOrder_ReportsHarnessError()
+    {
+        var testCase = ThrowingProbeCase(
+            "HarnessTests.TwoExceptionTypesKernel",
+            [-1, 1, 2, 0],
+            4,
+            static (b, s) => HarnessProbeKernels.LaunchTwoExceptionTypesKernel(
+                b.Get<int>("idx"),
+                b.Get<int>("r"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            )
+        );
+
+        var ex = Assert.Throws<DifferentialHarnessException>(() =>
+            DifferentialRunner.Evaluate(testCase, [1], NativeOnly, NoEntries));
+
+        Assert.Contains("oracle exception depends on thread order", ex.Message);
+        Assert.Contains(nameof(IndexOutOfRangeException), ex.Message);
+        Assert.Contains(nameof(DivideByZeroException), ex.Message);
+    }
+
+    // A MatchOracle case of four threads whose oracle is a probe kernel; the launch is never reached, since the
+    // oracle's checks fail first
+    private static DifferentialCase ThrowingProbeCase(
+        string name,
+        int[] idx,
+        int outputs,
+        Action<DiffBuffers, LaunchShape> oracle
+    ) =>
+        new(name)
+        {
+            Shape = LaunchShapes.Linear(4, blockX: 4),
+            Seeds = [1],
+            OracleExceptions = OracleExceptionMode.MatchOracle,
+            ExceptionPaths = DiffPath.Native,
+            Inputs = (_, _) => new DiffBuffers()
+                .In("idx", (int[])idx.Clone())
+                .Out<int>("r", outputs, OutputPolicy.Exact),
+            Launch = static (_, _) => throw new InvalidOperationException("The launch is not reached."),
+            Oracle = oracle,
+        };
+
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]

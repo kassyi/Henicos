@@ -126,6 +126,29 @@ public class CSharpExecutionTests
         Assert.Equal(5, last);
     }
 
+    // The writes to a ref or out argument before a thread throws reach the caller, as on the native path, which
+    // passes pointers to the caller's variables
+    // mutant: CSharpExecutionEmitter.WriteBranch writes the copies back after the run instead of in a finally (the
+    // caller keeps total = 10 and last = 0)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Launch_CSharpScopeThreadThrowsAfterRefOutWrites_CopiesTheWritesBack()
+    {
+        int total = 10;
+        int last = 0;
+
+        Assert.Throws<IndexOutOfRangeException>(() =>
+        {
+            using (GpuExecution.Use(KernelExecution.CSharp))
+            {
+                CSharpExecutionKernels.LaunchRefOutThenFailKernel(ref total, out last, []);
+            }
+        });
+
+        Assert.Equal(11, total);
+        Assert.Equal(7, last);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Launch_CSharpScopeSpans_PassesTheSpansToEachThread()

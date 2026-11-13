@@ -65,8 +65,13 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
     {
         var bagComparer = new StructElementComparer<DiffDeepBag>(CompareDeepBag);
         // A null optPrim throws at output[2] (optPrim.Length), so the kernel never writes output[2..5]. output is
-        // [Out], not copied to the device, so those cells hold whatever the device memory held on CUDA: not compared
+        // [Out], not copied to the device, so on CUDA those cells hold whatever the device memory held: not compared
+        // there. The CPU paths pass the caller's array, whose cells keep their value, so they are compared
+#if GSHARP_CUDA
         var afterThrow = optPrimInit is null ? OutputPolicy.Ignore : OutputPolicy.Exact;
+#else
+        var afterThrow = OutputPolicy.Exact;
+#endif
         return new DifferentialCase(
             KernelName(nameof(MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel), label))
         {

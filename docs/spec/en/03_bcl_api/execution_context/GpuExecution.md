@@ -112,7 +112,8 @@ time: the reference that the GPU, native CPU and managed results are compared wi
 - The arguments are the ones passed to the launcher, as a C# call takes them. The copies that the launchers make for
   `[In]` arrays do not apply: a write to such an array reaches the caller's array.
 - A `ref` or `out` argument is copied in before the first thread and back after the last one, as the GPU launchers
-  copy it to the device and back.
+  copy it to the device and back. It is copied back also when a thread throws, so the writes made before the
+  exception reach the caller, as on the native CPU path.
 - A kernel that returns a value fills the launcher's result array, one element per thread.
 - A thread that throws ends there, and the other threads run to their end, as a failing thread ends on the GPU
   ([semantics](../../01_language/06_semantics.md#63-undefined-behavior-is-an-error)): the writes of every thread before
