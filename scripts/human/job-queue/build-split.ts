@@ -6,12 +6,16 @@
 //   -> build: dotnet build A && dotnet build P -c Release
 //   -> tests: dotnet test --no-build P -c Release --filter X
 //
-// Only a plain command is planned: segments joined by && only, each a bare dotnet build or dotnet test, every build
-// before the first test, with no shell syntax outside quotes that could change where a segment or a word ends
-// (substitutions, redirections, other separators, escapes, a line break), and every option of a test known to be
-// either an option the build needs too (passed on: configuration, framework, runtime, properties, the MSBuild switches)
-// or one only the test run reads (left out of the build). Anything else gives no plan, and the command runs as before:
-// a test that names no project, a test of an assembly (.dll), an unknown option, a build after a test.
+// Only a plain command is planned: segments joined by && only, each a dotnet build or dotnet test, every build before
+// the first test, with no shell syntax outside quotes that could change where a segment or a word ends (substitutions,
+// input redirections, pipes, other separators, escapes, a line break), and every option of a test known to be either
+// an option the build needs too (passed on: configuration, framework, runtime, properties, the MSBuild switches) or one
+// only the test run reads (left out of the build). A segment may start with environment assignments (bash: A=b) and
+// end with output redirections to a file (> f, >> f, 2> f, 2>&1, &> f, PowerShell *> f); both stay with the segment,
+// and the build of a test gets them too, the test then appending (>>) to the file the build wrote, as the one command
+// did. A leading export A=b; (bash) or $env:A='b'; (PowerShell) goes in front of both steps. Anything else gives no
+// plan, and the command runs as before: a test that names no project, a test of an assembly (.dll), an unknown
+// option, a build after a test.
 
 import type { ShellName } from "./constants.ts";
 
@@ -91,6 +95,11 @@ const BuildInlineSwitches = new Set([
   "verbosity",
   "artifacts-path",
   "tl",
+  "clp",
+  "consoleloggerparameters",
+  "nr",
+  "warnaserror",
+  "nowarn",
 ]);
 
 /** The words of one segment as written (quotes kept), or null when it holds syntax a plain command does not. */
@@ -160,6 +169,64 @@ function bare(word: string): string {
   return word.replace(/["']/g, "");
 }
 
+// Assignments and redirection targets: a quoted string without escapes or substitutions, or a plain word
+const Unsafe = "$`\\\\"; // in a character class: $, backtick, backslash
+const PlainValue = `(?:"[^"${Unsafe}]*"|'[^']*'|[^\\s"'${Unsafe};&|<>()*?]*)`;
+const Assignment = `[A-Za-z_]\\w*=${PlainValue}`;
+const Target = `(?:"[^"${Unsafe}]*"|'[^']*'|[^\\s"'${Unsafe};&|<>()*?]+)`;
+
+/** One output redirection at the end of a segment, after a space. */
+function redirectionAtEnd(shell: ShellName): RegExp {
+  if (shell === "pwsh" || shell === "powershell") {
+    return new RegExp(String.raw`\s(?:[1-6*]?>>?\s*${Target}|[2-6*]>&1)$`);
+  }
+  if (shell === "cmd") {
+    return new RegExp(String.raw`\s(?:[12]?>>?\s*(?:"[^"]*"|[^\s"&|<>()^%]+)|2>&1)$`);
+  }
+  return new RegExp(String.raw`\s(?:[12&]?>>?\s*${Target}|[12]>&[12])$`);
+}
+
+/** The prefix that sets variables for the whole command (export A=b; / $env:A='b';), or "". */
+function variablePrefix(command: string, shell: ShellName): string {
+  const pattern =
+    shell === "pwsh" || shell === "powershell"
+      ? String.raw`^(?:\$env:[A-Za-z_]\w*\s*=\s*(?:'[^']*'|"[^"$\`]*")\s*;\s*)+`
+      : shell === "cmd"
+        ? "^(?!)"
+        : String.raw`^(?:export(?:\s+${Assignment})+\s*;\s*)+`;
+  return new RegExp(pattern).exec(command)?.[0] ?? "";
+}
+
+/** A segment split into its leading assignments, its command and its trailing output redirections. */
+interface SegmentParts {
+  env: string;
+  core: string;
+  redirections: string[];
+}
+
+function segmentParts(segment: string, shell: ShellName): SegmentParts {
+  let core = segment;
+  const redirections: string[] = [];
+  const atEnd = redirectionAtEnd(shell);
+  for (let match = atEnd.exec(core); match !== null; match = atEnd.exec(core)) {
+    redirections.unshift(match[0].trim());
+    core = core.slice(0, match.index).trimEnd();
+  }
+  const env =
+    shell === "bash" || shell === "sh" ? (new RegExp(String.raw`^(?:${Assignment}\s+)+`).exec(core)?.[0] ?? "") : "";
+  return { env: env.trim(), core: core.slice(env.length), redirections };
+}
+
+/** The redirection the test writes after its build wrote the same file first: > becomes >>, so nothing is lost. */
+function appending(redirection: string): string {
+  return redirection.replace(/^([12&*]?)>(?![>&])/, "$1>>");
+}
+
+/** Words joined by spaces, empty parts left out. */
+function joined(parts: string[]): string {
+  return parts.filter((part) => part !== "").join(" ");
+}
+
 /** The build a dotnet test needs: its project and the options the build reads too; "keep" or null (no plan). */
 function testBuild(words: string[]): { build: string } | "keep" | null {
   const args = words.slice(2);
@@ -218,10 +285,13 @@ export function planBuildStep(command: string, shell: ShellName): BuildStep | nu
   if (/--%/.test(command)) {
     return null;
   }
+  const text = command.trim();
+  const prefix = variablePrefix(text, shell);
   const builds: string[] = [];
   const tests: string[] = [];
-  for (const segment of segmentsOf(command.trim(), shell)) {
-    const words = rawWords(segment, shell);
+  for (const segment of segmentsOf(text.slice(prefix.length), shell)) {
+    const { env, core, redirections } = segmentParts(segment, shell);
+    const words = rawWords(core, shell);
     if (words === null || words.length < 2 || !/^dotnet(\.exe)?$/i.test(words[0] ?? "")) {
       return null;
     }
@@ -240,13 +310,14 @@ export function planBuildStep(command: string, shell: ShellName): BuildStep | nu
       tests.push(segment);
       continue;
     }
-    if (!builds.includes(needed.build)) {
-      builds.push(needed.build);
+    const build = joined([env, needed.build, ...redirections]);
+    if (!builds.includes(build)) {
+      builds.push(build);
     }
-    tests.push([words[0], "test", "--no-build", ...words.slice(2)].join(" "));
+    tests.push(joined([env, words[0] ?? "", "test", "--no-build", ...words.slice(2), ...redirections.map(appending)]));
   }
   if (tests.length === 0 || builds.length === 0) {
     return null; // no test, or nothing builds (every test runs with --no-build and no build comes before them)
   }
-  return { build: builds.join(" && "), tests: tests.join(" && ") };
+  return { build: prefix + builds.join(" && "), tests: prefix + tests.join(" && ") };
 }

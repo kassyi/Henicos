@@ -125,7 +125,9 @@ their own, an ordinary `QueuedRun` on CPU slots with its own id, MSBuild node li
 and the run then queues the tests, with `--no-build` added, for the turn. Two jobs instead of one job with two phases:
 no change to the protocol or the scheduler, a scheduler of an older checkout serves both, and each part is recorded
 and forecast by its own run time. The plan only reads plain commands (segments joined by `&&`, bare `dotnet build` /
-`dotnet test`, known options, no other shell syntax outside quotes) and keeps each word as written; anything else runs
+`dotnet test`, known options, bash assignments before a segment, output redirections after it, a leading `export` /
+`$env:` prefix copied to both steps, no other shell syntax outside quotes) and keeps each word as written; the test
+appends (`>>`) to the log its build wrote, so the log holds what the one command wrote. Anything else runs
 as before. Inside a queued job the builds run at once on that job's slots. The Claude Code hook splits
 `dotnet build X && dotnet test X --no-build` the same way into two queued runs (`queue-rewrite.js`).
 
