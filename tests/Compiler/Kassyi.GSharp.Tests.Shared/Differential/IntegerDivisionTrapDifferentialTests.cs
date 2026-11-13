@@ -62,11 +62,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel(
-            b.Get<int>("nums"),
-            b.Get<int>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_int32Remainder = new(
@@ -113,11 +109,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel(
-            b.Get<int>("nums"),
-            b.Get<int>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_uint32Divide = new(
@@ -159,11 +151,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel(
-            b.Get<uint>("nums"),
-            b.Get<uint>("denoms"),
-            b.Get<uint>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_uint32Remainder = new(
@@ -205,11 +193,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel(
-            b.Get<uint>("nums"),
-            b.Get<uint>("denoms"),
-            b.Get<uint>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_int64Divide = new(
@@ -260,11 +244,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel(
-            b.Get<long>("nums"),
-            b.Get<long>("denoms"),
-            b.Get<long>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_uint64Divide = new(
@@ -306,11 +286,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel(
-            b.Get<ulong>("nums"),
-            b.Get<ulong>("denoms"),
-            b.Get<ulong>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_int16CompoundDivide = new(
@@ -357,11 +333,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel(
-            b.Get<short>("nums"),
-            b.Get<short>("denoms"),
-            b.Get<short>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_sbyteCompoundRemainder = new(
@@ -408,11 +380,7 @@ public class IntegerDivisionTrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel(
-            b.Get<sbyte>("nums"),
-            b.Get<sbyte>("denoms"),
-            b.Get<sbyte>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

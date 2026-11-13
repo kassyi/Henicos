@@ -307,12 +307,13 @@ public class FuzzSplitKernelGeneratorTests
                     .In("inC", inC)
                     .Out<ulong>("checksum", shape.Rows, ["hash"], OutputPolicy.Exact);
             },
-            Launch = (b, s) => SequentialOracle.Run(
+            Launch = (b, s) => SequentialOracle.RunEachThread(
                 s,
                 ThreadOrder.Forward,
                 () => planted(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"))),
-            Oracle = (b, _) =>
-                oracle(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum")),
+            Oracle = (b, s) => SequentialOracle.RunEachThread(
+                s,
+                () => oracle(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"))),
         };
         var report = DifferentialRunner.Evaluate(
             testCase,
@@ -377,7 +378,7 @@ public class FuzzSplitKernelGeneratorTests
         int[] inB,
         int[] inC,
         ulong[] checksum) =>
-        SequentialOracle.Run(LaunchShapes.Grid1D(2, 64), order, () => twin(inA, inB, inC, checksum));
+        SequentialOracle.RunEachThread(LaunchShapes.Grid1D(2, 64), order, () => twin(inA, inB, inC, checksum));
 
     private static GatedShapeCounts CountGatedShapes(HashSet<int> allowedIssues)
     {

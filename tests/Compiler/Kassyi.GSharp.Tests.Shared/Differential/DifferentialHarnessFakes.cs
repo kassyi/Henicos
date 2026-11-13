@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -38,8 +37,8 @@ internal static class DifferentialHarnessFakes
         }
     }
 
-    // r[t * 2] = a + b, r[t * 2 + 1] = a ^ b for 5 rows. The oracle is C# that reads the thread context, as a kernel
-    // does; the launch computes on the host, then applies corrupt to r when it runs on one of the corrupted paths
+    // r[t * 2] = a + b, r[t * 2 + 1] = a ^ b for 5 rows. The oracle is a kernel run as C# (Int32AddXorKernel); the
+    // launch computes on the host, then applies corrupt to r when it runs on one of the corrupted paths
     public static FakeRun FakeCase(
         DiffPath paths = DiffPath.Managed | DiffPath.Native,
         Action<int[]>? corrupt = null,
@@ -81,22 +80,15 @@ internal static class DifferentialHarnessFakes
                     corrupt?.Invoke(r);
                 }
             },
-            Oracle = static (buffers, _) =>
-            {
-                var a = buffers.Get<int>("a");
-                var b = buffers.Get<int>("b");
-                var r = buffers.Get<int>("r");
-                int blockId = BlockIndex.X + (BlockIndex.Y * GridDimension.X);
-                int threadInBlock = ThreadIndex.X + (ThreadIndex.Y * BlockDimension.X);
-                int t = (blockId * BlockDimension.X * BlockDimension.Y) + threadInBlock;
-                if (t >= a.Length)
-                {
-                    return;
-                }
-
-                r[t * 2] = unchecked(a[t] + b[t]);
-                r[(t * 2) + 1] = a[t] ^ b[t];
-            },
+            Oracle = static (buffers, shape) => HarnessProbeKernels.LaunchInt32AddXorKernel(
+                buffers.Get<int>("a"),
+                buffers.Get<int>("b"),
+                buffers.Get<int>("r"),
+                gridDimX: shape.GridX,
+                gridDimY: shape.GridY,
+                blockDimX: shape.BlockX,
+                blockDimY: shape.BlockY
+            ),
         };
         return new FakeRun(testCase, runners);
     }

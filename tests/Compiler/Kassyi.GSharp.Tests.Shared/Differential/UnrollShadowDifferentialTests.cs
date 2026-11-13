@@ -29,7 +29,7 @@ public class UnrollShadowDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => UnrollShadowDifferentialKernels.UnrollShadowKernel(b.Get<int>("xs"), b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

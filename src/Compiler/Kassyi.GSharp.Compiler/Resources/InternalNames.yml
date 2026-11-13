@@ -279,11 +279,10 @@ Launcher:
     CSharpArgumentPrefix: __gsharp_csharp_arg_
     CSharpPinnedPrefix: __gsharp_csharp_pin_
     CSharpLengthPrefix: __gsharp_csharp_len_
-    # The launchers of external modules ([CudaImport], YAML moduleName): the static field that holds the bytes of a
-    # module, followed by its number in the class; the struct that packs the arguments of a method (PackContext),
-    # followed by the method's number in the class, and its local; the local of each kernel argument and of an 'out'
-    # value, followed by the parameter ordinal
-    ModuleFieldPrefix: __gsharp_module_
+    # The launchers of external modules ([CudaImport], YAML moduleName): the struct that packs the arguments of a
+    # method (PackContext), followed by the method's number in the class, and its local; the local of each kernel
+    # argument and of an 'out' value, followed by the parameter ordinal. The static field that holds the bytes of a
+    # module is named by GSharpNameEncoding.GetModuleFieldName, which demangle decodes
     NativeContextTypePrefix: __gsharp_native_context_
     NativeContext: __gsharp_native_context
     KernelArgumentPrefix: __gsharp_karg_

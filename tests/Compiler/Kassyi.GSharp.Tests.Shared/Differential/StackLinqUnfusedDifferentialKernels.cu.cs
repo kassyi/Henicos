@@ -31,7 +31,6 @@ public static partial class StackLinqUnfusedDifferentialKernels
         "SkipLast(2).ElementAtOrDefault(2)",
         "Static TakeLast(1).ElementAt(0)",
         "Local.Sum(x*2)",
-        "Local.Sum((double)x)",
         "Local.LastOrDefault(x>0)",
         "Local.LastOrDefault(false)",
         "Local.Last(true)",
@@ -56,7 +55,7 @@ public static partial class StackLinqUnfusedDifferentialKernels
 
         var slice = xs.AsSpan().Slice(baseIdx, SliceLength);
         int x0 = slice[0];
-        int o = t * 24;
+        int o = t * 23;
 
         // TakeLast / SkipLast before a terminal that has no fused strategy
         r[o] = slice.AsStackEnumerable().TakeLast(2).ElementAtOrDefault(0);
@@ -75,23 +74,40 @@ public static partial class StackLinqUnfusedDifferentialKernels
         // A query stored in a local is not fused: each terminal is a call of the device StackLinq header
         var local = slice.AsStackEnumerable();
         r[o + 12] = local.Sum(x => x * 2);
-        r[o + 13] = (long)local.Sum(x => (double)x);
-        r[o + 14] = local.LastOrDefault(x => x > 0);
-        r[o + 15] = local.LastOrDefault(x => x > 0 && x < 0);
-        r[o + 16] = local.Last(x => x >= int.MinValue);
-        r[o + 17] = local.Last(x => x <= x0);
+        r[o + 13] = local.LastOrDefault(x => x > 0);
+        r[o + 14] = local.LastOrDefault(x => x > 0 && x < 0);
+        r[o + 15] = local.Last(x => x >= int.MinValue);
+        r[o + 16] = local.Last(x => x <= x0);
 
-        r[o + 18] = (long)slice.AsStackEnumerable().Select(x => (double)x).SumSequential();
-        r[o + 19] = (long)slice.AsStackEnumerable().SumSequential(x => (double)x);
+        r[o + 17] = (long)slice.AsStackEnumerable().Select(x => (double)x).SumSequential();
+        r[o + 18] = (long)slice.AsStackEnumerable().SumSequential(x => (double)x);
 
         // AsParallel() stored in a local: every thread still receives the sum of its whole slice
         var parallel = slice.AsStackEnumerable().AsParallel();
-        r[o + 20] = parallel.Sum();
+        r[o + 19] = parallel.Sum();
 
         // Named arguments in the reverse order of the parameters: seed is still the seed
-        r[o + 21] = slice.AsStackEnumerable().Aggregate(func: (a, b) => a + b, seed: 10L);
-        r[o + 22] = local.Aggregate(func: (a, b) => a - b, seed: 7L);
-        r[o + 23] = StackLinqExtensions.Aggregate(func: (a, b) => a * 3 + b, seed: 5L, source: slice.AsStackEnumerable());
+        r[o + 20] = slice.AsStackEnumerable().Aggregate(func: (a, b) => a + b, seed: 10L);
+        r[o + 21] = local.Aggregate(func: (a, b) => a - b, seed: 7L);
+        r[o + 22] = StackLinqExtensions.Aggregate(func: (a, b) => a * 3 + b, seed: 5L, source: slice.AsStackEnumerable());
+    }
+
+    /// <summary>
+    /// A floating-point <c>Sum</c> of a query stored in a local: the generated code sums it in order, which the C#
+    /// execution does not reproduce, so it has a kernel of its own with a reference model.
+    /// </summary>
+    [GpuKernel]
+    public static void UnfusedDoubleSumKernel(int[] xs, long[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int baseIdx = t * SliceLength;
+        if (baseIdx + SliceLength > xs.Length)
+        {
+            return;
+        }
+
+        var local = xs.AsSpan().Slice(baseIdx, SliceLength).AsStackEnumerable();
+        r[t] = (long)local.Sum(x => (double)x);
     }
 
     /// <summary>The columns of <see cref="IndexedLambdaKernel"/>.</summary>

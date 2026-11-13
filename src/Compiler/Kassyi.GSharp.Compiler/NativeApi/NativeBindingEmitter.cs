@@ -22,55 +22,47 @@ internal static class NativeBindingEmitter
         writer.AppendLine("using System;");
         writer.AppendLine("using System.Runtime.InteropServices;");
         writer.AppendLine();
-        writer.AppendLine($"namespace {def.Namespace};");
-        writer.AppendLine();
+        WriteNamespace(writer, def.Namespace);
         writer.AppendLine("// ReSharper disable InconsistentNaming");
         writer.AppendExcludeFromCodeCoverageAttribute();
-        writer.AppendLine($"public static partial class {def.ClassName}");
+        WriteClassDeclaration(writer, def.ClassName);
         using (writer.Scope())
         {
             foreach (var m in def.Methods)
             {
-                NativeApiDocumentation.EmitDocumentation(writer, m);
-
-                var isUtf8 = m.StringMarshalling == "Utf8";
-                writer.Append("[DllImport(");
-                ModuleKernelLaunchEmitter.AppendStringLiteral(writer, def.LibraryName ?? string.Empty);
-                writer.Append(", EntryPoint = ");
-                ModuleKernelLaunchEmitter.AppendStringLiteral(writer,
-                    string.IsNullOrEmpty(m.EntryPoint) ? m.Name : m.EntryPoint ?? m.Name);
-                writer.Append(", ExactSpelling = true");
-                if (m.StringMarshalling == "Utf16")
-                {
-                    writer.Append(", CharSet = CharSet.Unicode");
-                }
-
-                writer.AppendLine(")]");
-
-                var unsafeMod = m.IsUnsafe ? "unsafe " : "";
-                writer.Append($"public static {unsafeMod}extern {m.ReturnType} {m.Name}(");
-                for (var i = 0; i < m.Parameters.Length; i++)
-                {
-                    var p = m.Parameters[i];
-                    if (i > 0)
-                    {
-                        writer.Append(", ");
-                    }
-
-                    if (isUtf8 && p.Type is "string" or "string?")
-                    {
-                        writer.Append("[MarshalAs(UnmanagedType.LPUTF8Str)] ");
-                    }
-
-                    writer.Append($"{p.Type} {p.Name}");
-                }
-
-                writer.AppendLine(");");
-                writer.AppendLine();
+                EmitLibraryMethod(writer, def.LibraryName ?? string.Empty, m);
             }
         }
 
         return writer.ToString();
+    }
+
+    // [DllImport("<library>", EntryPoint = "<entry point>", ExactSpelling = true[, CharSet = CharSet.Unicode])]
+    // public static [unsafe ]extern <return type> <name>(<parameters>);
+    private static void EmitLibraryMethod(SourceWriter writer, string libraryName, ApiMethodDefinition m)
+    {
+        NativeApiDocumentation.EmitDocumentation(writer, m);
+        writer.Append($"[DllImport({ModuleKernelLaunchEmitter.Literal(libraryName)}, ");
+        writer.Append($"EntryPoint = {ModuleKernelLaunchEmitter.Literal(GetEntryPoint(m))}, ExactSpelling = true");
+        writer.AppendIf(m.StringMarshalling == "Utf16", ", CharSet = CharSet.Unicode");
+        writer.AppendLine(")]");
+
+        writer.Append($"public static {(m.IsUnsafe ? "unsafe " : "")}extern {m.ReturnType} ");
+        writer.AppendCsharpIdentifier(m.Name);
+        using (writer.Parentheses())
+        {
+            var isUtf8 = m.StringMarshalling == "Utf8";
+            for (var i = 0; i < m.Parameters.Length; i++)
+            {
+                var p = m.Parameters[i];
+                writer.AppendIf(i > 0, ", ");
+                writer.AppendIf(isUtf8 && p.Type is "string" or "string?", "[MarshalAs(UnmanagedType.LPUTF8Str)] ");
+                writer.Append($"{p.Type} {p.Name.ToCSharpIdentifier()}");
+            }
+        }
+
+        writer.AppendLine(";");
+        writer.AppendLine();
     }
 
     /// <summary>
@@ -89,10 +81,9 @@ internal static class NativeBindingEmitter
         writer.AppendLine("using Kassyi.GSharp.Runtime.Aot;");
         writer.AppendLine("using Kassyi.GSharp.Runtime.Interop;");
         writer.AppendLine();
-        writer.AppendLine($"namespace {def.Namespace};");
-        writer.AppendLine();
+        WriteNamespace(writer, def.Namespace);
         writer.AppendExcludeFromCodeCoverageAttribute();
-        writer.AppendLine($"public static partial class {def.ClassName}");
+        WriteClassDeclaration(writer, def.ClassName);
         using (writer.Scope())
         {
             ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, moduleField, moduleName);
@@ -102,13 +93,13 @@ internal static class NativeBindingEmitter
                 var plan = ModuleBindingPlanner.Plan(m);
 
                 NativeApiDocumentation.EmitDocumentation(writer, m);
-                writer.Append($"public static void {m.Name}");
+                writer.Append(plan.TakesPointer ? "public static unsafe void " : "public static void ");
+                writer.AppendCsharpIdentifier(m.Name);
                 WriteModuleParameterList(writer, m);
                 writer.AppendLine();
                 using (writer.Scope())
                 {
-                    var entryPoint = string.IsNullOrEmpty(m.EntryPoint) ? m.Name : m.EntryPoint ?? m.Name;
-                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleField, entryPoint,
+                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleField, GetEntryPoint(m),
                         $"{def.ClassName}.{m.Name}", plan, contextTypeName: null);
                 }
 
@@ -128,7 +119,7 @@ internal static class NativeBindingEmitter
             {
                 var parameter = method.Parameters[i];
                 writer.AppendIf(i > 0, ", ");
-                writer.Append($"{parameter.Type} {parameter.Name}");
+                writer.Append($"{parameter.Type} {parameter.Name.ToCSharpIdentifier()}");
                 if (!string.IsNullOrEmpty(parameter.DefaultValue))
                 {
                     writer.Append($" = {parameter.DefaultValue}");
@@ -137,35 +128,37 @@ internal static class NativeBindingEmitter
         }
     }
 
-    /// <summary>
-    /// Returns <see langword="true"/> when the library of <paramref name="def"/> cannot be found by the default
-    /// probing logic: it declares platform candidates or is given as a relative or absolute path.
-    /// </summary>
-    public static bool RequiresResolver(NativeApiDefinition def)
+    // namespace <segment>.<segment>; with each segment that is a keyword escaped (My.@class)
+    private static void WriteNamespace(SourceWriter writer, string ns)
     {
-        if (def.BindingKind != NativeApiBindingKind.Library)
-        {
-            return false;
-        }
-
-        if (def.LibraryNames is { IsEmpty: false })
-        {
-            return true;
-        }
-
-        var libraryName = def.LibraryName ?? string.Empty;
-        return libraryName.IndexOf('/') >= 0 || libraryName.IndexOf('\\') >= 0;
+        writer.Append("namespace ");
+        writer.AppendCsharpNamespace(ns);
+        writer.AppendLine(";");
+        writer.AppendLine();
     }
 
+    // public static partial class <name>
+    private static void WriteClassDeclaration(SourceWriter writer, string className)
+    {
+        writer.Append("public static partial class ");
+        writer.AppendCsharpTypeIdentifier(className);
+        writer.AppendLine();
+    }
+
+    // The native symbol of a method: its entryPoint, or its name
+    private static string GetEntryPoint(ApiMethodDefinition method) =>
+        method.EntryPoint is { Length: > 0 } entryPoint ? entryPoint : method.Name;
+
     /// <summary>
-    /// Emits a single per-assembly <c>DllImportResolver</c> that probes the candidates declared by every
-    /// definition for which <see cref="RequiresResolver"/> is <see langword="true"/>.
+    /// Emits a single per-assembly <c>DllImportResolver</c> that probes, for each library name, the candidates that
+    /// <see cref="NativeLibraryResolverPlanner"/> merged from every definition of that name.
     /// </summary>
-    public static string EmitLibraryResolver(ImmutableArray<NativeApiDefinition> definitions)
+    public static string EmitLibraryResolver(ImmutableArray<NativeLibraryCandidates> libraries)
     {
         using var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
-        writer.AppendLine("#pragma warning disable CA2255 // ModuleInitializer is required to register the resolver before first P/Invoke");
+        writer.Append("#pragma warning disable CA2255 ");
+        writer.AppendLine("// ModuleInitializer is required to register the resolver before first P/Invoke");
         writer.AppendLine("using System;");
         writer.AppendLine("using System.Reflection;");
         writer.AppendLine("using System.Runtime.CompilerServices;");
@@ -177,13 +170,11 @@ internal static class NativeBindingEmitter
         writer.AppendLine($"internal static class {ResolverClassName}");
         using (writer.Scope())
         {
-            var index = 0;
-            foreach (var def in definitions)
+            for (var i = 0; i < libraries.Length; i++)
             {
-                EmitCandidateField(writer, index, "Windows", def.LibraryNames?.Windows, def.LibraryName);
-                EmitCandidateField(writer, index, "Linux", def.LibraryNames?.Linux, def.LibraryName);
-                EmitCandidateField(writer, index, "OSX", def.LibraryNames?.OSX, def.LibraryName);
-                index++;
+                EmitCandidateField(writer, i, "Windows", libraries[i].Windows);
+                EmitCandidateField(writer, i, "Linux", libraries[i].Linux);
+                EmitCandidateField(writer, i, "OSX", libraries[i].OSX);
             }
 
             writer.AppendLine();
@@ -191,58 +182,49 @@ internal static class NativeBindingEmitter
             writer.AppendLine("internal static void Register() =>");
             writer.AppendLine($"NativeLibrary.SetDllImportResolver(typeof({ResolverClassName}).Assembly, Resolve);");
             writer.AppendLine();
-            writer.AppendLine("private static IntPtr Resolve(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)");
-            using (writer.Scope())
-            {
-                writer.AppendLine("switch (libraryName)");
-                using (writer.Scope())
-                {
-                    index = 0;
-                    foreach (var def in definitions)
-                    {
-                        writer.Append("case ");
-                        ModuleKernelLaunchEmitter.AppendStringLiteral(writer, def.LibraryName ?? string.Empty);
-                        writer.AppendLine(":");
-                        writer.AppendLine("return global::Kassyi.GSharp.Runtime.Interop.NativeLibraryProbe.Load(assembly, searchPath,");
-                        writer.AppendLine($"OperatingSystem.IsWindows() ? s_candidates{index}Windows : OperatingSystem.IsLinux() ? s_candidates{index}Linux : s_candidates{index}OSX);");
-                        index++;
-                    }
-                }
-
-                writer.AppendLine();
-                writer.AppendLine("return IntPtr.Zero;");
-            }
+            EmitResolveMethod(writer, libraries);
         }
 
         return writer.ToString();
     }
 
+    // private static IntPtr Resolve(...) { switch (libraryName) { case "<name>": return <probe the candidates>; }
+    // return IntPtr.Zero; }
+    private static void EmitResolveMethod(SourceWriter writer, ImmutableArray<NativeLibraryCandidates> libraries)
+    {
+        writer.Append("private static IntPtr Resolve(string libraryName, Assembly assembly, ");
+        writer.AppendLine("DllImportSearchPath? searchPath)");
+        using (writer.Scope())
+        {
+            writer.AppendLine("switch (libraryName)");
+            using (writer.Scope())
+            {
+                for (var i = 0; i < libraries.Length; i++)
+                {
+                    writer.AppendLine($"case {ModuleKernelLaunchEmitter.Literal(libraries[i].LibraryName)}:");
+                    writer.Append("return global::Kassyi.GSharp.Runtime.Interop.NativeLibraryProbe.Load");
+                    writer.AppendLine("(assembly, searchPath,");
+                    writer.Append($"OperatingSystem.IsWindows() ? s_candidates{i}Windows : ");
+                    writer.AppendLine($"OperatingSystem.IsLinux() ? s_candidates{i}Linux : s_candidates{i}OSX);");
+                }
+            }
+
+            writer.AppendLine();
+            writer.AppendLine("return IntPtr.Zero;");
+        }
+    }
+
+    // private static readonly string[] s_candidates<index><platform> = ["<candidate>", ...];
     private static void EmitCandidateField(SourceWriter writer, int index, string platform,
-        ImmutableArray<string>? candidates, string? libraryName)
+        EquatableArray<string> candidates)
     {
         writer.Append($"private static readonly string[] s_candidates{index}{platform} = [");
-        var first = true;
-        if (candidates is { } list)
+        for (var i = 0; i < candidates.Length; i++)
         {
-            foreach (var candidate in list)
-            {
-                if (!first)
-                {
-                    writer.Append(", ");
-                }
-
-                ModuleKernelLaunchEmitter.AppendStringLiteral(writer, candidate);
-                first = false;
-            }
+            writer.AppendIf(i > 0, ", ");
+            writer.Append(ModuleKernelLaunchEmitter.Literal(candidates[i]));
         }
 
-        // The logical name is always the last resort so that a plain OS search still applies.
-        if (!first)
-        {
-            writer.Append(", ");
-        }
-
-        ModuleKernelLaunchEmitter.AppendStringLiteral(writer, libraryName ?? string.Empty);
         writer.AppendLine("];");
     }
 }

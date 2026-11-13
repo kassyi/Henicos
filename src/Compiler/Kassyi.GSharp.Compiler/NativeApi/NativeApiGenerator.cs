@@ -45,8 +45,8 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
         {
             if (result.Definition is { BindingKind: NativeApiBindingKind.Module } definition)
             {
-                classes.Add(new YamlModuleClass($"{definition.Namespace}.{definition.ClassName}",
-                    definition.ModuleName ?? string.Empty));
+                var typeName = YamlModuleClass.GetTypeName(definition.Namespace, definition.ClassName);
+                classes.Add(new YamlModuleClass(typeName, definition.ModuleName ?? string.Empty));
             }
         }
 
@@ -59,8 +59,7 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
 
     private static void Emit(SourceProductionContext context, ImmutableArray<NativeApiSourceFile> files)
     {
-        var resolverDefinitions = ImmutableArray.CreateBuilder<NativeApiDefinition>();
-        var resolvedLibraries = new HashSet<string>(StringComparer.Ordinal);
+        var resolverDefinitions = ImmutableArray.CreateBuilder<(string Path, NativeApiDefinition Definition)>();
         foreach (var result in ReadDefinitions(files, context.CancellationToken))
         {
             if (result.Definition is not { } definition)
@@ -73,18 +72,14 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
                 ? NativeBindingEmitter.EmitLibraryBindings(definition)
                 : NativeBindingEmitter.EmitModuleBindings(definition);
             context.AddSource($"{definition.Namespace}.{definition.ClassName}.NativeApi.g.cs", source);
-
-            if (NativeBindingEmitter.RequiresResolver(definition) &&
-                resolvedLibraries.Add(definition.LibraryName ?? string.Empty))
-            {
-                resolverDefinitions.Add(definition);
-            }
+            resolverDefinitions.Add((result.File.Path, definition));
         }
 
-        if (resolverDefinitions.Count > 0)
+        var resolver = NativeLibraryResolverPlanner.Plan(resolverDefinitions.ToImmutable());
+        if (!resolver.IsEmpty)
         {
             context.AddSource($"{NativeBindingEmitter.ResolverClassName}.g.cs",
-                NativeBindingEmitter.EmitLibraryResolver(resolverDefinitions.ToImmutable()));
+                NativeBindingEmitter.EmitLibraryResolver(resolver));
         }
     }
 

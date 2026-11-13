@@ -14,6 +14,10 @@ struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandC
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext;
 inline void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o1(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, int __gsharp_id_3_shiftBits);
 
+__forceinline__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedLeftWord(GSharpArray<const unsigned int> __gsharp_id_0_dA, int __gsharp_id_1_i, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords);
+
+__forceinline__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedRightWord(GSharpArray<const unsigned int> __gsharp_id_0_dA, int __gsharp_id_1_i, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords);
+
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext
@@ -55,18 +59,7 @@ auto __gsharp_id_4_wordShift = __gsharp_id_3_shiftBits/32;
 auto __gsharp_id_5_bitShift = __gsharp_id_3_shiftBits%32;
 for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords;__gsharp_id_6_i++)
 {
-auto __gsharp_id_7_srcIdx0 = __gsharp_sub_i32(__gsharp_id_6_i,__gsharp_id_4_wordShift);
-auto __gsharp_id_8_srcIdx1 = __gsharp_sub_i32(__gsharp_id_7_srcIdx0,1);
-auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
-auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
-auto __gsharp_id_11_w0 = __gsharp_id_2_left[__gsharp_id_9_safeIdx0];
-auto __gsharp_id_12_w1 = __gsharp_id_2_left[__gsharp_id_10_safeIdx1];
-auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
-auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
-__gsharp_id_11_w0&=__gsharp_id_13_mask0;
-__gsharp_id_12_w1&=__gsharp_id_14_mask1;
-auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_id_1_result[__gsharp_id_6_i]=(__gsharp_id_11_w0<<(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1>>(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
+__gsharp_id_1_result[__gsharp_id_6_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedLeftWord(__gsharp_id_2_left,__gsharp_id_6_i,__gsharp_id_4_wordShift,__gsharp_id_5_bitShift,(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords);
 }
 }
 
@@ -75,19 +68,38 @@ auto __gsharp_id_4_wordShift = __gsharp_id_3_shiftBits/32;
 auto __gsharp_id_5_bitShift = __gsharp_id_3_shiftBits%32;
 for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords;__gsharp_id_6_i++)
 {
-auto __gsharp_id_7_srcIdx0 = __gsharp_add_i32(__gsharp_id_6_i,__gsharp_id_4_wordShift);
-auto __gsharp_id_8_srcIdx1 = __gsharp_add_i32(__gsharp_id_7_srcIdx0,1);
-auto __gsharp_id_9_safeIdx0 = (__gsharp_id_7_srcIdx0<0?0:((__gsharp_id_7_srcIdx0>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_7_srcIdx0)));
-auto __gsharp_id_10_safeIdx1 = (__gsharp_id_8_srcIdx1<0?0:((__gsharp_id_8_srcIdx1>=(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?__gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1):__gsharp_id_8_srcIdx1)));
-auto __gsharp_id_11_w0 = __gsharp_id_2_left[__gsharp_id_9_safeIdx0];
-auto __gsharp_id_12_w1 = __gsharp_id_2_left[__gsharp_id_10_safeIdx1];
-auto __gsharp_id_13_mask0 = (__gsharp_id_7_srcIdx0>=0&&__gsharp_id_7_srcIdx0<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
-auto __gsharp_id_14_mask1 = (__gsharp_id_8_srcIdx1>=0&&__gsharp_id_8_srcIdx1<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords?0xFFFFFFFFu:0u);
-__gsharp_id_11_w0&=__gsharp_id_13_mask0;
-__gsharp_id_12_w1&=__gsharp_id_14_mask1;
-auto __gsharp_id_15_shiftMask = (__gsharp_id_5_bitShift==0?0u:0xFFFFFFFFu);
-__gsharp_id_1_result[__gsharp_id_6_i]=(__gsharp_id_11_w0>>(__gsharp_id_5_bitShift&31))|((__gsharp_id_12_w1<<(__gsharp_sub_i32(32,__gsharp_id_5_bitShift)&31))&__gsharp_id_15_shiftMask);
+__gsharp_id_1_result[__gsharp_id_6_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedRightWord(__gsharp_id_2_left,__gsharp_id_6_i,__gsharp_id_4_wordShift,__gsharp_id_5_bitShift,(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords);
 }
+}
+
+__forceinline__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedLeftWord(GSharpArray<const unsigned int> __gsharp_id_0_dA, int __gsharp_id_1_i, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords){
+auto __gsharp_id_5_srcIdx0 = __gsharp_sub_i32(__gsharp_id_1_i,__gsharp_id_2_wordShift);
+auto __gsharp_id_6_srcIdx1 = __gsharp_sub_i32(__gsharp_id_5_srcIdx0,1);
+auto __gsharp_id_7_safeIdx0 = (__gsharp_id_5_srcIdx0<0?0:((__gsharp_id_5_srcIdx0>=__gsharp_id_4_numWords?__gsharp_sub_i32(__gsharp_id_4_numWords,1):__gsharp_id_5_srcIdx0)));
+auto __gsharp_id_8_safeIdx1 = (__gsharp_id_6_srcIdx1<0?0:((__gsharp_id_6_srcIdx1>=__gsharp_id_4_numWords?__gsharp_sub_i32(__gsharp_id_4_numWords,1):__gsharp_id_6_srcIdx1)));
+auto __gsharp_id_9_w0 = __gsharp_id_0_dA[__gsharp_id_7_safeIdx0];
+auto __gsharp_id_10_w1 = __gsharp_id_0_dA[__gsharp_id_8_safeIdx1];
+auto __gsharp_id_11_mask0 = (__gsharp_id_5_srcIdx0>=0&&__gsharp_id_5_srcIdx0<__gsharp_id_4_numWords?0xFFFFFFFFu:0u);
+auto __gsharp_id_12_mask1 = (__gsharp_id_6_srcIdx1>=0&&__gsharp_id_6_srcIdx1<__gsharp_id_4_numWords?0xFFFFFFFFu:0u);
+__gsharp_id_9_w0&=__gsharp_id_11_mask0;
+__gsharp_id_10_w1&=__gsharp_id_12_mask1;
+auto __gsharp_id_13_shiftMask = (__gsharp_id_3_bitShift==0?0u:0xFFFFFFFFu);
+return (__gsharp_id_9_w0<<(__gsharp_id_3_bitShift&31))|((__gsharp_id_10_w1>>(__gsharp_sub_i32(32,__gsharp_id_3_bitShift)&31))&__gsharp_id_13_shiftMask);
+}
+
+__forceinline__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedRightWord(GSharpArray<const unsigned int> __gsharp_id_0_dA, int __gsharp_id_1_i, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords){
+auto __gsharp_id_5_srcIdx0 = __gsharp_add_i32(__gsharp_id_1_i,__gsharp_id_2_wordShift);
+auto __gsharp_id_6_srcIdx1 = __gsharp_add_i32(__gsharp_id_5_srcIdx0,1);
+auto __gsharp_id_7_safeIdx0 = (__gsharp_id_5_srcIdx0<0?0:((__gsharp_id_5_srcIdx0>=__gsharp_id_4_numWords?__gsharp_sub_i32(__gsharp_id_4_numWords,1):__gsharp_id_5_srcIdx0)));
+auto __gsharp_id_8_safeIdx1 = (__gsharp_id_6_srcIdx1<0?0:((__gsharp_id_6_srcIdx1>=__gsharp_id_4_numWords?__gsharp_sub_i32(__gsharp_id_4_numWords,1):__gsharp_id_6_srcIdx1)));
+auto __gsharp_id_9_w0 = __gsharp_id_0_dA[__gsharp_id_7_safeIdx0];
+auto __gsharp_id_10_w1 = __gsharp_id_0_dA[__gsharp_id_8_safeIdx1];
+auto __gsharp_id_11_mask0 = (__gsharp_id_5_srcIdx0>=0&&__gsharp_id_5_srcIdx0<__gsharp_id_4_numWords?0xFFFFFFFFu:0u);
+auto __gsharp_id_12_mask1 = (__gsharp_id_6_srcIdx1>=0&&__gsharp_id_6_srcIdx1<__gsharp_id_4_numWords?0xFFFFFFFFu:0u);
+__gsharp_id_9_w0&=__gsharp_id_11_mask0;
+__gsharp_id_10_w1&=__gsharp_id_12_mask1;
+auto __gsharp_id_13_shiftMask = (__gsharp_id_3_bitShift==0?0u:0xFFFFFFFFu);
+return (__gsharp_id_9_w0>>(__gsharp_id_3_bitShift&31))|((__gsharp_id_10_w1<<(__gsharp_sub_i32(32,__gsharp_id_3_bitShift)&31))&__gsharp_id_13_shiftMask);
 }
 
 ";

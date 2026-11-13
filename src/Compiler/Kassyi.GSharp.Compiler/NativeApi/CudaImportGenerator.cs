@@ -134,7 +134,8 @@ public class CudaImportGenerator : IIncrementalGenerator
     // <namespace>.<name> of a class that a YAML binding can also extend (not nested, not generic), keywords not escaped
     private static string? GetTopLevelTypeName(INamedTypeSymbol containingClass) =>
         containingClass is { ContainingType: null, TypeParameters.IsEmpty: true }
-            ? containingClass.ContainingNamespace.GetMetadataNamespaceName() + "." + containingClass.Name
+            ? YamlModuleClass.GetTypeName(containingClass.ContainingNamespace.GetMetadataNamespaceName(),
+                containingClass.Name)
             : null;
 
     private static string RenderMethodSignature(MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
@@ -178,14 +179,13 @@ public class CudaImportGenerator : IIncrementalGenerator
     private static void WriteMembers(SourceWriter writer, CudaImportClassModel classGroup,
         EquatableArray<YamlModuleClass> yamlModuleClasses)
     {
-        var modules = new HashSet<string>(StringComparer.Ordinal);
+        var fields = new HashSet<string>(StringComparer.Ordinal);
         foreach (var method in classGroup.Methods)
         {
-            if (modules.Add(method.ModuleName) &&
-                !IsDeclaredByYaml(yamlModuleClasses, classGroup.TopLevelTypeName, method.ModuleName))
+            var field = AotModuleNames.GetModuleFieldName(method.ModuleName);
+            if (fields.Add(field) && !IsDeclaredByYaml(yamlModuleClasses, classGroup.TopLevelTypeName, field))
             {
-                ModuleKernelLaunchEmitter.EmitModuleCacheField(writer,
-                    AotModuleNames.GetModuleFieldName(method.ModuleName), method.ModuleName);
+                ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, field, method.ModuleName);
             }
         }
 
@@ -195,13 +195,15 @@ public class CudaImportGenerator : IIncrementalGenerator
         }
     }
 
-    // Whether a YAML module binding declares the field of <moduleName> in the class <typeName>
+    // Whether a YAML module binding of the class <typeName> declares the module field <field>: both sides name the
+    // field by AotModuleNames.GetModuleFieldName, so equal names are one field
     private static bool IsDeclaredByYaml(EquatableArray<YamlModuleClass> yamlModuleClasses, string? typeName,
-        string moduleName) =>
+        string field) =>
         typeName is not null &&
         yamlModuleClasses
             .AsStackEnumerable()
-            .Any(new YamlModuleClass(typeName, moduleName), static (c, key) => c == key);
+            .Any((typeName, field), static (c, key) =>
+                c.TypeName == key.typeName && AotModuleNames.GetModuleFieldName(c.ModuleName) == key.field);
 
     // A method whose parameters the launcher cannot pass gets a body that throws the GSH0110 message, so the partial
     // method stays implemented and the build shows the diagnostic instead of CS8795
