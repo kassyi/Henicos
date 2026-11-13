@@ -2,10 +2,14 @@
 // pane, the narrow and short layouts, and the keys. No scheduler and no terminal: view.ts and reduceKey are pure.
 
 import * as assert from "node:assert";
-import type { StatusJob, StatusReply } from "./protocol.ts";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import type { StatusReply } from "./protocol.ts";
 import {
   displayWidth,
   fit,
+  helpLines,
   initialViewState,
   renderScreen,
   screenJobs,
@@ -15,84 +19,8 @@ import {
   type ViewState,
 } from "./view.ts";
 import { describeResult, reduceKey, splitKeys } from "./watch.ts";
-
-const Now = Date.UTC(2026, 10, 14, 5, 32, 0);
-const Minute = 60 * 1000;
-
-function job(id: number, fields: Partial<StatusJob>): StatusJob {
-  return {
-    id,
-    weight: 1,
-    gpu: false,
-    pid: 100 + id,
-    commandPid: null,
-    orphan: false,
-    cwd: "P:/repo",
-    command: `dotnet build project-${id}`,
-    queuedAt: Now - 20 * Minute,
-    grantedAt: null,
-    typicalMs: 10 * Minute,
-    pin: null,
-    before: null,
-    after: null,
-    keepIfFailed: false,
-    gpuTurn: false,
-    memoryMb: 0,
-    state: "waiting",
-    ahead: 0,
-    position: 0,
-    startAt: null,
-    endAt: null,
-    blockedBy: null,
-    ...fields,
-  };
-}
-
-/** Three running jobs (one late, one without history) and three waiting ones (one behind --after). */
-function sampleReply(): StatusReply {
-  return {
-    type: "status",
-    pid: 1,
-    now: Now,
-    policy: "hrrn",
-    capacity: 8,
-    used: 4,
-    memoryCapacity: 32000,
-    memoryUsed: 6000,
-    running: [
-      job(812, {
-        state: "running",
-        gpu: true,
-        weight: 2,
-        memoryMb: 6144,
-        command: "just test-category Runtime",
-        grantedAt: Now - 7 * Minute,
-        endAt: Now + 3 * Minute,
-      }),
-      job(815, { state: "running", grantedAt: Now - 14 * Minute, endAt: Now + Minute }), // past its typical 10 m
-      job(817, { state: "running", typicalMs: null, grantedAt: Now - 6 * Minute, endAt: Now + Minute / 2 }),
-    ],
-    waiting: [
-      job(820, { ahead: 0, position: 1, startAt: Now + 3 * Minute, endAt: Now + 6 * Minute }),
-      job(821, {
-        gpu: true,
-        gpuTurn: true,
-        ahead: 1,
-        position: 2,
-        startAt: Now + 4 * Minute,
-        endAt: Now + 19 * Minute,
-      }),
-      job(822, {
-        after: 821,
-        blockedBy: 821,
-        ahead: 2,
-        position: 3,
-        startAt: Now + 19 * Minute,
-        endAt: Now + 49 * Minute,
-      }),
-    ],
-  };
-}
+import { CellWidth, Padding, Screenshots, terminalSvg, writeScreenshots } from "./screenshot.ts";
+import { Minute, Now, job, sampleReply } from "./view-sample.ts";
 
 const plain = (lines: string[]): string[] => lines;
 
@@ -262,8 +190,14 @@ function checkKeys(): void {
   assert.strictEqual(state.prompt, null);
   assert.match(state.message?.text ?? "", /#812 already runs/);
 
-  assert.strictEqual(press("?").state.help, true);
-  assert.strictEqual(press("\x1b").state.help, false);
+  // ? pages through the help (two pages on a narrow screen) and closes it after the last one; Esc closes it at once
+  assert.strictEqual(press("?").state.help, 1);
+  assert.strictEqual(press("?").state.help, 2);
+  assert.strictEqual(press("?").state.help, 0);
+  assert.strictEqual(reduceKey({ ...state, helpPages: 1 }, "?", null, Now).state.help, 1);
+  assert.strictEqual(reduceKey({ ...state, help: 1, helpPages: 1 }, "?", null, Now).state.help, 0);
+  press("?");
+  assert.strictEqual(press("\x1b").state.help, 0);
   assert.strictEqual(state.selectedId, 812, "Esc closes the help first and keeps the selection");
   assert.strictEqual(press("q").action, "quit");
   assert.strictEqual(press("\x03").action, "quit");
@@ -388,10 +322,86 @@ function checkStartKey(): void {
   );
 }
 
+/** The help: keys and legend side by side when they fit, else one per page; the samples in their screen colors. */
+function checkHelp(): void {
+  const plainText = (lines: { text: string }[]): string[] => lines.map((line) => line.text);
+  const wide = plainText(helpLines(100));
+  assert.match(wide[0] ?? "", /^ Keys +Timeline/, "both columns on one screen");
+  assert.ok(
+    wide.some((line) => /^ c +cancel it \(y\/n\) +█ +past its usual run time/.test(line)),
+    wide.join("\n"),
+  );
+  assert.ok(
+    wide.some((line) => /CPU full +every slot in use/.test(line)),
+    "the wait reasons are listed",
+  );
+  wide.forEach((line) => assert.ok(displayWidth(line) <= 100, `fits 100 columns: ${line}`));
+  const narrow = plainText(helpLines(70));
+  const blank = narrow.findIndex((line) => line.trim() === "");
+  assert.ok(blank > 0 && narrow.slice(0, blank).some((line) => /^ q +quit/.test(line)), "the keys first");
+  assert.match(narrow[blank + 1] ?? "", /^ Timeline/, "then the legend");
+  narrow.forEach((line) => assert.ok(displayWidth(line) <= 70, `fits 70 columns: ${line}`));
+  // At 70x13 the help takes the 9 job rows a page at a time; ? turns the page, the rule says which one
+  const reply = sampleReply();
+  const small = { columns: 70, rows: 13, now: Now };
+  const state = { ...initialViewState(), help: 1 };
+  const first = plain(renderScreen(reply, state, small, false));
+  assert.strictEqual(state.helpPages, Math.ceil(narrow.length / 9));
+  assert.match(first[11] ?? "", /── help 1\/\d, \? next/);
+  const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false));
+  assert.ok(
+    last.some((line) => /after #n +until job n has ended/.test(line)),
+    "the last page ends the legend",
+  );
+  const colored = helpLines(100).map((line) => line.render(true));
+  assert.ok(
+    colored.some((line) => line.includes("\x1b[31m█\x1b[0m")),
+    "the late sample is red, as on the timeline",
+  );
+  assert.ok(
+    colored.some((line) => line.includes("\x1b[32m█\x1b[0m")),
+    "the run sample is green",
+  );
+  assert.ok(
+    colored.some((line) => line.includes("\x1b[33mCPU full")),
+    "a wait reason in its warning color",
+  );
+  assert.ok(colored[1]?.includes("\x1b[1m ↑↓ j k"), "the keys are bold");
+}
+
+/** The SVG of the screenshots: text escaped, wide characters on their cells, and the files of the README written. */
+function checkScreenshots(): void {
+  const svg = terminalSvg(["a<b&c>d", "[1;33m日本[0mx [7msel[0m"], 10);
+  assert.ok(svg.includes(">a&lt;b&amp;c&gt;d</tspan>"), `markup in the text is escaped: ${svg}`);
+  assert.ok(!svg.includes("a<b") && !svg.includes("&c"), "no raw < or & from the text");
+  const x = (column: number): string => `x="${Number((Padding + column * CellWidth).toFixed(1))}"`;
+  assert.ok(svg.includes(`<tspan ${x(0)}`) && svg.includes(`<tspan ${x(2)}`), "each wide character on its own cells");
+  assert.ok(svg.includes(`<tspan ${x(4)}`) && svg.includes(">x</tspan>"), "the text after two wide ones at column 4");
+  assert.ok(svg.includes('font-weight="bold"') && svg.includes('fill="#f5f543"'), "bold yellow");
+  assert.ok(svg.includes(`<rect ${x(6)}`), "reverse video draws its background");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-screenshots-"));
+  try {
+    const files = writeScreenshots(dir);
+    assert.deepStrictEqual(
+      files.map((file) => path.basename(file)),
+      Screenshots.map((shot) => shot.file),
+    );
+    for (const file of files) {
+      const text = fs.readFileSync(file, "utf8");
+      assert.ok(text.startsWith("<svg ") && text.trimEnd().endsWith("</svg>"), `${file} is an SVG`);
+      assert.ok(text.includes(">14:32:00</tspan>"), `${file} shows the sample at its fixed time and zone`);
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 export function checkView(): void {
+  checkHelp();
   checkStartKey();
   checkPieces();
   checkLayout();
   checkKeys();
   checkGpuPairsAndReasons();
+  checkScreenshots();
 }
