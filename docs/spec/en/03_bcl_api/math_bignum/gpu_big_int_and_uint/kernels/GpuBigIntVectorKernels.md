@@ -21,13 +21,6 @@ Contains native G# (CUDA) kernels and device functions for batched vector operat
 public static partial class GpuBigIntVectorKernels
 ```
 
-## Properties
-
-| Name | Description |
-| --- | --- |
-| `VectorSignMagnitudeToTwosComplementKernelHandle` | Cached native CUDA kernel handle (`IntPtr`) for `VectorSignMagnitudeToTwosComplementKernel`. |
-| `VectorSignMagnitudeToOffsetBinaryKernelHandle` | Cached native CUDA kernel handle (`IntPtr`) for `VectorSignMagnitudeToOffsetBinaryKernel`. |
-
 ## Fields
 
 | Name | Description |
@@ -1031,7 +1024,7 @@ public static void CopyCountedElementsKernel(CountedCopyContext ctx);
 
 ## Examples
 
-### Internal Kernel Usage
+### Shared Buffer Size of the Vector Division
 
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
@@ -1040,10 +1033,9 @@ public static void CopyCountedElementsKernel(CountedCopyContext ctx);
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
-// Execution Context: G# Kernel (GPU)
-// Inspect the cached kernel handle fields on GpuBigIntVectorKernels.
-IntPtr handle = GpuBigIntVectorKernels.VectorSignMagnitudeToTwosComplementKernelHandle;
-Console.WriteLine($"{nameof(GpuBigIntVectorKernels)} handle initialized: {handle != IntPtr.Zero}");
+// Execution Context: Host (CPU)
+// An element wider than this many 32-bit words divides in global scratch instead of shared memory.
+Console.WriteLine($"Shared work buffer: {GpuBigIntVectorKernels.DivModSharedWords} words");
 ```
 
 ## Remarks
