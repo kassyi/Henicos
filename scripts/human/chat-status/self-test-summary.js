@@ -38,7 +38,8 @@ process.stdin.on('end', () => {
     process.stderr.write('fake failure');
     process.exit(Number(env.FAKE_CLAUDE_EXIT));
   }
-  process.stdout.write(env.FAKE_CLAUDE_ANSWER ?? '{"title": "Queue order", "open": ["Which pull request goes first?"]}');
+  const answer = '{"title": "Queue order", "open": ["Which pull request goes first?"]}';
+  process.stdout.write(env.FAKE_CLAUDE_ANSWER ?? answer);
 });
 `;
 
@@ -385,7 +386,8 @@ function summaryChecks(helpers) {
     assert.strictEqual(record.question, 'Merge it?', 'the rest of the record stays');
     const seen = JSON.parse(fs.readFileSync(log, 'utf8'));
     assert.ok(sameFile(seen.cwd, os.tmpdir()), seen.cwd);
-    assert.deepStrictEqual(seen.args, ['-p', '--model', 'haiku', '--no-session-persistence', '--tools', '', '--strict-mcp-config', '--setting-sources', '']);
+    const noTools = ['--tools', '', '--strict-mcp-config', '--setting-sources', ''];
+    assert.deepStrictEqual(seen.args, ['-p', '--model', 'haiku', '--no-session-persistence', ...noTools]);
     assert.deepStrictEqual([seen.child, seen.session], ['1', null]);
     assert.match(seen.input, /<latest>\nMerge it\?\n<\/latest>/);
     assert.deepStrictEqual(fs.readdirSync(directory), [path.basename(file)], 'the lock is removed');
