@@ -321,10 +321,24 @@ function checkGpuPairsAndReasons(): void {
     [
       [900, 901, true, 2, ""],
       [902, null, false, 1, ""],
-      [910, null, true, 1, "GPU"],
-      [911, null, false, 1, "slots"],
+      [910, null, true, 1, "GPU busy"],
+      [911, null, false, 1, "CPU full"],
     ],
     "the holder joins the line of its --gpu job, which keeps the id its caller knows",
+  );
+  // With free slots: a test run whose budget does not fit waits for memory, any other for the jobs ahead of it
+  const roomy: StatusReply = {
+    ...reply,
+    used: 1,
+    memoryCapacity: 1000,
+    memoryUsed: 900,
+    waiting: [job(912, { memoryMb: 200 }), job(913, { memoryMb: 50 }), job(914, { blockedBy: 911 })],
+  };
+  assert.deepStrictEqual(
+    screenJobs(roomy)
+      .filter((j) => j.state === "waiting")
+      .map((j) => j.reason),
+    ["mem full", "in line", "after #911"],
   );
   const lines = renderScreen(
     reply,
@@ -334,8 +348,8 @@ function checkGpuPairsAndReasons(): void {
   );
   assert.match(lines[0] ?? "", /GPU #900 \+1/, "the GPU belongs to #900; one job waits for its turn");
   assert.match(lines[2] ?? "", /^▸900G/);
-  assert.match(lines[4] ?? "", /^ 910G.*GPU [│┃]/, "a waiting line names what it waits for, left of now");
-  assert.match(lines[5] ?? "", /^ 911 .*slots [│┃]/);
+  assert.match(lines[4] ?? "", /^ 910G.*GPU busy [│┃]/, "a waiting line names what it waits for, left of now");
+  assert.match(lines[5] ?? "", /^ 911 .*CPU full [│┃]/);
   assert.match(lines[8] ?? "", /^ #900 .* runs as #901 /);
   // A --gpu job whose holder has not registered yet (the lock is being taken) is still a GPU line
   const alone = screenJobs({ ...reply, running: [turn] });
@@ -364,7 +378,7 @@ function checkStartKey(): void {
   assert.deepStrictEqual(reduceKey(asked, "y", reply, Now).action, { type: "start", id: 820 });
   assert.strictEqual(reduceKey(asked, "n", reply, Now).action, undefined);
   const lines = renderScreen(reply, asked, { columns: 90, rows: 13, now: Now }, false);
-  assert.match(lines[12] ?? "", /start #820 now, over the pool \(it waits for order\)\? y\/n/);
+  assert.match(lines[12] ?? "", /start #820 now, over the pool \(it waits: in line\)\? y\/n/);
   assert.match(reduceKey(at(821), "s", reply, Now).state.message?.text ?? "", /#821 waits for the GPU/);
   assert.match(reduceKey(at(822), "s", reply, Now).state.message?.text ?? "", /#822 waits for #821 to end/);
   assert.match(reduceKey(at(812), "s", reply, Now).state.message?.text ?? "", /#812 already runs; .* can start/);

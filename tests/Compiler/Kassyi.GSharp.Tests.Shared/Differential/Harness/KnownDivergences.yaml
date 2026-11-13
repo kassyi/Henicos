@@ -225,25 +225,6 @@
       columns: [item0_x, item0_y, item1_has, item1_x, item1_y, h]
 
 
-- issue: 991
-  title: "[Bug]: Suspending call arguments still misordered on CPU"
-  entries:
-    # An earlier operand of a call that does not split, and an operand left of a split inside ?:, run after the split
-    - case: SplitOperandOrderDifferentialKernels.OperandOrderKernel
-      paths: [Managed, Native]
-      columns: [two_earlier, conditional_left_arg]
-    # The target of a compound assignment is read after the split in its value
-    - case: SplitOperandOrderDifferentialKernels.CompoundOrderKernel
-      paths: [Managed, Native]
-      columns: [a, c, d, element_before_shuffle, local_before_shuffle, nested_outer, nested_inner, int_add, long_add, shift_left, unsigned_shift_right, float_remainder, byte_narrowing, int_subtract, bool_and]
-
-- issue: 1256
-  title: "[Bug]: A shuffle or suspending call in a later declarator of a multi-variable declaration is hoisted above the earlier declarators on the CPU paths"
-  entries:
-    - case: SplitOperandOrderDifferentialKernels.OperandOrderKernel
-      paths: [Managed, Native]
-      columns: [later_declarator, later_declarator_shuffle]
-
 - issue: 1060
   title: "[Bug]: StackLinq ElementAtOrDefault with a negative index enumerates the source and runs upstream side effects"
   entries:
