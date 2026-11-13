@@ -21,22 +21,19 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
             {
                 yield return Create(nameof(K.SpanKernel), valueName, read,
                     (o, s) => K.LaunchSpanKernel(
-                        new Span<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.SpanKernel(new Span<int>(Array()), read, o));
+                        new Span<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
             foreach (int read in (int[])[R.IsNull, R.Length])
             {
                 yield return Create(nameof(K.MemoryKernel), valueName, read,
                     (o, s) => K.LaunchMemoryKernel(
-                        new Memory<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.MemoryKernel(new Memory<int>(Array()), read, o));
+                        new Memory<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
                 if (read == R.Length)
                 {
                     yield return Create(nameof(K.SegmentKernel), valueName, read,
                         (o, s) => K.LaunchSegmentKernel(
-                            Segment(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                        o => K.SegmentKernel(Segment(Array()), read, o));
+                            Segment(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
                 }
             }
 
@@ -44,24 +41,21 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
             {
                 yield return Create(nameof(K.ImmutableKernel), valueName, read,
                     (o, s) => K.LaunchImmutableKernel(
-                        Immutable(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.ImmutableKernel(Immutable(Array()), read, o));
+                        Immutable(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
             foreach (int read in (int[])[R.IsNull, R.Length, R.ForEach, R.InNullableFunction])
             {
                 yield return Create(nameof(K.ReadOnlySpanKernel), valueName, read,
                     (o, s) => K.LaunchReadOnlySpanKernel(
-                        new ReadOnlySpan<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.ReadOnlySpanKernel(new ReadOnlySpan<int>(Array()), read, o));
+                        new ReadOnlySpan<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
             foreach (int read in (int[])[R.IsNull, R.Length])
             {
                 yield return Create(nameof(K.ReadOnlyMemoryKernel), valueName, read,
                     (o, s) => K.LaunchReadOnlyMemoryKernel(
-                        new ReadOnlyMemory<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.ReadOnlyMemoryKernel(new ReadOnlyMemory<int>(Array()), read, o));
+                        new ReadOnlyMemory<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
         }
 
@@ -77,8 +71,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
             {
                 yield return Create(nameof(K.NullableMemoryKernel), valueName, read,
                     (o, s) => K.LaunchNullableMemoryKernel(
-                        create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.NullableMemoryKernel(create(), read, o));
+                        create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
         }
     }
@@ -95,8 +88,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                  ])
         {
             yield return Create(nameof(K.NullableSegmentKernel), valueName, R.Length,
-                (o, s) => K.LaunchNullableSegmentKernel(create(), o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                o => K.NullableSegmentKernel(create(), o));
+                (o, s) => K.LaunchNullableSegmentKernel(create(), o, gridDimX: s.GridX, blockDimX: s.BlockX));
         }
 
         foreach (var (valueName, create) in ((string, Func<ImmutableArray<int>?>)[])
@@ -108,8 +100,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                  ])
         {
             yield return Create(nameof(K.NullableImmutableKernel), valueName, R.Length,
-                (o, s) => K.LaunchNullableImmutableKernel(create(), o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                o => K.NullableImmutableKernel(create(), o));
+                (o, s) => K.LaunchNullableImmutableKernel(create(), o, gridDimX: s.GridX, blockDimX: s.BlockX));
         }
 
         // Each of the two arguments in turn; the other holds a value of length 1 or is null
@@ -122,12 +113,10 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
         {
             yield return Create(nameof(K.TwoNullableMemoryKernel), "First" + valueName, R.Length,
                 (o, s) => K.LaunchTwoNullableMemoryKernel(
-                    create(), new Memory<int>([1]), o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                o => K.TwoNullableMemoryKernel(create(), new Memory<int>([1]), o));
+                    create(), new Memory<int>([1]), o, gridDimX: s.GridX, blockDimX: s.BlockX));
             yield return Create(nameof(K.TwoNullableMemoryKernel), "Second" + valueName, R.Length,
                 (o, s) => K.LaunchTwoNullableMemoryKernel(
-                    null, create(), o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                o => K.TwoNullableMemoryKernel(null, create(), o));
+                    null, create(), o, gridDimX: s.GridX, blockDimX: s.BlockX));
         }
     }
 

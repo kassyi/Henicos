@@ -58,6 +58,8 @@
     <_GSharpCudaSources Include="Native\*.cu" />
     <!-- The YAML module binding of Native/module_arguments.cu (ModuleArgumentTests) -->
     <AdditionalFiles Include="Native\module_arguments.yml" GSharpApi="true" />
+    <!-- A YAML binding into the [CudaImport] class ModuleArgumentImports (ModuleArgumentTests) -->
+    <AdditionalFiles Include="Native\module_argument_imports.yml" GSharpApi="true" />
   </ItemGroup>
 
   <PropertyGroup>

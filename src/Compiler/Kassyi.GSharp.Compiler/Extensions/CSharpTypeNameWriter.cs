@@ -23,6 +23,29 @@ internal static class CSharpTypeNameWriter
     }
 
     /// <summary>
+    /// Appends the dotted namespace name <paramref name="namespaceName"/> (<c>event.P3</c>, read from a file rather
+    /// than a symbol) as C# source spells it: each segment escaped as <see cref="AppendCsharpIdentifier"/> does
+    /// (<c>@event.P3</c>).
+    /// </summary>
+    public static ref readonly SourceWriter AppendCsharpNamespace(this in SourceWriter writer, string namespaceName)
+    {
+        var start = 0;
+        while (true)
+        {
+            var end = namespaceName.IndexOf('.', start);
+            if (end < 0)
+            {
+                writer.AppendCsharpIdentifier(namespaceName[start..]);
+                return ref writer;
+            }
+
+            writer.AppendCsharpIdentifier(namespaceName[start..end]);
+            writer.Append('.');
+            start = end + 1;
+        }
+    }
+
+    /// <summary>
     /// Gets the metadata name of <paramref name="namespaceSymbol"/> (<c>event.P3</c>): dot-separated, keywords not
     /// escaped, or an empty string for the global namespace. For a metadata or display name only, such as the type name
     /// that <c>[UnsafeAccessorType]</c> takes; C# source takes <see cref="GetCsharpNamespaceName"/>.
@@ -42,13 +65,25 @@ internal static class CSharpTypeNameWriter
     }
 
     /// <summary>
-    /// Appends the name that declares <paramref name="type"/> in a partial declaration of it: its identifier and its
-    /// own type parameters (<c>@class</c>, <c>Outer&lt;T&gt;</c>), each escaped as
-    /// <see cref="AppendCsharpIdentifier"/> does.
+    /// Appends <paramref name="name"/> where it declares a type: a reserved keyword and a contextual keyword get the
+    /// verbatim <c>@</c> prefix, since a type may not be named <c>required</c>, <c>scoped</c> or <c>file</c> (CS9029,
+    /// CS9062, CS9056) and <c>@</c> is allowed before any identifier.
+    /// </summary>
+    public static ref readonly SourceWriter AppendCsharpTypeIdentifier(this in SourceWriter writer, string name)
+    {
+        writer.AppendIf(IsReservedKeyword(name) || SyntaxFacts.GetContextualKeywordKind(name) != SyntaxKind.None, "@");
+        writer.Append(name);
+        return ref writer;
+    }
+
+    /// <summary>
+    /// Appends the name that declares <paramref name="type"/> in a partial declaration of it: its identifier, escaped
+    /// as <see cref="AppendCsharpTypeIdentifier"/> does, and its own type parameters, escaped as
+    /// <see cref="AppendCsharpIdentifier"/> does (<c>@class</c>, <c>Outer&lt;T&gt;</c>).
     /// </summary>
     public static ref readonly SourceWriter AppendDeclaredTypeName(this in SourceWriter writer, INamedTypeSymbol type)
     {
-        writer.AppendCsharpIdentifier(type.Name);
+        writer.AppendCsharpTypeIdentifier(type.Name);
         if (type.TypeParameters.IsEmpty)
         {
             return ref writer;

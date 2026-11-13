@@ -261,9 +261,7 @@ internal static class WrapperEmitter
         WriteLaunchMethodSignature(writer, kernel, isDevicePtr: false);
         using (writer.Scope())
         {
-            writer.Append("throw new global::System.NotSupportedException(");
-            NativeApi.ModuleKernelLaunchEmitter.AppendStringLiteral(writer, reason);
-            writer.AppendLine(");");
+            NativeApi.ModuleKernelLaunchEmitter.EmitUnavailableBody(writer, reason);
         }
     }
 

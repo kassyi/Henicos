@@ -65,8 +65,8 @@ public sealed class MarshalingDirectionAttributesDifferentialTests
 
             float[] outObserved = b.Get<float>("outObserved");
             SequentialOracle.Run(s, ThreadOrder.Forward, () =>
-                MarshalingAliasingDifferentialKernels.InArrayMutationIsolationKernel(
-                    primCopy, convCopy, deepCopy, outObserved));
+                MarshalingAliasingDifferentialKernels.LaunchInArrayMutationIsolationKernel(
+                    primCopy, convCopy, deepCopy, outObserved, gridDimX: s.GridX, blockDimX: s.BlockX));
         },
         Launch = static (b, s) =>
         {
@@ -98,13 +98,7 @@ public sealed class MarshalingDirectionAttributesDifferentialTests
                 .Out<int>("dstPrim", n, OutputPolicy.Exact)
                 .Out<DiffVec2Padded>("dstConvert", n, OutputPolicy.ForStruct(Vec2PaddedComparer), Vec2PaddedComparer);
         },
-        Oracle = static (b, _) =>
-        {
-            int[] src = b.Get<int>("src");
-            int[] dstPrim = b.Get<int>("dstPrim");
-            DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
-            MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel(src, dstPrim, dstConvert, 1);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             int[] src = b.Get<int>("src");
@@ -145,13 +139,7 @@ public sealed class MarshalingDirectionAttributesDifferentialTests
                     ],
                     Vec2PaddedComparer);
         },
-        Oracle = static (b, _) =>
-        {
-            int[] src = b.Get<int>("src");
-            int[] dstPrim = b.Get<int>("dstPrim");
-            DiffVec2Padded[] dstConvert = b.Get<DiffVec2Padded>("dstConvert");
-            MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel(src, dstPrim, dstConvert, 2);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             int[] src = b.Get<int>("src");
