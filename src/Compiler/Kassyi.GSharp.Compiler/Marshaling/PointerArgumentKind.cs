@@ -10,16 +10,17 @@ internal enum PointerArgumentKind
     ShadowStruct,
 
     /// <summary>
-    /// A non-optional array-like parameter, taken as a <c>GSharpArrayProxy</c> that carries the length the kernel sees;
-    /// a null or empty proxy is passed as a null or empty array, as the array launcher passes one.
+    /// An array-like parameter (<c>T[]</c>, <c>T[]?</c>, <c>Memory&lt;T&gt;</c>), taken as a <c>GSharpArrayProxy</c>
+    /// that carries the length the kernel sees; a null or empty proxy is passed as a null or empty array, as the array
+    /// launcher passes one.
     /// </summary>
     Array,
 
     /// <summary>
-    /// An optional array-like parameter (<c>T[]?</c>, <c>Memory&lt;T&gt;?</c>), taken as a <c>GSharpArrayProxy</c> like
-    /// <see cref="Array"/>, whose typed buffer may be null.
+    /// A nullable array-like value (<c>Memory&lt;T&gt;?</c>, <c>ArraySegment&lt;T&gt;?</c>), taken as a
+    /// <c>GSharpArrayProxy?</c>: <see langword="null"/> has no value, and a proxy has one, also a null proxy.
     /// </summary>
-    OptionalArray,
+    NullableArray,
 
     /// <summary>A <c>ref</c> or <c>out</c> parameter, taken as the device address of the value.</summary>
     Reference

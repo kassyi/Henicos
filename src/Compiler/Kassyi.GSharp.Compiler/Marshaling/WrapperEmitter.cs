@@ -6,7 +6,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class WrapperEmitter
 {
     private const string NegativeLengthMessage = "The array length must not be negative.";
-    private const string EmptyArrayMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
     private const string InconsistentProxyMessage = "A null array has no elements, so its length must be 0.";
 
     internal readonly struct InteropParameterInfo(
@@ -57,10 +56,17 @@ internal static class WrapperEmitter
     {
         switch (isDevicePtr ? PointerLaunchPlan.Classify(shape) : PointerArgumentKind.Value)
         {
-            case PointerArgumentKind.Array or PointerArgumentKind.OptionalArray:
+            case PointerArgumentKind.Array:
                 return new InteropParameterInfo(
                     string.Empty,
                     HostTypeNames.ArrayProxy,
+                    false,
+                    shape.HasExplicitDefault ? "default" : null
+                );
+            case PointerArgumentKind.NullableArray:
+                return new InteropParameterInfo(
+                    string.Empty,
+                    HostTypeNames.ArrayProxy + "?",
                     false,
                     shape.HasExplicitDefault ? "default" : null
                 );
@@ -388,79 +394,12 @@ internal static class WrapperEmitter
     }
 
     /// <summary>
-    /// Emits the checks of the array arguments of the <c>Launch{Kernel}</c> launcher. An array argument is passed as a
-    /// C# call passes it, a null or empty one included. A span-like value (<c>Span&lt;T&gt;</c>,
-    /// <c>Memory&lt;T&gt;</c>, <c>ArraySegment&lt;T&gt;</c>, <c>ImmutableArray&lt;T&gt;</c>) must not be empty or
-    /// default, and an empty nullable one is passed as null. A null in a non-nullable array field of a by-value struct
-    /// argument is rejected.
+    /// Emits the checks of the array arguments of the <c>Launch{Kernel}</c> launcher. An array-like argument is passed
+    /// as a C# call passes it, a null, empty or default one included; only a null in a non-nullable array field of a
+    /// by-value struct argument is rejected.
     /// </summary>
-    internal static void WriteArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
-    {
-        foreach (var shape in kernel.Parameters)
-        {
-            if (shape is { IsArray: true } && shape.Container != ArrayContainerKind.Array)
-            {
-                WriteSpanLikeArgumentCheck(writer, in shape);
-            }
-        }
-
+    internal static void WriteArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel) =>
         WriteStructFieldChecks(writer, kernel, isPointer: false);
-    }
-
-    private static void WriteSpanLikeArgumentCheck(SourceWriter writer, in KernelParameterShape shape)
-    {
-        var name = shape.Identifier;
-        if (shape.IsOptional)
-        {
-            WriteOptionalArrayCheck(writer, in shape);
-            return;
-        }
-
-        if (shape.Container == ArrayContainerKind.ImmutableArray)
-        {
-            WriteNullCheck(writer, shape.Name, $"{name}.IsDefault");
-            WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);
-            return;
-        }
-
-        WriteEmptyArrayCheck(writer, shape.LengthExpression, shape.Name);
-    }
-
-    // if (<name> is { [IsDefault: false, ]<Length or Count>: 0 }) { <name> = null; }
-    // An empty optional array is passed as null (#860). An ImmutableArray<T>? that holds a default value has a value in
-    // C#, whose Length throws: the pattern tests IsDefault first and passes it on as it is, without an array
-    private static void WriteOptionalArrayCheck(SourceWriter writer, in KernelParameterShape shape)
-    {
-        var name = shape.Identifier;
-        writer.Append("if ");
-        using (writer.Parentheses())
-        {
-            writer.Append($"{name} is {{ ");
-            writer.AppendIf(shape.Container == ArrayContainerKind.ImmutableArray, "IsDefault: false, ");
-            writer.Append($"{shape.LengthMember}: 0 }}");
-        }
-
-        using (writer.Scope())
-        {
-            writer.AppendLine($"{name} = null;");
-        }
-    }
-
-    // if (<condition>) { throw new ArgumentNullException("<parameter name>"); }
-    // [WHY] The parameter name is a string literal: nameof(<name>) would call a parameter or method named nameof
-    private static void WriteNullCheck(SourceWriter writer, string parameterName, string condition)
-    {
-        writer.Append("if ");
-        using (writer.Parentheses())
-        {
-            writer.Append(condition);
-        }
-
-        using (writer.Scope())
-        {
-            writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}({Literal(parameterName)});");
-        }
-    }
 
     // if (<name>.<field path> is null)
     // { throw new ArgumentNullException("<name>", "<name>.<field path> is null, ..."); }
@@ -499,22 +438,6 @@ internal static class WrapperEmitter
 
     private static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
 
-    // if (<length> == 0) { throw new ArgumentException(<message>, "<parameter name>"); }
-    private static void WriteEmptyArrayCheck(SourceWriter writer, string length, string parameterName)
-    {
-        writer.Append("if ");
-        using (writer.Parentheses())
-        {
-            writer.Append($"{length} == 0");
-        }
-
-        using (writer.Scope())
-        {
-            writer.AppendLine(
-                $"throw new {HostTypeNames.ArgumentException}(\"{EmptyArrayMessage}\", {Literal(parameterName)});");
-        }
-    }
-
     /// <summary>
     /// Emits the checks of the <c>GSharpArrayProxy</c> arguments of the <c>Launch{Kernel}Ptr</c> launcher: a proxy with
     /// a negative length, or with no data and a length other than 0, describes no array and is rejected. Any other
@@ -531,23 +454,23 @@ internal static class WrapperEmitter
                 continue;
             }
 
-            var name = shape.Identifier;
+            var proxy = PointerLaunchPlan.GetProxyExpression(shape);
             writer.Append("if ");
             using (writer.Parentheses())
             {
-                writer.Append($"{name}.Length < 0");
+                writer.Append($"{proxy}.Length < 0");
             }
 
             using (writer.Scope())
             {
                 writer.Append($"throw new {HostTypeNames.ArgumentOutOfRangeException}({Literal(shape.Name)}, ");
-                writer.AppendLine($"{name}.Length, \"{NegativeLengthMessage}\");");
+                writer.AppendLine($"{proxy}.Length, \"{NegativeLengthMessage}\");");
             }
 
             writer.Append("if ");
             using (writer.Parentheses())
             {
-                writer.Append($"{name}.Data == {HostTypeNames.IntPtr}.Zero && {name}.Length != 0");
+                writer.Append($"{proxy}.Data == {HostTypeNames.IntPtr}.Zero && {proxy}.Length != 0");
             }
 
             using (writer.Scope())

@@ -8,8 +8,8 @@ public partial class EmissionShapeTests
 {
     private const string ArrayProxyType = "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy";
 
-    // The plan: arrays and spans become proxies (optional or not), a ref parameter stays an address, a by-value struct
-    // its shadow struct and a scalar its value
+    // The plan: arrays and spans become proxies (nullable or not; only a Nullable<array-like> becomes a proxy?), a ref
+    // parameter stays an address, a by-value struct its shadow struct and a scalar its value
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void PointerLaunchPlan_ClassifiesEveryKindOfParameter()
@@ -29,7 +29,7 @@ public partial class EmissionShapeTests
         Assert.Equal(
             [
                 PointerArgumentKind.Array,
-                PointerArgumentKind.OptionalArray,
+                PointerArgumentKind.Array,
                 PointerArgumentKind.Array,
                 PointerArgumentKind.Reference,
                 PointerArgumentKind.ShadowStruct,

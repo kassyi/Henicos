@@ -128,6 +128,7 @@ internal static class KernelHostNames
     {
         LauncherLocal.DevicePointer => GSharpInternalNames.Launcher.DevicePointerPrefix,
         LauncherLocal.Proxy => GSharpInternalNames.Launcher.ProxyPrefix,
+        LauncherLocal.NullableProxy => GSharpInternalNames.Launcher.NullableProxyPrefix,
         LauncherLocal.Native => GSharpInternalNames.Launcher.NativePrefix,
         LauncherLocal.Pinned => GSharpInternalNames.Launcher.PinnedPrefix,
         LauncherLocal.PinnedTemp => GSharpInternalNames.Launcher.PinnedTempPrefix,

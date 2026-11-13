@@ -62,7 +62,11 @@ internal static class CpuHostLaunchEmitter
             {
                 writer.Append(", ");
 
-                if (p.IsArray)
+                if (p is { IsArray: true, IsNullableValue: true })
+                {
+                    writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}>* {p.Identifier}");
+                }
+                else if (p.IsArray)
                 {
                     writer.Append($"global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {p.Identifier}");
                 }
@@ -385,12 +389,34 @@ internal static class CpuHostLaunchEmitter
         {
             using (writer.Scope())
             {
+                WriteNullableProxies(writer, kernel);
                 WriteDelegateInvocation(writer, kernel);
             }
         }
         else
         {
             WriteDelegateInvocation(writer, kernel);
+        }
+    }
+
+    // Nullable<GSharpArrayProxy> __gsharp_nullable_<ord> = <name>.HasValue ? <proxy> : null;   (Memory<T>? and the
+    // like)
+    // [WHY] The native launcher takes System_Nullable<GSharpArray<T>> by address; HasValue is the C# value's own, so a
+    // default Memory<T> passes as a null array that has a value
+    private static void WriteNullableProxies(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (shape is not { IsArray: true, IsNullableValue: true })
+            {
+                continue;
+            }
+
+            var local = KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape);
+            writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}> {local} = ");
+            writer.Append($"{shape.Identifier}.HasValue ? ");
+            WriteArrayProxy(writer, shape);
+            writer.AppendLine(" : null;");
         }
     }
 
@@ -428,15 +454,11 @@ internal static class CpuHostLaunchEmitter
         var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         switch (shape)
         {
-            case { IsCpuConvertedArray: true }:
-                // The shadow of a null array is an empty rented array, whose pinned address is not null
-                writer.Append($"new {HostTypeNames.ArrayProxy} {{ Data = {shape.NullTestExpression} ? ");
-                writer.Append($"{HostTypeNames.IntPtr}.Zero : ({HostTypeNames.IntPtr}){pinned}, ");
-                writer.Append($"Length = {shape.LengthExpression} }}");
+            case { IsArray: true, IsNullableValue: true }:
+                writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape)}");
                 break;
             case { IsArray: true }:
-                writer.Append(
-                    $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (global::System.IntPtr){pinned}, Length = {shape.LengthExpression} }}");
+                WriteArrayProxy(writer, shape);
                 break;
             case { IsCpuConvertedStruct: true }:
                 writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.Native, shape)}");
@@ -452,5 +474,18 @@ internal static class CpuHostLaunchEmitter
                 writer.Append(shape.Identifier);
                 break;
         }
+    }
+
+    // An argument passed as it is:
+    // new GSharpArrayProxy { Data = (IntPtr)__gsharp_p_<ord>, Length = <length> }
+    // A converted array:
+    // new GSharpArrayProxy { Data = <null test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }
+    // [WHY] The shadow of a null array is an empty rented array, whose pinned address is not null
+    private static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
+        writer.Append($"new {HostTypeNames.ArrayProxy} {{ Data = ");
+        writer.AppendIf(shape.IsCpuConvertedArray, $"{shape.NullTestExpression} ? {HostTypeNames.IntPtr}.Zero : ");
+        writer.Append($"({HostTypeNames.IntPtr}){pinned}, Length = {shape.LengthExpression} }}");
     }
 }

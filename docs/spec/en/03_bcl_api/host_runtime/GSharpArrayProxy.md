@@ -111,6 +111,8 @@ The `Launch{Kernel}Ptr` launchers pass an array argument as a C# call passes an 
 (`Data == IntPtr.Zero`) is a `null` array and an empty one (`EmptyArrayData`, length `0`) an empty array, whatever the
 nullable annotation of the parameter. They reject only a proxy that describes no array, before the launch: a negative
 `Length` (`ArgumentOutOfRangeException`), and `Data == IntPtr.Zero` with a `Length` other than `0` (`ArgumentException`).
+A `Memory<T>?`, `ReadOnlyMemory<T>?`, `ArraySegment<T>?` or `ImmutableArray<T>?` parameter takes a `GSharpArrayProxy?`:
+`null` has no value, and a proxy has one, also a `null` proxy (`default(Memory<T>)` in C#).
 
 ## Examples
 

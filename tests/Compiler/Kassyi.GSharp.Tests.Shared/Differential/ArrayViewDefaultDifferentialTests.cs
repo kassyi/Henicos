@@ -224,9 +224,7 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         Assert.Equal([1, 13], dst);
     }
 
-    // The launchers no longer throw for an empty or a default ImmutableArray<T>? argument. Whether the kernel then sees
-    // the value C# passes is the question of #860 (Array arguments treat null as empty without a marker): an empty one
-    // reads as null on every path today, a default one on the native and CUDA paths
+    // The launchers do not throw for an empty or a default ImmutableArray<T>? argument
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(false, false)]
@@ -242,12 +240,14 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         Assert.Equal(1, dst[0]);
     }
 
-    // C# passes a value (HasValue is true) for both
-    [SkippableTheory(Skip = "An empty or default optional view reads as null until #860 (Array arguments treat null " +
-                            "as empty without a marker) is decided")]
+    // C# passes a value (HasValue is true) for both: the kernel receives the Nullable<T> with its own HasValue (#860
+    // (Array arguments treat null as empty without a marker))
+    [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(false, false)]
+    [InlineData(false, true)]
     [InlineData(true, false)]
+    [InlineData(true, true)]
     public void Launch_EmptyOrDefaultImmutableArrayArgument_HasAValueAsInCSharp(bool isDefault, bool forceManaged)
     {
         var dst = new int[2];
