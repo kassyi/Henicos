@@ -125,7 +125,7 @@ internal static class CudaHostLaunchEmitter
         {
             if (!kernel.ErrorSites.IsDefaultOrEmpty)
             {
-                writer.Append($"{className}.s_errorSites");
+                writer.Append($"{className}.{KernelHostNames.ErrorSitesFieldName}");
             }
         }
     }

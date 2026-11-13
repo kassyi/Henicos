@@ -30,11 +30,16 @@ internal static class CSharpExecutionAnalysis
 
     private static readonly PerCompilationSymbolCache<IMethodSymbol, bool> s_sharedMemory = new();
 
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, bool> s_generatedMeaning = new();
+
     // What makes a kernel unable to run one thread at a time
     private static readonly Query s_obstacle = new(FindInNode, FindImported);
 
     // A SharedMemory<T> declaration, static or dynamic
     private static readonly Query s_sharedMemoryQuery = new(FindSharedMemory, FindImportedSharedMemory);
+
+    // Code whose C# meaning only the generated code gives
+    private static readonly Query s_generatedMeaningQuery = new(FindGeneratedMeaning, FindImportedGeneratedMeaning);
 
     /// <summary>
     /// The first construct that <paramref name="kernel"/> reaches and that cannot run one GPU thread at a time, as the
@@ -66,6 +71,25 @@ internal static class CSharpExecutionAnalysis
         if (!answers.TryGetValue(definition, out var reaches))
         {
             reaches = Find(definition, s_sharedMemoryQuery, compilation, NewVisited()) is not null;
+            answers.TryAdd(definition, reaches);
+        }
+
+        return reaches;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="method"/> (a kernel or a device function) reaches code whose C# meaning only the
+    /// generated code gives (an operator macro, a float or double StackLinq Sum, Gpu.InlinePtx), directly or through
+    /// the device functions it calls or names. A managed version can exist for another reason as well: an int or long
+    /// division that may divide the minimum by -1 (<c>ManagedDivision</c>), whose C# meaning the C# execution keeps.
+    /// </summary>
+    public static bool ReachesGeneratedMeaning(IMethodSymbol method, Compilation compilation)
+    {
+        var definition = method.OriginalDefinition;
+        var answers = s_generatedMeaning.For(compilation);
+        if (!answers.TryGetValue(definition, out var reaches))
+        {
+            reaches = Find(definition, s_generatedMeaningQuery, compilation, NewVisited()) is not null;
             answers.TryAdd(definition, reaches);
         }
 
@@ -115,26 +139,30 @@ internal static class CSharpExecutionAnalysis
         switch (node)
         {
             case InvocationExpressionSyntax invocation when model.GetSymbol(invocation) is IMethodSymbol callee:
-                if (NeedsOtherThreads(SyncIntrinsicClassifier.Classify(callee)))
-                {
-                    return $"{callee.ContainingType.Name}.{callee.Name}(){OneThreadAtATime}";
-                }
-
-                if (ManagedRewriteClassifier.IsSequentialSum(invocation, model))
-                {
-                    return "a float or double StackLinq Sum, which only the generated code sums in order";
-                }
-
-                return ManagedRewriteClassifier.IsInlinePtx(invocation, model)
-                    ? "Gpu.InlinePtx, which has no C# implementation"
-                    : null;
-            case AssignmentExpressionSyntax assignment
-                when ManagedRewriteClassifier.TryGetOperatorMacro(assignment, model, out _):
-                return "an operator macro ([GpuOperatorMacro]), which only the generated code expands";
+                return NeedsOtherThreads(SyncIntrinsicClassifier.Classify(callee))
+                    ? $"{callee.ContainingType.Name}.{callee.Name}(){OneThreadAtATime}"
+                    : FindGeneratedMeaning(node, model);
+            case AssignmentExpressionSyntax:
+                return FindGeneratedMeaning(node, model);
             default:
                 return FindSharedMemory(node, model) is null ? null : "SharedMemory<T>" + OneThreadAtATime;
         }
     }
+
+    // A managed-only rewrite whose C# meaning only the generated code gives. [WHY] Not the division that may divide the
+    // minimum by -1: the C# execution runs C#, where .NET throws OverflowException, and refusing every kernel that
+    // divides would leave the mode for few kernels
+    private static string? FindGeneratedMeaning(SyntaxNode node, SemanticModel model) => node switch
+    {
+        InvocationExpressionSyntax invocation when ManagedRewriteClassifier.IsSequentialSum(invocation, model) =>
+            "a float or double StackLinq Sum, which only the generated code sums in order",
+        InvocationExpressionSyntax invocation when ManagedRewriteClassifier.IsInlinePtx(invocation, model) =>
+            "Gpu.InlinePtx, which has no C# implementation",
+        AssignmentExpressionSyntax assignment
+            when ManagedRewriteClassifier.TryGetOperatorMacro(assignment, model, out _) =>
+            "an operator macro ([GpuOperatorMacro]), which only the generated code expands",
+        _ => null
+    };
 
     private static string? FindSharedMemory(SyntaxNode node, SemanticModel model) =>
         node is BaseObjectCreationExpressionSyntax creation && model.GetTypeSymbol(creation).IsSharedMemoryType()
@@ -170,10 +198,16 @@ internal static class CSharpExecutionAnalysis
             return $"{name} of another assembly, which uses SharedMemory<T>{OneThreadAtATime}";
         }
 
-        return traits.ManagedVersion
+        return traits.ReachesGeneratedMeaning
             ? $"{name} of another assembly, whose C# meaning only the generated code gives"
             : null;
     }
+
+    private static string? FindImportedGeneratedMeaning(IMethodSymbol method, Compilation compilation) =>
+        DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
+        imported.Record.Traits.ReachesGeneratedMeaning
+            ? "code whose C# meaning only the generated code gives"
+            : null;
 
     // A device function of another assembly that recorded a SharedMemory<T> declaration; a record written before the
     // static ones were recorded tells only the dynamic ones

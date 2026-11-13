@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;
@@ -12,10 +11,14 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// Differential tests for integer division by zero trap semantics across signed and unsigned
 /// 32-bit, 64-bit, 16-bit, and 8-bit integer operations (#718).
 /// </summary>
+/// <remarks>
+/// The zero divisor of seed 1 raises a device error on CUDA (every build checks the divisor; the thread exits), and the
+/// process has one device error slot, so the class runs alone.
+/// </remarks>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Differential)]
 [Scenario(TestScenario.Boundary)]
-[Collection(TestCollections.IntegerTrapAndCheckedDifferential)]
+[Collection(TestCollections.DeviceExclusive)]
 public class IntegerDivisionTrapDifferentialTests
 {
     internal static readonly DifferentialCase s_int32Divide = new(
@@ -24,10 +27,6 @@ public class IntegerDivisionTrapDifferentialTests
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -71,10 +70,6 @@ public class IntegerDivisionTrapDifferentialTests
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -118,10 +113,6 @@ public class IntegerDivisionTrapDifferentialTests
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 div by 0 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -160,10 +151,6 @@ public class IntegerDivisionTrapDifferentialTests
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 div by 0 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -202,10 +189,6 @@ public class IntegerDivisionTrapDifferentialTests
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -253,10 +236,6 @@ public class IntegerDivisionTrapDifferentialTests
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 div by 0 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -295,10 +274,6 @@ public class IntegerDivisionTrapDifferentialTests
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -342,10 +317,6 @@ public class IntegerDivisionTrapDifferentialTests
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv by 0 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;

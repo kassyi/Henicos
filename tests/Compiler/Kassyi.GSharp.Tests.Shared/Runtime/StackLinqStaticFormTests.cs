@@ -147,6 +147,40 @@ public class StackLinqStaticFormTests
         Assert.Equal(2, results[1]);
     }
 
+    // A zero-length stack span is passed to an unfused call as the span value it is (the fused chain on it was fine)
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void EmptyStackSpanStatic_SkipThenCount_CountsNothing()
+    {
+        int[] results = [-1];
+
+        StackLinqStaticFormKernels.LaunchEmptyStackSpanStaticKernel(0, results, blockDimX: 1);
+
+        Assert.Equal([7], results);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void EmptyStackSpanReduced_SkipThenCount_CountsNothing()
+    {
+        int[] results = [-1];
+
+        StackLinqStaticFormKernels.LaunchEmptyStackSpanReducedKernel(0, results, blockDimX: 1);
+
+        Assert.Equal([7], results);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void NonEmptyStackSpanStatic_SkipThenCount_CountsTheElementsAfterTheFirst()
+    {
+        int[] results = [-1];
+
+        StackLinqStaticFormKernels.LaunchNonEmptyStackSpanStaticKernel(6, results, blockDimX: 1);
+
+        Assert.Equal([8], results);
+    }
+
 #if GSHARP_CPU
     [Fact]
     [Scenario(TestScenario.HappyPath)]
