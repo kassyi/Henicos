@@ -29,32 +29,3 @@ internal sealed class StructSourceCollector
             .AsStackEnumerable()
             .Any(type, static (part, t) => part.Type.IsEqualTo(t));
 }
-
-/// <summary>One struct definition or <c>Dispose</c> definition, with the includes that writing it required.</summary>
-/// <param name="Type">The struct.</param>
-/// <param name="Text">The text.</param>
-/// <param name="Includes">The <c>#include</c> targets that the text needs.</param>
-/// <param name="Failed">
-/// Whether writing it met a construct that could not be emitted; only this struct's record fails for it, not the
-/// function or the struct whose transpilation wrote it.
-/// </param>
-/// <param name="InternalError">The message of the exception that stopped writing it, or an empty string.</param>
-internal readonly record struct StructSourcePart(
-    INamedTypeSymbol Type,
-    string Text,
-    EquatableArray<string> Includes,
-    bool Failed,
-    string InternalError);
-
-/// <summary>Whether a part met a construct that could not be emitted, set by an intercepting reporter.</summary>
-internal sealed class PartFailure
-{
-    /// <summary>Whether a failure was reported.</summary>
-    public bool Failed { get; private set; }
-
-    /// <summary>Records a failure.</summary>
-    public void Mark() => Failed = true;
-
-    /// <summary>The message of an exception that a record keeps (its type and message, without the stack).</summary>
-    public static string Describe(Exception exception) => exception.GetType().Name + ": " + exception.Message;
-}
