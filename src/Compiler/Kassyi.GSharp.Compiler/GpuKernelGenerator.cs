@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Compiler.Targets;
 using Kassyi.GSharp.Compiler.Transpiler.Managed;
 
 namespace Kassyi.GSharp.Compiler;
@@ -153,7 +154,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 options.GlobalOptions.TryGetValue("build_property.GSharpCheckedBuild", out var checkedStr);
                 var isCheckedBuild = string.Equals(checkedStr, "true", StringComparison.OrdinalIgnoreCase);
 
-                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild);
+                // The launch limits of the GPUs the fatbin may run on, from the same setting nvcc compiles for
+                options.GlobalOptions.TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
+                var targetLimits = GpuArchitectureLimits.Resolve(architectures);
+
+                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild,
+                    targetLimits);
             });
 
         // The wrappers take only the module name from the compilation, so this value compares equal across edits and
@@ -267,6 +273,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 .WithTrackingName(AotArtifactTrackingName),
             static (spc, input) => WriteAot(spc, input.Left.Left.Left.Left, input.Left.Left.Left.Right,
                 input.Left.Left.Right, input.Left.Right, input.Right));
+        context.RegisterSourceOutput(configProvider.Combine(hasKernels),
+            static (spc, input) => ReportUnknownArchitectures(spc, input.Left.TargetLimits, input.Right));
         context.RegisterSourceOutput(
             warmups.Combine(hostOptions).Combine(hasKernels).WithTrackingName(ModuleContextTrackingName),
             static (spc, input) => EmitModuleContext(spc, input.Left.Left, input.Left.Right, input.Right));
@@ -320,6 +328,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(
             allTypeKeyedSites.WithTrackingName(TypeKeyedSitesRegistrationTrackingName),
             static (spc, sites) => EmitTypeKeyedSitesRegistration(spc, sites));
+    }
+
+    // GSH0114 once per project with kernels, without a location: the setting is an MSBuild property
+    private static void ReportUnknownArchitectures(SourceProductionContext context, TargetLimits limits, bool hasKernels)
+    {
+        if (hasKernels && !limits.UnknownArchitectures.IsDefaultOrEmpty)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                GSharpDiagnostics.TargetArchitectureLimitsUnknown,
+                Location.None,
+                string.Join(", ", limits.UnknownArchitectures)
+            ));
+        }
     }
 
     private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context,

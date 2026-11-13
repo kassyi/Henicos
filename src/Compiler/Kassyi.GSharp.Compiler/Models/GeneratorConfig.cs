@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Targets;
+
 namespace Kassyi.GSharp.Compiler.Models;
 
 /// <param name="TargetDialect">The <c>GSharpTargetDialect</c> of the project.</param>
@@ -9,12 +11,16 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// <param name="IsCheckedBuild">
 /// Whether <c>GSharpCheckedBuild</c> enables checked device assertions and post-launch stream synchronization (#729).
 /// </param>
+/// <param name="TargetLimits">
+/// The launch limits of the GPUs that <c>GSharpTargetArchitectures</c> builds for (<see cref="GpuArchitectureLimits"/>).
+/// </param>
 internal record struct GeneratorConfig(
     string TargetDialect,
     bool EmitSource,
     string? IntermediateOutputPath,
     bool ExportDeviceCode = true,
-    bool IsCheckedBuild = false)
+    bool IsCheckedBuild = false,
+    TargetLimits TargetLimits = default)
 {
     /// <summary>Whether <c>GSharpTargetDialect</c> selects the CUDA dialect; any other value selects the C++ dialect.</summary>
     public readonly bool IsCuda => TranspilerDialects.IsCuda(TargetDialect);
