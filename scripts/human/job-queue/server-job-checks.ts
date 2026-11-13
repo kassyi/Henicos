@@ -1,6 +1,11 @@
-// Unit checks of the job record decisions (server-job-state.ts), run by the self-test beside the scheduler checks.
+// Unit checks of the job record decisions (server-job-state.ts), run by the self-test beside the scheduler checks, and
+// checks of the records against a scheduler in the self-test's own process (JobServerChecks).
 
 import type * as Assert from "node:assert";
+import * as fs from "node:fs";
+import * as net from "node:net";
+import * as os from "node:os";
+import * as path from "node:path";
 import { CancelledExitCode, ClientGraceMs } from "./constants.ts";
 import {
   cancelTargets,
@@ -13,6 +18,8 @@ import {
   type ClientIdentity,
   type JobFacts,
 } from "./server-job-state.ts";
+import { JobServer } from "./server.ts";
+import { connectRaw, registration, removeDirectory } from "./self-test-support.ts";
 
 type AssertModule = typeof Assert;
 
@@ -226,4 +233,59 @@ export const JobStateChecks: Record<string, (assert: AssertModule) => void> = {
   checkObservation,
   checkReport,
   checkCancelTargets,
+};
+
+/**
+ * Runs `body` against a scheduler in this process (no timers, no restore; nothing is held back), so that a check can
+ * read its records between the messages it sends.
+ */
+async function withServer(slots: number, body: (server: JobServer, port: number) => Promise<void>): Promise<void> {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-server-"));
+  const server = new JobServer({ slots, memoryMb: 1e9, policy: "fifo", port: 0, stateDir: directory, log: () => {} });
+  server.scheduler.holdUntil = 0;
+  await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
+  const port = (server.server.address() as net.AddressInfo).port;
+  try {
+    await body(server, port);
+  } finally {
+    server.stopping = true; // no state file is written while the connections close
+    server.server.close();
+    removeDirectory(directory);
+  }
+}
+
+/** One record per id: the records follow the jobs through queue, grant and end, and the invariant holds throughout. */
+export async function checkRecordsFollowTheJobs(assert: AssertModule): Promise<void> {
+  await withServer(1, async (server, port) => {
+    const holds = (when: string): void => assert.strictEqual(server.checkInvariant(), null, when);
+    const a = await connectRaw(port);
+    a.send(registration("A", 1, process.pid));
+    const granted = await a.until("granted");
+    assert.ok(granted !== null);
+    const aId = Number(granted.id);
+    assert.deepStrictEqual([server.find(aId)?.phase, server.find(aId)?.detached], ["running", false]);
+    holds("A runs");
+    const b = await connectRaw(port);
+    b.send(registration("B", 1, process.pid));
+    const queued = await b.until("queued");
+    assert.ok(queued !== null);
+    const bId = Number(queued.id);
+    assert.strictEqual(server.find(bId)?.phase, "waiting");
+    holds("B waits");
+    a.send({ type: "done", completed: true, exitCode: 0 });
+    assert.ok((await a.until("done-ok")) !== null && (await b.until("granted")) !== null);
+    assert.deepStrictEqual([server.find(aId), server.outcomes.get(aId)], [undefined, "succeeded"]);
+    assert.strictEqual(server.find(bId)?.phase, "running");
+    holds("A ended, B runs");
+    b.send({ type: "done", completed: true, exitCode: 2 });
+    assert.ok((await b.until("done-ok")) !== null);
+    assert.deepStrictEqual([server.records.size, server.outcomes.get(bId)], [0, "failed"]);
+    holds("both ended");
+    a.close();
+    b.close();
+  });
+}
+
+export const JobServerChecks: Record<string, (assert: AssertModule) => Promise<void>> = {
+  checkRecordsFollowTheJobs,
 };

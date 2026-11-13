@@ -11,7 +11,7 @@ import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
-import { JobStateChecks } from "./server-job-checks.ts";
+import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots, parseBudgets, testMemoryMb } from "./machine.ts";
 import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
@@ -92,6 +92,14 @@ export async function selfTest(): Promise<void> {
     }
   }
   checkShellHelpers();
+  for (const [name, check] of Object.entries(JobServerChecks)) {
+    try {
+      await check(assert);
+    } catch (error) {
+      process.stderr.write(`${name} failed\n`);
+      throw error;
+    }
+  }
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;

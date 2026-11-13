@@ -24,7 +24,7 @@ function request(connection: Connection, message: Incoming): void {
   if (connection.job !== null) {
     return;
   }
-  const created = server.createJob(socket, { ...message, grantedAt: 0 }, server.chooseId(idField(message, "id")));
+  const created = server.createJob({ ...message, grantedAt: 0 }, server.chooseId(idField(message, "id")), "waiting");
   const after = created.after;
   // A predecessor was queued before this job, so its id is lower: a later or the same id would wait for ever
   // (on itself, or in a cycle of two), also during the startup grace, when the predecessor is not checked yet
@@ -36,7 +36,7 @@ function request(connection: Connection, message: Incoming): void {
     });
     return;
   }
-  const unknown = after !== null && scheduler.find(after) === undefined && !server.expectedUntil.has(after);
+  const unknown = after !== null && server.find(after) === undefined && !server.expectedUntil.has(after);
   // An id it never knew is a usage error; a predecessor that already ended is handled like any other: the job is
   // queued, and settle grants or cancels it on the recorded outcome
   if (after !== null && unknown && Date.now() >= scheduler.holdUntil && !server.outcomes.has(after)) {
@@ -50,7 +50,8 @@ function request(connection: Connection, message: Incoming): void {
   server.forget(created.id);
   server.outcomes.delete(created.id); // the job is here again: an older record of its id no longer holds
   const job = created;
-  connection.job = job;
+  server.records.set(job.id, job);
+  server.bind(job, connection);
   server.log(
     `queue #${job.id} weight ${job.weight}${job.gpu ? " gpu" : ""}` +
       `${after !== null ? ` after #${after}` : ""} pid ${job.pid}: ${job.command}`,
@@ -76,11 +77,12 @@ function adopt(connection: Connection, message: Incoming): void {
   const keptId = kept.length > 0 ? (kept[0] as ServerJob).id : null;
   // A re-registering job started its command before this scheduler: its run time counts from that start
   const job = server.createJob(
-    socket,
     { ...message, grantedAt: numberField(message, "spawnedAt") },
     keptId ?? server.chooseId(idField(message, "id")),
+    "running",
   );
-  connection.job = job;
+  server.records.set(job.id, job);
+  server.bind(job, connection);
   scheduler.adopt(job);
   server.outcomes.delete(job.id); // the job runs: an older record of its id no longer holds
   server.forget(job.id);
@@ -137,12 +139,12 @@ function report(connection: Connection, message: Incoming): void {
   const server = connection.server;
   const scheduler = server.scheduler;
   const id = idField(message, "id");
-  const held = id === null ? undefined : scheduler.find(id);
+  const held = id === null ? undefined : server.find(id);
   const outcome = outcomeOfEnd(endOf(message), false);
   if (id !== null && held === undefined && !server.outcomes.has(id)) {
     server.log(`report #${id}: ${outcome}`);
     server.recordOutcome(id, outcome);
-  } else if (held !== undefined && held.socket === null && scheduler.running.includes(held)) {
+  } else if (held !== undefined && held.connection === null && scheduler.running.includes(held)) {
     server.release(held, `its lost client reported: ${outcome}`, outcome);
   } else if (held !== undefined && scheduler.running.includes(held) && !held.done) {
     // Its old connection has not closed here yet (the client saw the close first): end the job with this outcome when

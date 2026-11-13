@@ -93,15 +93,13 @@ export class Connection {
       // Only the connection dropped; the client queues again under the same id. It has not ended: no outcome, and
       // the jobs that wait for it keep waiting until it is back (or counts as lost after ClientGraceMs)
       const reconnecting = job;
-      this.job = null;
-      reconnecting.socket = null;
+      server.unbind(reconnecting);
       server.expect(reconnecting.id, Date.now() + ClientGraceMs);
       server.release(reconnecting, "its client reconnects", null);
       return;
     }
     const lost = job;
-    this.job = null;
-    lost.socket = null;
+    server.unbind(lost);
     if (scheduler.running.includes(lost) && !lost.done && lost.commandPid > 0) {
       // The poll releases the slot once no process of the command is left.
       server.log(`client of #${lost.id} is gone; holding its slot while command ${lost.commandPid} runs`);

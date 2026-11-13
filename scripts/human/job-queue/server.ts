@@ -30,7 +30,7 @@ import { MachineProfile } from "./machine.ts";
 import { Scheduler, type Expected } from "./scheduler.ts";
 import { Connection } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
-import { outcomeOfEnd } from "./server-job-state.ts";
+import { outcomeOfEnd, type Phase } from "./server-job-state.ts";
 import { JobStore } from "./server-store.ts";
 import { ProcessTable, resolveStateDirectory } from "./system.ts";
 
@@ -42,6 +42,8 @@ export interface ServeOptions {
   port: number;
   /** '' for the default (resolveStateDirectory); a scheduler started through WMI gets it on its command line. */
   stateDir: string;
+  /** Where the log lines go; stdout (server.log) by default. The self-test's in-process schedulers drop them. */
+  log?: (text: string) => void;
 }
 
 export function serve(options: ServeOptions): void {
@@ -58,6 +60,11 @@ export class JobServer {
   readonly store: JobStore;
   nextId: number;
   idleSince = Date.now();
+  /**
+   * Every job record without a final outcome, by id: the one index of the jobs (the scheduler's lists hold the waiting
+   * and running ones). An id is here or in `outcomes`, never in both.
+   */
+  readonly records = new Map<number, ServerJob>();
   /** How the jobs that ended went, oldest first, for --after (also across a restart, through jobs-<port>.json). */
   readonly outcomes = new Map<number, Outcome>();
   /** The connections waiting for a job to end (await, wait). */
@@ -78,6 +85,10 @@ export class JobServer {
 
   constructor(options: ServeOptions) {
     this.options = options;
+    // Several schedulers may write to one log for a moment (one stopping, the next starting): tag each line
+    this.log =
+      options.log ??
+      ((text: string): void => void process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`));
     // nothing is granted before listening (see listen)
     this.scheduler = new Scheduler<ServerJob>(options.slots, Infinity, options.policy, options.memoryMb);
     this.machine = new MachineProfile();
@@ -91,10 +102,7 @@ export class JobServer {
     this.server = net.createServer((socket) => new Connection(this, socket));
   }
 
-  // Several schedulers may write to one log for a moment (one stopping, the next starting): tag each line
-  readonly log = (text: string): void => {
-    process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`);
-  };
+  readonly log: (text: string) => void;
 
   expect(id: number, until: number): void {
     this.expectedUntil.set(id, until);
@@ -102,6 +110,77 @@ export class JobServer {
 
   forget(id: number): void {
     this.expectedUntil.delete(id);
+  }
+
+  /** The record of a job that has no final outcome yet. */
+  find(id: number): ServerJob | undefined {
+    return this.records.get(id);
+  }
+
+  /** Sends a message to the client of a job, when one is bound. */
+  tell(job: ServerJob, message: ServerMessage): void {
+    send(job.connection?.socket ?? null, message);
+  }
+
+  /**
+   * Binds a connection to a record: the connection bound before (a re-registration that came before its close) is
+   * unbound and ended, so that its close changes nothing.
+   */
+  bind(job: ServerJob, connection: Connection): void {
+    const old = job.connection;
+    if (old !== null && old !== connection) {
+      old.job = null;
+      old.socket.destroy();
+    }
+    job.connection = connection;
+    connection.job = job;
+    job.detached = false;
+    job.detachedAt = 0;
+    job.epoch++;
+  }
+
+  /** The client of a record is away: the record keeps its place or its slots until evidence ends it. */
+  unbind(job: ServerJob): void {
+    const connection = job.connection;
+    if (connection !== null && connection.job === job) {
+      connection.job = null;
+    }
+    job.connection = null;
+    job.detached = true;
+    job.detachedAt = Date.now();
+    job.epoch++;
+  }
+
+  /**
+   * The invariant of the records, for the self-test: null when it holds, else what breaks it. A record is waiting iff
+   * it is in the scheduler's waiting list, running iff in its running list, ended iff in neither and provisional; an
+   * id is a record or an outcome, never both; detached mirrors a missing connection.
+   */
+  checkInvariant(): string | null {
+    const scheduler = this.scheduler;
+    for (const [id, job] of this.records) {
+      const where = `#${id} (${job.phase})`;
+      if (job.id !== id) {
+        return `${where} is filed under another id`;
+      }
+      if ((job.phase === "waiting") !== scheduler.waiting.includes(job)) {
+        return `${where} and the waiting list disagree`;
+      }
+      if ((job.phase === "running") !== scheduler.running.includes(job)) {
+        return `${where} and the running list disagree`;
+      }
+      if ((job.phase === "ended") !== (job.provisional !== null)) {
+        return `${where} and its provisional outcome disagree`;
+      }
+      if (this.outcomes.has(id)) {
+        return `${where} also has a final outcome`;
+      }
+      if (job.detached !== (job.connection === null) || (job.connection !== null && job.connection.job !== job)) {
+        return `${where} and its connection disagree`;
+      }
+    }
+    const listed = scheduler.waiting.concat(scheduler.running).find((job) => this.records.get(job.id) !== job);
+    return listed === undefined ? null : `#${listed.id} is scheduled without a record`;
   }
 
   /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
@@ -114,7 +193,7 @@ export class JobServer {
       position: index + 1,
       startAt: expected ? expected.startAt : null,
       endAt: expected ? expected.endAt : null,
-      blockedBy: this.scheduler.isBlocked(job) ? job.after : null,
+      blockedBy: this.scheduler.awaitsPredecessor(job) ? job.after : null,
     };
   }
 
@@ -131,7 +210,7 @@ export class JobServer {
       if (job.lastPosition !== index || moved) {
         job.lastPosition = index;
         job.lastStartAt = view.startAt;
-        send(job.socket, { type: "waiting", id: job.id, ...view, used: scheduler.used, capacity: scheduler.capacity });
+        this.tell(job, { type: "waiting", id: job.id, ...view, used: scheduler.used, capacity: scheduler.capacity });
       }
     });
   }
@@ -140,17 +219,24 @@ export class JobServer {
     return Math.max(1, Math.floor((os.cpus().length / this.scheduler.capacity) * job.weight));
   }
 
+  /** The grant message of a job (also sent again to a client that never saw it). */
+  grantMessage(job: ServerJob): ServerMessage {
+    return {
+      type: "granted",
+      id: job.id,
+      cpus: this.cpus(job),
+      capacity: this.scheduler.capacity,
+      protocol: ProtocolVersion,
+    };
+  }
+
   private announce(granted: ServerJob[]): void {
     for (const job of granted) {
+      job.phase = "running";
+      job.epoch++;
       const flags = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${job.backfilled ? " backfilled" : ""}`;
       this.log(`grant #${job.id} weight ${job.weight}${flags} pid ${job.pid}: ${job.command}`);
-      send(job.socket, {
-        type: "granted",
-        id: job.id,
-        cpus: this.cpus(job),
-        capacity: this.scheduler.capacity,
-        protocol: ProtocolVersion,
-      });
+      this.tell(job, this.grantMessage(job));
     }
     this.notifyWaiting();
     if (!this.scheduler.isIdle()) {
@@ -161,18 +247,27 @@ export class JobServer {
   // Job ids stay the same across a scheduler restart, so that `cancel <id>` read from an earlier `status` never hits
   // another job: a re-registering client brings its id, and the next new id continues from the saved one.
   chooseId(wanted: number | null): number {
-    if (wanted !== null && this.scheduler.find(wanted) === undefined) {
+    if (wanted !== null && !this.records.has(wanted)) {
       this.nextId = Math.max(this.nextId, wanted + 1);
       return wanted;
     }
     return this.nextId++;
   }
 
-  createJob(socket: net.Socket | null, message: Incoming, id: number): ServerJob {
+  /** A record from a registration or a saved record, not bound to a connection yet (bind attaches it). */
+  createJob(message: Incoming, id: number, phase: Phase): ServerJob {
     const command = String(message.command ?? "");
     return {
       id,
-      socket,
+      phase,
+      connection: null,
+      detached: true,
+      detachedAt: 0,
+      provisional: null,
+      provisionalAt: 0,
+      epoch: 0,
+      turn: idField(message, "turn"),
+      stub: false,
       weight: numberField(message, "weight", 1) || 1,
       gpu: message.gpu === true,
       pid: numberField(message, "pid"),
@@ -224,6 +319,12 @@ export class JobServer {
    */
   release(job: ServerJob, why: string, outcome: Outcome | null): void {
     this.log(`end #${job.id} (${why})`);
+    if (this.records.get(job.id) === job) {
+      this.records.delete(job.id);
+    }
+    if (job.connection !== null && job.connection.job === job) {
+      job.connection.job = null;
+    }
     // Only a run seen from its grant to its end: the command ended by itself (not stopped by a signal or a cancel), and
     // the job was not lost or adopted after a restart. Not a GPU turn: its time includes the wait for the GPU lock, and
     // the command under the lock records its own run under the same command text.
@@ -246,6 +347,11 @@ export class JobServer {
     }
   }
 
+  /** Ends a job with a final outcome: frees its slots, removes its record and tells the connections that wait. */
+  finish(job: ServerJob, outcome: Outcome, why: string): void {
+    this.release(job, why, outcome);
+  }
+
   /**
    * The end of every event (a message, a closed connection, a timer): cancels the waiting jobs whose predecessor did
    * not succeed (along chains), records an unknown predecessor as lost, then grants once and saves the state. Nothing
@@ -266,7 +372,7 @@ export class JobServer {
         if (
           !this.outcomes.has(after) &&
           Date.now() >= scheduler.holdUntil &&
-          scheduler.find(after) === undefined &&
+          this.find(after) === undefined &&
           !this.expectedUntil.has(after)
         ) {
           // Not here, not ended, not expected back (a state file that was lost, an outcome dropped as too old)
@@ -297,8 +403,8 @@ export class JobServer {
   cancelJob(job: ServerJob, reason: string): void {
     const scheduler = this.scheduler;
     this.log(`cancel #${job.id} (${reason}): ${job.command}`);
-    send(job.socket, { type: "cancelled", id: job.id, reason });
-    if (scheduler.running.includes(job) && job.socket !== null && !job.socket.destroyed) {
+    this.tell(job, { type: "cancelled", id: job.id, reason });
+    if (scheduler.running.includes(job) && job.connection !== null && !job.connection.socket.destroyed) {
       // The client stops its command and then closes: keep the slot until then, so that the next job does not start
       // beside a command that is still being stopped
       job.cancelPending = true;
@@ -330,7 +436,7 @@ export class JobServer {
   /** Releases the slots of lost clients whose command has exited. */
   private async pollOrphans(): Promise<void> {
     const scheduler = this.scheduler;
-    const orphans = scheduler.running.filter((job) => job.socket === null);
+    const orphans = scheduler.running.filter((job) => job.connection === null);
     if (this.polling || orphans.length === 0) {
       return;
     }
@@ -358,7 +464,7 @@ export class JobServer {
    * clients were read) is left out. */
   async cancel(requested: ServerJob[]): Promise<number[]> {
     const scheduler = this.scheduler;
-    const orphans = requested.filter((job) => job.socket === null && scheduler.running.includes(job));
+    const orphans = requested.filter((job) => job.connection === null && scheduler.running.includes(job));
     const live = await this.orphanProcesses(orphans);
     orphans.forEach((_, index) => (live[index] ?? []).forEach(ProcessTable.killTree));
     const jobs = requested.filter(
@@ -372,7 +478,7 @@ export class JobServer {
   awaitJob(socket: net.Socket, id: number): void {
     // The job first: a job that runs or waits has not ended, whatever an older record says
     const outcome = this.outcomes.get(id);
-    if (this.scheduler.find(id) !== undefined || this.expectedUntil.has(id)) {
+    if (this.find(id) !== undefined || this.expectedUntil.has(id)) {
       this.awaiters.set(id, [...(this.awaiters.get(id) ?? []), socket]);
     } else if (outcome !== undefined) {
       send(socket, { type: "ended", id, outcome });
@@ -395,7 +501,7 @@ export class JobServer {
 
   /** Tells the client its job's new placement, grants by the new order and answers with the job's place. */
   placed(job: ServerJob): ServerMessage {
-    send(job.socket, { type: "updated", id: job.id, weight: job.weight, pin: job.pin, before: job.before });
+    this.tell(job, { type: "updated", id: job.id, weight: job.weight, pin: job.pin, before: job.before });
     this.settle();
     return { type: "move-result", id: job.id, position: this.scheduler.waiting.indexOf(job) + 1 };
   }
@@ -404,7 +510,7 @@ export class JobServer {
   private expireExpected(): void {
     const now = Date.now();
     for (const [id, until] of [...this.expectedUntil]) {
-      if (until <= now && this.scheduler.find(id) === undefined) {
+      if (until <= now && this.find(id) === undefined) {
         this.log(`#${id} did not come back`);
         this.recordOutcome(id, "lost");
       }

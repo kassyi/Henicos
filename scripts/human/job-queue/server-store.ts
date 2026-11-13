@@ -93,7 +93,9 @@ export class JobStore {
       if (!isObject(record) || ProcessTable.isAlive(numberField(record, "pid"))) {
         continue; // its client re-registers it
       }
-      const job = server.createJob(null, record, server.chooseId(idField(record, "id")));
+      const job = server.createJob(record, server.chooseId(idField(record, "id")), "running");
+      job.detachedAt = Date.now();
+      server.records.set(job.id, job);
       server.scheduler.adopt(job);
       server.forget(job.id);
       server.log(`restored #${job.id} weight ${job.weight} (client gone, command ${job.commandPid}): ${job.command}`);

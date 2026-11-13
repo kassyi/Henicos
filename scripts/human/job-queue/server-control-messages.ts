@@ -107,7 +107,7 @@ function stop(connection: Connection): void {
   server.server.close();
   const open = scheduler.running
     .concat(scheduler.waiting)
-    .map((j) => j.socket)
+    .map((j) => j.connection?.socket ?? null)
     .filter((s): s is net.Socket => s !== null);
   for (const sockets of server.awaiters.values()) {
     open.push(...sockets);
