@@ -34,7 +34,7 @@ internal static class CpuHostLaunchEmitter
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false, accessibility);
         using (writer.Scope())
         {
-            WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
+            WrapperEmitter.WriteOutParametersAssigned(writer, kernel.Host);
             LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));

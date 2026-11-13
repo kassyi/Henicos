@@ -123,6 +123,22 @@ public static partial class MarshalingOverlapDifferentialKernels
         }
     }
 
+    // The caller's variable is read through the ref before the kernel assigns the out, as C# reads it
+    [GpuKernel]
+    public static void OutAndRefOneVariableKernel(out int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = second;
+        }
+
+        first = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[1] = second;
+        }
+    }
+
     [GpuKernel]
     public static void TwoRefStructsKernel(
         ref DiffOverlapPoint first,
