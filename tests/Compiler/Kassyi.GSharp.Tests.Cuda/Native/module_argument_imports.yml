@@ -1,0 +1,15 @@
+# A YAML binding into ModuleArgumentImports, the class that also holds [CudaImport] methods of the same module
+# (ModuleArgumentTests): both kinds of binding share one module field. The parameter names are C# keywords, which the
+# launcher writes as @params, @checked and @base.
+namespace: Kassyi.GSharp.Tests.Cuda
+className: ModuleArgumentImports
+moduleName: module_arguments.gfatbin
+methods:
+  - name: ScaleWithKeywordNames
+    entryPoint: Scale
+    parameters:
+      - { name: params, type: "float[]" }
+      - { name: checked, type: int }
+      - { name: base, type: float }
+      - { name: gridDimX, type: uint }
+      - { name: blockDimX, type: uint }
