@@ -42,6 +42,10 @@ import {
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
 import { checkGpuTurnsEndToEnd, checkRegrant, checkWait } from "./self-test-parts.ts";
 
+// How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
+// PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
+const OrphanReleaseMs = 30000;
+
 /** Checks of the pure helpers: the node limit, quoting, the default weight. */
 function checkShellHelpers(): void {
   assert.strictEqual(
@@ -227,7 +231,7 @@ export async function selfTest(): Promise<void> {
       [0, 1, 2, 3],
       "arrival order",
     );
-    assert.strictEqual(await usedWithin(port, 0, OrphanPollMs * 3), 0, "every slot came back");
+    assert.strictEqual(await usedWithin(port, 0, OrphanReleaseMs), 0, "every slot came back");
 
     // 2. A client killed alone (its command keeps running) keeps the slot until the command exits.
     const loneStarted = path.join(dir, "started-2");
@@ -239,7 +243,7 @@ export async function selfTest(): Promise<void> {
     const orphaned = await statusOf(port);
     assert.strictEqual(orphaned.used, 1, "the slot stays while the command of a lost client runs");
     assert.strictEqual(orphaned.running[0]?.orphan, true);
-    assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanPollMs * 3), 0, "the slot comes back when it exits");
+    assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanReleaseMs), 0, "the slot comes back when it exits");
 
     // 3. cancel-all stops running jobs and empties the queue; the clients exit with 4.
     const r1 = client(port, sleeper(60000));
@@ -439,7 +443,7 @@ export async function selfTest(): Promise<void> {
     assert.ok(fresh.exitCode === 0 || (await fresh.done) === 0);
     const newIds = JSON.parse(fs.readFileSync(path.join(dir, `jobs-${port}.json`), "utf8")) as { nextId: number };
     assert.ok(newIds.nextId > (beforeRestart.running[0]?.id ?? Infinity), "new ids continue after the saved ones");
-    assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanPollMs * 3), 0, "and released when its command exits");
+    assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanReleaseMs), 0, "and released when its command exits");
 
     // 9. hrrn re-grants while jobs wait, not only when a job ends: a short job that overtakes the waiting wide one
     //    starts within RegrantMs, although nothing ends before the running job (20 s).
