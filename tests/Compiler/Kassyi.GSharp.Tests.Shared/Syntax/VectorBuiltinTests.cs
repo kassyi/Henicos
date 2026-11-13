@@ -87,14 +87,13 @@ public class VectorBuiltinTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Vector2Add_EmptyArrays_ThrowsArgumentException()
+    public void Vector2Add_EmptyArrays_RunsWithNoElement()
     {
         System.Numerics.Vector2[] empty = [];
 
-        // Empty array arguments are rejected instead of silently skipping the launch
-        var ex = Assert.Throws<ArgumentException>(() =>
-            VectorBuiltinKernels.LaunchVector2AddKernel(empty, empty, empty, 0, blockDimX: 32));
+        // An empty array argument is passed as one, as a C# call passes it
+        VectorBuiltinKernels.LaunchVector2AddKernel(empty, empty, empty, 0, blockDimX: 32);
 
-        Assert.Equal("a", ex.ParamName);
+        Assert.Empty(empty);
     }
 }

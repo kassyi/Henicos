@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// Reads of a null array field follow C# (#706): <c>Length</c>, an element and <c>foreach</c> throw
 /// <see cref="NullReferenceException"/> on the native CPU build (with the place in the user's source) and on the managed
 /// path, while an empty array reads as length 0 and is not null on every path. A null field that the kernel does not read
-/// is no error, and a null optional kernel argument keeps reading as an empty array (#838).
+/// is no error, and a null kernel argument is read as C# reads it: it throws as well.
 /// </summary>
 /// <remarks>
 /// CUDA checks a null array read on every build and reports its place through the device error record (#1409), but the
@@ -170,13 +170,12 @@ public class NullArrayFieldTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void NullOptionalArgumentToDeviceFunction_ReadsLengthZero(bool forceManaged)
+    public void NullOptionalArgumentToDeviceFunction_ThrowsInTheFunction(bool forceManaged)
     {
-        Skip.If(forceManaged, "The managed path reads a null optional argument as null outside the kernel itself (#852).");
         var o = new[] { -1 };
 
-        Run(forceManaged, () => NullArrayFieldKernels.LaunchOptionalToDeviceFunctionKernel(o, null));
-        Assert.Equal([0], o);
+        AssertNullRead(forceManaged, "(126,41)",
+            () => NullArrayFieldKernels.LaunchOptionalToDeviceFunctionKernel(o, null), inDeviceFunction: true);
 
         Run(forceManaged, () => NullArrayFieldKernels.LaunchOptionalToDeviceFunctionKernel(o, [1, 2, 3]));
         Assert.Equal([3], o);
@@ -267,8 +266,7 @@ public class NullArrayFieldTests : TranspilerTestBase
             () => NullArrayFieldKernels.LaunchWrittenParameterWithBarrierKernel(new NullArrayHolder { Data = null }, [1, 2], o));
     }
 
-    // The managed path rewrote bias.Length to 0 for any optional parameter (#838); once the kernel assigns it, the
-    // read follows C# on every path
+    // A read of an optional parameter that the kernel assigned follows C# on every path
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
     [InlineData(false, true)]
@@ -287,16 +285,15 @@ public class NullArrayFieldTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void OptionalWithBarrier_NullAndValue_ReadsItsLength(bool forceManaged)
+    public void OptionalWithBarrier_NullThrowsInTheFunctionAndValueReadsItsLength(bool forceManaged)
     {
-        Skip.If(forceManaged, "The managed path reads a null optional argument as null outside the kernel itself (#852).");
         var o = new[] { -1 };
 
-        Run(forceManaged, () => NullArrayFieldKernels.LaunchOptionalWithBarrierKernel(o, null));
-        Assert.Equal([0], o);
+        AssertNullRead(forceManaged, "(126,41)",
+            () => NullArrayFieldKernels.LaunchOptionalWithBarrierKernel(o, null), inDeviceFunction: true);
 
         Run(forceManaged, () => NullArrayFieldKernels.LaunchOptionalWithBarrierKernel(o, [1, 2]));
-        Assert.Equal([4], o);
+        Assert.Equal([2], o);
     }
 
     // The native CPU build names the place of the receiver: in a kernel body as the site of the kernel's error site table

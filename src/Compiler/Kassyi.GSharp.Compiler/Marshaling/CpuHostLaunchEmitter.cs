@@ -13,6 +13,7 @@ internal static class CpuHostLaunchEmitter
     private const string FunctionHandle = GSharpInternalNames.Launcher.FunctionHandle;
     private const string PinnedHandle = GSharpInternalNames.Launcher.PinnedHandle;
     private const string GridBlockCount = GSharpInternalNames.Launcher.GridBlockCount;
+    private const string ArrayPinningType = HostTypeNames.ArrayPinning;
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName)
@@ -358,14 +359,17 @@ internal static class CpuHostLaunchEmitter
         foreach (var shape in kernel.Parameters)
         {
             var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
+            // [WHY] fixed (T* p = <array or span>) gives a null pointer for an empty array, which the device would read
+            // as null; the pinnable reference is null only when there is no array (ArrayPinning)
             if (shape.IsCpuConvertedArray)
             {
-                writer.AppendLine($"fixed (byte* {pinned} = {KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)})");
+                var shadow = KernelHostNames.GetLocal(LauncherLocal.Shadow, shape);
+                writer.AppendLine($"fixed (byte* {pinned} = &{ArrayPinningType}.GetPinnableReference({shadow}))");
                 hasFixed = true;
             }
             else if (shape is { IsArray: true, ElementTypeName: { } elementType })
             {
-                writer.AppendLine($"fixed ({elementType}* {pinned} = {shape.SpanExpression})");
+                writer.AppendLine($"fixed ({elementType}* {pinned} = &{shape.PinnableReferenceExpression})");
                 hasFixed = true;
             }
             else if (shape is { IsByRef: true, IsCpuConvertedStruct: false })
@@ -424,12 +428,11 @@ internal static class CpuHostLaunchEmitter
         var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         switch (shape)
         {
-            case { IsArray: true, IsNullableReference: true }:
-                // A null optional array reads as an empty one on the device (GSharpArray::flags, #706)
-                writer.Append(
-                    $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (global::System.IntPtr){pinned}, Length = {shape.LengthExpression}, ");
-                writer.Append(
-                    $"Flags = {shape.Identifier} is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0 }}");
+            case { IsCpuConvertedArray: true }:
+                // The shadow of a null array is an empty rented array, whose pinned address is not null
+                writer.Append($"new {HostTypeNames.ArrayProxy} {{ Data = {shape.NullTestExpression} ? ");
+                writer.Append($"{HostTypeNames.IntPtr}.Zero : ({HostTypeNames.IntPtr}){pinned}, ");
+                writer.Append($"Length = {shape.LengthExpression} }}");
                 break;
             case { IsArray: true }:
                 writer.Append(

@@ -334,8 +334,7 @@ __device__ inline char16_t __gsharp_string_char(const char16_t (&text)[N], int i
 }
 
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
-// exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
-// (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
+// exists, also an empty one (#706). flags is the reserved padding after length (16 bytes), always 0
 template <typename T>
 struct GSharpArray {
     // Not __restrict__: in C# two arrays (arguments, struct fields, a ref into one of them) may be one object, and the
@@ -470,6 +469,30 @@ struct GSharpArray {
 // A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
 template <typename T, int N>
 __device__ inline GSharpArray<T> __gsharp_stackalloc_span(T (&storage)[N]) { return GSharpArray<T>(storage, N); }
+// The array operand of a System.Array method (Array.Fill, Clear, Reverse): ArgumentNullException for a null array,
+// before any other check of the call, as .NET throws it
+template <typename T>
+__device__ inline GSharpArray<T> __gsharp_array_argument(GSharpArray<T> array) {
+    if (array.data == nullptr) {
+        __gsharp_trap(GSharpErrorCode::ArgumentNull, "Value cannot be null. (Parameter 'array')");
+        return GSharpArray<T>();
+    }
+    return array;
+}
+// The source operand of Array.Copy, checked with its destination first: ArgumentNullException for a null source, then
+// for a null destination, before the lengths, as .NET checks them
+template <typename T, typename U>
+__device__ inline GSharpArray<T> __gsharp_copy_arguments(GSharpArray<T> source, GSharpArray<U> destination) {
+    if (source.data == nullptr) {
+        __gsharp_trap(GSharpErrorCode::ArgumentNull, "Value cannot be null. (Parameter 'sourceArray')");
+        return GSharpArray<T>();
+    }
+    if (destination.data == nullptr) {
+        __gsharp_trap(GSharpErrorCode::ArgumentNull, "Value cannot be null. (Parameter 'destinationArray')");
+        return GSharpArray<T>();
+    }
+    return source;
+}
 // The storage of a stackalloc outside a declaration, declared before the statement: zeroed where the stackalloc is
 // evaluated (every evaluation, as C# allocates a new block each time), then viewed as a span
 template <typename T, int N>
@@ -914,10 +937,8 @@ __device__ __forceinline__ unsigned int __gsharp_null_read_site(unsigned int sit
     __gsharp_exit_thread();
 }
 
-// GSharpArray::flags bit 0: a null optional kernel argument, which reads as an empty array (#838)
-#define __gsharp_array_null_reads_empty 1
 // The array that an array-typed C# expression reads (Length, an element, foreach): a null array fails as C# throws
-// NullReferenceException (#706), a null optional kernel argument reads as an empty array. Every build tests it, as
+// NullReferenceException (#706). Every build tests it, as
 // C# defines the result and the GPU does not (#1409); the compiler leaves the check out where the array cannot be null.
 // The place is the site of the kernel's error site table (unsigned int) or, in a device function, a message that names
 // it (const char*). An rvalue is returned by value, so that a range-based for over it does not keep a reference to a
@@ -925,7 +946,7 @@ __device__ __forceinline__ unsigned int __gsharp_null_read_site(unsigned int sit
 template <typename A, typename S>
 __device__ __forceinline__ A __gsharp_array_ref(A&& array, S site)
 {
-    if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+    if (array.data == nullptr)
     {
         __gsharp_null_read_trap(__gsharp_null_read_site(site));
     }
@@ -936,14 +957,13 @@ __device__ __forceinline__ A __gsharp_array_ref(A&& array, S site)
 template <typename A, typename I, typename S>
 __device__ __forceinline__ decltype(auto) __gsharp_array_at(A&& array, I index, S site)
 {
-    if (array.data == nullptr && (array.flags & __gsharp_array_null_reads_empty) == 0)
+    if (array.data == nullptr)
     {
         __gsharp_null_read_trap(__gsharp_null_read_site(site));
     }
     return array[index];
 }
-// The array of Gpu.NotNull(array): a null array fails as the C# method throws NullReferenceException. Unlike
-// __gsharp_array_ref, a null optional kernel argument fails too: it reads as an empty array, but it is null
+// The array of Gpu.NotNull(array): a null array fails as the C# method throws NullReferenceException
 template <typename A, typename S>
 __device__ __forceinline__ A __gsharp_array_not_null(A&& array, S site)
 {

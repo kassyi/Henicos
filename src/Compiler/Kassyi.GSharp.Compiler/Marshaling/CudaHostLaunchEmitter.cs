@@ -84,12 +84,8 @@ internal static class CudaHostLaunchEmitter
             {
                 if (p.TryAppendTypedBuffer(writer))
                 {
-                    var isOptional = p.HasExplicitDefault;
-                    writer.Append(isOptional ? "? " : " ").Append(p.Identifier);
-                    if (isOptional)
-                    {
-                        writer.Append(" = null");
-                    }
+                    writer.Append(TakesNullBuffer(p) ? "? " : " ").Append(p.Identifier);
+                    writer.AppendIf(p.HasExplicitDefault, " = null");
                 }
                 else
                 {
@@ -112,7 +108,7 @@ internal static class CudaHostLaunchEmitter
                 if (p.BufferElementTypeName is not null)
                 {
                     // An array carries the buffer's length (#720); a ref / out parameter is the address alone
-                    writer.Append((PointerLaunchPlan.IsProxy(PointerLaunchPlan.Classify(p)), p.HasExplicitDefault) switch
+                    writer.Append((PointerLaunchPlan.IsProxy(PointerLaunchPlan.Classify(p)), TakesNullBuffer(p)) switch
                     {
                         (true, true) => "?.ToProxy() ?? default",
                         (true, false) => ".ToProxy()",
@@ -130,6 +126,12 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine(";");
         writer.AppendLine();
     }
+
+    // A buffer parameter that accepts null: one with a default value, or a nullable array (T[]?, Memory<T>?), which a
+    // null buffer passes as null
+    private static bool TakesNullBuffer(in KernelParameterShape parameter) =>
+        parameter.HasExplicitDefault ||
+        parameter.IsOptional && PointerLaunchPlan.IsProxy(PointerLaunchPlan.Classify(parameter));
 
     // private static readonly CudaKernelFunction <field> = new CudaKernelFunction("<kernel>", <context>.GetFatbin);
     private static void WriteFunctionField(SourceWriter writer, in KernelEmission kernel, string moduleName)

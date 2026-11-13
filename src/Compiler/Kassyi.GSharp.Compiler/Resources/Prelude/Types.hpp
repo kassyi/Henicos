@@ -57,8 +57,7 @@ inline char16_t __gsharp_string_char(const char16_t (&text)[N], int index) {
 }
 
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
-// exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
-// (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
+// exists, also an empty one (#706). flags is the reserved padding after length (16 bytes), always 0
 template <typename T>
 struct GSharpArray {
     T* data;
@@ -189,6 +188,30 @@ struct GSharpArray {
 // A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
 template <typename T, int N>
 inline GSharpArray<T> __gsharp_stackalloc_span(T (&storage)[N]) { return GSharpArray<T>(storage, N); }
+// The array operand of a System.Array method (Array.Fill, Clear, Reverse): ArgumentNullException for a null array,
+// before any other check of the call, as .NET throws it
+template <typename T>
+inline GSharpArray<T> __gsharp_array_argument(GSharpArray<T> array) {
+    if (array.data == nullptr) {
+        __gsharp_trap(GSharpErrorCode::ArgumentNull, "Value cannot be null. (Parameter 'array')");
+        return GSharpArray<T>();
+    }
+    return array;
+}
+// The source operand of Array.Copy, checked with its destination first: ArgumentNullException for a null source, then
+// for a null destination, before the lengths, as .NET checks them
+template <typename T, typename U>
+inline GSharpArray<T> __gsharp_copy_arguments(GSharpArray<T> source, GSharpArray<U> destination) {
+    if (source.data == nullptr) {
+        __gsharp_trap(GSharpErrorCode::ArgumentNull, "Value cannot be null. (Parameter 'sourceArray')");
+        return GSharpArray<T>();
+    }
+    if (destination.data == nullptr) {
+        __gsharp_trap(GSharpErrorCode::ArgumentNull, "Value cannot be null. (Parameter 'destinationArray')");
+        return GSharpArray<T>();
+    }
+    return source;
+}
 // The storage of a stackalloc outside a declaration, declared before the statement: zeroed where the stackalloc is
 // evaluated (every evaluation, as C# allocates a new block each time), then viewed as a span
 template <typename T, int N>

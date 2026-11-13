@@ -7,6 +7,7 @@ internal static class WrapperEmitter
 {
     private const string NegativeLengthMessage = "The array length must not be negative.";
     private const string EmptyArrayMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
+    private const string InconsistentProxyMessage = "A null array has no elements, so its length must be 0.";
 
     internal readonly struct InteropParameterInfo(
         string modifier,
@@ -386,22 +387,27 @@ internal static class WrapperEmitter
         }
     }
 
+    /// <summary>
+    /// Emits the checks of the array arguments of the <c>Launch{Kernel}</c> launcher. An array argument is passed as a
+    /// C# call passes it, a null or empty one included. A span-like value (<c>Span&lt;T&gt;</c>,
+    /// <c>Memory&lt;T&gt;</c>, <c>ArraySegment&lt;T&gt;</c>, <c>ImmutableArray&lt;T&gt;</c>) must not be empty or
+    /// default, and an empty nullable one is passed as null. A null in a non-nullable array field of a by-value struct
+    /// argument is rejected.
+    /// </summary>
     internal static void WriteArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
     {
         foreach (var shape in kernel.Parameters)
         {
-            if (!shape.IsArray)
+            if (shape is { IsArray: true } && shape.Container != ArrayContainerKind.Array)
             {
-                continue;
+                WriteSpanLikeArgumentCheck(writer, in shape);
             }
-
-            WriteParameterArrayCheck(writer, in shape);
         }
 
         WriteStructFieldChecks(writer, kernel, isPointer: false);
     }
 
-    private static void WriteParameterArrayCheck(SourceWriter writer, in KernelParameterShape shape)
+    private static void WriteSpanLikeArgumentCheck(SourceWriter writer, in KernelParameterShape shape)
     {
         var name = shape.Identifier;
         if (shape.IsOptional)
@@ -410,20 +416,14 @@ internal static class WrapperEmitter
             return;
         }
 
-        switch (shape.Container)
+        if (shape.Container == ArrayContainerKind.ImmutableArray)
         {
-            case ArrayContainerKind.Array:
-                WriteNullCheck(writer, shape.Name, $"{name} is null");
-                WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);
-                break;
-            case ArrayContainerKind.ImmutableArray:
-                WriteNullCheck(writer, shape.Name, $"{name}.IsDefault");
-                WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);
-                break;
-            default:
-                WriteEmptyArrayCheck(writer, shape.LengthExpression, shape.Name);
-                break;
+            WriteNullCheck(writer, shape.Name, $"{name}.IsDefault");
+            WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);
+            return;
         }
+
+        WriteEmptyArrayCheck(writer, shape.LengthExpression, shape.Name);
     }
 
     // if (<name> is { [IsDefault: false, ]<Length or Count>: 0 }) { <name> = null; }
@@ -466,7 +466,7 @@ internal static class WrapperEmitter
     // { throw new ArgumentNullException("<name>", "<name>.<field path> is null, ..."); }
     // if (<name>.<field path>.Data == IntPtr.Zero) { ... }   (the shadow struct of the pointer launcher)
     // [WHY] The kernel reads a non-nullable array field of a by-value struct argument without a null check
-    // (NonNullProof); the launcher enforces the annotation, as it rejects a null non-optional array argument (#1409)
+    // (NonNullProof); the launcher enforces the annotation of the field (#1409)
     private static void WriteStructFieldChecks(SourceWriter writer, in KernelHostModel kernel, bool isPointer)
     {
         foreach (var shape in kernel.Parameters)
@@ -516,21 +516,17 @@ internal static class WrapperEmitter
     }
 
     /// <summary>
-    /// Emits the checks of the <c>GSharpArrayProxy</c> arguments of the <c>Launch{Kernel}Ptr</c> launcher, with the
-    /// contract of <see cref="WriteArrayArgumentChecks"/>: a non-optional array must not be null or empty, and an empty
-    /// optional one is passed as null. A negative length is rejected for both. The non-nullable array fields of a by-value
-    /// struct argument must not be null either.
+    /// Emits the checks of the <c>GSharpArrayProxy</c> arguments of the <c>Launch{Kernel}Ptr</c> launcher: a proxy with
+    /// a negative length, or with no data and a length other than 0, describes no array and is rejected. Any other
+    /// proxy is passed as it is: <c>Data == 0</c> is a null array, and an empty array has a non-null <c>Data</c>
+    /// (<c>GSharpArrayProxy.EmptyArrayData</c>). The non-nullable array fields of a by-value struct argument must not
+    /// be null.
     /// </summary>
-    /// <remarks>
-    /// The kernel leaves out the null check of a non-nullable array parameter or field it never writes on that promise
-    /// (<c>NonNullProof</c>); without the checks the device would read through <c>nullptr</c> (#1409).
-    /// </remarks>
     internal static void WritePointerArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
     {
         foreach (var shape in kernel.Parameters)
         {
-            var kind = PointerLaunchPlan.Classify(shape);
-            if (!PointerLaunchPlan.IsProxy(kind))
+            if (!PointerLaunchPlan.IsProxy(PointerLaunchPlan.Classify(shape)))
             {
                 continue;
             }
@@ -548,38 +544,22 @@ internal static class WrapperEmitter
                 writer.AppendLine($"{name}.Length, \"{NegativeLengthMessage}\");");
             }
 
-            if (kind == PointerArgumentKind.OptionalArray)
-            {
-                writer.Append("if ");
-                using (writer.Parentheses())
-                {
-                    writer.Append($"{name}.Data == {HostTypeNames.IntPtr}.Zero || {name}.Length == 0");
-                }
-
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"{name} = default;");
-                }
-
-                continue;
-            }
-
             writer.Append("if ");
             using (writer.Parentheses())
             {
-                writer.Append($"{name}.Data == {HostTypeNames.IntPtr}.Zero");
+                writer.Append($"{name}.Data == {HostTypeNames.IntPtr}.Zero && {name}.Length != 0");
             }
 
             using (writer.Scope())
             {
-                writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}({Literal(shape.Name)});");
+                writer.Append($"throw new {HostTypeNames.ArgumentException}(\"{InconsistentProxyMessage}\", ");
+                writer.AppendLine($"{Literal(shape.Name)});");
             }
-
-            WriteEmptyArrayCheck(writer, $"{name}.Length", shape.Name);
         }
 
         WriteStructFieldChecks(writer, kernel, isPointer: true);
     }
+
     private static void WriteErrorSiteTableField(SourceWriter writer, EquatableArray<ErrorSiteEntry> errorSites)
     {
         if (errorSites.IsDefaultOrEmpty)

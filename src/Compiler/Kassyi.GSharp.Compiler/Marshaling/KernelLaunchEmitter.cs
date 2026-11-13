@@ -18,6 +18,7 @@ internal static class KernelLaunchEmitter
     private const string CudaDriverApiType = HostTypeNames.CudaDriverApi;
     private const string CudaExceptionType = HostTypeNames.CudaException;
     private const string IntPtrType = HostTypeNames.IntPtr;
+    private const string ArrayProxyType = HostTypeNames.ArrayProxy;
     private const string LaunchErrorRecordsType = HostTypeNames.LaunchErrorRecords;
 
     /// <summary>
@@ -244,12 +245,10 @@ internal static class KernelLaunchEmitter
             {
                 var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
                 writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
-                // The argument checks have rejected a null non-optional array and made a null optional one 0 long
-                // (WritePointerArrayArgumentChecks), so only an optional array reaches here with Data == 0 and reads as empty
+                // Data == 0 is a null array, which WritePointerArrayArgumentChecks has checked to be 0 long
                 writer.AppendLine($"{proxy}[0] = {shape.Identifier}.Data;");
                 writer.AppendLine($"((int*)({proxy} + 1))[0] = {shape.Identifier}.Length;");
-                // The launcher decides the flags; the caller's Flags never reach the device
-                WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier}.Data == {IntPtrType}.Zero");
+                WriteReservedWord(writer, proxy);
                 writer.AppendLine($"{KernelParams}[{paramIndex}] = {proxy};");
             }
             else
@@ -341,9 +340,9 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"int {size} = checked({lenExpr} * sizeof({element}));");
 
         writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
-        writer.AppendLine($"{proxy}[0] = {IntPtrType}.Zero;");
+        WriteArrayReference(writer, shape, proxy);
         writer.AppendLine($"((int*)({proxy} + 1))[0] = {lenExpr};");
-        WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} is null");
+        WriteReservedWord(writer, proxy);
 
         WriteSizeTest(writer, plan, paramIndex);
         using (writer.Scope())
@@ -355,24 +354,20 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"{KernelParams}[{paramIndex}] = {proxy};");
     }
 
-    // ((int*)(__gsharp_proxy_<ord> + 1))[1] = <null test> ? GSharpArrayProxy.NullReadsAsEmpty : 0;   (an optional T[])
-    // ((int*)(__gsharp_proxy_<ord> + 1))[1] = 0;                                                     (any other array)
-    // [WHY] The device reads a null optional array argument as an empty one (#838), also through a local or a device
-    // function, while reading any other null array throws (#706); the flags word of GSharpArray tells them apart. It is
-    // written for every array because stackalloc is not zeroed under [SkipLocalsInit], and the device copies flags into
-    // every local and field that takes the array, so it is always defined.
-    private static void WriteNullReadsAsEmptyFlag(SourceWriter writer, in KernelParameterShape shape, string nullTest)
+    // __gsharp_proxy_<ord>[0] = <null test> ? IntPtr.Zero : (IntPtr)GSharpArrayProxy.EmptyArrayData;
+    // [WHY] A null array (or a span-like value over none) is a null pointer, and an empty array a non-null one that is
+    // never dereferenced, so that the device tells them apart as C# does; a copied array replaces it with its region
+    private static void WriteArrayReference(SourceWriter writer, in KernelParameterShape shape, string proxy)
     {
-        var proxy = KernelHostNames.GetLocal(LauncherLocal.Proxy, shape);
-        if (!shape.IsNullableReference)
-        {
-            writer.AppendLine($"((int*)({proxy} + 1))[1] = 0;");
-            return;
-        }
-
-        writer.AppendLine(
-            $"((int*)({proxy} + 1))[1] = {nullTest} ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0;");
+        writer.Append($"{proxy}[0] = {shape.NullTestExpression} ? ");
+        writer.AppendLine($"{IntPtrType}.Zero : ({IntPtrType}){ArrayProxyType}.EmptyArrayData;");
     }
+
+    // ((int*)(__gsharp_proxy_<ord> + 1))[1] = 0;
+    // [WHY] The 4 bytes after the length (GSharpArray::flags) are reserved; stackalloc is not zeroed under
+    // [SkipLocalsInit], and the device copies them into every local and field that takes the array
+    private static void WriteReservedWord(SourceWriter writer, string proxy) =>
+        writer.AppendLine($"((int*)({proxy} + 1))[1] = 0;");
 
     // if ([<name> is not null && ]__gsharp_size_<ord> > 0), the null test before a table lookup only
     private static void WriteSizeTest(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
@@ -509,9 +504,9 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"int {size} = checked({lenExpr} * sizeof({ConvertedArrayEmitter.GetElementShadowPath(shape, shape.Cuda)}));");
 
         writer.AppendLine($"{IntPtrType}* {proxy} = stackalloc {IntPtrType}[2];");
-        writer.AppendLine($"{proxy}[0] = {IntPtrType}.Zero;");
+        WriteArrayReference(writer, shape, proxy);
         writer.AppendLine($"((int*)({proxy} + 1))[0] = {lenExpr};");
-        WriteNullReadsAsEmptyFlag(writer, shape, $"{shape.Identifier} is null");
+        WriteReservedWord(writer, proxy);
 
         WriteSizeTest(writer, plan, paramIndex);
         using (writer.Scope())

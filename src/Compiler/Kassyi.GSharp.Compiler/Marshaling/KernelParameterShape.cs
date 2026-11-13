@@ -11,6 +11,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal readonly record struct KernelParameterShape
 {
     private const string GpuBufferType = "global::Kassyi.GSharp.Runtime.GpuBuffer";
+    private const string ArrayPinningType = HostTypeNames.ArrayPinning;
 
     /// <summary>The zero-based position of the parameter in the kernel's parameter list, which the launcher's locals (<c>__gsharp_d_0</c>, ...) build on.</summary>
     public int Ordinal { get; init; }
@@ -179,14 +180,27 @@ internal readonly record struct KernelParameterShape
     public string ValueExpression => IsNullableValue ? $"{Identifier}.GetValueOrDefault()" : Identifier;
 
     /// <summary>
-    /// The element count, 0 for a <c>null</c> array. An <c>ImmutableArray&lt;T&gt;?</c> counts the span of its value,
-    /// which is empty for <c>null</c>: <c>GetValueOrDefault()</c> gives the default immutable array, whose
-    /// <c>Length</c> throws (#1715).
+    /// The element count, 0 for a <c>null</c> array and for a default <c>ImmutableArray</c>, whose <c>Length</c>
+    /// throws.
     /// </summary>
-    public string LengthExpression =>
-        IsNullableReference ? $"({Identifier}?.Length ?? 0)"
-        : IsNullableValue && Container == ArrayContainerKind.ImmutableArray ? $"{SpanExpression}.Length"
-        : $"{ValueExpression}.{LengthMember}";
+    public string LengthExpression => Container switch
+    {
+        ArrayContainerKind.Array => $"({Identifier}?.Length ?? 0)",
+        ArrayContainerKind.ImmutableArray => $"{ValueExpression}.AsSpan().Length",
+        _ => $"{ValueExpression}.{LengthMember}"
+    };
+
+    /// <summary>
+    /// Whether the argument holds no array: a null array, or a span-like value over none (<c>default</c>, and a
+    /// <see langword="null"/> nullable value). An empty array, or a span-like value over one, holds an array.
+    /// </summary>
+    public string NullTestExpression => $"{ArrayPinningType}.IsNull({SpanExpression})";
+
+    /// <summary>
+    /// The reference that a <c>fixed</c> statement pins as <c>&amp;&lt;reference&gt;</c>: null when the argument holds
+    /// no array (<see cref="NullTestExpression"/>), the address of the array's data otherwise, also for an empty array.
+    /// </summary>
+    public string PinnableReferenceExpression => $"{ArrayPinningType}.GetPinnableReference({SpanExpression})";
 
     /// <summary>An expression that a <c>fixed</c> statement can pin.</summary>
     public string SpanExpression => Container switch

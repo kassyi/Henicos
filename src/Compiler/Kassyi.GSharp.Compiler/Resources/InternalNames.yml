@@ -277,7 +277,6 @@ ReturnValue:
 Prelude:
   Summary: Functions and globals that the Prelude declares, used by the emitters or by the runtime loader.
   Names:
-    ArrayNullReadsEmpty: { Value: __gsharp_array_null_reads_empty, Prelude: ErrorChannel.hpp }
     HostLastError: { Value: __gsharp_host_last_error, Prelude: ErrorChannel.hpp }
     ActiveErrorSlot: { Value: __gsharp_active_error_slot, Prelude: ErrorChannel.hpp }
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
@@ -291,8 +290,7 @@ Prelude:
     ArrayRef: { Value: __gsharp_array_ref, Prelude: ErrorChannel.hpp }
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
-    # The array of a Gpu.NotNull call: a null array fails with NullReferenceException, also a null optional kernel
-    # argument, which reads as an empty array but is null
+    # The array of a Gpu.NotNull call: a null array fails with NullReferenceException, a null kernel argument included
     ArrayNotNull: { Value: __gsharp_array_not_null, Prelude: ErrorChannel.hpp }
     # A by-value struct argument of a device function: the non-nullable array fields it reaches, checked at the call
     StructRef: { Value: __gsharp_struct_ref, Prelude: ErrorChannel.hpp }
@@ -380,6 +378,10 @@ Prelude:
     TempAddress: { Value: __gsharp_temp_address, Prelude: StandardTypes.hpp }
     # A stack array viewed as a span (StackArrayLocals.AppendView). Declared by Types.hpp and by the CUDA prelude.
     StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
+    # The null checks of the array operands of System.Array methods (SpanMemberTranspilerRule). Declared by Types.hpp and
+    # by the CUDA prelude.
+    ArrayArgument: { Value: __gsharp_array_argument, Prelude: Types.hpp }
+    CopyArguments: { Value: __gsharp_copy_arguments, Prelude: Types.hpp }
     # The zero fill of a stackalloc outside a declaration (StackAllocEmitter). Declared by Types.hpp and by the CUDA prelude.
     StackAllocZero: { Value: __gsharp_stackalloc_zero, Prelude: Types.hpp }
     # The UTF-16 code unit at a run-time index of a constant string (ConstantStringElement, ConstantStringForEach).

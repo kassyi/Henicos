@@ -2,22 +2,22 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 /// <summary>
 /// The null check of a C# array read (#706): <c>Length</c> and the other <c>System.Array</c> members, an element and
-/// <c>foreach</c> throw <see cref="NullReferenceException"/> on a null array in C#. The receiver goes through the Prelude
-/// helper <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>, which fails on every build (#1409); a null optional
-/// kernel argument reads as an empty array there (<c>GSharpArray::flags</c>, set by the launchers). In a kernel body the
-/// place is a site of the kernel's error site table, so the host exception carries it on CUDA as well
-/// (<see cref="NullCheckSite"/>).
+/// <c>foreach</c> throw <see cref="NullReferenceException"/> on a null array in C#, and so do <c>Length</c>,
+/// <c>IsEmpty</c>, an element and <c>foreach</c> of a default <c>ImmutableArray&lt;T&gt;</c>, whose array is null. The
+/// receiver goes through the Prelude helper <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>, which fails on
+/// every build (#1409). In a kernel body the place is a site of the kernel's error site table, so the host exception
+/// carries it on CUDA as well (<see cref="NullCheckSite"/>).
 /// </summary>
 /// <remarks>
 /// <para>
-/// Only a receiver of a C# array type is checked: a span is never null in C#, and <c>is null</c>, <c>?.</c>,
-/// <c>??</c>, a conversion to a span or passing the array along read nothing.
+/// Only a receiver of a C# array type or of <c>ImmutableArray&lt;T&gt;</c> is checked: a span is never null in C#, and
+/// <c>is null</c>, <c>??</c>, a conversion to a span (<c>AsSpan</c>) or passing the array along read nothing.
 /// </para>
 /// <para>
 /// No check is emitted where the receiver cannot be null, as RyuJIT drops a null check that an assertion proves
-/// (symbol-based only): a stack array local, and an array parameter of a kernel that the kernel never writes (the
-/// launcher rejects a null non-optional array, and a null optional one reads as empty anyway), and a conditional whose
-/// branches are both such receivers.
+/// (symbol-based only, <see cref="NonNullProof"/>): a stack array local, a non-nullable array parameter of a device
+/// function whose calls check it, and a conditional whose branches are both such receivers. A kernel parameter is
+/// checked whatever its annotation: the launcher passes a null array as a C# call does.
 /// </para>
 /// </remarks>
 internal static class ArrayNullCheck
@@ -44,11 +44,17 @@ internal static class ArrayNullCheck
     // Between the text of an error and the place it names, in a method without an error site table
     private const string PlaceSeparator = " at ";
 
-    private static readonly PerCompilationSymbolCache<IParameterSymbol, bool> s_written = new();
-
     /// <summary>Whether a read through <paramref name="receiver"/> needs the null check.</summary>
     public static bool NeedsCheck(ExpressionSyntax receiver, SemanticModel semanticModel) =>
-        semanticModel.GetTypeSymbol(receiver) is IArrayTypeSymbol && MayBeNull(receiver, semanticModel);
+        IsCheckedType(semanticModel.GetTypeSymbol(receiver)) && MayBeNull(receiver, semanticModel);
+
+    // A C# array, or an ImmutableArray<T>, whose default holds a null array
+    private static bool IsCheckedType(ITypeSymbol? type) =>
+        type is IArrayTypeSymbol || IsImmutableArray(type);
+
+    private static bool IsImmutableArray(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { IsGenericType: true, Name: "ImmutableArray" } named &&
+        named.ContainingNamespace.IsSystemCollectionsImmutable();
 
     private static bool MayBeNull(ExpressionSyntax expression, SemanticModel semanticModel)
     {
@@ -60,19 +66,14 @@ internal static class ArrayNullCheck
             return MayBeNull(conditional.WhenTrue, semanticModel) || MayBeNull(conditional.WhenFalse, semanticModel);
         }
 
-        // A stack array (#1543), or a non-nullable array that a launch or a call has checked (#1409)
+        // A stack array (#1543), or a non-nullable array that a call has checked (#1409)
         if (NonNullProof.IsProvenNonNull(expression, semanticModel))
         {
             return false;
         }
 
-        return semanticModel.GetSymbol(expression) switch
-        {
-            IParameterSymbol parameter => !IsUnwrittenKernelParameter(parameter, semanticModel.Compilation),
-            // A host static member, which GSH0065 reports
-            IFieldSymbol { IsStatic: true } => false,
-            _ => true
-        };
+        // A host static member, which GSH0065 reports
+        return semanticModel.GetSymbol(expression) is not IFieldSymbol { IsStatic: true };
     }
 
     /// <summary>
@@ -367,10 +368,13 @@ internal static class ArrayNullCheck
         model.GetTypeSymbol(argument) is INamedTypeSymbol { Name: "Index" or "Range" } type &&
         type.ContainingNamespace.IsSystemNamespace();
 
-    // An instance member of System.Array: Length, LongLength, Rank, GetLength, ... (not an extension method such as AsSpan)
+    // An instance member of System.Array: Length, LongLength, Rank, GetLength, ... (not an extension method such as
+    // AsSpan), or Length / IsEmpty of ImmutableArray<T>, which read its array (IsDefault and AsSpan do not)
     private static bool IsArrayMember(ISymbol? member) =>
         member is { IsStatic: false, ContainingType.SpecialType: SpecialType.System_Array } &&
-        member is not IMethodSymbol { MethodKind: MethodKind.ReducedExtension };
+        member is not IMethodSymbol { MethodKind: MethodKind.ReducedExtension } ||
+        member is IPropertySymbol { IsStatic: false, Name: "Length" or "IsEmpty" } property &&
+        IsImmutableArray(property.ContainingType);
 
     // Parentheses, and the null-forgiving operator, which has no run-time meaning (a! is null when a is)
     private static ExpressionSyntax SkipParentheses(ExpressionSyntax expression)
@@ -390,72 +394,6 @@ internal static class ArrayNullCheck
                     return expression;
             }
         }
-    }
-
-    /// <summary>
-    /// Whether <paramref name="parameter"/> is a by-value parameter of a <c>[GpuKernel]</c> that the kernel never writes
-    /// (an assignment, also in a tuple or a local function, a <c>ref</c> / <c>out</c> argument, a <c>ref</c> to it): it
-    /// holds what the launcher passed. The managed path rewrites the <c>Length</c> of such an optional array the same way.
-    /// </summary>
-    public static bool IsUnwrittenKernelParameter(IParameterSymbol parameter, Compilation compilation)
-    {
-        if (parameter is not { RefKind: RefKind.None, ContainingSymbol: IMethodSymbol method } ||
-            !method.HasAttribute(KnownAttributes.GpuKernel))
-        {
-            return false;
-        }
-
-        var written = s_written.For(compilation);
-        if (!written.TryGetValue(parameter, out var isWritten))
-        {
-            isWritten = IsWritten(parameter, compilation);
-            written.TryAdd(parameter, isWritten);
-        }
-
-        return !isWritten;
-    }
-
-    // Whether the method body writes the parameter: an assignment to it (also in a tuple), a ref or out argument, or a
-    // ref to it that could write it later
-    private static bool IsWritten(IParameterSymbol parameter, Compilation compilation)
-    {
-        foreach (var reference in parameter.ContainingSymbol.DeclaringSyntaxReferences)
-        {
-            var declaration = reference.GetSyntax();
-            var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-            foreach (var node in declaration.DescendantNodes())
-            {
-                var written = node switch
-                {
-                    AssignmentExpressionSyntax assignment => NamesParameter(assignment.Left, parameter, model),
-                    ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.RefKeyword or (int)SyntaxKind.OutKeyword } argument =>
-                        NamesParameter(argument.Expression, parameter, model),
-                    RefExpressionSyntax refExpression => NamesParameter(refExpression.Expression, parameter, model),
-                    _ => false
-                };
-                if (written)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private static bool NamesParameter(ExpressionSyntax target, IParameterSymbol parameter, SemanticModel model)
-    {
-        target = SkipParentheses(target);
-        if (target is TupleExpressionSyntax tuple)
-        {
-            return tuple.Arguments
-                .AsStackEnumerable()
-                .Any((parameter, model), static (argument, state) => NamesParameter(argument.Expression, state.parameter, state.model));
-        }
-
-        return target is IdentifierNameSyntax identifier &&
-               identifier.Identifier.ValueText == parameter.Name &&
-               model.GetSymbol(identifier).IsEqualTo(parameter);
     }
 }
 
