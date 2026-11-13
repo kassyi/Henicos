@@ -30,7 +30,17 @@ const TimeoutMs = 60 * 1000;
  * The CLI's options: Haiku, no session file, and no tools, MCP servers or settings (hooks), so that text quoted from a
  * chat can only shape the answer, never act.
  */
-const CliOptions = ['-p', '--model', 'haiku', '--no-session-persistence', '--tools', '', '--strict-mcp-config', '--setting-sources', ''];
+const CliOptions = [
+  '-p',
+  '--model',
+  'haiku',
+  '--no-session-persistence',
+  '--tools',
+  '',
+  '--strict-mcp-config',
+  '--setting-sources',
+  '',
+];
 /** The waits a summary is made for: a reply, a choice question, a permission prompt (not other notifications). */
 const SummarizedKinds = new Set(['reply', 'question', 'permission']);
 const MaxSummaryLength = 120;
@@ -122,7 +132,9 @@ function findClaude(options = {}) {
   return file === undefined ? null : { file, source: 'extension' };
 }
 
-/** Whether summaries are made: `{ on: true, executable, source }` or `{ on: false, reason: 'disabled' | 'missing' }`. */
+/**
+ * Whether summaries are made: `{ on: true, executable, source }` or `{ on: false, reason: 'disabled' | 'missing' }`.
+ */
 function summaryStatus(options = {}) {
   const env = options.env ?? process.env;
   if (env[SummaryVariable] === '0') {
