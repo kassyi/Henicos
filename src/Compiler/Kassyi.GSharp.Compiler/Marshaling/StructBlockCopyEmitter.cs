@@ -94,9 +94,9 @@ internal static class StructBlockCopyEmitter
     // (a GSharpArray on the device, a reference on the host)
     internal static bool NeedsElementCopy(ITypeSymbol elementType, ITranspilerDialect dialect) =>
         elementType.IsArrayLikeType() ||
-        elementType is INamedTypeSymbol named &&
-        TypeLayoutCalculator.IsUserStruct(named) &&
-        TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical;
+        (elementType is INamedTypeSymbol named &&
+         TypeLayoutCalculator.IsUserStruct(named) &&
+         TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical);
 
     // for (int k = 0; k < <N>; k++) { <copy host[k] and ((<element shadow>*)pField)[k]> }
     internal static void WriteInlineArrayElementCopy(SourceWriter writer, StructAbiMember member, bool toNative,
