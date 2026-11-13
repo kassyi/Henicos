@@ -216,10 +216,14 @@ internal static class NullRepresentation
     {
         const string target = GSharpInternalNames.Lowering.CoalesceTarget;
         var model = context.Query.SemanticModel;
-        var targetType = model.GetTypeSymbol(node.Left);
-        var isArray = targetType != null && targetType.IsArrayLikeType();
-        var valueIsUnderlying = !isArray && targetType != null && model.GetTypeSymbol(node) is { } valueType &&
-                                !valueType.IsEqualTo(targetType) && valueType.IsEqualTo(targetType.UnwrapNullable());
+        // No type, no shape: writing the nullable form for an unresolved type would fail the C++ build far from the cause
+        var targetType = model.GetTypeSymbol(node.Left) ?? throw new InvalidOperationException(
+            $"The type of the ??= target '{node.Left}' did not resolve.");
+        var valueType = model.GetTypeSymbol(node) ?? throw new InvalidOperationException(
+            $"The type of the ??= expression '{node}' did not resolve.");
+        var isArray = targetType.IsArrayLikeType();
+        var valueIsUnderlying = !isArray && !valueType.IsEqualTo(targetType) &&
+                                valueType.IsEqualTo(targetType.UnwrapNullable());
         var nullTest = isArray ? $"{target}.data == nullptr" : $"!{target}.HasValue";
         var valueSuffix = valueIsUnderlying ? ".Value" : "";
 
