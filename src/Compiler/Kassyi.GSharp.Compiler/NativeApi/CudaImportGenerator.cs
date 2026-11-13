@@ -7,10 +7,17 @@ using Models;
 /// <summary>
 /// Roslyn source generator that generates boilerplate for invoking CUDA kernels via [CudaImport].
 /// </summary>
+/// <remarks>
+/// Each class with <c>[CudaImport]</c> methods gets one generated part that repeats the declarations of the class and
+/// of the types that contain it, and implements each partial method from its symbol. A declaration that such a part
+/// cannot complete (<see cref="CudaImportDeclaration.GetProblem"/>, GSH0113) gets nothing.
+/// </remarks>
 [Generator]
 public class CudaImportGenerator : IIncrementalGenerator
 {
     public const string MethodTrackingName = "CudaImportMethod";
+
+    private const string HintNameExtension = ".CudaImport.g.cs";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -27,7 +34,12 @@ public class CudaImportGenerator : IIncrementalGenerator
             .Collect()
             .SelectMany(static (items, _) => GroupByClass(items));
 
-        context.RegisterSourceOutput(classGroups, GenerateCudaImportForClass);
+        // [WHY] A YAML module binding into the same class declares the field of its module; the methods of that
+        // module use it instead of declaring a second one (CS0102)
+        var yamlModuleClasses = NativeApiGenerator.GetSourceFiles(context)
+            .Select(NativeApiGenerator.GetModuleClasses);
+
+        context.RegisterSourceOutput(classGroups.Combine(yamlModuleClasses), GenerateCudaImportForClass);
     }
 
     // One model per containing class, in the order the classes first appear, each with its methods in input order
@@ -38,11 +50,11 @@ public class CudaImportGenerator : IIncrementalGenerator
 
         foreach (var item in items)
         {
-            if (!groups.TryGetValue(item.ClassKey, out var builder))
+            if (!groups.TryGetValue(item.HintName, out var builder))
             {
                 builder = ImmutableArray.CreateBuilder<CudaImportMethodModel>();
-                groups[item.ClassKey] = builder;
-                order.Add(item.ClassKey);
+                groups[item.HintName] = builder;
+                order.Add(item.HintName);
             }
 
             builder.Add(item);
@@ -53,12 +65,11 @@ public class CudaImportGenerator : IIncrementalGenerator
         {
             var builder = groups[key];
             var first = builder[0];
-            var lastDot = key.LastIndexOf('.');
-            var className = lastDot >= 0 ? key[(lastDot + 1)..] : key;
             result.Add(new CudaImportClassModel(
+                key,
                 first.NamespaceName,
-                className,
-                first.ClassHeader,
+                first.TypeDeclarations,
+                first.TopLevelTypeName,
                 builder.ToImmutable().AsEquatableArray()));
         }
 
@@ -70,13 +81,8 @@ public class CudaImportGenerator : IIncrementalGenerator
 
     private static CudaImportMethodModel? TransformMethod(GeneratorAttributeSyntaxContext ctx)
     {
-        if (ctx.TargetSymbol is not IMethodSymbol methodSymbol)
-        {
-            return null;
-        }
-
-        var containingClass = methodSymbol.ContainingType;
-        if (containingClass == null)
+        if (ctx.TargetSymbol is not IMethodSymbol { ContainingType: { } containingType } methodSymbol ||
+            CudaImportDeclaration.GetProblem(methodSymbol) is not null)
         {
             return null;
         }
@@ -95,35 +101,41 @@ public class CudaImportGenerator : IIncrementalGenerator
         ExtractAttributeArguments(attributeData, methodSyntax, methodSymbol.Name,
             out var moduleName, out var entryPoint, out var packContext);
 
-        var plan = CudaImportPlanner.Plan(methodSymbol, ctx.SemanticModel.Compilation);
-        var namespaceName = GetNamespaceName(containingClass);
-        var classHeader = RenderClassHeader(containingClass);
-        var signature = RenderMethodSignature(methodSyntax, methodSymbol);
-        var className = containingClass.Name;
-        var classKey = string.IsNullOrEmpty(namespaceName) ? className : $"{namespaceName}.{className}";
-
         return new CudaImportMethodModel(
-            classKey,
-            namespaceName,
-            classHeader,
-            methodSymbol.Name,
+            GlobalCppNames.GetHintName(containingType, HintNameExtension),
+            containingType.ContainingNamespace.GetCsharpNamespaceName(),
+            CreateTypeDeclarations(containingType),
+            GetTopLevelTypeName(containingType),
             CudaImportPlanner.GetMessageName(methodSymbol),
             moduleName,
             entryPoint,
             packContext,
-            signature,
-            plan);
+            RenderMethodSignature(methodSyntax, methodSymbol),
+            CudaImportPlanner.Plan(methodSymbol, ctx.SemanticModel.Compilation));
     }
 
-    private static string GetNamespaceName(INamedTypeSymbol containingClass) =>
-        containingClass.ContainingNamespace.GetCsharpNamespaceName();
-
-    private static string RenderClassHeader(INamedTypeSymbol containingClass)
+    // partial <keyword> <outer>, ..., unsafe partial <keyword> <type>: the declarations of the containing types,
+    // outermost first. Each part may leave out the accessibility and the other modifiers of the type; 'unsafe' lets the
+    // signature name pointer types whether or not the user's part is unsafe ('ref' must repeat on a ref struct).
+    private static EquatableArray<string> CreateTypeDeclarations(INamedTypeSymbol type)
     {
-        using var classWriter = new SourceWriter();
-        EmitClassDeclaration(classWriter, containingClass);
-        return classWriter.ToString();
+        var declarations = ImmutableArray.CreateBuilder<string>();
+        foreach (var outer in HostClassHeader.CreateOuterDeclarations(type))
+        {
+            declarations.Add(outer);
+        }
+
+        var refModifier = type.IsRefLikeType ? "ref " : string.Empty;
+        var keyword = HostClassHeader.GetKeyword(type);
+        declarations.Add($"unsafe {refModifier}partial {keyword} {type.GetDeclaredTypeName()}");
+        return declarations.ToImmutable().AsEquatableArray();
     }
+
+    // <namespace>.<name> of a class that a YAML binding can also extend (not nested, not generic), keywords not escaped
+    private static string? GetTopLevelTypeName(INamedTypeSymbol containingClass) =>
+        containingClass is { ContainingType: null, TypeParameters.IsEmpty: true }
+            ? containingClass.ContainingNamespace.GetMetadataNamespaceName() + "." + containingClass.Name
+            : null;
 
     private static string RenderMethodSignature(MethodDeclarationSyntax methodSyntax, IMethodSymbol methodSymbol)
     {
@@ -132,43 +144,77 @@ public class CudaImportGenerator : IIncrementalGenerator
         return sigWriter.ToString();
     }
 
-    private static void GenerateCudaImportForClass(SourceProductionContext context, CudaImportClassModel classGroup)
+    private static void GenerateCudaImportForClass(SourceProductionContext context,
+        (CudaImportClassModel Class, EquatableArray<YamlModuleClass> YamlModuleClasses) input)
     {
+        var (classGroup, yamlModuleClasses) = input;
         using var writer = new SourceWriter();
-        EmitFileHeader(writer);
-
+        writer.AppendGeneratedFileHeader();
         EmitNamespace(writer, classGroup.NamespaceName);
+        WriteTypeDeclaration(writer, classGroup, yamlModuleClasses, 0);
+        context.AddSource(classGroup.HintName, writer.ToString());
+    }
 
-        writer.AppendLine(classGroup.ClassHeader);
+    // <declaration> { <the next declaration, or the members of the class> }
+    private static void WriteTypeDeclaration(SourceWriter writer, CudaImportClassModel classGroup,
+        EquatableArray<YamlModuleClass> yamlModuleClasses, int depth)
+    {
+        writer.AppendLine(classGroup.TypeDeclarations[depth]);
         using (writer.Scope())
         {
-            var generatedFatbins = new HashSet<string>();
-
-            foreach (var method in classGroup.Methods)
+            if (depth + 1 < classGroup.TypeDeclarations.Length)
             {
-                if (generatedFatbins.Add(method.ModuleName))
-                {
-                    ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, method.ModuleName);
-                }
+                WriteTypeDeclaration(writer, classGroup, yamlModuleClasses, depth + 1);
             }
-
-            foreach (var method in classGroup.Methods)
+            else
             {
-                EmitMethod(writer, method);
+                WriteMembers(writer, classGroup, yamlModuleClasses);
+            }
+        }
+    }
+
+    // One field per module and class (named by the module, AotModuleNames.GetModuleFieldName), unless a
+    // YAML binding of the class declares it, then the methods
+    private static void WriteMembers(SourceWriter writer, CudaImportClassModel classGroup,
+        EquatableArray<YamlModuleClass> yamlModuleClasses)
+    {
+        var modules = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var method in classGroup.Methods)
+        {
+            if (modules.Add(method.ModuleName) &&
+                !IsDeclaredByYaml(yamlModuleClasses, classGroup.TopLevelTypeName, method.ModuleName))
+            {
+                ModuleKernelLaunchEmitter.EmitModuleCacheField(writer,
+                    AotModuleNames.GetModuleFieldName(method.ModuleName), method.ModuleName);
             }
         }
 
-        context.AddSource($"{classGroup.ClassName}_CudaImport.g.cs", writer.ToString());
+        for (var i = 0; i < classGroup.Methods.Length; i++)
+        {
+            EmitMethod(writer, classGroup.Methods[i], i);
+        }
     }
+
+    // Whether a YAML module binding declares the field of <moduleName> in the class <typeName>
+    private static bool IsDeclaredByYaml(EquatableArray<YamlModuleClass> yamlModuleClasses, string? typeName,
+        string moduleName) =>
+        typeName is not null &&
+        yamlModuleClasses
+            .AsStackEnumerable()
+            .Any(new YamlModuleClass(typeName, moduleName), static (c, key) => c == key);
 
     // A method whose parameters the launcher cannot pass gets a body that throws the GSH0110 message, so the partial
     // method stays implemented and the build shows the diagnostic instead of CS8795
-    private static void EmitMethod(SourceWriter writer, CudaImportMethodModel method)
+    private static void EmitMethod(SourceWriter writer, CudaImportMethodModel method, int index)
     {
+        var moduleField = AotModuleNames.GetModuleFieldName(method.ModuleName);
         var plan = method.Plan;
-        if (method.PackContext && plan.CanLaunch)
+        var contextTypeName = method.PackContext && plan.CanLaunch
+            ? ModuleKernelLaunchEmitter.GetNativeContextTypeName(index)
+            : null;
+        if (contextTypeName is not null)
         {
-            ModuleKernelLaunchEmitter.EmitNativeContextStruct(writer, method.MethodName, plan);
+            ModuleKernelLaunchEmitter.EmitNativeContextStruct(writer, contextTypeName, plan);
         }
 
         writer.AppendLine(method.Signature);
@@ -176,8 +222,8 @@ public class CudaImportGenerator : IIncrementalGenerator
         {
             if (plan.CanLaunch)
             {
-                ModuleKernelLaunchEmitter.EmitLaunchBody(writer, method.ModuleName, method.EntryPoint,
-                    method.MethodName, method.MessageName, plan, method.PackContext);
+                ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleField, method.EntryPoint, method.MessageName,
+                    plan, contextTypeName);
             }
             else
             {
@@ -187,16 +233,6 @@ public class CudaImportGenerator : IIncrementalGenerator
         }
     }
 
-    private static void EmitFileHeader(SourceWriter writer)
-    {
-        writer.AppendGeneratedFileHeader();
-        writer.AppendLine("using System;");
-        writer.AppendLine("using System.Runtime.InteropServices;");
-        writer.AppendLine("using Kassyi.GSharp.Runtime;");
-        writer.AppendLine("using Kassyi.GSharp.Runtime.Interop;");
-        writer.AppendLine();
-    }
-
     private static void EmitNamespace(SourceWriter writer, string namespaceName)
     {
         if (string.IsNullOrEmpty(namespaceName))
@@ -204,55 +240,11 @@ public class CudaImportGenerator : IIncrementalGenerator
             return;
         }
 
-        writer.Append("namespace ");
-        writer.Append(namespaceName);
-        writer.AppendLine(";");
+        writer.AppendLine($"namespace {namespaceName};");
         writer.AppendLine();
     }
 
-    private static void EmitClassDeclaration(SourceWriter writer, INamedTypeSymbol containingClass)
-    {
-        var hasPartial = false;
-        var hasAnyModifier = false;
-
-        foreach (var reference in containingClass.DeclaringSyntaxReferences)
-        {
-            if (reference.GetSyntax() is not TypeDeclarationSyntax typeDecl)
-            {
-                continue;
-            }
-
-            foreach (var modifier in typeDecl.Modifiers)
-            {
-                if (modifier.IsKind(SyntaxKind.PartialKeyword))
-                {
-                    hasPartial = true;
-                }
-
-                if (hasAnyModifier)
-                {
-                    writer.Append(' ');
-                }
-
-                writer.Append(modifier.Text);
-                hasAnyModifier = true;
-            }
-
-            break;
-        }
-
-        if (!hasAnyModifier)
-        {
-            writer.Append("public partial");
-        }
-        else if (!hasPartial)
-        {
-            writer.Append(" partial");
-        }
-
-        writer.Append($" class {containingClass.Name}");
-    }
-
+    // <modifiers> void <name>(<modifiers> <type> <name>, ...), names escaped and types from global::
     private static void EmitMethodSignature(SourceWriter writer, MethodDeclarationSyntax methodSyntax,
         IMethodSymbol methodSymbol)
     {
@@ -262,27 +254,27 @@ public class CudaImportGenerator : IIncrementalGenerator
             writer.Append(' ');
         }
 
-        writer.Append($"void {methodSymbol.Name}(");
-        for (var i = 0; i < methodSymbol.Parameters.Length; i++)
+        writer.Append("void ");
+        writer.AppendCsharpIdentifier(methodSymbol.Name);
+        using (writer.Parentheses())
         {
-            var param = methodSymbol.Parameters[i];
-
-            // [WHY] The implementation repeats the modifiers of the declaration ('params', 'scoped', 'this', the ref
-            // kind); a partial method whose two parts differ in them does not compile (CS0758, CS0759, CS8988)
-            foreach (var modifier in methodSyntax.ParameterList.Parameters[i].Modifiers)
+            for (var i = 0; i < methodSymbol.Parameters.Length; i++)
             {
-                writer.Append($"{modifier.Text} ");
-            }
+                var param = methodSymbol.Parameters[i];
+                writer.AppendIf(i > 0, ", ");
 
-            writer.AppendCsharpTypeName(param.Type);
-            writer.Append($" {param.Name}");
-            if (i < methodSymbol.Parameters.Length - 1)
-            {
-                writer.Append(", ");
+                // [WHY] The implementation repeats the modifiers of the declaration ('params', 'scoped', 'this', the
+                // ref kind); a partial method whose two parts differ in them does not compile (CS0758, CS0759, CS8988)
+                foreach (var modifier in methodSyntax.ParameterList.Parameters[i].Modifiers)
+                {
+                    writer.Append($"{modifier.Text} ");
+                }
+
+                writer.AppendCsharpTypeName(param.Type);
+                writer.Append(' ');
+                writer.AppendCsharpIdentifier(param.Name);
             }
         }
-
-        writer.Append(")");
     }
 
     private static void ExtractAttributeArguments(

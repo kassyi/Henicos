@@ -18,17 +18,39 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
 
     public const string TrackingName = "NativeApiFiles";
 
-    public void Initialize(IncrementalGeneratorInitializationContext context)
-    {
-        var files = context.AdditionalTextsProvider
+    public void Initialize(IncrementalGeneratorInitializationContext context) =>
+        context.RegisterSourceOutput(GetSourceFiles(context).WithTrackingName(TrackingName), Emit);
+
+    /// <summary>
+    /// The native API definition files of the compilation (<c>GSharpApi="true"</c>), in the build's order.
+    /// </summary>
+    internal static IncrementalValueProvider<ImmutableArray<NativeApiSourceFile>> GetSourceFiles(
+        IncrementalGeneratorInitializationContext context) =>
+        context.AdditionalTextsProvider
             .Combine(context.AnalyzerConfigOptionsProvider)
             .Where(static pair => IsGSharpApi(pair.Right.GetOptions(pair.Left)))
             .Select(static (pair, cancellationToken) =>
                 new NativeApiSourceFile(pair.Left.Path, pair.Left.GetText(cancellationToken)?.ToString() ?? string.Empty))
-            .Collect()
-            .WithTrackingName(TrackingName);
+            .Collect();
 
-        context.RegisterSourceOutput(files, Emit);
+    /// <summary>
+    /// The classes that the module bindings of <paramref name="files"/> extend, each with the module whose field the
+    /// binding declares, for the <c>[CudaImport]</c> methods of the same class and module.
+    /// </summary>
+    internal static EquatableArray<YamlModuleClass> GetModuleClasses(ImmutableArray<NativeApiSourceFile> files,
+        CancellationToken cancellationToken)
+    {
+        var classes = ImmutableArray.CreateBuilder<YamlModuleClass>();
+        foreach (var result in ReadDefinitions(files, cancellationToken))
+        {
+            if (result.Definition is { BindingKind: NativeApiBindingKind.Module } definition)
+            {
+                classes.Add(new YamlModuleClass($"{definition.Namespace}.{definition.ClassName}",
+                    definition.ModuleName ?? string.Empty));
+            }
+        }
+
+        return classes.ToImmutable().AsEquatableArray();
     }
 
     private static bool IsGSharpApi(AnalyzerConfigOptions options) =>
@@ -38,38 +60,19 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
     private static void Emit(SourceProductionContext context, ImmutableArray<NativeApiSourceFile> files)
     {
         var resolverDefinitions = ImmutableArray.CreateBuilder<NativeApiDefinition>();
-        var emittedClasses = new HashSet<string>(StringComparer.Ordinal);
         var resolvedLibraries = new HashSet<string>(StringComparer.Ordinal);
-
-        foreach (var file in files)
+        foreach (var result in ReadDefinitions(files, context.CancellationToken))
         {
-            context.CancellationToken.ThrowIfCancellationRequested();
-
-            if (!NativeApiYamlReader.TryRead(file.Text, out var definition, out var error))
+            if (result.Definition is not { } definition)
             {
-                Report(context, file, error);
-                continue;
-            }
-
-            if (definition.BindingKind == NativeApiBindingKind.Intrinsic)
-            {
-                Report(context, file, new NativeApiReadError(NativeApiReadErrorKind.Schema, 1,
-                    "Either 'libraryName' (host library) or 'moduleName' (kernel module) must be specified."));
-                continue;
-            }
-
-            var qualifiedName = $"{definition.Namespace}.{definition.ClassName}";
-            if (!emittedClasses.Add(qualifiedName))
-            {
-                Report(context, file, new NativeApiReadError(NativeApiReadErrorKind.Schema, definition.ClassNameLine,
-                    $"Class '{qualifiedName}' is already defined by another native API definition."));
+                Report(context, result.File, result.Error ?? throw new InvalidOperationException("No definition."));
                 continue;
             }
 
             var source = definition.BindingKind == NativeApiBindingKind.Library
                 ? NativeBindingEmitter.EmitLibraryBindings(definition)
                 : NativeBindingEmitter.EmitModuleBindings(definition);
-            context.AddSource($"{qualifiedName}.NativeApi.g.cs", source);
+            context.AddSource($"{definition.Namespace}.{definition.ClassName}.NativeApi.g.cs", source);
 
             if (NativeBindingEmitter.RequiresResolver(definition) &&
                 resolvedLibraries.Add(definition.LibraryName ?? string.Empty))
@@ -85,6 +88,45 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
         }
     }
 
+    // Each file read: the definition to emit, or the error that keeps it out (a YAML or schema error, an intrinsic
+    // definition, a class that an earlier file already defines)
+    private static ImmutableArray<NativeApiReadResult> ReadDefinitions(ImmutableArray<NativeApiSourceFile> files,
+        CancellationToken cancellationToken)
+    {
+        var results = ImmutableArray.CreateBuilder<NativeApiReadResult>(files.Length);
+        var emittedClasses = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var file in files)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            results.Add(Read(file, emittedClasses));
+        }
+
+        return results.MoveToImmutable();
+    }
+
+    private static NativeApiReadResult Read(NativeApiSourceFile file, HashSet<string> emittedClasses)
+    {
+        if (!NativeApiYamlReader.TryRead(file.Text, out var definition, out var error))
+        {
+            return new NativeApiReadResult(file, null, error);
+        }
+
+        if (definition.BindingKind == NativeApiBindingKind.Intrinsic)
+        {
+            return new NativeApiReadResult(file, null, new NativeApiReadError(NativeApiReadErrorKind.Schema, 1,
+                "Either 'libraryName' (host library) or 'moduleName' (kernel module) must be specified."));
+        }
+
+        var qualifiedName = $"{definition.Namespace}.{definition.ClassName}";
+        if (emittedClasses.Add(qualifiedName))
+        {
+            return new NativeApiReadResult(file, definition, null);
+        }
+
+        return new NativeApiReadResult(file, null, new NativeApiReadError(NativeApiReadErrorKind.Schema,
+            definition.ClassNameLine, $"Class '{qualifiedName}' is already defined by another native API definition."));
+    }
+
     private static void Report(SourceProductionContext context, NativeApiSourceFile file, NativeApiReadError error)
     {
         var descriptor = error.Kind == NativeApiReadErrorKind.Syntax
@@ -96,5 +138,9 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
         context.ReportDiagnostic(Diagnostic.Create(descriptor, location, Path.GetFileName(file.Path), error.Message));
     }
 
-    private readonly record struct NativeApiSourceFile(string Path, string Text);
+    // A file and its definition, or the error that keeps it from being emitted
+    private readonly record struct NativeApiReadResult(
+        NativeApiSourceFile File,
+        NativeApiDefinition? Definition,
+        NativeApiReadError? Error);
 }
