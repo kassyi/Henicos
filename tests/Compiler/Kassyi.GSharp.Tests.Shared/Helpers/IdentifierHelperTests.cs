@@ -5,41 +5,46 @@ namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 public class IdentifierHelperTests
 {
-    // The artifact files keep the name that the native build and the launchers already use: only '.' is replaced
+    // The artifact files escape the module name as the module context class does, so names that differ only in
+    // punctuation (My.Lib, My_Lib) never share a native library or fatbin
     [Theory]
-    [InlineData("MyNamespace.MyClass", "Kassyi.GSharp.Kernels_MyNamespace_MyClass")]
-    [InlineData("System.Collections.Generic", "Kassyi.GSharp.Kernels_System_Collections_Generic")]
+    [InlineData("MyNamespace.MyClass", "Kassyi.GSharp.Kernels_MyNamespace_x00002eMyClass")]
+    [InlineData("My.Lib", "Kassyi.GSharp.Kernels_My_x00002eLib")]
+    [InlineData("My_Lib", "Kassyi.GSharp.Kernels_My_uLib")]
     [InlineData("NoDotsHere", "Kassyi.GSharp.Kernels_NoDotsHere")]
-    [InlineData("my-lib", "Kassyi.GSharp.Kernels_my-lib")]
+    [InlineData("my-lib", "Kassyi.GSharp.Kernels_my_x00002dlib")]
     [InlineData("", "Kassyi.GSharp.Kernels_")]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void GetArtifactFileStem_ModuleName_ReplacesOnlyDots(string input, string expected) =>
+    public void GetArtifactFileStem_ModuleName_EscapesInjectively(string input, string expected) =>
         Assert.Equal(expected, AotModuleNames.GetArtifactFileStem(input));
 
-    // The module context name is a C# identifier for any assembly name; a name that was one already after replacing '.'
-    // (letters of any script included) keeps its earlier spelling
+    // The module context name is a C# identifier for any assembly name, and two names give two identifiers: ASCII
+    // letters and digits stay, '_' becomes _u and any other character _x and six hex digits of its code point
     [Theory]
-    [InlineData("Kassyi.GSharp.Tests.Cuda", "GSharpModuleContext_Kassyi_GSharp_Tests_Cuda")]
-    [InlineData("my-lib", "GSharpModuleContext_my_lib")]
+    [InlineData("Kassyi.GSharp.Tests.Cuda", "GSharpModuleContext_Kassyi_x00002eGSharp_x00002eTests_x00002eCuda")]
+    [InlineData("my-lib", "GSharpModuleContext_my_x00002dlib")]
     [InlineData("1lib", "GSharpModuleContext_1lib")]
-    [InlineData("a b+c", "GSharpModuleContext_a_b_c")]
-    [InlineData("a{b}\"c", "GSharpModuleContext_a_b__c")]
-    [InlineData("\u00e9t\u00e9", "GSharpModuleContext_\u00e9t\u00e9")]
-    [InlineData("\u65e5\u672c", "GSharpModuleContext_\u65e5\u672c")]
-    [InlineData("\u4e2d\u56fd", "GSharpModuleContext_\u4e2d\u56fd")]
+    [InlineData("a b+c", "GSharpModuleContext_a_x000020b_x00002bc")]
+    [InlineData("a{b}\"c", "GSharpModuleContext_a_x00007bb_x00007d_x000022c")]
+    [InlineData("\u00e9t\u00e9", "GSharpModuleContext__x0000e9t_x0000e9")]
+    [InlineData("\u65e5\u672c", "GSharpModuleContext__x0065e5_x00672c")]
+    [InlineData("\u4e2d\u56fd", "GSharpModuleContext__x004e2d_x0056fd")]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void GetModuleContextName_ModuleName_KeepsOnlyIdentifierCharacters(string input, string expected) =>
+    public void GetModuleContextName_ModuleName_EscapesInjectively(string input, string expected) =>
         Assert.Equal(expected, AotModuleNames.GetModuleContextName(input));
 
-    [Fact]
+    // Names that differ only in characters an identifier cannot hold give distinct module context classes (each of
+    // them was '_' when every such character was replaced by '_')
+    [Theory]
+    [InlineData("a-b", "GSharpModuleContext_a_x00002db")]
+    [InlineData("a_b", "GSharpModuleContext_a_ub")]
+    [InlineData("a.b", "GSharpModuleContext_a_x00002eb")]
+    [InlineData("a{b}", "GSharpModuleContext_a_x00007bb_x00007d")]
+    [InlineData("a_b_", "GSharpModuleContext_a_ub_u")]
     [Category(TestCategory.Unit)]
-    [Scenario(TestScenario.HappyPath)]
-    public void ToIdentifierPart_IdentifierCharactersOnly_ReturnsTheInput()
-    {
-        const string Name = "Already_An_Identifier9";
-
-        Assert.Same(Name, AotModuleNames.ToIdentifierPart(Name));
-    }
+    [Scenario(TestScenario.Boundary)]
+    public void GetModuleContextName_NamesDifferingInPunctuation_StayDistinct(string input, string expected) =>
+        Assert.Equal(expected, AotModuleNames.GetModuleContextName(input));
 }
