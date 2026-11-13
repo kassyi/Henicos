@@ -158,10 +158,16 @@ global::System.Single __gsharp_csharp_arg_1 = default;
 global::System.Int32[] __gsharp_csharp_arg_2 = arrayVal;
 global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct __gsharp_csharp_arg_3 = structRef;
 global::System.UInt32 __gsharp_csharp_arg_4 = constantVal;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.TestCases.WrapperOptimizationKernels.ComplexSignatureKernel(ref __gsharp_csharp_arg_0, out __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, ref __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
+}
+finally
+{
 scalarRef = __gsharp_csharp_arg_0;
 scalarOut = __gsharp_csharp_arg_1;
 structRef = __gsharp_csharp_arg_3;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())

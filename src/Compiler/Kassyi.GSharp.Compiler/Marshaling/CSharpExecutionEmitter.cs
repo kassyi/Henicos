@@ -17,7 +17,8 @@ internal static class CSharpExecutionEmitter
     private const string LaunchDimensions = "gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ";
 
     // if (GpuExecution.Current == KernelExecution.CSharp)
-    // { <copies>; <pins> { CSharpKernelRunner.Run(<launch>, <call>); } <copies back>; return [__gsharp_auto_result]; }
+    // { <copies>; [try {] <pins> { CSharpKernelRunner.Run(<launch>, <call>); } [} finally { <copies back> }]
+    //   return [__gsharp_auto_result]; }
     // or, when the kernel cannot run as C#:
     // { throw CSharpKernelRunner.CannotRun("<kernel>", "<reason>"); }
     /// <summary>Writes the C# execution branch of <paramref name="plan"/>.</summary>
@@ -35,8 +36,27 @@ internal static class CSharpExecutionEmitter
             }
 
             WriteCopies(writer, plan);
-            WritePinnedRun(writer, plan);
-            WriteCopiesBack(writer, plan);
+            if (plan.CopiesBack)
+            {
+                // [WHY] In a finally, so that the writes the threads made before one of them threw reach the caller's
+                // ref and out variables, as the native launcher, which passes pointers to them, leaves them
+                writer.AppendLine("try");
+                using (writer.Scope())
+                {
+                    WritePinnedRun(writer, plan);
+                }
+
+                writer.AppendLine("finally");
+                using (writer.Scope())
+                {
+                    WriteCopiesBack(writer, plan);
+                }
+            }
+            else
+            {
+                WritePinnedRun(writer, plan);
+            }
+
             writer.AppendLine(plan.ReturnsValue ? $"return {AutoResult};" : "return;");
         }
     }

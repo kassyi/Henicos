@@ -34,7 +34,11 @@ public static class CSharpKernelRunner
     /// <param name="blockDimZ">The number of threads per block in z.</param>
     /// <param name="thread">The call of the kernel, given the linear index of the GPU thread.</param>
     /// <exception cref="ArgumentOutOfRangeException">A dimension is 0.</exception>
-    /// <remarks>The first exception of a GPU thread ends the run and is rethrown with its stack trace.</remarks>
+    /// <remarks>
+    /// A GPU thread that throws ends there and the other threads run to their end, as a failing thread ends on the GPU;
+    /// the run then rethrows the first exception in the thread order with its stack trace. A
+    /// <see cref="CSharpExecutionUnsupportedException"/> ends the run at once: no thread of it has a C# value.
+    /// </remarks>
     public static void Run(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ,
         Action<long> thread)
     {
@@ -98,26 +102,38 @@ public static class CSharpKernelRunner
     private static void RunThreads(in LaunchGeometry shape, Func<CSharpLaunchDimensions, int[]>? order,
         Action<long> thread)
     {
+        ExceptionDispatchInfo? first = null;
         if (order is null)
         {
             for (long id = 0; id < shape.ThreadCount; id++)
             {
-                RunThread(shape, id, thread);
+                RunThread(shape, id, thread, ref first);
             }
-
-            return;
         }
-
-        foreach (var id in GetOrder(shape, order))
+        else
         {
-            RunThread(shape, id, thread);
+            foreach (var id in GetOrder(shape, order))
+            {
+                RunThread(shape, id, thread, ref first);
+            }
         }
+
+        first?.Throw();
     }
 
-    private static void RunThread(in LaunchGeometry shape, long id, Action<long> thread)
+    // Runs one GPU thread; its exception ends only this thread and is kept when it is the first one
+    private static void RunThread(in LaunchGeometry shape, long id, Action<long> thread,
+        ref ExceptionDispatchInfo? first)
     {
         ManagedGpuContext.BeginCSharpThread(shape.ContextOf(id));
-        thread(id);
+        try
+        {
+            thread(id);
+        }
+        catch (Exception ex) when (ex is not CSharpExecutionUnsupportedException)
+        {
+            first ??= ExceptionDispatchInfo.Capture(ex);
+        }
     }
 
     // The ids of a custom order, checked to be a permutation, so that an order never skips or repeats a thread

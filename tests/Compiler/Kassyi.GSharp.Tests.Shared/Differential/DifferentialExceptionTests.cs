@@ -50,15 +50,7 @@ public class DifferentialExceptionTests
                     .In("idx", indices)
                     .Out<int>("r", shape.Rows, OutputPolicy.Exact);
             },
-            Launch = static (b, shape) =>
-            {
-                var idx = b.Get<int>("idx");
-                var r = b.Get<int>("r");
-                for (int t = 0; t < shape.Rows; t++)
-                {
-                    r[t] = idx[idx[t]];
-                }
-            },
+            Launch = static (b, shape) => DoubleIndexOnHost(b, shape, ThreadStop.FailingThread),
             Oracle = static (b, s) => HarnessProbeKernels.LaunchDoubleIndexKernel(
                 b.Get<int>("idx"),
                 b.Get<int>("r"),
@@ -114,6 +106,142 @@ public class DifferentialExceptionTests
         var excusedReport = DifferentialRunner.Evaluate(silentNativeCase, [1], managedThrowsNativeSilent, exceptionEntry);
         Assert.False(excusedReport.HasFailures, excusedReport.ToString());
     }
+
+    // A seed whose oracle throws compares the writes too: thread 0 of four reads idx[-1], and threads 1 to 3 write
+    // r[t] = t. A path that stops every thread at the first failure, or lets the failing thread write on, differs in r
+    [Theory]
+    [InlineData(nameof(ThreadStop.FailingThread), false, false)]
+    [InlineData(nameof(ThreadStop.WholeLaunch), false, true)]
+    [InlineData(nameof(ThreadStop.Never), false, true)]
+    [InlineData(nameof(ThreadStop.FailingThread), true, false)]
+    [InlineData(nameof(ThreadStop.WholeLaunch), true, true)]
+    [InlineData(nameof(ThreadStop.Never), true, true)]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ExceptionSeed_PathStopsOtherThanTheFailingThread_ReportsTheWrites(
+        string stop,
+        bool explicitPolicy,
+        bool differs
+    )
+    {
+        var threadStop = Enum.Parse<ThreadStop>(stop);
+        var testCase = new DifferentialCase("HarnessTests.ThreadStopKernel")
+        {
+            Shape = LaunchShapes.Linear(4, blockX: 4),
+            Seeds = [1],
+            Inputs = static (_, shape) => new DiffBuffers()
+                .In("idx", new[] { -1, 1, 2, 3 })
+                .Out<int>("r", shape.Rows, OutputPolicy.Exact),
+            Launch = (b, shape) => DoubleIndexOnHost(b, shape, threadStop),
+            Oracle = static (b, s) => HarnessProbeKernels.LaunchDoubleIndexKernel(
+                b.Get<int>("idx"),
+                b.Get<int>("r"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
+        };
+        // mutant: DifferentialRunner.RunOneShape skips RunOracleExpecting for an explicit policy (no comparison)
+        testCase = explicitPolicy
+            ? testCase with
+            {
+                ExceptionPolicy = ExceptionPolicy.For<IndexOutOfRangeException>(DiffPath.Managed | DiffPath.Native),
+            }
+            : testCase with
+            {
+                OracleExceptions = OracleExceptionMode.MatchOracle,
+                ExceptionPaths = DiffPath.Managed | DiffPath.Native,
+            };
+        DiffPathRunner[] paths =
+        [
+            new(DiffPath.Managed, DiffPaths.RunDirect),
+            new(DiffPath.Native, DiffPaths.RunDirect),
+        ];
+
+        var report = DifferentialRunner.Evaluate(testCase, [1], paths, NoEntries);
+
+        // mutant: DifferentialRunner.RunOracle sets afterException = null for MatchOracle (the writes are not compared)
+        Assert.Equal(differs, report.HasFailures);
+        Assert.DoesNotContain(report.Mismatches, static m => m.ColumnName == KnownDivergence.ExceptionColumn);
+        Assert.Equal(differs, report.Mismatches.Any(static m => m.ColumnName == "r"));
+    }
+
+    // When the oracle throws, its outputs must still not depend on the thread order: every thread writes r[0] and
+    // thread 0 throws, so r[0] is the value of the thread that ran last (a race on the GPU)
+    // mutant: DifferentialRunner.RunOracleOrders skips CheckOrderIndependence when the oracle throws
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ExceptionSeed_OutputDependsOnTheThreadOrder_ReportsHarnessError()
+    {
+        var testCase = ThrowingProbeCase(
+            "HarnessTests.RacingWriteThenThrowKernel",
+            [-1, 1, 2, 3],
+            2,
+            static (b, s) => HarnessProbeKernels.LaunchRacingWriteThenThrowKernel(
+                b.Get<int>("idx"),
+                b.Get<int>("r"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            )
+        );
+
+        var ex = Assert.Throws<DifferentialHarnessException>(() =>
+            DifferentialRunner.Evaluate(testCase, [1], NativeOnly, NoEntries));
+
+        Assert.Contains("kernel output depends on thread order", ex.Message);
+    }
+
+    // The first exception of the oracle must not depend on the thread order: thread 0 throws
+    // IndexOutOfRangeException, thread 3 DivideByZeroException
+    // mutant: DifferentialRunner.RunOracleOrders compares only whether each order threw, not the exception types
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ExceptionSeed_ExceptionTypeDependsOnTheThreadOrder_ReportsHarnessError()
+    {
+        var testCase = ThrowingProbeCase(
+            "HarnessTests.TwoExceptionTypesKernel",
+            [-1, 1, 2, 0],
+            4,
+            static (b, s) => HarnessProbeKernels.LaunchTwoExceptionTypesKernel(
+                b.Get<int>("idx"),
+                b.Get<int>("r"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            )
+        );
+
+        var ex = Assert.Throws<DifferentialHarnessException>(() =>
+            DifferentialRunner.Evaluate(testCase, [1], NativeOnly, NoEntries));
+
+        Assert.Contains("oracle exception depends on thread order", ex.Message);
+        Assert.Contains(nameof(IndexOutOfRangeException), ex.Message);
+        Assert.Contains(nameof(DivideByZeroException), ex.Message);
+    }
+
+    // A MatchOracle case of four threads whose oracle is a probe kernel; the launch is never reached, since the
+    // oracle's checks fail first
+    private static DifferentialCase ThrowingProbeCase(
+        string name,
+        int[] idx,
+        int outputs,
+        Action<DiffBuffers, LaunchShape> oracle
+    ) =>
+        new(name)
+        {
+            Shape = LaunchShapes.Linear(4, blockX: 4),
+            Seeds = [1],
+            OracleExceptions = OracleExceptionMode.MatchOracle,
+            ExceptionPaths = DiffPath.Native,
+            Inputs = (_, _) => new DiffBuffers()
+                .In("idx", (int[])idx.Clone())
+                .Out<int>("r", outputs, OutputPolicy.Exact),
+            Launch = static (_, _) => throw new InvalidOperationException("The launch is not reached."),
+            Oracle = oracle,
+        };
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
@@ -251,6 +379,51 @@ public class DifferentialExceptionTests
         var mismatch = Assert.Single(mismatchReport.Mismatches);
         var nativeCell = Assert.Single(mismatch.Paths.Where(static p => p.Path == DiffPath.Native));
         Assert.Contains("skipped (#718 (x86 idiv terminates process))", nativeCell.Value);
+    }
+
+    // How a host launch of the double-index kernel stops after a thread fails
+    public enum ThreadStop
+    {
+        // Only the failing thread, as on the GPU
+        FailingThread,
+
+        // Every thread from the failing one on
+        WholeLaunch,
+
+        // None: the failing thread writes on
+        Never,
+    }
+
+    // r[t] = idx[idx[t]] on the host for each thread, stopping as stop says; throws the first failure at the end
+    private static void DoubleIndexOnHost(DiffBuffers b, LaunchShape shape, ThreadStop stop)
+    {
+        var idx = b.Get<int>("idx");
+        var r = b.Get<int>("r");
+        Exception? first = null;
+        for (int t = 0; t < shape.Rows; t++)
+        {
+            if ((uint)idx[t] < (uint)idx.Length)
+            {
+                r[t] = idx[idx[t]];
+                continue;
+            }
+
+            first ??= new IndexOutOfRangeException("Index was outside the bounds of the array.");
+            if (stop == ThreadStop.WholeLaunch)
+            {
+                break;
+            }
+
+            if (stop == ThreadStop.Never)
+            {
+                r[t] = 99;
+            }
+        }
+
+        if (first is not null)
+        {
+            throw first;
+        }
     }
 
     [Fact]
