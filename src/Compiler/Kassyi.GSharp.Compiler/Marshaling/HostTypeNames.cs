@@ -28,4 +28,8 @@ internal static class HostTypeNames
     public const string Span = "global::System.Span";
     public const string ReadOnlySpan = "global::System.ReadOnlySpan";
     public const string ModuleKernelArguments = "global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments";
+    public const string Lazy = "global::System.Lazy";
+    public const string File = "global::System.IO.File";
+    public const string Path = "global::System.IO.Path";
+    public const string AppContext = "global::System.AppContext";
 }

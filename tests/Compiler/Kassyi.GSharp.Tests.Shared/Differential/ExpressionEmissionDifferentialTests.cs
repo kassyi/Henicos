@@ -45,8 +45,7 @@ public sealed class ExpressionEmissionDifferentialTests
         Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchSwitchArmConversionKernel(
             b.Get<int>("a"), b.Get<long>("dst"), b.Get<float>("fdst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => ExpressionEmissionDifferentialKernels.SwitchArmConversionKernel(
-            b.Get<int>("a"), b.Get<long>("dst"), b.Get<float>("fdst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_floatingSwitch = new(
@@ -61,8 +60,7 @@ public sealed class ExpressionEmissionDifferentialTests
         Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchFloatingSwitchKernel(
             b.Get<double>("d"), b.Get<float>("f"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => ExpressionEmissionDifferentialKernels.FloatingSwitchKernel(
-            b.Get<double>("d"), b.Get<float>("f"), b.Get<int>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullableSwitch = new(
@@ -77,8 +75,7 @@ public sealed class ExpressionEmissionDifferentialTests
         Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchNullableSwitchKernel(
             b.Get<int>("a"), b.Get<double>("d"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => ExpressionEmissionDifferentialKernels.NullableSwitchKernel(
-            b.Get<int>("a"), b.Get<double>("d"), b.Get<int>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullForgivingAndArrayCoalesce = new(
@@ -92,8 +89,7 @@ public sealed class ExpressionEmissionDifferentialTests
         Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchNullForgivingAndArrayCoalesceKernel(
             b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => ExpressionEmissionDifferentialKernels.NullForgivingAndArrayCoalesceKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_implicitArgumentConversion = new(
@@ -108,8 +104,7 @@ public sealed class ExpressionEmissionDifferentialTests
         Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchImplicitArgumentConversionKernel(
             b.Get<int>("a"), b.Get<long>("la"), b.Get<float>("dst"), b.Get<double>("ddst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => ExpressionEmissionDifferentialKernels.ImplicitArgumentConversionKernel(
-            b.Get<int>("a"), b.Get<long>("la"), b.Get<float>("dst"), b.Get<double>("ddst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nestedMemberInitializer = new(
@@ -122,8 +117,7 @@ public sealed class ExpressionEmissionDifferentialTests
         Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchNestedMemberInitializerKernel(
             b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => ExpressionEmissionDifferentialKernels.NestedMemberInitializerKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

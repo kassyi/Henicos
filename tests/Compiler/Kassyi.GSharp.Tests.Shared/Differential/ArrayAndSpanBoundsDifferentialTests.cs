@@ -40,10 +40,7 @@ public class ArrayAndSpanBoundsDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.ArrayAndSpanBoundaryEdgesKernel(
-            b.Get<int>("src"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_arrayIndexBounds = new(
@@ -99,12 +96,7 @@ public class ArrayAndSpanBoundsDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel(
-            b.Get<int>("src"),
-            b.Get<int>("readIndices"),
-            b.Get<int>("writeIndices"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_spanCanaryIndexBounds = new(
@@ -153,13 +145,7 @@ public class ArrayAndSpanBoundsDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_spanSliceStart = new(
@@ -202,13 +188,7 @@ public class ArrayAndSpanBoundsDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.SpanSliceStartKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("starts"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_spanSliceStartCount = new(
@@ -282,14 +262,7 @@ public class ArrayAndSpanBoundsDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.SpanSliceStartCountKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("starts"),
-            b.Get<int>("counts"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

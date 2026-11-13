@@ -92,11 +92,6 @@ public static partial class Example
     [CudaImport("custom_kernels.ptx", EntryPoint = "custom_add_kernel", PackContext = true)]
     public static partial void CustomAdd(float[] a, float[] b, float[] c, int n);
 
-    public static partial void CustomAdd(float[] a, float[] b, float[] c, int n)
-    {
-        // Generated or stub implementation for inspection
-    }
-
     public static void Run()
     {
         var method = typeof(Example).GetMethod(nameof(CustomAdd));
@@ -111,7 +106,7 @@ public static partial class Example
 
 ## Remarks
 
-Applied to C# `partial` or `extern` method declarations that are implemented in external CUDA source, PTX, or Fatbin files. When `EntryPoint` is omitted or empty, the source generator resolves the target symbol using the C# method name.
+Applied to a `partial void` method declaration without a body, in `partial` types that are not file-local, for a kernel implemented in an external CUDA source, PTX, or Fatbin file. G# generates the body, which loads the module and launches the kernel; the generated part repeats the declaration, so the method may be an instance or static method of a nested, generic, struct or record type, and its parameters may be named with keywords (`@in`). An `extern` or generic method, a method that returns a value, a method whose body is already written, and a method of a type that is not `partial` or is file-local are reported as [GSH0113](../diagnostics/GSH0113.md), and nothing is generated for them. When `EntryPoint` is omitted or empty, the source generator resolves the target symbol using the C# method name.
 
 Parameters named `gridDimX/Y/Z`, `blockDimX/Y/Z`, `sharedMemBytes` and `stream` configure the launch and are not passed to the kernel. A `sharedMemBytes` above what the kernel currently allows (48 KB minus its static shared memory) opts the kernel in to the device maximum, and a request whose static plus dynamic shared memory is above the device limit throws `ArgumentOutOfRangeException` before the launch, as for a `[GpuKernel]` launch (see [SharedMemory: Size limit per block](../memory/SharedMemory.md#size-limit-per-block)).
 
@@ -132,6 +127,11 @@ Any other parameter is reported as [GSH0110](../diagnostics/GSH0110.md), and the
 a host address, a struct with `LayoutKind.Auto` (a tuple, `DateTime`, or a struct that holds one) may have its fields
 reordered by the runtime, a ref struct cannot leave the launcher's stack, `Nullable<T>` has no counterpart in a kernel,
 a pointer or an array cannot be passed by `ref`, `out` or `in`, and jagged arrays are not supported yet.
+
+A YAML native API definition with `moduleName` may name the class of `[CudaImport]` methods as its `className`: the
+launchers of both kinds load a module through one field per module and class, so the YAML methods and the imported
+methods of the same module share it. The YAML binding declares the class `public static partial`, so the class of
+the `[CudaImport]` methods must be declared `public static partial` as well (any other accessibility gives CS0262).
 
 ## See also
 

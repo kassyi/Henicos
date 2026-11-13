@@ -110,12 +110,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.NarrowCompoundAndStepMatrixKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<int>("sh"),
-            b.Get<int>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_narrowEnumAndSignedEnum = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumMatrixKernel)}")
@@ -132,11 +127,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumMatrixKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<int>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_mixedSignDivRem = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.MixedSignDivRemMatrixKernel)}")
@@ -164,13 +155,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.MixedSignDivRemMatrixKernel(
-            b.Get<long>("l"),
-            b.Get<int>("iNz"),
-            b.Get<uint>("uNz"),
-            b.Get<long>("lNz"),
-            b.Get<long>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_bitOpsReturnSign = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.BitOpsReturnSignMatrixKernel)}")
@@ -192,11 +177,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.BitOpsReturnSignMatrixKernel(
-            b.Get<uint>("u"),
-            b.Get<ulong>("ul"),
-            b.Get<int>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_targetEvaluationOrder = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.TargetEvaluationOrderMatrixKernel)}")
@@ -211,10 +192,7 @@ public class NarrowIntegerDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => NarrowIntegerDifferentialKernels.TargetEvaluationOrderMatrixKernel(
-            b.Get<int>("a"),
-            b.Get<int>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

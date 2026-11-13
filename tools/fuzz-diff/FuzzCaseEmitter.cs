@@ -70,6 +70,12 @@ internal static class FuzzCaseEmitter
         string effectiveOracleName = oracleMethodName
             ?? (split ? FuzzSplitOracle.OracleName(kernelMethodName) : kernelMethodName);
         string shapeExpression = split ? FuzzSplitOracle.LaunchShapeExpression : "LaunchShapes.PartialWarp()";
+        // The oracle runs as C# under the runner's thread orders: a kernel through its launcher, the oracle twin of a
+        // split kernel (a plain method without a launcher) once per thread
+        string arguments = "b.Get<int>(\"inA\"), b.Get<int>(\"inB\"), b.Get<int>(\"inC\"), b.Get<ulong>(\"checksum\")";
+        string oracle = split && oracleMethodName is null
+            ? $"SequentialOracle.RunEachThread(s, () => {kernelClassName}.{effectiveOracleName}({arguments}))"
+            : $"{kernelClassName}.Launch{effectiveOracleName}({arguments}, gridDimX: s.GridX, blockDimX: s.BlockX)";
         string seedsLine = inputSeed is { } s
             ? string.Create(CultureInfo.InvariantCulture, $"\nSeeds = [{s}],")
             : string.Empty;
@@ -91,7 +97,7 @@ internal static class FuzzCaseEmitter
             .Out<ulong>("checksum", rows, ["{{column}}"], OutputPolicy.Exact);
             },
             Launch = static (b, s) => {{kernelClassName}}.Launch{{kernelMethodName}}(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"), gridDimX: s.GridX, blockDimX: s.BlockX),
-            Oracle = static (b, _) => {{kernelClassName}}.{{effectiveOracleName}}(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum")),
+            Oracle = static (b, s) => {{oracle}},
             };
             """;
     }

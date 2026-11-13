@@ -15,7 +15,7 @@ internal static class BigIntWideOps
     /// <summary><c>result = a + b</c>, or <c>a - b</c> when <paramref name="subtract"/> is set.</summary>
     /// <param name="a">The left operand.</param>
     /// <param name="b">The right operand.</param>
-    /// <param name="result">The result buffer; it may be an operand, but must not only partly overlap one.</param>
+    /// <param name="result">The result buffer; it may be an operand or overlap one.</param>
     /// <param name="subtract"><see langword="true"/> to subtract.</param>
     /// <exception cref="OverflowException">
     /// CPU fallback mode only: the result is below zero or does not fit.
@@ -52,6 +52,14 @@ internal static class BigIntWideOps
         }
 
         var workspace = a.Workspace;
+        if (PartlyOverlaps(result, a) || PartlyOverlaps(result, b))
+        {
+            using var staging = workspace.RentTemp(result.NumWords);
+            AddSubtract(a, b, staging, subtract, modulo);
+            result.CopyFrom(staging);
+            return;
+        }
+
         var words = Math.Max(Math.Max(a.NumWords, b.NumWords), result.NumWords);
         GpuBigIntWideKernels.LaunchAddSubWideKernelPtr(
             a.ToProxy(), a.NumWords, b.ToProxy(), b.NumWords, result.ToProxy(), result.NumWords,
@@ -64,7 +72,7 @@ internal static class BigIntWideOps
     /// <c>result = a op b</c> for <see cref="GpuBigIntWideKernels.BitwiseAnd"/>,
     /// <see cref="GpuBigIntWideKernels.BitwiseOr"/> and <see cref="GpuBigIntWideKernels.BitwiseXor"/>, or <c>~a</c>
     /// over the words of <paramref name="a"/> for <see cref="GpuBigIntWideKernels.BitwiseNot"/> (<paramref name="b"/>
-    /// is then ignored). The result keeps its low words; it is not checked.
+    /// is then ignored). The result keeps its low words; it is not checked. It may be an operand or overlap one.
     /// </summary>
     public static void Bitwise(GpuBigUInt a, GpuBigUInt b, GpuBigUInt result, int operation)
     {
@@ -84,12 +92,29 @@ internal static class BigIntWideOps
         }
 
         var workspace = a.Workspace;
-        var (gridSize, blockSize) = KernelGraphHandler.CalculateGridDim(result.NumWords);
         var bWords = operation == GpuBigIntWideKernels.BitwiseNot ? 0 : b.NumWords;
+        if (PartlyOverlaps(result, a) || (bWords > 0 && PartlyOverlaps(result, b)))
+        {
+            using var staging = workspace.RentTemp(result.NumWords);
+            Bitwise(a, b, staging, operation);
+            result.CopyFrom(staging);
+            return;
+        }
+
+        var (gridSize, blockSize) = KernelGraphHandler.CalculateGridDim(result.NumWords);
         GpuBigIntWideKernels.LaunchBitwiseWideKernelPtr(
             a.ToProxy(), a.NumWords, b.ToProxy(), bWords, result.ToProxy(), result.NumWords, operation,
             gridDimX: gridSize, blockDimX: blockSize, hStream: workspace.Stream);
     }
+
+    /// <summary>
+    /// Whether <paramref name="result"/> shares words with <paramref name="operand"/> but starts elsewhere. The
+    /// element-wise kernels run exactly in place (word <c>i</c> reads only word <c>i</c> of each operand), but walk the
+    /// words in passes or across blocks, so a result shifted against an operand would overwrite words that a later
+    /// thread still reads; such a result goes through a temporary.
+    /// </summary>
+    public static bool PartlyOverlaps(GpuBigUInt result, GpuBigUInt operand) =>
+        DeviceRanges.Overlaps(result.Handle, operand.Handle) && result.DevicePointer != operand.DevicePointer;
 
     /// <summary>
     /// Checks that <paramref name="value"/> fits in <paramref name="words"/> words: a non-zero word at or above them is

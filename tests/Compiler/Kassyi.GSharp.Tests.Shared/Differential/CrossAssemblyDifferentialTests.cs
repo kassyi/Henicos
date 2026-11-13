@@ -43,8 +43,7 @@ public class CrossAssemblyDifferentialTests
     private static DifferentialCase CreateStructCase(
         string kernelName,
         string[] columns,
-        Action<int[], int[], int[], uint, uint> launch,
-        Action<int[], int[], int[]> oracle) =>
+        Action<int[], int[], int[], uint, uint> launch) =>
         new($"{nameof(CrossAssemblyDifferentialKernels)}.{kernelName}")
         {
             Shape = LaunchShape.ForRows(Rows, blockX: 64),
@@ -57,32 +56,33 @@ public class CrossAssemblyDifferentialTests
                     .Out<int>("r", rows, columns, OutputPolicy.Exact);
             },
             Launch = (b, s) => launch(b.Get<int>("xs"), b.Get<int>("ys"), b.Get<int>("r"), s.GridX, s.BlockX),
-            Oracle = (b, _) => oracle(b.Get<int>("xs"), b.Get<int>("ys"), b.Get<int>("r")),
+            OracleIsLaunch = true,
         };
 
     internal static readonly DifferentialCase s_vec2 = CreateStructCase(
         nameof(CrossAssemblyDifferentialKernels.CrossAssemblyVec2Kernel),
         ["vec2_x", "vec2_y", "vec2_sum"],
-        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyVec2Kernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
-        CrossAssemblyDifferentialKernels.CrossAssemblyVec2Kernel);
+        static (xs, ys, r, gx, bx) =>
+            CrossAssemblyDifferentialKernels.LaunchCrossAssemblyVec2Kernel(xs, ys, r, gridDimX: gx, blockDimX: bx));
 
     internal static readonly DifferentialCase s_particle = CreateStructCase(
         nameof(CrossAssemblyDifferentialKernels.CrossAssemblyParticleKernel),
         ["particle_weight"],
-        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyParticleKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
-        CrossAssemblyDifferentialKernels.CrossAssemblyParticleKernel);
+        static (xs, ys, r, gx, bx) =>
+            CrossAssemblyDifferentialKernels.LaunchCrossAssemblyParticleKernel(xs, ys, r, gridDimX: gx, blockDimX: bx));
 
     internal static readonly DifferentialCase s_scaled = CreateStructCase(
         nameof(CrossAssemblyDifferentialKernels.CrossAssemblyScaledKernel),
         ["scaled_val"],
-        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyScaledKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
-        CrossAssemblyDifferentialKernels.CrossAssemblyScaledKernel);
+        static (xs, ys, r, gx, bx) =>
+            CrossAssemblyDifferentialKernels.LaunchCrossAssemblyScaledKernel(xs, ys, r, gridDimX: gx, blockDimX: bx));
 
     internal static readonly DifferentialCase s_transitiveStruct = CreateStructCase(
         nameof(CrossAssemblyDifferentialKernels.CrossAssemblyTransitiveStructKernel),
         ["alpha_inner_v", "alpha_probe"],
-        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyTransitiveStructKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
-        CrossAssemblyDifferentialKernels.CrossAssemblyTransitiveStructKernel);
+        static (xs, ys, r, gx, bx) =>
+            CrossAssemblyDifferentialKernels.LaunchCrossAssemblyTransitiveStructKernel(
+                xs, ys, r, gridDimX: gx, blockDimX: bx));
 
     internal static readonly DifferentialCase s_constantSizedFixedBuffer = CreateStructCase(
         nameof(CrossAssemblyDifferentialKernels.CrossAssemblyConstantSizedFixedBufferKernel),
@@ -93,26 +93,28 @@ public class CrossAssemblyDifferentialTests
                 ys,
                 r,
                 gridDimX: gx,
-                blockDimX: bx),
-        CrossAssemblyDifferentialKernels.CrossAssemblyConstantSizedFixedBufferKernel);
+                blockDimX: bx));
 
     internal static readonly DifferentialCase s_float3Functions = CreateStructCase(
         nameof(CrossAssemblyDifferentialKernels.CrossAssemblyFloat3FunctionsKernel),
         ["length3_sq", "dot3_val"],
-        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyFloat3FunctionsKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
-        CrossAssemblyDifferentialKernels.CrossAssemblyFloat3FunctionsKernel);
+        static (xs, ys, r, gx, bx) =>
+            CrossAssemblyDifferentialKernels.LaunchCrossAssemblyFloat3FunctionsKernel(
+                xs, ys, r, gridDimX: gx, blockDimX: bx));
 
     internal static readonly DifferentialCase s_explicitPackedLayout = CreateStructCase(
         nameof(CrossAssemblyDifferentialKernels.CrossAssemblyExplicitPackedLayoutKernel),
         ["swap_pair_a", "packed_pair_val"],
-        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyExplicitPackedLayoutKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
-        CrossAssemblyDifferentialKernels.CrossAssemblyExplicitPackedLayoutKernel);
+        static (xs, ys, r, gx, bx) =>
+            CrossAssemblyDifferentialKernels.LaunchCrossAssemblyExplicitPackedLayoutKernel(
+                xs, ys, r, gridDimX: gx, blockDimX: bx));
 
     internal static readonly DifferentialCase s_disposableGuard = CreateStructCase(
         nameof(CrossAssemblyDifferentialKernels.CrossAssemblyDisposableGuardKernel),
         ["disposed_lib_guard"],
-        static (xs, ys, r, gx, bx) => CrossAssemblyDifferentialKernels.LaunchCrossAssemblyDisposableGuardKernel(xs, ys, r, gridDimX: gx, blockDimX: bx),
-        CrossAssemblyDifferentialKernels.CrossAssemblyDisposableGuardKernel);
+        static (xs, ys, r, gx, bx) =>
+            CrossAssemblyDifferentialKernels.LaunchCrossAssemblyDisposableGuardKernel(
+                xs, ys, r, gridDimX: gx, blockDimX: bx));
 
     internal static readonly DifferentialCase s_functionsAndMacros = new(
         $"{nameof(CrossAssemblyDifferentialKernels)}.{nameof(CrossAssemblyDifferentialKernels.CrossAssemblyFunctionsAndMacrosKernel)}")
@@ -196,12 +198,7 @@ public class CrossAssemblyDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => CrossAssemblyDifferentialKernels.CrossAssemblyExplicitLayoutArrayKernel(
-            b.Get<SwapPair>("swaps"),
-            b.Get<PackedPair>("packeds"),
-            b.Get<Sized>("sizeds"),
-            b.Get<IntFloatUnion>("unions"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_barrierExchange = new(
