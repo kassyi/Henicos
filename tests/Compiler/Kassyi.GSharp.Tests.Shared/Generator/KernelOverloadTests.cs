@@ -153,4 +153,25 @@ public class KernelOverloadTests
         Assert.Contains("LaunchScale(", wrapper, StringComparison.Ordinal);
         Assert.Contains("LaunchScalePtr(", wrapper, StringComparison.Ordinal);
     }
+
+    // A kernel named like a launcher of another kernel has the launcher's parameter types without the launch options,
+    // which the launcher has: C# keeps both, so nothing is reported
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Generator/KernelOverload_LookalikeArray.cu.cs", "Cpu")]
+    [InlineData("Generator/KernelOverload_LookalikeArray.cu.cs", "Cuda")]
+    [InlineData("Generator/KernelOverload_LookalikeNoParameters.cu.cs", "Cpu")]
+    [InlineData("Generator/KernelOverload_LookalikeNoParameters.cu.cs", "Cuda")]
+    [InlineData("Generator/KernelOverload_LookalikePointer.cu.cs", "Cpu")]
+    [InlineData("Generator/KernelOverload_LookalikePointer.cu.cs", "Cuda")]
+    public async Task KernelNamedLikeALauncher_ParameterListsDifferByLaunchOptions_ReportsNothing(string testCase,
+        string dialect)
+    {
+        var source = RoslynTestUtility.ReadTestCase(testCase);
+        var diagnostics = await KernelDiagnostics.RunAsync(source, dialect);
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.IndistinguishableKernelOverloads.Id));
+
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(source, dialect);
+        Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
+    }
 }

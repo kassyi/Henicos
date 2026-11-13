@@ -245,16 +245,19 @@ internal static class LauncherSignatures
     {
         var memberKey = KernelHostNames.GetMemberKey(kernel, isOverloaded);
         var count = 0;
-        members[count++] = LauncherMember.Method(KernelHostNames.GetLaunchName(kernel), kernel.ManagedParameterTypes);
+        members[count++] = LauncherMember.Launcher(
+            KernelHostNames.GetLaunchName(kernel),
+            kernel.ManagedParameterTypes
+        );
         if (isOverloaded)
         {
-            members[count++] = LauncherMember.Method(
+            members[count++] = LauncherMember.Launcher(
                 KernelHostNames.GetTypedPointerLaunchName(kernel),
                 kernel.TypedPointerParameterTypes
             );
         }
 
-        members[count++] = LauncherMember.Method(
+        members[count++] = LauncherMember.Launcher(
             KernelHostNames.GetPointerLaunchName(memberKey),
             kernel.PointerParameterTypes
         );
@@ -267,18 +270,36 @@ internal static class LauncherSignatures
         return count;
     }
 
-    // A member of the table: a method, which collides with a method of the same name and parameter types, or a field,
-    // constant or nested type, which collides with any member of its name
-    private readonly record struct LauncherMember(string Name, string? ParameterTypes)
-    {
-        public static LauncherMember Method(string name, string parameterTypes) => new(name, parameterTypes);
+    /// <summary>
+    /// The types of the launch options that every launcher takes after the parameters of its kernel
+    /// (<see cref="KernelHostNames.LaunchOptions"/>), spelled as <see cref="FormatParameterTypes"/> spells a type.
+    /// </summary>
+    internal const string LaunchOptionTypes =
+        "global::System.UInt32, global::System.UInt32, global::System.UInt32, global::System.UInt32, " +
+        "global::System.UInt32, global::System.UInt32, global::System.UInt32, global::System.IntPtr, " +
+        "global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<global::System.String, " +
+        "global::System.String>>";
 
-        public static LauncherMember NameOnly(string name) => new(name, null);
+    // A member of the table: a method, which collides with a method of the same name and parameter types, or a field,
+    // constant or nested type, which collides with any member of its name. A launcher takes the launch options after
+    // the parameters of its kernel, so a method of the kernel's own with the parameters alone is another overload
+    private readonly record struct LauncherMember(string Name, string? ParameterTypes, bool HasLaunchOptions)
+    {
+        public static LauncherMember Method(string name, string parameterTypes) => new(name, parameterTypes, false);
+
+        public static LauncherMember Launcher(string name, string parameterTypes) => new(name, parameterTypes, true);
+
+        public static LauncherMember NameOnly(string name) => new(name, null, false);
 
         public bool IsMethod => ParameterTypes is not null;
 
-        // Name(type, type) for a method, the name alone otherwise
+        // Name(type, type) for a method, the name alone otherwise: what the message shows
         public string Display => IsMethod ? $"{Name}({ParameterTypes})" : Name;
+
+        // The signature as C# compares it, the launch options of a launcher included
+        public string Key => HasLaunchOptions
+            ? $"{Name}({(ParameterTypes is { Length: > 0 } ? ParameterTypes + ", " : string.Empty)}{LaunchOptionTypes})"
+            : Display;
     }
 
     // The members of one class with their owners: a kernel index, or LauncherConflict.ClassMember
@@ -291,7 +312,7 @@ internal static class LauncherSignatures
         public bool TryFind(LauncherMember member, int self, out LauncherConflict conflict)
         {
             // A method that meets a method is shown with its parameter types; anything else collides by name alone
-            if (member.IsMethod && FindOwner(_methods, member.Display, self) is { } methodOwner)
+            if (member.IsMethod && FindOwner(_methods, member.Key, self) is { } methodOwner)
             {
                 conflict = new LauncherConflict(methodOwner, member.Display);
                 return true;
@@ -311,7 +332,7 @@ internal static class LauncherSignatures
                 return;
             }
 
-            AddFirst(_methods, member.Display, owner);
+            AddFirst(_methods, member.Key, owner);
             AddFirst(_methodNames, member.Name, owner);
         }
 

@@ -182,6 +182,64 @@ public class LauncherSignaturesTests
         Assert.True(conflict.IsClassMember);
     }
 
+    // The launch options that a launcher takes after the parameters of its kernel, as the plan spells them, are the
+    // trailing parameters of the generated launcher: the plan compares a kernel of its own against them
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void LaunchOptionTypes_GeneratedLauncher_AreTheTrailingParameters()
+    {
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(s_source, "Cpu");
+        var kernels = output.GetTypeByMetadataName("Signatures.Kernels") ?? throw new InvalidOperationException();
+        var launcher = kernels.GetMembers("LaunchMixed")
+            .OfType<IMethodSymbol>()
+            .First(static m => m.Parameters.Length > KernelHostNames.LaunchOptions.Length);
+
+        var trailing = launcher.Parameters
+            .Skip(launcher.Parameters.Length - KernelHostNames.LaunchOptions.Length)
+            .Select(static p => p.Type.GetFullyQualifiedCsharpName());
+
+        Assert.Equal(LauncherSignatures.LaunchOptionTypes, string.Join(", ", trailing));
+    }
+
+    // Foo(int[]) generates LaunchFoo(int[], <launch options>), which C# keeps beside a kernel LaunchFoo(int[]);
+    // the same without parameters, and for the pointer launcher
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Foo", "global::System.Int32[]", "LaunchFoo")]
+    [InlineData("Foo", "", "LaunchFoo")]
+    [InlineData("Foo", "ref global::System.Int32", "LaunchFooPtr")]
+    public void FindConflicts_KernelNamedLikeALauncher_ReportsNothing(string kernel, string parameters,
+        string lookalike)
+    {
+        var isReference = parameters.StartsWith("ref", StringComparison.Ordinal);
+        var pointer = isReference ? "global::System.IntPtr" : parameters.Length == 0 ? "" : Proxy;
+        var own = isReference ? "global::System.IntPtr" : parameters;
+        KernelHostModel[] kernels =
+            [Host(kernel, -1, managed: parameters, pointer: pointer), Host(lookalike, -1, managed: own, pointer: own)];
+
+        var conflicts = LauncherSignatures.FindConflicts(kernels, emitsSource: false);
+
+        Assert.All(conflicts.ToArray(), static conflict => Assert.Equal(LauncherConflict.None, conflict));
+    }
+
+    // The warmup method takes no parameters and no launch options: a kernel of that name collides with it, and the
+    // kernel that generates the warmup method is the one reported
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void FindConflicts_KernelNamedLikeTheWarmupMethod_StillReportsIt()
+    {
+        KernelHostModel[] kernels =
+        [
+            Host("Foo", -1, managed: Ints, pointer: Proxy),
+            Host("WarmupFunctionPointerFoo", -1, managed: "", pointer: "")
+        ];
+
+        var conflicts = LauncherSignatures.FindConflicts(kernels, emitsSource: false);
+
+        Assert.Equal(new LauncherConflict(1, "WarmupFunctionPointerFoo()"), conflicts[0]);
+        Assert.Equal(LauncherConflict.None, conflicts[1]);
+    }
+
     private static KernelHostModel Host(string name, int ordinal, string managed, string pointer) =>
         new()
         {
