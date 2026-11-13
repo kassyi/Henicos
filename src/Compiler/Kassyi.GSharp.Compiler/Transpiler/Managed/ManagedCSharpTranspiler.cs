@@ -41,15 +41,41 @@ internal static class ManagedCSharpTranspiler
         var bodySource = CreateBody(lowered, unhoistedLocals, renamedLocals, semanticModel, kernelName,
             methodSymbol.AreLocalsZeroed(), isDeviceFunction: false, accessors, isUnsafe);
 
+        var (contextAccessibility, stateMachineAccessibility) =
+            GetKernelStateMachineAccessibility(methodSymbol, regularFields, copiedParameters);
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
             writer, contextName, regularFields, copiedParameters, lowered.CallSites, semanticModel,
-            isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
+            GeneratedMemberAccessibility.ToKeyword(contextAccessibility), isUnsafe: isUnsafe,
+            warpSiteCount: lowered.WarpSiteCount);
         ManagedStateMachineEmitter.EmitStateMachineMethod(
             writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, copiedParameters, localInits,
-            bodySource, isUnsafe: isUnsafe);
+            bodySource, GeneratedMemberAccessibility.ToKeyword(stateMachineAccessibility), isUnsafe: isUnsafe);
         accessors.WriteTo(writer);
         return writer.ToString();
+    }
+
+    // The context class names the types of its fields; the state machine those of the kernel's signature and the
+    // context. Only the launchers of the kernel's class call them, so each is as accessible as those types allow
+    // (#1284), public for the public types of code that compiled before
+    private static (Accessibility Context, Accessibility StateMachine) GetKernelStateMachineAccessibility(
+        IMethodSymbol kernel, ImmutableArray<ManagedContextField> regularFields,
+        ImmutableArray<IParameterSymbol> copiedParameters)
+    {
+        var fieldTypes = default(GeneratedMemberAccessibility.NamedTypes);
+        foreach (var parameter in copiedParameters)
+        {
+            fieldTypes = fieldTypes.With(parameter.Type);
+        }
+
+        foreach (var field in regularFields)
+        {
+            fieldTypes = fieldTypes.With(field.ResolvedType);
+        }
+
+        var context = fieldTypes.ChooseIn(kernel.ContainingType);
+        var signature = GeneratedMemberAccessibility.OfSignature(kernel).ChooseIn(kernel.ContainingType);
+        return (context, GeneratedMemberAccessibility.Narrowest(context, signature));
     }
 
     /// <summary>

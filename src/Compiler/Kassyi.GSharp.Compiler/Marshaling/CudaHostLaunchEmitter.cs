@@ -68,13 +68,13 @@ internal static class CudaHostLaunchEmitter
         }
     }
 
-    // The public Launch{Name}Ptr of an overloaded kernel: device pointers are typed GpuBuffer<T>, so C# selects the
+    // The Launch{Name}Ptr of an overloaded kernel: device pointers are typed GpuBuffer<T>, so C# selects the
     // overload, and the wrapper forwards them to the private implementation: an array as GSharpArrayProxy with the
     // buffer's length, a ref / out parameter as its device pointer.
     private static void WriteTypedPointerLaunchMethod(SourceWriter writer, in KernelEmission kernel)
     {
         writer.AppendGeneratedCodeAttributes();
-        writer.Append("public static unsafe ");
+        writer.Append($"{GeneratedMemberAccessibility.ToKeyword(kernel.PointerLauncherAccessibility)} static unsafe ");
         WrapperEmitter.WriteLaunchReturnType(writer, kernel.Host);
         writer.Append(KernelHostNames.GetTypedPointerLaunchName(kernel.Host));
         using (writer.Parentheses())

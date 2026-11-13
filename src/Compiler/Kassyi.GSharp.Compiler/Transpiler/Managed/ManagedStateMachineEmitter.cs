@@ -327,13 +327,15 @@ internal static class ManagedStateMachineEmitter
         ImmutableArray<IParameterSymbol> copiedParameters,
         ImmutableArray<ManagedContextField> localInits,
         string bodySource,
+        string accessibility = "public",
         bool isUnsafe = false)
     {
         // An unsafe context is taken by pointer (ManagedPointerWarning.PinnedContext)
         using var suppression =
             writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe);
         writer.AppendLine(EditorBrowsableNever);
-        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters, isUnsafe);
+        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters,
+            accessibility, isUnsafe);
         using (writer.Scope(" {"))
         {
             foreach (var localInit in localInits)
@@ -354,9 +356,10 @@ internal static class ManagedStateMachineEmitter
         IMethodSymbol methodSymbol,
         bool hasAutoResult,
         ImmutableArray<IParameterSymbol> copiedParameters,
+        string accessibility,
         bool isUnsafe)
     {
-        writer.Append("public static ");
+        writer.Append($"{accessibility} static ");
         writer.AppendIf(isUnsafe, "unsafe ");
         writer.Append($"void {stateMachineName}");
         using (writer.Parentheses())

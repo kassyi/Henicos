@@ -229,7 +229,8 @@ internal static class WrapperEmitter
         {
             WriteErrorSiteTableField(writer, model.ErrorSites);
             writer.AppendGeneratedCodeAttributes();
-            writer.AppendLine($"public static partial class {AotHostNames.AotContextsClassName}");
+            var aotContexts = GeneratedMemberAccessibility.ToKeyword(model.AotContextsAccessibility);
+            writer.AppendLine($"{aotContexts} static partial class {AotHostNames.AotContextsClassName}");
             using (writer.Scope())
             {
                 StructMarshalingEmitter.WriteStructMarshaling(writer, model.Structs, config.IsCuda);
@@ -297,9 +298,10 @@ internal static class WrapperEmitter
     {
         writer.AppendGeneratedCodeAttributes();
         // An overloaded kernel's IntPtr wrapper is private: callers select the overload through the typed wrapper.
-        writer.Append(isDevicePtr && kernel.IsOverloaded
-            ? "private static unsafe "
-            : "public static unsafe ");
+        var accessibility = !isDevicePtr ? kernel.Host.LauncherAccessibility
+            : kernel.IsOverloaded ? Accessibility.Private
+            : kernel.PointerLauncherAccessibility;
+        writer.Append($"{GeneratedMemberAccessibility.ToKeyword(accessibility)} static unsafe ");
         WriteLaunchReturnType(writer, kernel.Host);
         writer.Append(isDevicePtr
             ? KernelHostNames.GetPointerLaunchName(kernel)

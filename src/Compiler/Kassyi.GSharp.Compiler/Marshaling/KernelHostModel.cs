@@ -30,6 +30,12 @@ internal readonly record struct KernelHostModel
     public string LaunchExportName { get; init; }
 
     /// <summary>
+    /// The accessibility of the launchers and of the managed state machine: the widest under which they name only
+    /// types at least as accessible as themselves, whatever the kernel's own accessibility (#1284).
+    /// </summary>
+    public Accessibility LauncherAccessibility { get; init; }
+
+    /// <summary>
     /// The method through which a container warms up the kernel of a class the module context cannot name
     /// (<see cref="HostClassHeader.WarmupRelayHosts"/>).
     /// </summary>
@@ -153,6 +159,7 @@ internal readonly record struct KernelHostModel
             ContextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, kernel),
             StateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, kernel),
             LaunchExportName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.LaunchExportPrefix, kernel),
+            LauncherAccessibility = GeneratedMemberAccessibility.OfSignature(kernel).ChooseIn(kernel.ContainingType),
             WarmupRelayName =
                 GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Launcher.WarmupRelayPrefix, kernel),
             ReturnTypeName = kernel.ReturnType.SpecialType == SpecialType.System_Void
@@ -426,7 +433,15 @@ internal readonly record struct HostClassHeader(
 /// <param name="AotStructPath">The <c>AotContexts</c> path, which identifies the struct within a class.</param>
 /// <param name="CudaText">The CUDA declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
 /// <param name="CpuText">The CPU declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
-internal readonly record struct StructHostSource(string AotStructPath, string CudaText, string CpuText)
+/// <param name="Accessibility">
+/// The widest accessibility of the <c>AotContexts</c> class under which its members for the struct, all public, name
+/// only types at least as accessible as themselves (<see cref="GeneratedMemberAccessibility"/>).
+/// </param>
+internal readonly record struct StructHostSource(
+    string AotStructPath,
+    string CudaText,
+    string CpuText,
+    Accessibility Accessibility = Accessibility.Public)
 {
     public string GetText(bool isCuda) => isCuda ? CudaText : CpuText;
 }
@@ -443,6 +458,10 @@ internal readonly record struct StructHostSource(string AotStructPath, string Cu
 /// <param name="ErrorSites">
 /// The source locations of the run-time error sites of the kernel, which the class reports by site ID.
 /// </param>
+/// <param name="PointerLauncherAccessibility">
+/// The accessibility of <c>Launch{Name}Ptr</c> when it is not private for an overload: the launcher's, narrowed to the
+/// <c>AotContexts</c> class's when a parameter is its shadow struct.
+/// </param>
 internal readonly record struct KernelEmission(
     KernelHostModel Host,
     string MemberKey,
@@ -452,7 +471,8 @@ internal readonly record struct KernelEmission(
     string CppSource,
     string ManagedCSharpSource,
     string InternalError,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default)
+    EquatableArray<ErrorSiteEntry> ErrorSites = default,
+    Accessibility PointerLauncherAccessibility = Accessibility.Public)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 
@@ -471,6 +491,23 @@ internal readonly record struct KernelClassModel(
     EquatableArray<StructHostSource> Structs,
     EquatableArray<ErrorSiteEntry> ErrorSites = default)
 {
+    /// <summary>
+    /// The accessibility of the <c>AotContexts</c> class: the narrowest that its structs need
+    /// (<see cref="StructHostSource.Accessibility"/>), <see cref="Accessibility.Public"/> without any.
+    /// </summary>
+    public Accessibility AotContextsAccessibility => GetAotContextsAccessibility(Structs);
+
+    private static Accessibility GetAotContextsAccessibility(IEnumerable<StructHostSource> structs)
+    {
+        var accessibility = Accessibility.Public;
+        foreach (var s in structs)
+        {
+            accessibility = GeneratedMemberAccessibility.Narrowest(accessibility, s.Accessibility);
+        }
+
+        return accessibility;
+    }
+
     /// <summary>
     /// Builds the class model from the kernels of one class, in the order given; the overloads, member keys and the
     /// indistinguishable overloads are derived from these models only.
@@ -526,6 +563,23 @@ internal readonly record struct KernelClassModel(
                     structs[index] = s;
                 }
             }
+        }
+
+        // A pointer launcher that takes a shadow struct names the AotContexts class, which the structs of every kernel
+        // of the class narrow
+        var aotContexts = GetAotContextsAccessibility(structs);
+        for (var i = 0; i < emissions.Count; i++)
+        {
+            var emission = emissions[i];
+            var namesShadow = emission.Host.Parameters
+                .AsStackEnumerable()
+                .Any(static p => PointerLaunchPlan.Classify(p) == PointerArgumentKind.ShadowStruct);
+            emissions[i] = emission with
+            {
+                PointerLauncherAccessibility = namesShadow
+                    ? GeneratedMemberAccessibility.Narrowest(emission.Host.LauncherAccessibility, aotContexts)
+                    : emission.Host.LauncherAccessibility
+            };
         }
 
         ErrorSiteTable.TryBuildModuleSites(rawClassSites, out var classErrorSites, out _, out _);
