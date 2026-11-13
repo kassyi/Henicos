@@ -134,9 +134,9 @@ internal static class SymbolExtensions
 
     /// <summary>
     /// Whether <paramref name="parameter"/> is an <c>in</c> or <c>ref readonly</c> parameter of a kernel that the
-    /// kernel receives by address: the kernel also has a <c>ref</c> or <c>out</c> parameter of the same type, which the caller
-    /// may pass the same variable, and a write through it must show through the <c>in</c> parameter as in C#. Any other
-    /// <c>in</c> parameter of a kernel is a value.
+    /// kernel receives by address: the kernel also has a <c>ref</c> or <c>out</c> parameter of the same type, which the
+    /// caller may pass the same variable, and a write through it must show through the <c>in</c> parameter as in C#. Any
+    /// other <c>in</c> parameter of a kernel is a value.
     /// </summary>
     public static bool IsKernelInPassedByAddress(this IParameterSymbol parameter) =>
         parameter is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter, ContainingSymbol: IMethodSymbol kernel } &&
