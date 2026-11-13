@@ -47,6 +47,10 @@ internal sealed class WindowsJobObject : IDisposable
     /// <summary>Puts a started process into the job; <see langword="false"/> when Windows refuses it.</summary>
     public bool TryAssign(Process process) => AssignProcessToJobObject(_handle, process.Handle);
 
+    /// <summary>Whether <paramref name="process"/> belongs to this job.</summary>
+    public bool Contains(SafeProcessHandle process) =>
+        IsProcessInJob(process, _handle, out var inJob) && inJob;
+
     /// <summary>Terminates every process of the job.</summary>
     public bool Terminate() => TerminateJobObject(_handle, uint.MaxValue);
 
@@ -94,6 +98,15 @@ internal sealed class WindowsJobObject : IDisposable
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool AssignProcessToJobObject(JobHandle job, IntPtr process);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsProcessInJob(
+        SafeProcessHandle process,
+        JobHandle job,
+        [MarshalAs(UnmanagedType.Bool)] out bool result
+    );
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]

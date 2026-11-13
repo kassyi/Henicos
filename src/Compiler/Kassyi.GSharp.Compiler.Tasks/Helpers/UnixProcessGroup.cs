@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Kassyi.GSharp.Compiler.Tasks.Helpers;
 
@@ -15,17 +16,26 @@ namespace Kassyi.GSharp.Compiler.Tasks.Helpers;
 /// anything.
 /// </para>
 /// <para>
-/// The program path is resolved before wrapping in the order <see cref="Process.Start()"/> uses (a rooted path as
-/// it is, else the host's directory, the current directory, then <c>PATH</c>), so <c>setsid</c> runs the same file.
-/// Without <c>setsid</c> (macOS has no such program), with a program that cannot be found (so that
-/// <see cref="Process.Start()"/> reports it as before), or with a start info whose arguments are in
-/// <c>ArgumentList</c> (not visible to <c>netstandard2.0</c>), the process starts in the caller's group and a
-/// cancellation stops only that process.
+/// The program path is resolved before wrapping as <see cref="Process.Start()"/> resolves it (a rooted path as it
+/// is, else the host's directory, the current directory, then the first executable file of that name on
+/// <c>PATH</c>), so <c>setsid</c> runs the same file. The program is wrapped only when <c>exec</c> will accept it:
+/// it has the execute permission and starts with the ELF magic or with <c>#!</c> naming an executable interpreter.
+/// Otherwise <see cref="Process.Start()"/> starts it unwrapped and reports a failure with the same
+/// <see cref="System.ComponentModel.Win32Exception"/> as before, instead of an exit code of <c>setsid</c> or the
+/// <c>/bin/sh</c> fallback of its <c>execvp</c>.
+/// </para>
+/// <para>
+/// Without <c>setsid</c> (macOS has no such program), with a program that is not wrapped, or with a start info whose
+/// arguments are in <c>ArgumentList</c> (not visible to <c>netstandard2.0</c>), the process starts in the caller's
+/// group, and <see cref="UnixDescendants"/> stops its tree on cancellation.
 /// </para>
 /// </remarks>
 internal static class UnixProcessGroup
 {
-    private const int SigKill = 9;
+    private const byte Tab = 0x09;
+    private const byte LineFeed = 0x0A;
+    private const byte CarriageReturn = 0x0D;
+    private const byte Space = 0x20;
 
     // The directory of the running host, which Process.Start searches before the current directory and PATH.
     private static readonly Lazy<string?> s_hostDirectory = new(static () =>
@@ -43,7 +53,7 @@ internal static class UnixProcessGroup
     public static bool TryWrap(ProcessStartInfo startInfo, out OriginalCommand original)
     {
         original = new OriginalCommand(startInfo.FileName, startInfo.Arguments);
-        if (s_setsid is null || ResolveProgram(startInfo.FileName) is not { } program)
+        if (s_setsid is null || ResolveProgram(startInfo.FileName) is not { } program || !ExecAccepts(program))
         {
             return false;
         }
@@ -55,19 +65,20 @@ internal static class UnixProcessGroup
         return true;
     }
 
-    /// <summary>Kills the group led by <paramref name="leader"/> after the leader itself.</summary>
+    /// <summary>
+    /// Kills the group led by <paramref name="leader"/> (process ID <paramref name="leaderId"/>), leader first.
+    /// </summary>
     /// <remarks>
     /// The leader is killed first through <see cref="Process.Kill()"/>, which never signals a reaped and reused
     /// process ID; a process with a pending kill cannot start another one, so the group cannot grow afterwards. The
     /// group ID stays reserved while any member lives, so the group signal reaches only the run's own descendants.
     /// </remarks>
-    public static void Kill(Process leader)
+    public static void Kill(Process leader, int leaderId)
     {
-        var leaderId = leader.Id;
         ProcessTree.KillProcessOnly(leader);
 
         // ESRCH (no member left, or setsid had not run yet and the leader died before it) needs no handling.
-        _ = SendSignal(-leaderId, SigKill);
+        _ = UnixLibc.Send(-leaderId, UnixLibc.Kill);
     }
 
     private static string? ResolveProgram(string fileName)
@@ -97,10 +108,16 @@ internal static class UnixProcessGroup
         return ExistingIn("/usr/bin", "setsid") ?? ExistingIn("/bin", "setsid") ?? FindInPath("setsid");
     }
 
-    private static string? FindInPath(string fileName)
+    private static string? FindInPath(string fileName) =>
+        FindInPath(fileName, Environment.GetEnvironmentVariable("PATH"));
+
+    /// <summary>
+    /// The first executable file named <paramref name="fileName"/> in the directories of <paramref name="path"/>, as
+    /// <see cref="Process.Start()"/> searches <c>PATH</c>; a file without the execute permission is passed over.
+    /// </summary>
+    internal static string? FindInPath(string fileName, string? path)
     {
-        var path = Environment.GetEnvironmentVariable("PATH");
-        if (string.IsNullOrEmpty(path))
+        if (path is null || path.Length == 0)
         {
             return null;
         }
@@ -111,13 +128,73 @@ internal static class UnixProcessGroup
             var end = rest.IndexOf(':');
             var directory = end < 0 ? rest : rest.Slice(0, end);
             rest = end < 0 ? ReadOnlySpan<char>.Empty : rest.Slice(end + 1);
-            if (directory.Length > 0 && ExistingIn(directory.ToString(), fileName) is { } found)
+            if (directory.Length > 0
+                && ExistingIn(directory.ToString(), fileName) is { } found
+                && UnixLibc.IsExecutable(found))
             {
                 return found;
             }
         }
 
         return null;
+    }
+
+    // Whether execve will run the file itself: an ELF image, or a script whose #! line names an executable file.
+    private static bool ExecAccepts(string program)
+    {
+        if (!UnixLibc.IsExecutable(program) || ReadHeader(program) is not { } header)
+        {
+            return false;
+        }
+
+        if (header.Length >= 4 && header[0] == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F')
+        {
+            return true;
+        }
+
+        return ShebangInterpreter(header) is { } interpreter
+            && File.Exists(interpreter)
+            && UnixLibc.IsExecutable(interpreter);
+    }
+
+    // The interpreter path of a "#!<spaces><path>[ <argument>]" line, or null.
+    private static string? ShebangInterpreter(byte[] header)
+    {
+        if (header.Length < 2 || header[0] != '#' || header[1] != '!')
+        {
+            return null;
+        }
+
+        var start = 2;
+        while (start < header.Length && header[start] is Space or Tab)
+        {
+            start++;
+        }
+
+        var end = start;
+        while (end < header.Length && header[end] is not (Space or Tab or LineFeed or CarriageReturn))
+        {
+            end++;
+        }
+
+        return end > start ? Encoding.UTF8.GetString(header, start, end - start) : null;
+    }
+
+    private static byte[]? ReadHeader(string program)
+    {
+        try
+        {
+            using var stream = new FileStream(program, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 1);
+            var buffer = new byte[256];
+            var length = stream.Read(buffer, 0, buffer.Length);
+            Array.Resize(ref buffer, length);
+            return buffer;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Unreadable: leave it to Process.Start, which reports it as it always did.
+            return null;
+        }
     }
 
     private static string? ExistingIn(string? directory, string fileName)
@@ -130,9 +207,6 @@ internal static class UnixProcessGroup
         var candidate = Path.Combine(directory, fileName);
         return File.Exists(candidate) ? candidate : null;
     }
-
-    [DllImport("libc", EntryPoint = "kill", SetLastError = true)]
-    private static extern int SendSignal(int processId, int signal);
 
     /// <summary>The program and arguments of a start info before <see cref="TryWrap"/> changed them.</summary>
     internal readonly struct OriginalCommand(string fileName, string arguments)

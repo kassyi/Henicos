@@ -42,8 +42,16 @@ internal sealed class DescendantProcessProbe : IDisposable
     /// </summary>
     public ProcessStartInfo WaitingShell(int seconds) =>
         OperatingSystem.IsWindows()
-            ? new ProcessStartInfo { FileName = "cmd.exe", Arguments = $"/c \"\"{_executable}\" -n {seconds + 1} 127.0.0.1\"" }
-            : new ProcessStartInfo { FileName = "sh", Arguments = $"-c \"'{_executable}' {seconds}; true\"" };
+            ? new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"\"{_executable}\" -n {seconds + 1} 127.0.0.1\""
+            }
+            : new ProcessStartInfo
+            {
+                FileName = "sh",
+                Arguments = $"-c \"'{_executable}' {seconds}; true\""
+            };
 
     /// <summary>
     /// A shell that starts the copy for <paramref name="seconds"/> seconds without its output pipes and exits at once,
@@ -54,9 +62,14 @@ internal sealed class DescendantProcessProbe : IDisposable
             ? new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = $"-NoProfile -NonInteractive -Command \"Start-Process -WindowStyle Hidden -FilePath '{_executable}' -ArgumentList '-n','{seconds + 1}','127.0.0.1'\""
+                Arguments = "-NoProfile -NonInteractive -Command \"Start-Process -WindowStyle Hidden"
+                    + $" -FilePath '{_executable}' -ArgumentList '-n','{seconds + 1}','127.0.0.1'\""
             }
-            : new ProcessStartInfo { FileName = "sh", Arguments = $"-c \"'{_executable}' {seconds} >/dev/null 2>&1 </dev/null &\"" };
+            : new ProcessStartInfo
+            {
+                FileName = "sh",
+                Arguments = $"-c \"'{_executable}' {seconds} >/dev/null 2>&1 </dev/null &\""
+            };
 
     /// <summary>Gets the number of running processes of the copy.</summary>
     public int CountRunning()
@@ -76,7 +89,9 @@ internal sealed class DescendantProcessProbe : IDisposable
         return running;
     }
 
-    /// <summary>Waits until <see cref="CountRunning"/> satisfies <paramref name="condition"/> or the timeout passes.</summary>
+    /// <summary>
+    /// Waits until <see cref="CountRunning"/> satisfies <paramref name="condition"/> or the timeout passes.
+    /// </summary>
     public bool WaitFor(Func<int, bool> condition, TimeSpan timeout)
     {
         var stopwatch = Stopwatch.StartNew();

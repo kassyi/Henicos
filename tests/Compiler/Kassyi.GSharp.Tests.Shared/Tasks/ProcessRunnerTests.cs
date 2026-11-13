@@ -117,7 +117,10 @@ public class ProcessRunnerTests
         // The grandchild holds the output pipes for 60 s: killing only the shell leaves the run waiting for it.
         Assert.True(Task.WaitAny([run], TimeSpan.FromSeconds(15)) == 0, "The run waited for the grandchild.");
         Assert.IsAssignableFrom<OperationCanceledException>(run.Exception?.InnerException);
-        Assert.True(probe.WaitFor(static n => n == 0, TimeSpan.FromSeconds(5)), "The grandchild survived the cancellation.");
+        Assert.True(
+            probe.WaitFor(static n => n == 0, TimeSpan.FromSeconds(5)),
+            "The grandchild survived the cancellation."
+        );
     }
 
     [Fact]
@@ -134,7 +137,10 @@ public class ProcessRunnerTests
         var finished = await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(15)));
         Assert.Same(run, finished);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
-        Assert.True(probe.WaitFor(static n => n == 0, TimeSpan.FromSeconds(5)), "The grandchild survived the cancellation.");
+        Assert.True(
+            probe.WaitFor(static n => n == 0, TimeSpan.FromSeconds(5)),
+            "The grandchild survived the cancellation."
+        );
     }
 
     [Fact]
@@ -148,9 +154,38 @@ public class ProcessRunnerTests
         var result = ProcessRunner.Default.Run(probe.DetachingShell(30));
 
         Assert.Equal(0, result.ExitCode);
-        Assert.True(probe.WaitFor(static n => n == 1, TimeSpan.FromSeconds(10)), "The detached descendant did not start.");
+        Assert.True(
+            probe.WaitFor(static n => n == 1, TimeSpan.FromSeconds(10)),
+            "The detached descendant did not start."
+        );
         Thread.Sleep(500);
         Assert.Equal(1, probe.CountRunning());
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("#!/bin/sh\necho started\n", false)]
+    [InlineData("echo started\n", true)]
+    public void Run_FileThatCannotBeExecuted_ThrowsWin32ExceptionAsProcessStartDoes(string content, bool executable)
+    {
+        // Not an exit code of a wrapper, and no fallback to /bin/sh for a script without #!.
+        Skip.If(OperatingSystem.IsWindows(), "Execute permissions and #! lines are Unix only.");
+        var directory = Directory.CreateTempSubdirectory("gsharp-process-runner-");
+        try
+        {
+            var program = Path.Combine(directory.FullName, "program");
+            File.WriteAllText(program, content);
+            var mode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            File.SetUnixFileMode(program, executable ? mode | UnixFileMode.UserExecute : mode);
+
+            Assert.Throws<System.ComponentModel.Win32Exception>(
+                () => ProcessRunner.Default.Run(new ProcessStartInfo { FileName = program })
+            );
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     [Fact]

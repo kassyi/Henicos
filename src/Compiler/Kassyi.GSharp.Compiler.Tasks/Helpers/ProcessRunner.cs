@@ -20,7 +20,9 @@ public class ProcessRunner : IProcessRunner
     {
         ConfigureRedirection(startInfo);
 
-        var process = new Process
+        // Declared before the tree and the registration, so the registration is disposed (waiting for a running
+        // callback) before the process is.
+        using var process = new Process
         {
             StartInfo = startInfo
         };
@@ -53,15 +55,8 @@ public class ProcessRunner : IProcessRunner
         var stderrTask = process.StandardError.ReadToEndAsync();
 #endif
 
-        try
-        {
-            await Task.WhenAll(tcs.Task, stdoutTask, stderrTask).ConfigureAwait(false);
-            return new ProcessResult(process.ExitCode, await stdoutTask, await stderrTask);
-        }
-        finally
-        {
-            process.Dispose();
-        }
+        await Task.WhenAll(tcs.Task, stdoutTask, stderrTask).ConfigureAwait(false);
+        return new ProcessResult(process.ExitCode, await stdoutTask, await stderrTask);
     }
 
     /// <inheritdoc />

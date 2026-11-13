@@ -9,16 +9,27 @@ namespace Kassyi.GSharp.Compiler.Tasks.Helpers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Windows: the process joins a <see cref="WindowsJobObject"/> right after it starts. A process it starts before it has
-/// joined stays outside the job; the window is the few instructions between <c>CreateProcess</c> returning in
-/// <see cref="Process.Start()"/> and the assignment, while the child is still loading. <see cref="Process"/> cannot
-/// start a process suspended, which would close the window.
+/// Windows: the process joins a <see cref="WindowsJobObject"/> right after it starts, and a cancellation terminates the
+/// job. A process the child starts before it has joined (between <c>CreateProcess</c> returning in
+/// <see cref="Process.Start()"/> and the assignment; <see cref="Process"/> cannot start a process suspended) stays
+/// outside the job, so the cancellation also walks the process table (<see cref="WindowsDescendants"/>), which is also
+/// what stops the tree when Windows refuses the job.
 /// </para>
 /// <para>
-/// Linux: the process starts as the leader of its own process group (<see cref="UnixProcessGroup"/>), so there is no
-/// such window. Where that is not possible, and where Windows refuses the job, only the process itself is stopped.
+/// Linux: the process starts as the leader of its own process group (<see cref="UnixProcessGroup"/>), so the group
+/// holds every descendant from the start. Where that is not possible (macOS, which has no <c>setsid</c>, or a start
+/// info that uses <c>ArgumentList</c>), the cancellation stops the tree by a walk of the process table
+/// (<see cref="UnixDescendants"/>).
 /// </para>
 /// <para>A normal end changes nothing: descendants that outlive the process keep running, as before.</para>
+/// <para>
+/// Not covered on Linux: a build host that dies without cancelling (killed, or its terminal closed) leaves the
+/// compilers running. <c>setsid</c> also takes them out of the terminal's session, so Ctrl+C and the hang-up of the
+/// terminal no longer reach them directly; they rely on the cancellation that MSBuild sends. Windows covers this case
+/// with the kill-on-close limit of the job. <c>PR_SET_PDEATHSIG</c> is no substitute: it fires when the thread that
+/// started the child ends, which for a thread-pool thread of the host is any time, and it reaches the direct child
+/// only.
+/// </para>
 /// </remarks>
 internal sealed class ProcessTree : IDisposable
 {
@@ -28,11 +39,15 @@ internal sealed class ProcessTree : IDisposable
     private readonly WindowsJobObject? _job;
     private readonly bool _ownsGroup;
 
+    // Read once at the start: a cancellation may arrive after the caller disposed the Process, which forgets its ID.
+    private readonly int _processId;
+
     private ProcessTree(Process process, WindowsJobObject? job, bool ownsGroup)
     {
         _process = process;
         _job = job;
         _ownsGroup = ownsGroup;
+        _processId = process.Id;
     }
 
     /// <summary>Starts <paramref name="process"/> so that <see cref="Kill"/> reaches its descendants.</summary>
@@ -40,21 +55,32 @@ internal sealed class ProcessTree : IDisposable
     public static ProcessTree Start(Process process) =>
         s_isWindows ? StartInJob(process) : StartInGroup(process);
 
-    /// <summary>Stops the process and its descendants; best effort, as a process may end at the same time.</summary>
+    /// <summary>
+    /// Stops the process and its descendants; best effort, as a process may end at the same time. Never throws, also
+    /// after the caller disposed the <see cref="Process"/>, since it runs in a cancellation callback.
+    /// </summary>
     public void Kill()
     {
-        if (_job is not null && _job.Terminate())
+        if (s_isWindows)
         {
+            // The job holds every descendant started after the assignment; the walk finds the ones started before it
+            // and, when Windows refused the job, all of them.
+            if (_job is null || !_job.Terminate())
+            {
+                KillProcessOnly(_process);
+            }
+
+            WindowsDescendants.Kill(_process, _processId, _job);
             return;
         }
 
         if (_ownsGroup)
         {
-            UnixProcessGroup.Kill(_process);
+            UnixProcessGroup.Kill(_process, _processId);
             return;
         }
 
-        KillProcessOnly(_process);
+        UnixDescendants.Kill(_process, _processId);
     }
 
     /// <inheritdoc />
