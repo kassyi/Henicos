@@ -63,8 +63,15 @@ internal static class SwitchStatementTranspilers
         using (context.Emitter.Writer.Scope())
         {
             JumpedOverDeclarations.WriteDeclarations(node.Statements, ref context);
-            foreach (var stmt in node.Statements)
+            var writtenAhead = LocalFunctionOrder.CreateWrittenSet(node.Statements, 0);
+            for (var i = 0; i < node.Statements.Count; i++)
             {
+                var stmt = node.Statements[i];
+                if (LocalFunctionOrder.TryWriteStatement(node.Statements, i, writtenAhead, ref context))
+                {
+                    continue;
+                }
+
                 if (stmt is BlockSyntax nested &&
                     nested.HasAnnotations(LoweringAnnotations.ScopedBlockAnnotationKind))
                 {

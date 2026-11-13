@@ -290,9 +290,16 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// </summary>
     internal void VisitStatements(SyntaxList<StatementSyntax> statements, int start)
     {
+        // The local functions that a statement uses before they are declared are written in front of it
+        var writtenAhead = LocalFunctionOrder.CreateWrittenSet(statements, start);
         for (var i = start; i < statements.Count; i++)
         {
             var statement = statements[i];
+            if (LocalFunctionOrder.TryWriteStatement(statements, i, writtenAhead, ref Context))
+            {
+                continue;
+            }
+
             if (!Context.Emitter.Dialect.IsCuda &&
                 UsingCpuEmitter.TryGetUsingDeclaration(statement, out var declaration))
             {
