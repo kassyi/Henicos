@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Compiler.Transpiler.Helpers;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;

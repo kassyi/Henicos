@@ -14,6 +14,7 @@ internal static class CpuHostLaunchEmitter
     private const string PinnedHandle = GSharpInternalNames.Launcher.PinnedHandle;
     private const string GridBlockCount = GSharpInternalNames.Launcher.GridBlockCount;
     private const string ArrayPinningType = HostTypeNames.ArrayPinning;
+    private const string AutoResult = GSharpInternalNames.ReturnValue.Buffer;
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, Accessibility accessibility,
@@ -21,12 +22,13 @@ internal static class CpuHostLaunchEmitter
     {
         writer.AppendLine(kernel.ManagedCSharpSource);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
-        WriteCpuDelegateDeclaration(writer, kernel);
-        WriteLaunchMethodCpu(writer, kernel, accessibility, moduleName);
+        var arguments = CpuNativeArgumentPlan.Create(kernel.Host);
+        WriteCpuDelegateDeclaration(writer, kernel, arguments);
+        WriteLaunchMethodCpu(writer, kernel, arguments, accessibility, moduleName);
     }
 
-    private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel, Accessibility accessibility,
-        string moduleName)
+    private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel,
+        in CpuNativeArgumentPlan arguments, Accessibility accessibility, string moduleName)
     {
         using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id);
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false, accessibility);
@@ -44,44 +46,35 @@ internal static class CpuHostLaunchEmitter
             // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
             WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
             WriteCpuDelegateGetOrCompile(writer, kernel);
-            WriteCpuFixedBlocksAndInvoke(writer, kernel.Host, sharing);
+            WriteCpuFixedBlocksAndInvoke(writer, kernel.Host, sharing, arguments);
         }
     }
 
-    private static void WriteCpuDelegateDeclaration(SourceWriter writer, in KernelEmission kernel)
+    // [UnmanagedFunctionPointer(Cdecl)] private unsafe delegate void <delegate>(<launch dimensions>, <arguments>);
+    private static void WriteCpuDelegateDeclaration(SourceWriter writer, in KernelEmission kernel,
+        in CpuNativeArgumentPlan arguments)
     {
         // Generate Delegate
-        writer.AppendLine(
-            "[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]");
+        const string Interop = "global::System.Runtime.InteropServices.";
+        writer.Append($"[{Interop}UnmanagedFunctionPointer({Interop}CallingConvention.Cdecl, ");
+        writer.AppendLine($"CharSet = {Interop}CharSet.Unicode)]");
         writer.Append("private unsafe delegate void ");
         writer.Append(KernelHostNames.GetDelegateTypeName(kernel));
         using (writer.Parentheses())
         {
-            writer.Append("uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, ");
+            writer.Append("uint gridDimX, uint gridDimY, uint gridDimZ, ");
+            writer.Append("uint blockDimX, uint blockDimY, uint blockDimZ, ");
             writer.Append($"uint sharedMemBytes, long {GridBlockCount}");
-            foreach (var p in kernel.Host.Parameters)
+            var parameters = kernel.Host.Parameters;
+            for (var i = 0; i < parameters.Length; i++)
             {
-                writer.Append(", ");
-
-                if (p is { IsArray: true, IsNullableValue: true })
-                {
-                    writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}>* {p.Identifier}");
-                }
-                else if (p.IsArray)
-                {
-                    writer.Append($"global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {p.Identifier}");
-                }
-                else
-                {
-                    // [WHY] A user struct by value goes as a pointer to the host value, so that the runtime marshaller
-                    // never converts it (bool, char, the x64 size rules); the native launcher copies it (#511). A struct
-                    // whose layouts differ goes as a pointer to its native shadow struct.
-                    var typeName = p.IsCpuConvertedStruct && p.AotStructPath is { } shadow ? shadow : p.TypeName;
-                    writer.Append($"{typeName}{(p.IsByRef || p.IsCpuValueStruct ? "*" : "")} {p.Identifier}");
-                }
+                writer.Append($", {arguments.Arguments[i].TypeName} {parameters[i].Identifier}");
             }
 
-            AutoResultEmitter.WriteCpuDelegateParameter(writer, kernel.Host);
+            if (arguments.ResultTypeName is { } result)
+            {
+                writer.Append($", {result} {AutoResult}");
+            }
         }
 
         writer.AppendLine(";");
@@ -141,7 +134,7 @@ internal static class CpuHostLaunchEmitter
     // block frees them and returns the rented shadows after the call and the copy back, also when the marshaling, the
     // native call or its error check throws.
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel,
-        in ArraySharingPlan sharing)
+        in ArraySharingPlan sharing, in CpuNativeArgumentPlan arguments)
     {
         var parameters = kernel.Parameters;
         var hasConverted = false;
@@ -154,7 +147,7 @@ internal static class CpuHostLaunchEmitter
 
         if (!hasConverted)
         {
-            WriteFixedBlocksAndInvoke(writer, kernel);
+            WriteFixedBlocksAndInvoke(writer, kernel, arguments);
             AutoResultEmitter.WriteReturn(writer, kernel);
             return;
         }
@@ -181,7 +174,7 @@ internal static class CpuHostLaunchEmitter
             }
 
             AutoResultEmitter.WriteCpuConvertedMarshal(writer, kernel);
-            WriteFixedBlocksAndInvoke(writer, kernel);
+            WriteFixedBlocksAndInvoke(writer, kernel, arguments);
             foreach (var shape in kernel.Parameters)
             {
                 WriteConvertedUnmarshal(writer, shape);
@@ -358,7 +351,8 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine($"{HostTypeNames.GCHandle}.FromIntPtr({PinnedHandle}).Free();");
     }
 
-    private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel,
+        in CpuNativeArgumentPlan arguments)
     {
         var hasFixed = false;
 
@@ -392,12 +386,12 @@ internal static class CpuHostLaunchEmitter
             using (writer.Scope())
             {
                 WriteNullableProxies(writer, kernel);
-                WriteDelegateInvocation(writer, kernel);
+                WriteDelegateInvocation(writer, kernel, arguments);
             }
         }
         else
         {
-            WriteDelegateInvocation(writer, kernel);
+            WriteDelegateInvocation(writer, kernel, arguments);
         }
     }
 
@@ -422,7 +416,8 @@ internal static class CpuHostLaunchEmitter
         }
     }
 
-    private static void WriteDelegateInvocation(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteDelegateInvocation(SourceWriter writer, in KernelHostModel kernel,
+        in CpuNativeArgumentPlan arguments)
     {
         writer.Append(FunctionHandle);
         using (writer.Parentheses())
@@ -432,43 +427,41 @@ internal static class CpuHostLaunchEmitter
             writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ");
             writer.Append($"sharedMemBytes, {GridBlockCount}");
 
-            foreach (var shape in kernel.Parameters)
+            var parameters = kernel.Parameters;
+            for (var i = 0; i < parameters.Length; i++)
             {
                 writer.Append(", ");
-                WriteDelegateArgument(writer, shape);
+                WriteDelegateArgument(writer, parameters[i], arguments.Arguments[i].Form);
             }
 
-            if (kernel.ReturnsValue)
-            {
-                writer.Append(", ");
-                writer.Append(AutoResultEmitter.PinnedAutoResult);
-            }
+            writer.AppendIf(arguments.ResultTypeName is not null, $", {AutoResultEmitter.PinnedAutoResult}");
         }
 
         writer.AppendLine(";");
         writer.AppendLine($"global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError({DllPath});");
     }
 
+    // The argument in the form that CpuNativeArgumentPlan chose
     // [WHY] A switch statement, not a switch expression: each form is written straight into the writer, so no argument
     // string is built (transpiler-emission.md section 1)
-    private static void WriteDelegateArgument(SourceWriter writer, in KernelParameterShape shape)
+    private static void WriteDelegateArgument(SourceWriter writer, in KernelParameterShape shape,
+        CpuNativeArgumentForm form)
     {
-        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
-        switch (shape)
+        switch (form)
         {
-            case { IsArray: true, IsNullableValue: true }:
+            case CpuNativeArgumentForm.NullableProxyAddress:
                 writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape)}");
                 break;
-            case { IsArray: true }:
+            case CpuNativeArgumentForm.ArrayProxy:
                 WriteArrayProxy(writer, shape);
                 break;
-            case { IsCpuConvertedStruct: true }:
+            case CpuNativeArgumentForm.ShadowAddress:
                 writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.Native, shape)}");
                 break;
-            case { IsByRef: true }:
-                writer.Append(pinned);
+            case CpuNativeArgumentForm.PinnedAddress:
+                writer.Append(KernelHostNames.GetLocal(LauncherLocal.Pinned, shape));
                 break;
-            case { IsCpuValueStruct: true }:
+            case CpuNativeArgumentForm.ValueAddress:
                 // The parameter of Launch is a value parameter, a fixed variable whose address needs no pinning
                 writer.Append($"&{shape.Identifier}");
                 break;

@@ -1,5 +1,5 @@
 #nullable enable
-using Kassyi.GSharp.Compiler.Transpiler.Helpers;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 
 namespace Kassyi.GSharp.Tests.Shared.Analysis;
 
