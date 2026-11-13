@@ -48,6 +48,20 @@ public sealed class DeviceArrayRegions
     }
 
     /// <summary>
+    /// Records a region that another owner allocated and frees for <paramref name="array"/>: the region of a group
+    /// of overlapping arguments (<see cref="HostAliasGroups"/>), so that a struct field that holds the same array
+    /// takes it. Two <c>T[]</c> arguments that are one array record it once: both start the group's region at the
+    /// same address.
+    /// </summary>
+    /// <param name="array">The host array, compared by reference.</param>
+    /// <param name="region">The device address of the array's first element.</param>
+    public void AddShared(object array, IntPtr region)
+    {
+        _byArray ??= new Dictionary<object, Entry>(ReferenceEqualityComparer.Instance);
+        _byArray.TryAdd(array, new Entry(region));
+    }
+
+    /// <summary>
     /// Claims the copy of <paramref name="array"/> back to the host for the caller, so that an array that several
     /// arguments hold is copied back once.
     /// </summary>
