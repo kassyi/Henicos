@@ -170,6 +170,7 @@ Measured on one Windows 11 machine (WDDM):
 
 - A first measurement (driver 610.88) read only `\Memory\Pool Nonpaged Bytes` and `\Memory\Pool Paged Bytes` while a plain CUDA program whose kernel ends in `trap;` ran 200 times, and took their growth for memory the faults left behind.
 - A second measurement also read the kernel pool tag table at each step. On driver 621.24, 200 such faults grew the counters by about 400 MB nonpaged and 330 MB paged, but nearly all of it was in file system and filter tags (caches of unrelated disk activity after a reboot); the tags of the NVIDIA driver grew by 2 MB, and the memory outside any tag did not grow. 50 faults right after a reboot on 621.14 grew nothing.
+- Over nine days of test runs (about 10,600 Event 153 entries), the pools reached 8.3 GB nonpaged and 11.1 GB paged, and a reboot returned them to 1.8 GB and 2.1 GB. No tag data was taken then, so what held that memory is not known.
 
 No pool growth that a GPU fault causes has been shown. The pool counters alone cannot tell, so when they grow during a workload that faults, list the pool tags that grew (poolmon) on an otherwise idle machine before suspecting the driver.
 
