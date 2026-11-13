@@ -28,11 +28,15 @@ internal sealed class InstanceSymbolMap
     /// <summary>Whether <paramref name="parameter"/> is one the instance gives an argument for.</summary>
     public bool IsMapped(ITypeParameterSymbol parameter) => _arguments.ContainsKey(parameter.OriginalDefinition);
 
-    /// <summary>Whether <paramref name="type"/> is or contains a type parameter the instance gives an argument for.</summary>
+    /// <summary>
+    /// Whether <paramref name="type"/> is or contains a type parameter the instance gives an argument for.
+    /// </summary>
     public bool DependsOnTypeParameter(ITypeSymbol? type) =>
         type is not null && !ReferenceEquals(Substitute(type), type);
 
-    /// <summary><paramref name="type"/> with the mapped type parameters replaced; itself when none occurs in it.</summary>
+    /// <summary>
+    /// <paramref name="type"/> with the mapped type parameters replaced; itself when none occurs in it.
+    /// </summary>
     public ITypeSymbol Substitute(ITypeSymbol type)
     {
         switch (type)
@@ -87,7 +91,8 @@ internal sealed class InstanceSymbolMap
     }
 
     /// <summary>
-    /// What a member of an interface that the declaration reaches through a type parameter (a static abstract or virtual
+    /// What a member of an interface that the declaration reaches through a type parameter (a static abstract or
+    /// virtual
     /// member, <c>T.Zero</c>, <c>a + b</c> on <c>T : INumber&lt;T&gt;</c>) is for the type argument, and how the copy
     /// must bind it.
     /// </summary>
@@ -113,7 +118,8 @@ internal sealed class InstanceSymbolMap
         {
             // A checked operator that the type does not declare runs the default implementation of the interface,
             // which calls the unchecked operator: the copy binds that one
-            return member is IMethodSymbol { Name: var name } && TryGetUncheckedOperator(interfaceType, name) is { } plain
+            return member is IMethodSymbol { Name: var name } &&
+                   TryGetUncheckedOperator(interfaceType, name) is { } plain
                 ? Resolve(plain, closed)
                 : ConstrainedMember.Unsupported(closed,
                     $"'{member.Name}' runs the default implementation of '{interfaceType.Name}'");
@@ -227,7 +233,8 @@ internal sealed class InstanceSymbolMap
         {
             definition = containing.GetTypeMembers(named.Name, named.Arity)
                 .AsStackEnumerable()
-                .FirstOrDefault(named.OriginalDefinition, static (t, d) => t.OriginalDefinition.IsEqualTo(d)) ?? definition;
+                .FirstOrDefault(named.OriginalDefinition,
+                    static (t, d) => t.OriginalDefinition.IsEqualTo(d)) ?? definition;
         }
 
         return arguments.Length == 0 ? definition : definition.Construct(arguments);

@@ -48,9 +48,10 @@ internal static class GenericCopyEmitter
             var written = rewrite.Kind switch
             {
                 CopyRewriteKind.TypeArgument => WriteType(rewrite.Type),
-                CopyRewriteKind.ExplicitTypeArguments => WriteGenericName(((IdentifierNameSyntax)node).Identifier.ValueText,
-                    rewrite.TypeArguments),
-                CopyRewriteKind.StaticExtensionCall => WriteStaticCall(Inner<InvocationExpressionSyntax>(node), rewrite),
+                CopyRewriteKind.ExplicitTypeArguments => WriteGenericName(
+                    ((IdentifierNameSyntax)node).Identifier.ValueText, rewrite.TypeArguments),
+                CopyRewriteKind.StaticExtensionCall =>
+                    WriteStaticCall(Inner<InvocationExpressionSyntax>(node), rewrite),
                 CopyRewriteKind.IdentityConstant => WriteIdentity(rewrite),
                 CopyRewriteKind.NameOfConstant => SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
                     SyntaxFactory.Literal((string?)rewrite.Constant ?? string.Empty)),
@@ -70,7 +71,8 @@ internal static class GenericCopyEmitter
             .WithoutAnnotations(CopyNodeIndex.AnnotationKind);
 
         private static TypeSyntax WriteType(ITypeSymbol? type) =>
-            (type ?? throw new InvalidOperationException("A type rewrite of a generic copy has no type.")).ToCsharpTypeSyntax();
+            (type ?? throw new InvalidOperationException("A type rewrite of a generic copy has no type."))
+            .ToCsharpTypeSyntax();
 
         // <name><<type arguments>>
         private static SimpleNameSyntax WriteGenericName(string name, ImmutableArray<ITypeSymbol> arguments)
@@ -92,7 +94,8 @@ internal static class GenericCopyEmitter
         private static ExpressionSyntax WriteStaticCall(InvocationExpressionSyntax call, CopyRewrite rewrite)
         {
             var method = rewrite.Method ??
-                         throw new InvalidOperationException("A static extension call of a generic copy has no method.");
+                         throw new InvalidOperationException(
+                             "A static extension call of a generic copy has no method.");
             var access = (MemberAccessExpressionSyntax)call.Expression;
             var receiver = SyntaxFactory.Argument(access.Expression.WithoutTrivia());
             if (method.Parameters is [{ RefKind: RefKind.Ref }, ..])

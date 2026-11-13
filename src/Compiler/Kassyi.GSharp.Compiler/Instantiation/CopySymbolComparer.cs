@@ -13,7 +13,9 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// </param>
 internal sealed class CopySymbolComparer(InstanceSymbolMap map, IReadOnlyDictionary<SyntaxNode, int> originalNodes)
 {
-    /// <summary>Whether the copy binds <paramref name="copy"/> where the declaration binds <paramref name="original"/>.</summary>
+    /// <summary>
+    /// Whether the copy binds <paramref name="copy"/> where the declaration binds <paramref name="original"/>.
+    /// </summary>
     /// <param name="original">The symbol of the declaration, already read as the instance.</param>
     /// <param name="copy">The symbol the copy binds.</param>
     public bool Same(ISymbol? original, ISymbol? copy)
@@ -176,6 +178,7 @@ internal sealed class CopySymbolComparer(InstanceSymbolMap map, IReadOnlyDiction
     private static bool SameDefinition(ISymbol original, ISymbol copy)
     {
         var left = DocumentationCommentId.CreateDeclarationId(original);
-        return left is not null && string.Equals(left, DocumentationCommentId.CreateDeclarationId(copy), StringComparison.Ordinal);
+        var right = DocumentationCommentId.CreateDeclarationId(copy);
+        return left is not null && string.Equals(left, right, StringComparison.Ordinal);
     }
 }
