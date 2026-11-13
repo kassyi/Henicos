@@ -15,6 +15,7 @@ import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
+import { checkBuildSplit } from "./self-test-build-split.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./machine.ts";
 import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
@@ -62,6 +63,7 @@ function checkShellHelpers(): void {
   assert.strictEqual(isTestCommand("just test --filter X"), true);
   assert.strictEqual(isTestCommand("dotnet build Henicos.slnx"), false);
   checkMachineDefaults();
+  checkBuildSplit(assert);
 }
 
 /** The defaults that follow the machine, and the memory a test run needs. */
@@ -140,7 +142,7 @@ export async function selfTest(): Promise<void> {
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;
-  const { client, sleeper, open, started, whenExists, startScheduler } = fixture;
+  const { client, sleeper, gated, open, started, whenExists, startScheduler } = fixture;
   const { statusOf, usedWithin, waitFor, jobWith, runningWith, jobsWith, rawClient } = fixture;
   try {
     // 1. At most 2 jobs at once, in arrival order; a client killed with its command frees its slot.
@@ -296,8 +298,10 @@ export async function selfTest(): Promise<void> {
     assert.strictEqual(recorded.estimate(started(8000, loneStarted)), null, "the run of a lost client is not recorded");
 
     // 4. After a scheduler restart, running jobs re-register before waiting ones are granted: never over capacity.
-    const k1 = client(port, sleeper(6000));
-    const k2 = client(port, sleeper(6000));
+    //    The two running commands wait for a gate, so that they still run whenever the next scheduler is up.
+    const restartGate = path.join(dir, "gate-restart");
+    const k1 = client(port, gated(0, restartGate));
+    const k2 = client(port, gated(0, restartGate));
     await waitFor(port, "two commands run", (s) =>
       s.running.filter((j) => j.commandPid !== null).length === 2 ? true : undefined,
     );
@@ -307,7 +311,8 @@ export async function selfTest(): Promise<void> {
     servers[0]?.kill("SIGKILL"); // the clients start the next scheduler themselves
     let maxUsed = 0;
     let adoptedSince = Infinity;
-    for (let i = 0; i < 20; i++) {
+    // At least 3 s of samples, and on until a running job was seen (the next scheduler may take a while to start)
+    for (let i = 0; i < 100 && (i < 20 || adoptedSince === Infinity); i++) {
       const snapshot = await request(port, { type: "status" }).catch(() => null); // the scheduler may be restarting
       if (snapshot !== null && snapshot.type === "status") {
         const status = snapshot as unknown as StatusReply;
@@ -318,6 +323,7 @@ export async function selfTest(): Promise<void> {
     }
     assert.ok(maxUsed <= 2, `never over capacity after a restart, saw ${maxUsed}`);
     assert.ok(adoptedSince < restartedAt, "a re-registered job keeps the start of its command, not the restart time");
+    open(restartGate);
     assert.deepStrictEqual(await Promise.all([k1.done, k2.done, k3.done]), [0, 0, 0]);
 
     // 6. The command runs in the chosen shell and its exit code comes back: PowerShell passes the code of the last
