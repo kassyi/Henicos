@@ -81,17 +81,7 @@ public class IntegerShiftAndWrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) =>
-            IntegerTrapAndCheckedDifferentialKernels.ShiftCountMaskBoundaryMatrixKernel(
-            b.Get<int>("iVals"),
-            b.Get<uint>("uVals"),
-            b.Get<long>("lVals"),
-            b.Get<ulong>("ulVals"),
-            b.Get<short>("sVals"),
-            b.Get<sbyte>("sbVals"),
-            b.Get<int>("counts"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_uncheckedIntegerWrap = new(
@@ -118,11 +108,7 @@ public class IntegerShiftAndWrapDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.UncheckedIntegerWrapKernel(
-            b.Get<int>("left"),
-            b.Get<int>("right"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

@@ -397,8 +397,8 @@ public class FuzzReducerTests
 
             ulong[] oracleOut = new ulong[16];
             ulong[] brokenOut = new ulong[16];
-            SequentialOracle.Run(shape, ThreadOrder.Forward, () => oracleDel(inA, inB, inC, oracleOut));
-            SequentialOracle.Run(shape, ThreadOrder.Forward, () => brokenDel(inA, inB, inC, brokenOut));
+            SequentialOracle.RunEachThread(shape, ThreadOrder.Forward, () => oracleDel(inA, inB, inC, oracleOut));
+            SequentialOracle.RunEachThread(shape, ThreadOrder.Forward, () => brokenDel(inA, inB, inC, brokenOut));
 
             for (int i = 0; i < 16; i++)
             {

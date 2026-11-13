@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Kernels that test the differential harness itself (<see cref="DifferentialRunnerTests"/>): one whose result every
+/// Kernels that test the differential harness itself (<see cref="DifferentialRunnerTests"/>): ones whose result every
 /// path must reproduce, and one whose result depends on the thread order, which the oracle's order check must reject.
 /// </summary>
 public static partial class HarnessProbeKernels
@@ -32,5 +32,33 @@ public static partial class HarnessProbeKernels
     public static void LastWriterKernel(int[] r)
     {
         r[0] = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+    }
+
+    // The oracle of the harness tests' fake case: r[t * 2] = a + b (wrapping) and r[t * 2 + 1] = a ^ b, for the linear
+    // id t of a two-dimensional launch
+    [GpuKernel]
+    public static void Int32AddXorKernel(int[] a, int[] b, int[] r)
+    {
+        int blockId = BlockIndex.X + BlockIndex.Y * GridDimension.X;
+        int threadInBlock = ThreadIndex.X + ThreadIndex.Y * BlockDimension.X;
+        int t = blockId * BlockDimension.X * BlockDimension.Y + threadInBlock;
+        if (t >= a.Length)
+        {
+            return;
+        }
+
+        r[t * 2] = (int)((uint)a[t] + (uint)b[t]);
+        r[t * 2 + 1] = a[t] ^ b[t];
+    }
+
+    // r[t] = idx[idx[t]]: an index outside idx throws IndexOutOfRangeException
+    [GpuKernel]
+    public static void DoubleIndexKernel(int[] idx, int[] r)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t < r.Length)
+        {
+            r[t] = idx[idx[t]];
+        }
     }
 }

@@ -28,9 +28,7 @@ public class StructMutatingGetterDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructMutatingGetterDifferentialKernels.MutatingGetterKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

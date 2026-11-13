@@ -32,11 +32,7 @@ public class NullArrayAndFieldDifferentialTests
             opt: null,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayOptionalValidKernel(
-            b.Get<int>("src"),
-            b.Get<int>("dst"),
-            s.Rows,
-            opt: null),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullArrayLengthTrap = new(
@@ -51,9 +47,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayLengthTrapKernel(
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullArrayIndexerTrap = new(
@@ -68,9 +62,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayIndexerTrapKernel(
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullArrayForeachTrap = new(
@@ -85,9 +77,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayForeachTrapKernel(
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullArrayReassignedParameterTrap = new(
@@ -104,10 +94,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NullArrayReassignedParameterTrapKernel(
-            b.Get<int>("src"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_allThreadsNullDereferenceTrap = new(
@@ -140,10 +127,7 @@ public class NullArrayAndFieldDifferentialTests
             blockDimX: s.BlockX,
             blockDimY: s.BlockY,
             blockDimZ: s.BlockZ),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel(
-            b.Get<int>("flags"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     // A null read in a device function reports no site on CUDA (its message is not registered),
@@ -167,11 +151,7 @@ public class NullArrayAndFieldDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.GridStrideNullParameterKernel(
-            b.Get<int>("src"),
-            b.Get<int>("flags"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_allThreadsEmptyFirstTrap = new(
@@ -206,11 +186,7 @@ public class NullArrayAndFieldDifferentialTests
             blockDimX: s.BlockX,
             blockDimY: s.BlockY,
             blockDimZ: s.BlockZ),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel(
-            b.Get<int>("emptyArr"),
-            b.Get<int>("flags"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]
@@ -264,11 +240,7 @@ public class NullArrayAndFieldDifferentialTests
                 s.Rows,
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX),
-            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NonNullableParameterNullArgumentKernel(
-                b.Get<int>("src"),
-                b.Get<int>("flags"),
-                b.Get<int>("dst"),
-                s.Rows),
+            OracleIsLaunch = true,
         });
 
     // A null in a non-nullable array field of a struct argument reaches the kernel, as in a C# call, and throws where
@@ -304,10 +276,7 @@ public class NullArrayAndFieldDifferentialTests
                 s.Rows,
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX),
-            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NonNullableFieldKernel(
-                b.GetScalar<DiffNonNullableHolder>("holder"),
-                b.Get<int>("dst"),
-                s.Rows),
+            OracleIsLaunch = true,
         });
 
     // A struct argument of the kernel passed by value to a device function: the call checks the non-nullable field, so
@@ -343,10 +312,7 @@ public class NullArrayAndFieldDifferentialTests
                 s.Rows,
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX),
-            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NonNullableFieldToFunctionKernel(
-                b.GetScalar<DiffNonNullableHolder>("holder"),
-                b.Get<int>("dst"),
-                s.Rows),
+            OracleIsLaunch = true,
         });
 
     [SkippableFact]
@@ -374,10 +340,6 @@ public class NullArrayAndFieldDifferentialTests
                 s.Rows,
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX),
-            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.GpuNotNullKernel(
-                b.Get<int>("src"),
-                b.Get<int>("flags"),
-                b.Get<int>("dst"),
-                s.Rows),
+            OracleIsLaunch = true,
         });
 }

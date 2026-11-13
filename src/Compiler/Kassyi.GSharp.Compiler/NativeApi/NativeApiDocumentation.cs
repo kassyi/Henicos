@@ -42,20 +42,26 @@ internal static class NativeApiDocumentation
 
     /// <summary>
     /// Writes each line of <paramref name="xmlDoc"/> unchanged after <c>///</c> (<c>xmlDoc</c> keys hold XML markup).
+    /// A line ends at every line break that C# source knows (<see cref="XmlDocEscaping.LineBreaks"/>; <c>\r\n</c> is
+    /// one), so no text of the YAML can end the comment and be read as code.
     /// </summary>
     public static void EmitXmlDoc(SourceWriter writer, string xmlDoc)
     {
         var start = 0;
         while (start <= xmlDoc.Length)
         {
-            var end = xmlDoc.IndexOf('\n', start);
+            var end = xmlDoc.IndexOfAny(XmlDocEscaping.LineBreaks, start);
             if (end < 0)
             {
                 end = xmlDoc.Length;
             }
 
-            writer.Line($"/// {xmlDoc[start..end].TrimEnd('\r')}");
+            writer.Line($"/// {xmlDoc[start..end]}");
             start = end + 1;
+            if (end + 1 < xmlDoc.Length && xmlDoc[end] == '\r' && xmlDoc[end + 1] == '\n')
+            {
+                start++;
+            }
         }
     }
 

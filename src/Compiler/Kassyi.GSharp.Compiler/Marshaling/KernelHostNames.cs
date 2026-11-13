@@ -124,6 +124,12 @@ internal static class KernelHostNames
     public static string GetLocal(LauncherLocal kind, in KernelParameterShape parameter) =>
         FormatOrdinal(GetPrefix(kind), parameter.Ordinal);
 
+    /// <summary>
+    /// Returns the generated launcher local variable name of kind <paramref name="kind"/> for the parameter at
+    /// <paramref name="ordinal"/>.
+    /// </summary>
+    public static string GetLocal(LauncherLocal kind, int ordinal) => FormatOrdinal(GetPrefix(kind), ordinal);
+
     private static string GetPrefix(LauncherLocal kind) => kind switch
     {
         LauncherLocal.DevicePointer => GSharpInternalNames.Launcher.DevicePointerPrefix,
@@ -146,6 +152,8 @@ internal static class KernelHostNames
         LauncherLocal.CSharpArgument => GSharpInternalNames.Launcher.CSharpArgumentPrefix,
         LauncherLocal.CSharpPinned => GSharpInternalNames.Launcher.CSharpPinnedPrefix,
         LauncherLocal.CSharpLength => GSharpInternalNames.Launcher.CSharpLengthPrefix,
+        LauncherLocal.KernelArgument => GSharpInternalNames.Launcher.KernelArgumentPrefix,
+        LauncherLocal.OutValue => GSharpInternalNames.Launcher.OutValuePrefix,
         _ => throw new System.ArgumentOutOfRangeException(nameof(kind), kind, null)
     };
 

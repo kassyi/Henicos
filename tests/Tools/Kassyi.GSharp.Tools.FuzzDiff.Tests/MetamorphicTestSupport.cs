@@ -61,11 +61,13 @@ internal static class MetamorphicTestSupport
                     .In("inC", inC)
                     .Out<ulong>("checksum", rows, ["hash"], OutputPolicy.Exact);
             },
-            Launch = (b, s) => SequentialOracle.Run(
+            Launch = (b, s) => SequentialOracle.RunEachThread(
                 s,
                 ThreadOrder.Forward,
                 () => afterDel(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"))),
-            Oracle = (b, _) => beforeDel(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum")),
+            Oracle = (b, s) => SequentialOracle.RunEachThread(
+                s,
+                () => beforeDel(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"))),
         };
 
         var report = DifferentialRunner.Evaluate(
