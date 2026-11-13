@@ -565,9 +565,20 @@ internal readonly record struct KernelClassModel(
             }
         }
 
-        // A pointer launcher that takes a shadow struct names the AotContexts class, which the structs of every kernel
-        // of the class narrow
-        var aotContexts = GetAotContextsAccessibility(structs);
+        NarrowPointerLaunchers(emissions, GetAotContextsAccessibility(structs));
+        ErrorSiteTable.TryBuildModuleSites(rawClassSites, out var classErrorSites, out _, out _);
+        return new KernelClassModel(
+            header,
+            emissions.MoveToImmutable().AsEquatableArray(),
+            structs.ToImmutable().AsEquatableArray(),
+            classErrorSites.AsEquatableArray());
+    }
+
+    // A pointer launcher that takes a shadow struct names the AotContexts class, which the structs of every kernel of
+    // the class narrow
+    private static void NarrowPointerLaunchers(ImmutableArray<KernelEmission>.Builder emissions,
+        Accessibility aotContexts)
+    {
         for (var i = 0; i < emissions.Count; i++)
         {
             var emission = emissions[i];
@@ -581,13 +592,6 @@ internal readonly record struct KernelClassModel(
                     : emission.Host.LauncherAccessibility
             };
         }
-
-        ErrorSiteTable.TryBuildModuleSites(rawClassSites, out var classErrorSites, out _, out _);
-        return new KernelClassModel(
-            header,
-            emissions.MoveToImmutable().AsEquatableArray(),
-            structs.ToImmutable().AsEquatableArray(),
-            classErrorSites.AsEquatableArray());
     }
 
     /// <summary>Whether another kernel of <paramref name="kernels"/> has the name of <c>kernels[index]</c>.</summary>
