@@ -1,5 +1,6 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Extensions;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers.Calls;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -16,8 +17,9 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// already gives: the body macros with a lambda (Kassyi.GSharp.Core runs them), the site key of a
 /// <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key), the length of an optional array,
 /// the calls that C# removes (<c>RemovedCalls</c>), which the user's method does not make either, the arm that C# adds
-/// to a switch expression that is not exhaustive, and the <c>in</c> of a variable passed to a <c>ref readonly</c>
-/// parameter without a keyword.
+/// to a switch expression that is not exhaustive, the <c>in</c> of a variable passed to a <c>ref readonly</c>
+/// parameter without a keyword, and the value of a caller-info parameter that a call omits (the value C# passes at the
+/// same call).
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [Scenario(TestScenario.HappyPath)]
@@ -218,6 +220,7 @@ public class ManagedRewriteConsistencyTests
         body.DescendantNodes().Any(node => node switch
         {
             InvocationExpressionSyntax invocation when RemovedCalls.IsRemoved(invocation, model) => true,
+            InvocationExpressionSyntax or BaseObjectCreationExpressionSyntax when OmitsCallerInfo(node, model) => true,
             InvocationExpressionSyntax invocation =>
                 model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ContainingType.Name: "Gpu" } callee &&
                 callee.Name is "ForUnroll" or "GridStrideLoop" or "SingleThread",
@@ -237,4 +240,8 @@ public class ManagedRewriteConsistencyTests
                 },
             _ => false
         });
+
+    private static bool OmitsCallerInfo(SyntaxNode call, SemanticModel model) =>
+        model.GetSymbolInfo(call).Symbol is IMethodSymbol method &&
+        method.Parameters.Any(parameter => CallerInfoArgument.GetValue(parameter, call, model) is not null);
 }
