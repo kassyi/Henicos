@@ -5,14 +5,19 @@
 // .agents/hooks.json): denies a build or test command that does not go through the job queue
 // (scripts/human/job-queue.js), so that agents running side by side do not oversubscribe the machine. The input
 // format tells the two apart. A command that may run produces no output: an Antigravity "allow" would skip the
-// user's permission prompt.
+// user's permission prompt. In Claude Code, a plain build or test command (segments joined by && only, no wrapper)
+// is not denied but handed back queued, `node scripts/human/job-queue.js run [--gpu] --shell <s> -- '<command>'`
+// (updatedInput, with no permission decision, so the user's permission prompt still runs); --gpu comes from the
+// dialect of the named test projects and from the queue options of a just recipe, and a command whose GPU use cannot
+// be told is denied with a sentence saying that it may need --gpu.
 //
 // Modules (check-queued-command/):
-//   shell-reader.js   reads the command in the tool's dialect (bash, PowerShell, cmd): quotes, segments at &&, ||, ;,
-//                     |, & and line breaks, $( ) / @( ) substitutions, heredocs and here-strings, assignments, launch
-//                     prefixes and shell wrappers
-//   command-rules.js  what is denied and allowed, the denial message, the hook input and output
-//   self-test.js      --self-test
+//   shell-reader.js       reads the command in the tool's dialect (bash, PowerShell, cmd): quotes, segments at &&,
+//                         ||, ;, |, & and line breaks, $( ) / @( ) substitutions, heredocs and here-strings,
+//                         assignments, launch prefixes and shell wrappers
+//   command-rules.js      what is denied and allowed, the denial message, the hook input and output
+//   queue-rewrite.js      which denied commands are queued instead, with which queue options
+//   self-test.js          --self-test (self-test-rewrite.js: the rewrite)
 // Out of reach: a command held in a variable and run later ($c = 'dotnet test'; cmd /c $c) and the contents of a
 // script file the command runs.
 //
