@@ -36,6 +36,7 @@ const Usage = [
   "  node scripts/human/job-queue.js stop",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
   "  node scripts/human/job-queue.js --self-test",
+  "  node scripts/human/job-queue.js --screenshots <dir>",
   "",
   "run         Waits for a slot of the job queue, runs the command in this directory, gives the slot back.",
   "            --weight <n>           Slots the job takes (default 1; a test run also takes its memory budget).",
@@ -67,6 +68,9 @@ const Usage = [
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
   "            slot per 3 cores, at least 2); --memory-mb: the memory the budgets of the running test runs may add up",
   "            to (tests/memory-budgets.yml; default half the physical memory).",
+  "--screenshots",
+  "            Draws the live view from a fixed sample status as SVG files into <dir> (wide.svg, small.svg,",
+  "            selected.svg, help.svg; no scheduler). Regenerates the images of the README after a change to the view.",
   "",
   `Environment: ${PortVariable} (default ${DefaultPort}), ${SlotsVariable} (--slots), ${MemoryVariable}`,
   `(--memory-mb), ${PolicyVariable} (default ${DefaultPolicy}; the scheduler keeps the policy it started with).`,
@@ -86,7 +90,7 @@ const Modes = [
   "stop",
   "serve",
 ] as const;
-type Mode = (typeof Modes)[number] | "self-test";
+type Mode = (typeof Modes)[number] | "self-test" | "screenshots";
 
 interface Options extends RunOptions {
   mode: Mode | "";
@@ -100,6 +104,8 @@ interface Options extends RunOptions {
   moveBefore: number;
   moveReset: boolean;
   newWeight: number;
+  /** --screenshots: the directory the SVG files go to. */
+  screenshotDir: string;
 }
 
 function parsePositive(name: string, text: string | undefined, allowZero = false): number {
@@ -140,6 +146,7 @@ export function parseArgs(argv: string[]): Options {
     moveBefore: 0,
     moveReset: false,
     newWeight: 0,
+    screenshotDir: "",
     command: command.join(" "),
     // Several words after `--` are argv that the calling shell has already split: re-quote them for the shell that
     // runs them (see run), instead of joining them into a different command.
@@ -172,6 +179,13 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--self-test":
         options.mode = "self-test";
+        break;
+      case "--screenshots":
+        options.mode = "screenshots";
+        options.screenshotDir = own[++i] ?? "";
+        if (options.screenshotDir === "") {
+          usageError("--screenshots needs a directory.");
+        }
         break;
       case "--weight":
         options.weight = parsePositive("--weight", own[++i]);
@@ -306,6 +320,14 @@ export async function main(argv: string[]): Promise<void> {
       case "self-test": {
         const { selfTest } = await import("./self-test.ts");
         await selfTest();
+        break;
+      }
+      case "screenshots": {
+        const { writeScreenshots } = await import("./screenshot.ts");
+        for (const file of writeScreenshots(options.screenshotDir)) {
+          process.stdout.write(`${file}
+`);
+        }
         break;
       }
       case "":
