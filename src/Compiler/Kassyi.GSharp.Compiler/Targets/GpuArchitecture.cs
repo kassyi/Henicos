@@ -1,13 +1,11 @@
 namespace Kassyi.GSharp.Compiler.Targets;
 
 /// <summary>
-/// The launch limits of the GPUs of one compute capability, in bytes and counts, as the CUDA Programming Guide
+/// The shared memory limits of the GPUs of one compute capability, in bytes, as the CUDA Programming Guide
 /// ("Compute Capabilities", technical specifications) lists them.
 /// </summary>
 /// <param name="Major">The major version of the compute capability (8 for 8.6).</param>
 /// <param name="Minor">The minor version of the compute capability (6 for 8.6).</param>
-/// <param name="MaxBlocksPerMultiprocessor">The most blocks resident on one multiprocessor at once.</param>
-/// <param name="MaxThreadsPerMultiprocessor">The most threads resident on one multiprocessor at once.</param>
 /// <param name="SharedMemoryPerMultiprocessor">The shared memory of one multiprocessor.</param>
 /// <param name="MaxSharedMemoryPerBlockOptIn">
 /// The most shared memory (static and dynamic) one block may use after opting in above 48 KB.
@@ -23,8 +21,6 @@ namespace Kassyi.GSharp.Compiler.Targets;
 internal readonly record struct GpuArchitecture(
     int Major,
     int Minor,
-    int MaxBlocksPerMultiprocessor,
-    int MaxThreadsPerMultiprocessor,
     int SharedMemoryPerMultiprocessor,
     int MaxSharedMemoryPerBlockOptIn,
     int ReservedSharedMemoryPerBlock,

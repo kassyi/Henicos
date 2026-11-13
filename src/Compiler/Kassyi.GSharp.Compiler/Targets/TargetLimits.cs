@@ -12,8 +12,6 @@ namespace Kassyi.GSharp.Compiler.Targets;
 /// </remarks>
 /// <param name="Architectures">The compute capabilities of the table the fatbin may run on, oldest first.</param>
 /// <param name="MaxSharedMemoryPerBlockOptIn">The smallest shared memory per block with opt-in, in bytes.</param>
-/// <param name="MaxBlocksPerMultiprocessor">The fewest resident blocks per multiprocessor.</param>
-/// <param name="MaxThreadsPerMultiprocessor">The fewest resident threads per multiprocessor.</param>
 /// <param name="SharedMemoryBudgets">
 /// The shared memory budgets of <see cref="Architectures"/> that may hold the fewest blocks: no budget in the list is
 /// <see cref="SharedMemoryBudget.IsAtMost"/> another. The resident blocks by shared memory are the smallest
@@ -27,13 +25,26 @@ namespace Kassyi.GSharp.Compiler.Targets;
 internal readonly record struct TargetLimits(
     EquatableArray<GpuArchitecture> Architectures,
     int MaxSharedMemoryPerBlockOptIn,
-    int MaxBlocksPerMultiprocessor,
-    int MaxThreadsPerMultiprocessor,
     EquatableArray<SharedMemoryBudget> SharedMemoryBudgets,
     EquatableArray<string> UnknownArchitectures)
 {
     /// <summary>Whether at least one compute capability the fatbin may run on is in the table.</summary>
     public bool IsKnown => !Architectures.IsDefaultOrEmpty;
+
+    /// <summary>
+    /// The SASS name (<c>sm_86</c>) of the oldest compute capability whose opt-in limit is
+    /// <see cref="MaxSharedMemoryPerBlockOptIn"/>, to name the GPU that rejects a launch; empty when
+    /// <see cref="IsKnown"/> is <see langword="false"/>.
+    /// </summary>
+    public string SharedMemoryLimitArchitecture => Architectures
+        .AsStackEnumerable()
+        .TryFirst(
+            MaxSharedMemoryPerBlockOptIn,
+            static (row, limit) => row.MaxSharedMemoryPerBlockOptIn == limit,
+            out var strictest
+        )
+        ? strictest.Name
+        : "";
 
     /// <summary>
     /// How many blocks that each use <paramref name="bytesPerBlock"/> bytes of shared memory fit on one multiprocessor

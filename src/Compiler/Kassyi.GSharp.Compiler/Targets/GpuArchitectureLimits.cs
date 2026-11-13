@@ -3,8 +3,8 @@ using Kassyi.GSharp.Cuda;
 namespace Kassyi.GSharp.Compiler.Targets;
 
 /// <summary>
-/// The launch limits per compute capability, and the limits of the GPUs a <c>GSharpTargetArchitectures</c> setting
-/// may run on.
+/// The shared memory limits per compute capability, and the limits of the GPUs a <c>GSharpTargetArchitectures</c>
+/// setting may run on.
 /// </summary>
 /// <remarks>
 /// The values are those of the CUDA Programming Guide ("Compute Capabilities": technical specifications and shared
@@ -19,18 +19,18 @@ internal static class GpuArchitectureLimits
 
     /// <summary>The compute capabilities whose limits G# knows, oldest first.</summary>
     public static ImmutableArray<GpuArchitecture> Table { get; } = ImmutableArray.Create<GpuArchitecture>(
-        new(7, 5, 16, 1024, 64 * KiB, 64 * KiB, 0, 256),
-        new(8, 0, 32, 2048, 164 * KiB, 163 * KiB, KiB, 128),
-        new(8, 6, 16, 1536, 100 * KiB, 99 * KiB, KiB, 128),
-        new(8, 7, 16, 1536, 164 * KiB, 163 * KiB, KiB, 128, IsTegra: true),
-        new(8, 9, 24, 1536, 100 * KiB, 99 * KiB, KiB, 128),
-        new(9, 0, 32, 2048, 228 * KiB, 227 * KiB, KiB, 128),
-        new(10, 0, 32, 2048, 228 * KiB, 227 * KiB, KiB, 128),
-        new(10, 3, 32, 2048, 228 * KiB, 227 * KiB, KiB, 128),
-        new(10, 7, 16, 1024, 328 * KiB, 327 * KiB, KiB, 128),
-        new(11, 0, 24, 1536, 228 * KiB, 227 * KiB, KiB, 128),
-        new(12, 0, 24, 1536, 100 * KiB, 99 * KiB, KiB, 128),
-        new(12, 1, 24, 1536, 100 * KiB, 99 * KiB, KiB, 128)
+        new(7, 5, 64 * KiB, 64 * KiB, 0, 256),
+        new(8, 0, 164 * KiB, 163 * KiB, KiB, 128),
+        new(8, 6, 100 * KiB, 99 * KiB, KiB, 128),
+        new(8, 7, 164 * KiB, 163 * KiB, KiB, 128, IsTegra: true),
+        new(8, 9, 100 * KiB, 99 * KiB, KiB, 128),
+        new(9, 0, 228 * KiB, 227 * KiB, KiB, 128),
+        new(10, 0, 228 * KiB, 227 * KiB, KiB, 128),
+        new(10, 3, 228 * KiB, 227 * KiB, KiB, 128),
+        new(10, 7, 328 * KiB, 327 * KiB, KiB, 128),
+        new(11, 0, 228 * KiB, 227 * KiB, KiB, 128),
+        new(12, 0, 100 * KiB, 99 * KiB, KiB, 128),
+        new(12, 1, 100 * KiB, 99 * KiB, KiB, 128)
     );
 
     /// <summary>
@@ -101,8 +101,6 @@ internal static class GpuArchitectureLimits
             return new TargetLimits(
                 ImmutableArray<GpuArchitecture>.Empty.AsEquatableArray(),
                 0,
-                0,
-                0,
                 ImmutableArray<SharedMemoryBudget>.Empty.AsEquatableArray(),
                 unknown.AsEquatableArray()
             );
@@ -113,14 +111,6 @@ internal static class GpuArchitectureLimits
             rows
                 .AsStackEnumerable()
                 .Select(static row => row.MaxSharedMemoryPerBlockOptIn)
-                .Min(),
-            rows
-                .AsStackEnumerable()
-                .Select(static row => row.MaxBlocksPerMultiprocessor)
-                .Min(),
-            rows
-                .AsStackEnumerable()
-                .Select(static row => row.MaxThreadsPerMultiprocessor)
                 .Min(),
             GetFewestBlockBudgets(rows).AsEquatableArray(),
             unknown.AsEquatableArray()
