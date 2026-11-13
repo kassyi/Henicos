@@ -6,8 +6,6 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 [ExcludeFromCodeCoverage]
 public static partial class GpuBigIntVectorKernels
 {
-    public static IntPtr VectorSignMagnitudeToTwosComplementKernelHandle;
-    public static IntPtr VectorSignMagnitudeToOffsetBinaryKernelHandle;
     /// <summary>
     /// Performs a two-tier (warp + block) Kogge-Stone carry-lookahead scan across the thread block
     /// and returns the carry-in for the calling thread while outputting the block-wide carry-out.

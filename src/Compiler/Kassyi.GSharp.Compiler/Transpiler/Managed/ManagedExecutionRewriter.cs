@@ -2,19 +2,6 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
-/// <summary>The managed body that <see cref="ManagedExecutionRewriter"/> rewrites.</summary>
-internal enum ManagedBodyKind
-{
-    /// <summary>The lowered body of a kernel's state machine.</summary>
-    Kernel,
-
-    /// <summary>The lowered body of the state machine of a device function that may suspend.</summary>
-    SuspendingDeviceFunction,
-
-    /// <summary>The user's body of a device function that does not suspend, copied into its managed version (#711).</summary>
-    ManagedVersion
-}
-
 /// <summary>
 /// Rewrites lowered device function calls and state machine constructs into managed execution equivalents.
 /// </summary>
@@ -438,19 +425,4 @@ internal sealed partial class ManagedExecutionRewriter(
             _inLambdaOrLocalFuncCount--;
         }
     }
-}
-
-/// <summary>The arm that the managed copy adds to a switch expression that is not exhaustive.</summary>
-internal enum UnmatchedSwitchArm
-{
-    /// <summary><c>var v =&gt; throw new SwitchExpressionException(v)</c>.</summary>
-    SwitchExpressionWithValue,
-
-    /// <summary><c>_ =&gt; throw new SwitchExpressionException()</c>, for an input that cannot be boxed.</summary>
-    SwitchExpression,
-
-    /// <summary>
-    /// <c>_ =&gt; throw new InvalidOperationException()</c>, where the library has no SwitchExpressionException.
-    /// </summary>
-    InvalidOperation
 }

@@ -63,6 +63,22 @@ internal sealed class IrPrinter
         return writer.ToString().TrimEnd('\r', '\n');
     }
 
+    /// <summary>
+    /// Writes statements one after another, with the temporaries numbered across them (the output of a pass that
+    /// replaces one statement with several).
+    /// </summary>
+    public static string Print(ImmutableArray<IrStatement> statements, IrPrintOptions options = IrPrintOptions.None)
+    {
+        using var writer = new SourceWriter();
+        var printer = new IrPrinter(writer, options);
+        foreach (var statement in statements)
+        {
+            printer.WriteStatement(statement);
+        }
+
+        return writer.ToString().TrimEnd('\r', '\n');
+    }
+
     /// <summary>Writes an expression on one line.</summary>
     public static string Print(IrExpression expression, IrPrintOptions options = IrPrintOptions.None)
     {
@@ -129,7 +145,15 @@ internal sealed class IrPrinter
     {
         _writer.Append("local ");
         WriteVariableType(declaration.Variable);
-        _writer.Append(declaration.Variable.Name);
+        if (declaration.Variable.Kind == IrVariableKind.Temporary)
+        {
+            WriteVariable(declaration.Variable);
+        }
+        else
+        {
+            _writer.Append(declaration.Variable.Name);
+        }
+
         if (declaration.Initializer is { } initializer)
         {
             _writer.Append(" = ");

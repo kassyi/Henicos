@@ -6,6 +6,37 @@ namespace IrSpillPlannerCases;
 public struct Cell
 {
     public int F;
+
+    public int Add(int v)
+    {
+        F += v;
+        return F;
+    }
+
+    public readonly int Peek(int v) => F + v;
+}
+
+public struct Wrapped
+{
+    public int V;
+
+    public static implicit operator Wrapped(int v) => new Wrapped { V = v };
+}
+
+public enum Lane
+{
+    A,
+    B
+}
+
+public static class Extensions
+{
+    [GpuDeviceFunction]
+    public static int AfterBarrier(this int x)
+    {
+        Gpu.SyncThreads();
+        return x;
+    }
 }
 
 // Each kernel ends with the statement the test plans; the split points are a warp shuffle and device functions that
@@ -192,5 +223,187 @@ public static class Cases
         {
             result[i] = Suspend();
         }
+    }
+
+    [GpuDeviceFunction]
+    public static void SuspendRef(ref int target, int value)
+    {
+        Gpu.SyncThreads();
+        target = value;
+    }
+
+    [GpuDeviceFunction]
+    public static int Take(Wrapped w, int b) => w.V + b;
+
+    [GpuKernel]
+    public static void SpanElementTarget(int[] data)
+    {
+        Span<int> s = data.AsSpan();
+        int i = ThreadIndex.X;
+        s[i] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void ElementTarget(int[] a)
+    {
+        int i = ThreadIndex.X;
+        a[i] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void StructMethodOfElement(Cell[] cells, int[] result)
+    {
+        int i = ThreadIndex.X;
+        result[0] = cells[i].Add(Suspend());
+    }
+
+    [GpuKernel]
+    public static void RefElementOfASplit(int[] a)
+    {
+        int i = ThreadIndex.X;
+        SuspendRef(ref a[i], 1);
+    }
+
+    [GpuKernel]
+    public static void CompoundThenReadSameElement(int[] a, int x, int y, int[] r)
+    {
+        int l = ThreadIndex.X;
+        r[l] = Triple(a[l] += Warp.ShuffleSync(0xffffffffu, x, 0), a[l], Warp.ShuffleSync(0xffffffffu, y, 0));
+    }
+
+    [GpuKernel]
+    public static void NestedCompound(int[] a, int[] b, int x)
+    {
+        int l = ThreadIndex.X;
+        a[l] += b[l] += Warp.ShuffleSync(0xffffffffu, x, 0);
+    }
+
+    [GpuKernel]
+    public static void CompoundFieldOfElement(Cell[] cells)
+    {
+        int i = ThreadIndex.X;
+        cells[i].F += Suspend();
+    }
+
+    [GpuDeviceFunction]
+    public static int ReadOnlyReceiverOfAMutatingMethod(in Cell c) => c.Add(Suspend());
+
+    [GpuDeviceFunction]
+    public static int ReadOnlyReceiverOfAReadOnlyMethod(in Cell c) => c.Peek(Suspend());
+
+    [GpuKernel]
+    public static void IndexNumericConversion(int[] r, long n)
+    {
+        r[(int)n] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void IndexEnumConversion(int[] r, Lane lane)
+    {
+        r[(int)lane] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void IndexThreadIndex(int[] r)
+    {
+        r[ThreadIndex.X + 1] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void IndexNullableConversion(int[] r, int? n)
+    {
+        r[(int)n] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void IndexUnboxing(int[] r, object o)
+    {
+        r[(int)o] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void IndexCheckedArithmetic(int[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        r[checked(t + u)] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void IndexArrayRead(int[] r, int[] idx)
+    {
+        r[idx[0]] = Suspend();
+    }
+
+    [GpuKernel]
+    public static void CoalesceRight(int?[] cached, int[] data)
+    {
+        int t = ThreadIndex.X;
+        data[t] = cached[t] ?? Warp.ShuffleSync(0xffffffffu, data[t], 0);
+    }
+
+    [GpuKernel]
+    public static void ExtensionReceiverOfASplit(int[] data)
+    {
+        int x = ThreadIndex.X;
+        data[0] = (x - 1).AfterBarrier();
+    }
+
+    [GpuKernel]
+    public static void UserDefinedConversionBeforeASplit(int[] a, int[] result)
+    {
+        result[0] = Take(a[0], Suspend());
+    }
+
+    [GpuKernel]
+    public static void OrElseDeclarator(int[] result)
+    {
+        bool p = ThreadIndex.X > 0;
+        bool q = p || Suspend() > 0;
+        result[0] = q ? 1 : 0;
+    }
+
+    [GpuKernel]
+    public static void DiscardedSuspend()
+    {
+        Suspend();
+    }
+
+    [GpuKernel]
+    public static void BarrierStatement()
+    {
+        Gpu.SyncThreads();
+    }
+
+    [GpuKernel]
+    public static void DiscardedShuffle(int x)
+    {
+        Warp.ShuffleSync(0xffffffffu, x, 0);
+    }
+
+    [GpuKernel]
+    public static void IfConditionSplit(int[] result)
+    {
+        if (Suspend() > 0)
+        {
+            result[0] = Suspend();
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static int ReturnAfterSplit(int[] a)
+    {
+        return a[0] + Suspend();
+    }
+
+    [GpuKernel]
+    public static void ConditionalBothArmsSplit(bool c, int x, int[] result)
+    {
+        result[0] = c ? Suspend() : Warp.ShuffleSync(0xffffffffu, x, 0);
+    }
+
+    [GpuKernel]
+    public static void CheckReadsTheIndexOnce(Cell[] cells, int[] b)
+    {
+        cells[b[0]].F = Suspend();
     }
 }

@@ -44,7 +44,7 @@ if (!isHelp) {
 buildTool();
 
 // `dotnet run` starts the tool under the dotnet host, so the tool's parent is not this script. The ids of this
-// process and its parent let the tool recognize a GPU lock that scripts/agent/gpu-lock.js took for this run.
+// process and its parent let the tool recognize a GPU lock that scripts/human/gpu-lock.js took for this run.
 const runArgs = [
   'run', '--project', toolProject, '-c', 'Debug', '--no-build', '--',
   'run', '--repo-root', repoRoot, ...argv,

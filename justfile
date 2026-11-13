@@ -6,7 +6,7 @@ export DiffEngine_Disabled := "true"
 blame_crash := "--blame-crash --blame-crash-dump-type mini"
 
 # The recipes that build, test, fuzz or benchmark run their command through the job queue
-# (scripts/human/job-queue.js, test-execution.md "Job queue"): it waits for free slots of the machine and adds the
+# (scripts/human/job-queue.js, .agents/rules/job-queue.md): it waits for free slots of the machine and adds the
 # MSBuild node limit (-m:<n>) to each dotnet build / test of the command. --gpu takes the GPU lock first. Inside a job
 # the queue already granted (an agent's job-queue.js run -- "just test") the command runs at once, in that job.
 queue := "node scripts/human/job-queue.js run"
@@ -102,6 +102,19 @@ mutate phase="gpumath" since="" *args="":
 # Demangle C++ / G# identifiers in a build/runtime log (pass file path, "-" for stdin, or "help" / "-- --help" for usage)
 gsharp-demangle log_path="-" symbols_path="":
     dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle "{{log_path}}" "{{symbols_path}}"
+
+# The job queue live, one line per job with its timeline (arrows select, c cancel, s start, m move, w slots, ? keys)
+queue-watch:
+    node scripts/human/job-queue.js status --watch
+
+# The same view in a new Windows Terminal window
+[windows]
+queue-window:
+    wt -w new --title "job queue" -d "{{justfile_directory()}}" node scripts/human/job-queue.js status --watch
+
+[unix]
+queue-window:
+    @echo "Run just queue-watch in a terminal window of its own."
 
 # Print the environment of a bug report (OS, GPU, CUDA, host C++, .NET) as Markdown; e.g. `just env-info --json`. Same source on Windows and Unix; needs the .NET SDK 10.0.300 or later (`#:include`)
 env-info *args="":

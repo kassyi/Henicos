@@ -7,6 +7,7 @@
 @.agents/rules/generator-invariants.md
 @.agents/rules/gsharp-naming-conventions.md
 @.agents/rules/issue-milestones.md
+@.agents/rules/job-queue.md
 @.agents/rules/model-routing.md
 @.agents/rules/semantics-charter.md
 @.agents/rules/test-architecture.md

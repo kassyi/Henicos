@@ -3,7 +3,7 @@
 // benchmark baselines (generator, compute, GPU Pi), the differential fuzzer, the sanitized native tests (on Windows
 // also inside WSL, for UBSan), the test-stability loop, the tests with coverage and the Stryker.NET mutation runs.
 // The whole set takes about a day; pick a subset with --steps. Steps that use the GPU run under
-// scripts/agent/gpu-lock.js (the fuzzer takes the lock itself). A failing step is recorded and the run goes on.
+// scripts/human/gpu-lock.js (the fuzzer takes the lock itself). A failing step is recorded and the run goes on.
 //
 // Outputs elsewhere: fuzzer findings in tmp/differential-fuzz, sanitizer logs in tmp/test-sanitized.log, test-stability
 // logs in TestResults/<os>/<time>, coverage reports in TestResults, mutation reports in tmp/stryker/<phase>.
@@ -12,8 +12,8 @@
 //   <step>.log            full output of the step
 //   bench/generator/      BenchmarkDotNet reports of the generator benchmark (input of `just bench-compare`)
 //   summary.md            one row per step: exit code, duration, log; on Windows also the kernel pools after the
-//                         step and the nvlddmkm Event 153 entries during it (gpu-fault-watch.js): the kernel pools
-//                         grew after GPU faults and were freed only by a reboot
+//                         step and the nvlddmkm Event 153 entries during it (gpu-fault-watch.js), so that pool
+//                         growth during a step with GPU faults shows
 //
 // Usage:
 //   node scripts/human/long-checks.js [--steps <list>] [--fuzz-minutes <n>] [--stability <count|duration>]
@@ -28,7 +28,7 @@ const { spawn, spawnSync } = require('child_process');
 const faultWatch = require('./gpu-fault-watch.js');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
-const gpuLock = path.join(repoRoot, 'scripts', 'agent', 'gpu-lock.js');
+const gpuLock = path.join(repoRoot, 'scripts', 'human', 'gpu-lock.js');
 const benchmarksProject = path.join('src', 'Apps', 'Henicos.Benchmarks');
 
 // The comments give the measured time of each step, for reference only: one Windows 11 machine with an NVIDIA GPU,

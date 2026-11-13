@@ -855,8 +855,14 @@ global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedDeep __gsharp_csharp_a
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedDeep __gsharp_csharp_arg_1 = byIn;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedDeep __gsharp_csharp_arg_2 = byRef;
 global::System.Single[] __gsharp_csharp_arg_3 = outSums;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.DeepStructAllArgModesKernel(__gsharp_csharp_arg_0, in __gsharp_csharp_arg_1, ref __gsharp_csharp_arg_2, __gsharp_csharp_arg_3));
+}
+finally
+{
 byRef = __gsharp_csharp_arg_2;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -1543,8 +1549,14 @@ global::Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag __gsharp_csha
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag __gsharp_csharp_arg_1 = byRef;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag[] __gsharp_csharp_arg_2 = arr;
 global::System.Single[] __gsharp_csharp_arg_3 = outEval;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.PrimaryCtorDeepStructKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3));
+}
+finally
+{
 byRef = __gsharp_csharp_arg_1;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -2848,9 +2860,15 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 global::System.Int32 __gsharp_csharp_arg_0 = a;
 global::System.Int32 __gsharp_csharp_arg_1 = b;
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel(ref __gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
+}
+finally
+{
 a = __gsharp_csharp_arg_0;
 b = __gsharp_csharp_arg_1;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -3052,8 +3070,14 @@ global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag __gsharp_csharp_arg_
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag __gsharp_csharp_arg_2 = bagB;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag[] __gsharp_csharp_arg_3 = bagArray;
 global::System.Int32[] __gsharp_csharp_arg_4 = observed;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.DeepStructInternalAliasKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
+}
+finally
+{
 pair = __gsharp_csharp_arg_0;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -3299,8 +3323,14 @@ global::System.Int32[] __gsharp_csharp_arg_1 = topWritable;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag __gsharp_csharp_arg_2 = bagByVal;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag __gsharp_csharp_arg_3 = bagByRef;
 global::System.Int32[] __gsharp_csharp_arg_4 = observed;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.CrossLevelTopAndDeepStructKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, ref __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
+}
+finally
+{
 bagByRef = __gsharp_csharp_arg_3;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -4869,8 +4899,14 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 global::System.Int32[] __gsharp_csharp_arg_0 = items;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded __gsharp_csharp_arg_1 = accum;
 global::System.Int32 __gsharp_csharp_arg_2 = count;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.PtrConvertStructAndRefKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
+}
+finally
+{
 accum = __gsharp_csharp_arg_1;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -5661,8 +5697,14 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableDeepBag __gsharp_csharp_arg_0 = bagByVal;
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableDeepBag __gsharp_csharp_arg_1 = bagByRef;
 global::System.Int32[] __gsharp_csharp_arg_2 = output;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel(__gsharp_csharp_arg_0, ref __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
+}
+finally
+{
 bagByRef = __gsharp_csharp_arg_1;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())

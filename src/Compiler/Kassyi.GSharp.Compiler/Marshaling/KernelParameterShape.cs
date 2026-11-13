@@ -51,6 +51,11 @@ internal readonly record struct KernelParameterShape
     /// </summary>
     public string? BufferElementTypeName { get; init; }
 
+    /// <summary>
+    /// Whether <see cref="BufferElementTypeName"/> is the shadow struct of a user struct (<c>AotContexts.*</c>).
+    /// </summary>
+    public bool IsShadowStructBuffer { get; init; }
+
     /// <summary>A nullable reference type such as <c>float[]?</c>.</summary>
     public bool IsNullableReference { get; init; }
 
@@ -257,6 +262,7 @@ internal readonly record struct KernelParameterShape
                 MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType, kernelClass),
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
                 BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type, kernelClass) : null,
+                IsShadowStructBuffer = shape.IsByRef && IsShadowStructElement(parameter.Type),
                 HasArrayFields = hasArrayFields,
                 CpuHoldsArrayMethodName = hasArrayFields
                     ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
@@ -275,6 +281,7 @@ internal readonly record struct KernelParameterShape
                 Container = GetContainer(marshaledType),
                 ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
                 BufferElementTypeName = GetBufferElementTypeName(elementType, kernelClass),
+                IsShadowStructBuffer = IsShadowStructElement(elementType),
                 CpuHoldsArrayMethodName = cpu.ConvertedElementHasArrayFields
                     ? AotHostNames.GetQualifiedHoldsArrayMethodName(elementType, kernelClass)
                     : null,
@@ -284,7 +291,11 @@ internal readonly record struct KernelParameterShape
         }
 
         return shape.IsByRef
-            ? shape with { BufferElementTypeName = GetBufferElementTypeName(parameter.Type, kernelClass) }
+            ? shape with
+            {
+                BufferElementTypeName = GetBufferElementTypeName(parameter.Type, kernelClass),
+                IsShadowStructBuffer = IsShadowStructElement(parameter.Type)
+            }
             : shape;
     }
 
@@ -316,6 +327,10 @@ internal readonly record struct KernelParameterShape
         !element.IsUnmanagedType ? null
         : TypeLayoutCalculator.IsUserStruct(element) ? AotHostNames.GetAotStructPath(element, kernelClass)
         : element.GetFullyQualifiedCsharpName();
+
+    // The GpuBuffer element that GetBufferElementTypeName spells as an AotContexts path
+    private static bool IsShadowStructElement(ITypeSymbol element) =>
+        element.IsUnmanagedType && TypeLayoutCalculator.IsUserStruct(element);
 
     // The default as C# in the launcher's signature, whatever the build host's culture
     private static string FormatDefaultValue(ITypeSymbol type, object? value) => value switch

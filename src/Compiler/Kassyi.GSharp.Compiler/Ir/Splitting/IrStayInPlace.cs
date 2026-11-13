@@ -51,6 +51,8 @@ internal static class IrStayInPlace
     /// Whether the index of a target, read once before the split, can be read after it instead: it stays in place
     /// (<see cref="Stays"/>), or it is built without a user-defined or checked operator and without division or
     /// remainder (which can throw) from operands that stay and from values that read nothing (<c>ThreadIndex.X</c>).
+    /// A conversion stays only when it cannot throw: an identity, numeric (unchecked), implicit constant or enum
+    /// conversion; reading a <see cref="Nullable{T}"/>, unboxing and a reference conversion can.
     /// </summary>
     public static bool StaysAsIndex(IrExpression index, in ExpressionEffects others, in ExpressionEffects later,
         Compilation compilation)
@@ -68,13 +70,19 @@ internal static class IrStayInPlace
                 StaysAsIndex(binary.Right, others, later, compilation),
             IrUnary { Operator: { Method: null, IsChecked: false } } unary =>
                 StaysAsIndex(unary.Operand, others, later, compilation),
-            IrConversion { Conversion: { Method: null, IsChecked: false } } conversion =>
+            IrConversion { Conversion: { Method: null, IsChecked: false, Kind: var kind } } conversion
+                when CannotThrow(kind) =>
                 StaysAsIndex(conversion.Operand, others, later, compilation),
             IrPropertyReference { Receiver: null, Arguments.IsEmpty: true } property =>
                 IrEffects.Of(property, compilation).IsEmpty,
             _ => false
         };
     }
+
+    // The conversions that cannot throw when they are built in and unchecked
+    private static bool CannotThrow(IrConversionKind kind) =>
+        kind is IrConversionKind.Identity or IrConversionKind.Numeric or IrConversionKind.ImplicitConstant
+            or IrConversionKind.Enumeration;
 
     /// <summary>What evaluating <paramref name="operand"/> as its holder uses it reads and writes.</summary>
     public static ExpressionEffects EffectsOf(IrExpression operand, Compilation compilation) => operand.Category switch

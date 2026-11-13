@@ -61,4 +61,23 @@ public static partial class HarnessProbeKernels
             r[t] = idx[idx[t]];
         }
     }
+
+    // Every thread writes r[0] = t + 10 before it reads idx[idx[t]]: with idx[0] = -1 thread 0 throws, and r[0] holds
+    // the value of the thread that ran last, so it depends on the thread order
+    [GpuKernel]
+    public static void RacingWriteThenThrowKernel(int[] idx, int[] r)
+    {
+        int t = ThreadIndex.X;
+        r[0] = t + 10;
+        r[1] = idx[idx[t]];
+    }
+
+    // r[t] = idx[idx[t]] / idx[t]: with idx = {-1, 1, 2, 0} thread 0 throws IndexOutOfRangeException and thread 3
+    // DivideByZeroException, so the first exception depends on the thread order
+    [GpuKernel]
+    public static void TwoExceptionTypesKernel(int[] idx, int[] r)
+    {
+        int t = ThreadIndex.X;
+        r[t] = idx[idx[t]] / idx[t];
+    }
 }

@@ -53,7 +53,7 @@ public sealed record RunPaths(string RepoRoot, string WorkDir, string OutDir);
 /// <param name="CompareBase">The git ref for <c>--compare-base</c>, or <see langword="null"/>.</param>
 /// <param name="ExpectChange">Whether a difference found by <c>--compare-base</c> is the expected result.</param>
 /// <param name="NoReduce">Whether failures are recorded without reduction.</param>
-/// <param name="NoGpuLock">Whether the CUDA run skips <c>scripts/agent/gpu-lock.js</c>.</param>
+/// <param name="NoGpuLock">Whether the CUDA run skips <c>scripts/human/gpu-lock.js</c>.</param>
 public sealed record RunCommandOptions(
     FuzzProfile Profile,
     RunGenerationOptions Generation,
@@ -96,7 +96,7 @@ public sealed class RunCommand : IFuzzCommand
           --out-dir <dir>                    Output directory for generated sources (default: <work-dir>/Generated).
           --no-reduce                        Skip automatic 2-stage reduction and fingerprint deduplication on
                                              failure.
-          --no-gpu-lock                      Skip acquiring scripts/agent/gpu-lock.js (use when already holding
+          --no-gpu-lock                      Skip acquiring scripts/human/gpu-lock.js (use when already holding
                                              the lock).
           --repo-root <dir>                  Root of the working tree; relative directories resolve against it
                                              (default: current directory).

@@ -105,10 +105,10 @@ internal static class ManagedStateMachineAvailability
         if (!AreContainingTypesPartial(method) ||
             !method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) ||
             declaration.GetBodyNode() is not { } body ||
-            !IsAtLeastInternal(method.ReturnType) ||
+            !GeneratedMemberAccessibility.IsAtLeastInternal(method.ReturnType) ||
             !method.Parameters
                 .AsStackEnumerable()
-                .All(static p => IsAtLeastInternal(p.Type)))
+                .All(static p => GeneratedMemberAccessibility.IsAtLeastInternal(p.Type)))
         {
             return false;
         }
@@ -118,7 +118,8 @@ internal static class ManagedStateMachineAvailability
         foreach (var node in body.DescendantNodes())
         {
             if (node is VariableDeclaratorSyntax or SingleVariableDesignationSyntax &&
-                model.GetDeclaredSymbol(node) is ILocalSymbol local && !IsAtLeastInternal(local.Type))
+                model.GetDeclaredSymbol(node) is ILocalSymbol local &&
+                !GeneratedMemberAccessibility.IsAtLeastInternal(local.Type))
             {
                 return false;
             }
@@ -153,33 +154,5 @@ internal static class ManagedStateMachineAvailability
         }
 
         return true;
-    }
-
-    // A type that an internal member of the assembly can name: public or internal, as are the types that contain it
-    // and its type arguments
-    private static bool IsAtLeastInternal(ITypeSymbol type)
-    {
-        switch (type)
-        {
-            case IArrayTypeSymbol array:
-                return IsAtLeastInternal(array.ElementType);
-            case IPointerTypeSymbol pointer:
-                return IsAtLeastInternal(pointer.PointedAtType);
-            case INamedTypeSymbol named:
-                for (INamedTypeSymbol? current = named; current != null; current = current.ContainingType)
-                {
-                    if (current.DeclaredAccessibility is not (Accessibility.Public or Accessibility.Internal
-                        or Accessibility.ProtectedOrInternal or Accessibility.NotApplicable))
-                    {
-                        return false;
-                    }
-                }
-
-                return named.TypeArguments
-                    .AsStackEnumerable()
-                    .All(IsAtLeastInternal);
-            default:
-                return true;
-        }
     }
 }

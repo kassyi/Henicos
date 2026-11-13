@@ -1,3 +1,9 @@
+---
+trigger: glob
+globs: "**/src/Compiler/**"
+description: Invariants of the generator pipeline - diagnostics, original spans, struct guards, ref/out, design-time I/O, evaluation order.
+---
+
 # Generator Pipeline Invariants
 
 Architectural constraints enforced by the GSharp generator pipeline. Abide by these when modifying transpiler/generator logic. For anything not listed, consult `docs/spec/` before assuming.
