@@ -8,7 +8,9 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// </summary>
 internal static class GenericCopyPlanner
 {
-    /// <summary>Plans the copy of <paramref name="declaration"/> for the instance <paramref name="map"/> reads.</summary>
+    /// <summary>
+    /// Plans the copy of <paramref name="declaration"/> for the instance <paramref name="map"/> reads.
+    /// </summary>
     /// <param name="declaration">The generic declaration, in the compilation of <paramref name="model"/>.</param>
     /// <param name="nodes">The nodes of the declaration, <see cref="CopyNodeIndex.List"/>.</param>
     /// <param name="model">The semantic model of the declaration.</param>
@@ -75,7 +77,8 @@ internal static class GenericCopyPlanner
             switch (model.GetSymbolInfo(name).Symbol)
             {
                 case ITypeParameterSymbol parameter when map.IsMapped(parameter):
-                    Rewrites[index] = new CopyRewrite(index, CopyRewriteKind.TypeArgument, Type: map.Substitute(parameter));
+                    Rewrites[index] = new CopyRewrite(index, CopyRewriteKind.TypeArgument,
+                        Type: map.Substitute(parameter));
                     break;
                 case IMethodSymbol { IsGenericMethod: true, ReducedFrom: null } method
                     when method.MethodKind is MethodKind.Ordinary or MethodKind.LocalFunction && !IsInNameOf(name):
@@ -95,7 +98,8 @@ internal static class GenericCopyPlanner
             if (invocation.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" } &&
                 model.GetSymbolInfo(invocation).Symbol is null)
             {
-                if (model.GetConstantValue(invocation) is { HasValue: true, Value: string text } && NamesTypeParameter(invocation))
+                if (model.GetConstantValue(invocation) is { HasValue: true, Value: string text } &&
+                    NamesTypeParameter(invocation))
                 {
                     Rewrites[index] = new CopyRewrite(index, CopyRewriteKind.NameOfConstant, Constant: text);
                 }
@@ -110,7 +114,8 @@ internal static class GenericCopyPlanner
 
             switch (invocation.Expression)
             {
-                case MemberAccessExpressionSyntax access when map.DependsOnTypeParameter(model.GetTypeInfo(access.Expression).Type):
+                case MemberAccessExpressionSyntax access
+                    when map.DependsOnTypeParameter(model.GetTypeInfo(access.Expression).Type):
                     var method = reduced.GetConstructedReducedFrom() ?? reduced;
                     var arguments = SubstituteAll(method.TypeArguments);
                     if (CheckWritable(index, arguments))
@@ -138,7 +143,8 @@ internal static class GenericCopyPlanner
             switch (resolved.Kind)
             {
                 case ConstrainedMemberKind.IdentityConstant:
-                    Rewrites[index] = new CopyRewrite(index, CopyRewriteKind.IdentityConstant, Type: resolved.ClosedType,
+                    Rewrites[index] = new CopyRewrite(index, CopyRewriteKind.IdentityConstant,
+                        Type: resolved.ClosedType,
                         Constant: resolved.Constant);
                     break;
                 case ConstrainedMemberKind.Unsupported:
@@ -277,6 +283,7 @@ internal static class GenericCopyPlanner
             node.Ancestors()
                 .AsStackEnumerable()
                 .OfType<InvocationExpressionSyntax>()
-                .Any(static invocation => invocation.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" });
+                .Any(static invocation =>
+                    invocation.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" });
     }
 }

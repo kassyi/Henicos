@@ -20,7 +20,9 @@ internal static class CopyNodeIndex
             .AsStackEnumerable()
             .ToArray();
 
-    /// <summary><paramref name="declaration"/> with every node annotated with its position in <see cref="List"/>.</summary>
+    /// <summary>
+    /// <paramref name="declaration"/> with every node annotated with its position in <see cref="List"/>.
+    /// </summary>
     public static TNode Annotate<TNode>(TNode declaration) where TNode : SyntaxNode =>
         new Annotator().Visit(declaration) as TNode ??
         throw new InvalidOperationException("Annotating the nodes of a declaration changed its kind.");

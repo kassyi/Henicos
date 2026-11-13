@@ -160,11 +160,13 @@ internal static class GenericCopyChecker
             if (!comparer.SameType(Substitute(originalType.Type), copyType.Type) ||
                 (!isOperand && !comparer.SameType(Substitute(originalType.ConvertedType), copyType.ConvertedType)))
             {
-                return $"the copy has the type '{copyType.Type?.Name}' where the declaration has '{originalType.Type?.Name}'";
+                return $"the copy has the type '{copyType.Type?.Name}' " +
+                       $"where the declaration has '{originalType.Type?.Name}'";
             }
 
-            if (plan.Rewrites.TryGetValue(index, out var rewrite) && rewrite.Kind is CopyRewriteKind.IdentityConstant or
-                    CopyRewriteKind.NameOfConstant or CopyRewriteKind.NarrowedOperator or CopyRewriteKind.NarrowedShift or
+            if (plan.Rewrites.TryGetValue(index, out var rewrite) &&
+                rewrite.Kind is CopyRewriteKind.IdentityConstant or CopyRewriteKind.NameOfConstant or
+                    CopyRewriteKind.NarrowedOperator or CopyRewriteKind.NarrowedShift or
                     CopyRewriteKind.NarrowedNegation)
             {
                 return CompareWritten(rewrite, copied);
@@ -181,7 +183,7 @@ internal static class GenericCopyChecker
             return rewrite.Kind switch
             {
                 CopyRewriteKind.IdentityConstant when !constant.HasValue ||
-                                                     !IsNumber(constant.Value, rewrite.Constant is int value ? value : -1) =>
+                                                     !IsNumber(constant.Value, ConstantOf(rewrite)) =>
                     "the copy does not give the identity of the type",
                 CopyRewriteKind.NameOfConstant when !Equals(constant.Value, rewrite.Constant) =>
                     "the copy does not give the name the declaration gives",
@@ -194,7 +196,8 @@ internal static class GenericCopyChecker
             var symbol = model.GetSymbolInfo(original).Symbol;
             var copySymbol = copyModel.GetSymbolInfo(copied).Symbol;
             if (ConstrainedAccess.IsConstrainable(symbol) && symbol is not null &&
-                ConstrainedAccess.Find(original, model, symbol) is ITypeParameterSymbol parameter && map.IsMapped(parameter))
+                ConstrainedAccess.Find(original, model, symbol) is ITypeParameterSymbol parameter &&
+                map.IsMapped(parameter))
             {
                 var resolved = map.ResolveConstrained(symbol, parameter);
                 var same = resolved.Kind switch
@@ -223,7 +226,8 @@ internal static class GenericCopyChecker
 
             var conversion = model.GetConversion(expression);
             var copyConversion = copyModel.GetConversion(copiedExpression);
-            var same = conversion.Exists == copyConversion.Exists && conversion.IsImplicit == copyConversion.IsImplicit &&
+            var same = conversion.Exists == copyConversion.Exists &&
+                       conversion.IsImplicit == copyConversion.IsImplicit &&
                        conversion.IsNumeric == copyConversion.IsNumeric &&
                        conversion.IsNullable == copyConversion.IsNullable &&
                        conversion.IsUserDefined == copyConversion.IsUserDefined &&
@@ -243,7 +247,10 @@ internal static class GenericCopyChecker
 
         // The checked and unchecked operator of the same C# operator: the copy is in the same checked context
         private static bool SameOperator(string copyName, string? expectedName) =>
-            expectedName is not null && string.Equals(Unchecked(copyName), Unchecked(expectedName), StringComparison.Ordinal);
+            expectedName is not null &&
+            string.Equals(Unchecked(copyName), Unchecked(expectedName), StringComparison.Ordinal);
+
+        private static int ConstantOf(CopyRewrite rewrite) => rewrite.Constant is int value ? value : -1;
 
         private static string Unchecked(string name) =>
             name.StartsWith("op_Checked", StringComparison.Ordinal) ? "op_" + name["op_Checked".Length..] : name;

@@ -7,7 +7,8 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// The type argument (<see cref="CopyRewriteKind.TypeArgument"/>), the type of a constant, or the type an operator is
 /// converted back to.
 /// </param>
-/// <param name="Method">The extension method of <see cref="CopyRewriteKind.StaticExtensionCall"/>, in its static form.</param>
+/// <param name="Method">The extension method of <see cref="CopyRewriteKind.StaticExtensionCall"/>, in its static
+/// form.</param>
 /// <param name="TypeArguments">The type arguments a pinned call writes, already substituted.</param>
 /// <param name="Constant">
 /// The value of <see cref="CopyRewriteKind.IdentityConstant"/> or <see cref="CopyRewriteKind.NameOfConstant"/>, or the

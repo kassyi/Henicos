@@ -13,7 +13,8 @@ internal static class ConstrainedAccess
 
     /// <summary>Whether <paramref name="symbol"/> is a member that a type parameter can reach by constraint.</summary>
     public static bool IsConstrainable(ISymbol? symbol) =>
-        symbol is { IsStatic: true, ContainingType.TypeKind: TypeKind.Interface } && (symbol.IsAbstract || symbol.IsVirtual);
+        symbol is { IsStatic: true, ContainingType.TypeKind: TypeKind.Interface } &&
+        (symbol.IsAbstract || symbol.IsVirtual);
 
     /// <summary>
     /// The type <paramref name="node"/> reaches <paramref name="member"/> through, or <see langword="null"/> when it

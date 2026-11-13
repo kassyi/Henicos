@@ -3,7 +3,9 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// <summary>How the closed copy of a generic declaration writes one node of the declaration.</summary>
 internal enum CopyRewriteKind
 {
-    /// <summary>A name bound to a type parameter: the type argument, fully qualified (<c>global::System.Int32</c>).</summary>
+    /// <summary>
+    /// A name bound to a type parameter: the type argument, fully qualified (<c>global::System.Int32</c>).
+    /// </summary>
     TypeArgument,
 
     /// <summary>
@@ -25,7 +27,9 @@ internal enum CopyRewriteKind
     /// </summary>
     IdentityConstant,
 
-    /// <summary><c>nameof</c> of something that names a type parameter: the string it gives in the declaration.</summary>
+    /// <summary>
+    /// <c>nameof</c> of something that names a type parameter: the string it gives in the declaration.
+    /// </summary>
     NameOfConstant,
 
     /// <summary>
@@ -34,7 +38,8 @@ internal enum CopyRewriteKind
     /// math operator computes. A checked operator converts back with a cast in the context it is written in
     /// (<c>((global::System.Byte)(a + b))</c>, throwing where <c>op_CheckedAddition</c> throws); an unchecked one keeps
     /// the low bits first, so that the cast never throws even inside <c>checked</c>
-    /// (<c>((global::System.Byte)((a / b) &amp; 0xFF))</c>, <c>((global::System.SByte)(((a / b) &lt;&lt; 24) &gt;&gt; 24))</c>).
+    /// (<c>((global::System.Byte)((a / b) &amp; 0xFF))</c>, <c>((global::System.SByte)(((a / b) &lt;&lt; 24) &gt;&gt;
+    /// 24))</c>).
     /// </summary>
     NarrowedOperator,
 
