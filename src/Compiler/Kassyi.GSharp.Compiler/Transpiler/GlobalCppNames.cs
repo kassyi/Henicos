@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Instantiation;
 using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
@@ -153,6 +154,11 @@ internal static class GlobalCppNames
     /// <summary>The C# path of <paramref name="method"/>: the path of its containing type and the method.</summary>
     public static GlobalNamePath GetFunctionPath(IMethodSymbol method)
     {
+        if (GenericInstanceTable.TryGet(GetDefinition(method), out var instance))
+        {
+            return GenericInstanceNames.GetInstancePath(instance);
+        }
+
         var definition = GetDefinition(method);
         var typePath = GetTypePath(definition.ContainingType);
         var segments = ImmutableArray.CreateBuilder<GlobalNameSegment>(typePath.Segments.Count + 1);
@@ -268,7 +274,11 @@ internal static class GlobalCppNames
     public static GlobalNamePath GetTypePath(INamedTypeSymbol type) =>
         new(BuildTypeSegments(type));
 
-    private static GlobalNamePath GetTypePath(ITypeSymbol type)
+    /// <summary>
+    /// The C# path of <paramref name="type"/> with its element-type modifiers: <see cref="GetTypePath(INamedTypeSymbol)"/>
+    /// of the element type of a pointer or array, followed by <c>*</c> and the ranks.
+    /// </summary>
+    public static GlobalNamePath GetTypePath(ITypeSymbol type)
     {
         var modifiers = ImmutableArray.CreateBuilder<int>();
         var current = type;
