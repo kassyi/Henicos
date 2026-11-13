@@ -14,7 +14,7 @@ public static partial class FrameOwner
     [GpuDeviceFunction]
     internal static int HoldsPrivate(int[] data)
     {
-        var hidden = new Hidden { X = data[ThreadIndex.X] };
+        var hidden = new Hidden { X = data[0] };
         Gpu.SyncThreads();
         return hidden.X;
     }
@@ -56,7 +56,7 @@ public static partial class FileLocalHolder
     [GpuDeviceFunction]
     internal static int HoldsFileLocal(int[] data)
     {
-        var value = new FileLocalValue { X = data[ThreadIndex.X] };
+        var value = new FileLocalValue { X = data[0] };
         Gpu.SyncThreads();
         return value.X;
     }

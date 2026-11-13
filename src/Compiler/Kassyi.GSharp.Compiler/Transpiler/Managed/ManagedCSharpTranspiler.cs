@@ -43,20 +43,14 @@ internal static class ManagedCSharpTranspiler
 
         // A callee whose frame the context cannot hold (GSH0115, or the diagnostics of the callee) leaves a body that
         // throws, and no call frames
-        string bodySource;
-        if (callees
-            .AsStackEnumerable()
-            .TryFirst((methodSymbol.ContainingType, compilation), static (callee, state) =>
-                    !ManagedStateMachineAvailability.CanCall(callee, state.ContainingType, state.compilation),
-                out var unreachable))
+        var unreachable = FindUnreachableCallee(callees, methodSymbol.ContainingType, compilation);
+        var bodySource = unreachable is null
+            ? CreateBody(lowered, unhoistedLocals, renamedLocals, semanticModel, kernelName,
+                methodSymbol.AreLocalsZeroed(), isDeviceFunction: false, accessors, isUnsafe)
+            : CreateUnreachableFrameThrow(kernelName, unreachable);
+        if (unreachable is not null)
         {
-            bodySource = CreateUnreachableFrameThrow(kernelName, unreachable);
             callees = ImmutableArray<IMethodSymbol>.Empty;
-        }
-        else
-        {
-            bodySource = CreateBody(lowered, unhoistedLocals, renamedLocals, semanticModel, kernelName,
-                methodSymbol.AreLocalsZeroed(), isDeviceFunction: false, accessors, isUnsafe);
         }
 
         var accessibility = KernelFrameAccessibility.Create(methodSymbol,
@@ -103,6 +97,17 @@ internal static class ManagedCSharpTranspiler
 
         return callees.MoveToImmutable();
     }
+
+    // The first callee whose frame a context declared in <within> cannot hold
+    private static IMethodSymbol? FindUnreachableCallee(ImmutableArray<IMethodSymbol> callees,
+        INamedTypeSymbol within, Compilation compilation) =>
+        callees
+            .AsStackEnumerable()
+            .TryFirst((within, compilation), static (callee, state) =>
+                    !ManagedStateMachineAvailability.CanCall(callee, state.within, state.compilation),
+                out var unreachable)
+            ? unreachable
+            : null;
 
     // throw new global::System.NotSupportedException("<kernel> cannot run on the managed CPU path: ...");
     private static string CreateUnreachableFrameThrow(string methodName, IMethodSymbol callee) =>

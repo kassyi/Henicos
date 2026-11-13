@@ -296,26 +296,32 @@ internal static class ManagedStateMachineAvailability
             case IPointerTypeSymbol pointer:
                 return FindFileLocalType(pointer.PointedAtType);
             case INamedTypeSymbol named:
-                for (INamedTypeSymbol? current = named; current != null; current = current.ContainingType)
-                {
-                    if (current.IsFileLocal)
-                    {
-                        return current;
-                    }
-
-                    foreach (var argument in current.TypeArguments)
-                    {
-                        if (FindFileLocalType(argument) is { } found)
-                        {
-                            return found;
-                        }
-                    }
-                }
-
-                return null;
+                return FindFileLocalType(named);
             default:
                 return null;
         }
+    }
+
+    // <named>, a type that contains it, or a type argument of one of them
+    private static INamedTypeSymbol? FindFileLocalType(INamedTypeSymbol named)
+    {
+        for (INamedTypeSymbol? current = named; current != null; current = current.ContainingType)
+        {
+            if (current.IsFileLocal)
+            {
+                return current;
+            }
+
+            if (current.TypeArguments
+                .AsStackEnumerable()
+                .Select(static argument => FindFileLocalType(argument))
+                .TryFirst(static found => found is not null, out var fileLocal))
+            {
+                return fileLocal;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
