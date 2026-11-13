@@ -98,7 +98,10 @@
     <Compile Remove="**\GeneratedInternalNames\**\*.g.cs" />
   </ItemGroup>
 
-  <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles)" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
+  <!-- The generator is an input, as for the targets below: a change of what it writes regenerates the sources. The
+       directory is emptied first, so files that the generator no longer writes are not compiled. -->
+  <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles);$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
+    <RemoveDir Directories="$(IntermediateOutputPath)GeneratedDialects" />
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedDialects" />
     <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; dialects &quot;$(MSBuildThisFileDirectory)Dialects&quot; &quot;$(IntermediateOutputPath)GeneratedDialects&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedDialects.stamp" AlwaysCreate="true" />
