@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Kassyi.GSharp.Core;
 
 namespace IrClassifierCases;
@@ -161,6 +162,28 @@ public static class Cases
         }
 
         data[0] = 1;
+    }
+
+    // A barrier that never runs: C# removes every call of it, so neither kernel below splits
+    [Conditional("GSHARP_PROBE_NEVER_DEFINED")]
+    [GpuDeviceFunction]
+    public static void RemovedBarrier() => Gpu.SyncThreads();
+
+    [GpuKernel]
+    public static void RemovedBarrierDirect(int[] data)
+    {
+        RemovedBarrier();
+        data[0] = 1;
+    }
+
+    [GpuKernel]
+    public static void RemovedBarrierInLoop(int[] data, int n)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            RemovedBarrier();
+            data[i] = i;
+        }
     }
 
     [GpuDeviceFunction]

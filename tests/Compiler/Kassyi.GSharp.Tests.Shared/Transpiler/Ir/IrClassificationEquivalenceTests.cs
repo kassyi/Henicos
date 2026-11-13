@@ -30,7 +30,8 @@ public class IrClassificationEquivalenceTests(ITestOutputHelper output)
 
         output.WriteLine($"{equivalence.CallsCompared} calls compared ({equivalence.SplitCallsCompared} split), " +
                          $"{equivalence.InvocationsInOpaque} invocations in opaque nodes " +
-                         $"({equivalence.SplitInvocationsInOpaque} split, all under nodes marked as holding one), " +
+                         $"({equivalence.SplitInvocationsInOpaque} split, all under nodes marked as holding one, " +
+                         $"{equivalence.RemovedSplitInvocationsInOpaque} split in calls C# removes), " +
                          $"{equivalence.StructMembers} struct members, " +
                          $"{equivalence.ExpressionsCompared} expressions compared, " +
                          $"{equivalence.ExpressionsWithOpaque} skipped for an opaque node, " +

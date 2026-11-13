@@ -3,6 +3,7 @@ using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 using Kassyi.GSharp.Compiler.Lowering;
 
@@ -96,11 +97,23 @@ public class IrClassifierTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("BarrierInLoop", "HoldsSplit")]
     [InlineData("FenceInLoop", "None")]
+    [InlineData("RemovedBarrierInLoop", "None")]
     public void Classify_OpaqueLoop_RecordsWhetherItHoldsASplit(string name, string split)
     {
         var loop = Assert.IsType<IrOpaqueStatement>(Classify(name).Body.Statements[0]);
 
         Assert.Equal(Enum.Parse<IrOpaqueSplit>(split), loop.Split);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("RemovedBarrierDirect")]
+    [InlineData("RemovedBarrierInLoop")]
+    public void Plan_BarrierInACallThatCSharpRemoves_PlansNoStatement(string name)
+    {
+        var plan = IrSpillPlanner.Plan(Classify(name), Compilation);
+
+        Assert.Empty(plan.Statements);
     }
 
     [Fact]
