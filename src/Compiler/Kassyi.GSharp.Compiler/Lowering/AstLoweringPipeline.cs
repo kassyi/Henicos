@@ -95,8 +95,8 @@ public static class AstLoweringPipeline
     // keeps one instance across both rounds so that temporaries and labels stay unique, and the passes that declare
     // temporaries share their names. A method that reaches Warp.ActiveMask() makes its lanes wait for each other where
     // a thread-dependent branch or loop ends (#844, reconvergence), on the structure of the source, before the branches
-    // and loops are flattened. The split pass of the IR writes out the statements it plans first; the syntax passes leave
-    // those alone and hoist the split points of the rest.
+    // and loops are flattened. The split pass of the IR writes out the statements it plans first; the syntax passes
+    // leave those alone and hoist the split points of the rest.
     private static ImmutableArray<IBlockLoweringPass> CreatePasses(SemanticModel? bodyModel,
         ReconvergenceInserter? reconvergence, LoweringTempNames names, IrSplitLoweringPass? irPass)
     {
