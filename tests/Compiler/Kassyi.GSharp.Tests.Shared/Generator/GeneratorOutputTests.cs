@@ -80,6 +80,95 @@ public class GeneratorOutputTests
         Assert.True(first >= 0 && first < middle && middle < last, context);
     }
 
+    // A private, a protected and a two-level private kernel class are out of the module context's reach (#1282): it
+    // warms them up through the outermost container it can name, in the order of the kernels, and the output compiles
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Cuda")]
+    [InlineData("Cpu")]
+    public void ModuleContext_InaccessibleNestedKernelClasses_WarmsUpThroughContainers(string dialect)
+    {
+        var compilation = CreateCompilation(
+            ("nested.cs", RoslynTestUtility.ReadTestCase("Generators/GpuKernel_InaccessibleNestedClasses.cu.cs")));
+        var driver = CreateDriver(dialect).RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+
+        var errors = output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => d.ToString())
+            .ToList();
+        Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
+        if (dialect != "Cuda")
+        {
+            return;
+        }
+
+        var context = GetSource(result, "GSharpModuleContext_OutputTest.g.cs");
+        var warmups = new List<string>();
+        foreach (var line in context.AsSpan().EnumerateLines())
+        {
+            if (line.StartsWith("global::TestNamespace.Nested.".AsSpan(), StringComparison.Ordinal))
+            {
+                warmups.Add(line.ToString());
+            }
+        }
+
+        Assert.Collection(
+            warmups,
+            static w => Assert.StartsWith("global::TestNamespace.Nested.PrivateHost.__gsharp_warmup_", w),
+            static w => Assert.Equal(
+                "global::TestNamespace.Nested.PublicKernels.WarmupFunctionPointerPublicKernel();", w),
+            static w => Assert.StartsWith("global::TestNamespace.Nested.ProtectedHost.__gsharp_warmup_", w),
+            static w => Assert.StartsWith("global::TestNamespace.Nested.TwoLevelHost.__gsharp_warmup_", w),
+            static w => Assert.StartsWith("global::TestNamespace.Nested.TwoLevelHost.__gsharp_warmup_", w));
+        Assert.NotEqual(warmups[3], warmups[4]);
+    }
+
+    // A generated member is never more accessible than a type it names (#1284): a launcher of a private struct is
+    // private, of an internal one internal, and the marshaling class of a class with a private struct is private. The
+    // output compiles on both dialects, and a kernel whose types are all public keeps public launchers
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Cuda")]
+    [InlineData("Cpu")]
+    public void Launchers_ParameterTypesLessAccessible_TakeTheirAccessibility(string dialect)
+    {
+        var compilation = CreateCompilation(
+            ("access.cs", RoslynTestUtility.ReadTestCase("Generators/GpuKernel_InaccessibleParameterTypes.cu.cs")));
+        var driver = CreateDriver(dialect).RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+
+        var errors = output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => d.ToString())
+            .ToList();
+        Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
+        Assert.Contains("private static unsafe void LaunchScaleKernel(",
+            GetSource(result, "PrivateStructKernels.g.cs"), StringComparison.Ordinal);
+        Assert.Contains("private static partial class AotContexts",
+            GetSource(result, "PrivateStructKernels.g.cs"), StringComparison.Ordinal);
+        Assert.Contains("private static unsafe void LaunchSumKernel(",
+            GetSource(result, "PrivateBlittableKernels.g.cs"), StringComparison.Ordinal);
+        Assert.Contains("internal static unsafe void LaunchFillKernel(",
+            GetSource(result, "InternalStructKernels.g.cs"), StringComparison.Ordinal);
+        Assert.Contains("internal static partial class AotContexts",
+            GetSource(result, "InternalStructKernels.g.cs"), StringComparison.Ordinal);
+        Assert.Contains("private static unsafe void LaunchCopyKernel(",
+            GetSource(result, "OuterHost__Kernels.g.cs"), StringComparison.Ordinal);
+        if (dialect == "Cuda")
+        {
+            var mixed = GetSource(result, "Mixed2.g.cs");
+            Assert.Contains("private static unsafe void LaunchPubKPtr(global::Kassyi.GSharp.Runtime.GpuBuffer<", mixed,
+                StringComparison.Ordinal);
+        }
+
+        var open = GetSource(result, "OpenKernels.g.cs");
+        Assert.Contains("public static unsafe void LaunchOpenKernel(", open, StringComparison.Ordinal);
+        Assert.Contains("public static partial class AotContexts", open, StringComparison.Ordinal);
+    }
+
     // The module context class and the wrappers that name it take one module name: the assembly name, or
     // UnknownAssembly without one. Its identifier keeps ASCII letters and digits and escapes every other character
     // injectively ('_' as _u, any other as _x and six hex digits, as the C++ names), and the artifact files, which the

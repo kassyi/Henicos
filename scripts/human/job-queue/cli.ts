@@ -16,20 +16,23 @@ import {
   type Policy,
   type ShellName,
 } from "./constants.ts";
-import { cancel, place, run, status, stop, usageError, wait, type RunOptions } from "./client.ts";
-import { defaultMemoryPoolMb, defaultSlots } from "./machine.ts";
+import { run, usageError, type RunOptions } from "./client.ts";
+import { cancel, place, startNow, status, stop, wait } from "./client-commands.ts";
+import { MachineProfile } from "./machine.ts";
+import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
 
 const Usage = [
   "Usage:",
   "  node scripts/human/job-queue.js run [--weight <n>] [--gpu] [--after <id> [--keep-if-failed]] [--shell <name>]",
   '                                       [--timeout-minutes <n>] -- "<command>"',
-  "  node scripts/human/job-queue.js status [<id>] [--json]",
+  "  node scripts/human/job-queue.js status [<id>] [--json | --watch]",
   "  node scripts/human/job-queue.js wait <id> [--json]",
   "  node scripts/human/job-queue.js cancel <id>",
   "  node scripts/human/job-queue.js cancel-all",
   "  node scripts/human/job-queue.js move <id> (--first | --before <id> | --reset)",
   "  node scripts/human/job-queue.js set-weight <id> <n>",
+  "  node scripts/human/job-queue.js start <id>",
   "  node scripts/human/job-queue.js stop",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
   "  node scripts/human/job-queue.js --self-test",
@@ -46,6 +49,9 @@ const Usage = [
   "                                   --gpu, once for the turn at the GPU and once more for the GPU lock.",
   "status      Lists the running and waiting jobs with their ids, the jobs ahead and the expected start and end;",
   "            with <id>, only that job (exit 1 when it ended or is unknown); --json prints the same as JSON.",
+  "            --watch shows the queue live in the terminal, one line per job with its timeline: arrows select a job,",
+  "            c cancels it, s starts, m moves and w re-weights a waiting one, ? lists the keys, q quits",
+  "            (just queue-watch).",
   "wait        Waits until job <id> has ended (also across a scheduler restart) and exits with its outcome: 0",
   "            succeeded, 1 failed, 4 cancelled, 5 lost (its client died; the result is unknown), 2 for an unknown",
   "            id. Run it in the background to be told when a job ends; --json prints {id, outcome}.",
@@ -54,6 +60,8 @@ const Usage = [
   "move        Puts a waiting job ahead of the policy order: --first before every waiting job, --before <id> right",
   "            before another waiting job; --reset returns it to the policy order.",
   "set-weight  Changes the slots a waiting job takes.",
+  "start       Starts a waiting job now, beside the running ones, over the slots and the memory pool (like a GPU",
+  "            holder). Not for a job waiting for the GPU (one job at a time: move it --first) or for its --after job.",
   "stop        Stops the scheduler; running jobs keep running and register with the next one.",
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
   "            slot per 3 cores, at least 2); --memory-mb: the memory the budgets of the running test runs may add up",
@@ -65,7 +73,18 @@ const Usage = [
   'test run of what it built) go into one job: run -- "dotnet build X && dotnet test X --no-build".',
 ].join("\n");
 
-const Modes = ["run", "status", "wait", "cancel", "cancel-all", "move", "set-weight", "stop", "serve"] as const;
+const Modes = [
+  "run",
+  "status",
+  "wait",
+  "cancel",
+  "cancel-all",
+  "move",
+  "set-weight",
+  "start",
+  "stop",
+  "serve",
+] as const;
 type Mode = (typeof Modes)[number] | "self-test";
 
 interface Options extends RunOptions {
@@ -73,7 +92,8 @@ interface Options extends RunOptions {
   stateDir: string;
   commandFromEnv: boolean;
   json: boolean;
-  /** The job a mode acts on (status, cancel, move, set-weight); 0 for none. */
+  watch: boolean;
+  /** The job a mode acts on (status, cancel, move, set-weight, start); 0 for none. */
   jobId: number;
   moveFirst: boolean;
   moveBefore: number;
@@ -103,14 +123,15 @@ export function parseArgs(argv: string[]): Options {
     weight: 0,
     gpu: false,
     timeoutMinutes: 0,
-    slots: Number(process.env[SlotsVariable]) || defaultSlots(),
-    memoryMb: Number(process.env[MemoryVariable]) || defaultMemoryPoolMb(),
+    slots: Number(process.env[SlotsVariable]) || new MachineProfile().slots,
+    memoryMb: Number(process.env[MemoryVariable]) || new MachineProfile().memoryPoolMb,
     policy: isPolicy(policy) ? policy : DefaultPolicy,
     port: Number(process.env[PortVariable]) || DefaultPort,
     commandFromEnv: false,
     shell: "",
     stateDir: "",
     json: false,
+    watch: false,
     jobId: 0,
     after: 0,
     keepIfFailed: false,
@@ -130,7 +151,7 @@ export function parseArgs(argv: string[]): Options {
         usageError(`Unexpected ${arg}.`);
       }
       options.mode = arg;
-      if (arg === "wait" || arg === "cancel" || arg === "move" || arg === "set-weight") {
+      if (arg === "wait" || arg === "cancel" || arg === "move" || arg === "set-weight" || arg === "start") {
         options.jobId = parsePositive(arg, own[++i]);
       }
       if (arg === "set-weight") {
@@ -174,6 +195,9 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--json":
         options.json = true;
+        break;
+      case "--watch":
+        options.watch = true;
         break;
       case "--timeout-minutes":
         options.timeoutMinutes = parsePositive("--timeout-minutes", own[++i], true);
@@ -222,6 +246,9 @@ export function parseArgs(argv: string[]): Options {
   ) {
     usageError("move needs one of --first, --before <id> or --reset.");
   }
+  if (options.watch && (options.mode !== "status" || options.json || options.jobId > 0)) {
+    usageError("--watch goes with status alone (no <id>, no --json).");
+  }
   if (options.keepIfFailed && options.after === 0) {
     usageError("--keep-if-failed needs --after <id>.");
   }
@@ -242,7 +269,7 @@ export async function main(argv: string[]): Promise<void> {
         await run(options);
         break;
       case "status":
-        await status(options.port, options.jobId, options.json);
+        await (options.watch ? watch(options.port) : status(options.port, options.jobId, options.json));
         break;
       case "wait":
         await wait(options, options.jobId, options.json);
@@ -265,6 +292,9 @@ export async function main(argv: string[]): Promise<void> {
         break;
       case "set-weight":
         await place(options.port, { type: "set-weight", id: options.jobId, weight: options.newWeight });
+        break;
+      case "start":
+        await startNow(options.port, options.jobId);
         break;
       case "stop":
         await stop(options.port);

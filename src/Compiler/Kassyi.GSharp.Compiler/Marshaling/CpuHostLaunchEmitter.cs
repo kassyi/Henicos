@@ -16,18 +16,20 @@ internal static class CpuHostLaunchEmitter
     private const string ArrayPinningType = HostTypeNames.ArrayPinning;
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
-    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName)
+    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, Accessibility accessibility,
+        string moduleName)
     {
         writer.AppendLine(kernel.ManagedCSharpSource);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
         WriteCpuDelegateDeclaration(writer, kernel);
-        WriteLaunchMethodCpu(writer, kernel, moduleName);
+        WriteLaunchMethodCpu(writer, kernel, accessibility, moduleName);
     }
 
-    private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel, string moduleName)
+    private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel, Accessibility accessibility,
+        string moduleName)
     {
         using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id);
-        WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false);
+        WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false, accessibility);
         using (writer.Scope())
         {
             WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);

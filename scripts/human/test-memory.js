@@ -7,7 +7,7 @@
 //   --keep-budget is given, a budget too large to breach. While the tests run, dotnet-counters samples the test host
 //   into counters.csv. The diagnostic tools run one-shot through `dotnet dnx` at a pinned version.
 //   Output: tmp/test-memory/run-<project>-<time>/ (test.log, <assembly>.tsv, <assembly>.top.tsv, counters.csv, the
-//   gcdump and its report). A summary is printed at the end. GPU suites: run it under scripts/agent/gpu-lock.js.
+//   gcdump and its report). A summary is printed at the end. GPU suites: run it under scripts/human/gpu-lock.js.
 'use strict';
 
 const fs = require('fs');

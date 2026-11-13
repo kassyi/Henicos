@@ -41,15 +41,33 @@ internal static class ManagedCSharpTranspiler
         var bodySource = CreateBody(lowered, unhoistedLocals, renamedLocals, semanticModel, kernelName,
             methodSymbol.AreLocalsZeroed(), isDeviceFunction: false, accessors, isUnsafe);
 
+        var accessibility =
+            KernelFrameAccessibility.Create(methodSymbol, GetFrameFieldTypes(regularFields, copiedParameters));
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
             writer, contextName, regularFields, copiedParameters, lowered.CallSites, semanticModel,
-            isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
+            accessibility.Context, Accessibility.Public, isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
         ManagedStateMachineEmitter.EmitStateMachineMethod(
             writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, copiedParameters, localInits,
-            bodySource, isUnsafe: isUnsafe);
+            bodySource, accessibility.StateMachine, isUnsafe: isUnsafe);
         accessors.WriteTo(writer);
         return writer.ToString();
+    }
+
+    // The types of the context's fields: the copied parameters and the hoisted locals
+    private static ImmutableArray<ITypeSymbol> GetFrameFieldTypes(ImmutableArray<ManagedContextField> regularFields,
+        ImmutableArray<IParameterSymbol> copiedParameters)
+    {
+        var types = ImmutableArray.CreateBuilder<ITypeSymbol>(copiedParameters.Length + regularFields.Length);
+        copiedParameters
+            .AsStackEnumerable()
+            .Select(static p => p.Type)
+            .AddTo(types);
+        regularFields
+            .AsStackEnumerable()
+            .Select(static f => f.ResolvedType)
+            .AddTo(types);
+        return types.MoveToImmutable();
     }
 
     /// <summary>
@@ -101,11 +119,13 @@ internal static class ManagedCSharpTranspiler
 
         // As visible as the function (a consumer of another assembly calls a public one); the frame's fields are the
         // assembly's own (#538 3rd review M1)
-        var accessibility = ManagedStateMachineAvailability.IsEffectivelyPublic(methodSymbol) ? "public" : "internal";
+        var accessibility = ManagedStateMachineAvailability.IsEffectivelyPublic(methodSymbol)
+            ? Accessibility.Public
+            : Accessibility.Internal;
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
             writer, frameName, regularFields, copiedParameters, lowered.CallSites, semanticModel, accessibility,
-            "internal", isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
+            Accessibility.Internal, isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
         ManagedStateMachineEmitter.EmitDeviceStateMachineMethod(
             writer, frameName, stateMachineName, methodSymbol, copiedParameters, localInits, bodySource, accessibility,
             isUnsafe: isUnsafe);

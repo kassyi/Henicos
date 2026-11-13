@@ -17,7 +17,8 @@ internal static class CSharpExecutionEmitter
     private const string LaunchDimensions = "gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ";
 
     // if (GpuExecution.Current == KernelExecution.CSharp)
-    // { <copies>; <pins> { CSharpKernelRunner.Run(<launch>, <call>); } <copies back>; return [__gsharp_auto_result]; }
+    // { <copies>; [try {] <pins> { CSharpKernelRunner.Run(<launch>, <call>); } [} finally { <copies back> }]
+    //   return [__gsharp_auto_result]; }
     // or, when the kernel cannot run as C#:
     // { throw CSharpKernelRunner.CannotRun("<kernel>", "<reason>"); }
     /// <summary>Writes the C# execution branch of <paramref name="plan"/>.</summary>

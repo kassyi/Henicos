@@ -1,34 +1,17 @@
-// Parts 9, 11 and 12 of the job queue self-test: the hrrn re-grant, GPU turns and wait.
+// Parts 9, 11, 12 and 13 of the job queue self-test: the hrrn re-grant, GPU turns, wait and start.
 
 import * as assert from "node:assert";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { EntryScript, RegrantMs, StartupGraceMs, StateDirectoryVariable } from "./constants.ts";
-import { request } from "./client.ts";
+import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
-import {
-  delay,
-  removeDirectory,
-  type Client,
-  startTestScheduler,
-  statusOf,
-  usedWithin,
-  waitFor,
-  jobWith,
-  runningWith,
-  type ClientFactory,
-} from "./self-test-support.ts";
+import { delay, removeDirectory, type Client, type QueueFixture } from "./self-test-support.ts";
 
-export async function checkRegrant(
-  port: number,
-  env: NodeJS.ProcessEnv,
-  client: ClientFactory,
-  sleeper: (ms: number) => string,
-  servers: ChildProcess[],
-  ports: number[],
-): Promise<void> {
+export async function checkRegrant(fixture: QueueFixture, port: number): Promise<void> {
+  const { env, client, sleeper, ports, startScheduler, statusOf, usedWithin } = fixture;
   const hrrnDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-hrrn-"));
   const longRun = sleeper(20000);
   const shortRun = sleeper(300);
@@ -44,7 +27,7 @@ export async function checkRegrant(
   );
   try {
     ports.push(port);
-    servers.push(await startTestScheduler(port, 2, { ...env, [StateDirectoryVariable]: hrrnDir }));
+    await startScheduler(port, 2, { ...env, [StateDirectoryVariable]: hrrnDir });
     await delay(StartupGraceMs);
     client(port, longRun);
     assert.strictEqual(await usedWithin(port, 1, 5000), 1, "the long job runs before the wide one arrives");
@@ -81,17 +64,10 @@ export async function checkRegrant(
   }
 }
 
-export async function checkGpuTurnsEndToEnd(
-  port: number,
-  env: NodeJS.ProcessEnv,
-  client: ClientFactory,
-  commands: { gated: (code: number, file: string) => string; open: (file: string) => void; dir: string },
-  servers: ChildProcess[],
-  ports: number[],
-): Promise<void> {
-  const { gated, open, dir } = commands;
+export async function checkGpuTurnsEndToEnd(fixture: QueueFixture, port: number): Promise<void> {
+  const { client, gated, open, dir, ports, startScheduler, statusOf, usedWithin, waitFor } = fixture;
   ports.push(port);
-  servers.push(await startTestScheduler(port, 2, env));
+  await startScheduler(port, 2);
   await delay(StartupGraceMs);
   const gate = (name: string): string => path.join(dir, `gate-11${name}`);
   const turnOf = (command: string) =>
@@ -142,22 +118,10 @@ export async function checkGpuTurnsEndToEnd(
   await request(port, { type: "stop" });
 }
 
-export async function checkWait(
-  port: number,
-  env: NodeJS.ProcessEnv,
-  client: ClientFactory,
-  commands: {
-    gated: (code: number, file: string) => string;
-    open: (file: string) => void;
-    exiting: (code: number, ms?: number) => string;
-    dir: string;
-  },
-  servers: ChildProcess[],
-  ports: number[],
-): Promise<void> {
-  const { gated, open, exiting, dir } = commands;
+export async function checkWait(fixture: QueueFixture, port: number): Promise<void> {
+  const { env, client, gated, open, exiting, dir, ports, startScheduler, jobWith, runningWith } = fixture;
   ports.push(port);
-  servers.push(await startTestScheduler(port, 2, env));
+  await startScheduler(port, 2);
   await delay(StartupGraceMs);
   const waiter = (id: number): Client & { output: () => string } => {
     let output = "";
@@ -221,5 +185,35 @@ export async function checkWait(
   assert.strictEqual(await failing.done, 3);
   assert.strictEqual(await waiter(failingJob.id).done, 1, "wait exits 1 for a job that failed");
   assert.strictEqual(await waiter(999999).done, 2, "wait exits 2 for an unknown id");
+  await request(port, { type: "stop" });
+}
+
+/** start <id> grants a waiting job over the full pool; it refuses an unknown id. */
+export async function checkStart(fixture: QueueFixture, port: number): Promise<void> {
+  const { env, client, gated, open, dir, ports, startScheduler, jobWith, runningWith, statusOf } = fixture;
+  ports.push(port);
+  await startScheduler(port, 1);
+  await delay(StartupGraceMs);
+  const holdGate = path.join(dir, "gate-13a");
+  const queuedGate = path.join(dir, "gate-13b");
+  const holder = client(port, gated(0, holdGate));
+  await runningWith(port, gated(0, holdGate));
+  const queued = client(port, gated(0, queuedGate));
+  const queuedJob = await jobWith(port, gated(0, queuedGate));
+  assert.strictEqual(queuedJob.state, "waiting", "one slot: the second job waits");
+  const started = spawnSync(process.execPath, [EntryScript, "start", String(queuedJob.id), "--port", String(port)], {
+    env,
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  assert.strictEqual(started.status, 0, started.stdout + started.stderr);
+  assert.strictEqual(started.stdout.trim(), `#${queuedJob.id} started over the pool`);
+  await runningWith(port, gated(0, queuedGate));
+  assert.strictEqual((await statusOf(port)).used, 2, "it runs beside the first job, over the one slot");
+  const unknown = await request(port, { type: "start", id: 999999 });
+  assert.strictEqual(unknown?.code, "not-waiting");
+  open(holdGate);
+  open(queuedGate);
+  assert.deepStrictEqual(await Promise.all([holder.done, queued.done]), [0, 0]);
   await request(port, { type: "stop" });
 }

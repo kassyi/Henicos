@@ -271,6 +271,10 @@ Launcher:
     FunctionPointerFieldPrefix: __gsharp_hfunc_
     LayoutCheckedFieldPrefix: __gsharp_layout_checked_
     DelegateTypePrefix: __gsharp_delegate_
+    # The method that a container writes for each kernel of a nested class the module context cannot name (a private
+    # or protected class), so that the module context warms the kernel up through it; the rest of the name is the body
+    # of the kernel's entry point name
+    WarmupRelayPrefix: __gsharp_warmup_
     DevicePointerPrefix: __gsharp_d_
     ProxyPrefix: __gsharp_proxy_
     NullableProxyPrefix: __gsharp_nullable_

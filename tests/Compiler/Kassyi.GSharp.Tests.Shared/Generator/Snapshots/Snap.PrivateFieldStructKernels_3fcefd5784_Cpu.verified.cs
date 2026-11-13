@@ -173,18 +173,22 @@ global::System.Buffer.MemoryCopy(pField, pHost, 4 * sizeof(int), 4 * sizeof(int)
 }
 }
 }
-public static void CopyArrays_PfHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder hostValue, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
+public static void CopyArrays_PfHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder hostValue)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder>());
 if (!AotContexts.PfHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder");
 ref AotContexts.PfHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
-_ = copies.Copy(ref host._data);
-CopyArrays_PfInner(ref host._inner, copies);
-if (copies.Copy(ref host._items))
+if (host._data != null)
 {
+host._data = (global::System.Int32[])host._data.Clone();
+}
+CopyArrays_PfInner(ref host._inner);
+if (host._items != null)
+{
+host._items = (global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner[])host._items.Clone();
 for (int i = 0; i < host._items.Length; i++)
 {
-CopyArrays_PfInner(ref host._items[i], copies);
+CopyArrays_PfInner(ref host._items[i]);
 }
 }
 }
@@ -262,12 +266,15 @@ if (!AotContexts.PfInner.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.
 ref AotContexts.PfInner.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
 host._bias = native._bias;
 }
-public static void CopyArrays_PfInner(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner hostValue, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
+public static void CopyArrays_PfInner(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner hostValue)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>());
 if (!AotContexts.PfInner.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner");
 ref AotContexts.PfInner.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
-_ = copies.Copy(ref host._values);
+if (host._values != null)
+{
+host._values = (global::System.Int32[])host._values.Clone();
+}
 }
 public static bool HoldsArray_PfInner(global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner hostValue, object array)
 {
@@ -368,12 +375,15 @@ ref AotContexts.LibInternalFieldHolder.__gsharp_host_mirror host = ref global::S
 host.Hidden = native.Hidden;
 host.Wide = native.Wide;
 }
-public static void CopyArrays_LibInternalFieldHolder(ref global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder hostValue, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
+public static void CopyArrays_LibInternalFieldHolder(ref global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder hostValue)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>());
 if (!AotContexts.LibInternalFieldHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder");
 ref AotContexts.LibInternalFieldHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
-_ = copies.Copy(ref host.Data);
+if (host.Data != null)
+{
+host.Data = (global::System.Int32[])host.Data.Clone();
+}
 }
 public static bool HoldsArray_LibInternalFieldHolder(global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder hostValue, object array)
 {
@@ -665,10 +675,14 @@ public static unsafe void LaunchStepPrivateFieldsKernel(ref global::Kassyi.GShar
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepPrivateFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder* __gsharp_csharp_pin_0 = &holder)
+global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder __gsharp_csharp_arg_0 = holder;
+try
 {
-global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.StepPrivateFieldsKernel(ref *__gsharp_csharp_arg_0));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.StepPrivateFieldsKernel(ref __gsharp_csharp_arg_0));
+}
+finally
+{
+holder = __gsharp_csharp_arg_0;
 }
 return;
 }
@@ -1294,10 +1308,14 @@ public static unsafe void LaunchStepLibraryInternalFieldsKernel(ref global::Kass
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-fixed (global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder* __gsharp_csharp_pin_0 = &holder)
+global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder __gsharp_csharp_arg_0 = holder;
+try
 {
-global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.StepLibraryInternalFieldsKernel(ref *__gsharp_csharp_arg_0));
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.StepLibraryInternalFieldsKernel(ref __gsharp_csharp_arg_0));
+}
+finally
+{
+holder = __gsharp_csharp_arg_0;
 }
 return;
 }
