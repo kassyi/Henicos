@@ -24,11 +24,9 @@ throw new global::System.ArgumentNullException("c");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, 1, 1, blockDimX, 1, 1, "MyKernels.SgemmCustom");
 using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new();
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fmy_x00002dcustom_x00002ekernels_x00002efatbin.Value, "sgemm_kernel_v1");
-using global::Kassyi.GSharp.Runtime.GpuBuffer<float> __gsharp_d_0 = new(a.Length);
-__gsharp_d_0.CopyToDevice(a);
-using global::Kassyi.GSharp.Runtime.GpuBuffer<float> __gsharp_d_1 = new(c.Length);
-__gsharp_d_1.CopyToDevice(c);
-global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases;
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
+try
+{
 unsafe
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(a), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(c))
@@ -44,12 +42,14 @@ __gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(ne
 __gsharp_aliases?.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), global::System.IntPtr.Zero);
 }
 }
-try
-{
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float>? __gsharp_d_0 = __gsharp_aliases?.IsMember(0) == true ? null : new(a.Length);
+__gsharp_d_0?.CopyToDevice(a);
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float>? __gsharp_d_1 = __gsharp_aliases?.IsMember(1) == true ? null : new(c.Length);
+__gsharp_d_1?.CopyToDevice(c);
 unsafe
 {
-global::System.IntPtr __gsharp_karg_0 = __gsharp_aliases?.IsMember(0) == true ? __gsharp_aliases.GetDevicePointer(0) : __gsharp_d_0.DevicePointer;
-global::System.IntPtr __gsharp_karg_1 = __gsharp_aliases?.IsMember(1) == true ? __gsharp_aliases.GetDevicePointer(1) : __gsharp_d_1.DevicePointer;
+global::System.IntPtr __gsharp_karg_0 = __gsharp_aliases?.IsMember(0) == true ? __gsharp_aliases.GetDevicePointer(0) : __gsharp_d_0?.DevicePointer ?? global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_karg_1 = __gsharp_aliases?.IsMember(1) == true ? __gsharp_aliases.GetDevicePointer(1) : __gsharp_d_1?.DevicePointer ?? global::System.IntPtr.Zero;
 int __gsharp_karg_2 = n;
 void** __gsharp_kernel_params = stackalloc void*[3];
 __gsharp_kernel_params[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref __gsharp_karg_0);
@@ -81,11 +81,11 @@ __gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias
 }
 if (!(__gsharp_aliases?.IsMember(0) == true))
 {
-__gsharp_d_0.CopyToHost(a);
+__gsharp_d_0?.CopyToHost(a);
 }
 if (!(__gsharp_aliases?.IsMember(1) == true))
 {
-__gsharp_d_1.CopyToHost(c);
+__gsharp_d_1?.CopyToHost(c);
 }
 }
 finally

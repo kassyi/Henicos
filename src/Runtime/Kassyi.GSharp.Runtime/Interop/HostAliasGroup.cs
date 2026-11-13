@@ -17,4 +17,9 @@ internal struct HostAliasGroup
     public IntPtr Region;
     public IntPtr Base;
     public Array? HostCopy;
+
+    // Every member is a span (HostAliasGroups.SpanView), so the CPU copy is one byte buffer that each views, and the
+    // byte at which the copy of the group starts in it
+    public bool ViewsOnly;
+    public int CopyStart;
 }

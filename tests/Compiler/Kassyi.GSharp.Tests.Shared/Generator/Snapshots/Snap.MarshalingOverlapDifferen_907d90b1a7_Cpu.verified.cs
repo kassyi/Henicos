@@ -63,6 +63,16 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1550239253u, "MarshalingOv
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(334569215u, "MarshalingOverlapDifferentialKernels.cs", 168, 13, "TwoInFieldsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1757709113u, "MarshalingOverlapDifferentialKernels.cs", 168, 27, "TwoInFieldsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1568764710u, "MarshalingOverlapDifferentialKernels.cs", 168, 27, "TwoInFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1201454599u, "MarshalingOverlapDifferentialKernels.cs", 180, 13, "InArrayAndReadOnlySpanFieldKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1800769981u, "MarshalingOverlapDifferentialKernels.cs", 181, 13, "InArrayAndReadOnlySpanFieldKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1381436817u, "MarshalingOverlapDifferentialKernels.cs", 181, 27, "InArrayAndReadOnlySpanFieldKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(12806039u, "MarshalingOverlapDifferentialKernels.cs", 193, 13, "InIntAndLongViewsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1718371813u, "MarshalingOverlapDifferentialKernels.cs", 194, 13, "InIntAndLongViewsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2035386807u, "MarshalingOverlapDifferentialKernels.cs", 210, 13, "TwoArraysSliceAndStructKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1194654765u, "MarshalingOverlapDifferentialKernels.cs", 211, 13, "TwoArraysSliceAndStructKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(398475735u, "MarshalingOverlapDifferentialKernels.cs", 211, 27, "TwoArraysSliceAndStructKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2061065875u, "MarshalingOverlapDifferentialKernels.cs", 212, 13, "TwoArraysSliceAndStructKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1985836949u, "MarshalingOverlapDifferentialKernels.cs", 212, 38, "TwoArraysSliceAndStructKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -942,12 +952,12 @@ __gsharp_alias_ranges[5] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_2;
 __gsharp_alias_ranges[7] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), new byte[] {1, 3, 11}, "readOnly,written,observed");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), new byte[] {17, 19, 11}, "readOnly,written,observed");
 if (__gsharp_aliases?.IsMember(0) == true)
 {
-if (__gsharp_aliases.TryGetHostCopy<global::System.Int32>(0, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Int32[]? __gsharp_alias_copy_0, out int __gsharp_alias_start_0))
+if (__gsharp_aliases.TryGetHostView<global::System.Int32>(0, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Span<global::System.Int32> __gsharp_alias_copy_0))
 {
-readOnly = __gsharp_alias_copy_0.AsSpan(__gsharp_alias_start_0, readOnly.Length);
+readOnly = __gsharp_alias_copy_0;
 }
 }
 else
@@ -1257,12 +1267,12 @@ __gsharp_alias_ranges[5] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_2;
 __gsharp_alias_ranges[7] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), new byte[] {1, 1, 11}, "first,second,observed");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), new byte[] {17, 17, 11}, "first,second,observed");
 if (__gsharp_aliases?.IsMember(0) == true)
 {
-if (__gsharp_aliases.TryGetHostCopy<global::System.Int32>(0, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Int32[]? __gsharp_alias_copy_0, out int __gsharp_alias_start_0))
+if (__gsharp_aliases.TryGetHostView<global::System.Int32>(0, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Span<global::System.Int32> __gsharp_alias_copy_0))
 {
-first = __gsharp_alias_copy_0.AsSpan(__gsharp_alias_start_0, first.Length);
+first = __gsharp_alias_copy_0;
 }
 }
 else
@@ -1274,9 +1284,9 @@ first = first.ToArray();
 }
 if (__gsharp_aliases?.IsMember(1) == true)
 {
-if (__gsharp_aliases.TryGetHostCopy<global::System.Int32>(1, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Int32[]? __gsharp_alias_copy_1, out int __gsharp_alias_start_1))
+if (__gsharp_aliases.TryGetHostView<global::System.Int32>(1, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Span<global::System.Int32> __gsharp_alias_copy_1))
 {
-second = __gsharp_alias_copy_1.AsSpan(__gsharp_alias_start_1, second.Length);
+second = __gsharp_alias_copy_1;
 }
 }
 else
@@ -1586,12 +1596,12 @@ __gsharp_alias_ranges[5] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_2;
 __gsharp_alias_ranges[7] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), new byte[] {1, 11, 11}, "readOnly,written,observed");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), new byte[] {17, 11, 11}, "readOnly,written,observed");
 if (__gsharp_aliases?.IsMember(0) == true)
 {
-if (__gsharp_aliases.TryGetHostCopy<global::System.Int32>(0, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Int32[]? __gsharp_alias_copy_0, out int __gsharp_alias_start_0))
+if (__gsharp_aliases.TryGetHostView<global::System.Int32>(0, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Span<global::System.Int32> __gsharp_alias_copy_0))
 {
-readOnly = __gsharp_alias_copy_0.AsSpan(__gsharp_alias_start_0, readOnly.Length);
+readOnly = __gsharp_alias_copy_0;
 }
 }
 else
@@ -4143,6 +4153,1013 @@ finally
 {
 foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 if (__gsharp_shadow_0 != null) global::System.Buffers.ArrayPool<byte>.Shared.Return(__gsharp_shadow_0);
+}
+}
+#pragma warning restore CS8500
+public const string InArrayAndReadOnlySpanFieldKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag
+{
+GSharpArray<int> __gsharp_mb_Data;
+int __gsharp_mb_Tag;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag)==24,""Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag.Data: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag,__gsharp_mb_Tag)==16,""Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag.Tag: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel* __gsharp_all_contexts = nullptr;
+bool __gsharp_yielded_for_grid_sync = false;
+bool __gsharp_yielded_for_block_barrier = false;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel(GSharpArray<int> __gsharp_id_0_array, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag> __gsharp_id_1_bags, GSharpArray<int> __gsharp_id_2_observed, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
+auto* __gsharp_root = __gsharp_ctx;
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+if((int)threadIdx.x==0)
+{
+__gsharp_array_at(__gsharp_id_0_array, 0, 1201454599u)=7;
+__gsharp_array_at(__gsharp_id_2_observed, 0, 1800769981u)=__gsharp_array_at(__gsharp_id_1_bags[0].__gsharp_mb_Data, 0, 1381436817u);
+}
+__gsharp_state=-1;
+return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+#undef __gsharp_yielded_for_block_barrier
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_array, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag> __gsharp_id_1_bags, GSharpArray<int> __gsharp_id_2_observed)
+{
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot __gsharp_launch_error;
+#pragma omp parallel for schedule(dynamic)
+for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+try
+{
+int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
+int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
+int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active)
+{
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+try
+{
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel(__gsharp_id_0_array, __gsharp_id_1_bags, __gsharp_id_2_observed, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in MarshalingOverlapDifferentialKernels.InArrayAndReadOnlySpanFieldKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
+}
+catch (const __gsharp_step_abort&)
+{
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state = -1;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier = false;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync = false;
+}
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_any_active = true;
+}
+}
+}
+if (!__gsharp_any_active)
+{
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+if (__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier)
+{
+__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier = false;
+__gsharp_any_active = true;
+}
+}
+}
+}
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
+}
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
+}
+}
+";
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel {
+public int __gsharp_state;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel(int[] array, global::System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag> bags, int[] observed, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel __gsharp_ctx) {
+{
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+if (global::Kassyi.GSharp.Core.ThreadIndex.X == 0)
+{
+array[0] = 7;
+observed[0] = bags[0].Data[0];
+}
+
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+}
+}
+
+[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
+private unsafe delegate void __gsharp_delegate_InArrayAndReadOnlySpanFieldKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy array, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy bags, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy observed);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchInArrayAndReadOnlySpanFieldKernel(global::System.Int32[] array, global::System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag> bags, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InArrayAndReadOnlySpanFieldKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::System.Int32[] __gsharp_csharp_arg_0 = array;
+global::System.Int32[] __gsharp_csharp_arg_2 = observed;
+fixed (global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag* __gsharp_csharp_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(bags))
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
+int __gsharp_csharp_len_1 = bags.Length;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.InArrayAndReadOnlySpanFieldKernel(__gsharp_csharp_arg_0, global::System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
+}
+return;
+}
+// Find the arguments that overlap: the [In] members of a group share one copy
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(array), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(bags), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[9];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (nint)(array?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[4] = (nint)bags.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag);
+__gsharp_alias_ranges[5] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag);
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[7] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), new byte[] {9, 21, 11}, "array,bags,observed");
+global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies __gsharp_array_copies = new();
+__gsharp_array_copies.Keep(observed);
+if (__gsharp_aliases?.IsMember(0) == true)
+{
+if (__gsharp_aliases.TryGetHostCopy<global::System.Int32>(0, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Int32[]? __gsharp_alias_copy_0, out int __gsharp_alias_start_0))
+{
+array = __gsharp_alias_copy_0;
+}
+}
+else
+{
+if (array != null)
+{
+if (!global::System.Object.ReferenceEquals(array, observed))
+{
+_ = __gsharp_array_copies.Copy(ref array);
+}
+}
+}
+if (bags.Length > 0)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag[] __gsharp_copy_1 = bags.ToArray();
+for (int __gsharp_copy_index_1 = 0; __gsharp_copy_index_1 < __gsharp_copy_1.Length; __gsharp_copy_index_1++)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.CopyArrays_DiffDeepBag(ref __gsharp_copy_1[__gsharp_copy_index_1], __gsharp_array_copies);
+}
+bags = __gsharp_copy_1;
+}
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InArrayAndReadOnlySpanFieldKernel");
+int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel[__gsharp_context_count];
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+global::System.Runtime.ExceptionServices.ExceptionDispatchInfo? __gsharp_first_failure = null;
+bool __gsharp_any_grid_active = true;
+try
+{
+while (__gsharp_any_grid_active)
+{
+__gsharp_any_grid_active = false;
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
+bool __gsharp_any_block_active = true;
+while (__gsharp_any_block_active)
+{
+__gsharp_any_block_active = false;
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_grid_active = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel(array, bags, observed, __gsharp_contexts[__gsharp_linear_tid]);
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("MarshalingOverlapDifferentialKernels.InArrayAndReadOnlySpanFieldKernel");
+}
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
+}
+}
+catch (global::System.Exception __gsharp_failure)
+{
+__gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_block_active = true;
+}
+}
+}
+if (!__gsharp_any_block_active)
+{
+for (int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block; __gsharp_linear_tid < (__gsharp_block_index + 1) * __gsharp_threads_per_block; __gsharp_linear_tid++)
+{
+if (__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+__gsharp_any_block_active = true;
+}
+}
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+}
+catch (global::System.Exception) when (__gsharp_first_failure is not null)
+{
+__gsharp_first_failure.Throw();
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
+__gsharp_first_failure?.Throw();
+return;
+}
+__gsharp_delegate_InArrayAndReadOnlySpanFieldKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_InArrayAndReadOnlySpanFieldKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InArrayAndReadOnlySpanFieldKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+byte[]? __gsharp_shadow_1 = null;
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_1 = new();
+int __gsharp_size_1 = checked(bags.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.DiffDeepBag));
+try
+{
+__gsharp_shadow_1 = global::System.Buffers.ArrayPool<byte>.Shared.Rent(__gsharp_size_1);
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.DiffDeepBag> __gsharp_native_1 = global::System.Runtime.InteropServices.MemoryMarshal.Cast<byte, global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.DiffDeepBag>(__gsharp_shadow_1.AsSpan(0, __gsharp_size_1));
+global::System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag> __gsharp_host_1 = bags;
+for (int __gsharp_index_1 = 0; __gsharp_index_1 < __gsharp_native_1.Length; __gsharp_index_1++)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag __gsharp_element_1 = __gsharp_host_1[__gsharp_index_1];
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.Marshal_DiffDeepBag(ref __gsharp_element_1, ref __gsharp_native_1[__gsharp_index_1], __gsharp_allocated_ptrs_1, hStream);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(array))
+fixed (byte* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(__gsharp_shadow_1))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(observed))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (array?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(bags) ? global::System.IntPtr.Zero : (global::System.IntPtr)__gsharp_p_1, Length = bags.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (observed?.Length ?? 0) });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+}
+finally
+{
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_1) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
+if (__gsharp_shadow_1 != null) global::System.Buffers.ArrayPool<byte>.Shared.Return(__gsharp_shadow_1);
+}
+}
+#pragma warning restore CS8500
+public const string InIntAndLongViewsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel* __gsharp_all_contexts = nullptr;
+bool __gsharp_yielded_for_grid_sync = false;
+bool __gsharp_yielded_for_block_barrier = false;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<long long> __gsharp_id_1_longs, GSharpArray<long long> __gsharp_id_2_observed, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
+auto* __gsharp_root = __gsharp_ctx;
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+if((int)threadIdx.x==0)
+{
+__gsharp_id_0_ints[2]=__gsharp_add_i32(__gsharp_id_0_ints[2],8);
+__gsharp_id_1_longs[1]=__gsharp_add_i64(__gsharp_id_1_longs[1],4294967296LL);
+__gsharp_array_at(__gsharp_id_2_observed, 0, 12806039u)=__gsharp_id_1_longs[0];
+__gsharp_array_at(__gsharp_id_2_observed, 1, 1718371813u)=__gsharp_id_0_ints[5];
+}
+__gsharp_state=-1;
+return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+#undef __gsharp_yielded_for_block_barrier
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_ints, GSharpArray<long long> __gsharp_id_1_longs, GSharpArray<long long> __gsharp_id_2_observed)
+{
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot __gsharp_launch_error;
+#pragma omp parallel for schedule(dynamic)
+for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+try
+{
+int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
+int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
+int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active)
+{
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+try
+{
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel(__gsharp_id_0_ints, __gsharp_id_1_longs, __gsharp_id_2_observed, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in MarshalingOverlapDifferentialKernels.InIntAndLongViewsKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
+}
+catch (const __gsharp_step_abort&)
+{
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state = -1;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier = false;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync = false;
+}
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_any_active = true;
+}
+}
+}
+if (!__gsharp_any_active)
+{
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+if (__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier)
+{
+__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier = false;
+__gsharp_any_active = true;
+}
+}
+}
+}
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
+}
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
+}
+}
+";
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel {
+public int __gsharp_state;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel(global::System.Span<int> ints, global::System.Span<long> longs, long[] observed, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel __gsharp_ctx) {
+{
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+if (global::Kassyi.GSharp.Core.ThreadIndex.X == 0)
+{
+ints[2] += 8;
+longs[1] += 1L << 32;
+observed[0] = longs[0];
+observed[1] = ints[5];
+}
+
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+}
+}
+
+[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
+private unsafe delegate void __gsharp_delegate_InIntAndLongViewsKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ints, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy longs, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy observed);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchInIntAndLongViewsKernel(global::System.Span<global::System.Int32> ints, global::System.Span<global::System.Int64> longs, global::System.Int64[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InIntAndLongViewsKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::System.Int64[] __gsharp_csharp_arg_2 = observed;
+fixed (global::System.Int32* __gsharp_csharp_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(ints))
+fixed (global::System.Int64* __gsharp_csharp_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(longs))
+{
+global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+int __gsharp_csharp_len_0 = ints.Length;
+global::System.Int64* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
+int __gsharp_csharp_len_1 = longs.Length;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.InIntAndLongViewsKernel(global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_0, __gsharp_csharp_len_0), global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_1, __gsharp_csharp_len_1), __gsharp_csharp_arg_2));
+}
+return;
+}
+// Find the arguments that overlap: the [In] members of a group share one copy
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(ints), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(longs), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[9];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (nint)ints.Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[2] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[4] = (nint)longs.Length * sizeof(global::System.Int64);
+__gsharp_alias_ranges[5] = sizeof(global::System.Int64);
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[7] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int64);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int64);
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), new byte[] {17, 17, 11}, "ints,longs,observed");
+if (__gsharp_aliases?.IsMember(0) == true)
+{
+if (__gsharp_aliases.TryGetHostView<global::System.Int32>(0, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Span<global::System.Int32> __gsharp_alias_copy_0))
+{
+ints = __gsharp_alias_copy_0;
+}
+}
+else
+{
+if (ints.Length > 0)
+{
+ints = ints.ToArray();
+}
+}
+if (__gsharp_aliases?.IsMember(1) == true)
+{
+if (__gsharp_aliases.TryGetHostView<global::System.Int64>(1, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 9), out global::System.Span<global::System.Int64> __gsharp_alias_copy_1))
+{
+longs = __gsharp_alias_copy_1;
+}
+}
+else
+{
+if (longs.Length > 0)
+{
+longs = longs.ToArray();
+}
+}
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InIntAndLongViewsKernel");
+int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel[__gsharp_context_count];
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+global::System.Runtime.ExceptionServices.ExceptionDispatchInfo? __gsharp_first_failure = null;
+bool __gsharp_any_grid_active = true;
+try
+{
+while (__gsharp_any_grid_active)
+{
+__gsharp_any_grid_active = false;
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
+bool __gsharp_any_block_active = true;
+while (__gsharp_any_block_active)
+{
+__gsharp_any_block_active = false;
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_grid_active = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel(ints, longs, observed, __gsharp_contexts[__gsharp_linear_tid]);
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("MarshalingOverlapDifferentialKernels.InIntAndLongViewsKernel");
+}
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
+}
+}
+catch (global::System.Exception __gsharp_failure)
+{
+__gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_block_active = true;
+}
+}
+}
+if (!__gsharp_any_block_active)
+{
+for (int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block; __gsharp_linear_tid < (__gsharp_block_index + 1) * __gsharp_threads_per_block; __gsharp_linear_tid++)
+{
+if (__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+__gsharp_any_block_active = true;
+}
+}
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+}
+catch (global::System.Exception) when (__gsharp_first_failure is not null)
+{
+__gsharp_first_failure.Throw();
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
+__gsharp_first_failure?.Throw();
+return;
+}
+__gsharp_delegate_InIntAndLongViewsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_InIntAndLongViewsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__InIntAndLongViewsKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(ints))
+fixed (global::System.Int64* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(longs))
+fixed (global::System.Int64* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(observed))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = ints.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = longs.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (observed?.Length ?? 0) });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+}
+#pragma warning restore CS8500
+public const string TwoArraysSliceAndStructKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag
+{
+GSharpArray<int> __gsharp_mb_Data;
+int __gsharp_mb_Tag;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag)==24,""Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag)==8,""Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag.Data: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag,__gsharp_mb_Tag)==16,""Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag.Tag: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel* __gsharp_all_contexts = nullptr;
+bool __gsharp_yielded_for_grid_sync = false;
+bool __gsharp_yielded_for_block_barrier = false;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel(GSharpArray<int> __gsharp_id_0_first, GSharpArray<int> __gsharp_id_1_second, GSharpArray<int> __gsharp_id_2_slice, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag __gsharp_id_3_bag, GSharpArray<int> __gsharp_id_4_observed, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
+auto* __gsharp_root = __gsharp_ctx;
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+if((int)threadIdx.x==0)
+{
+__gsharp_id_2_slice[0]=__gsharp_add_i32(__gsharp_id_2_slice[0],1);
+__gsharp_array_at(__gsharp_id_0_first, 2, 2035386807u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_first, 2, 2035386807u),10);
+__gsharp_array_at(__gsharp_id_4_observed, 0, 1194654765u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_second, 1, 398475735u),__gsharp_id_3_bag.__gsharp_mb_Tag);
+__gsharp_array_at(__gsharp_id_4_observed, 1, 2061065875u)=__gsharp_add_i32(__gsharp_id_2_slice[1],__gsharp_array_at(__gsharp_id_3_bag.__gsharp_mb_Data, 0, 1985836949u));
+}
+__gsharp_state=-1;
+return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+#undef __gsharp_yielded_for_block_barrier
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_first, GSharpArray<int> __gsharp_id_1_second, GSharpArray<int> __gsharp_id_2_slice, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag* __gsharp_arg_3, GSharpArray<int> __gsharp_id_4_observed)
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffDeepBag __gsharp_id_3_bag = *__gsharp_arg_3;
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot __gsharp_launch_error;
+#pragma omp parallel for schedule(dynamic)
+for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+try
+{
+int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
+int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
+int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active)
+{
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+try
+{
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel(__gsharp_id_0_first, __gsharp_id_1_second, __gsharp_id_2_slice, __gsharp_id_3_bag, __gsharp_id_4_observed, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in MarshalingOverlapDifferentialKernels.TwoArraysSliceAndStructKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
+}
+catch (const __gsharp_step_abort&)
+{
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state = -1;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier = false;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync = false;
+}
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_any_active = true;
+}
+}
+}
+if (!__gsharp_any_active)
+{
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+if (__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier)
+{
+__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier = false;
+__gsharp_any_active = true;
+}
+}
+}
+}
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
+}
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
+}
+}
+";
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel {
+public int __gsharp_state;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel(int[] first, int[] second, global::System.Span<int> slice, global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag bag, int[] observed, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel __gsharp_ctx) {
+{
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+if (global::Kassyi.GSharp.Core.ThreadIndex.X == 0)
+{
+slice[0] += 1;
+first[2] += 10;
+observed[0] = second[1] + bag.Tag;
+observed[1] = slice[1] + bag.Data[0];
+}
+
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+}
+}
+
+[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
+private unsafe delegate void __gsharp_delegate_TwoArraysSliceAndStructKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy first, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy second, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy slice, global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.DiffDeepBag* bag, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy observed);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchTwoArraysSliceAndStructKernel(global::System.Int32[] first, global::System.Int32[] second, global::System.Span<global::System.Int32> slice, global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag bag, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.TwoArraysSliceAndStructKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::System.Int32[] __gsharp_csharp_arg_0 = first;
+global::System.Int32[] __gsharp_csharp_arg_1 = second;
+global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag __gsharp_csharp_arg_3 = bag;
+global::System.Int32[] __gsharp_csharp_arg_4 = observed;
+fixed (global::System.Int32* __gsharp_csharp_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(slice))
+{
+global::System.Int32* __gsharp_csharp_arg_2 = __gsharp_csharp_pin_2;
+int __gsharp_csharp_len_2 = slice.Length;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.TwoArraysSliceAndStructKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, global::System.Runtime.InteropServices.MemoryMarshal.CreateSpan(ref *__gsharp_csharp_arg_2, __gsharp_csharp_len_2), __gsharp_csharp_arg_3, __gsharp_csharp_arg_4));
+}
+return;
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.TwoArraysSliceAndStructKernel");
+int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel[__gsharp_context_count];
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+global::System.Runtime.ExceptionServices.ExceptionDispatchInfo? __gsharp_first_failure = null;
+bool __gsharp_any_grid_active = true;
+try
+{
+while (__gsharp_any_grid_active)
+{
+__gsharp_any_grid_active = false;
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
+bool __gsharp_any_block_active = true;
+while (__gsharp_any_block_active)
+{
+__gsharp_any_block_active = false;
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_grid_active = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel(first, second, slice, bag, observed, __gsharp_contexts[__gsharp_linear_tid]);
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("MarshalingOverlapDifferentialKernels.TwoArraysSliceAndStructKernel");
+}
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
+}
+}
+catch (global::System.Exception __gsharp_failure)
+{
+__gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_block_active = true;
+}
+}
+}
+if (!__gsharp_any_block_active)
+{
+for (int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block; __gsharp_linear_tid < (__gsharp_block_index + 1) * __gsharp_threads_per_block; __gsharp_linear_tid++)
+{
+if (__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+__gsharp_any_block_active = true;
+}
+}
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+}
+catch (global::System.Exception) when (__gsharp_first_failure is not null)
+{
+__gsharp_first_failure.Throw();
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
+__gsharp_first_failure?.Throw();
+return;
+}
+__gsharp_delegate_TwoArraysSliceAndStructKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_TwoArraysSliceAndStructKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__MarshalingOverlapDifferentialKernels__TwoArraysSliceAndStructKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.DiffDeepBag __gsharp_native_3 = default;
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_3 = new();
+try
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.Marshal_DiffDeepBag(ref bag, ref __gsharp_native_3, __gsharp_allocated_ptrs_3, hStream);
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(first))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(second))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(slice))
+fixed (global::System.Int32* __gsharp_p_4 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(observed))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (first?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (second?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = slice.Length }, &__gsharp_native_3, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_4, Length = (observed?.Length ?? 0) });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingOverlapDifferentialKernels.AotContexts.Unmarshal_DiffDeepBag(ref bag, ref __gsharp_native_3, hStream);
+}
+finally
+{
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_3) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
 }
 #pragma warning restore CS8500

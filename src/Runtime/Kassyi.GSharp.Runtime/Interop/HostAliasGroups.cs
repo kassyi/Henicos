@@ -44,6 +44,15 @@ public sealed class HostAliasGroups
     /// </summary>
     public const byte WholeArray = 8;
 
+    /// <summary>
+    /// Trait (CPU): a <c>Span&lt;T&gt;</c> or <c>ReadOnlySpan&lt;T&gt;</c> argument, which can view a copy of any
+    /// element type (<see cref="TryGetHostView{T}"/>).
+    /// </summary>
+    public const byte SpanView = 16;
+
+    // The alignment that a CPU copy keeps from the caller's memory: the widest element alignment
+    private const int CopyAlignment = 16;
+
     /// <summary>The number of values per argument in a range list: address, byte length, element size.</summary>
     public const int RangeFields = 3;
 
@@ -242,6 +251,66 @@ public sealed class HostAliasGroups
 
         start = (int)(_offsets[index] / size);
         return true;
+    }
+
+    /// <summary>
+    /// CPU: gets the view that a <c>Span&lt;T&gt;</c> or <c>ReadOnlySpan&lt;T&gt;</c> member passes to the kernel
+    /// instead of the caller's memory, under the same rule as <see cref="TryGetHostCopy{T}"/>. When every member of the
+    /// group is such a span, the copy is one buffer of bytes placed at the caller's alignment, so members of different
+    /// element types (an <c>int</c> and a <c>long</c> view of one array) view the same bytes, as on the device.
+    /// </summary>
+    /// <param name="index">The member.</param>
+    /// <param name="ranges">The range list of <see cref="Find"/>, with the arguments still pinned.</param>
+    /// <param name="view">The member's elements in the copy.</param>
+    /// <typeparam name="T">The element type of the member.</typeparam>
+    /// <exception cref="NotSupportedException">
+    /// The group also holds an array, <c>Memory&lt;T&gt;</c> or segment of another element type, which needs a typed
+    /// copy.
+    /// </exception>
+    public bool TryGetHostView<T>(int index, ReadOnlySpan<nint> ranges, out Span<T> view)
+    {
+        ref var group = ref _groups[_groupOf[index]];
+        var size = Unsafe.SizeOf<T>();
+        var count = checked((int)(ranges[(index * RangeFields) + 1] / size));
+        if (!group.ViewsOnly)
+        {
+            var found = TryGetHostCopy<T>(index, ranges, out var copy, out var start);
+            view = found ? copy.AsSpan(start, count) : default;
+            return found;
+        }
+
+        if (!group.KernelGetsCopy)
+        {
+            view = default;
+            return false;
+        }
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            throw new NotSupportedException(
+                $"The [In] arguments that overlap one memory with '{group.Names}' hold references.");
+        }
+
+        var bytes = group.HostCopy as byte[] ?? CopyBytes(ref group, ranges);
+        ref var data = ref MemoryMarshal.GetArrayDataReference(bytes);
+        ref var first = ref Unsafe.Add(ref data, group.CopyStart + _offsets[index]);
+        view = MemoryMarshal.CreateSpan(ref Unsafe.As<byte, T>(ref first), count);
+        return true;
+    }
+
+    // One pinned byte buffer for a group of span views, whose copy of the group starts at the address that the caller's
+    // memory has modulo CopyAlignment, so that every view keeps the alignment of its elements
+    private static unsafe byte[] CopyBytes(ref HostAliasGroup group, ReadOnlySpan<nint> ranges)
+    {
+        var length = checked((int)group.Length);
+        var bytes = GC.AllocateUninitializedArray<byte>(length + CopyAlignment, pinned: true);
+        var source = ranges[group.Leader * RangeFields];
+        var buffer = (nint)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(bytes));
+        var start = (int)((source - buffer) & (CopyAlignment - 1));
+        new ReadOnlySpan<byte>((void*)source, length).CopyTo(bytes.AsSpan(start, length));
+        group.HostCopy = bytes;
+        group.CopyStart = start;
+        return bytes;
     }
 
     // Whether arguments i and j belong to one group: both hold bytes, and their bytes overlap. Two T[] arguments that

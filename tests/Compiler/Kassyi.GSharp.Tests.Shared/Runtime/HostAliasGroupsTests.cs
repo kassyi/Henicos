@@ -13,6 +13,7 @@ public class HostAliasGroupsTests
     private const byte InOut = HostAliasGroups.CopiesIn | HostAliasGroups.CopiesBack;
     private const byte In = HostAliasGroups.CopiesIn;
     private const byte Whole = HostAliasGroups.WholeArray;
+    private const byte InView = HostAliasGroups.CopiesIn | HostAliasGroups.SpanView;
 
     // (address, byte length, element size) per argument
     private static nint[] Ranges(params (nint Address, nint Length, nint Size)[] ranges)
@@ -195,6 +196,53 @@ public class HostAliasGroupsTests
             Assert.NotSame(backing, first);
             Assert.Equal([1, 2, 3, 4], first);
             Assert.Equal((0, 1), (firstStart, secondStart));
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public unsafe void TryGetHostView_IntAndLongViews_ShareOneCopyAtTheCallersAlignment()
+    {
+        long[] storage = [0x0000000200000001, 0x0000000400000003, 0x0000000600000005];
+        fixed (long* data = storage)
+        {
+            // ints 1 to 5 (starting 4 bytes into the array) and longs 1 to 2
+            var ints = (int*)data + 1;
+            var ranges = Ranges(((nint)ints, 20, 4), ((nint)(data + 1), 16, 8));
+            var groups = HostAliasGroups.Find(ranges, [InView, InView], "ints,longs");
+            Assert.NotNull(groups);
+
+            Assert.True(groups.TryGetHostView<int>(0, ranges, out var intView));
+            Assert.True(groups.TryGetHostView<long>(1, ranges, out var longView));
+            intView[1] = 30;
+
+            Assert.Equal([2, 30, 4, 5, 6], intView.ToArray());
+            Assert.Equal(0x000000040000001E, longView[0]);
+            Assert.Equal(0x0000000400000003, storage[1]);
+            fixed (long* first = longView)
+            {
+                Assert.Equal(0, (nint)first % 8);
+            }
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public unsafe void TryGetHostView_ViewBesideAnArrayOfAnotherType_Throws()
+    {
+        long[] storage = [1, 2];
+        fixed (long* data = storage)
+        {
+            var ranges = Ranges(((nint)data, 16, 8), ((nint)data, 8, 4));
+            var groups = HostAliasGroups.Find(ranges, [In, InView], "array,ints");
+            Assert.NotNull(groups);
+
+            Assert.True(groups.TryGetHostCopy<long>(0, ranges, out _, out _));
+            Assert.Throws<NotSupportedException>(() => groups.TryGetHostView<int>(1, ranges, out _));
         }
     }
 

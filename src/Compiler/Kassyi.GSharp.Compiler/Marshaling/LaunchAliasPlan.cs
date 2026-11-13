@@ -19,11 +19,14 @@ internal readonly struct LaunchAliasPlan
     internal const byte CopiesBack = 2;
     internal const byte Unsupported = 4;
     internal const byte WholeArray = 8;
+    internal const byte SpanView = 16;
 
-    private LaunchAliasPlan(ImmutableArray<int> candidates, ImmutableArray<byte> traits)
+    private LaunchAliasPlan(ImmutableArray<int> candidates, ImmutableArray<byte> traits,
+        ImmutableArray<AliasRange> ranges)
     {
         Candidates = candidates;
         Traits = traits;
+        Ranges = ranges;
     }
 
     /// <summary>The parameters that the launcher compares, in parameter order; empty when it compares none.</summary>
@@ -31,6 +34,9 @@ internal readonly struct LaunchAliasPlan
 
     /// <summary>The <c>HostAliasGroups</c> traits of each candidate.</summary>
     public ImmutableArray<byte> Traits { get; }
+
+    /// <summary>The pins and ranges of the candidates, in the order of <see cref="Candidates"/>.</summary>
+    public ImmutableArray<AliasRange> Ranges { get; }
 
     /// <summary>Whether the launcher compares any arguments.</summary>
     public bool IsActive => !Candidates.IsDefaultOrEmpty;
@@ -65,10 +71,10 @@ internal readonly struct LaunchAliasPlan
                 ? shape.IsCudaConvertedArray
                 : shape.IsCustomStruct && (!shape.Cuda.IsIdenticalStruct || shape.HasArrayFields);
             candidates.Add(i);
-            traits.Add(GetTraits(shape, copiesIn, copiesBack, converted));
+            traits.Add(GetTraits(shape, copiesIn, copiesBack, converted, spanView: false));
         }
 
-        return Create(candidates, traits);
+        return Create(parameters, candidates, traits);
     }
 
     /// <summary>
@@ -99,11 +105,12 @@ internal readonly struct LaunchAliasPlan
             var readOnly = shape.IsArray && (sharing.NeedsKernelCopy(i) || shape.IsReadOnlyContainer);
             var converted = shape.IsArray ? shape.IsCpuConvertedArray : shape.IsCpuConvertedStruct;
             copies |= converted || (shape.IsArray && sharing.NeedsKernelCopy(i));
+            var spanView = shape.Container is ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan;
             candidates.Add(i);
-            traits.Add(GetTraits(shape, copiesIn: true, copiesBack: !readOnly, converted));
+            traits.Add(GetTraits(shape, copiesIn: true, copiesBack: !readOnly, converted, spanView));
         }
 
-        return copies ? Create(candidates, traits) : default;
+        return copies ? Create(parameters, candidates, traits) : default;
     }
 
     /// <summary>The candidate number of parameter <paramref name="parameterIndex"/>, or -1.</summary>
@@ -143,17 +150,37 @@ internal readonly struct LaunchAliasPlan
     private static bool IsCandidate(in KernelParameterShape shape) =>
         shape.IsArray ? !shape.IsByRef : shape.IsByRef;
 
-    private static byte GetTraits(in KernelParameterShape shape, bool copiesIn, bool copiesBack, bool converted)
+    private static byte GetTraits(in KernelParameterShape shape, bool copiesIn, bool copiesBack, bool converted,
+        bool spanView)
     {
         var traits = 0;
         traits |= copiesIn ? CopiesIn : 0;
         traits |= copiesBack ? CopiesBack : 0;
         traits |= converted ? Unsupported : 0;
         traits |= shape.IsSharableArray ? WholeArray : 0;
+        traits |= spanView ? SpanView : 0;
         return (byte)traits;
     }
 
-    private static LaunchAliasPlan Create(ImmutableArray<int>.Builder candidates,
-        ImmutableArray<byte>.Builder traits) =>
-        new(candidates.ToImmutable(), traits.ToImmutable());
+    private static LaunchAliasPlan Create(EquatableArray<KernelParameterShape> parameters,
+        ImmutableArray<int>.Builder candidates, ImmutableArray<byte>.Builder traits)
+    {
+        var ranges = ImmutableArray.CreateBuilder<AliasRange>(candidates.Count);
+        for (var k = 0; k < candidates.Count; k++)
+        {
+            ranges.Add(GetRange(parameters[candidates[k]], traits[k]));
+        }
+
+        return new LaunchAliasPlan(candidates.ToImmutable(), traits.ToImmutable(), ranges.MoveToImmutable());
+    }
+
+    // An array-like argument pins its span; a ref or out value pins the variable
+    private static AliasRange GetRange(in KernelParameterShape shape, byte traits)
+    {
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.AliasPinned, shape);
+        return shape.IsArray
+            ? AliasRange.ForArray(pinned, shape.SpanExpression, shape.LengthExpression,
+                ConvertedArrayEmitter.GetElementTypeName(shape), traits, shape.Name)
+            : AliasRange.ForReference(pinned, shape.Identifier, shape.TypeName, traits, shape.Name);
+    }
 }

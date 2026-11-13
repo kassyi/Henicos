@@ -44,8 +44,24 @@ internal readonly record struct ModuleKernelArgument(
     /// </summary>
     public bool IsAliasCandidate => IsArray || (Kind == ModuleKernelParameterKind.ByReference && CopyIn);
 
-    /// <summary>The <c>HostAliasGroups</c> traits of an alias candidate: copied in (1), copied back (2).</summary>
-    public byte AliasTraits => (byte)((CopyIn ? 1 : 0) | (CopyOut ? 2 : 0));
+    /// <summary>The <c>HostAliasGroups</c> traits of an alias candidate: copied in, copied back.</summary>
+    public byte AliasTraits =>
+        (byte)((CopyIn ? LaunchAliasPlan.CopiesIn : 0) | (CopyOut ? LaunchAliasPlan.CopiesBack : 0));
+
+    /// <summary>The pin and range of an alias candidate (<see cref="IsAliasCandidate"/>).</summary>
+    public AliasRange ToAliasRange()
+    {
+        var name = Name.ToCSharpIdentifier();
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.AliasPinned, Ordinal);
+        if (!IsArray)
+        {
+            return AliasRange.ForReference(pinned, $"{HostTypeNames.Unsafe}.AsRef(in {name})", TypeName, AliasTraits,
+                Name);
+        }
+
+        var count = AllowsNull ? $"({name}?.Length ?? 0)" : $"{name}.Length";
+        return AliasRange.ForArray(pinned, name, count, TypeName, AliasTraits, Name);
+    }
 }
 
 /// <summary>
@@ -116,6 +132,21 @@ internal readonly record struct ModuleKernelLaunchPlan(
         Arguments
             .AsStackEnumerable()
             .Count(static a => a.IsAliasCandidate) > 1;
+
+    /// <summary>The pins and ranges of the alias candidates, in declaration order.</summary>
+    public ImmutableArray<AliasRange> AliasRanges
+    {
+        get
+        {
+            var ranges = ImmutableArray.CreateBuilder<AliasRange>();
+            Arguments
+                .AsStackEnumerable()
+                .Where(static a => a.IsAliasCandidate)
+                .Select(static a => a.ToAliasRange())
+                .AddTo(ranges);
+            return ranges.ToImmutable();
+        }
+    }
 
     /// <summary>
     /// Whether a kernel argument is a pointer or a function pointer, so the launcher is declared <c>unsafe</c> (CS0214

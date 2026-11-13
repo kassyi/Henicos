@@ -168,4 +168,48 @@ public static partial class MarshalingOverlapDifferentialKernels
             observed[0] = pairs[0].Second[0];
         }
     }
+
+    [GpuKernel]
+    public static void InArrayAndReadOnlySpanFieldKernel(
+        [In] int[] array,
+        ReadOnlySpan<DiffDeepBag> bags,
+        [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            array[0] = 7;
+            observed[0] = bags[0].Data[0];
+        }
+    }
+
+    // --- [In] views of different element types: the CPU copy is shared bytes, as the device region is ---
+    [GpuKernel]
+    public static void InIntAndLongViewsKernel([In] Span<int> ints, [In] Span<long> longs, [Out] long[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            ints[2] += 8;
+            longs[1] += 1L << 32;
+            observed[0] = longs[0];
+            observed[1] = ints[5];
+        }
+    }
+
+    // --- Two T[] arguments that are one array, a slice of it, and a struct that puts the launch in table mode ---
+    [GpuKernel]
+    public static void TwoArraysSliceAndStructKernel(
+        int[] first,
+        int[] second,
+        Span<int> slice,
+        DiffDeepBag bag,
+        [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            slice[0] += 1;
+            first[2] += 10;
+            observed[0] = second[1] + bag.Tag;
+            observed[1] = slice[1] + bag.Data[0];
+        }
+    }
 }

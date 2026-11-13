@@ -44,7 +44,10 @@ public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, in
   forms cannot share one region and throw `NotSupportedException` naming the arguments: a member whose elements the
   launcher converts between the host and the device layout, and members that overlap at offsets no device address can
   align for all of their element types. The CPU paths pass the caller's memory, and give the `[In]` members of a group
-  of `[In]` arguments one shared copy.
+  of `[In]` arguments one shared copy. When every member of such a group is a `Span<T>` or `ReadOnlySpan<T>`, the copy
+  is one buffer of bytes that each member views, so views of different element types work as on the device. A group of
+  `[In]` arguments that also holds a `T[]`, `Memory<T>`, `ArraySegment<T>` or `ImmutableArray<T>` needs one typed
+  copy; with members of different element types it throws `NotSupportedException` on the CPU paths only.
 
 Using these attributes appropriately is highly recommended for performance-critical kernels, as redundant PCIe transfers can drastically degrade performance compared to native C++ CUDA.
 

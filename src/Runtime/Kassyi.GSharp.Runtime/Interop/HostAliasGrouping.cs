@@ -16,7 +16,7 @@ internal static class HostAliasGrouping
         var leader = -1;
         nint start = 0;
         nint end = 0;
-        var group = new HostAliasGroup { KernelGetsCopy = true, Alignment = 1 };
+        var group = new HostAliasGroup { KernelGetsCopy = true, ViewsOnly = true, Alignment = 1 };
         for (var i = 0; i < groupOf.Length; i++)
         {
             if (groupOf[i] != g)
@@ -36,6 +36,7 @@ internal static class HostAliasGrouping
 
             group.CopiesIn |= (traits[i] & HostAliasGroups.CopiesIn) != 0;
             group.CopiesBack |= (traits[i] & HostAliasGroups.CopiesBack) != 0;
+            group.ViewsOnly &= (traits[i] & HostAliasGroups.SpanView) != 0;
             group.KernelGetsCopy &= (traits[i] & (HostAliasGroups.CopiesIn | HostAliasGroups.CopiesBack)) ==
                 HostAliasGroups.CopiesIn;
             group.Alignment = Math.Max(group.Alignment, GetAlignment(ranges[(i * HostAliasGroups.RangeFields) + 2]));

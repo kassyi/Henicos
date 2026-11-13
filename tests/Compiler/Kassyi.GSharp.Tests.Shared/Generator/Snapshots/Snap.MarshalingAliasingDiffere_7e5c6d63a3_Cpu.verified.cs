@@ -1198,7 +1198,7 @@ __gsharp_alias_ranges[17] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differenti
 __gsharp_alias_ranges[18] = (nint)__gsharp_alias_pin_6;
 __gsharp_alias_ranges[19] = (nint)(outTotals?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[20] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 21), new byte[] {15, 7, 5, 7, 7, 5, 11}, "arrBags,spanBags,roSpanBags,segBags,memBags,immBags,outTotals");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 21), new byte[] {15, 23, 21, 7, 7, 5, 11}, "arrBags,spanBags,roSpanBags,segBags,memBags,immBags,outTotals");
 global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies __gsharp_array_copies = new();
 __gsharp_array_copies.Keep(arrBags);
 __gsharp_array_copies.Keep(outTotals);

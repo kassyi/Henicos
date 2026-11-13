@@ -282,6 +282,85 @@ public sealed class MarshalingOverlapDifferentialTests
         },
     };
 
+    // The issue's read-only container form: a ReadOnlySpan of structs whose field holds the [In] array
+    internal static readonly DifferentialCase s_inArrayAndReadOnlySpanField = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InArrayAndReadOnlySpanFieldKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("array", [1, 2], OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 1, OutputPolicy.Exact),
+        Reference = static (b, _) => b.Get<int>("observed")[0] = 7,
+        Launch = static (b, s) =>
+        {
+            int[] array = b.Get<int>("array");
+            DiffDeepBag[] bags = [new DiffDeepBag { Data = array, Tag = 3 }];
+            MarshalingOverlapDifferentialKernels.LaunchInArrayAndReadOnlySpanFieldKernel(
+                array, bags, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    // Both views are [In]: the kernel sees its writes through the other view, and nothing reaches the caller
+    internal static readonly DifferentialCase s_inIntAndLongViews = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InIntAndLongViewsKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(8), OutputPolicy.Exact, readOnly: true)
+            .Out<long>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, s) =>
+        {
+            int[] shadow = (int[])b.Get<int>("backing").Clone();
+            SequentialOracle.Run(s, ThreadOrder.Forward, () =>
+                MarshalingOverlapDifferentialKernels.LaunchInIntAndLongViewsKernel(
+                    shadow.AsSpan(0, 6), MemoryMarshal.Cast<int, long>(shadow.AsSpan(2, 4)), b.Get<long>("observed"),
+                    gridDimX: s.GridX, blockDimX: s.BlockX));
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchInIntAndLongViewsKernel(
+                backing.AsSpan(0, 6), MemoryMarshal.Cast<int, long>(backing.AsSpan(2, 4)), b.Get<long>("observed"),
+                gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_twoArraysSliceAndStruct = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.TwoArraysSliceAndStructKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var bag = new DiffDeepBag { Data = [9], Tag = 100 };
+            MarshalingOverlapDifferentialKernels.LaunchTwoArraysSliceAndStructKernel(
+                backing, backing, backing.AsSpan(1), bag, b.Get<int>("observed"), gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InHolders_InArrayAndAReadOnlySpanElementField_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_inArrayAndReadOnlySpanField);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void SpanOverlap_InIntAndLongViewsOfOneArray_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inIntAndLongViews);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void SpanOverlap_TwoArraysOfOneArraySliceAndStruct_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_twoArraysSliceAndStruct);
+
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void SpanOverlap_SpanAndReadOnlySpanOverOneArray_MatchesTheOracleOnEveryPath() =>

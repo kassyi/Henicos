@@ -8,12 +8,9 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </summary>
 internal static class AliasGroupEmitter
 {
-    private const string GroupsType = "global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups";
-    private const string PinsType = "global::Kassyi.GSharp.Runtime.Interop.HostAliasPins";
-    private const string Aliases = GSharpInternalNames.Launcher.Aliases;
-    private const string Ranges = GSharpInternalNames.Launcher.AliasRanges;
+    private const string GroupsType = AliasRangeEmitter.GroupsType;
+    private const string Aliases = AliasRangeEmitter.Aliases;
     private const string DeviceArrays = GSharpInternalNames.Launcher.DeviceArrays;
-    private const int RangeFields = 3;
     private const string ImmutableCollectionsMarshalType =
         "global::System.Runtime.InteropServices.ImmutableCollectionsMarshal";
 
@@ -44,13 +41,13 @@ internal static class AliasGroupEmitter
         }
 
         writer.AppendLine("// Find the arguments that overlap and give each group one device region");
-        using (WritePinnedRanges(writer, plan, sharing.Parameters))
+        using (AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges))
         {
-            WriteFind(writer, plan, sharing.Parameters);
+            AliasRangeEmitter.WriteFind(writer, plan.Ranges);
             writer.AppendLine($"if ({Aliases} != null)");
             using (writer.Scope())
             {
-                writer.AppendLine($"{Aliases}.CopyToDevice({RangesSpan(plan)}, hStream);");
+                writer.AppendLine($"{Aliases}.CopyToDevice({AliasRangeEmitter.RangesSpan(plan.Ranges)}, hStream);");
                 if (!sharing.UsesTable)
                 {
                     return;
@@ -82,9 +79,9 @@ internal static class AliasGroupEmitter
         writer.AppendLine($"if ({Aliases} != null)");
         using (writer.Scope())
         {
-            using (WritePinnedRanges(writer, plan, sharing.Parameters))
+            using (AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges))
             {
-                writer.AppendLine($"{Aliases}.CopyToHost({RangesSpan(plan)}, hStream);");
+                writer.AppendLine($"{Aliases}.CopyToHost({AliasRangeEmitter.RangesSpan(plan.Ranges)}, hStream);");
             }
         }
     }
@@ -112,15 +109,17 @@ internal static class AliasGroupEmitter
 
         writer.AppendLine("// Find the arguments that overlap: the [In] members of a group share one copy");
         WriteDeclaration(writer, plan);
-        var scope = WritePinnedRanges(writer, plan, sharing.Parameters);
-        WriteFind(writer, plan, sharing.Parameters);
+        var scope = AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges);
+        AliasRangeEmitter.WriteFind(writer, plan.Ranges);
         return scope;
     }
 
-    // if (__gsharp_aliases.TryGetHostCopy<T>(<k>, <ranges>, out var copy, out var start))
-    // { <name> = <container over the copy>; }
+    // A span: if (__gsharp_aliases.TryGetHostView<T>(<k>, <ranges>, out Span<T> view)) { <name> = view; }
+    // Others: if (__gsharp_aliases.TryGetHostCopy<T>(<k>, <ranges>, out var copy, out var start))
+    //         { <name> = <container over the copy>; }
     // [WHY] A member of a group that is written back gets the caller's memory, as it did; the members of a group of
-    // [In] arguments get one copy, so that a write through one is seen through the others, as on the device
+    // [In] arguments get one copy, so that a write through one is seen through the others, as on the device. Spans view
+    // a copy of bytes, so that views of different element types share it as they share the caller's memory
     /// <summary>CPU: the statement that gives member <paramref name="parameterIndex"/> its group's copy.</summary>
     public static void WriteCpuMemberCopy(SourceWriter writer, in ArraySharingPlan sharing, int parameterIndex)
     {
@@ -129,16 +128,28 @@ internal static class AliasGroupEmitter
         var copy = KernelHostNames.GetLocal(LauncherLocal.AliasCopy, shape);
         var start = KernelHostNames.GetLocal(LauncherLocal.AliasStart, shape);
         var element = ConvertedArrayEmitter.GetElementTypeName(shape);
-        writer.Append($"if ({Aliases}.TryGetHostCopy<{element}>({plan.MemberIndexOf(parameterIndex)}, ");
-        writer.AppendLine($"{RangesSpan(plan)}, out {element}[]? {copy}, out int {start}))");
+        var index = plan.MemberIndexOf(parameterIndex);
+        var ranges = AliasRangeEmitter.RangesSpan(plan.Ranges);
+        if (shape.Container is ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan)
+        {
+            writer.Append($"if ({Aliases}.TryGetHostView<{element}>({index}, {ranges}, ");
+            writer.AppendLine($"out global::System.Span<{element}> {copy}))");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"{shape.Identifier} = {copy};");
+            }
+
+            return;
+        }
+
+        writer.Append($"if ({Aliases}.TryGetHostCopy<{element}>({index}, ");
+        writer.AppendLine($"{ranges}, out {element}[]? {copy}, out int {start}))");
         using (writer.Scope())
         {
             var length = shape.LengthExpression;
             writer.AppendLine(shape.Container switch
             {
                 ArrayContainerKind.Array => $"{shape.Identifier} = {copy};",
-                ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan =>
-                    $"{shape.Identifier} = {copy}.AsSpan({start}, {length});",
                 ArrayContainerKind.Memory =>
                     $"{shape.Identifier} = new global::System.Memory<{element}>({copy}, {start}, {length});",
                 ArrayContainerKind.ReadOnlyMemory =>
@@ -149,67 +160,4 @@ internal static class AliasGroupEmitter
             });
         }
     }
-
-    // fixed (byte* __gsharp_alias_pin_<a> = &HostAliasPins.Start(<span>),
-    //        __gsharp_alias_pin_<b> = &HostAliasPins.StartOf(ref <name>), ...)
-    // { nint* __gsharp_alias_ranges = stackalloc nint[<3n>];
-    //   __gsharp_alias_ranges[<3k>] = (nint)<pin>; [<3k + 1>] = (nint)<length> * sizeof(<T>);
-    //   [<3k + 2>] = sizeof(<T>); ...
-    // [WHY] Pinned, every address is read at one time, so two arguments overlap exactly when their ranges do; a group
-    // lies in one object, so the offsets stay valid after the arguments are unpinned
-    private static SourceWriterScope WritePinnedRanges(SourceWriter writer, LaunchAliasPlan plan,
-        EquatableArray<KernelParameterShape> parameters)
-    {
-        writer.Append("fixed (byte* ");
-        for (var k = 0; k < plan.Candidates.Length; k++)
-        {
-            var shape = parameters[plan.Candidates[k]];
-            writer.AppendIf(k > 0, ", ");
-            writer.Append($"{KernelHostNames.GetLocal(LauncherLocal.AliasPinned, shape)} = &{PinsType}.");
-            writer.Append(shape.IsArray ? $"Start({shape.SpanExpression})" : $"StartOf(ref {shape.Identifier})");
-        }
-
-        writer.AppendLine(")");
-        var scope = writer.Scope();
-        writer.AppendLine($"nint* {Ranges} = stackalloc nint[{plan.Candidates.Length * RangeFields}];");
-        for (var k = 0; k < plan.Candidates.Length; k++)
-        {
-            var shape = parameters[plan.Candidates[k]];
-            var at = k * RangeFields;
-            var element = shape.IsArray ? ConvertedArrayEmitter.GetElementTypeName(shape) : shape.TypeName;
-            var length = shape.IsArray ? $"(nint){shape.LengthExpression} * sizeof({element})" : $"sizeof({element})";
-            writer.AppendLine($"{Ranges}[{at}] = (nint){KernelHostNames.GetLocal(LauncherLocal.AliasPinned, shape)};");
-            writer.AppendLine($"{Ranges}[{at + 1}] = {length};");
-            writer.AppendLine($"{Ranges}[{at + 2}] = sizeof({element});");
-        }
-
-        return scope;
-    }
-
-    // __gsharp_aliases = HostAliasGroups.Find(<ranges>, new byte[] { <traits> }, "<names>");
-    private static void WriteFind(SourceWriter writer, in LaunchAliasPlan plan,
-        EquatableArray<KernelParameterShape> parameters)
-    {
-        writer.Append($"{Aliases} = {GroupsType}.Find({RangesSpan(plan)}, new byte[] ");
-        using (writer.Braces())
-        {
-            for (var k = 0; k < plan.Traits.Length; k++)
-            {
-                writer.AppendIf(k > 0, ", ");
-                writer.Append(plan.Traits[k].ToString(CultureInfo.InvariantCulture));
-            }
-        }
-
-        writer.Append(", \"");
-        for (var k = 0; k < plan.Candidates.Length; k++)
-        {
-            writer.AppendIf(k > 0, ",");
-            writer.Append(parameters[plan.Candidates[k]].Name);
-        }
-
-        writer.AppendLine("\");");
-    }
-
-    private static string RangesSpan(in LaunchAliasPlan plan) =>
-        $"new global::System.ReadOnlySpan<nint>({Ranges}, {plan.Candidates.Length * RangeFields})";
 }
