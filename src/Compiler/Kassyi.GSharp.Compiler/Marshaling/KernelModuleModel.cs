@@ -79,7 +79,11 @@ internal readonly record struct KernelModuleModel(
     EquatableArray<KernelWarmup> Warmups)
 {
     /// <summary>Groups <paramref name="kernels"/> by class, in the order the classes first appear.</summary>
-    public static KernelModuleModel Create(ImmutableArray<TranspiledKernelResult> kernels)
+    /// <param name="kernels">The kernels of the compilation.</param>
+    /// <param name="emitsSource">
+    /// Whether <c>GSharpEmitSource</c> adds a <c>{key}_Source</c> constant per kernel.
+    /// </param>
+    public static KernelModuleModel Create(ImmutableArray<TranspiledKernelResult> kernels, bool emitsSource)
     {
         var kernelsByClass = new Dictionary<string, ImmutableArray<TranspiledKernelResult>.Builder>(StringComparer.Ordinal);
         var classIndices = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -100,7 +104,9 @@ internal readonly record struct KernelModuleModel(
         var classes = ImmutableArray.CreateBuilder<KernelClassModel>(classOrder.Count);
         classOrder
             .AsStackEnumerable()
-            .Select(kernelsByClass, static (header, groups) => KernelClassModel.Create(header, groups[header.HintName]))
+            .Select((kernelsByClass, emitsSource), static (header, state) =>
+                KernelClassModel.Create(header, state.kernelsByClass[header.HintName], state.emitsSource)
+            )
             .AddTo(classes);
         var classModels = classes.MoveToImmutable();
 
