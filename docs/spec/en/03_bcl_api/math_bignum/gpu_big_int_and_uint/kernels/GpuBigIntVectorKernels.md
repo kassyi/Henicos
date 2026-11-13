@@ -21,12 +21,17 @@ Contains native G# (CUDA) kernels and device functions for batched vector operat
 public static partial class GpuBigIntVectorKernels
 ```
 
-## Fields
+## Properties
 
 | Name | Description |
 | --- | --- |
 | `VectorSignMagnitudeToTwosComplementKernelHandle` | Cached native CUDA kernel handle (`IntPtr`) for `VectorSignMagnitudeToTwosComplementKernel`. |
 | `VectorSignMagnitudeToOffsetBinaryKernelHandle` | Cached native CUDA kernel handle (`IntPtr`) for `VectorSignMagnitudeToOffsetBinaryKernel`. |
+
+## Fields
+
+| Name | Description |
+| --- | --- |
 | `DivModSharedWords` | `public const int DivModSharedWords = 512;` the words of each shared work buffer of the vector division; a wider element works in global scratch. |
 
 ## Nested Context Structs
