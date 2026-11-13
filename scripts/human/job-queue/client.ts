@@ -159,10 +159,87 @@ export async function run(options: RunOptions): Promise<void> {
     }
     // Wait for the turn at the GPU in the scheduler (in order, visible and cancellable), then take the lock: the GPU
     // lock alone gives it to whichever waiter polls first. An --after predecessor blocks the turn there too.
-    await new QueuedRun(options, placement, false, true).run();
+    await new QueuedRun(options, placement, false, true, new ProcessRunHost(options)).run();
     return;
   }
-  await new QueuedRun(options, placement, inGpuLock, false).run();
+  await new QueuedRun(options, placement, inGpuLock, false, new ProcessRunHost(options)).run();
+}
+
+/**
+ * The effects of a queued run: the scheduler connection, the command's process and the client process itself. The run
+ * passes ProcessRunHost; the self-test passes a fake, so that it can drive a client in its own process.
+ */
+export interface RunHost {
+  /** Connects to the scheduler, starting it when none listens (SchedulerLauncher.connectOrStart). */
+  connect(): Promise<net.Socket>;
+  /** Reports the end of a job to the next scheduler (SchedulerLauncher.reportEnd). */
+  reportEnd(
+    id: number,
+    completed: boolean,
+    exitCode: number,
+    cancelled: boolean,
+    reporter: { pid: number; queuedAt: number },
+  ): Promise<void>;
+  /** Runs the command in the caller's shell (CommandShell.run). */
+  runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult>;
+  /** Runs the command under gpu-lock.js for a GPU turn (`turn`: the run's job id, 0 when unknown). */
+  runUnderGpuLock(weight: number, turn: number, onChild: (child: ChildProcess) => void): Promise<ShellResult>;
+  /** Stops the command: what runs under gpu-lock.js when `underGpuLock` (Windows), else the whole tree. */
+  stop(child: ChildProcess | null, underGpuLock: boolean): void;
+  /** Ends the process (process.exit); a fake records the code and returns. */
+  exit(code: number): void;
+  onSignal(signal: NodeJS.Signals, handler: () => void): void;
+}
+
+/** The RunHost of a real run: the scheduler of the endpoint, the caller's shell, this process. */
+export class ProcessRunHost implements RunHost {
+  private readonly options: RunOptions;
+  private readonly launcher: SchedulerLauncher;
+
+  constructor(options: RunOptions) {
+    this.options = options;
+    this.launcher = new SchedulerLauncher(options);
+  }
+
+  connect(): Promise<net.Socket> {
+    return this.launcher.connectOrStart();
+  }
+
+  reportEnd(
+    id: number,
+    completed: boolean,
+    exitCode: number,
+    cancelled: boolean,
+    reporter: { pid: number; queuedAt: number },
+  ): Promise<void> {
+    return this.launcher.reportEnd(id, completed, exitCode, cancelled, reporter);
+  }
+
+  runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
+    return CommandShell.resolve(this.options.shell).run(command, env, onChild);
+  }
+
+  runUnderGpuLock(weight: number, turn: number, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
+    return runGpuLocked(this.options, weight, turn, onChild);
+  }
+
+  stop(child: ChildProcess | null, underGpuLock: boolean): void {
+    if (underGpuLock && process.platform === "win32" && child !== null) {
+      // Stop what runs under gpu-lock.js, not gpu-lock.js itself (taskkill /F would leave its lock behind): it then
+      // releases the lock and ends
+      void stopUnder(child);
+    } else {
+      ProcessTable.killChild(child);
+    }
+  }
+
+  exit(code: number): void {
+    process.exit(code);
+  }
+
+  onSignal(signal: NodeJS.Signals, handler: () => void): void {
+    process.on(signal, handler);
+  }
 }
 
 /**
@@ -170,12 +247,12 @@ export async function run(options: RunOptions): Promise<void> {
  * for its turn at the GPU instead of slots, and runs gpu-lock.js with an inner client that registers the command's
  * slots as a GPU holder.
  */
-class QueuedRun {
+export class QueuedRun {
   private readonly options: RunOptions;
   private readonly placement: Placement;
   private readonly inGpuLock: boolean;
   private readonly gpuTurn: boolean;
-  private readonly launcher: SchedulerLauncher;
+  private readonly host: RunHost;
   private readonly queuedAt = Date.now();
   private state: "waiting" | "running" | "done" = "waiting";
   private child: ChildProcess | null = null;
@@ -195,18 +272,18 @@ class QueuedRun {
   /** The scheduler cancelled this job: its end is reported as cancelled, not as a failure. */
   private wasCancelled = false;
 
-  constructor(options: RunOptions, placement: Placement, inGpuLock: boolean, gpuTurn: boolean) {
+  constructor(options: RunOptions, placement: Placement, inGpuLock: boolean, gpuTurn: boolean, host: RunHost) {
     this.options = options;
     this.placement = placement;
     this.inGpuLock = inGpuLock;
     this.gpuTurn = gpuTurn;
-    this.launcher = new SchedulerLauncher(options);
+    this.host = host;
   }
 
   async run(): Promise<void> {
-    process.on("SIGINT", this.onSignal("SIGINT", 130));
-    process.on("SIGTERM", this.onSignal("SIGTERM", 143));
-    process.on("SIGHUP", this.onSignal("SIGHUP", 129));
+    this.host.onSignal("SIGINT", this.onSignal("SIGINT", 130));
+    this.host.onSignal("SIGTERM", this.onSignal("SIGTERM", 143));
+    this.host.onSignal("SIGHUP", this.onSignal("SIGHUP", 129));
 
     const timeoutMinutes = this.options.timeoutMinutes;
     if (timeoutMinutes > 0) {
@@ -237,12 +314,13 @@ class QueuedRun {
       if (ran && jobId > 0) {
         // No scheduler listens right now (it restarts): report the outcome to the next one, for the jobs that wait for
         // this one, then exit
-        void this.launcher
+        void this.host
           .reportEnd(jobId, completed, code, this.wasCancelled, this.reporter())
-          .finally(() => process.exit(code));
+          .finally(() => this.host.exit(code));
         return;
       }
-      process.exit(code);
+      this.host.exit(code);
+      return;
     }
     // "done" first, so that the scheduler frees the slot at once instead of treating the job as a lost client whose
     // command may still run
@@ -254,8 +332,8 @@ class QueuedRun {
       cancelled: this.wasCancelled,
     });
     if (!ran || jobId === 0 || !this.receipts) {
-      setTimeout(() => process.exit(code), 1000).unref();
-      current.end(() => process.exit(code));
+      setTimeout(() => this.host.exit(code), 1000).unref();
+      current.end(() => this.host.exit(code));
       return;
     }
     // Then the scheduler's receipt: one that is stopping does not save the outcome (and one of an older checkout sends
@@ -268,14 +346,14 @@ class QueuedRun {
       }
       left = true;
       if (received) {
-        setTimeout(() => process.exit(code), 1000).unref();
-        current.end(() => process.exit(code));
+        setTimeout(() => this.host.exit(code), 1000).unref();
+        current.end(() => this.host.exit(code));
         return;
       }
       current.destroy();
-      void this.launcher
+      void this.host
         .reportEnd(this.jobId, completed, code, this.wasCancelled, this.reporter())
-        .finally(() => process.exit(code));
+        .finally(() => this.host.exit(code));
     };
     setTimeout(() => this.doneReceipt?.(false), 2000);
   }
@@ -295,7 +373,7 @@ class QueuedRun {
         running.once("close", () => this.finish(code));
         return;
       }
-      ProcessTable.killChild(this.child);
+      this.host.stop(this.child, false);
       this.finish(code);
     };
   }
@@ -323,7 +401,7 @@ class QueuedRun {
       prefix(
         `the GPU turn of #${jobId} came after ${Math.round((Date.now() - this.queuedAt) / 1000)}s; taking the GPU lock`,
       );
-      const { code, signaled } = await runGpuLocked(options, placement.weight, jobId, (c) => this.started(c));
+      const { code, signaled } = await this.host.runUnderGpuLock(placement.weight, jobId, (c) => this.started(c));
       this.finish(code, !signaled);
       return;
     }
@@ -337,8 +415,7 @@ class QueuedRun {
       [CpusVariable]: String(cpus),
       [MsbuildArgsVariable]: `-m:${cpus}`,
     };
-    const shell = CommandShell.resolve(options.shell);
-    const { code, signaled } = await shell.run(command, env, (c) => this.started(c));
+    const { code, signaled } = await this.host.runCommand(command, env, (c) => this.started(c));
     this.finish(code, !signaled); // a run a signal cut short is not recorded
   }
 
@@ -441,13 +518,7 @@ class QueuedRun {
       const leave = (): void => this.finish(CancelledExitCode);
       running.once("close", leave);
       setTimeout(leave, 10000).unref();
-      if (this.gpuTurn && process.platform === "win32") {
-        // Stop what runs under gpu-lock.js, not gpu-lock.js itself (taskkill /F would leave its lock behind): it then
-        // releases the lock and ends
-        void stopUnder(running);
-      } else {
-        ProcessTable.killChild(running);
-      }
+      this.host.stop(running, this.gpuTurn);
     } else {
       this.finish(CancelledExitCode);
     }
@@ -460,14 +531,15 @@ class QueuedRun {
       prefix("the scheduler of an older checkout has no GPU turns; waiting for the GPU lock directly");
       this.registered = false;
       this.state = "running";
-      void runGpuLocked(this.options, this.placement.weight, 0, (c) => (this.child = c)).then(({ code }) =>
-        process.exit(code),
-      );
+      void this.host
+        .runUnderGpuLock(this.placement.weight, 0, (c) => (this.child = c))
+        .then(({ code }) => this.host.exit(code));
       return;
     }
     prefix(`scheduler: ${String(message.message)}${message.code === "version" ? `; ${OlderSchedulerHint}` : ""}`);
     if (this.state === "waiting") {
-      process.exit(message.code === "unknown-job" ? UsageExitCode : 1);
+      this.host.exit(message.code === "unknown-job" ? UsageExitCode : 1);
+      return;
     }
     if (message.code === "version") {
       this.registered = false; // the command keeps running, unregistered; do not reconnect again
@@ -486,7 +558,7 @@ class QueuedRun {
         return; // the command ended while this client reconnected: finish reports it (reportEnd)
       }
       try {
-        this.socket = await this.launcher.connectOrStart();
+        this.socket = await this.host.connect();
         break;
       } catch (error) {
         if (this.state === "running") {
@@ -498,7 +570,8 @@ class QueuedRun {
           return;
         }
         prefix(errorMessage(error));
-        process.exit(1);
+        this.host.exit(1);
+        return;
       }
     }
     const current = this.socket;

@@ -12,6 +12,7 @@ import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
+import { ClientChecks } from "./self-test-client.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots, parseBudgets, testMemoryMb } from "./machine.ts";
 import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
@@ -94,7 +95,7 @@ export async function selfTest(): Promise<void> {
     }
   }
   checkShellHelpers();
-  for (const [name, check] of Object.entries(JobServerChecks)) {
+  for (const [name, check] of Object.entries({ ...JobServerChecks, ...ClientChecks })) {
     try {
       await check(assert);
     } catch (error) {
