@@ -170,7 +170,7 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
     // [split=BlockBarrier, writes=Memory] after a classified call; nothing before the classify pass
     private void WriteClassification(IrCallClassification classification)
     {
-        if (!classification.IsClassified)
+        if (!classification.IsClassified || (_options & IrPrintOptions.WithoutClassifications) != 0)
         {
             return;
         }
