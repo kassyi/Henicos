@@ -125,10 +125,11 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine($"(\"{exportName}\", {DllPath});");
         if (!kernel.ErrorSites.IsDefaultOrEmpty)
         {
-            writer.AppendLine("if (s_errorSites.Length > 0)");
+            writer.AppendLine($"if ({KernelHostNames.ErrorSitesFieldName}.Length > 0)");
             using (writer.Scope())
             {
-                writer.AppendLine($"global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites({DllPath}, s_errorSites);");
+                writer.AppendLine("global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites" +
+                                  $"({DllPath}, {KernelHostNames.ErrorSitesFieldName});");
             }
         }
     }
