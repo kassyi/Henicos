@@ -9,18 +9,17 @@ public class GpuMacroTests
     [InlineData(int.MinValue)]
     [InlineData(-1)]
     [InlineData(0)]
-    public void Launch_EmptyOutputBuffer_ThrowsArgumentException(int length)
+    public void Launch_EmptyOutputBuffer_RunsWithNoElement(int length)
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
 
-        // Non-positive lengths produce an empty output buffer, which the launcher rejects instead of skipping the launch
+        // Non-positive lengths produce an empty output buffer, which the launcher passes as one, as a C# call does
         var output = new uint[Math.Max(0, length)];
 
-        var exception = Assert.Throws<ArgumentException>(() =>
-            GpuMacroTestKernels.LaunchKernel_MacroTest_FillAndSingle(
-                output, length, 0x55555555, 0x12345678, blockDimX: 256));
-        Assert.Equal("outputBuffer", exception.ParamName);
+        GpuMacroTestKernels.LaunchKernel_MacroTest_FillAndSingle(
+            output, length, 0x55555555, 0x12345678, blockDimX: 256);
+        Assert.Empty(output);
     }
 
     [SkippableTheory]

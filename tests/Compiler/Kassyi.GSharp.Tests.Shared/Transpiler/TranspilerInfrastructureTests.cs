@@ -44,13 +44,12 @@ public class TranspilerInfrastructureTests
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void PinnedArrayTransfer_EmptyAndOversizedArrays_ThrowsArgumentException()
+    public void PinnedArrayTransfer_EmptyAndOversizedArrays_TransfersBoth()
     {
-        // 1. Empty array transfer: the launcher rejects it instead of skipping the launch
+        // 1. Empty array transfer: the launcher passes it as one, as a C# call does
         int[] emptyData = [];
-        var emptyException = Assert.Throws<ArgumentException>(() =>
-            TranspilerInfrastructureKernels.LaunchArrayTransferKernel(emptyData, 0, blockDimX: 1));
-        Assert.Equal("data", emptyException.ParamName);
+        TranspilerInfrastructureKernels.LaunchArrayTransferKernel(emptyData, 0, blockDimX: 1);
+        Assert.Empty(emptyData);
 
         // 2. Large array transfer (65,536 elements across 256 blocks of 256 threads)
         int length = 65536;

@@ -5,8 +5,8 @@ namespace Kassyi.GSharp.Tests.Shared.Analysis;
 
 /// <summary>
 /// Verifies which array reads <see cref="NonNullProof"/> proves non-null (#1409 (Reading an element of a null array in a
-/// CUDA kernel fails the launch instead of throwing NullReferenceException)): a non-nullable array that a launch or a
-/// call has checked and that nothing in its method can change, and a <c>Gpu.NotNull</c> call, which throws on null.
+/// CUDA kernel fails the launch instead of throwing NullReferenceException)): a non-nullable array that a call has
+/// checked and that nothing in its method can change, and a <c>Gpu.NotNull</c> call, which throws on null.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class NonNullProofTests
@@ -17,7 +17,6 @@ public class NonNullProofTests
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData("KernelStructField")]
     [InlineData("DeviceParameter")]
     [InlineData("DeviceStructField")]
     [InlineData("DeviceLocalCopy")]
@@ -26,9 +25,12 @@ public class NonNullProofTests
     public void IsProvenNonNull_CheckedNonNullableArray_IsTrue(string method) =>
         Assert.True(IsProven(method));
 
-    // A nullable or oblivious annotation, a write the method makes, a default value, an element, an extension method
+    // A nullable or oblivious annotation, a write the method makes, a default value, an element, an extension method, a
+    // kernel parameter or a field of one (a C# call passes a null to it)
     [Theory]
     [Scenario(TestScenario.SadPath)]
+    [InlineData("KernelParameter")]
+    [InlineData("KernelStructField")]
     [InlineData("KernelNullableField")]
     [InlineData("KernelWrittenStruct")]
     [InlineData("KernelObliviousField")]
@@ -45,7 +47,7 @@ public class NonNullProofTests
     public void IsProvenNonNull_ArrayThatMayBeNull_IsFalse(string method) =>
         Assert.False(IsProven(method));
 
-    // The launchers check the non-nullable array fields a struct argument reaches through struct fields, nothing else
+    // A call checks the non-nullable array fields a struct argument reaches through struct fields, nothing else
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Holder", "Inner.Data")]
@@ -58,15 +60,6 @@ public class NonNullProofTests
         var paths = NonNullProof.GetNonNullableArrayFields(symbol)
             .Select(static path => string.Join(".", path.Select(static f => f.Name)));
         Assert.Equal(fields, string.Join(" ", paths));
-    }
-
-    // The host model carries the paths the launchers check, as C# field names
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void KernelParameterShape_CarriesTheCheckedFieldPaths()
-    {
-        var shape = Kassyi.GSharp.Compiler.Marshaling.KernelParameterShape.Classify(GetMethod("KernelStructField").Parameters[0]);
-        Assert.Equal(["Inner.Data"], shape.NonNullableArrayFields.AsImmutableArray().ToArray());
     }
 
     // The caller checks an argument for a by-value non-nullable array or a struct that reaches one

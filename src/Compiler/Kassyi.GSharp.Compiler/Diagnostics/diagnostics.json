@@ -895,6 +895,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "CudaImportDeclarationNotSupported",
+    "id": "GSH0113",
+    "title": "G# cannot generate the launcher of a [CudaImport] declaration",
+    "messageFormat": "[CudaImport] method '{0}' cannot have a generated launcher: {1}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

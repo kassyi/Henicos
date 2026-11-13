@@ -203,6 +203,8 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
                 last = Math.Max(last, 3);
             }
 
+            last = Math.Max(last, LastSystemArrayWrite(kind, effects.AsSpan(1, count - 1)));
+
             // Array.Copy(..., length) emits length in both source and destination AsSpan(..., length) calls.
             var spillRepeatedLength = kind is SpanMemberKind.ArrayCopy3 or SpanMemberKind.ArrayCopy5 &&
                                       operands[count - 1].Expression is not (LiteralExpressionSyntax or IdentifierNameSyntax);
@@ -243,6 +245,58 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         finally
         {
             ArrayPool<ExpressionEffects>.Shared.Return(effects, clearArray: true);
+        }
+    }
+
+    // A System.Array call checks its arrays for null before it runs (WriteArrayOperand), after C# has evaluated every
+    // argument: the index of the last operand after the first that writes, which is then evaluated first, into a
+    // temporary (-1 for another call, or when none writes)
+    private static int LastSystemArrayWrite(SpanMemberKind kind, ReadOnlySpan<ExpressionEffects> rest)
+    {
+        if (!GetDescriptor(kind).IsSystemArray)
+        {
+            return -1;
+        }
+
+        for (var i = rest.Length - 1; i >= 0; i--)
+        {
+            if (!rest[i].Writes.IsEmpty)
+            {
+                return i + 1;
+            }
+        }
+
+        return -1;
+    }
+
+    // __gsharp_array_argument(<array>), or __gsharp_copy_arguments(<source>, <destination>) for the source of
+    // Array.Copy: the array operand of a System.Array call, checked for null (ArgumentNullException) before the call
+    // reads it. The destination of Array.Copy is written a second time for the check; an operand with an effect is a
+    // temporary
+    private static void WriteArrayOperand(
+        SpanMemberKind kind,
+        ReadOnlySpan<Operand> operands,
+        ReadOnlySpan<int> temps,
+        ref TranspileContext context)
+    {
+        var writer = context.Emitter.Writer;
+        var destination = kind switch
+        {
+            SpanMemberKind.ArrayCopy3 => 1,
+            SpanMemberKind.ArrayCopy5 => 2,
+            _ => -1,
+        };
+        writer.Append(destination < 0
+            ? GSharpInternalNames.Prelude.ArrayArgument
+            : GSharpInternalNames.Prelude.CopyArguments);
+        using (writer.Parentheses())
+        {
+            WriteOperand(operands, temps, 0, ref context);
+            if (destination >= 0)
+            {
+                writer.Append(',');
+                WriteOperand(operands, temps, destination, ref context);
+            }
         }
     }
 
@@ -292,7 +346,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         switch (descriptor.Shape)
         {
             case CallShape.MethodCall:
-                WriteMethodCall(descriptor.MemberName!, operands, temps, ref context);
+                WriteMethodCall(kind, descriptor, operands, temps, ref context);
                 break;
             case CallShape.SliceOrSpan:
                 WriteSliceOrSpan(descriptor.MemberName!, descriptor.ErrorCode, node, operands, temps, ref context);
@@ -316,15 +370,25 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
     }
 
     private static void WriteMethodCall(
-        string memberName,
+        SpanMemberKind kind,
+        SpanMemberDescriptor descriptor,
         ReadOnlySpan<Operand> operands,
         ReadOnlySpan<int> temps,
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        WriteOperand(operands, temps, 0, ref context);
+        if (descriptor.IsSystemArray)
+        {
+            WriteArrayOperand(kind, operands, temps, ref context);
+        }
+        else
+        {
+            WriteOperand(operands, temps, 0, ref context);
+        }
+
         writer.Append('.');
-        writer.Append(memberName);
+        // The member name of a MethodCall descriptor is always set (GetDescriptor)
+        writer.Append(descriptor.MemberName!);
         if (operands.Length > 1)
         {
             using (writer.Parentheses())
@@ -389,7 +453,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        WriteOperand(operands, temps, 0, ref context);
+        WriteArrayOperand(SpanMemberKind.ArrayFill4, operands, temps, ref context);
         writer.Append(".AsSpan");
         using (writer.Parentheses())
         {
@@ -413,7 +477,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        WriteOperand(operands, temps, 0, ref context);
+        WriteArrayOperand(SpanMemberKind.ArrayClear3, operands, temps, ref context);
         writer.Append(".AsSpan<GSharpErrorCode::IndexOutOfRange>");
         using (writer.Parentheses())
         {
@@ -433,7 +497,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        WriteOperand(operands, temps, 0, ref context);
+        WriteArrayOperand(SpanMemberKind.ArrayReverse3, operands, temps, ref context);
         writer.Append(".AsSpan");
         using (writer.Parentheses())
         {
@@ -453,7 +517,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        WriteOperand(operands, temps, 0, ref context);
+        WriteArrayOperand(SpanMemberKind.ArrayCopy3, operands, temps, ref context);
         writer.Append(".AsSpan<GSharpErrorCode::Argument>");
         using (writer.Parentheses())
         {
@@ -483,7 +547,7 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        WriteOperand(operands, temps, 0, ref context);
+        WriteArrayOperand(SpanMemberKind.ArrayCopy5, operands, temps, ref context);
         writer.Append(".AsSpan<GSharpErrorCode::Argument>");
         using (writer.Parentheses())
         {

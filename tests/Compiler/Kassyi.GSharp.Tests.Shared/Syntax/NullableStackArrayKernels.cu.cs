@@ -47,7 +47,7 @@ public static partial class NullableStackArrayKernels
         output[0] = First(b, input);
     }
 
-    // Control: a kernel parameter alone, which the launch checks
+    // Control: a kernel parameter alone, which the call of SumArray checks
     [GpuKernel]
     public static void ParameterArgumentKernel(int[] input, int[] output)
     {

@@ -159,12 +159,15 @@ public static class GSharpErrorMapper
             "G#: the static shared memory of a declaration could not be allocated";
 
         // An ArraySegment<T> or ImmutableArray<T> without an array, and a null CopyTo destination
-        // (__gsharp_view_message of the CUDA prelude)
+        // (__gsharp_view_message of the CUDA prelude); a null array passed to Array.Fill, Clear, Reverse or Copy
+        // (__gsharp_array_argument, __gsharp_copy_arguments)
         foreach (var message in (ReadOnlySpan<string>)
                  [
                      "The underlying array is null.",
                      "Object reference not set to an instance of an object.",
                      "Value cannot be null. (Parameter 'destinationArray')",
+                     "Value cannot be null. (Parameter 'sourceArray')",
+                     "Value cannot be null. (Parameter 'array')",
                  ])
         {
             dict[ComputeBuiltinMessageId(message)] = message;

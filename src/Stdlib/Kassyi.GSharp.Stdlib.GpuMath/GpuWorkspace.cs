@@ -94,7 +94,7 @@ public class GpuWorkspace : IGpuResourceScope
     /// </summary>
     /// <remarks>
     /// Only a CPU fallback workspace has no status words, and it launches no kernel: its operations compute on the host.
-    /// The kernels therefore take the status as a non-nullable array, which their launchers check.
+    /// The kernels therefore take the status as a non-nullable array; a null one throws where a kernel reads it.
     /// </remarks>
     internal GSharpArrayProxy CorrectionStatusProxy =>
         CorrectionStatus is { } status ? new GSharpArrayProxy(status.DevicePointer, GpuCorrectionStatus.DeviceWords) : default;

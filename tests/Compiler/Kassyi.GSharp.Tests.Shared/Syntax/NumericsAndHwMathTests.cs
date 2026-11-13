@@ -142,23 +142,6 @@ public class NumericsAndHwMathTests : TranspilerTestBase
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    public void MathAndMathF_EmptyArray_ThrowsArgumentException()
-    {
-        double[] doubleInputs = [];
-        double[] doubleOutputs = [];
-        float[] floatInputs = [];
-        float[] floatOutputs = [];
-
-        // Empty array arguments are rejected instead of silently skipping the launch
-        var ex = Assert.Throws<ArgumentException>(() =>
-            InvocationAndIntrinsicsKernels.LaunchMathKernel(
-                doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 0));
-
-        Assert.Equal("doubleInputs", ex.ParamName);
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
     public void PtxIntrinsics_Expansion_ComputesExpectedResults()
     {
         SkipIfCpuDialect("PTX hardware intrinsics require CUDA execution environment");

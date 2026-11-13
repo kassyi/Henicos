@@ -78,6 +78,11 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class LaunchLimitDifferentialKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(921681535u, "LaunchLimitDifferentialKernels.cs", 20, 20, "WriteLinearRankKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2119473251u, "LaunchLimitDifferentialKernels.cs", 22, 13, "WriteLinearRankKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -89,26 +94,20 @@ long long __gsharp_id_1_threadsPerBlock = __gsharp_mul_i64((long long)(int)block
 long long __gsharp_id_2_block = __gsharp_add_i64(__gsharp_mul_i64(__gsharp_add_i64((long long)(int)blockIdx.z*(int)gridDim.y,(int)blockIdx.y),(int)gridDim.x),(int)blockIdx.x);
 long long __gsharp_id_3_thread = __gsharp_add_i64(__gsharp_mul_i64(__gsharp_add_i64((long long)(int)threadIdx.z*(int)blockDim.y,(int)threadIdx.y),(int)blockDim.x),(int)threadIdx.x);
 long long __gsharp_id_4_rank = __gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_2_block,__gsharp_id_1_threadsPerBlock),__gsharp_id_3_thread);
-if(__gsharp_id_4_rank<__gsharp_id_0_output.length)
+if(__gsharp_id_4_rank<__gsharp_array_ref(__gsharp_id_0_output, 921681535u).length)
 {
-__gsharp_id_0_output[(int)__gsharp_id_4_rank]=__gsharp_add_i32((int)__gsharp_id_4_rank,1);
+__gsharp_array_at(__gsharp_id_0_output, (int)__gsharp_id_4_rank, 2119473251u)=__gsharp_add_i32((int)__gsharp_id_4_rank,1);
 }
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WriteLinearRankKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__LaunchLimitDifferentialKernels__WriteLinearRankKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerWriteLinearRankKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LaunchLimitDifferentialKernels.__gsharp_hfunc_WriteLinearRankKernel.Resolve();
+public static void WarmupFunctionPointerWriteLinearRankKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.LaunchLimitDifferentialKernels.__gsharp_hfunc_WriteLinearRankKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.LaunchLimitDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchWriteLinearRankKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException("output");
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "output");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchLimitDifferentialKernels.WriteLinearRankKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -118,7 +117,7 @@ return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LaunchLimitDifferentialKernels.__gsharp_hfunc_WriteLinearRankKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LaunchLimitDifferentialKernels.__gsharp_hfunc_WriteLinearRankKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.LaunchLimitDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LaunchLimitDifferentialKernels.WriteLinearRankKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -126,10 +125,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: output
-int __gsharp_size_0 = checked(output.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = output.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -180,11 +179,8 @@ public static unsafe void LaunchWriteLinearRankKernelPtr(global::Kassyi.GSharp.R
 if (output.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
 }
-if (output.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException("output");
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "output");
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchLimitDifferentialKernels.WriteLinearRankKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
@@ -193,7 +189,7 @@ throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LaunchLimi
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LaunchLimitDifferentialKernels.__gsharp_hfunc_WriteLinearRankKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.LaunchLimitDifferentialKernels.__gsharp_hfunc_WriteLinearRankKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.LaunchLimitDifferentialKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "LaunchLimitDifferentialKernels.WriteLinearRankKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try

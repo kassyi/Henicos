@@ -23,21 +23,16 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
     {
         Shape = LaunchShapes.SingleThread(),
         Seeds = [0],
-        ExceptionPolicy = ExceptionPolicy.For<ArgumentNullException>(
-            DiffPath.Managed | DiffPath.Native,
-            paramName: "input"),
+        OracleExceptions = OracleExceptionMode.MatchOracle,
         Inputs = static (_, _) => new DiffBuffers()
             .InNullable<int>("input", null)
             .Out<int>("output", 1, OutputPolicy.Ignore),
-        Launch = static (b, s) =>
-        {
-            int[]? input = b.GetNullable<int>("input");
-            int[] output = b.Get<int>("output");
+        // C# does not check the annotation of a parameter: the null reaches the kernel, whose read of it throws
 #pragma warning disable CS8604
-            MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
-                input, output, gridDimX: s.GridX, blockDimX: s.BlockX);
+        OracleIsLaunch = true,
+        Launch = static (b, s) => MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
+            b.GetNullable<int>("input"), b.Get<int>("output"), gridDimX: s.GridX, blockDimX: s.BlockX),
 #pragma warning restore CS8604
-        },
     };
 
     internal static readonly DifferentialCase s_nonNullableArrayEmpty = new(
@@ -45,51 +40,26 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
     {
         Shape = LaunchShapes.SingleThread(),
         Seeds = [0],
-        ExceptionPolicy = ExceptionPolicy.For<ArgumentException>(
-            DiffPath.Managed | DiffPath.Native,
-            paramName: "input"),
         Inputs = static (_, _) => new DiffBuffers()
-            .In("input", Array.Empty<int>(), OutputPolicy.Ignore)
+            .In("input", Array.Empty<int>(), OutputPolicy.Exact)
+            // The kernel writes no element of an [Out] array that the launch does not copy in
             .Out<int>("output", 1, OutputPolicy.Ignore),
-        Launch = static (b, s) =>
-        {
-            int[] input = b.Get<int>("input");
-            int[] output = b.Get<int>("output");
-            MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
-                input, output, gridDimX: s.GridX, blockDimX: s.BlockX);
-        },
+        OracleIsLaunch = true,
+        Launch = static (b, s) => MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
+            b.Get<int>("input"), b.Get<int>("output"), gridDimX: s.GridX, blockDimX: s.BlockX),
     };
 
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void NullAndEmptyArrays_NonNullableNull_ThrowsArgumentNullException() =>
+    public void NullAndEmptyArrays_NonNullableNull_ThrowsWhereTheKernelReadsIt() =>
         DifferentialRunner.Run(s_nonNullableArrayNull);
 
     [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void NullAndEmptyArrays_NonNullableEmpty_ThrowsArgumentException() =>
+    [Scenario(TestScenario.Boundary)]
+    public void NullAndEmptyArrays_NonNullableEmpty_RunsWithLengthZero() =>
         DifferentialRunner.Run(s_nonNullableArrayEmpty);
 
-#if GSHARP_CUDA
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void NullAndEmptyArrays_NonNullableDirectLaunch_ThrowsOnCuda()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        int[] dummyOut = new int[1];
-#pragma warning disable CS8625
-        var nullEx = Assert.Throws<ArgumentNullException>(() =>
-            MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(null, dummyOut));
-#pragma warning restore CS8625
-        Assert.Equal("input", nullEx.ParamName);
-
-        var emptyEx = Assert.Throws<ArgumentException>(() =>
-            MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(Array.Empty<int>(), dummyOut));
-        Assert.Equal("input", emptyEx.ParamName);
-    }
-#endif
-
-    // --- Nullable top-level array null vs empty (NullReadsAsEmpty #806, #838) ---
+    // --- Nullable top-level array null vs empty: each as C# passes it ---
     private static DifferentialCase CreateNullableTopLevelCase(
         string label, int[]? optPrimInit, DiffDeepBag[]? optDeepInit)
     {
@@ -99,6 +69,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
         {
             Shape = LaunchShapes.SingleThread(),
             Seeds = [0],
+            OracleExceptions = OracleExceptionMode.MatchOracle,
             Inputs = (_, _) => new DiffBuffers()
                 .InNullable("optPrim", optPrimInit, OutputPolicy.Exact, readOnly: true)
                 .InNullable(
@@ -108,27 +79,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
                     bagComparer,
                     readOnly: true)
                 .Out<int>("output", 6, OutputPolicy.Exact),
-            // The one thread of the launch
-            Reference = static (b, _) =>
-            {
-                int[]? optPrim = b.GetNullable<int>("optPrim");
-                DiffDeepBag[]? optDeep = b.GetNullable<DiffDeepBag>("optDeep");
-                int[] output = b.Get<int>("output");
-
-                // Per G# top-level nullable array contract (#806, #838),
-                // both null and Length == 0 normalize to the null/empty slice (data == null, length == 0)
-                bool primNullOrEmpty = optPrim is null || optPrim.Length == 0;
-                bool deepNullOrEmpty = optDeep is null || optDeep.Length == 0;
-                output[0] = primNullOrEmpty ? -1 : 1;
-                output[1] = primNullOrEmpty ? -1 : 1;
-                output[2] = optPrim?.Length ?? 0;
-                output[3] = deepNullOrEmpty ? -1 : 1;
-                output[4] = optDeep?.Length ?? 0;
-                output[5] = (optDeep is not null && optDeep.Length > 0 &&
-                             optDeep[0].Data is not null && optDeep[0].Data.Length > 0)
-                    ? optDeep[0].Data[0] + optDeep[0].Tag
-                    : -99;
-            },
+            OracleIsLaunch = true,
             Launch = static (b, s) =>
             {
                 int[]? optPrim = b.GetNullable<int>("optPrim");

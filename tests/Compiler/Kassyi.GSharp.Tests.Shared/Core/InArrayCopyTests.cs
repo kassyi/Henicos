@@ -71,16 +71,30 @@ public class InArrayCopyTests : TranspilerTestBase
         Assert.Equal([7, 0], bags[1].Data);
     }
 
-    // An optional [In] argument that is null stays null and arrives with length 0, also on the managed fallback (#806)
+    // An optional [In] argument that is null stays null, also on the managed fallback (#806)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void InNullableConvertedArray_Null_IsPassedWithLengthZero(bool forceManaged)
+    public void InNullableConvertedArray_Null_IsPassedAsNull(bool forceManaged)
     {
         var o = new[] { -1 };
 
         Run(forceManaged, () => InArrayCopyKernels.LaunchInNullableBagArrayKernel(null, o));
+
+        Assert.Equal(-2, o[0]);
+    }
+
+    // An empty [In] argument is not null and has length 0
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InNullableConvertedArray_Empty_IsPassedWithLengthZero(bool forceManaged)
+    {
+        var o = new[] { -1 };
+
+        Run(forceManaged, () => InArrayCopyKernels.LaunchInNullableBagArrayKernel([], o));
 
         Assert.Equal(0, o[0]);
     }

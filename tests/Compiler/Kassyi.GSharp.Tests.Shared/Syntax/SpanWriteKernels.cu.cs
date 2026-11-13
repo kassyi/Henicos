@@ -409,4 +409,51 @@ public static partial class SpanWriteKernels
 
         a.AsSpan().Slice(2, 10).Fill(5);
     }
+
+    // A System.Array call on a null array: ArgumentNullException before the call reads anything. dst[0] is written
+    // before the call, dst[1] after it; length 0 keeps every range check from failing first
+    [GpuKernel]
+    public static void ArrayNullArgumentKernel(int[] a, int[] b, int mode, int[] dst)
+    {
+        if (ThreadIndex.X != 0 || BlockIndex.X != 0)
+        {
+            return;
+        }
+
+        dst[0] = 1;
+        if (mode == 0)
+        {
+            Array.Fill(a, 5);
+        }
+        else if (mode == 1)
+        {
+            Array.Fill(a, 5, 0, 0);
+        }
+        else if (mode == 2)
+        {
+            Array.Clear(a);
+        }
+        else if (mode == 3)
+        {
+            Array.Clear(a, 0, 0);
+        }
+        else if (mode == 4)
+        {
+            Array.Reverse(a);
+        }
+        else if (mode == 5)
+        {
+            Array.Reverse(a, 0, 0);
+        }
+        else if (mode == 6)
+        {
+            Array.Copy(a, b, 0);
+        }
+        else
+        {
+            Array.Copy(a, 0, b, 0, 0);
+        }
+
+        dst[1] = 100;
+    }
 }

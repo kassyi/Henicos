@@ -187,7 +187,12 @@ public static partial class Ntt35CarryKernels
     }
 
     [GpuKernel]
-    public static void MultiplyNtt35PointwiseMultiplyKernel(Ntt35PointwiseMultiplyContext ctx)
+    public static void MultiplyNtt35PointwiseMultiplyKernel(Ntt35PointwiseMultiplyContext ctx) =>
+        ExecutePointwiseMultiply(ctx);
+
+    // The call checks the six buffers of the context once; the loop then reads them without a check
+    [GpuDeviceFunction]
+    private static void ExecutePointwiseMultiply(Ntt35PointwiseMultiplyContext ctx)
     {
         Gpu.GridStrideLoop(ctx.TransformLength, index =>
         {

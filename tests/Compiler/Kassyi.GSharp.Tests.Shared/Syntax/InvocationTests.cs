@@ -34,23 +34,6 @@ public class InvocationTests
         Assert.Equal(800ul, ulongBuf[2]);
     }
 
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Interlocked_EmptyArray_ThrowsArgumentException()
-    {
-        int[] intBuf = [];
-        uint[] uintBuf = [];
-        long[] longBuf = [];
-        ulong[] ulongBuf = [];
-
-        // Empty array arguments are rejected instead of silently skipping the launch
-        var ex = Assert.Throws<ArgumentException>(() =>
-            InvocationAndIntrinsicsKernels.LaunchInterlockedKernel(
-                intBuf, uintBuf, longBuf, ulongBuf, blockDimX: 0));
-
-        Assert.Equal("intBuf", ex.ParamName);
-    }
-
     // SYN-49 Edge Cases
 
     // SYN-49 Edge Cases
@@ -76,21 +59,6 @@ public class InvocationTests
             structArray[i].ValueI == (i + 1) * 10 + 1 &&
             structArray[i].ValueU == 42u &&
             structArray[i].ValueL == 99L).All(ok => ok));
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    public void Interlocked_EmptyArrayInEdgeCases_ThrowsArgumentException()
-    {
-        int[] emptyArray = [];
-        AtomicTestStruct[] emptyStructArray = [];
-
-        // Empty array arguments are rejected instead of silently skipping the launch
-        var ex = Assert.Throws<ArgumentException>(() =>
-            InvocationAndIntrinsicsKernels.LaunchInterlockedEdgeCasesKernel(
-                emptyArray, emptyStructArray, blockDimX: 0));
-
-        Assert.Equal("array", ex.ParamName);
     }
 
     [SkippableFact]
