@@ -6,6 +6,7 @@ import type { StatusJob, StatusReply } from "./protocol.ts";
 import {
   displayWidth,
   fit,
+  helpLines,
   initialViewState,
   renderScreen,
   screenJobs,
@@ -262,8 +263,14 @@ function checkKeys(): void {
   assert.strictEqual(state.prompt, null);
   assert.match(state.message?.text ?? "", /#812 already runs/);
 
-  assert.strictEqual(press("?").state.help, true);
-  assert.strictEqual(press("\x1b").state.help, false);
+  // ? pages through the help (two pages on a narrow screen) and closes it after the last one; Esc closes it at once
+  assert.strictEqual(press("?").state.help, 1);
+  assert.strictEqual(press("?").state.help, 2);
+  assert.strictEqual(press("?").state.help, 0);
+  assert.strictEqual(reduceKey({ ...state, helpPages: 1 }, "?", null, Now).state.help, 1);
+  assert.strictEqual(reduceKey({ ...state, help: 1, helpPages: 1 }, "?", null, Now).state.help, 0);
+  press("?");
+  assert.strictEqual(press("\x1b").state.help, 0);
   assert.strictEqual(state.selectedId, 812, "Esc closes the help first and keeps the selection");
   assert.strictEqual(press("q").action, "quit");
   assert.strictEqual(press("\x03").action, "quit");
@@ -321,10 +328,24 @@ function checkGpuPairsAndReasons(): void {
     [
       [900, 901, true, 2, ""],
       [902, null, false, 1, ""],
-      [910, null, true, 1, "GPU"],
-      [911, null, false, 1, "slots"],
+      [910, null, true, 1, "GPU busy"],
+      [911, null, false, 1, "CPU full"],
     ],
     "the holder joins the line of its --gpu job, which keeps the id its caller knows",
+  );
+  // With free slots: a test run whose budget does not fit waits for memory, any other for the jobs ahead of it
+  const roomy: StatusReply = {
+    ...reply,
+    used: 1,
+    memoryCapacity: 1000,
+    memoryUsed: 900,
+    waiting: [job(912, { memoryMb: 200 }), job(913, { memoryMb: 50 }), job(914, { blockedBy: 911 })],
+  };
+  assert.deepStrictEqual(
+    screenJobs(roomy)
+      .filter((j) => j.state === "waiting")
+      .map((j) => j.reason),
+    ["mem full", "in line", "after #911"],
   );
   const lines = renderScreen(
     reply,
@@ -334,8 +355,8 @@ function checkGpuPairsAndReasons(): void {
   );
   assert.match(lines[0] ?? "", /GPU #900 \+1/, "the GPU belongs to #900; one job waits for its turn");
   assert.match(lines[2] ?? "", /^▸900G/);
-  assert.match(lines[4] ?? "", /^ 910G.*GPU [│┃]/, "a waiting line names what it waits for, left of now");
-  assert.match(lines[5] ?? "", /^ 911 .*slots [│┃]/);
+  assert.match(lines[4] ?? "", /^ 910G.*GPU busy [│┃]/, "a waiting line names what it waits for, left of now");
+  assert.match(lines[5] ?? "", /^ 911 .*CPU full [│┃]/);
   assert.match(lines[8] ?? "", /^ #900 .* runs as #901 /);
   // A --gpu job whose holder has not registered yet (the lock is being taken) is still a GPU line
   const alone = screenJobs({ ...reply, running: [turn] });
@@ -364,7 +385,7 @@ function checkStartKey(): void {
   assert.deepStrictEqual(reduceKey(asked, "y", reply, Now).action, { type: "start", id: 820 });
   assert.strictEqual(reduceKey(asked, "n", reply, Now).action, undefined);
   const lines = renderScreen(reply, asked, { columns: 90, rows: 13, now: Now }, false);
-  assert.match(lines[12] ?? "", /start #820 now, over the pool \(it waits for order\)\? y\/n/);
+  assert.match(lines[12] ?? "", /start #820 now, over the pool \(it waits: in line\)\? y\/n/);
   assert.match(reduceKey(at(821), "s", reply, Now).state.message?.text ?? "", /#821 waits for the GPU/);
   assert.match(reduceKey(at(822), "s", reply, Now).state.message?.text ?? "", /#822 waits for #821 to end/);
   assert.match(reduceKey(at(812), "s", reply, Now).state.message?.text ?? "", /#812 already runs; .* can start/);
@@ -374,7 +395,55 @@ function checkStartKey(): void {
   );
 }
 
+/** The help: keys and legend side by side when they fit, else one per page; the samples in their screen colors. */
+function checkHelp(): void {
+  const plainText = (lines: { text: string }[]): string[] => lines.map((line) => line.text);
+  const wide = plainText(helpLines(100));
+  assert.match(wide[0] ?? "", /^ Keys +Timeline/, "both columns on one screen");
+  assert.ok(
+    wide.some((line) => /^ c +cancel it \(y\/n\) +█ +past its usual run time/.test(line)),
+    wide.join("\n"),
+  );
+  assert.ok(
+    wide.some((line) => /CPU full +every slot in use/.test(line)),
+    "the wait reasons are listed",
+  );
+  wide.forEach((line) => assert.ok(displayWidth(line) <= 100, `fits 100 columns: ${line}`));
+  const narrow = plainText(helpLines(70));
+  const blank = narrow.findIndex((line) => line.trim() === "");
+  assert.ok(blank > 0 && narrow.slice(0, blank).some((line) => /^ q +quit/.test(line)), "the keys first");
+  assert.match(narrow[blank + 1] ?? "", /^ Timeline/, "then the legend");
+  narrow.forEach((line) => assert.ok(displayWidth(line) <= 70, `fits 70 columns: ${line}`));
+  // At 70x13 the help takes the 9 job rows a page at a time; ? turns the page, the rule says which one
+  const reply = sampleReply();
+  const small = { columns: 70, rows: 13, now: Now };
+  const state = { ...initialViewState(), help: 1 };
+  const first = plain(renderScreen(reply, state, small, false));
+  assert.strictEqual(state.helpPages, Math.ceil(narrow.length / 9));
+  assert.match(first[11] ?? "", /── help 1\/\d, \? next/);
+  const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false));
+  assert.ok(
+    last.some((line) => /after #n +until job n has ended/.test(line)),
+    "the last page ends the legend",
+  );
+  const colored = helpLines(100).map((line) => line.render(true));
+  assert.ok(
+    colored.some((line) => line.includes("\x1b[31m█\x1b[0m")),
+    "the late sample is red, as on the timeline",
+  );
+  assert.ok(
+    colored.some((line) => line.includes("\x1b[32m█\x1b[0m")),
+    "the run sample is green",
+  );
+  assert.ok(
+    colored.some((line) => line.includes("\x1b[33mCPU full")),
+    "a wait reason in its warning color",
+  );
+  assert.ok(colored[1]?.includes("\x1b[1m ↑↓ j k"), "the keys are bold");
+}
+
 export function checkView(): void {
+  checkHelp();
   checkStartKey();
   checkPieces();
   checkLayout();
