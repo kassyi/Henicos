@@ -51,19 +51,20 @@ internal static class PinnableReferenceMethod
     {
         if (declarator.Parent?.Parent is not FixedStatementSyntax ||
             declarator.Initializer?.Value is not { } receiver ||
-            Find(receiver, model) is not { } method ||
-            (method.ReducedFrom ?? method).Parameters is not [var receiverParameter, ..])
+            Find(receiver, model) is not { } method)
         {
             return null;
         }
 
-        var form = receiverParameter.RefKind == RefKind.None
+        // An instance method has the receiver as its own; an extension method takes it as its first parameter
+        var receiverParameter = method.ReducedFrom?.Parameters is [var first, ..] ? first : null;
+        var form = receiverParameter is null or { RefKind: RefKind.None }
             ? PinnableReceiverForm.Value
             : RefSyntaxHelper.ClassifyStorage(receiver, model) == CppLocation.Storage
                 ? PinnableReceiverForm.Address
                 : PinnableReceiverForm.Spill;
         return new PinnablePlan(method, receiver, pointerType, method.ReturnsByRefReadonly, form,
-            receiverParameter.Type);
+            receiverParameter?.Type ?? method.ContainingType);
     }
 
     /// <summary>
