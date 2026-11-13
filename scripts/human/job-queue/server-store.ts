@@ -1,16 +1,21 @@
-// The scheduler's state file (jobs-<port>.json): the running jobs with a started command, the next id, the jobs that
-// have not ended and the outcomes for --after, written after every event and read once when the scheduler starts.
+// The scheduler's state file (jobs-<port>.json): every job record (running, waiting, provisionally ended), the next id
+// and the final outcomes for --after, written after every event and read once when the scheduler starts.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { ClientGraceMs } from "./constants.ts";
 import { errorCode, errorMessage, isObject, replaceFile } from "./history.ts";
-import { idField, numberField, type Outcome } from "./protocol.ts";
-import { describeJob } from "./server-job.ts";
+import type { Outcome } from "./protocol.ts";
+import { describeJob, type ServerJob } from "./server-job.ts";
+import type { Phase } from "./server-job-state.ts";
 import type { JobServer } from "./server.ts";
-import { ProcessTable } from "./system.ts";
 
 const Outcomes: readonly string[] = ["succeeded", "failed", "cancelled", "lost"];
+
+/** The format of the file this scheduler writes; a file without one was written by an older scheduler. */
+export const StoreFormat = 2;
+
+/** How restore went: "current" when a file of this format was read, so that no startup grace is needed. */
+export type Restored = "current" | "older" | "none";
 
 export class JobStore {
   readonly path: string;
@@ -21,33 +26,46 @@ export class JobStore {
     this.path = path.join(stateDirectory, `jobs-${port}.json`);
   }
 
-  // The running jobs with a started command, so that a restarted scheduler still counts the ones whose client is gone
-  // (nobody re-registers them), the next id, and the outcomes for --after. Jobs whose client lives re-register.
+  /** A record as the file keeps it: what status shows, plus what a restore needs. */
+  private static describe(job: ServerJob): Record<string, unknown> {
+    return {
+      ...describeJob(job),
+      spawnedAt: job.spawnedAt,
+      turn: job.turn,
+      ...(job.stub ? { stub: true } : {}),
+      ...(job.provisional !== null ? { provisional: job.provisional } : {}),
+    };
+  }
+
+  /**
+   * Every record, so that a restarted scheduler counts the slots of the running jobs from its first event and keeps the
+   * places of the waiting ones, the next id, and the final outcomes for --after. `jobs`, `ended`, `nextId` and
+   * `pending` keep the names and meaning an older scheduler reads.
+   */
   persist(): void {
     const server = this.server;
     if (server.stopping) {
       return; // the next scheduler may already have read the file: a late write would overwrite what it saved
     }
     const jobsPath = this.path;
-    const records = server.scheduler.running
-      .filter((job) => job.commandPid > 0)
-      .map((job) => ({ ...describeJob(job), spawnedAt: job.spawnedAt }));
+    const records = [...server.records.values()];
+    const of = (phase: Phase) => records.filter((job) => job.phase === phase).map(JobStore.describe);
     const temporary = `${jobsPath}.${process.pid}.tmp`;
     try {
       fs.mkdirSync(path.dirname(jobsPath), { recursive: true });
-      // The jobs that have not ended, so that a restarted scheduler waits for them as predecessors (--after) until they
-      // come back: the waiting ones, the running ones, and those still expected from an earlier restart
-      const pending = [
-        ...new Set(
-          [...server.scheduler.waiting, ...server.scheduler.running]
-            .map((job) => job.id)
-            .concat([...server.expectedUntil.keys()]),
-        ),
-      ];
       // Written aside and renamed over, so that a reader or a crash never sees half a file
       fs.writeFileSync(
         temporary,
-        JSON.stringify({ nextId: server.nextId, jobs: records, ended: [...server.outcomes], pending }),
+        JSON.stringify({
+          format: StoreFormat,
+          nextId: server.nextId,
+          jobs: of("running"),
+          waiting: of("waiting"),
+          provisional: of("ended"),
+          ended: [...server.outcomes],
+          // Only for an older scheduler, which waits for these ids as predecessors (--after) until they come back
+          pending: records.map((job) => job.id),
+        }),
       );
       replaceFile(temporary, jobsPath);
     } catch (error) {
@@ -56,7 +74,12 @@ export class JobStore {
     }
   }
 
-  restore(): void {
+  /**
+   * Restores the file: every saved record is held (running ones count their slots, waiting ones keep their place,
+   * provisional ones wait for a report) until its client re-binds it or the evidence ends it. A file of an older
+   * scheduler has only the running jobs as records; its other pending ids become stubs.
+   */
+  restore(): Restored {
     const server = this.server;
     const jobsPath = this.path;
     let saved: unknown = null;
@@ -66,10 +89,10 @@ export class JobStore {
       if (errorCode(error) !== "ENOENT") {
         server.log(`could not read ${jobsPath}: ${errorMessage(error)}`);
       }
-      return;
+      return "none";
     }
     if (!isObject(saved)) {
-      return;
+      return "none";
     }
     if (typeof saved.nextId === "number" && Number.isInteger(saved.nextId)) {
       server.nextId = Math.max(server.nextId, saved.nextId);
@@ -81,26 +104,25 @@ export class JobStore {
         }
       }
     }
-    if (Array.isArray(saved.pending)) {
-      for (const id of saved.pending as unknown[]) {
-        if (typeof id === "number" && Number.isInteger(id) && id > 0 && !server.outcomes.has(id)) {
-          server.expect(id, Date.now() + ClientGraceMs);
-        }
+    const list = (name: string): unknown[] => (Array.isArray(saved[name]) ? (saved[name] as unknown[]) : []);
+    const restore = (phase: Phase) => (record: unknown) => {
+      if (isObject(record)) {
+        server.restoreRecord(record, phase);
+      }
+    };
+    list("jobs").forEach(restore("running"));
+    if (saved.format === StoreFormat) {
+      list("waiting").forEach(restore("waiting"));
+      list("provisional").forEach(restore("ended"));
+      return "current";
+    }
+    // An older scheduler's file: the ids that had not ended are kept as stubs, so that --after, wait and the cascade
+    // keep working until the job comes back or the grace is over
+    for (const id of list("pending")) {
+      if (typeof id === "number" && Number.isInteger(id) && id > 0 && server.find(id) === undefined) {
+        server.restoreRecord({ id, stub: true }, "waiting");
       }
     }
-    const records = Array.isArray(saved.jobs) ? (saved.jobs as unknown[]) : [];
-    for (const record of records) {
-      if (!isObject(record) || ProcessTable.isAlive(numberField(record, "pid"))) {
-        continue; // its client re-registers it
-      }
-      const job = server.createJob(record, server.chooseId(idField(record, "id")), "running");
-      job.detachedAt = Date.now();
-      server.records.set(job.id, job);
-      server.scheduler.adopt(job);
-      server.forget(job.id);
-      server.log(`restored #${job.id} weight ${job.weight} (client gone, command ${job.commandPid}): ${job.command}`);
-    }
-    // No persist here: the records of live clients stay in the file until they re-register (the next persist), so
-    // that a crash in between does not lose them.
+    return "older";
   }
 }

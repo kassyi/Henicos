@@ -18,6 +18,7 @@ import { delay, stopChild, QueueFixture, registration } from "./self-test-suppor
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
 import { checkGpuTurnsEndToEnd, checkRegrant, checkWait } from "./self-test-parts.ts";
 import { checkReconnects } from "./self-test-reconnect.ts";
+import { checkRestarts } from "./self-test-restart.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
@@ -420,6 +421,9 @@ export async function selfTest(): Promise<void> {
     // 13. A client that comes back: re-registrations that race with the old connection's close or the observation of
     //     its processes, and another process that reuses its pid.
     await checkReconnects(fixture, port + 5);
+
+    // 14. A restarted scheduler holds every job of its state file from the first event; an older file keeps the grace.
+    await checkRestarts(fixture, port + 9);
   } finally {
     await fixture.cleanup();
   }

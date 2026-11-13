@@ -79,7 +79,6 @@ function rebind(
   const { server, socket } = connection;
   const scheduler = server.scheduler;
   server.bind(job, connection);
-  server.forget(job.id);
   if (job.commandPid === 0 && numberField(message, "commandPid") > 0) {
     job.commandPid = numberField(message, "commandPid");
     job.spawnedAt = numberField(message, "spawnedAt");
@@ -130,7 +129,7 @@ function request(connection: Connection, message: Incoming): void {
     });
     return;
   }
-  const unknown = after !== null && server.find(after) === undefined && !server.expectedUntil.has(after);
+  const unknown = after !== null && server.find(after) === undefined;
   // An id it never knew is a usage error; a predecessor that already ended is handled like any other: the job is
   // queued, and settle grants or cancels it on the recorded outcome
   if (after !== null && unknown && Date.now() >= scheduler.holdUntil && !server.outcomes.has(after)) {
@@ -141,7 +140,6 @@ function request(connection: Connection, message: Incoming): void {
     });
     return;
   }
-  server.forget(created.id);
   const job = created;
   server.records.set(job.id, job);
   server.bind(job, connection);
@@ -168,7 +166,6 @@ function adopt(connection: Connection, message: Incoming): void {
   }
   // A re-registering job started its command before this scheduler: its run time counts from that start
   const job = server.createJob({ ...message, grantedAt: numberField(message, "spawnedAt") }, id, "running");
-  server.forget(job.id);
   server.records.set(job.id, job);
   server.bind(job, connection);
   server.scheduler.adopt(job);

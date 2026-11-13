@@ -59,9 +59,11 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
     "a stop records no outcome for the waiting jobs",
   );
   await startScheduler(port, 2);
-  // The holder re-registers too, so that the cancel below reaches it
+  // The jobs are restored at once; wait until their clients are back too, so that the cancel below reaches them
   await waitFor(port, "the jobs register again", (s) =>
-    s.running.length === 1 && s.waiting.length === 3 ? true : undefined,
+    s.running.length === 1 && s.waiting.length === 3 && s.running.concat(s.waiting).every((j) => !j.orphan)
+      ? true
+      : undefined,
   );
   assert.deepStrictEqual(await waitingIds(), [y.id, z.id, x.id], "the order survives a restart");
   assert.strictEqual((await jobWith(port, waitingCommands[0] as string)).weight, 2, "the weight survives a restart");
@@ -140,23 +142,28 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
     "await an ended job",
   );
 
-  // A dependent that comes back after a restart before its predecessor, past the startup grace, still waits for it;
-  // the predecessor's client, whose command ended while no scheduler listened, reports the outcome afterwards
+  // A dependent that comes back after a restart before its predecessor's client, past the startup grace, still waits
+  // for it; the predecessor's client, whose command ended while no scheduler listened, reports the outcome afterwards
   const connection = async (message: Record<string, unknown>): Promise<RawClient> => {
     const c = await rawClient(port);
     c.send(message);
     return c;
   };
   const idOf = async (c: RawClient): Promise<number> => Number((await c.until("queued", 5000))?.id);
+  // The raw clients stand for live clients (pid 1 is alive, or reads as alive on Windows): a job they leave behind is
+  // held for them. Cancel what is left, so that it holds no slot in the next section, also across a restart.
+  const emptyQueue = async (): Promise<void> => {
+    await request(port, { type: "cancel", all: true });
+    await waitFor(port, "the queue is empty", (s) => (s.running.length + s.waiting.length === 0 ? true : undefined));
+  };
   const grantedId = async (c: RawClient): Promise<number> => Number((await c.until("granted", 5000))?.id);
-  const holderRaw = await connection(registration("R-holder", 2, 1));
-  const predecessor = await connection(registration("R-predecessor", 1, 1));
-  const predecessorId = await idOf(predecessor);
-  const dependentRequest = { ...registration("R-dependent", 1, 1), after: predecessorId };
+  const predecessor = await connection(registration("R-predecessor", 1, process.pid));
+  const predecessorId = await grantedId(predecessor);
+  const dependentRequest = { ...registration("R-dependent", 1, process.pid), after: predecessorId };
   const dependentRaw = await connection(dependentRequest);
   const dependentId = await idOf(dependentRaw);
   await request(port, { type: "stop" });
-  [holderRaw, predecessor, dependentRaw].forEach((c) => c.socket.destroy());
+  [predecessor, dependentRaw].forEach((c) => c.socket.destroy());
   await delay(300);
   await startScheduler(port, 2);
   await delay(StartupGraceMs + 1000);
@@ -198,6 +205,7 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   } else {
     command.kill("SIGTERM");
   }
+  await emptyQueue();
   await request(port, { type: "stop" });
 
   // A command that ends while its client reconnects to the next scheduler: the client reports the end instead of
@@ -273,6 +281,7 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
     "the job after one that left is cancelled",
   );
   [blocker, waitingOnDropped, returned, waitingOnLeaving].forEach((c) => c.socket.destroy());
+  await emptyQueue();
   await request(port, { type: "stop" });
 
   // A "done" gets a receipt once the outcome is saved; a stopping scheduler saves nothing and gives none, so that the
@@ -300,6 +309,7 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   // client says so in "done"); a command that succeeded before the cancel reached it stays succeeded
   await startScheduler(port, 2);
   await delay(StartupGraceMs);
+  await emptyQueue(); // the job whose "done" the stopping scheduler did not save is held for its client
   const outcomeOf = async (id: number): Promise<unknown> => (await request(port, { type: "await", id }))?.outcome;
   const crossing = await connection(registration("R-crossing", 1, process.pid));
   const crossingId = await grantedId(crossing);
@@ -316,14 +326,15 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   reporting.socket.destroy();
   await delay(300);
   assert.strictEqual(await outcomeOf(reportingId), "succeeded", "a reported success that crosses the cancel wins");
-  const restarted = await connection(registration("R-cancel-restart", 1, process.pid));
+  const restartedRequest = registration("R-cancel-restart", 1, process.pid);
+  const restarted = await connection(restartedRequest);
   const restartedId = await grantedId(restarted);
   await request(port, { type: "stop" });
   restarted.socket.destroy();
   await delay(300);
   await startScheduler(port, 2);
   const again = await connection({
-    ...registration("R-cancel-restart", 1, process.pid),
+    ...restartedRequest,
     type: "adopt",
     id: restartedId,
     spawnedAt: Date.now(),

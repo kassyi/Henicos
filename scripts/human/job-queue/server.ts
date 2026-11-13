@@ -77,12 +77,9 @@ export class JobServer {
   /** The connections waiting for a job to end (await, wait). */
   readonly awaiters = new Map<number, net.Socket[]>();
   /**
-   * The jobs that are not here but have not ended (an earlier scheduler's, or a waiting job whose connection dropped),
-   * until when they are waited for. Their dependents are blocked anyway (no outcome); this only bounds the wait: an id
-   * that does not come back in time is recorded as lost.
+   * Connections that asked to await a job during the startup grace (a start without a current state file), when it
+   * may not have re-registered yet.
    */
-  readonly expectedUntil = new Map<number, number>();
-  /** Connections that asked to await a job during the startup grace, when it may not have re-registered yet. */
   readonly pendingAwaits: { socket: net.Socket; id: number }[] = [];
   /** Set by stop: the connections that close from then on were ended by the stop itself. */
   stopping = false;
@@ -110,14 +107,6 @@ export class JobServer {
   }
 
   readonly log: (text: string) => void;
-
-  expect(id: number, until: number): void {
-    this.expectedUntil.set(id, until);
-  }
-
-  forget(id: number): void {
-    this.expectedUntil.delete(id);
-  }
 
   /** The record of a job that has no final outcome yet. */
   find(id: number): ServerJob | undefined {
@@ -156,6 +145,34 @@ export class JobServer {
     job.detached = true;
     job.detachedAt = Date.now();
     job.epoch++;
+  }
+
+  /**
+   * Restores a saved record as held: detached until its client re-binds it. A running record counts its slots whether
+   * its client lives or not; a waiting one keeps its place (not granted while detached); a provisional one waits for a
+   * report. A stub (an id of an older scheduler's file) waits for its job to come back.
+   */
+  restoreRecord(saved: Incoming, phase: Phase): void {
+    const id = idField(saved, "id");
+    if (id === null || this.records.has(id) || this.outcomes.has(id)) {
+      return;
+    }
+    const job = this.createJob(saved, id, phase);
+    job.stub = saved.stub === true;
+    job.detachedAt = Date.now();
+    this.nextId = Math.max(this.nextId, id + 1);
+    this.records.set(id, job);
+    if (phase === "running") {
+      this.scheduler.adopt(job);
+    } else if (phase === "waiting") {
+      this.scheduler.add(job);
+    } else {
+      job.provisional = "lost";
+      job.provisionalAt = Date.now();
+    }
+    this.log(
+      `restored #${id} ${job.stub ? "(id only)" : `${phase} weight ${job.weight} pid ${job.pid}`}: ${job.command}`,
+    );
   }
 
   /**
@@ -316,7 +333,6 @@ export class JobServer {
       socket.end();
     }
     this.awaiters.delete(id);
-    this.forget(id);
   }
 
   /**
@@ -387,12 +403,7 @@ export class JobServer {
           continue;
         }
         const after = job.after;
-        if (
-          !this.outcomes.has(after) &&
-          Date.now() >= scheduler.holdUntil &&
-          this.find(after) === undefined &&
-          !this.expectedUntil.has(after)
-        ) {
+        if (!this.outcomes.has(after) && Date.now() >= scheduler.holdUntil && this.find(after) === undefined) {
           // Not here, not ended, not expected back (a state file that was lost, an outcome dropped as too old)
           this.log(`#${after} is unknown; counting it as lost for #${job.id}`);
           this.recordOutcome(after, "lost");
@@ -516,7 +527,7 @@ export class JobServer {
   awaitJob(socket: net.Socket, id: number): void {
     // The job first: a job that runs or waits has not ended, whatever an older record says
     const outcome = this.outcomes.get(id);
-    if (this.find(id) !== undefined || this.expectedUntil.has(id)) {
+    if (this.find(id) !== undefined) {
       this.awaiters.set(id, [...(this.awaiters.get(id) ?? []), socket]);
     } else if (outcome !== undefined) {
       send(socket, { type: "ended", id, outcome });
@@ -544,17 +555,6 @@ export class JobServer {
     return { type: "move-result", id: job.id, position: this.scheduler.waiting.indexOf(job) + 1 };
   }
 
-  /** A job that did not come back in time is lost: its dependents follow that outcome. */
-  private expireExpected(): void {
-    const now = Date.now();
-    for (const [id, until] of [...this.expectedUntil]) {
-      if (until <= now && this.find(id) === undefined) {
-        this.log(`#${id} did not come back`);
-        this.recordOutcome(id, "lost");
-      }
-    }
-  }
-
   /** Starts the timers and listens; the state file is restored once the port is ours. */
   start(): void {
     const { options, scheduler } = this;
@@ -573,10 +573,16 @@ export class JobServer {
           `${os.cpus().length} cores, ${Math.round(scheduler.memoryCapacity)} MB for test runs ` +
           `(${this.machine.budgets.size} budgets), policy ${scheduler.policy}`,
       );
-      // The grace for re-registration starts once clients can connect; only the scheduler that owns the port restores.
-      // It ends in the timer, not at a time: nothing is granted (holdUntil stays Infinity) before settle has run with
-      // the re-registered jobs.
-      this.store.restore();
+      // Only the scheduler that owns the port restores. A current state file holds every job: the slots of the running
+      // ones count from the first event, so nothing needs to wait.
+      if (this.store.restore() === "current") {
+        scheduler.holdUntil = Date.now();
+        this.settle();
+        return;
+      }
+      // Without one (a first start, a deleted file, an older scheduler's file) nothing is known about the running jobs:
+      // nothing is granted on that absence while they re-register. The grace ends in the timer, not at a time, so that
+      // nothing is granted (holdUntil stays Infinity) before settle has run with the re-registered jobs.
       setTimeout(() => {
         scheduler.holdUntil = Date.now();
         this.pendingAwaits.splice(0).forEach(({ socket, id }) => this.awaitJob(socket, id));
@@ -585,10 +591,7 @@ export class JobServer {
     });
     // The response ratios change with time alone: a waiting job can overtake the first one and fit in the free slots
     // between two events, so grant again now and then while jobs wait
-    setInterval(() => {
-      this.expireExpected();
-      this.settle();
-    }, RegrantMs).unref();
+    setInterval(() => this.settle(), RegrantMs).unref();
     setInterval(() => {
       if (scheduler.isIdle() && Date.now() - this.idleSince >= IdleExitMs) {
         this.log("idle; exiting");
