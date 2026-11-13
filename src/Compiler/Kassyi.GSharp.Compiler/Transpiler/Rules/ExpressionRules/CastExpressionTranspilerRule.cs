@@ -177,9 +177,14 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             return;
         }
 
-        using (context.Emitter.Writer.Parentheses())
+        // A delegate is a lambda of its own type on CUDA ("auto"), which names no type to cast to: the converted
+        // expression is the delegate (Func<int, int>)Inc
+        if (!(context.Emitter.Dialect.IsCuda && GpuCodeConstraints.IsDelegate(targetType)))
         {
-            context.Emitter.Dialect.AppendType(ref context, targetType);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, targetType);
+            }
         }
 
         context.Visitor.Visit(node.Expression);

@@ -60,6 +60,9 @@ internal static class GpuCodeConstraints
         _ => null
     };
 
+    /// <summary>Whether <paramref name="type"/> is a delegate type.</summary>
+    public static bool IsDelegate(ITypeSymbol? type) => type is { TypeKind: TypeKind.Delegate };
+
     /// <summary>Whether <paramref name="type"/> is <see cref="string"/>, which device code cannot hold (GSH0002).</summary>
     public static bool IsString(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_String };
 
@@ -158,6 +161,23 @@ internal static class GpuCodeConstraints
     public static string FormatKernelCalledFromDeviceCode(IMethodSymbol kernel) =>
         $"call of the [GpuKernel] method '{kernel.Name}' from device code (a kernel runs only through its launcher; " +
         "move its body to a [GpuDeviceFunction] method and call that from both)";
+
+    /// <summary>
+    /// The GSH0003 text for a <c>[GpuKernel]</c> method named without a call (<c>Action&lt;int[]&gt; f = K;</c>): a
+    /// delegate to a kernel would call it from device code.
+    /// </summary>
+    public static string FormatKernelNamedInDeviceCode(IMethodSymbol kernel) =>
+        $"the [GpuKernel] method '{kernel.Name}' used as a method group in device code (a kernel runs only through " +
+        "its launcher; move its body to a [GpuDeviceFunction] method and name that instead)";
+
+    /// <summary>
+    /// The GSH0003 text for <c>+</c>, <c>-</c>, <c>+=</c> or <c>-=</c> on delegates, which builds a multicast
+    /// delegate: a delegate holds one method in device code, and a list of methods of a length known only at run time
+    /// needs a heap.
+    /// </summary>
+    public const string DelegateCombination =
+        "delegate combination (+, -, +=, -=) is not supported in GPU code: a delegate holds one method; call each " +
+        "method in turn";
 
     /// <summary>The GSH0003 text for a switch expression arm with a <c>when</c> clause.</summary>
     public const string SwitchArmWhenClauseNotSupported = "Switch expression arms with 'when' clauses are not supported";
