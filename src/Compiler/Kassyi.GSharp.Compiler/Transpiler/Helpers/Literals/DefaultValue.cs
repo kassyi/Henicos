@@ -10,21 +10,25 @@ internal enum DefaultValueForm
     Typed
 }
 
-/// <summary>The decision how a <c>default</c> is written: its form and, for <see cref="DefaultValueForm.Typed"/>, <c>T</c>.</summary>
+/// <summary>
+/// The decision how a <c>default</c> is written: its form and, for <see cref="DefaultValueForm.Typed"/>, <c>T</c>.
+/// </summary>
 internal readonly record struct DefaultValuePlan(DefaultValueForm Form, ITypeSymbol? Type);
 
 /// <summary>
-/// <c>default(T)</c> and the <c>default</c> literal. <c>{}</c> is C++ only where a braced list may stand: the initializer
-/// of a declaration with a written type (<c>T x = {};</c>), the right side of a simple assignment (<c>x = {};</c>) and
-/// an argument the compiler built itself. Every other position gets <c>__gsharp_type&lt;T&gt;{}</c> with <c>T</c> from the
-/// semantic model (<c>c ? a : __gsharp_type&lt;int&gt;{}</c>, <c>x == __gsharp_type&lt;int&gt;{}</c>,
-/// <c>auto z = __gsharp_type&lt;int&gt;{}</c>, <c>__gsharp_type&lt;S&gt;{}.Field</c>). The alias template is one name for
-/// every type, so a type of several words (<c>long long</c>, <c>unsigned char</c>) or a pointer is a valid functional
-/// cast in every compiler.
+/// <c>default(T)</c> and the <c>default</c> literal. <c>{}</c> is C++ only where a braced list may stand: the
+/// initializer of a declaration with a written type (<c>T x = {};</c>), the right side of a simple assignment
+/// (<c>x = {};</c>) and an argument the compiler built itself. Every other position gets
+/// <c>__gsharp_type&lt;T&gt;{}</c> with <c>T</c> from the semantic model (<c>c ? a : __gsharp_type&lt;int&gt;{}</c>, <c>x == __gsharp_type&lt;int&gt;{}</c>,
+/// <c>auto z = __gsharp_type&lt;int&gt;{}</c>, <c>__gsharp_type&lt;S&gt;{}.Field</c>). The alias template is one name
+/// for every type, so a type of several words (<c>long long</c>, <c>unsigned char</c>) or a pointer is a valid
+/// functional cast in every compiler.
 /// </summary>
 internal static class DefaultValue
 {
-    /// <summary>Decides how <paramref name="node"/> (<c>default(T)</c> or the <c>default</c> literal) is written.</summary>
+    /// <summary>
+    /// Decides how <paramref name="node"/> (<c>default(T)</c> or the <c>default</c> literal) is written.
+    /// </summary>
     /// <exception cref="InvalidOperationException">
     /// The position needs a type and the semantic model has none for the node.
     /// </exception>
@@ -70,8 +74,8 @@ internal static class DefaultValue
     }
 
     /// <summary>
-    /// Whether <paramref name="node"/> is the initializer of a declaration with a written type (not <c>var</c>), the right
-    /// side of a simple assignment, or an argument the compiler built itself, where <c>{}</c> is valid C++.
+    /// Whether <paramref name="node"/> is the initializer of a declaration with a written type (not <c>var</c>), the
+    /// right side of a simple assignment, or an argument the compiler built itself, where <c>{}</c> is valid C++.
     /// </summary>
     internal static bool IsBracedListPosition(ExpressionSyntax node) =>
         node.Parent switch

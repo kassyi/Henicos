@@ -5,8 +5,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Differential tests of <c>default(T)</c> and the <c>default</c> literal in expression positions (<c>var</c>, a
-/// conditional arm, a comparison, an operand, a return value, a struct, a nullable, an array and a pointer), one case per
-/// shape.
+/// conditional arm, a comparison, an operand, a return value, a struct, a nullable, an array and a pointer), one case
+/// per shape.
 /// </summary>
 public class DefaultValueDifferentialTests
 {
