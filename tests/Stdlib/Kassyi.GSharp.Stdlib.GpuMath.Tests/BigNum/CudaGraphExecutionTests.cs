@@ -1,4 +1,5 @@
 #nullable enable
+using System.Buffers;
 using System.Runtime.ExceptionServices;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
@@ -305,5 +306,87 @@ public class CudaGraphExecutionTests
         Assert.True(hostRemainder.AsSpan(1).AsStackEnumerable().All(w => w == 0u));
 
         ctx.Provider.DestroyGraph(graph, graphExec);
+    }
+
+    // A captured Clear records no host memory: the launched graph writes zero words even after the shared pool handed
+    // out again, and overwrote, any array the clear rented, and leaves the words around the range as they were.
+    // mutant: GpuBigUInt.Clear copying a zeroed array rented from ArrayPool<uint>.Shared (the old code) -> the cleared
+    // words read 0xFFFFFFFF
+    // mutant: GpuBigUInt.Clear without the offset (IntPtr.Add(DevicePointer, 0)) -> words 0 to 3 cleared, 4 and 5 not
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void Clear_CapturedInGraph_WritesZerosAfterThePoolReusesItsArray()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int Words = 8;
+        using var ctx = new GpuWorkspace(Words, GpuExecutionEngine.GSharpAot);
+        using var value = new GpuBigUInt(ctx, new uint[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+
+        ctx.Provider.BeginCapture(ctx.Stream);
+        value.Clear(offsetWords: 2, numWords: 4);
+        var graph = ctx.Provider.EndCapture(ctx.Stream);
+        var graphExec = ctx.Provider.InstantiateGraph(graph);
+        try
+        {
+            // The same size on the same thread: the pool hands back the array a clear rented, if it rented one
+            var reused = ArrayPool<uint>.Shared.Rent(4);
+            reused.AsSpan().Fill(0xFFFFFFFFu);
+            ctx.Provider.LaunchGraph(graphExec, ctx.Stream);
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+            ArrayPool<uint>.Shared.Return(reused);
+
+            Assert.Equal(new uint[] { 1, 2, 0, 0, 0, 0, 7, 8 }, value.ToHostArray());
+        }
+        finally
+        {
+            ctx.Provider.DestroyGraph(graph, graphExec);
+        }
+    }
+
+    // The single-word writes of CreatePowerOfTwo and ClearWord are recorded with their value, not a host buffer: the
+    // launched graph writes 2^40 and clears word 0 even after the pool handed out, and overwrote, the array
+    // CreatePowerOfTwo used to rent.
+    // mutant: GpuBigUInt.CreatePowerOfTwo copying a word rented from ArrayPool<uint>.Shared (the old code) -> word 1
+    // reads 0xFFFFFFFF
+    // mutant: GpuBigUInt.ClearWord writing 1u instead of 0u -> word 0 of the second value reads 1
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void SingleWordWrites_CapturedInGraph_WriteTheirValueAfterThePoolReusesItsArray()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int Words = 4;
+        using var ctx = new GpuWorkspace(Words * 4, GpuExecutionEngine.GSharpAot);
+        using var cleared = new GpuBigUInt(ctx, new uint[] { 5, 6, 7, 8 });
+        // Warm the pool so that the capture allocates nothing new
+        GpuBigUInt.CreatePowerOfTwo(ctx, Words, 0).Dispose();
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+
+        ctx.Provider.BeginCapture(ctx.Stream);
+        var power = GpuBigUInt.CreatePowerOfTwo(ctx, Words, 40);
+        cleared.ClearWord(0);
+        var graph = ctx.Provider.EndCapture(ctx.Stream);
+        var graphExec = ctx.Provider.InstantiateGraph(graph);
+        try
+        {
+            // The same size on the same thread: the pool hands back the word CreatePowerOfTwo rented, if it rented one
+            var reused = ArrayPool<uint>.Shared.Rent(1);
+            reused.AsSpan().Fill(0xFFFFFFFFu);
+            ctx.Provider.LaunchGraph(graphExec, ctx.Stream);
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+            ArrayPool<uint>.Shared.Return(reused);
+
+            Assert.Equal(new uint[] { 0, 1u << 8, 0, 0 }, power.ToHostArray());
+            Assert.Equal(new uint[] { 0, 6, 7, 8 }, cleared.ToHostArray());
+        }
+        finally
+        {
+            ctx.Provider.DestroyGraph(graph, graphExec);
+            power.Dispose();
+        }
     }
 }
