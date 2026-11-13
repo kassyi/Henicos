@@ -34,5 +34,20 @@ internal enum IrSpillFallback
     /// A value of a ref struct type (a span) other than a local must be evaluated before a split: no temporary can keep
     /// it across the split.
     /// </summary>
-    RefLikeOperand
+    RefLikeOperand,
+
+    /// <summary>
+    /// A field written or passed by reference has a struct receiver that is a value, not a variable: spilling the
+    /// receiver would write the field of a copy.
+    /// </summary>
+    StructValueReceiverTarget,
+
+    /// <summary>
+    /// A method or accessor that is not <see langword="readonly"/> is called on a struct receiver that is a read-only
+    /// variable (an <see langword="in"/> or <see langword="ref readonly"/> parameter or local, a
+    /// <see langword="readonly"/> field, <see langword="this"/> of a <see langword="readonly"/> member), and an
+    /// argument holds a split: C# calls it on a copy of the receiver taken before the split, which the IR does not
+    /// represent.
+    /// </summary>
+    ReadOnlyVariableReceiver
 }
