@@ -113,8 +113,10 @@ A chat waits for the person when it asks through a tool (a choice question, a pe
 reply leaves a question open. At each `Stop` the hook records at once what a heuristic says: the open questions stay
 until the person sends a new prompt; after one, only the latest reply counts, by a question mark in its asking
 paragraph. It then starts `chat-status/summarizer.js` detached (the hook never waits for it), for a reply, a choice
-question or a permission prompt. The summarizer runs `claude -p --model haiku --no-session-persistence` (the person's
-subscription) in the system temporary directory with `GSHARP_CHAT_STATUS_CHILD=1`, which makes the chat-status hook of
+question or a permission prompt. The summarizer runs
+`claude -p --model haiku --no-session-persistence --tools "" --strict-mcp-config --setting-sources ""` (the person's
+subscription; no tools, MCP servers or settings, so quoted chat text can shape the answer but never act) in the system
+temporary directory with `GSHARP_CHAT_STATUS_CHILD=1`, which makes the chat-status hook of
 that session do nothing, at most 60 s, with the prompt on stdin. Claude Haiku gets the first prompt of the chat, the
 questions open before the turn, the prompt of the turn and the latest text, each a delimited block of data, and
 answers with one JSON object `{"title": "...", "open": ["...?"]}`: it drops the questions the prompt answered or the

@@ -385,7 +385,7 @@ function summaryChecks(helpers) {
     assert.strictEqual(record.question, 'Merge it?', 'the rest of the record stays');
     const seen = JSON.parse(fs.readFileSync(log, 'utf8'));
     assert.ok(sameFile(seen.cwd, os.tmpdir()), seen.cwd);
-    assert.deepStrictEqual(seen.args, ['-p', '--model', 'haiku', '--no-session-persistence']);
+    assert.deepStrictEqual(seen.args, ['-p', '--model', 'haiku', '--no-session-persistence', '--tools', '', '--strict-mcp-config', '--setting-sources', '']);
     assert.deepStrictEqual([seen.child, seen.session], ['1', null]);
     assert.match(seen.input, /<latest>\nMerge it\?\n<\/latest>/);
     assert.deepStrictEqual(fs.readdirSync(directory), [path.basename(file)], 'the lock is removed');

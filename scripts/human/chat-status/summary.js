@@ -26,6 +26,11 @@ const RememberedFile = 'claude-executable.txt';
 /** The extension folders searched last, under the home directory. */
 const ExtensionRoots = ['.antigravity-ide/extensions', '.vscode/extensions', '.vscode-insiders/extensions'];
 const TimeoutMs = 60 * 1000;
+/**
+ * The CLI's options: Haiku, no session file, and no tools, MCP servers or settings (hooks), so that text quoted from a
+ * chat can only shape the answer, never act.
+ */
+const CliOptions = ['-p', '--model', 'haiku', '--no-session-persistence', '--tools', '', '--strict-mcp-config', '--setting-sources', ''];
 /** The waits a summary is made for: a reply, a choice question, a permission prompt (not other notifications). */
 const SummarizedKinds = new Set(['reply', 'question', 'permission']);
 const MaxSummaryLength = 120;
@@ -295,7 +300,7 @@ function runSummarizer(file, since, executable, options = {}) {
       return 'done';
     }
     const [command, args] = commandOf(executable);
-    const result = spawnSync(command, [...args, '-p', '--model', 'haiku', '--no-session-persistence'], {
+    const result = spawnSync(command, [...args, ...CliOptions], {
       input: buildPrompt(record),
       cwd: os.tmpdir(), // outside the repository: no project hooks, settings or memory of it
       env: childEnvironment(options.env ?? process.env),
