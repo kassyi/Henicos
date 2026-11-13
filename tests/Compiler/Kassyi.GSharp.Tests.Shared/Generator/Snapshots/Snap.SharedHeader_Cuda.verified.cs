@@ -132,7 +132,8 @@ NullReference = 6,
 DivideByZero = 7,
 Overflow = 8,
 DataRace = 9,
-SwitchExpression = 10
+SwitchExpression = 10,
+ArgumentNull = 11
 };
 
 // One device error record (GSharpDeviceErrorSlot of the runtime). code and epoch are one 8-byte word, which a failing
@@ -417,6 +418,28 @@ return ""Offset and length were out of bounds for the array or count is greater 
 return ""Index was out of range."";
 }
 
+// The message of a view without an array (CheckedSlice, CheckedCopyTo), as .NET words it
+template <GSharpErrorCode ErrorCode>
+__device__ inline const char* __gsharp_view_message() {
+if (ErrorCode == GSharpErrorCode::InvalidOperation) {
+return ""The underlying array is null."";
+}
+if (ErrorCode == GSharpErrorCode::ArgumentNull) {
+return ""Value cannot be null. (Parameter 'destinationArray')"";
+}
+return ""Object reference not set to an instance of an object."";
+}
+
+// text[index] of a constant C# string, written as a UTF-16 literal (u""...""): the code unit C# reads, and
+// IndexOutOfRangeException outside the string, on every build. N counts the terminating zero, which C# does not have
+template <int N>
+__device__ inline char16_t __gsharp_string_char(const char16_t (&text)[N], int index) {
+if (static_cast<unsigned int>(index) >= static_cast<unsigned int>(N - 1)) {
+__gsharp_trap(GSharpErrorCode::IndexOutOfRange, ""Index was outside the bounds of the array."");
+}
+return text[index];
+}
+
 // A C# array or span: data is nullptr for a null array (and the default span), and never nullptr for an array that
 // exists, also an empty one (#706). flags uses the padding after length (16 bytes as before): bit 0
 // (__gsharp_array_null_reads_empty) marks a null optional kernel argument, which reads as an empty array
@@ -500,6 +523,34 @@ __device__ inline void CopyTo(GSharpArray<U> destination) const {
 if (!TryCopyTo(destination)) {
 __gsharp_trap(GSharpErrorCode::Argument, ""Destination is too short."");
 }
+}
+// Slice and CopyTo of an ArraySegment<T> or ImmutableArray<T> (ArrayViewMethods.GetChecks): a default value has no
+// array (data is nullptr; an empty one has an array), which C# reports first (IfDefault); CopyTo then reports a
+// destination without an array (IfDestinationNull, None for a span) before it compares the lengths. Every build
+// checks, as C# defines the result and the GPU does not
+template <GSharpErrorCode IfDefault>
+__device__ inline GSharpArray<T> CheckedSlice(int start) const {
+if (data == nullptr) {
+__gsharp_trap(IfDefault, __gsharp_view_message<IfDefault>());
+}
+return Slice(start);
+}
+template <GSharpErrorCode IfDefault>
+__device__ inline GSharpArray<T> CheckedSlice(int start, int count) const {
+if (data == nullptr) {
+__gsharp_trap(IfDefault, __gsharp_view_message<IfDefault>());
+}
+return Slice(start, count);
+}
+template <GSharpErrorCode IfDefault, GSharpErrorCode IfDestinationNull, typename U>
+__device__ inline void CheckedCopyTo(GSharpArray<U> destination) const {
+if (IfDefault != GSharpErrorCode::None && data == nullptr) {
+__gsharp_trap(IfDefault, __gsharp_view_message<IfDefault>());
+}
+if (IfDestinationNull != GSharpErrorCode::None && destination.data == nullptr) {
+__gsharp_trap(IfDestinationNull, __gsharp_view_message<IfDestinationNull>());
+}
+CopyTo(destination);
 }
 __device__ inline GSharpArray<T> AsSpan() const { return *this; }
 template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>

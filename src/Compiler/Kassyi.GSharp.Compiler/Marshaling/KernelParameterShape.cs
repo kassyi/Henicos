@@ -18,6 +18,11 @@ internal readonly record struct KernelParameterShape
     /// <summary>The parameter name as a C# identifier, which every reference to the argument uses.</summary>
     public string Identifier { get; init; }
 
+    /// <summary>
+    /// The parameter name as metadata spells it (<c>class</c> for <c>@class</c>), which the argument checks report.
+    /// </summary>
+    public string Name { get; init; }
+
     public RefKind RefKind { get; init; }
 
     public KernelParameterKind Kind { get; init; }
@@ -173,9 +178,15 @@ internal readonly record struct KernelParameterShape
     /// <summary>The parameter value, with a nullable value type unwrapped by <c>GetValueOrDefault()</c>.</summary>
     public string ValueExpression => IsNullableValue ? $"{Identifier}.GetValueOrDefault()" : Identifier;
 
-    /// <summary>The element count, 0 for a <c>null</c> array.</summary>
+    /// <summary>
+    /// The element count, 0 for a <c>null</c> array. An <c>ImmutableArray&lt;T&gt;?</c> counts the span of its value,
+    /// which is empty for <c>null</c>: <c>GetValueOrDefault()</c> gives the default immutable array, whose
+    /// <c>Length</c> throws (#1715).
+    /// </summary>
     public string LengthExpression =>
-        IsNullableReference ? $"({Identifier}?.Length ?? 0)" : $"{ValueExpression}.{LengthMember}";
+        IsNullableReference ? $"({Identifier}?.Length ?? 0)"
+        : IsNullableValue && Container == ArrayContainerKind.ImmutableArray ? $"{SpanExpression}.Length"
+        : $"{ValueExpression}.{LengthMember}";
 
     /// <summary>An expression that a <c>fixed</c> statement can pin.</summary>
     public string SpanExpression => Container switch
@@ -207,6 +218,7 @@ internal readonly record struct KernelParameterShape
         {
             Ordinal = parameter.Ordinal,
             Identifier = parameter.Name.ToCSharpIdentifier(),
+            Name = parameter.Name,
             RefKind = parameter.RefKind,
             Kind = parameter.RefKind is RefKind.Ref or RefKind.Out
                 ? KernelParameterKind.RefScalar

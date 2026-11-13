@@ -20,11 +20,11 @@ UnsupportedOperation	DelegateCreation	SimpleLambdaExpression	297
 UnsupportedOperation	DelegateCreation	SimpleMemberAccessExpression	10
 UnsupportedOperation	InlineArrayAccess	ElementAccessExpression	82
 UnsupportedOperation	InterpolatedString	InterpolatedStringExpression	1
-UnsupportedOperation	None	ElementAccessExpression	91
+UnsupportedOperation	None	ElementAccessExpression	93
 UnsupportedOperation	None	IdentifierName	4
 UnsupportedOperation	None	MakeRefExpression	1
 UnsupportedOperation	None	PointerIndirectionExpression	37
-UnsupportedOperation	None	StackAllocArrayCreationExpression	67
+UnsupportedOperation	None	StackAllocArrayCreationExpression	68
 UnsupportedOperation	Range	RangeExpression	1
 UnsupportedOperation	SwitchExpression	SwitchExpression	45
 UnsupportedOperation	TranslatedQuery	QueryExpression	1
@@ -45,14 +45,14 @@ statement UnsupportedOperation	Labeled	LabeledStatement	19
 statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	54
 statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
-statement UnsupportedOperation	Loop	ForEachStatement	134
+statement UnsupportedOperation	Loop	ForEachStatement	140
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
-statement UnsupportedOperation	Loop	ForStatement	118
+statement UnsupportedOperation	Loop	ForStatement	119
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	5
-statement UnsupportedOperation	Switch	SwitchStatement	39
+statement UnsupportedOperation	Switch	SwitchStatement	40
 statement UnsupportedOperation	Try	TryStatement	3
-statement UnsupportedOperation	Using	UsingStatement	13
+statement UnsupportedOperation	Using	UsingStatement	14
 statement UnsupportedOperation	UsingDeclaration	LocalDeclarationStatement	15
 statement UnsupportedOperation	YieldBreak	YieldBreakStatement	2
-statement UnsupportedOperation	YieldReturn	YieldReturnStatement	83
+statement UnsupportedOperation	YieldReturn	YieldReturnStatement	85
