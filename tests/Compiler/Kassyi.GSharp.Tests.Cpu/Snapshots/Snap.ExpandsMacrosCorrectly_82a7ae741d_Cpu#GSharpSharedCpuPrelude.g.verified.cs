@@ -277,9 +277,13 @@ template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
 inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
 inline bool IsEmpty() const { return length <= 0; }
 
-// Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+// Implicit conversion from GSharpArray<U> to GSharpArray<T> where U and T differ only in const: T to const T, and
+// const T back to T. C# converts a [GpuReadOnly] array (const elements here) to every array and span type of its
+// element, so the const is removed here and the code that only reads builds. [GpuReadOnly] promises that no
+// thread writes the array during the launch, through any alias; G# reports the writes it sees (GSH0118)
 template <typename U>
-inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length), flags(other.flags) {}
+inline GSharpArray(const GSharpArray<U>& other)
+: data(const_cast<T*>(other.data)), length(other.length), flags(other.flags) {}
 inline T* begin() { return data; }
 inline T* end() { return data + length; }
 inline const T* begin() const { return data; }
