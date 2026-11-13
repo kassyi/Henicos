@@ -358,7 +358,7 @@ internal static class ManagedOperatorMacroExpander
         private static ArgumentSyntax CreateArgument(ExpressionSyntax expression, IParameterSymbol parameter,
             bool isVariable, ITypeSymbol? conversion)
         {
-            if (parameter.RefKind is RefKind.Ref or RefKind.Out || isVariable && IsPassedByReference(parameter))
+            if (parameter.RefKind is RefKind.Ref or RefKind.Out || (isVariable && IsPassedByReference(parameter)))
             {
                 return WithModifier(expression, parameter.RefKind);
             }

@@ -68,8 +68,8 @@ internal static class ManagedStateMachineAvailability
             .AsStackEnumerable()
             .Any(static node => node is PointerTypeSyntax or FunctionPointerTypeSyntax or UnsafeStatementSyntax
                 or FixedStatementSyntax ||
-                node is PrefixUnaryExpressionSyntax prefix &&
-                prefix.Kind() is SyntaxKind.AddressOfExpression or SyntaxKind.PointerIndirectionExpression ||
+                (node is PrefixUnaryExpressionSyntax prefix &&
+                 prefix.Kind() is SyntaxKind.AddressOfExpression or SyntaxKind.PointerIndirectionExpression) ||
                 node.IsKind(SyntaxKind.PointerMemberAccessExpression));
     }
 

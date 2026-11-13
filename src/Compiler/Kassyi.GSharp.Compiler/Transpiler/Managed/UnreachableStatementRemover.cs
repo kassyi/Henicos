@@ -57,7 +57,7 @@ internal sealed class UnreachableStatementRemover : CSharpSyntaxRewriter
                 continue;
             }
 
-            var kept = new SyntaxList<StatementSyntax>();
+            SyntaxList<StatementSyntax> kept = default;
             for (var j = 0; j < statements.Count; j++)
             {
                 if (j <= i || j >= end)

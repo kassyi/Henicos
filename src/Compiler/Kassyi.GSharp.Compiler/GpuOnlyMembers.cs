@@ -50,7 +50,7 @@ internal static class GpuOnlyMembers
         property.HasAttribute(KnownAttributes.CudaIntrinsic) ||
         HasIntrinsicPatternType(property) ||
         IsDim3(property.ContainingType) ||
-        property.IsIndexer && property.ContainingType.IsSharedMemoryType();
+        (property.IsIndexer && property.ContainingType.IsSharedMemoryType());
 
     private static bool HasIntrinsicPatternType(ISymbol member) =>
         member.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) == true;

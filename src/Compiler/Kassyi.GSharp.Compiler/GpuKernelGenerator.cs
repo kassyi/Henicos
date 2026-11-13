@@ -408,7 +408,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 header,
                 host,
                 "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n",
-                new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
+                default, default, ex.ToString());
         }
     }
 
@@ -546,7 +546,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
                 methodSymbol.Name,
                 "", errorSource, "", errorSource,
-                new EquatableArray<string>(), new EquatableArray<string>(), "");
+                default, default, "");
         }
         catch (Exception ex)
         {
@@ -555,7 +555,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return new TranspiledDeviceMethodResult(
                 HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
                 methodSymbol.Name,
-                "", errorSource, "", errorSource, new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
+                "", errorSource, "", errorSource, default, default, ex.ToString());
         }
     }
 
