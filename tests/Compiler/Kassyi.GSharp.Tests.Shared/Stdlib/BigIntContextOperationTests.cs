@@ -51,6 +51,32 @@ public class BigIntContextOperationTests : TranspilerTestBase
         Assert.Equal(expected, result);
     }
 
+    // The result buffer is the left operand: one thread of the grid shifts every word, so no thread reads a word
+    // another one already shifted; two blocks of two threads, so the grid-stride loop would have split the words.
+    // mutant: GpuBigIntKernels.cu.cs ExecuteShiftLeft(GpuBigIntContext, ...) `if (IsSameArray(left, result))` ->
+    // `if (false)` -> wrong words on the native CPU path (and a race on CUDA)
+    // mutant: the same in ExecuteShiftRight
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 3)]
+    [InlineData(1, 5)]
+    [InlineData(2, 0)]
+    public void Shifts_ResultIsTheLeftOperand_MatchBigIntegerShift(int wordShift, int bitShift)
+    {
+        var left = (uint[])s_left.Clone();
+        var right = (uint[])s_left.Clone();
+
+        BigIntContextOperationKernels.LaunchShiftLeftKernel(Context(left, null, left), wordShift, bitShift,
+            gridDimX: 2, blockDimX: 2);
+        BigIntContextOperationKernels.LaunchShiftRightKernel(Context(right, null, right), wordShift, bitShift,
+            gridDimX: 2, blockDimX: 2);
+
+        var value = BigIntWords.ToBigInteger(s_left);
+        var shift = wordShift * 32 + bitShift;
+        Assert.Equal(BigIntWords.ToWords(value << shift, Words), left);
+        Assert.Equal(BigIntWords.ToWords(value >> shift, Words), right);
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void BitwiseOperations_Words_MatchEachWord()

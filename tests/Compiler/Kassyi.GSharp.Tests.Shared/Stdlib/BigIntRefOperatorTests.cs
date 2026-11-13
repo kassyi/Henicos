@@ -25,8 +25,9 @@ public class BigIntRefOperatorTests : TranspilerTestBase
     }
 
     // x = x << s writes the words it reads: each word must come from the unshifted value, as BigInteger computes it
-    // from the input the test holds. mutant: GpuBigIntKernels.cu.cs ExecuteShiftLeft(ref ...) runs i upward ->
-    // shifts 3, 40 and 71 read words already shifted. x = x >> s reads upward and is the control.
+    // from the input the test holds (also for a negative amount, which shifts the other way).
+    // mutant: GpuBigIntKernels.cu.cs ShiftWordsLeft runs i upward -> shifts 3, 40, 71 and -40 (x >> 40) fail
+    // mutant: ExecuteShiftLeft(ref ...) without the `amount < 0` branch -> -1, -40, -127 fail
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(BigIntRefOperatorCases.Shifts), MemberType = typeof(BigIntRefOperatorCases))]
@@ -56,8 +57,9 @@ internal static class BigIntRefOperatorCases
     // Every word non-zero and different, so a word read from the wrong place changes the result
     public static readonly uint[] InPlaceInput = [0x80000001u, 0x00000003u, 0xF0F0F0F0u, 0x12345678u];
 
-    // Inside a word (3, 31), whole words (32), words and bits (40, 71), the top bit only (127), past the width (128)
-    public static TheoryData<int> Shifts => [0, 3, 31, 32, 40, 71, 127, 128];
+    // Inside a word (3, 31), whole words (32), words and bits (40, 71), the top bit only (127), past the width (128,
+    // int.MaxValue); a negative amount shifts the other way, as for BigInteger (int.MinValue moves every bit out)
+    public static TheoryData<int> Shifts => [0, 3, 31, 32, 40, 71, 127, 128, int.MaxValue, -1, -40, -127, int.MinValue];
 
     public static uint[] ExpectedShiftLeft(int shiftBits) =>
         BigIntWords.ToWords(BigIntWords.ToBigInteger(InPlaceInput) << shiftBits, InPlaceInput.Length);
