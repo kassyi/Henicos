@@ -34,7 +34,6 @@ public class GpuArchitectureLimitsTests
         Assert.True(limits.IsKnown);
         Assert.Equal(99 * KiB, limits.MaxSharedMemoryPerBlockOptIn);
         Assert.Equal("sm_86", limits.SharedMemoryLimitArchitecture);
-        Assert.Equal(new[] { new SharedMemoryBudget(100 * KiB, KiB, 128) }, limits.SharedMemoryBudgets);
         Assert.Empty(limits.UnknownArchitectures);
     }
 
@@ -45,6 +44,13 @@ public class GpuArchitectureLimitsTests
     [InlineData("compute_80,sm_80", new[] { "8.0", "8.6", "8.9" }, 99 * KiB, "sm_86")]
     [InlineData("compute_90,sm_90", new[] { "9.0" }, 227 * KiB, "sm_90")]
     [InlineData("compute_75,sm_75", new[] { "7.5" }, 64 * KiB, "sm_75")]
+    // sm_75 alone adds PTX that every newer GPU runs; 7.5 stays the strictest
+    [InlineData(
+        "sm_75",
+        new[] { "7.5", "8.0", "8.6", "8.7", "8.9", "9.0", "10.0", "10.3", "10.7", "11.0", "12.0", "12.1" },
+        64 * KiB,
+        "sm_75"
+    )]
     // The Tegra 8.7 SASS runs on 8.7 only
     [InlineData("compute_87,sm_87", new[] { "8.7" }, 163 * KiB, "sm_87")]
     // Architecture-specific code runs on its own compute capability only, family-specific code on its family
@@ -78,79 +84,6 @@ public class GpuArchitectureLimitsTests
         Assert.Empty(limits.UnknownArchitectures);
     }
 
-    [Fact]
-    [Scenario(TestScenario.Boundary)]
-    public void Resolve_Sm75Only_KeepsTheTuringBudgetWithItsGranularity()
-    {
-        var limits = GpuArchitectureLimits.Resolve("compute_75,sm_75");
-
-        Assert.Equal(new[] { new SharedMemoryBudget(64 * KiB, 0, 256) }, limits.SharedMemoryBudgets);
-    }
-
-    [Fact]
-    [Scenario(TestScenario.Boundary)]
-    public void Resolve_TuringAndAmpere_KeepsBothBudgetsSinceNeitherAlwaysHoldsFewer()
-    {
-        // sm_75 alone is SASS for 7.5 plus PTX that every newer GPU runs: 7.5 has less shared memory, but 8.x reserves
-        // 1 KB per block, so for some block sizes either one holds fewer blocks
-        var limits = GpuArchitectureLimits.Resolve("sm_75");
-
-        Assert.Equal(64 * KiB, limits.MaxSharedMemoryPerBlockOptIn);
-        Assert.Equal(
-            new[] { new SharedMemoryBudget(64 * KiB, 0, 256), new SharedMemoryBudget(100 * KiB, KiB, 128) },
-            limits.SharedMemoryBudgets
-        );
-        // A block of 1 byte: 7.5 allocates 256 bytes (256 blocks), 8.6 allocates 1 KB + 128 bytes (88 blocks)
-        Assert.Equal(88, limits.ResidentBlocksBySharedMemory(1));
-        // A block of 40 KB: 7.5 fits one, 8.6 fits two
-        Assert.Equal(1, limits.ResidentBlocksBySharedMemory(40 * KiB));
-    }
-
-    [Theory]
-    [Scenario(TestScenario.Boundary)]
-    [InlineData(null)]
-    [InlineData("sm_75")]
-    [InlineData("compute_75,sm_75;compute_86,sm_86")]
-    [InlineData("compute_80,sm_80")]
-    [InlineData("sm_100f;compute_75,sm_75")]
-    public void ResidentBlocksBySharedMemory_AnyBlockSize_EqualsTheFewestOverEveryTargetGpu(string? setting)
-    {
-        var limits = GpuArchitectureLimits.Resolve(setting);
-        long[] sizes = [0, 1, 127, 128, 129, 255, 256, 257, 1023, 1024, 1025, 40 * KiB, 48 * KiB, 63 * KiB, 64 * KiB,
-            99 * KiB, 99 * KiB + 1, 163 * KiB, 227 * KiB, 327 * KiB];
-
-        foreach (var size in sizes)
-        {
-            var expected = limits.Architectures.Min(row => row.SharedMemoryBudget.ResidentBlocks(size));
-            Assert.True(expected == limits.ResidentBlocksBySharedMemory(size), $"bytes per block {size}");
-        }
-    }
-
-    [Theory]
-    [Scenario(TestScenario.Boundary)]
-    // 8.6: 100 KB per multiprocessor, 1 KB reserved per block, 128-byte units
-    [InlineData(102400, 1024, 128, 0, 100)]
-    [InlineData(102400, 1024, 128, 101376, 1)]
-    [InlineData(102400, 1024, 128, 101377, 0)]
-    [InlineData(102400, 1024, 128, 50 * 1024 - 1024, 2)]
-    [InlineData(102400, 1024, 128, 50 * 1024 - 1023, 1)]
-    // 7.5: nothing reserved, 256-byte units; a block without shared memory takes none
-    [InlineData(65536, 0, 256, 0, int.MaxValue)]
-    [InlineData(65536, 0, 256, 1, 256)]
-    [InlineData(65536, 0, 256, 256, 256)]
-    [InlineData(65536, 0, 256, 257, 128)]
-    public void ResidentBlocks_BlockSize_RoundsTheBlockAndItsReservationUpToTheUnit(
-        int perMultiprocessor,
-        int reserved,
-        int granularity,
-        long bytesPerBlock,
-        int expected)
-    {
-        var budget = new SharedMemoryBudget(perMultiprocessor, reserved, granularity);
-
-        Assert.Equal(expected, budget.ResidentBlocks(bytesPerBlock));
-    }
-
     [Theory]
     [Scenario(TestScenario.SadPath)]
     // A compute capability newer than the table reaches no GPU: only the limits every GPU shares are left
@@ -177,8 +110,6 @@ public class GpuArchitectureLimitsTests
         {
             Assert.Equal(0, limits.MaxSharedMemoryPerBlockOptIn);
             Assert.Equal("", limits.SharedMemoryLimitArchitecture);
-            Assert.Empty(limits.SharedMemoryBudgets);
-            Assert.Equal(int.MaxValue, limits.ResidentBlocksBySharedMemory(1));
         }
     }
 
@@ -204,54 +135,45 @@ public class GpuArchitectureLimitsTests
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
-    // compute capability, shared memory per multiprocessor and per block with opt-in (KB): the CUDA Programming Guide,
-    // "Compute Capabilities" (Tables 34 and 35). The largest shared memory configuration and the allocation unit agree
-    // with cuda_occupancy.h of CUDA 13.4 (cudaOccAlignUpShmemSizeVoltaPlus, cudaOccSMemAllocationGranularity)
-    [InlineData(7, 5, 64, 64, 256)]
-    [InlineData(8, 0, 164, 163, 128)]
-    [InlineData(8, 6, 100, 99, 128)]
-    [InlineData(8, 7, 164, 163, 128)]
-    [InlineData(8, 9, 100, 99, 128)]
-    [InlineData(9, 0, 228, 227, 128)]
-    [InlineData(10, 0, 228, 227, 128)]
-    [InlineData(10, 3, 228, 227, 128)]
-    [InlineData(10, 7, 328, 327, 128)]
-    [InlineData(11, 0, 228, 227, 128)]
-    [InlineData(12, 0, 100, 99, 128)]
-    [InlineData(12, 1, 100, 99, 128)]
+    // compute capability and shared memory per block with opt-in (KB): the CUDA Programming Guide, "Compute
+    // Capabilities" (Table 34, "Maximum amount of shared memory per thread block", columns read from the colspans)
+    [InlineData(7, 5, 64)]
+    [InlineData(8, 0, 163)]
+    [InlineData(8, 6, 99)]
+    [InlineData(8, 7, 163)]
+    [InlineData(8, 9, 99)]
+    [InlineData(9, 0, 227)]
+    [InlineData(10, 0, 227)]
+    [InlineData(10, 3, 227)]
+    [InlineData(10, 7, 327)]
+    [InlineData(11, 0, 227)]
+    [InlineData(12, 0, 99)]
+    [InlineData(12, 1, 99)]
     public void Table_ComputeCapability_MatchesThePublishedLimits(
         int major,
         int minor,
-        int sharedKiB,
-        int optInKiB,
-        int granularity)
+        int optInKiB)
     {
         var row = Assert.Single(GpuArchitectureLimits.Table, r => r.Major == major && r.Minor == minor);
 
-        Assert.Equal(sharedKiB * KiB, row.SharedMemoryPerMultiprocessor);
         Assert.Equal(optInKiB * KiB, row.MaxSharedMemoryPerBlockOptIn);
-        Assert.Equal(granularity, row.SharedMemoryAllocationGranularity);
         Assert.Equal(major == 8 && minor == 7, row.IsTegra);
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Table_EveryRow_FitsOneBlockAtTheOptInLimit()
+    public void Table_Rows_AreDistinctAndOldestFirst()
     {
+        // SharedMemoryLimitArchitecture names the first row with the smallest limit, the oldest one
         Assert.Equal(12, GpuArchitectureLimits.Table.Length);
         Assert.Equal(
             GpuArchitectureLimits.Table.OrderBy(r => r.Major).ThenBy(r => r.Minor),
             GpuArchitectureLimits.Table
         );
-        foreach (var row in GpuArchitectureLimits.Table)
-        {
-            // The driver reserves what the opt-in limit leaves of a multiprocessor (1 KB from 8.0 on), so a block at
-            // the opt-in limit still fits on one multiprocessor: a launch within the limit never needs more
-            Assert.Equal(row.SharedMemoryPerMultiprocessor - row.MaxSharedMemoryPerBlockOptIn,
-                row.ReservedSharedMemoryPerBlock);
-            Assert.Equal(row.Major >= 8 ? KiB : 0, row.ReservedSharedMemoryPerBlock);
-            Assert.Equal(1, row.SharedMemoryBudget.ResidentBlocks(row.MaxSharedMemoryPerBlockOptIn));
-        }
+        Assert.Equal(
+            GpuArchitectureLimits.Table.Length,
+            GpuArchitectureLimits.Table.Select(r => (r.Major, r.Minor)).Distinct().Count()
+        );
     }
 
     private static string[] Versions(TargetLimits limits) =>

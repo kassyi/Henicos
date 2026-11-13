@@ -3,15 +3,13 @@ using Kassyi.GSharp.Cuda;
 namespace Kassyi.GSharp.Compiler.Targets;
 
 /// <summary>
-/// The shared memory limits per compute capability, and the limits of the GPUs a <c>GSharpTargetArchitectures</c>
-/// setting may run on.
+/// The shared memory limit per block of each compute capability, and the limit of the GPUs a
+/// <c>GSharpTargetArchitectures</c> setting may run on.
 /// </summary>
 /// <remarks>
-/// The values are those of the CUDA Programming Guide ("Compute Capabilities": technical specifications and shared
-/// memory capacity). The reserved bytes per block are the shared memory per multiprocessor less the opt-in limit per
-/// block, which the driver reports as <c>CU_DEVICE_ATTRIBUTE_RESERVED_SHARED_MEMORY_PER_BLOCK</c> (1 KB from 8.0 on);
-/// the allocation unit is 256 bytes before 8.0 and 128 bytes from 8.0 on. The 12.x column of the guide covers 12.0
-/// and 12.1, the members of the compute_120f family.
+/// The values are those of the CUDA Programming Guide ("Compute Capabilities", the maximum amount of shared memory per
+/// thread block with opt-in). The 12.x column of the guide covers 12.0 and 12.1, the members of the compute_120f
+/// family.
 /// </remarks>
 internal static class GpuArchitectureLimits
 {
@@ -19,18 +17,18 @@ internal static class GpuArchitectureLimits
 
     /// <summary>The compute capabilities whose limits G# knows, oldest first.</summary>
     public static ImmutableArray<GpuArchitecture> Table { get; } = ImmutableArray.Create<GpuArchitecture>(
-        new(7, 5, 64 * KiB, 64 * KiB, 0, 256),
-        new(8, 0, 164 * KiB, 163 * KiB, KiB, 128),
-        new(8, 6, 100 * KiB, 99 * KiB, KiB, 128),
-        new(8, 7, 164 * KiB, 163 * KiB, KiB, 128, IsTegra: true),
-        new(8, 9, 100 * KiB, 99 * KiB, KiB, 128),
-        new(9, 0, 228 * KiB, 227 * KiB, KiB, 128),
-        new(10, 0, 228 * KiB, 227 * KiB, KiB, 128),
-        new(10, 3, 228 * KiB, 227 * KiB, KiB, 128),
-        new(10, 7, 328 * KiB, 327 * KiB, KiB, 128),
-        new(11, 0, 228 * KiB, 227 * KiB, KiB, 128),
-        new(12, 0, 100 * KiB, 99 * KiB, KiB, 128),
-        new(12, 1, 100 * KiB, 99 * KiB, KiB, 128)
+        new(7, 5, 64 * KiB),
+        new(8, 0, 163 * KiB),
+        new(8, 6, 99 * KiB),
+        new(8, 7, 163 * KiB, IsTegra: true),
+        new(8, 9, 99 * KiB),
+        new(9, 0, 227 * KiB),
+        new(10, 0, 227 * KiB),
+        new(10, 3, 227 * KiB),
+        new(10, 7, 327 * KiB),
+        new(11, 0, 227 * KiB),
+        new(12, 0, 99 * KiB),
+        new(12, 1, 99 * KiB)
     );
 
     /// <summary>
@@ -101,7 +99,6 @@ internal static class GpuArchitectureLimits
             return new TargetLimits(
                 ImmutableArray<GpuArchitecture>.Empty.AsEquatableArray(),
                 0,
-                ImmutableArray<SharedMemoryBudget>.Empty.AsEquatableArray(),
                 unknown.AsEquatableArray()
             );
         }
@@ -112,26 +109,7 @@ internal static class GpuArchitectureLimits
                 .AsStackEnumerable()
                 .Select(static row => row.MaxSharedMemoryPerBlockOptIn)
                 .Min(),
-            GetFewestBlockBudgets(rows).AsEquatableArray(),
             unknown.AsEquatableArray()
-        );
-    }
-
-    // The distinct budgets of the rows, without those that another budget never exceeds
-    private static ImmutableArray<SharedMemoryBudget> GetFewestBlockBudgets(ImmutableArray<GpuArchitecture> rows)
-    {
-        var distinct = ImmutableArray.CreateBuilder<SharedMemoryBudget>();
-        rows
-            .AsStackEnumerable()
-            .Select(static row => row.SharedMemoryBudget)
-            .AddIf(distinct, distinct, static (budget, seen) => !seen.Contains(budget));
-        var all = distinct.ToImmutable();
-        return ImmutableArray.Create(all
-            .AsStackEnumerable()
-            .Where(all, static (budget, others) => !others
-                .AsStackEnumerable()
-                .Any(budget, static (other, self) => other != self && other.IsAtMost(self))
-            ).ToArray()
         );
     }
 }
