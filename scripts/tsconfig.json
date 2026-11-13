@@ -1,0 +1,24 @@
+{
+  // The type check of the TypeScript scripts (node scripts/human/check-types.js; CI: script-types.yml). Node runs the
+  // .ts files as they are by stripping the types, so only erasable syntax is allowed and nothing is emitted.
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "types": ["node"],
+    // Installed by check-types.js (no package.json in the repository); an editor finds the Node types there as well
+    "typeRoots": ["../tmp/typecheck/node_modules/@types"]
+  },
+  "include": ["**/*.ts"]
+}
