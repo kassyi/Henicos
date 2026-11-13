@@ -160,29 +160,6 @@ internal static class ArrayNullCheck
     /// <c>^i</c> or a range): a location whose null and bounds check C# makes when it reads or stores the element.
     /// </summary>
     public static bool IsArrayElement(ElementAccessExpressionSyntax node, SemanticModel model) =>
-        IsArrayElementAccess(node, model);
-
-    /// <summary>
-    /// Whether C# checks an element of an array of <paramref name="elementType"/> (null, bounds) when a simple
-    /// assignment stores the value, after the right side, rather than when it names the element.
-    /// </summary>
-    /// <remarks>
-    /// [WHY] G# follows what C# does on the CLR, which the oracle of the differential tests runs. Roslyn stores an
-    /// element of a primitive, an enum or a reference type with <c>stelem</c>, which checks after the right side (as C# spec
-    /// §12.21.2 says), and an element of any other struct through <c>ldelema</c> / <c>stobj</c>, whose <c>ldelema</c>
-    /// checks before the right side. A type parameter is taken as a struct (<c>ldelema</c>).
-    /// </remarks>
-    public static bool ChecksElementAtStore(ITypeSymbol? elementType) =>
-        elementType is { IsReferenceType: true } ||
-        elementType is { TypeKind: TypeKind.Enum } ||
-        elementType?.SpecialType is SpecialType.System_Boolean or SpecialType.System_Char or SpecialType.System_SByte or
-            SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 or
-            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Int64 or
-            SpecialType.System_UInt64 or SpecialType.System_Single or SpecialType.System_Double or
-            SpecialType.System_IntPtr or SpecialType.System_UIntPtr;
-
-    // An element of a one-dimensional C# array at an int-like index
-    private static bool IsArrayElementAccess(ElementAccessExpressionSyntax node, SemanticModel model) =>
         node.ArgumentList.Arguments is [{ RefKindKeyword.RawKind: (int)SyntaxKind.None } argument] &&
         model.GetTypeSymbol(node.Expression) is IArrayTypeSymbol { Rank: 1 } &&
         !IsIndexOrRange(argument.Expression, model);

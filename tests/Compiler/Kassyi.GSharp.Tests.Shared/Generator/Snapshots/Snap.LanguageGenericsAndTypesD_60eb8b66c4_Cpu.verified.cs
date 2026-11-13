@@ -256,9 +256,9 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(647824798u, "LanguageGener
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(165543679u, "LanguageGenericsAndTypesDifferentialKernels.cs", 302, 9, "RefReceiverExtensionMethodKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1885275939u, "LanguageGenericsAndTypesDifferentialKernels.cs", 303, 9, "RefReceiverExtensionMethodKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(806322987u, "LanguageGenericsAndTypesDifferentialKernels.cs", 310, 20, "StaticMethodGroupConversionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(926273311u, "LanguageGenericsAndTypesDifferentialKernels.cs", 316, 9, "StaticMethodGroupConversionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1827355817u, "LanguageGenericsAndTypesDifferentialKernels.cs", 316, 27, "StaticMethodGroupConversionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(113724497u, "LanguageGenericsAndTypesDifferentialKernels.cs", 316, 36, "StaticMethodGroupConversionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(926273311u, "LanguageGenericsAndTypesDifferentialKernels.cs", 316, 9, "StaticMethodGroupConversionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(252158395u, "LanguageGenericsAndTypesDifferentialKernels.cs", 323, 20, "ReducedExtensionMethodGroupKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(638063243u, "LanguageGenericsAndTypesDifferentialKernels.cs", 331, 9, "ReducedExtensionMethodGroupKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1534923783u, "LanguageGenericsAndTypesDifferentialKernels.cs", 338, 20, "ReadonlyPropertyAccessOnInAndFieldKernel", "G#: a null array is read"),
@@ -2451,9 +2451,10 @@ __gsharp_state = -1;return;
 }
 System_Func<int, int, int> __gsharp_id_4_staticFn = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageGenericsAndTypesDifferentialKernels__CombineStaticForDelegate;
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_2_r, __gsharp_id_3_tid, 926273311u);
-int __gsharp_seq_1 = __gsharp_id_4_staticFn(__gsharp_array_at(__gsharp_id_0_xs, __gsharp_id_3_tid, 1827355817u),__gsharp_array_at(__gsharp_id_1_ys, __gsharp_id_3_tid, 113724497u));
-return __gsharp_seq_0 = __gsharp_seq_1;
+auto __gsharp_seq_0 = __gsharp_id_2_r;
+auto __gsharp_seq_1 = __gsharp_id_3_tid;
+int __gsharp_seq_2 = __gsharp_id_4_staticFn(__gsharp_array_at(__gsharp_id_0_xs, __gsharp_id_3_tid, 1827355817u),__gsharp_array_at(__gsharp_id_1_ys, __gsharp_id_3_tid, 113724497u));
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 926273311u) = __gsharp_seq_2;
 }());
 __gsharp_state=-1;
 return;
@@ -2720,9 +2721,10 @@ GSharpArray<int> __gsharp_id_4_receiverArr = __gsharp_id_0_xs;
 System_Func<int, int> __gsharp_id_5_boundExtFn = [__gsharp_id_0_arr = (__gsharp_id_4_receiverArr)](int __gsharp_id_1_index) { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__DiffGenBoxExtensions__AddOffsetFromArray(__gsharp_id_0_arr, __gsharp_id_1_index); };
 __gsharp_id_4_receiverArr=__gsharp_id_1_ys;
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_2_r, __gsharp_id_3_tid, 638063243u);
-int __gsharp_seq_1 = __gsharp_id_5_boundExtFn(__gsharp_id_3_tid);
-return __gsharp_seq_0 = __gsharp_seq_1;
+auto __gsharp_seq_0 = __gsharp_id_2_r;
+auto __gsharp_seq_1 = __gsharp_id_3_tid;
+int __gsharp_seq_2 = __gsharp_id_5_boundExtFn(__gsharp_id_3_tid);
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 638063243u) = __gsharp_seq_2;
 }());
 __gsharp_state=-1;
 return;

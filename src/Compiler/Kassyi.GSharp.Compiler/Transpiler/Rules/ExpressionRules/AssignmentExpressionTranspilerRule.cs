@@ -135,8 +135,8 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         out ExpressionEffects value)
     {
         var model = context.Query.SemanticModel;
-        // A simple assignment checks an array element of a primitive or reference type when it stores the value, after
-        // the right side (ArrayNullCheck.ChecksElementAtStore)
+        // A simple assignment checks an array element when it stores the value, after the right side
+        // (C# spec §12.21.2)
         var target = readsTarget
             ? ExpressionEffects.OfLocation(node.Left, model, readsValue: true)
             : ExpressionEffects.OfAssignmentTarget(node.Left, model);
@@ -149,8 +149,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     private static void TranspileSequencedAssignment(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
         if (node.Left is ElementAccessExpressionSyntax element &&
-            ArrayNullCheck.IsArrayElement(element, context.Query.SemanticModel) &&
-            ArrayNullCheck.ChecksElementAtStore(context.Query.SemanticModel.GetTypeSymbol(element)))
+            ArrayNullCheck.IsArrayElement(element, context.Query.SemanticModel))
         {
             TranspileSequencedElementAssignment(node, element, ref context);
             return;
@@ -168,10 +167,10 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
     // ([&]() { auto __gsharp_seq_0 = <array>; auto __gsharp_seq_1 = <index>; <T> __gsharp_seq_2 = <right>;
     //   return <element __gsharp_seq_1 of __gsharp_seq_0> = __gsharp_seq_2; }())
-    // [WHY] C# evaluates the array and the index, then the right side, and checks an element of a primitive, an enum or
-    // a reference type (stelem) only when it stores the value (ArrayNullCheck.ChecksElementAtStore), so the element is
-    // not bound before the right side; an element of another struct (ldelema) keeps the general form, bound first. A
-    // stack array is bound by reference: a copy of a C array would decay to a pointer
+    // [WHY] C# evaluates the array and the index, then the right side, and checks the element (null, bounds) only when
+    // it stores the value (C# spec §12.21.2; the CLR does so for an element of every type, a struct included), so the
+    // element is not bound before the right side. A stack array is bound by reference: a copy of a C array would
+    // decay to a pointer
     private static void TranspileSequencedElementAssignment(AssignmentExpressionSyntax node,
         ElementAccessExpressionSyntax element, ref TranspileContext context)
     {
@@ -181,7 +180,8 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             reference: StackArrayLocals.IsStackArrayReference(element.Expression, model));
         var index = EvaluationOrder.DeclareTemp(ref context, element.ArgumentList.Arguments[0].Expression,
             reference: false);
-        var value = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false, model.GetTypeSymbol(node.Left));
+        var value = EvaluationOrder.DeclareTemp(ref context, node.Right, reference: false,
+            model.GetTypeSymbol(node.Left));
         sequence.Return();
         ArrayNullCheck.AppendElementOfTemps(element, array, index, ref context);
         context.Emitter.Writer.Append(" = ");

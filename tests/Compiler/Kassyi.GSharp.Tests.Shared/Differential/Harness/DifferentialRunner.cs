@@ -403,24 +403,7 @@ public static class DifferentialRunner
             }
             else
             {
-                var shape = at.Shape;
-                var buffers = at.Initial.Clone();
-                buffers.Shape = shape;
-                ranBuffers = buffers;
-                try
-                {
-                    path.Run(() => testCase.Launch(buffers, shape));
-                    if (path.Path == DiffPath.Cuda && testCase.LaunchPtr is { } launchPtr)
-                    {
-                        var ptrBuffers = at.Initial.Clone();
-                        ptrBuffers.Shape = shape;
-                        path.Run(() => launchPtr(ptrBuffers, shape));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    thrown = ex;
-                }
+                thrown = LaunchExpectingException(testCase, path, at, out ranBuffers);
             }
 
             if (skippedBySampling)
@@ -471,6 +454,37 @@ public static class DifferentialRunner
         }
 
         return launchedSubprocess;
+    }
+
+    // Launches the case on path in this process: the exception it throws, or null, and the buffers it wrote
+    private static Exception? LaunchExpectingException(
+        DifferentialCase testCase,
+        DiffPathRunner path,
+        in ShapeRun at,
+        out DiffBuffers buffers
+    )
+    {
+        var shape = at.Shape;
+        var initial = at.Initial;
+        var launched = initial.Clone();
+        launched.Shape = shape;
+        buffers = launched;
+        try
+        {
+            path.Run(() => testCase.Launch(launched, shape));
+            if (path.Path == DiffPath.Cuda && testCase.LaunchPtr is { } launchPtr)
+            {
+                var ptrBuffers = initial.Clone();
+                ptrBuffers.Shape = shape;
+                path.Run(() => launchPtr(ptrBuffers, shape));
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return ex;
+        }
     }
 
     private static DiffBuffers? RunOracle(

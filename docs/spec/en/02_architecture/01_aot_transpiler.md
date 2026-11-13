@@ -344,14 +344,13 @@ temporaries, up to the last one that interferes:
 auto __gsharp_seq_0 = a;
 auto __gsharp_seq_1 = i;
 int __gsharp_seq_2 = Next(&i);
-return __gsharp_seq_0[__gsharp_seq_1] = __gsharp_seq_2;
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, <site>) = __gsharp_seq_2;
 }());
 ```
 
-The element of a simple assignment is stored through the array and the index in temporaries when C# checks the
-element (null, bounds) as it stores the value, after the right side: an array of a primitive, an enum or a reference
-type, which Roslyn stores with `stelem`. An element of another struct is bound first, as Roslyn's `ldelema` checks it
-before the right side (`ArrayNullCheck.ChecksElementAtStore`).
+The element of a simple assignment is stored through the array and the index in temporaries: C# checks the element
+(null, bounds) when it stores the value, after the right side (C# spec §12.21.2, and the CLR for an element of every
+type, a struct included), so it is not bound before the right side is evaluated.
 
 A check that may throw (`ExpressionTraps`: the null check of an array read, an integer division, a checked operation,
 the value of a `Nullable<T>`, a call) interferes with a write to memory in another operand
@@ -362,8 +361,8 @@ interferes with a read, or with a write to a local, which ends with the thread t
 // Execution Context: Generated C++ (CPU)
 // C#: o[0] = Bump(o) + a.Length;   MSVC would check a before it calls Bump
 ([&]() {
-int __gsharp_seq_0 = Bump(o);
-int __gsharp_seq_1 = __gsharp_array_ref(a, <site>).length;
+auto __gsharp_seq_0 = Bump(o);
+auto __gsharp_seq_1 = __gsharp_array_ref(a, <site>).length;
 return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
 }());
 ```

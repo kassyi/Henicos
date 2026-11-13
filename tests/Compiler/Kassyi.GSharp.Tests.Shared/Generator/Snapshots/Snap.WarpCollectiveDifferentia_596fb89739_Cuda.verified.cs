@@ -290,8 +290,8 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1760570076u, "WarpCollecti
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(857031197u, "WarpCollectiveDifferentialKernels.cs", 127, 17, "VoteInDeviceFunctionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(39492292u, "WarpCollectiveDifferentialKernels.cs", 128, 9, "VoteInDeviceFunctionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1067528036u, "WarpCollectiveDifferentialKernels.cs", 129, 9, "VoteInDeviceFunctionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1551173893u, "WarpCollectiveDifferentialKernels.cs", 139, 13, "GridStrideBallotKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1703544546u, "WarpCollectiveDifferentialKernels.cs", 139, 95, "GridStrideBallotKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1551173893u, "WarpCollectiveDifferentialKernels.cs", 139, 13, "GridStrideBallotKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1669522536u, "WarpCollectiveDifferentialKernels.cs", 149, 9, "BallotCallerOutsideMaskKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1997639228u, "WarpCollectiveDifferentialKernels.cs", 158, 9, "ReduceCallerOutsideMaskKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1954964366u, "WarpCollectiveDifferentialKernels.cs", 189, 60, "GridStrideShuffleWithContextKernel", "G#: a null array is read"),
@@ -859,7 +859,12 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_3_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_i%__gsharp_id_2_totalThreads,2),__gsharp_id_3_i/__gsharp_id_2_totalThreads), 1551173893u)=__ballot_sync(0xFFFFFFFFu,(__gsharp_array_at(__gsharp_id_0_input, __gsharp_id_3_i, 1703544546u)&1)!=0);
+([&]() {
+auto __gsharp_seq_0 = __gsharp_id_1_output;
+auto __gsharp_seq_1 = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_i%__gsharp_id_2_totalThreads,2),__gsharp_id_3_i/__gsharp_id_2_totalThreads);
+unsigned int __gsharp_seq_2 = __ballot_sync(0xFFFFFFFFu,(__gsharp_array_at(__gsharp_id_0_input, __gsharp_id_3_i, 1703544546u)&1)!=0);
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 1551173893u) = __gsharp_seq_2;
+}());
 }
 }
 }

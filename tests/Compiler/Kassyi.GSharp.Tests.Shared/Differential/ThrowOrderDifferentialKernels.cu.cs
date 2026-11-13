@@ -38,8 +38,7 @@ public static class ThrowOrderForms
     public const int ElementThenCompoundCall = 17;
     public const int NullElementThenAssignedCall = 18;
 
-    // --- An element of a struct array: C# on the CLR checks it before the right side (ldelema), also in a simple
-    // assignment ---
+    // --- An element of a struct array: C# on the CLR checks it when it stores, after the right side, as for int ---
     public const int StructElementThenAssignedCall = 19;
     public const int StructReadIndexElementThenAssignedCall = 20;
 

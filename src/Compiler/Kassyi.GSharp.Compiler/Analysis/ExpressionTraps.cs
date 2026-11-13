@@ -41,8 +41,9 @@ internal static class ExpressionTraps
     /// <summary>
     /// Whether evaluating <paramref name="target"/>, the target of a simple assignment, to its location may raise a
     /// run-time error before the right operand is evaluated: the traps of its receiver and index, without the null and
-    /// bounds check of an array element that C# makes when it stores the value
-    /// (<see cref="ArrayNullCheck.ChecksElementAtStore"/>).
+    /// bounds check of an array element, which C# makes when it stores the value (C# spec §12.21.2: the array instance
+    /// and the index are evaluated, then the right operand, then the element is checked). The CLR does the same for an
+    /// element of every type, a struct included (<c>ThrowOrderDifferentialTests</c>).
     /// </summary>
     public static bool MayTrapBeforeStore(ExpressionSyntax target, SemanticModel model)
     {
@@ -56,8 +57,7 @@ internal static class ExpressionTraps
             return MayTrapUnresolved(target, model);
         }
 
-        if (operation is not IArrayElementReferenceOperation element ||
-            !ArrayNullCheck.ChecksElementAtStore(element.Type))
+        if (operation is not IArrayElementReferenceOperation element)
         {
             return MayTrap(operation);
         }
@@ -81,7 +81,8 @@ internal static class ExpressionTraps
     private static bool MayTrap(IOperation operation)
     {
         // A lambda is not evaluated where it is written: creating it raises nothing, its body runs when it is called
-        if (operation is IAnonymousFunctionOperation or IDelegateCreationOperation { Target: IAnonymousFunctionOperation })
+        if (operation is IAnonymousFunctionOperation or
+            IDelegateCreationOperation { Target: IAnonymousFunctionOperation })
         {
             return false;
         }

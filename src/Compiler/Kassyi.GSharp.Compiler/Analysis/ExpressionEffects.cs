@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
-/// What evaluating an expression reads (<see cref="Reads"/>) and writes (<see cref="Writes"/>), and whether it may throw
-/// (<see cref="MayThrow"/>), as far as the order of the operands of an enclosing expression can tell
+/// What evaluating an expression reads (<see cref="Reads"/>) and writes (<see cref="Writes"/>), and whether it may
+/// throw (<see cref="MayThrow"/>), as far as the order of the operands of an enclosing expression can tell
 /// (<see cref="EvaluationOrder"/>).
 /// </summary>
 /// <remarks>
@@ -78,9 +78,8 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
 
     /// <summary>
     /// The effects of evaluating <paramref name="target"/>, the target of a simple assignment, to its location:
-    /// <see cref="OfLocation"/>, except that the null and bounds check of an array element of a primitive or reference
-    /// type is not part of it, since C# makes it when it stores the value, after the right operand
-    /// (<see cref="ExpressionTraps.MayTrapBeforeStore"/>).
+    /// <see cref="OfLocation"/>, except that the null and bounds check of an array element is not part of it, since C#
+    /// makes it when it stores the value, after the right operand (<see cref="ExpressionTraps.MayTrapBeforeStore"/>).
     /// </summary>
     public static ExpressionEffects OfAssignmentTarget(ExpressionSyntax target, SemanticModel model)
     {
@@ -120,7 +119,7 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
         return new ExpressionEffects(walker.Reads, walker.Writes, mayThrow: true);
     }
 
-    /// <summary>What evaluating this and <paramref name="other"/> reads and writes, and whether one may throw.</summary>
+    /// <summary>What evaluating this and <paramref name="other"/> reads and writes, and whether one throws.</summary>
     public ExpressionEffects Union(in ExpressionEffects other) =>
         new(Reads.Union(other.Reads), Writes.Union(other.Writes), MayThrow || other.MayThrow);
 
@@ -132,8 +131,8 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     public bool InterferesWith(in ExpressionEffects later) => DataInterferesWith(later) || ThrowInterferesWith(later);
 
     /// <summary>
-    /// Whether this operand, evaluated before <paramref name="later"/>, writes what it reads or writes, or reads what it
-    /// writes: evaluated in the other order, one of them would see another value.
+    /// Whether this operand, evaluated before <paramref name="later"/>, writes what it reads or writes, or reads what
+    /// it writes: evaluated in the other order, one of them would see another value.
     /// </summary>
     public bool DataInterferesWith(in ExpressionEffects later) =>
         Writes.Overlaps(later.Reads) || Writes.Overlaps(later.Writes) || Reads.Overlaps(later.Writes);

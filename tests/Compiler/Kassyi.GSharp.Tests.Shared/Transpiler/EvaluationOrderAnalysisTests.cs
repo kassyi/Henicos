@@ -114,13 +114,14 @@ public class EvaluationOrderAnalysisTests
         Assert.Equal(-1, EvaluationOrder.LastSpilledOperand(operands));
     }
 
-    // C# on the CLR checks an element of a primitive, an enum or a reference type (stelem) when a simple assignment
-    // stores the value, after the right side; a ref argument or a compound assignment checks it as it names it
+    // C# on the CLR checks an array element of every type, a struct included, when a simple assignment stores the
+    // value, after the right side; a ref argument or a compound assignment checks it as it names it
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("ElementTarget")]
     [InlineData("EnumElementTarget")]
-    public void OfAssignmentTarget_ArrayElementStoredByStelem_LeavesTheElementCheckToTheStore(string method)
+    [InlineData("StructElementTarget")]
+    public void OfAssignmentTarget_ArrayElement_LeavesTheElementCheckToTheStore(string method)
     {
         var (element, model) = GetResult(method);
         var (checkedIndex, checkedModel) = GetResult("ElementTargetWithCheckedIndex");
@@ -128,16 +129,6 @@ public class EvaluationOrderAnalysisTests
         Assert.True(ExpressionEffects.OfLocation(element, model).MayThrow);
         Assert.False(ExpressionEffects.OfAssignmentTarget(element, model).MayThrow);
         Assert.True(ExpressionEffects.OfAssignmentTarget(checkedIndex, checkedModel).MayThrow);
-    }
-
-    // An element of any other struct is stored through ldelema, which checks it before the right side
-    [Fact]
-    [Scenario(TestScenario.Boundary)]
-    public void OfAssignmentTarget_StructElement_ChecksTheElementFirst()
-    {
-        var (element, model) = GetResult("StructElementTarget");
-
-        Assert.True(ExpressionEffects.OfAssignmentTarget(element, model).MayThrow);
     }
 
     [Theory]
