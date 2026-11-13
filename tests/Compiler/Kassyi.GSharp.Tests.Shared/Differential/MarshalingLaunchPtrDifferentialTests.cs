@@ -38,12 +38,8 @@ public sealed class MarshalingLaunchPtrDifferentialTests
                 .In("data", data, OutputPolicy.Exact)
                 .Out<int>("outLen", 1, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            int[] data = b.Get<int>("data");
-            int[] outLen = b.Get<int>("outLen");
-            MarshalingAliasingDifferentialKernels.PtrLengthGuardedScaleKernel(data, 3, outLen);
-        },
+        Oracle = static (b, s) => MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernel(
+            b.Get<int>("data"), 3, b.Get<int>("outLen"), gridDimX: s.GridX, blockDimX: s.BlockX),
         Launch = static (b, s) =>
         {
             int[] data = b.Get<int>("data");
@@ -121,15 +117,7 @@ public sealed class MarshalingLaunchPtrDifferentialTests
                 .In("srcFloat", srcFloat, OutputPolicy.Bitwise, readOnly: true)
                 .Out<float>("dstFloat", OverloadedPtrCount, OutputPolicy.Bitwise);
         },
-        Oracle = static (b, _) =>
-        {
-            int[] srcInt = b.Get<int>("srcInt");
-            int[] dstInt = b.Get<int>("dstInt");
-            float[] srcFloat = b.Get<float>("srcFloat");
-            float[] dstFloat = b.Get<float>("dstFloat");
-            MarshalingAliasingDifferentialKernels.OverloadedPtrKernel(srcInt, dstInt, OverloadedPtrCount);
-            MarshalingAliasingDifferentialKernels.OverloadedPtrKernel(srcFloat, dstFloat, OverloadedPtrCount);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             int[] srcInt = b.Get<int>("srcInt");
@@ -196,13 +184,7 @@ public sealed class MarshalingLaunchPtrDifferentialTests
                     OutputPolicy.ForStruct(Vec2PaddedComparer),
                     Vec2PaddedComparer);
         },
-        Oracle = static (b, _) =>
-        {
-            int[] items = b.Get<int>("items");
-            ref DiffVec2Padded accum = ref b.GetScalarRef<DiffVec2Padded>("accum");
-            MarshalingAliasingDifferentialKernels.PtrConvertStructAndRefKernel(
-                items, ref accum, PtrConvertStructAndRefCount);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             int[] items = b.Get<int>("items");

@@ -32,9 +32,7 @@ public class StructBodyDependencyDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructBodyDependencyDifferentialKernels.StructCreatedOnlyInBodiesKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

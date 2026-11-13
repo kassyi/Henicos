@@ -147,7 +147,7 @@ public class GpuExecutionTests
     [InlineData("Gpu.SyncGrid(body)")]
     [InlineData("Warp.ActiveMask()")]
     [InlineData("SharedMemory<T>")]
-    public void Run_DelegateReachesAnOperationOfOtherThreads_ThrowsInvalidOperationException(string construct)
+    public void Run_DelegateReachesAnOperationOfOtherThreads_ThrowsCSharpExecutionUnsupportedException(string construct)
     {
         Action<long> thread = construct switch
         {
@@ -159,7 +159,7 @@ public class GpuExecutionTests
         };
         var ran = 0;
 
-        var ex = Assert.Throws<InvalidOperationException>(() => CSharpKernelRunner.Run(1, 1, 1, 2, 1, 1, id =>
+        var ex = Assert.Throws<CSharpExecutionUnsupportedException>(() => CSharpKernelRunner.Run(1, 1, 1, 2, 1, 1, id =>
         {
             ran++;
             thread(id);

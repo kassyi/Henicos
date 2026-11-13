@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Kassyi.GSharp.Core;
 using Xunit;
 using static Kassyi.GSharp.Tests.Shared.Differential.DifferentialHarnessFakes;
 
@@ -60,16 +59,12 @@ public class DifferentialExceptionTests
                     r[t] = idx[idx[t]];
                 }
             },
-            Oracle = static (b, _) =>
-            {
-                int t = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-                var idx = b.Get<int>("idx");
-                var r = b.Get<int>("r");
-                if (t < r.Length)
-                {
-                    r[t] = idx[idx[t]];
-                }
-            },
+            Oracle = static (b, s) => HarnessProbeKernels.LaunchDoubleIndexKernel(
+                b.Get<int>("idx"),
+                b.Get<int>("r"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
+            ),
         };
 
         DiffPathRunner[] bothCpuPaths =

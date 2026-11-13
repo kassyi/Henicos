@@ -29,8 +29,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
             .Out<int>("output", 1, OutputPolicy.Ignore),
         // C# does not check the annotation of a parameter: the null reaches the kernel, whose read of it throws
 #pragma warning disable CS8604
-        Oracle = static (b, _) => MarshalingAliasingDifferentialKernels.NonNullableArrayKernel(
-            b.GetNullable<int>("input"), b.Get<int>("output")),
+        OracleIsLaunch = true,
         Launch = static (b, s) => MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
             b.GetNullable<int>("input"), b.Get<int>("output"), gridDimX: s.GridX, blockDimX: s.BlockX),
 #pragma warning restore CS8604
@@ -45,8 +44,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
             .In("input", Array.Empty<int>(), OutputPolicy.Exact)
             // The kernel writes no element of an [Out] array that the launch does not copy in
             .Out<int>("output", 1, OutputPolicy.Ignore),
-        Oracle = static (b, _) => MarshalingAliasingDifferentialKernels.NonNullableArrayKernel(
-            b.Get<int>("input"), b.Get<int>("output")),
+        OracleIsLaunch = true,
         Launch = static (b, s) => MarshalingAliasingDifferentialKernels.LaunchNonNullableArrayKernel(
             b.Get<int>("input"), b.Get<int>("output"), gridDimX: s.GridX, blockDimX: s.BlockX),
     };
@@ -81,11 +79,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
                     bagComparer,
                     readOnly: true)
                 .Out<int>("output", 6, OutputPolicy.Exact),
-            Oracle = static (b, _) => MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel(
-                b.GetNullable<int>("optPrim"),
-                b.GetNullable<DiffDeepBag>("optDeep"),
-                b.Get<int>("output")
-            ),
+            OracleIsLaunch = true,
             Launch = static (b, s) =>
             {
                 int[]? optPrim = b.GetNullable<int>("optPrim");
@@ -162,14 +156,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
                     CloneNullableBag,
                     CompareNullableBag)
                 .Out<int>("output", 5, OutputPolicy.Exact),
-            Oracle = static (b, _) =>
-            {
-                DiffNullableDeepBag bagByVal = b.GetScalar<DiffNullableDeepBag>("bagByVal");
-                ref DiffNullableDeepBag bagByRef = ref b.GetScalarRef<DiffNullableDeepBag>("bagByRef");
-                int[] output = b.Get<int>("output");
-                MarshalingAliasingDifferentialKernels.StructFieldNullOrEmptySafeKernel(
-                    bagByVal, ref bagByRef, output);
-            },
+            OracleIsLaunch = true,
             Launch = static (b, s) =>
             {
                 DiffNullableDeepBag bagByVal = b.GetScalar<DiffNullableDeepBag>("bagByVal");

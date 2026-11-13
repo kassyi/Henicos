@@ -61,13 +61,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<double>("rd"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => AssignmentFormsDifferentialKernels.FloatRemainderKernel(
-            b.Get<float>("a"),
-            b.Get<float>("b"),
-            b.Get<double>("c"),
-            b.Get<double>("d"),
-            b.Get<float>("rf"),
-            b.Get<double>("rd")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullableConversion = new(
@@ -98,11 +92,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<int>("dst"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => AssignmentFormsDifferentialKernels.NullableConversionKernel(
-            b.Get<int>("has"),
-            b.Get<int>("values"),
-            b.Get<float>("fvalues"),
-            b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullArray = new(
@@ -128,10 +118,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => AssignmentFormsDifferentialKernels.NullArrayKernel(
-            b.Get<int>("has"),
-            b.Get<int>("a"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_discard = new(
@@ -152,10 +139,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => AssignmentFormsDifferentialKernels.DiscardKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_computedProperty = new(
@@ -182,12 +166,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<float>("rf"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => AssignmentFormsDifferentialKernels.ComputedPropertyKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<float>("f"),
-            b.Get<int>("r"),
-            b.Get<float>("rf")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_deconstruction = new(
@@ -202,9 +181,7 @@ public class AssignmentFormsDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => AssignmentFormsDifferentialKernels.DeconstructionShapesKernel(
-            b.Get<int>("values"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

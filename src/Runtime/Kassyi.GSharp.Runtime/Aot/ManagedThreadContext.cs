@@ -2,8 +2,9 @@ namespace Kassyi.GSharp.Runtime.Aot;
 
 /// <summary>
 /// The thread context of the managed path (<see cref="ManagedGpuContext"/>), which only Core, the runtime and the code
-/// G# generates set. The test assemblies reach it here, through the runtime's InternalsVisibleTo: the differential
-/// oracles and the Core tests set the context of a GPU thread themselves.
+/// G# generates set. The tests of the managed runtime reach it here, through the runtime's InternalsVisibleTo: they
+/// call its primitives (shared memory, warp exchange, barriers) directly, with the context of one GPU thread set. Tests
+/// that run a kernel as C# use its launcher under <see cref="KernelExecution.CSharp"/> instead.
 /// </summary>
 internal static class ManagedThreadContext
 {
