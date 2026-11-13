@@ -100,29 +100,31 @@ internal static class ManagedStateMachineEmitter
         ImmutableArray<IParameterSymbol> copiedParameters,
         IReadOnlyList<InvocationExpressionSyntax> callSites,
         SemanticModel semanticModel,
-        string accessibility = "public",
-        string memberAccessibility = "public",
+        Accessibility accessibility,
+        Accessibility memberAccessibility,
         bool isUnsafe = false,
         int warpSiteCount = 0)
     {
         writer.AppendLine(EditorBrowsableNever);
         var typeKeyword = isUnsafe ? "unsafe struct" : "class";
         var warpFrame = warpSiteCount > 0 ? $" : {ManagedWarpFrameInterface}" : "";
-        using (writer.Scope($"{accessibility} {typeKeyword} {contextName}{warpFrame} {{"))
+        var members = GeneratedMemberAccessibility.ToKeyword(memberAccessibility);
+        var type = GeneratedMemberAccessibility.ToKeyword(accessibility);
+        using (writer.Scope($"{type} {typeKeyword} {contextName}{warpFrame} {{"))
         {
-            writer.AppendLine($"{memberAccessibility} int {GSharpInternalNames.StateMachine.State};");
-            writer.AppendLine($"{memberAccessibility} uint {GSharpInternalNames.StateMachine.WarpPath};");
+            writer.AppendLine($"{members} int {GSharpInternalNames.StateMachine.State};");
+            writer.AppendLine($"{members} uint {GSharpInternalNames.StateMachine.WarpPath};");
 
             foreach (var parameter in copiedParameters)
             {
-                writer.Append($"{memberAccessibility} ");
+                writer.Append($"{members} ");
                 writer.AppendCsharpTypeName(parameter.Type);
                 writer.AppendLine($" {parameter.Name.ToCSharpIdentifier()};");
             }
 
             foreach (var field in regularFields)
             {
-                writer.Append($"{memberAccessibility} ");
+                writer.Append($"{members} ");
                 AppendFieldType(writer, field);
                 writer.AppendLine($" {field.Name};");
             }
@@ -140,7 +142,7 @@ internal static class ManagedStateMachineEmitter
                     : $" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
             }
 
-            EmitWarpFrameMembers(writer, memberAccessibility, isUnsafe, warpSiteCount);
+            EmitWarpFrameMembers(writer, members, isUnsafe, warpSiteCount);
             EmitWarpPathNumbering(writer, callSites.Count);
         }
 
@@ -210,7 +212,7 @@ internal static class ManagedStateMachineEmitter
         ImmutableArray<IParameterSymbol> copiedParameters,
         ImmutableArray<ManagedContextField> localInits,
         string bodySource,
-        string accessibility,
+        Accessibility accessibility,
         bool isUnsafe)
     {
         // An unsafe frame is taken by pointer (ManagedPointerWarning.PinnedContext)
@@ -218,7 +220,7 @@ internal static class ManagedStateMachineEmitter
         {
             writer.AppendLine(EditorBrowsableNever);
             AppendDeviceStateMachineSignature(writer, frameName, stateMachineName, methodSymbol, copiedParameters,
-                accessibility, isUnsafe);
+                GeneratedMemberAccessibility.ToKeyword(accessibility), isUnsafe);
             using (writer.Scope(" {"))
             {
                 foreach (var localInit in localInits)
@@ -327,7 +329,7 @@ internal static class ManagedStateMachineEmitter
         ImmutableArray<IParameterSymbol> copiedParameters,
         ImmutableArray<ManagedContextField> localInits,
         string bodySource,
-        string accessibility = "public",
+        Accessibility accessibility,
         bool isUnsafe = false)
     {
         // An unsafe context is taken by pointer (ManagedPointerWarning.PinnedContext)
@@ -335,7 +337,7 @@ internal static class ManagedStateMachineEmitter
             writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe);
         writer.AppendLine(EditorBrowsableNever);
         EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters,
-            accessibility, isUnsafe);
+            GeneratedMemberAccessibility.ToKeyword(accessibility), isUnsafe);
         using (writer.Scope(" {"))
         {
             foreach (var localInit in localInits)

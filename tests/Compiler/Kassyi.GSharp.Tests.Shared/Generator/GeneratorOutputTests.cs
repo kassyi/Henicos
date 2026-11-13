@@ -157,6 +157,13 @@ public class GeneratorOutputTests
             GetSource(result, "InternalStructKernels.g.cs"), StringComparison.Ordinal);
         Assert.Contains("private static unsafe void LaunchCopyKernel(",
             GetSource(result, "OuterHost__Kernels.g.cs"), StringComparison.Ordinal);
+        if (dialect == "Cuda")
+        {
+            var mixed = GetSource(result, "Mixed2.g.cs");
+            Assert.Contains("private static unsafe void LaunchPubKPtr(global::Kassyi.GSharp.Runtime.GpuBuffer<", mixed,
+                StringComparison.Ordinal);
+        }
+
         var open = GetSource(result, "OpenKernels.g.cs");
         Assert.Contains("public static unsafe void LaunchOpenKernel(", open, StringComparison.Ordinal);
         Assert.Contains("public static partial class AotContexts", open, StringComparison.Ordinal);

@@ -85,3 +85,38 @@ public static partial class OpenKernels
     [SkipSnapshotConsistency("Generator case")]
     public static void OpenKernel(Open open) => open.Values[ThreadIndex.X] = 1;
 }
+
+// A private struct narrows the AotContexts class, so the typed pointer launchers of an overloaded kernel, which take
+// GpuBuffer<AotContexts.PubR>, are narrowed with it
+public struct PubR
+{
+    public int A;
+}
+
+public static partial class Mixed2
+{
+    private struct PrivS
+    {
+        public int[] V;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Generator case")]
+    private static void PrivK(PrivS s) => s.V[ThreadIndex.X] = 2;
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Generator case")]
+    public static void PubK(ref PubR r) => r.A += 1;
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Generator case")]
+    public static void PubK(ref PubR r, int x) => r.A += x;
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Generator case")]
+    public static void ArrayK(PubR[] a) => a[ThreadIndex.X].A = 1;
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Generator case")]
+    public static void ArrayK(PubR[] a, int x) => a[ThreadIndex.X].A = x;
+}

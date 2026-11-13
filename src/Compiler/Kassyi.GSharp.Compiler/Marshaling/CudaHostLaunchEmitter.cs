@@ -7,24 +7,25 @@ internal static class CudaHostLaunchEmitter
 {
 
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
-    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName,
-        bool isCheckedBuild = false)
+    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel,
+        LauncherAccessibilities accessibilities, string moduleName, bool isCheckedBuild)
     {
         WriteFunctionField(writer, kernel, moduleName);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
         WriteWarmupFunctionPointerMethod(writer, kernel);
-        WriteLaunchMethod(writer, kernel, false, isCheckedBuild);
-        WriteLaunchMethod(writer, kernel, true, isCheckedBuild);
+        WriteLaunchMethod(writer, kernel, false, accessibilities.Launcher, isCheckedBuild);
+        WriteLaunchMethod(writer, kernel, true, accessibilities.Pointer, isCheckedBuild);
         if (kernel.IsOverloaded)
         {
-            WriteTypedPointerLaunchMethod(writer, kernel);
+            WriteTypedPointerLaunchMethod(writer, kernel, accessibilities.TypedPointer);
         }
     }
 
-    private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr, bool isCheckedBuild)
+    private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr,
+        Accessibility accessibility, bool isCheckedBuild)
     {
         using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.Description);
-        WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, isDevicePtr);
+        WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, isDevicePtr, accessibility);
         using (writer.Scope())
         {
             if (!isDevicePtr)
@@ -71,10 +72,11 @@ internal static class CudaHostLaunchEmitter
     // The Launch{Name}Ptr of an overloaded kernel: device pointers are typed GpuBuffer<T>, so C# selects the
     // overload, and the wrapper forwards them to the private implementation: an array as GSharpArrayProxy with the
     // buffer's length, a ref / out parameter as its device pointer.
-    private static void WriteTypedPointerLaunchMethod(SourceWriter writer, in KernelEmission kernel)
+    private static void WriteTypedPointerLaunchMethod(SourceWriter writer, in KernelEmission kernel,
+        Accessibility accessibility)
     {
         writer.AppendGeneratedCodeAttributes();
-        writer.Append($"{GeneratedMemberAccessibility.ToKeyword(kernel.PointerLauncherAccessibility)} static unsafe ");
+        writer.Append($"{GeneratedMemberAccessibility.ToKeyword(accessibility)} static unsafe ");
         WrapperEmitter.WriteLaunchReturnType(writer, kernel.Host);
         writer.Append(KernelHostNames.GetTypedPointerLaunchName(kernel.Host));
         using (writer.Parentheses())
