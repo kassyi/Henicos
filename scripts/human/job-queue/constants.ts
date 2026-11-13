@@ -32,6 +32,8 @@ export const DefaultPolicy: Policy = "hrrn";
 
 // the typical run time of a command with no recorded run, for its response ratio
 export const UnknownTypicalMs = 60 * 1000;
+// hrrn: a job that has waited longer than this, and longer than its typical run time, goes ahead of the others
+export const OverdueMs = 10 * 60 * 1000;
 export const HistoryRunsPerCommand = 9;
 export const HistoryCommands = 500;
 export const RegrantMs = 5 * 1000; // how often the scheduler re-orders and grants while jobs wait

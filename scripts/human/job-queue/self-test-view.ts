@@ -6,6 +6,7 @@ import type { StatusJob, StatusReply } from "./protocol.ts";
 import {
   displayWidth,
   fit,
+  helpLines,
   initialViewState,
   renderScreen,
   screenJobs,
@@ -262,8 +263,14 @@ function checkKeys(): void {
   assert.strictEqual(state.prompt, null);
   assert.match(state.message?.text ?? "", /#812 already runs/);
 
-  assert.strictEqual(press("?").state.help, true);
-  assert.strictEqual(press("\x1b").state.help, false);
+  // ? pages through the help (two pages on a narrow screen) and closes it after the last one; Esc closes it at once
+  assert.strictEqual(press("?").state.help, 1);
+  assert.strictEqual(press("?").state.help, 2);
+  assert.strictEqual(press("?").state.help, 0);
+  assert.strictEqual(reduceKey({ ...state, helpPages: 1 }, "?", null, Now).state.help, 1);
+  assert.strictEqual(reduceKey({ ...state, help: 1, helpPages: 1 }, "?", null, Now).state.help, 0);
+  press("?");
+  assert.strictEqual(press("\x1b").state.help, 0);
   assert.strictEqual(state.selectedId, 812, "Esc closes the help first and keeps the selection");
   assert.strictEqual(press("q").action, "quit");
   assert.strictEqual(press("\x03").action, "quit");
@@ -388,7 +395,55 @@ function checkStartKey(): void {
   );
 }
 
+/** The help: keys and legend side by side when they fit, else one per page; the samples in their screen colors. */
+function checkHelp(): void {
+  const plainText = (lines: { text: string }[]): string[] => lines.map((line) => line.text);
+  const wide = plainText(helpLines(100));
+  assert.match(wide[0] ?? "", /^ Keys +Timeline/, "both columns on one screen");
+  assert.ok(
+    wide.some((line) => /^ c +cancel it \(y\/n\) +█ +past its usual run time/.test(line)),
+    wide.join("\n"),
+  );
+  assert.ok(
+    wide.some((line) => /CPU full +every slot in use/.test(line)),
+    "the wait reasons are listed",
+  );
+  wide.forEach((line) => assert.ok(displayWidth(line) <= 100, `fits 100 columns: ${line}`));
+  const narrow = plainText(helpLines(70));
+  const blank = narrow.findIndex((line) => line.trim() === "");
+  assert.ok(blank > 0 && narrow.slice(0, blank).some((line) => /^ q +quit/.test(line)), "the keys first");
+  assert.match(narrow[blank + 1] ?? "", /^ Timeline/, "then the legend");
+  narrow.forEach((line) => assert.ok(displayWidth(line) <= 70, `fits 70 columns: ${line}`));
+  // At 70x13 the help takes the 9 job rows a page at a time; ? turns the page, the rule says which one
+  const reply = sampleReply();
+  const small = { columns: 70, rows: 13, now: Now };
+  const state = { ...initialViewState(), help: 1 };
+  const first = plain(renderScreen(reply, state, small, false));
+  assert.strictEqual(state.helpPages, Math.ceil(narrow.length / 9));
+  assert.match(first[11] ?? "", /── help 1\/\d, \? next/);
+  const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false));
+  assert.ok(
+    last.some((line) => /after #n +until job n has ended/.test(line)),
+    "the last page ends the legend",
+  );
+  const colored = helpLines(100).map((line) => line.render(true));
+  assert.ok(
+    colored.some((line) => line.includes("\x1b[31m█\x1b[0m")),
+    "the late sample is red, as on the timeline",
+  );
+  assert.ok(
+    colored.some((line) => line.includes("\x1b[32m█\x1b[0m")),
+    "the run sample is green",
+  );
+  assert.ok(
+    colored.some((line) => line.includes("\x1b[33mCPU full")),
+    "a wait reason in its warning color",
+  );
+  assert.ok(colored[1]?.includes("\x1b[1m ↑↓ j k"), "the keys are bold");
+}
+
 export function checkView(): void {
+  checkHelp();
   checkStartKey();
   checkPieces();
   checkLayout();
