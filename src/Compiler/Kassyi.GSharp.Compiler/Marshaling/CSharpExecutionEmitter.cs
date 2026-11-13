@@ -36,14 +36,12 @@ internal static class CSharpExecutionEmitter
 
             WriteCopies(writer, plan);
             WritePinnedRun(writer, plan);
-            WriteCopiesBack(writer, plan);
             writer.AppendLine(plan.ReturnsValue ? $"return {AutoResult};" : "return;");
         }
     }
 
     // [<return type>[] __gsharp_csharp_result = __gsharp_auto_result;]
-    // <type> __gsharp_csharp_arg_<n> = <parameter>;   (value, in, ref)
-    // <type> __gsharp_csharp_arg_<n> = default;       (out)
+    // <type> __gsharp_csharp_arg_<n> = <parameter>;   (value, in)
     // [WHY] The lambda captures only locals of the branch: a captured local of the whole launcher (the auto result)
     // would make C# allocate the closure when the launcher starts, on every path
     private static void WriteCopies(SourceWriter writer, in CSharpExecutionPlan plan)
@@ -51,26 +49,16 @@ internal static class CSharpExecutionEmitter
         writer.AppendLineIf(plan.ReturnsValue, $"{plan.ReturnTypeName}[] {Result} = {AutoResult};");
         foreach (var argument in plan.Arguments)
         {
-            if (!IsSpan(argument))
+            if (!IsPinned(argument))
             {
-                var value = argument.Kind == CSharpArgumentKind.Out ? "default" : argument.Identifier;
-                writer.AppendLine($"{argument.TypeName} {argument.Local} = {value};");
+                writer.AppendLine($"{argument.TypeName} {argument.Local} = {argument.Identifier};");
             }
         }
     }
 
-    // <parameter> = __gsharp_csharp_arg_<n>;   (ref, out)
-    private static void WriteCopiesBack(SourceWriter writer, in CSharpExecutionPlan plan)
-    {
-        foreach (var argument in plan.Arguments)
-        {
-            writer.AppendLineIf(argument.Kind is CSharpArgumentKind.Ref or CSharpArgumentKind.Out,
-                $"{argument.Identifier} = {argument.Local};");
-        }
-    }
-
-    // fixed (<element>* __gsharp_csharp_pin_<n> = &ArrayPinning.GetPinnableReference(<span>)) ... {
-    //   <element>* __gsharp_csharp_arg_<n> = <pin>; int __gsharp_csharp_len_<n> = <span>.Length; ... <run> }
+    // fixed (<element>* __gsharp_csharp_pin_<n> = &ArrayPinning.GetPinnableReference(<span>)) ...
+    // fixed (<type>* __gsharp_csharp_pin_<n> = &<ref or out parameter>) ... {
+    //   <element>* __gsharp_csharp_arg_<n> = <pin>; [int __gsharp_csharp_len_<n> = <span>.Length;] ... <run> }
     // [WHY] A lambda can capture neither a span nor a fixed local; it captures a copy of the pointer, which stays valid
     // while the caller waits in the fixed statement for the run to end. The pinned reference is null only for a span
     // over no array, so a span over an empty array stays one (fixed (T* p = <span>) would make it default)
@@ -85,16 +73,21 @@ internal static class CSharpExecutionEmitter
                 writer.AppendLine($"&{HostTypeNames.ArrayPinning}.GetPinnableReference({argument.Identifier}))");
                 pins++;
             }
+            else if (IsPinned(argument))
+            {
+                writer.AppendLine($"fixed ({argument.TypeName}* {argument.Pinned} = &{argument.Identifier})");
+                pins++;
+            }
         }
 
         using (pins > 0 ? writer.Scope() : default)
         {
             foreach (var argument in plan.Arguments)
             {
-                if (IsSpan(argument))
+                if (IsPinned(argument))
                 {
                     writer.AppendLine($"{argument.TypeName}* {argument.Local} = {argument.Pinned};");
-                    writer.AppendLine($"int {argument.Length} = {argument.Identifier}.Length;");
+                    writer.AppendLineIf(IsSpan(argument), $"int {argument.Length} = {argument.Identifier}.Length;");
                 }
             }
 
@@ -129,10 +122,10 @@ internal static class CSharpExecutionEmitter
                 writer.Append($"in {argument.Local}");
                 break;
             case CSharpArgumentKind.Ref:
-                writer.Append($"ref {argument.Local}");
+                writer.Append($"ref *{argument.Local}");
                 break;
             case CSharpArgumentKind.Out:
-                writer.Append($"out {argument.Local}");
+                writer.Append($"out *{argument.Local}");
                 break;
             // [WHY] Not the pointer constructor of Span, which rejects an element type that holds references; the
             // fixed statement keeps the elements in place while the run uses the span
@@ -147,6 +140,11 @@ internal static class CSharpExecutionEmitter
                 break;
         }
     }
+
+    // [WHY] A ref or out argument is passed through the pinned caller's variable, never a copy: two parameters that
+    // receive one variable, or a ref to an element of an array argument, are one memory in C# (#1061)
+    private static bool IsPinned(in CSharpArgument argument) =>
+        IsSpan(argument) || argument.Kind is CSharpArgumentKind.Ref or CSharpArgumentKind.Out;
 
     private static bool IsSpan(in CSharpArgument argument) =>
         argument.Kind is CSharpArgumentKind.Span or CSharpArgumentKind.ReadOnlySpan;

@@ -8,6 +8,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class CpuArrayCopyEmitter
 {
     private const string ReferenceEqualsMethod = ArraySharingPlan.ReferenceEqualsMethod;
+    private const string ArrayCopies = GSharpInternalNames.Launcher.ArrayCopies;
 
     // if (<name> != null) {                                          (if (<length> > 0) for a span-like value)
     //   <name> = (<array type>)<name>.Clone();                         (<span>.ToArray() for the other containers)
@@ -21,29 +22,83 @@ internal static class CpuArrayCopyEmitter
     /// <summary>Emits the copy of every argument that <see cref="ArraySharingPlan.NeedsKernelCopy"/>.</summary>
     public static void WriteKernelCopies(SourceWriter writer, in ArraySharingPlan plan)
     {
+        WriteCopyTable(writer, plan);
         for (var i = 0; i < plan.Parameters.Length; i++)
         {
-            if (!plan.NeedsKernelCopy(i))
-            {
-                continue;
-            }
-
             var shape = plan.Parameters[i];
 
             // <type> __gsharp_source_<ord> = <name>;          (an [In] T[] that a later [In] T[] may hold as well)
             writer.AppendLineIf(plan.KeepsSource(i),
                 $"{shape.TypeName} {KernelHostNames.GetLocal(LauncherLocal.CopySource, shape)} = {shape.Identifier};");
 
-            // if (<name> != null) for an array, if (<length> > 0) for a span-like value: a null array has nothing to
-            // copy, and a copy of an empty span-like value would be one over an array where the argument may have none
-            writer.AppendLine(shape.Container == ArrayContainerKind.Array
-                ? $"if ({shape.Identifier} != null)"
-                : $"if ({shape.LengthExpression} > 0)");
-            using (writer.Scope())
+            using (WriteGroupMemberBranch(writer, plan, i))
             {
-                WriteKernelCopyOrShare(writer, plan, i);
+                if (!plan.NeedsKernelCopy(i))
+                {
+                    continue;
+                }
+
+                // if (<name> != null) for an array, if (<length> > 0) for a span-like value: a null array has nothing
+                // to copy, and a copy of an empty span-like value would be one over an array where the argument may
+                // have none
+                writer.AppendLine(shape.Container == ArrayContainerKind.Array
+                    ? $"if ({shape.Identifier} != null)"
+                    : $"if ({shape.LengthExpression} > 0)");
+                using (writer.Scope())
+                {
+                    WriteKernelCopyOrShare(writer, plan, i);
+                }
             }
         }
+    }
+
+    // HostArrayCopies __gsharp_array_copies = new(); __gsharp_array_copies.Keep(<writable T[]>); ...
+    // [WHY] The kernel gets a writable array argument itself; an element field of an [In] container that holds the same
+    // array must see the kernel's writes to it, as the shared device region shows them on CUDA (#985)
+    private static void WriteCopyTable(SourceWriter writer, in ArraySharingPlan plan)
+    {
+        if (!plan.UsesCopyTable)
+        {
+            return;
+        }
+
+        writer.AppendLine($"{StructArrayHelperEmitter.HostArrayCopiesType} {ArrayCopies} = new();");
+        for (var i = 0; i < plan.Parameters.Length; i++)
+        {
+            var shape = plan.Parameters[i];
+            writer.AppendLineIf(shape.IsSharableArray && !plan.NeedsKernelCopy(i),
+                $"{ArrayCopies}.Keep({shape.Identifier});");
+        }
+    }
+
+    // if (__gsharp_aliases?.IsMember(<k>) == true) { <the group's copy, or the caller's memory> }
+    // else { <the copy of an [In] argument> }
+    // (returns the else scope, or an empty scope when the argument is no member)
+    // [WHY] An argument that overlaps another one (a slice, a span over the same array) follows its group
+    // (AliasGroupEmitter): the [In] members of a group of [In] arguments share one copy, the members of any other group
+    // pass the caller's memory, as the device sees one region for them. A writable member always passes the caller's
+    // memory, so it gets no branch
+    private static SourceWriterScope WriteGroupMemberBranch(SourceWriter writer, in ArraySharingPlan plan, int index)
+    {
+        if (!plan.Parameters[index].IsArray || !plan.Aliases.MayTakeGroupCopy(index) ||
+            AliasGroupEmitter.MemberTest(plan.Aliases, index) is not { } member)
+        {
+            return default;
+        }
+
+        writer.AppendLine($"if ({member})");
+        using (writer.Scope())
+        {
+            AliasGroupEmitter.WriteCpuMemberCopy(writer, plan, index);
+        }
+
+        if (!plan.NeedsKernelCopy(index))
+        {
+            return default;
+        }
+
+        writer.AppendLine("else");
+        return writer.Scope();
     }
 
     // <reuse of an earlier [In] copy> <guard against the holders that share the array with the kernel> { <copy> }
@@ -56,7 +111,7 @@ internal static class CpuArrayCopyEmitter
         var shape = plan.Parameters[index];
         if (!shape.IsSharableArray)
         {
-            WriteKernelCopy(writer, shape);
+            WriteKernelCopy(writer, plan, shape);
             return;
         }
 
@@ -64,14 +119,14 @@ internal static class CpuArrayCopyEmitter
         var guarded = TryWriteSharingHolderGuard(writer, plan, index, hasCondition);
         if (!guarded && !hasCondition)
         {
-            WriteKernelCopy(writer, shape);
+            WriteKernelCopy(writer, plan, shape);
             return;
         }
 
         writer.AppendLineIf(!guarded, "else");
         using (writer.Scope())
         {
-            WriteKernelCopy(writer, shape);
+            WriteKernelCopy(writer, plan, shape);
         }
     }
 
@@ -152,11 +207,22 @@ internal static class CpuArrayCopyEmitter
         return true;
     }
 
-    private static void WriteKernelCopy(SourceWriter writer, in KernelParameterShape shape)
+    // [WHY] With the launch's HostArrayCopies (ArraySharingPlan.UsesCopyTable), a T[] is copied through the table, so
+    // that every holder of one array, an element's field included, gets one copy, and an array that a writable argument
+    // holds gets none (#985)
+    private static void WriteKernelCopy(SourceWriter writer, in ArraySharingPlan plan, in KernelParameterShape shape)
     {
+        var throughTable = plan.UsesCopyTable && shape.Container == ArrayContainerKind.Array;
+
         // A read-only container (ImmutableArray among them) is copied only for elements that hold arrays
         if (shape.Cpu.ConvertedElementCopyArraysMethodName is not { } copyArrays)
         {
+            if (throughTable)
+            {
+                writer.AppendLine($"_ = {ArrayCopies}.Copy(ref {shape.Identifier});");
+                return;
+            }
+
             writer.Append($"{shape.Identifier} = ");
             WriteElementsCopy(writer, shape);
             writer.AppendLine(";");
@@ -166,12 +232,24 @@ internal static class CpuArrayCopyEmitter
         var copy = KernelHostNames.GetLocal(LauncherLocal.CopyBuffer, shape);
         var copyIndex = KernelHostNames.GetLocal(LauncherLocal.CopyIndex, shape);
         writer.Append($"{ConvertedArrayEmitter.GetElementTypeName(shape)}[] {copy} = ");
-        WriteElementsCopy(writer, shape);
-        writer.AppendLine(";");
-        writer.AppendLine($"for (int {copyIndex} = 0; {copyIndex} < {copy}.Length; {copyIndex}++)");
-        using (writer.Scope())
+        if (throughTable)
         {
-            writer.AppendLine($"{copyArrays}(ref {copy}[{copyIndex}]);");
+            writer.AppendLine($"{shape.Identifier};");
+            writer.AppendLine($"if ({ArrayCopies}.Copy(ref {copy}))");
+        }
+        else
+        {
+            WriteElementsCopy(writer, shape);
+            writer.AppendLine(";");
+        }
+
+        using (throughTable ? writer.Scope() : default)
+        {
+            writer.AppendLine($"for (int {copyIndex} = 0; {copyIndex} < {copy}.Length; {copyIndex}++)");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"{copyArrays}(ref {copy}[{copyIndex}], {ArrayCopies});");
+            }
         }
 
         writer.AppendLine(shape.Container == ArrayContainerKind.ImmutableArray

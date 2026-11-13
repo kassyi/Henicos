@@ -202,6 +202,16 @@ Launcher:
     CudaContextScope: __gsharp_cuda_context_scope
     # The CUDA launcher's DeviceArrayRegions: one device region per host array that its struct arguments hold (#707)
     DeviceArrays: __gsharp_device_arrays
+    # The arguments of a launch that overlap (HostAliasGroups, #857): the groups, the pinned address, byte length and
+    # element size of each compared argument, and the pinned pointer of each, followed by the parameter ordinal; on the
+    # CPU, the copy that the [In] members of a group share and the element index of a member in it
+    Aliases: __gsharp_aliases
+    AliasRanges: __gsharp_alias_ranges
+    AliasPinPrefix: __gsharp_alias_pin_
+    AliasCopyPrefix: __gsharp_alias_copy_
+    AliasStartPrefix: __gsharp_alias_start_
+    # The CPU launcher's HostArrayCopies: one copy per host array that the kernel gets instead of the caller's (#985)
+    ArrayCopies: __gsharp_array_copies
     GridDimX: __gsharp_grid_dim_x
     GridDimY: __gsharp_grid_dim_y
     GridDimZ: __gsharp_grid_dim_z

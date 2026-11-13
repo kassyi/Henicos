@@ -35,7 +35,11 @@ internal static class CpuHostLaunchEmitter
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));
             var sharing = ArraySharingPlan.ForCpu(kernel.Host);
-            CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
+            using (AliasGroupEmitter.WriteCpuGroups(writer, sharing))
+            {
+                CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
+            }
+
             WriteDllPath(writer, moduleName);
             ManagedFallbackEmitter.WriteManagedExecutionFallback(writer, kernel.Host);
 

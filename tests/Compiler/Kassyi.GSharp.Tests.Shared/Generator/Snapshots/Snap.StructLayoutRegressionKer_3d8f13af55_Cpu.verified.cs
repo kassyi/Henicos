@@ -213,12 +213,9 @@ public static unsafe void Unmarshal_LayoutReproBag(ref global::Kassyi.GSharp.Tes
 {
 host.N = native.N;
 }
-public static void CopyArrays_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host)
+public static void CopyArrays_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Data != null)
-{
-host.Data = (global::System.Int32[])host.Data.Clone();
-}
+_ = copies.Copy(ref host.Data);
 }
 public static bool HoldsArray_LayoutReproBag(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, object array)
 {
@@ -279,14 +276,13 @@ Unmarshal_LayoutReproInnerBag(ref host.Elems[i], ref shadow[i], hStream);
 }
 }
 }
-public static void CopyArrays_LayoutReproElemHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host)
+public static void CopyArrays_LayoutReproElemHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Elems != null)
+if (copies.Copy(ref host.Elems))
 {
-host.Elems = (global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag[])host.Elems.Clone();
 for (int i = 0; i < host.Elems.Length; i++)
 {
-CopyArrays_LayoutReproInnerBag(ref host.Elems[i]);
+CopyArrays_LayoutReproInnerBag(ref host.Elems[i], copies);
 }
 }
 }
@@ -336,12 +332,9 @@ public static unsafe void Unmarshal_LayoutReproInnerBag(ref global::Kassyi.GShar
 {
 host.Tag = native.Tag;
 }
-public static void CopyArrays_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host)
+public static void CopyArrays_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Items != null)
-{
-host.Items = (global::System.Int32[])host.Items.Clone();
-}
+_ = copies.Copy(ref host.Items);
 }
 public static bool HoldsArray_LayoutReproInnerBag(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, object array)
 {
@@ -395,16 +388,10 @@ native.B.Length = host.B.Length;
 public static unsafe void Unmarshal_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, ref AotContexts.LayoutReproPair native, global::System.IntPtr hStream = default)
 {
 }
-public static void CopyArrays_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host)
+public static void CopyArrays_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.A != null)
-{
-host.A = (global::System.Int32[])host.A.Clone();
-}
-if (host.B != null)
-{
-host.B = (global::System.Int32[])host.B.Clone();
-}
+_ = copies.Copy(ref host.A);
+_ = copies.Copy(ref host.B);
 }
 public static bool HoldsArray_LayoutReproPair(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, object array)
 {
@@ -606,9 +593,9 @@ public static unsafe void Unmarshal_LayoutReproArrOuter(ref global::Kassyi.GShar
 {
 Unmarshal_LayoutReproArrPair(ref host.P, ref native.P, hStream);
 }
-public static void CopyArrays_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host)
+public static void CopyArrays_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-CopyArrays_LayoutReproArrPair(ref host.P);
+CopyArrays_LayoutReproArrPair(ref host.P, copies);
 }
 public static bool HoldsArray_LayoutReproArrOuter(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, object array)
 {
@@ -657,11 +644,11 @@ Unmarshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)
 }
 }
 }
-public static void CopyArrays_LayoutReproArrPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host)
+public static void CopyArrays_LayoutReproArrPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 for (int k = 0; k < 2; k++)
 {
-CopyArrays_LayoutReproWithArr(ref host[k]);
+CopyArrays_LayoutReproWithArr(ref host[k], copies);
 }
 }
 public static bool HoldsArray_LayoutReproArrPair(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, object array)
@@ -708,12 +695,9 @@ native.Data.Length = host.Data.Length;
 public static unsafe void Unmarshal_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, global::System.IntPtr hStream = default)
 {
 }
-public static void CopyArrays_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host)
+public static void CopyArrays_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Data != null)
-{
-host.Data = (global::System.Int32[])host.Data.Clone();
-}
+_ = copies.Copy(ref host.Data);
 }
 public static bool HoldsArray_LayoutReproWithArr(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, object array)
 {
@@ -1626,10 +1610,12 @@ public static unsafe void LaunchInlineElemKernel(ref global::Kassyi.GSharp.Tests
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructLayoutRegressionKernels.InlineElemKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter __gsharp_csharp_arg_0 = x;
 global::System.Single[] __gsharp_csharp_arg_1 = o;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.InlineElemKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-x = __gsharp_csharp_arg_0;
+fixed (global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter* __gsharp_csharp_pin_0 = &x)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.InlineElemKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+}
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -2229,11 +2215,26 @@ public static unsafe void LaunchBagByRefKernel(ref global::Kassyi.GSharp.Tests.S
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructLayoutRegressionKernels.BagByRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag __gsharp_csharp_arg_0 = b;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.BagByRefKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-b = __gsharp_csharp_arg_0;
+fixed (global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag* __gsharp_csharp_pin_0 = &b)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.BagByRefKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+}
 return;
+}
+// Find the arguments that overlap: the [In] members of a group share one copy
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref b), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[6];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
+__gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
+__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), new byte[] {7, 11}, "b,o");
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -8277,11 +8278,26 @@ public static unsafe void LaunchInlineArrFieldKernel(ref global::Kassyi.GSharp.T
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructLayoutRegressionKernels.InlineArrFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter __gsharp_csharp_arg_0 = x;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.InlineArrFieldKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
-x = __gsharp_csharp_arg_0;
+fixed (global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter* __gsharp_csharp_pin_0 = &x)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.InlineArrFieldKernel(ref *__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+}
 return;
+}
+// Find the arguments that overlap: the [In] members of a group share one copy
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref x), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[6];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
+__gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
+__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), new byte[] {7, 11}, "x,o");
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";

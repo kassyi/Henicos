@@ -71,8 +71,10 @@ public class CSharpExecutionAnalysisTests
             {
                 new CSharpArgument("a", CSharpArgumentKind.Value, "global::System.Int32", "__gsharp_csharp_arg_0"),
                 new CSharpArgument("b", CSharpArgumentKind.In, "global::System.Int32", "__gsharp_csharp_arg_1"),
-                new CSharpArgument("c", CSharpArgumentKind.Ref, "global::System.Int32", "__gsharp_csharp_arg_2"),
-                new CSharpArgument("d", CSharpArgumentKind.Out, "global::System.Int32", "__gsharp_csharp_arg_3"),
+                new CSharpArgument("c", CSharpArgumentKind.Ref, "global::System.Int32", "__gsharp_csharp_arg_2",
+                    "__gsharp_csharp_pin_2"),
+                new CSharpArgument("d", CSharpArgumentKind.Out, "global::System.Int32", "__gsharp_csharp_arg_3",
+                    "__gsharp_csharp_pin_3"),
                 new CSharpArgument("e", CSharpArgumentKind.Span, "global::System.Int32", "__gsharp_csharp_arg_4",
                     "__gsharp_csharp_pin_4", "__gsharp_csharp_len_4"),
                 new CSharpArgument(
