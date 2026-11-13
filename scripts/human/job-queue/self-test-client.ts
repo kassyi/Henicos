@@ -5,8 +5,8 @@ import type * as Assert from "node:assert";
 import { EventEmitter } from "node:events";
 import * as net from "node:net";
 import type { ChildProcess } from "node:child_process";
-import { QueuedRun, type RunHost, type RunOptions } from "./client.ts";
-import { ProtocolVersion } from "./constants.ts";
+import { QueuedRun, commandEnd, type RunHost, type RunOptions } from "./client.ts";
+import { CancelledExitCode, ProtocolVersion } from "./constants.ts";
 import { onMessages, type Incoming } from "./protocol.ts";
 import type { ShellResult } from "./shell.ts";
 
@@ -198,6 +198,56 @@ export async function checkClientReconnect(assert: AssertModule): Promise<void> 
   }
 }
 
+/** The command's result decides how a job ends after a cancel: only a success by itself is not the cancel's. */
+export function checkCommandEnd(assert: AssertModule): void {
+  const end = (code: number, signaled: boolean, cancelRequested: boolean) =>
+    commandEnd({ code, signaled }, cancelRequested);
+  assert.deepStrictEqual(end(0, false, false), { exitCode: 0, completed: true, cancelled: false });
+  assert.deepStrictEqual(end(3, false, false), { exitCode: 3, completed: true, cancelled: false });
+  assert.deepStrictEqual(end(1, true, false), { exitCode: 1, completed: false, cancelled: false }, "a signal");
+  assert.deepStrictEqual(
+    end(0, false, true),
+    { exitCode: 0, completed: true, cancelled: false },
+    "a success that the cancel crossed",
+  );
+  assert.deepStrictEqual(
+    end(1, false, true),
+    { exitCode: CancelledExitCode, completed: false, cancelled: true },
+    "taskkill /F ends a command with 1",
+  );
+  assert.deepStrictEqual(end(0, true, true), { exitCode: CancelledExitCode, completed: false, cancelled: true });
+}
+
+/**
+ * A cancel reaches the client after its command ended with 0 by itself, before the client saw the end: the command's
+ * result decides, so the job succeeded and run exits with 0.
+ */
+export async function checkCancelCrossesEnd(assert: AssertModule): Promise<void> {
+  const scheduler = new FakeScheduler();
+  await scheduler.listen();
+  try {
+    const host = new FakeHost();
+    const first = await grantedClient(scheduler, host, 6);
+    FakeScheduler.send(first, { type: "cancelled", id: 6, reason: "cancel requested" });
+    await until("the client stops the command", () => host.stops.length === 1);
+    host.commands[0]?.end({ code: 0, signaled: false });
+    await until("the client sends done", () => first.messages.some((m) => m.type === "done"));
+    FakeScheduler.send(first, { type: "done-ok", id: 6 });
+    await until("the client exits", () => host.exits.length > 0);
+    const done = first.messages.find((m) => m.type === "done");
+    assert.deepStrictEqual(
+      [done?.completed, done?.exitCode, done?.cancelled],
+      [true, 0, false],
+      "the command's success decides",
+    );
+    assert.strictEqual(host.exits[0], 0, "run exits with 0");
+  } finally {
+    scheduler.close();
+  }
+}
+
 export const ClientChecks: Record<string, (assert: AssertModule) => Promise<void>> = {
   checkClientReconnect: (assert) => quietly(() => checkClientReconnect(assert)),
+  checkCancelCrossesEnd: (assert) => quietly(() => checkCancelCrossesEnd(assert)),
+  checkCommandEnd: async (assert) => checkCommandEnd(assert),
 };

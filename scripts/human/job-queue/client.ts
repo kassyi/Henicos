@@ -166,6 +166,23 @@ export async function run(options: RunOptions): Promise<void> {
 }
 
 /**
+ * How a command's end is reported after a cancel may have reached it: the command's result decides. A command that
+ * ended with 0 by itself succeeded, also when the cancel crossed its end (a killed command never ends with 0 without a
+ * signal: Windows' taskkill /F ends it with 1, Unix a signal); any other end after a cancel is the cancel's.
+ */
+export function commandEnd(
+  result: ShellResult,
+  cancelRequested: boolean,
+): { exitCode: number; completed: boolean; cancelled: boolean } {
+  const cancelled = cancelRequested && !(result.code === 0 && !result.signaled);
+  return {
+    exitCode: cancelled ? CancelledExitCode : result.code,
+    completed: !result.signaled && !cancelled,
+    cancelled,
+  };
+}
+
+/**
  * The effects of a queued run: the scheduler connection, the command's process and the client process itself. The run
  * passes ProcessRunHost; the self-test passes a fake, so that it can drive a client in its own process.
  */
@@ -269,8 +286,8 @@ export class QueuedRun {
    * The scheduler gives a receipt for "done" (protocol 3); one of an older checkout does not, and is not waited for.
    */
   private receipts = false;
-  /** The scheduler cancelled this job: its end is reported as cancelled, not as a failure. */
-  private wasCancelled = false;
+  /** The scheduler cancelled this job: the command is being stopped, and its end decides how it is reported. */
+  private cancelRequested = false;
 
   constructor(options: RunOptions, placement: Placement, inGpuLock: boolean, gpuTurn: boolean, host: RunHost) {
     this.options = options;
@@ -301,8 +318,9 @@ export class QueuedRun {
     await this.attach();
   }
 
-  // completed: the command ran to its own end (not stopped by a signal or a cancel), so its run time may be recorded
-  private finish(code: number, completed = false): void {
+  // completed: the command ran to its own end (not stopped by a signal or a cancel), so its run time may be recorded;
+  // cancelled: the job ends as cancelled (a waiting job that the scheduler cancelled, or a command commandEnd says so)
+  private finish(code: number, completed = false, cancelled = this.cancelRequested): void {
     if (this.state === "done") {
       return;
     }
@@ -315,7 +333,7 @@ export class QueuedRun {
         // No scheduler listens right now (it restarts): report the outcome to the next one, for the jobs that wait for
         // this one, then exit
         void this.host
-          .reportEnd(jobId, completed, code, this.wasCancelled, this.reporter())
+          .reportEnd(jobId, completed, code, cancelled, this.reporter())
           .finally(() => this.host.exit(code));
         return;
       }
@@ -329,7 +347,7 @@ export class QueuedRun {
       type: "done",
       completed,
       exitCode: code,
-      cancelled: this.wasCancelled,
+      cancelled,
     });
     if (!ran || jobId === 0 || !this.receipts) {
       setTimeout(() => this.host.exit(code), 1000).unref();
@@ -352,7 +370,7 @@ export class QueuedRun {
       }
       current.destroy();
       void this.host
-        .reportEnd(this.jobId, completed, code, this.wasCancelled, this.reporter())
+        .reportEnd(this.jobId, completed, code, cancelled, this.reporter())
         .finally(() => this.host.exit(code));
     };
     setTimeout(() => this.doneReceipt?.(false), 2000);
@@ -401,8 +419,9 @@ export class QueuedRun {
       prefix(
         `the GPU turn of #${jobId} came after ${Math.round((Date.now() - this.queuedAt) / 1000)}s; taking the GPU lock`,
       );
-      const { code, signaled } = await this.host.runUnderGpuLock(placement.weight, jobId, (c) => this.started(c));
-      this.finish(code, !signaled);
+      const result = await this.host.runUnderGpuLock(placement.weight, jobId, (c) => this.started(c));
+      const end = commandEnd(result, this.cancelRequested);
+      this.finish(end.exitCode, end.completed, end.cancelled);
       return;
     }
     const cpus = numberField(granted, "cpus", 1);
@@ -415,8 +434,10 @@ export class QueuedRun {
       [CpusVariable]: String(cpus),
       [MsbuildArgsVariable]: `-m:${cpus}`,
     };
-    const { code, signaled } = await this.host.runCommand(command, env, (c) => this.started(c));
-    this.finish(code, !signaled); // a run a signal cut short is not recorded
+    const result = await this.host.runCommand(command, env, (c) => this.started(c));
+    // The command's result decides, also after a cancel; a run a signal cut short is not recorded
+    const end = commandEnd(result, this.cancelRequested);
+    this.finish(end.exitCode, end.completed, end.cancelled);
   }
 
   private onMessage(message: Incoming): void {
@@ -506,21 +527,22 @@ export class QueuedRun {
     if (this.state === "done") {
       return; // the command had already ended
     }
-    this.wasCancelled = true;
+    this.cancelRequested = true;
     const reason = message.reason ? ` (${String(message.reason)})` : "";
     prefix(
       `job #${numberField(message, "id", this.jobId)} was cancelled${reason}` +
         (this.state === "running" ? "; stopping the command" : ""),
     );
+    if (this.state === "waiting") {
+      this.finish(CancelledExitCode);
+      return;
+    }
+    // The command runs: stop it, and leave (so freeing the slot) once it has really ended, with what commandEnd makes
+    // of its result in start(). A command that ended with 0 before the cancel reached it succeeded.
     const running = this.child;
     if (running !== null && running.exitCode === null && running.signalCode === null) {
-      // Leave (and so free the slot) once the command has really ended
-      const leave = (): void => this.finish(CancelledExitCode);
-      running.once("close", leave);
-      setTimeout(leave, 10000).unref();
+      setTimeout(() => this.finish(CancelledExitCode, false, true), 10000).unref(); // a command that does not stop
       this.host.stop(running, this.gpuTurn);
-    } else {
-      this.finish(CancelledExitCode);
     }
   }
 
