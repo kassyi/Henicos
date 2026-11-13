@@ -120,13 +120,19 @@ export class SchedulerLauncher {
    * when none listens (nobody else may start it soon, and the jobs that wait for this one need the outcome). Gives up
    * after a few tries: the command has ended either way.
    */
-  async reportEnd(id: number, completed: boolean, exitCode: number, cancelled = false): Promise<void> {
+  async reportEnd(
+    id: number,
+    completed: boolean,
+    exitCode: number,
+    cancelled: boolean,
+    reporter: { pid: number; queuedAt: number },
+  ): Promise<void> {
     for (let attempt = 0; attempt < 3; attempt++) {
       const socket = await this.connectOrStart().catch(() => null);
       if (socket === null) {
         return;
       }
-      const reply = await exchange(socket, { type: "report", id, completed, exitCode, cancelled });
+      const reply = await exchange(socket, { type: "report", id, completed, exitCode, cancelled, ...reporter });
       // "reported", or an error from an older scheduler that cannot take it; null: the scheduler went away meanwhile
       if (reply !== null) {
         return;

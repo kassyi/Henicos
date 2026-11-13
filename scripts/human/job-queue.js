@@ -37,10 +37,10 @@
 //     (a tool timeout that kills only the client), the scheduler keeps the slot until no process of the command is
 //     left (on Windows: the shell or a child of it, matched by creation time, since the shell dies with the client).
 //   - A cancelled running job keeps its slot until its client has stopped the command and closed.
-//   - When the scheduler dies, a running client reconnects and re-registers its job, and a waiting client queues
-//     again with its original arrival time, both with their job id, place and predecessor, so that nothing changes
-//     across a restart. For the first seconds after it starts, the scheduler accepts those re-registrations and grants
-//     nothing. Jobs whose client was already gone are restored from jobs-<port>.json.
+//   - When the scheduler dies, the next one restores every job from jobs-<port>.json: running jobs keep their slots
+//     and waiting jobs their place until their clients re-register (a running client with its job id, a waiting one
+//     with its id, place and predecessor), so that nothing changes across a restart. Only without a current state
+//     file does the scheduler grant nothing for the first seconds after it starts.
 //
 // Weight: every job takes 1 slot unless --weight says more; a test run (dotnet test, just test*, the long test
 // scripts) also takes the budget of the assemblies it names, or of all of them when it names none, from the memory

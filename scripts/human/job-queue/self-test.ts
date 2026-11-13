@@ -5,19 +5,22 @@
 import * as assert from "node:assert";
 import * as fs from "node:fs";
 import * as os from "node:os";
-import * as net from "node:net";
 import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
-import { EntryScript, OrphanPollMs, ProtocolVersion, StartupGraceMs } from "./constants.ts";
+import { EntryScript, OrphanPollMs, StartupGraceMs } from "./constants.ts";
 import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
-import { onMessages, send, type StatusJob, type StatusReply } from "./protocol.ts";
+import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
+import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
+import { ClientChecks } from "./self-test-client.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./machine.ts";
 import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
 import { checkGpuTurnsEndToEnd, checkRegrant, checkStart, checkWait } from "./self-test-parts.ts";
+import { checkReconnects } from "./self-test-reconnect.ts";
+import { checkRestarts } from "./self-test-restart.ts";
 import { checkView } from "./self-test-view.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
@@ -115,7 +118,7 @@ function checkCpuOnlyProjects(): void {
 }
 
 export async function selfTest(): Promise<void> {
-  for (const [name, check] of Object.entries(SchedulerChecks)) {
+  for (const [name, check] of Object.entries({ ...SchedulerChecks, ...JobStateChecks })) {
     try {
       check(assert);
     } catch (error) {
@@ -124,12 +127,20 @@ export async function selfTest(): Promise<void> {
     }
   }
   checkShellHelpers();
+  for (const [name, check] of Object.entries({ ...JobServerChecks, ...ClientChecks })) {
+    try {
+      await check(assert);
+    } catch (error) {
+      process.stderr.write(`${name} failed\n`);
+      throw error;
+    }
+  }
   checkView();
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;
   const { client, sleeper, open, started, whenExists, startScheduler } = fixture;
-  const { statusOf, usedWithin, waitFor, jobWith, runningWith, jobsWith } = fixture;
+  const { statusOf, usedWithin, waitFor, jobWith, runningWith, jobsWith, rawClient } = fixture;
   try {
     // 1. At most 2 jobs at once, in arrival order; a client killed with its command frees its slot.
     const port = 20000 + Math.floor(Math.random() * 20000);
@@ -259,20 +270,14 @@ export async function selfTest(): Promise<void> {
     assert.deepStrictEqual([empty.used, empty.running.length, empty.waiting.length], [0, 0, 0]);
     // Run times are recorded for the commands that ended by themselves, not for killed, lost or cancelled ones, nor
     // for one stopped early (done with completed: false, as a client sends after a signal)
-    const rawRun = (command: string, completed: boolean): Promise<void> =>
-      new Promise((resolve) => {
-        const s = net.connect(port, "127.0.0.1", () =>
-          send(s, { version: ProtocolVersion, ...registration(command, 1, process.pid) }),
-        );
-        onMessages(s, (m) => {
-          if (m.type === "granted") {
-            send(s, { version: ProtocolVersion, type: "done", completed, exitCode: 0 });
-            s.end();
-          }
-        });
-        s.on("close", () => resolve());
-        s.on("error", () => resolve());
-      });
+    const rawRun = async (command: string, completed: boolean): Promise<void> => {
+      const c = await rawClient(port);
+      c.send(registration(command, 1, process.pid));
+      assert.ok((await c.until("granted")) !== null, `granted: ${command}`);
+      c.send({ type: "done", completed, exitCode: 0 });
+      c.socket.end();
+      await c.closed;
+    };
     await rawRun("stopped early", false);
     await rawRun("ran to its end", true);
     // The scheduler records when it sees the close, after our side closed; the early run's close came before
@@ -377,11 +382,6 @@ export async function selfTest(): Promise<void> {
     // 8. A client that lost only its connection re-registers: its kept slot is replaced under the same id, and a
     //    waiting job does not get it in between (capacity 2: A weighs 2, W waits with 2).
     await usedWithin(port, 0, 5000);
-    const raw = (): Promise<net.Socket> =>
-      new Promise((resolve) => {
-        const socket = net.connect(port, "127.0.0.1", () => resolve(socket));
-        socket.on("error", () => socket.destroy());
-      });
     // Unix: a group leader, as the command a client starts, so that the scheduler sees its group alive
     const sleeperProcess = spawn(process.execPath, ["-e", "setTimeout(function(){},20000)"], {
       windowsHide: true,
@@ -389,30 +389,23 @@ export async function selfTest(): Promise<void> {
     });
     children.push(sleeperProcess);
     const fakeClientPid = process.pid;
-    const first = await raw();
-    send(first, { version: ProtocolVersion, ...registration("A", 2, fakeClientPid) });
-    await delay(300);
-    send(first, {
-      version: ProtocolVersion,
-      type: "started",
-      commandPid: sleeperProcess.pid ?? 0,
-      spawnedAt: Date.now(),
-    });
-    const waiter = await raw();
-    send(waiter, { version: ProtocolVersion, ...registration("W", 2, 1) });
-    await delay(300);
-    const keptId = (await jobWith(port, "A")).id;
-    first.destroy();
-    await delay(500);
-    const again = await raw();
-    send(again, {
-      version: ProtocolVersion,
-      ...registration("A", 2, fakeClientPid),
-      type: "adopt",
-      commandPid: sleeperProcess.pid ?? 0,
-      spawnedAt: Date.now(),
-    });
-    await delay(500);
+    const first = await rawClient(port);
+    const requestA = registration("A", 2, fakeClientPid);
+    first.send(requestA);
+    assert.ok((await first.until("granted")) !== null, "A is granted");
+    const spawnedAt = Date.now();
+    first.send({ type: "started", commandPid: sleeperProcess.pid ?? 0, spawnedAt });
+    const waiter = await rawClient(port);
+    waiter.send(registration("W", 2, 1));
+    await waiter.until("queued");
+    const keptId = (await runningWith(port, "A")).id;
+    first.close();
+    await waitFor(port, "A is seen lost", (s) =>
+      s.running.some((j) => j.id === keptId && j.orphan) ? true : undefined,
+    );
+    const again = await rawClient(port);
+    again.send({ ...requestA, type: "adopt", id: keptId, commandPid: sleeperProcess.pid ?? 0, spawnedAt });
+    assert.ok((await again.until("adopted")) !== null, "A re-registers");
     const readopted = await statusOf(port);
     assert.deepStrictEqual(
       [readopted.used, readopted.running.map((j) => j.command), readopted.waiting.map((j) => j.command)],
@@ -420,8 +413,8 @@ export async function selfTest(): Promise<void> {
       "re-registration replaces the kept slot without handing it to W",
     );
     assert.strictEqual(readopted.running[0]?.id, keptId, "the re-registered job keeps its id");
-    again.destroy();
-    waiter.destroy();
+    again.close();
+    waiter.close();
     stopChild(sleeperProcess);
 
     // 5. A job whose client was lost before a restart still holds its slot after it (restored from jobs-<port>.json).
@@ -458,8 +451,16 @@ export async function selfTest(): Promise<void> {
     // 12. wait <id> exits with the outcome of a job: when a running job ends (also across a restart), at once for an
     //     ended one, with 2 for an unknown id.
     await checkWait(fixture, port + 4);
+
     // 13. start <id> runs a waiting job beside the running ones, over the pool.
     await checkStart(fixture, port + 5);
+
+    // 14. A client that comes back: re-registrations that race with the old connection's close or the observation of
+    //     its processes, and another process that reuses its pid.
+    await checkReconnects(fixture, port + 6);
+
+    // 15. A restarted scheduler holds every job of its state file from the first event; an older file keeps the grace.
+    await checkRestarts(fixture, port + 10);
   } finally {
     await fixture.cleanup();
   }
