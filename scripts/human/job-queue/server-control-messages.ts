@@ -105,7 +105,7 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
   }
   job.startNow = true;
   server.log(`start #${job.id} over the pools`);
-  server.settle();
+  // Granted by the settle that follows every message (Connection), like a move
   return { type: "start-result", id: job.id };
 }
 
