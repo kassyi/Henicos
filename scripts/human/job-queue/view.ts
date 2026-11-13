@@ -147,22 +147,26 @@ export interface ScreenJob extends StatusJob {
   reason: string;
 }
 
-/** What a waiting job waits for: "after #821", "GPU", "slots", "memory", or "order" (an earlier job goes first). */
+/**
+ * What a waiting job waits for, in words a person reads without the docs: "after #821" (its --after job), "GPU busy"
+ * (another job has the GPU), "CPU full" (every slot in use), "mem full" (the memory pool of the test runs), or
+ * "in line" (there is room, but an earlier job goes first).
+ */
 function waitReason(job: StatusJob, reply: StatusReply): string {
   if (job.blockedBy != null) {
     return `after #${job.blockedBy}`;
   }
   if (job.gpuTurn) {
-    return "GPU";
+    return "GPU busy";
   }
   if (reply.used + job.weight > reply.capacity) {
-    return "slots";
+    return "CPU full";
   }
   const memory = job.memoryMb ?? 0;
   if (reply.memoryCapacity != null && reply.memoryUsed != null && reply.memoryUsed + memory > reply.memoryCapacity) {
-    return "memory";
+    return "mem full";
   }
-  return "order";
+  return "in line";
 }
 
 /** The jobs in screen order: running first, then waiting in queue order; a --gpu job and its holder as one. */
@@ -277,7 +281,7 @@ function isLate(job: StatusJob, now: number): boolean {
   );
 }
 
-/** "72% ends ~14:36", "overrun +2m", "6m, no history", "starts ~14:35 ends ~14:38, waits for GPU, 1 ahead". */
+/** "72% ends ~14:36", "overrun +2m", "6m, no history", "starts ~14:35 ends ~14:38, waits: GPU busy, 1 ahead". */
 export function describeProgress(job: ScreenJob, now: number): string {
   if (job.state === "running") {
     const elapsed = now - (job.grantedAt ?? now);
@@ -292,7 +296,7 @@ export function describeProgress(job: ScreenJob, now: number): string {
   }
   const times =
     finite(job.startAt) && finite(job.endAt) ? `starts ~${clock(job.startAt)} ends ~${clock(job.endAt)}, ` : "";
-  return `${times}waits for ${job.reason}, ${job.ahead} ahead`;
+  return `${times}waits: ${job.reason}, ${job.ahead} ahead`;
 }
 
 /** The progress in a few cells, for a terminal too narrow for the timeline: "72% ~14:36", "14m +4m", "after #821". */
@@ -434,6 +438,8 @@ export const HelpLines = [
   "",
   "█ run so far (red: past its typical time)  ▓ expected rest  ┃ now",
   "? no recorded run time  ▒ expected run  ⋯ waits; left of ┃: for what",
+  "  CPU full / mem full: no free slot / memory   GPU busy   in line: an",
+  "  earlier job goes first   after #n: until job n has ended",
 ];
 
 function promptText(prompt: Prompt, jobs: ScreenJob[]): string {
@@ -442,7 +448,7 @@ function promptText(prompt: Prompt, jobs: ScreenJob[]): string {
     case "cancel":
       return `cancel #${prompt.id}${job?.state === "running" ? " (stops its command)" : ""}? y/n`;
     case "start":
-      return `start #${prompt.id} now, over the pool (it waits for ${job?.reason ?? "?"})? y/n`;
+      return `start #${prompt.id} now, over the pool (it waits: ${job?.reason ?? "?"})? y/n`;
     case "move":
       return `move #${prompt.id}: f first, r reset, or id + Enter to go before it: ${prompt.digits}_  (Esc)`;
     case "weight":
