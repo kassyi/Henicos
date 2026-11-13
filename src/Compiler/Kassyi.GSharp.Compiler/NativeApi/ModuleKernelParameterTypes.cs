@@ -211,28 +211,31 @@ internal static class ModuleKernelParameterTypes
     private static bool TryReadModifiers(string text, ref int position, out RefKind refKind, out bool isScoped,
         out bool isParams)
     {
-        refKind = RefKind.None;
-        isParams = false;
         isScoped = TryReadModifier(text, ref position, "scoped");
-        if (!isScoped && TryReadModifier(text, ref position, "params"))
-        {
-            isParams = true;
-        }
-        else if (TryReadModifier(text, ref position, "ref"))
-        {
-            refKind = TryReadModifier(text, ref position, "readonly") ? RefKind.In : RefKind.Ref;
-        }
-        else if (TryReadModifier(text, ref position, "out"))
-        {
-            refKind = RefKind.Out;
-        }
-        else if (TryReadModifier(text, ref position, "in"))
-        {
-            refKind = RefKind.In;
-        }
+        isParams = !isScoped && TryReadModifier(text, ref position, "params");
+        refKind = isParams ? RefKind.None : ReadRefKind(text, ref position);
 
         // A modifier after these is one in another order
         return !IsModifierAt(text, position);
+    }
+
+    // Reads 'ref', 'ref readonly', 'out' or 'in' at <position> when a type follows it
+    private static RefKind ReadRefKind(string text, ref int position)
+    {
+        var refKind = ReadWord(text, position, out var end) switch
+        {
+            "ref" => RefKind.Ref,
+            "out" => RefKind.Out,
+            "in" => RefKind.In,
+            _ => RefKind.None,
+        };
+        if (refKind == RefKind.None || end == text.Length)
+        {
+            return RefKind.None;
+        }
+
+        position = SkipWhitespace(text, end);
+        return refKind == RefKind.Ref && TryReadModifier(text, ref position, "readonly") ? RefKind.In : refKind;
     }
 
     // A 'ref', 'out' or 'in' parameter: an unmanaged value staged through a one-element device buffer
@@ -261,13 +264,19 @@ internal static class ModuleKernelParameterTypes
             return false;
         }
 
-        while (end < text.Length && char.IsWhiteSpace(text[end]))
+        position = SkipWhitespace(text, end);
+        return true;
+    }
+
+    // The first position from <position> that is not whitespace
+    private static int SkipWhitespace(string text, int position)
+    {
+        while (position < text.Length && char.IsWhiteSpace(text[position]))
         {
-            end++;
+            position++;
         }
 
-        position = end;
-        return true;
+        return position;
     }
 
     // Whether the word at <position> is a parameter modifier with a type after it
