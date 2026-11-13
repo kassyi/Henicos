@@ -120,7 +120,10 @@ public partial class EmissionShapeTests
     {
         var expected = string.Join("\n", lines);
         var at = launcher.IndexOf(expected, StringComparison.Ordinal);
-        Assert.True(at >= 0, "Missing lines:\n" + expected + "\nin:\n" + launcher[..Math.Min(launcher.Length, 3000)].ToString());
+        Assert.True(
+            at >= 0,
+            "Missing lines:\n" + expected + "\nin:\n" + launcher[..Math.Min(launcher.Length, 3000)].ToString()
+        );
         Assert.True(at < launch, "The check comes after the launch begins:\n" + expected);
     }
 }

@@ -468,8 +468,11 @@ public partial class EmissionShapeTests
     }
 
     // A launcher of the generated C#, from the text at start (its signature) to the end of its CS8500 suppression
-    private static ReadOnlySpan<char> LauncherFrom(string generated, int start) =>
-        generated.AsSpan(start, generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal) - start);
+    private static ReadOnlySpan<char> LauncherFrom(string generated, int start)
+    {
+        var end = generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal);
+        return generated.AsSpan(start, end - start);
+    }
 
     private static void AssertContainsLines(string source, params string[] lines)
     {
