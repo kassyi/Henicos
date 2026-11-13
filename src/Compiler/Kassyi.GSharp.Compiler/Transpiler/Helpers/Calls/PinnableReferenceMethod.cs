@@ -39,66 +39,102 @@ internal static class PinnableReferenceMethod
                    .FirstOrDefault(static symbol => IsPinnable(symbol, extension: true)) as IMethodSymbol;
     }
 
+    // Prefix of the local that holds the copy of a receiver (PinnableReceiverForm.Spill); only this helper spells it
+    private const string SpillPrefix = "__gsharp_pin_";
+
     /// <summary>
-    /// Writes <c> = &amp;&lt;function&gt;(&lt;receiver&gt;)</c> for <paramref name="declarator"/> of a <c>fixed</c>
-    /// statement whose initializer is pinned through <c>GetPinnableReference</c>; false, writing nothing, for any other
-    /// declarator.
+    /// What <paramref name="declarator"/> of a <c>fixed</c> statement writes when its initializer is pinned through
+    /// <c>GetPinnableReference</c>; null for any other declarator.
     /// </summary>
-    public static bool TryWriteInitializer(VariableDeclaratorSyntax declarator, ITypeSymbol? pointerType,
-        ref TranspileContext context)
+    public static PinnablePlan? Plan(VariableDeclaratorSyntax declarator, ITypeSymbol? pointerType,
+        SemanticModel model)
     {
         if (declarator.Parent?.Parent is not FixedStatementSyntax ||
-            declarator.Initializer?.Value is not { } value ||
-            Find(value, context.Query.SemanticModel) is not { } method)
+            declarator.Initializer?.Value is not { } receiver ||
+            Find(receiver, model) is not { } method ||
+            (method.ReducedFrom ?? method).Parameters is not [var receiverParameter, ..])
         {
-            return false;
+            return null;
         }
 
+        var form = receiverParameter.RefKind == RefKind.None
+            ? PinnableReceiverForm.Value
+            : RefSyntaxHelper.ClassifyStorage(receiver, model) == CppLocation.Storage
+                ? PinnableReceiverForm.Address
+                : PinnableReceiverForm.Spill;
+        return new PinnablePlan(method, receiver, pointerType, method.ReturnsByRefReadonly, form,
+            receiverParameter.Type);
+    }
+
+    /// <summary>
+    /// Writes <c>&lt;type&gt; &lt;local&gt; = &lt;receiver&gt;;</c> and a line break for a plan that spills its
+    /// receiver, and nothing for any other.
+    /// </summary>
+    public static void WriteSpill(VariableDeclaratorSyntax declarator, in PinnablePlan plan,
+        ref TranspileContext context)
+    {
+        if (plan.Form != PinnableReceiverForm.Spill)
+        {
+            return;
+        }
+
+        StructOrdering.RegisterUsedStructIfApplicable(plan.ReceiverType, ref context);
+        context.Emitter.Dialect.AppendType(ref context, plan.ReceiverType);
+        context.Emitter.Writer.Append(' ');
+        AppendSpillName(declarator, ref context);
         context.Emitter.Writer.Append(" = ");
-        if (!ImplicitDeviceCall.CheckCallable(value, method, ref context))
+        context.Visitor.Visit(plan.Receiver);
+        context.Emitter.Writer.AppendLine(";");
+    }
+
+    /// <summary>
+    /// Writes <c> = &amp;&lt;function&gt;(&lt;receiver&gt;)</c>, with the cast of a <c>ref readonly</c> result, for
+    /// <paramref name="plan"/>; when the method cannot be called, reports why and writes the placeholder.
+    /// </summary>
+    public static void WriteInitializer(VariableDeclaratorSyntax declarator, in PinnablePlan plan,
+        ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append(" = ");
+        if (!ImplicitDeviceCall.CheckCallable(plan.Receiver, plan.Method, ref context))
         {
-            return true;
+            return;
         }
 
-        // (<pointer type>)&<function>(<receiver>): a ref readonly result is a const reference in C++, which C# pins as
-        // a pointer that may be written
-        if (method.ReturnsByRefReadonly)
+        // (<pointer type>)&<function>(<receiver>)
+        if (plan.CastsToPointer)
         {
             using (context.Emitter.Writer.Parentheses())
             {
-                context.Emitter.Dialect.AppendType(ref context, pointerType);
+                context.Emitter.Dialect.AppendType(ref context, plan.PointerType);
             }
         }
 
         context.Emitter.Writer.Append('&');
-        ImplicitDeviceCall.AppendName(method, ref context);
+        ImplicitDeviceCall.AppendName(plan.Method, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            AppendReceiver(value, method, ref context);
+            switch (plan.Form)
+            {
+                case PinnableReceiverForm.Value:
+                    context.Visitor.Visit(plan.Receiver);
+                    break;
+                case PinnableReceiverForm.Address:
+                    context.Emitter.Writer.Append('&');
+                    context.Visitor.Visit(plan.Receiver);
+                    break;
+                default:
+                    context.Emitter.Writer.Append('&');
+                    AppendSpillName(declarator, ref context);
+                    break;
+            }
         }
-
-        return true;
     }
 
-    // The receiver of the extension method: a variable by its address for a ref or in receiver (C# converts its value
-    // to the pointer, so the conversion does not make it a temporary), any other value of an in receiver in a
-    // temporary
-    private static void AppendReceiver(ExpressionSyntax receiver, IMethodSymbol method, ref TranspileContext context)
+    // <prefix><C++ name of the declared pointer>: unique among the declarators of the method
+    private static void AppendSpillName(VariableDeclaratorSyntax declarator, ref TranspileContext context)
     {
-        if (method.ReducedFrom is not { Parameters: [{ RefKind: not RefKind.None }, ..] })
-        {
-            context.Visitor.Visit(receiver);
-            return;
-        }
-
-        if (RefSyntaxHelper.ClassifyStorage(receiver, context.Query.SemanticModel) == CppLocation.Storage)
-        {
-            context.Emitter.Writer.Append('&');
-            context.Visitor.Visit(receiver);
-            return;
-        }
-
-        RefSyntaxHelper.TranspileAsByRefArgument(ref context, receiver);
+        context.Emitter.Writer.Append(SpillPrefix);
+        CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
     }
 
     // A parameterless method that returns by reference: an instance method, or the reduced form of an extension method

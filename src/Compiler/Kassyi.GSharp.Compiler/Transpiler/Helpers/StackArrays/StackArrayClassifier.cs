@@ -47,32 +47,57 @@ internal static class StackArrayClassifier
         problem = node.Kind().ToString();
 
         var target = ConvertedType(node, model);
-        var isPointer = target is IPointerTypeSymbol;
         // A collection expression of a [CollectionBuilder] type is the span that its builder takes
         var builder = node is CollectionExpressionSyntax ? CollectionBuilderMethod.Find(target) : null;
         var storageType = builder is { Parameters: [var span] } ? span.Type : target;
-        var elementType = node is StackAllocArrayCreationExpressionSyntax { Type: ArrayTypeSyntax arrayType }
+        if (GetElementType(node, storageType, model) is not { } elementType ||
+            !TryReadElements(node, model, out var length, out var elements, out problemNode, out problem))
+        {
+            return false;
+        }
+
+        // A C# array of length zero is not null, which the G# null representation cannot tell apart (Z5); an empty
+        // span or a null pointer is what C# gives for the others
+        if (length == 0 && target is IArrayTypeSymbol)
+        {
+            problem = GpuCodeConstraints.ZeroLengthArray;
+            return false;
+        }
+
+        allocation = new StackAllocation(elementType, length, elements, target is IPointerTypeSymbol, builder);
+        return true;
+    }
+
+    // The element type of the storage: the declared one of a stackalloc, the pointed-at type of a pointer, the element
+    // of a span or an array
+    private static ITypeSymbol? GetElementType(SyntaxNode node, ITypeSymbol? storageType, SemanticModel model) =>
+        node is StackAllocArrayCreationExpressionSyntax { Type: ArrayTypeSyntax arrayType }
             ? model.GetTypeSymbol(arrayType.ElementType)
             : storageType is IPointerTypeSymbol pointer
                 ? pointer.PointedAtType
                 : InitializationSyntaxExtractor.TryGetArrayElementType(storageType, out var element, out _)
                     ? element
                     : null;
-        if (elementType == null)
-        {
-            return false;
-        }
 
-        int length;
-        SyntaxNode? elements;
+    // The constant length and the initializer of the node; false with the node and the GSH0003 text to report for a
+    // size that is not a constant or a spread element
+    private static bool TryReadElements(SyntaxNode node, SemanticModel model, out int length,
+        out SyntaxNode? elements, out SyntaxNode problemNode, out string problem)
+    {
+        length = 0;
+        elements = null;
+        problemNode = node;
+        problem = node.Kind().ToString();
         switch (node)
         {
             case StackAllocArrayCreationExpressionSyntax { Initializer: { } initializer }:
                 elements = initializer;
                 length = initializer.Expressions.Count;
-                break;
-            case StackAllocArrayCreationExpressionSyntax { Type: ArrayTypeSyntax { RankSpecifiers: [{ Sizes: [var size] }, ..] } }:
-                elements = null;
+                return true;
+            case StackAllocArrayCreationExpressionSyntax
+            {
+                Type: ArrayTypeSyntax { RankSpecifiers: [{ Sizes: [var size] }, ..] }
+            }:
                 if (model.GetSafeConstantValue(size) is not { HasValue: true, Value: int constant })
                 {
                     problemNode = size;
@@ -81,11 +106,11 @@ internal static class StackArrayClassifier
                 }
 
                 length = constant;
-                break;
+                return true;
             case ImplicitStackAllocArrayCreationExpressionSyntax implicitStackAlloc:
                 elements = implicitStackAlloc.Initializer;
                 length = implicitStackAlloc.Initializer.Expressions.Count;
-                break;
+                return true;
             case CollectionExpressionSyntax collection:
                 if (collection.Elements
                     .AsStackEnumerable()
@@ -98,21 +123,10 @@ internal static class StackArrayClassifier
 
                 elements = collection;
                 length = collection.Elements.Count;
-                break;
+                return true;
             default:
                 return false;
         }
-
-        // A C# array of length zero is not null, which the G# null representation cannot tell apart (Z5); an empty
-        // span or a null pointer is what C# gives for the others
-        if (length == 0 && target is IArrayTypeSymbol)
-        {
-            problem = GpuCodeConstraints.ZeroLengthArray;
-            return false;
-        }
-
-        allocation = new StackAllocation(elementType, length, elements, isPointer, builder);
-        return true;
     }
 
     // The declaration path writes T name[N] for this initializer

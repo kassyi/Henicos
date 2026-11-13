@@ -86,15 +86,7 @@ internal static class StackAllocEmitter
     {
         if (allocation.Length == 0)
         {
-            if (allocation.IsPointer)
-            {
-                context.Emitter.Writer.Append("nullptr");
-                return;
-            }
-
-            context.Emitter.Writer.Append("GSharpArray<");
-            context.Emitter.Dialect.AppendType(ref context, allocation.ElementType);
-            context.Emitter.Writer.Append(">()");
+            AppendEmptySpan(allocation, ref context);
             return;
         }
 
@@ -106,33 +98,7 @@ internal static class StackAllocEmitter
 
         if (allocation.Elements is { } elements)
         {
-            // (<storage>[0]=<e0>,...,__gsharp_stackalloc_span(<storage>)): a comma sequences the elements in C# order,
-            // and an assignment converts each element as C# does (a braced list would reject a narrowing conversion)
-            using (context.Emitter.Writer.Parentheses())
-            {
-                if (elements is InitializerExpressionSyntax initializer)
-                {
-                    for (var i = 0; i < initializer.Expressions.Count; i++)
-                    {
-                        AppendElement(number, i, initializer.Expressions[i], ref context);
-                    }
-                }
-                else
-                {
-                    // TryClassify leaves only expression elements
-                    var collection = (CollectionExpressionSyntax)elements;
-                    for (var i = 0; i < collection.Elements.Count; i++)
-                    {
-                        if (collection.Elements[i] is ExpressionElementSyntax element)
-                        {
-                            AppendElement(number, i, element.Expression, ref context);
-                        }
-                    }
-                }
-
-                context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.StackAllocSpan}({StoragePrefix}{number})");
-            }
-
+            AppendFilledSpan(number, elements, ref context);
             return;
         }
 
@@ -140,6 +106,54 @@ internal static class StackAllocEmitter
             ? GSharpInternalNames.Prelude.StackAllocZero
             : GSharpInternalNames.Prelude.StackAllocSpan;
         context.Emitter.Writer.Append($"{view}({StoragePrefix}{number})");
+    }
+
+    // nullptr for a pointer, GSharpArray<T>() for a span: no storage
+    private static void AppendEmptySpan(StackAllocation allocation, ref TranspileContext context)
+    {
+        if (allocation.IsPointer)
+        {
+            context.Emitter.Writer.Append("nullptr");
+            return;
+        }
+
+        context.Emitter.Writer.Append("GSharpArray<");
+        context.Emitter.Dialect.AppendType(ref context, allocation.ElementType);
+        context.Emitter.Writer.Append(">()");
+    }
+
+    // (<storage>[0]=<e0>,...,__gsharp_stackalloc_span(<storage>)): a comma sequences the elements in C# order, and an
+    // assignment converts each element as C# does (a braced list would reject a narrowing conversion)
+    private static void AppendFilledSpan(int number, SyntaxNode elements, ref TranspileContext context)
+    {
+        using (context.Emitter.Writer.Parentheses())
+        {
+            AppendElements(number, elements, ref context);
+            context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.StackAllocSpan}({StoragePrefix}{number})");
+        }
+    }
+
+    // The elements of an initializer or a collection expression (TryClassify leaves only expression elements)
+    private static void AppendElements(int number, SyntaxNode elements, ref TranspileContext context)
+    {
+        if (elements is InitializerExpressionSyntax initializer)
+        {
+            for (var i = 0; i < initializer.Expressions.Count; i++)
+            {
+                AppendElement(number, i, initializer.Expressions[i], ref context);
+            }
+
+            return;
+        }
+
+        var collection = (CollectionExpressionSyntax)elements;
+        for (var i = 0; i < collection.Elements.Count; i++)
+        {
+            if (collection.Elements[i] is ExpressionElementSyntax element)
+            {
+                AppendElement(number, i, element.Expression, ref context);
+            }
+        }
     }
 
     // <storage>[<index>]=<element>,

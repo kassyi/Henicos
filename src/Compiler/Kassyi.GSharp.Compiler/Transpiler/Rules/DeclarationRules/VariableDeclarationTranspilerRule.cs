@@ -113,40 +113,59 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 context.Emitter.Writer.AppendLine(";");
             }
 
+            hasEmittedAny = true;
             if (declaredAhead)
             {
-                // <name> = <initializer>
-                CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
-                DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
-                hasEmittedAny = true;
+                WriteDeclaredAheadAssignment(v, ref context);
                 continue;
             }
 
-            hasEmittedAny = true;
-            if (TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
+            if (!TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
             {
-                continue;
+                WriteSplitDeclarator(v, typeSymbol, isVar, ref context);
             }
+        }
+    }
 
-            // A split declaration has no initializer to deduce auto from, so it names the type
-            var splitInitialization = context.Query.SemanticModel.GetOriginalNode(v) is not ParameterSyntax &&
-                                      IsJumpedOverInitialization(v, typeSymbol);
-            WriteDeclaredType(v, typeSymbol, isVar && !splitInitialization, ref context);
-            context.Emitter.Writer.Append(' ');
-            CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
-            if (splitInitialization)
-            {
-                // <type> <name>;
-                // <name> = <initializer>
-                context.Emitter.Writer.AppendLine(";");
-                CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
-            }
+    // <name> = <initializer>: the local was declared ahead of its statement
+    private static void WriteDeclaredAheadAssignment(VariableDeclaratorSyntax variable, ref TranspileContext context)
+    {
+        CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+        DeclarationTranspilerHelper.WriteDeclaratorInitializer(variable, ref context);
+    }
 
-            // fixed (int* p = s) pins what s.GetPinnableReference() returns
-            if (!PinnableReferenceMethod.TryWriteInitializer(v, typeSymbol, ref context))
-            {
-                DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
-            }
+    // <type> <name> = <initializer>, or <type> <name>; <name> = <initializer> for a local that a goto jumps over; a fixed
+    // declarator that pins through GetPinnableReference writes the copy of its receiver first, then the call
+    private static void WriteSplitDeclarator(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol, bool isVar,
+        ref TranspileContext context)
+    {
+        var pin = PinnableReferenceMethod.Plan(variable, typeSymbol, context.Query.SemanticModel);
+        if (pin is { } plan)
+        {
+            PinnableReferenceMethod.WriteSpill(variable, in plan, ref context);
+        }
+
+        // A split declaration has no initializer to deduce auto from, so it names the type
+        var splitInitialization = context.Query.SemanticModel.GetOriginalNode(variable) is not ParameterSyntax &&
+                                  IsJumpedOverInitialization(variable, typeSymbol);
+        WriteDeclaredType(variable, typeSymbol, isVar && !splitInitialization, ref context);
+        context.Emitter.Writer.Append(' ');
+        CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+        if (splitInitialization)
+        {
+            // <type> <name>;
+            // <name> = <initializer>
+            context.Emitter.Writer.AppendLine(";");
+            CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+        }
+
+        if (pin is { } pinned)
+        {
+            PinnableReferenceMethod.WriteInitializer(variable, in pinned, ref context);
+        }
+        else
+        {
+            DeclarationTranspilerHelper.WriteDeclaratorInitializer(variable, ref context);
         }
     }
 

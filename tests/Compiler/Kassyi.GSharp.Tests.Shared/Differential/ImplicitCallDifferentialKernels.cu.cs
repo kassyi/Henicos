@@ -41,6 +41,12 @@ public struct DiffReadOnlyWindow
     public int Offset;
 }
 
+/// <summary>A value that no variable holds when it is pinned: <c>fixed (int* p = Make(v))</c>.</summary>
+public struct DiffRvalueCell
+{
+    public int Value;
+}
+
 /// <summary>
 /// Differential kernels for the calls that C# makes without a call in the source: the <c>[CollectionBuilder]</c> method
 /// of a collection expression, and the <c>GetPinnableReference</c> of a <c>fixed</c> statement.
@@ -49,7 +55,7 @@ public static unsafe partial class ImplicitCallDifferentialKernels
 {
     public static readonly string[] BuilderColumns = ["declared", "empty", "argument", "order"];
 
-    public static readonly string[] PinnableColumns = ["window", "cell", "read_only"];
+    public static readonly string[] PinnableColumns = ["window", "cell", "read_only", "rvalue"];
 
     [GpuDeviceFunction]
     public static DiffWeightedBag CreateWeightedBag(ReadOnlySpan<int> values)
@@ -84,6 +90,17 @@ public static unsafe partial class ImplicitCallDifferentialKernels
     public static ref readonly int GetPinnableReference(this DiffReadOnlyWindow window) =>
         ref window.Data[window.Offset];
 
+    [GpuDeviceFunction]
+    public static ref readonly int GetPinnableReference(in this DiffRvalueCell cell) => ref cell.Value;
+
+    [GpuDeviceFunction]
+    public static DiffRvalueCell MakeRvalueCell(int value)
+    {
+        DiffRvalueCell cell;
+        cell.Value = value;
+        return cell;
+    }
+
     // A collection expression declared, empty, passed as an argument, and with elements that change a local in order
     [GpuKernel]
     public static void CollectionBuilderKernel(int[] inputs, int[] r)
@@ -105,7 +122,8 @@ public static unsafe partial class ImplicitCallDifferentialKernels
         r[o + 3] = Weigh([Step(ref k, 1), Step(ref k, 2), k]);
     }
 
-    // fixed over a window into the output, over a local through ref this, and over a ref readonly element of the input
+    // fixed over a window into the output, over a local through ref this, over a ref readonly element of the input,
+    // and over values that no variable holds
     [GpuKernel]
     public static void PinnableReferenceKernel(int[] inputs, int[] r)
     {
@@ -116,7 +134,7 @@ public static unsafe partial class ImplicitCallDifferentialKernels
         }
 
         int v = inputs[tid] % 1000;
-        int o = tid * 3;
+        int o = tid * 4;
         var window = new DiffPinnedWindow { Data = r, Offset = o };
         fixed (int* p = window)
         {
@@ -134,6 +152,12 @@ public static unsafe partial class ImplicitCallDifferentialKernels
         fixed (int* p = readOnly)
         {
             r[o + 2] = (*p % 1000) - 1;
+        }
+
+        // The receivers are values that no variable holds: each copy lives for the whole statement, as in C#
+        fixed (int* p = MakeRvalueCell(v + 17), q = MakeRvalueCell(v + 18))
+        {
+            r[o + 3] = (*p * 3) + *q;
         }
     }
 }
