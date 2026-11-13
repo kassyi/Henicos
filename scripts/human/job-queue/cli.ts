@@ -36,6 +36,7 @@ const Usage = [
   "  node scripts/human/job-queue.js stop",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
   "  node scripts/human/job-queue.js --self-test",
+  "  node scripts/human/job-queue.js --screenshots <dir>",
   "",
   "run         Waits for a slot of the job queue, runs the command in this directory, gives the slot back.",
   "            --weight <n>           Slots the job takes (default 1; a test run also takes its memory budget).",
@@ -51,7 +52,7 @@ const Usage = [
   "            with <id>, only that job (exit 1 when it ended or is unknown); --json prints the same as JSON.",
   "            --watch shows the queue live in the terminal, one line per job with its timeline: arrows select a job,",
   "            c cancels it, s starts, m moves and w re-weights a waiting one, ? lists the keys, q quits",
-  "            (just queue-watch).",
+  "            (just queue-watch). Below the jobs, the agent chats that wait for you (chat-status.js); a hides them.",
   "wait        Waits until job <id> has ended (also across a scheduler restart) and exits with its outcome: 0",
   "            succeeded, 1 failed, 4 cancelled, 5 lost (its client died; the result is unknown), 2 for an unknown",
   "            id. Run it in the background to be told when a job ends; --json prints {id, outcome}.",
@@ -67,11 +68,15 @@ const Usage = [
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
   "            slot per 3 cores, at least 2); --memory-mb: the memory the budgets of the running test runs may add up",
   "            to (tests/memory-budgets.yml; default half the physical memory).",
+  "--screenshots",
+  "            Draws the live view from a fixed sample status as SVG files into <dir> (wide.svg, small.svg,",
+  "            selected.svg, help.svg; no scheduler). Regenerates the images of the README after a change to the view.",
   "",
   `Environment: ${PortVariable} (default ${DefaultPort}), ${SlotsVariable} (--slots), ${MemoryVariable}`,
   `(--memory-mb), ${PolicyVariable} (default ${DefaultPolicy}; the scheduler keeps the policy it started with).`,
   "Quote the command as one string when it needs pipes or redirection. Steps that belong together (a build and the",
-  'test run of what it built) go into one job: run -- "dotnet build X && dotnet test X --no-build".',
+  'test run of what it built) go into one job: run -- "dotnet build X && dotnet test X --no-build". Under --gpu,',
+  "run builds a plain dotnet build / dotnet test command first as a job of its own, without the GPU turn.",
 ].join("\n");
 
 const Modes = [
@@ -86,7 +91,7 @@ const Modes = [
   "stop",
   "serve",
 ] as const;
-type Mode = (typeof Modes)[number] | "self-test";
+type Mode = (typeof Modes)[number] | "self-test" | "screenshots";
 
 interface Options extends RunOptions {
   mode: Mode | "";
@@ -100,6 +105,8 @@ interface Options extends RunOptions {
   moveBefore: number;
   moveReset: boolean;
   newWeight: number;
+  /** --screenshots: the directory the SVG files go to. */
+  screenshotDir: string;
 }
 
 function parsePositive(name: string, text: string | undefined, allowZero = false): number {
@@ -140,6 +147,7 @@ export function parseArgs(argv: string[]): Options {
     moveBefore: 0,
     moveReset: false,
     newWeight: 0,
+    screenshotDir: "",
     command: command.join(" "),
     // Several words after `--` are argv that the calling shell has already split: re-quote them for the shell that
     // runs them (see run), instead of joining them into a different command.
@@ -172,6 +180,13 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--self-test":
         options.mode = "self-test";
+        break;
+      case "--screenshots":
+        options.mode = "screenshots";
+        options.screenshotDir = own[++i] ?? "";
+        if (options.screenshotDir === "") {
+          usageError("--screenshots needs a directory.");
+        }
         break;
       case "--weight":
         options.weight = parsePositive("--weight", own[++i]);
@@ -306,6 +321,14 @@ export async function main(argv: string[]): Promise<void> {
       case "self-test": {
         const { selfTest } = await import("./self-test.ts");
         await selfTest();
+        break;
+      }
+      case "screenshots": {
+        const { writeScreenshots } = await import("./screenshot.ts");
+        for (const file of writeScreenshots(options.screenshotDir)) {
+          process.stdout.write(`${file}
+`);
+        }
         break;
       }
       case "":

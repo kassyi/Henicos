@@ -10,12 +10,12 @@ internal enum CSharpArgumentKind
     In,
 
     /// <summary>
-    /// A copy of a <c>ref</c> argument that the lambda captures and passes by <c>ref</c>, copied back after the run, as
-    /// the GPU launchers copy the value to the device and back.
+    /// A <c>ref</c> argument, pinned for the run and passed through its pointer, so that the kernel writes the caller's
+    /// variable and two parameters that receive one variable stay one variable (#1061).
     /// </summary>
     Ref,
 
-    /// <summary>The same for an <c>out</c> argument, which starts as <c>default</c>.</summary>
+    /// <summary>The same for an <c>out</c> argument, which the launcher has set to <c>default</c>.</summary>
     Out,
 
     /// <summary>A <c>Span&lt;T&gt;</c>, pinned for the run and rebuilt in the lambda from pointer and length.</summary>
