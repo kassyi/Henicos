@@ -52,7 +52,8 @@ internal static class StructMarshalingEmitter
             sources.Add(new StructHostSource(
                 AotHostNames.GetAotStructPath(s),
                 RenderStructForDialect(s, HostDialects.Cuda, launcherAssembly),
-                cpuStructs.Contains(s) ? RenderStructForDialect(s, HostDialects.Cpu, launcherAssembly) : string.Empty));
+                cpuStructs.Contains(s) ? RenderStructForDialect(s, HostDialects.Cpu, launcherAssembly) : string.Empty,
+                GeneratedMemberAccessibility.OfStruct(s).ChooseIn(kernel.ContainingType)));
         }
 
         return sources.MoveToImmutable().AsEquatableArray();

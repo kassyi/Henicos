@@ -859,7 +859,12 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_3_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_i%__gsharp_id_2_totalThreads,2),__gsharp_id_3_i/__gsharp_id_2_totalThreads), 1551173893u)=__ballot_sync(0xFFFFFFFFu,(__gsharp_array_at(__gsharp_id_0_input, __gsharp_id_3_i, 1703544546u)&1)!=0);
+([&]() {
+auto __gsharp_seq_0 = __gsharp_id_1_output;
+auto __gsharp_seq_1 = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_i%__gsharp_id_2_totalThreads,2),__gsharp_id_3_i/__gsharp_id_2_totalThreads);
+unsigned int __gsharp_seq_2 = __ballot_sync(0xFFFFFFFFu,(__gsharp_array_at(__gsharp_id_0_input, __gsharp_id_3_i, 1703544546u)&1)!=0);
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 1551173893u) = __gsharp_seq_2;
+}());
 }
 }
 }

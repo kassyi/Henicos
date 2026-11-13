@@ -106,8 +106,10 @@ public sealed record DifferentialCase(string name)
 
     /// <summary>
     /// Gets or initializes a per-seed, per-shape expected exception policy hook. When this returns a non-null
-    /// <see cref="Differential.ExceptionPolicy"/>, the oracle is skipped for that seed and each path in
-    /// <see cref="ExceptionPolicy.Paths"/> must throw a matching exception.
+    /// <see cref="Differential.ExceptionPolicy"/>, each path in <see cref="ExceptionPolicy.Paths"/> must throw a
+    /// matching exception for that seed. A case with an oracle runs it too: it must throw the same exception type, and
+    /// every path that throws must leave the writes the oracle made (each thread runs to its end or to its own
+    /// exception).
     /// </summary>
     public Func<DiffRandom, LaunchShape, ExceptionPolicy?>? ExpectedException { get; init; }
 
@@ -122,6 +124,8 @@ public sealed record DifferentialCase(string name)
 
     /// <summary>
     /// Gets or initializes how exceptions thrown by <see cref="Oracle"/> are handled when <see cref="ExpectedException"/> returns <see langword="null"/>.
+    /// With <see cref="OracleExceptionMode.MatchOracle"/>, every path that throws the oracle's exception must also
+    /// leave the writes the oracle made: each thread runs to its end or to its own exception, as on the GPU.
     /// </summary>
     public OracleExceptionMode OracleExceptions { get; init; } = OracleExceptionMode.None;
 

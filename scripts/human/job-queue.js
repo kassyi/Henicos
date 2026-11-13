@@ -20,7 +20,8 @@
 // (backfilling): it ends before the first job could start, counting every running job at its longest recorded time,
 // or it fits in the slots the first job leaves free. `backfill` keeps arrival order with backfilling; `fifo` keeps
 // arrival order without it. `move <id> --first` / `--before <id>` put a waiting job ahead of that order (backfilling
-// still reserves the first job's start); `set-weight` changes the slots a waiting job takes.
+// still reserves the first job's start); `set-weight` changes the slots a waiting job takes; `start <id>` grants a
+// waiting job at once, over the slots and the memory pool, like a GPU holder (not a GPU turn, not before --after).
 //
 // Dependencies: `run --after <id>` starts once that job's recorded outcome lets it (succeeded, or any outcome with
 // --keep-if-failed); when it failed, was cancelled or its client was lost, the job is cancelled too (exit 4). The
@@ -36,10 +37,10 @@
 //     (a tool timeout that kills only the client), the scheduler keeps the slot until no process of the command is
 //     left (on Windows: the shell or a child of it, matched by creation time, since the shell dies with the client).
 //   - A cancelled running job keeps its slot until its client has stopped the command and closed.
-//   - When the scheduler dies, a running client reconnects and re-registers its job, and a waiting client queues
-//     again with its original arrival time, both with their job id, place and predecessor, so that nothing changes
-//     across a restart. For the first seconds after it starts, the scheduler accepts those re-registrations and grants
-//     nothing. Jobs whose client was already gone are restored from jobs-<port>.json.
+//   - When the scheduler dies, the next one restores every job from jobs-<port>.json: running jobs keep their slots
+//     and waiting jobs their place until their clients re-register (a running client with its job id, a waiting one
+//     with its id, place and predecessor), so that nothing changes across a restart. Only without a current state
+//     file does the scheduler grant nothing for the first seconds after it starts.
 //
 // Weight: every job takes 1 slot unless --weight says more; a test run (dotnet test, just test*, the long test
 // scripts) also takes the budget of the assemblies it names, or of all of them when it names none, from the memory
@@ -49,7 +50,7 @@
 // The justfile recipes that build or test queue their command through `run` themselves.
 //
 // GPU: --gpu first waits in the scheduler for its turn at the GPU (one at a time, in the same order as the slots,
-// taking no slots), then takes the GPU lock (scripts/agent/gpu-lock.js), under which the command asks for its CPU
+// taking no slots), then takes the GPU lock (scripts/human/gpu-lock.js), under which the command asks for its CPU
 // slots and is granted at once, even over the capacity, so that a job that holds the GPU lock never waits for a slot.
 //
 // Shell: the command runs in the caller's shell: Git Bash on Windows when MSYSTEM or SHELL is set (the Claude Code Bash

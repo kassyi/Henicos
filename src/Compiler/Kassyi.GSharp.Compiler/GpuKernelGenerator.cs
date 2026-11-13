@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Compiler.Targets;
 using Kassyi.GSharp.Compiler.Transpiler.Managed;
 
 namespace Kassyi.GSharp.Compiler;
@@ -50,6 +51,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
     /// every edit; it only reports.
     /// </summary>
     public const string HeldRefLocalsTrackingName = "GpuHeldRefLocalsInput";
+
+    /// <summary>
+    /// The tracking name of the input of the output that reports the target architectures without launch limits in
+    /// the table of the compiler (GSH0114). It reads only the build options and whether there are kernels.
+    /// </summary>
+    public const string TargetArchitecturesTrackingName = "GpuTargetArchitecturesInput";
 
     /// <summary>
     /// The tracking name of the step that reads the device code export records of the referenced assemblies, which the
@@ -153,7 +160,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 options.GlobalOptions.TryGetValue("build_property.GSharpCheckedBuild", out var checkedStr);
                 var isCheckedBuild = string.Equals(checkedStr, "true", StringComparison.OrdinalIgnoreCase);
 
-                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild);
+                // The launch limits of the GPUs the fatbin may run on, from the same setting nvcc compiles for
+                options.GlobalOptions.TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
+                var targetLimits = GpuArchitectureLimits.Resolve(architectures);
+
+                return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild,
+                    targetLimits);
             });
 
         // The wrappers take only the module name from the compilation, so this value compares equal across edits and
@@ -268,6 +280,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
             static (spc, input) => WriteAot(spc, input.Left.Left.Left.Left, input.Left.Left.Left.Right,
                 input.Left.Left.Right, input.Left.Right, input.Right));
         context.RegisterSourceOutput(
+            configProvider.Combine(hasKernels).WithTrackingName(TargetArchitecturesTrackingName),
+            static (spc, input) => ReportUnknownArchitectures(spc, input.Left.TargetLimits, input.Right));
+        context.RegisterSourceOutput(
             warmups.Combine(hostOptions).Combine(hasKernels).WithTrackingName(ModuleContextTrackingName),
             static (spc, input) => EmitModuleContext(spc, input.Left.Left, input.Left.Right, input.Right));
         // A library without kernels exports its device functions as well. The records are gathered first, so an edit
@@ -322,6 +337,22 @@ public class GpuKernelGenerator : IIncrementalGenerator
             static (spc, sites) => EmitTypeKeyedSitesRegistration(spc, sites));
     }
 
+    // GSH0114 once per project with kernels, without a location: the setting is an MSBuild property
+    private static void ReportUnknownArchitectures(
+        SourceProductionContext context,
+        TargetLimits limits,
+        bool hasKernels)
+    {
+        if (hasKernels && !limits.UnknownArchitectures.IsDefaultOrEmpty)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                GSharpDiagnostics.TargetArchitectureLimitsUnknown,
+                Location.None,
+                string.Join(", ", limits.UnknownArchitectures)
+            ));
+        }
+    }
+
     private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context,
         CancellationToken cancellationToken)
     {
@@ -337,7 +368,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         // The values that the host wrappers need are read here, from this compilation, so that a result taken from the
         // cache never refers to an earlier one (#383)
-        var header = HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation);
+        var header = HostClassHeader.CreateForKernels(methodSymbol.ContainingType, context.SemanticModel.Compilation);
         var host = KernelHostModel.Create(methodSymbol, StructMarshalingEmitter.RenderStructs(methodSymbol),
             context.SemanticModel);
 

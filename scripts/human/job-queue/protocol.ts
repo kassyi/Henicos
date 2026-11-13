@@ -24,6 +24,8 @@ export interface JobRequest {
   keepIfFailed: boolean;
   /** run --gpu: wait for the turn at the GPU (see SchedulerJob.gpuTurn). */
   gpuTurn: boolean;
+  /** A GPU holder: the id of the --gpu run whose turn started it (absent from older clients). */
+  turn?: number | null;
 }
 
 export type ClientMessage =
@@ -36,12 +38,25 @@ export type ClientMessage =
   | { type: "stop" }
   | { type: "move"; id: number; first?: boolean; before?: number; reset?: boolean }
   | { type: "set-weight"; id: number; weight: number }
+  /** Grants a waiting job at once, over the slots and the memory pool (not a GPU turn, not before its predecessor). */
+  | { type: "start"; id: number }
   /**
    * Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock).
    */
   | { type: "await"; id: number }
-  /** The end of a job whose command ended while no scheduler listened, for the jobs that wait for it. */
-  | { type: "report"; id: number; completed: boolean; exitCode: number; cancelled?: boolean };
+  /**
+   * The end of a job whose command ended while its client had no connection, for the jobs that wait for it. pid and
+   * queuedAt name the client (absent from older clients), so that a report never ends another client's job.
+   */
+  | {
+      type: "report";
+      id: number;
+      completed: boolean;
+      exitCode: number;
+      cancelled?: boolean;
+      pid?: number;
+      queuedAt?: number;
+    };
 
 /** A job as `status` shows it. */
 export interface JobView {
@@ -112,6 +127,7 @@ export type ServerMessage =
   | { type: "cancel-result"; cancelled: number[] }
   | { type: "stopping"; running: number; waiting: number }
   | { type: "move-result"; id: number; position: number }
+  | { type: "start-result"; id: number }
   | { type: "ended"; id: number; outcome: Outcome }
   | { type: "reported"; id: number }
   /** The scheduler has recorded and saved the outcome of a "done". */
@@ -128,6 +144,7 @@ export function wireVersion(message: ClientMessage): number {
   switch (message.type) {
     case "move":
     case "set-weight":
+    case "start":
     case "await":
     case "report":
       return ProtocolVersion;

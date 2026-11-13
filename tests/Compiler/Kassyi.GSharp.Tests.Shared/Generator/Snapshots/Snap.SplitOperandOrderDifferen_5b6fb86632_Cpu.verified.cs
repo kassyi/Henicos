@@ -3191,7 +3191,11 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 GSharpArray<int> __gsharp_id_3_s = __gsharp_id_0_data.AsSpan(0,4, ""G#: index was out of range at SplitOperandOrderDifferentialKernels.cs(304,23)"");
-__gsharp_id_3_s[__gsharp_id_2_i]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_3_s[__gsharp_id_2_i];
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 __gsharp_state=-1;
 return;
 }
@@ -3801,7 +3805,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_cells, __gsharp_id_2_i, 1254140810u).__gsharp_mb_F=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_cells, __gsharp_id_2_i, 1254140810u).__gsharp_mb_F;
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 __gsharp_state=-1;
 return;
 }
@@ -4392,7 +4400,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__StoreValue(&__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_i, 827705276u),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts));
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_i, 827705276u);
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__StoreValue(&__gsharp_seq_0,__gsharp_seq_1);
+}());
 __gsharp_state=-1;
 return;
 }

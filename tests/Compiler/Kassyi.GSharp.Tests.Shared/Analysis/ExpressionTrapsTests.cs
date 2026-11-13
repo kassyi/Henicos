@@ -3,7 +3,8 @@ namespace Kassyi.GSharp.Tests.Shared.Analysis;
 
 /// <summary>
 /// Verifies which expressions <see cref="ExpressionTraps"/> says may raise a run-time error (#1275 (A fused StackLinq
-/// Skip after Select skips the selector calls, so an exception C# throws is lost)).
+/// Skip after Select skips the selector calls, so an exception C# throws is lost), #1786 (a throwing check in a later
+/// operand runs before an earlier call on MSVC)).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class ExpressionTrapsTests
@@ -22,7 +23,11 @@ public class ExpressionTrapsTests
     [InlineData("Conversion")]
     [InlineData("Choice")]
     [InlineData("Field")]
-    [InlineData("Length")]
+    [InlineData("SpanLength")]
+    [InlineData("Increment")]
+    [InlineData("Assignment")]
+    [InlineData("CompoundAddition")]
+    [InlineData("Lambda")]
     public void MayTrap_TrapFreeExpression_IsFalse(string name) =>
         Assert.False(MayTrap(name));
 
@@ -39,6 +44,9 @@ public class ExpressionTrapsTests
     [InlineData("IntegerMath")]
     [InlineData("ComputedProperty")]
     [InlineData("Throw")]
+    [InlineData("Length")]
+    [InlineData("NullableValue")]
+    [InlineData("CompoundDivision")]
     public void MayTrap_ExpressionThatMayRaise_IsTrue(string name) =>
         Assert.True(MayTrap(name));
 

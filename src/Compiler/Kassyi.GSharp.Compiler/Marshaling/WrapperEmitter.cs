@@ -98,8 +98,10 @@ internal static class WrapperEmitter
 
     // namespace <namespace> { <outer partial declarations> <accessibility> partial <keyword> <name>, without the
     // namespace for the global namespace. The generated part must declare the accessibility of the user's part, or the
-    // compiler reports CS0262, and its kind (class, record), or CS0261.
-    private static void WriteClassDeclaration(SourceWriter writer, in HostClassHeader header)
+    // compiler reports CS0262, and its kind (class, record), or CS0261. Each outer declaration gets its warmup relays
+    // (CUDA only).
+    private static void WriteClassDeclaration(SourceWriter writer, in HostClassHeader header,
+        EquatableArray<WarmupRelay> relays = default)
     {
         if (!header.IsGlobalNamespace)
         {
@@ -108,10 +110,11 @@ internal static class WrapperEmitter
         }
 
         // A nested class is written inside partial declarations of the types that contain it
-        foreach (var outer in header.OuterDeclarations)
+        for (var i = 0; i < header.OuterDeclarations.Length; i++)
         {
-            writer.AppendLine(outer);
+            writer.AppendLine(header.OuterDeclarations[i]);
             writer.AppendLine("{");
+            CudaHostLaunchEmitter.WriteWarmupRelays(writer, relays, i);
         }
 
         writer.AppendLine($"{header.Accessibility} partial {header.Keyword} {header.Name}");
@@ -210,12 +213,13 @@ internal static class WrapperEmitter
 
         writer.AppendLine();
 
-        WriteClassDeclaration(writer, model.Class);
+        WriteClassDeclaration(writer, model.Class, config.IsCuda ? model.WarmupRelays : default);
         using (writer.Scope())
         {
             WriteErrorSiteTableField(writer, model.ErrorSites);
             writer.AppendGeneratedCodeAttributes();
-            writer.AppendLine($"public static partial class {AotHostNames.AotContextsClassName}");
+            var aotContexts = GeneratedMemberAccessibility.ToKeyword(model.AotContextsAccessibility);
+            writer.AppendLine($"{aotContexts} static partial class {AotHostNames.AotContextsClassName}");
             using (writer.Scope())
             {
                 StructMarshalingEmitter.WriteStructMarshaling(writer, model.Structs, config.IsCuda);
@@ -231,9 +235,10 @@ internal static class WrapperEmitter
 
                 // GSH0108: the analyzer reports the field type the launcher cannot name; a launcher that throws keeps
                 // the callers compiling, so that the build shows GSH0108 rather than errors in generated code
+                var accessibilities = model.GetLauncherAccessibilities(kernel);
                 if (kernel.Host.LauncherUnavailableReason is { } reason)
                 {
-                    WriteUnavailableLaunchMethod(writer, kernel, reason);
+                    WriteUnavailableLaunchMethod(writer, kernel, accessibilities.Launcher, reason);
                     continue;
                 }
 
@@ -241,11 +246,12 @@ internal static class WrapperEmitter
 
                 if (config.IsCuda)
                 {
-                    CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, moduleName, config.IsCheckedBuild);
+                    CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities, moduleName,
+                        config.IsCheckedBuild);
                 }
                 else
                 {
-                    CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, moduleName);
+                    CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities.Launcher, moduleName);
                 }
             }
         }
@@ -256,9 +262,10 @@ internal static class WrapperEmitter
 
     // public static unsafe <return> Launch<Name>(<parameters>, <launch options>)
     // { throw new NotSupportedException("<reason>"); }
-    private static void WriteUnavailableLaunchMethod(SourceWriter writer, in KernelEmission kernel, string reason)
+    private static void WriteUnavailableLaunchMethod(SourceWriter writer, in KernelEmission kernel,
+        Accessibility accessibility, string reason)
     {
-        WriteLaunchMethodSignature(writer, kernel, isDevicePtr: false);
+        WriteLaunchMethodSignature(writer, kernel, isDevicePtr: false, accessibility);
         using (writer.Scope())
         {
             NativeApi.ModuleKernelLaunchEmitter.EmitUnavailableBody(writer, reason);
@@ -279,13 +286,11 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    internal static void WriteLaunchMethodSignature(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr)
+    internal static void WriteLaunchMethodSignature(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr,
+        Accessibility accessibility)
     {
         writer.AppendGeneratedCodeAttributes();
-        // An overloaded kernel's IntPtr wrapper is private: callers select the overload through the typed wrapper.
-        writer.Append(isDevicePtr && kernel.IsOverloaded
-            ? "private static unsafe "
-            : "public static unsafe ");
+        writer.Append($"{GeneratedMemberAccessibility.ToKeyword(accessibility)} static unsafe ");
         WriteLaunchReturnType(writer, kernel.Host);
         writer.Append(isDevicePtr
             ? KernelHostNames.GetPointerLaunchName(kernel)

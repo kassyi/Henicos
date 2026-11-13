@@ -3,8 +3,8 @@
 // Builds once, then runs `dotnet test --no-build` per iteration with a TEST_SEED of its own (the input seed of the
 // tests); the extra arguments go to `dotnet test` only, not to the build.
 // Writes one log per iteration and summary.json under TestResults/<os>/<time>/. On Windows the summary also holds the
-// kernel pools and the nvlddmkm Event 153 entries before and after the run (gpu-fault-watch.js): the kernel pools
-// grew after GPU faults and were freed only by a reboot.
+// kernel pools and the nvlddmkm Event 153 entries before and after the run (gpu-fault-watch.js), so that pool growth
+// during a run with GPU faults shows.
 //
 // Usage:
 //   node scripts/human/test-stability.js [--count <n|duration>] [--continue-on-error] [--no-shuffle]

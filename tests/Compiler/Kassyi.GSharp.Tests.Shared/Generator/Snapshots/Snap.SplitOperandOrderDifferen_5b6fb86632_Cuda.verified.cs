@@ -1969,7 +1969,11 @@ finally
 public const string SpanElementTargetChecksFirstKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SpanElementTargetChecksFirstKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counts, int __gsharp_id_2_i, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 GSharpArray<int> __gsharp_id_3_s = __gsharp_id_0_data.AsSpan(0,4, ""G#: index was out of range at SplitOperandOrderDifferentialKernels.cs(297,23)"");
-__gsharp_id_3_s[__gsharp_id_2_i]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenCount(__gsharp_id_1_counts);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_3_s[__gsharp_id_2_i];
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenCount(__gsharp_id_1_counts);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SpanElementTargetChecksFirstKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SpanElementTargetChecksFirstKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2142,7 +2146,11 @@ finally
 public const string SpanElementTargetChecksFirstTwinKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SpanElementTargetChecksFirstTwinKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counts, int __gsharp_id_2_i, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 GSharpArray<int> __gsharp_id_3_s = __gsharp_id_0_data.AsSpan(0,4, ""G#: index was out of range at SplitOperandOrderDifferentialKernels.cs(304,23)"");
-__gsharp_id_3_s[__gsharp_id_2_i]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_3_s[__gsharp_id_2_i];
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SpanElementTargetChecksFirstTwinKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SpanElementTargetChecksFirstTwinKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2329,7 +2337,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__FieldOfElementTargetChecksFirstKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SplitOrderCell> __gsharp_id_0_cells, GSharpArray<int> __gsharp_id_1_counts, int __gsharp_id_2_i, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_0_cells, __gsharp_id_2_i, 2126169466u).__gsharp_mb_F=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenCount(__gsharp_id_1_counts);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_cells, __gsharp_id_2_i, 2126169466u).__gsharp_mb_F;
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenCount(__gsharp_id_1_counts);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldOfElementTargetChecksFirstKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__FieldOfElementTargetChecksFirstKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2522,7 +2534,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__FieldOfElementTargetChecksFirstTwinKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SplitOrderCell> __gsharp_id_0_cells, GSharpArray<int> __gsharp_id_1_counts, int __gsharp_id_2_i, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_0_cells, __gsharp_id_2_i, 1254140810u).__gsharp_mb_F=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_cells, __gsharp_id_2_i, 1254140810u).__gsharp_mb_F;
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldOfElementTargetChecksFirstTwinKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__FieldOfElementTargetChecksFirstTwinKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2708,7 +2724,11 @@ finally
 #pragma warning restore CS8500
 public const string RefElementArgumentChecksFirstKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__RefElementArgumentChecksFirstKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counts, int __gsharp_id_2_i, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__StoreValue(&__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_i, 1584782418u),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenCount(__gsharp_id_1_counts));
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_i, 1584782418u);
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenCount(__gsharp_id_1_counts);
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__StoreValue(&__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RefElementArgumentChecksFirstKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__RefElementArgumentChecksFirstKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2880,7 +2900,11 @@ finally
 #pragma warning restore CS8500
 public const string RefElementArgumentChecksFirstTwinKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__RefElementArgumentChecksFirstTwinKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_counts, int __gsharp_id_2_i, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__StoreValue(&__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_i, 827705276u),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts));
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_i, 827705276u);
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Count(__gsharp_id_1_counts);
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__StoreValue(&__gsharp_seq_0,__gsharp_seq_1);
+}());
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RefElementArgumentChecksFirstTwinKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__RefElementArgumentChecksFirstTwinKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -3415,7 +3439,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__FieldOfElementBeforeDivisionKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SplitOrderCell> __gsharp_id_0_cells, GSharpArray<int> __gsharp_id_1_counts, int __gsharp_id_2_i, int __gsharp_id_3_zero, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_0_cells, __gsharp_id_2_i, 599336586u).__gsharp_mb_F=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenDivide(__gsharp_id_1_counts,__gsharp_id_3_zero);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_cells, __gsharp_id_2_i, 599336586u).__gsharp_mb_F;
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenDivide(__gsharp_id_1_counts,__gsharp_id_3_zero);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldOfElementBeforeDivisionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__FieldOfElementBeforeDivisionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

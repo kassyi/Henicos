@@ -1497,8 +1497,14 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter __gsharp_csharp_arg_0 = x;
 global::System.Single[] __gsharp_csharp_arg_1 = o;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.InlineElemKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+}
+finally
+{
 x = __gsharp_csharp_arg_0;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -1806,8 +1812,14 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag __gsharp_csharp_arg_0 = b;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.BagByRefKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+}
+finally
+{
 b = __gsharp_csharp_arg_0;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
@@ -5034,8 +5046,14 @@ if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.
 {
 global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter __gsharp_csharp_arg_0 = x;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
+try
+{
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.InlineArrFieldKernel(ref __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
+}
+finally
+{
 x = __gsharp_csharp_arg_0;
+}
 return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())

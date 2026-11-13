@@ -29,6 +29,18 @@ internal readonly record struct KernelHostModel
     /// <summary>The CPU export of the launcher.</summary>
     public string LaunchExportName { get; init; }
 
+    /// <summary>
+    /// The accessibility of the launchers and of the managed state machine: the widest under which they name only
+    /// types at least as accessible as themselves, whatever the kernel's own accessibility (#1284).
+    /// </summary>
+    public Accessibility LauncherAccessibility { get; init; }
+
+    /// <summary>
+    /// The method through which a container warms up the kernel of a class the module context cannot name
+    /// (<see cref="HostClassHeader.WarmupRelayHosts"/>).
+    /// </summary>
+    public string WarmupRelayName { get; init; }
+
     /// <summary>The fully qualified return type, or <see langword="null"/> for <c>void</c>.</summary>
     public string? ReturnTypeName { get; init; }
 
@@ -147,6 +159,9 @@ internal readonly record struct KernelHostModel
             ContextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, kernel),
             StateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, kernel),
             LaunchExportName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.LaunchExportPrefix, kernel),
+            LauncherAccessibility = GeneratedMemberAccessibility.OfSignature(kernel).ChooseIn(kernel.ContainingType),
+            WarmupRelayName =
+                GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Launcher.WarmupRelayPrefix, kernel),
             ReturnTypeName = kernel.ReturnType.SpecialType == SpecialType.System_Void
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
@@ -298,299 +313,6 @@ internal readonly record struct StructLayoutGuard(
 /// <param name="FullyQualifiedTypeName">The <c>global::</c>-qualified field type.</param>
 /// <param name="ExpectedOffset">The predicted host offset in bytes.</param>
 internal readonly record struct FieldOffsetGuard(string Name, string FullyQualifiedTypeName, int ExpectedOffset);
-
-/// <summary>The partial class that the generated host members of a kernel or device function go into.</summary>
-/// <param name="HintName">The source hint name of the class's wrapper (<see cref="GlobalCppNames.GetHintName"/>).</param>
-/// <param name="Namespace">
-/// The namespace as C# source spells it (<c>@event.P3</c>), or empty for the global namespace.
-/// </param>
-/// <param name="Name">
-/// The class name and type parameters as C# source spells them (<c>@class</c>, <c>G&lt;T&gt;</c>).
-/// </param>
-/// <param name="Keyword">
-/// The keyword of the user's declaration after <c>partial</c> (<c>class</c>, or <c>record</c> for a record class),
-/// which every part must repeat (CS0261).
-/// </param>
-/// <param name="Accessibility">The declared accessibility keywords, which the generated part must repeat (CS0262).</param>
-/// <param name="IsPublic">Whether the class is public, which decides the CS0649 suppression.</param>
-/// <param name="OuterDeclarations">
-/// The partial declarations of the types that contain the class, outermost first (<c>partial class Outer</c>, names
-/// as <see cref="CSharpTypeNameWriter.GetDeclaredTypeName"/> spells them), so
-/// that a part of a nested class is written inside them.
-/// </param>
-/// <param name="FullyQualifiedName">The <c>global::</c>-qualified C# type name, including any enclosing types.</param>
-/// <param name="DefinedSymbols">
-/// The symbols that the generated files of the class <c>#define</c>, so that C# keeps there the
-/// <c>[Conditional]</c> calls that a <c>#define</c> of the user's file keeps
-/// (<see cref="RemovedCalls.GetSymbolsToDefine"/>).
-/// </param>
-internal readonly record struct HostClassHeader(
-    string HintName,
-    string Namespace,
-    string Name,
-    string Keyword,
-    string Accessibility,
-    bool IsPublic,
-    EquatableArray<string> OuterDeclarations,
-    string FullyQualifiedName,
-    EquatableArray<string> DefinedSymbols = default)
-{
-    public bool IsGlobalNamespace => Namespace.Length == 0;
-
-    public static HostClassHeader Create(INamedTypeSymbol type, Compilation compilation) => new(
-        GlobalCppNames.GetHintName(type),
-        type.ContainingNamespace.GetCsharpNamespaceName(),
-        type.GetDeclaredTypeName(),
-        GetKeyword(type),
-        SyntaxFacts.GetText(type.DeclaredAccessibility),
-        type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
-        CreateOuterDeclarations(type),
-        type.GetFullyQualifiedCsharpName(),
-        RemovedCalls.GetSymbolsToDefine(type, compilation));
-
-    /// <summary>
-    /// The partial declarations of the types that contain <paramref name="type"/>, outermost first
-    /// (<c>partial class Outer&lt;T&gt;</c>), or empty for a type that is not nested.
-    /// </summary>
-    public static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
-    {
-        if (type.ContainingType == null)
-        {
-            return default;
-        }
-
-        var declarations = ImmutableArray.CreateBuilder<string>();
-        for (var outer = type.ContainingType; outer != null; outer = outer.ContainingType)
-        {
-            declarations.Insert(0, $"partial {GetKeyword(outer)} {outer.GetDeclaredTypeName()}");
-        }
-
-        return declarations.ToImmutable().AsEquatableArray();
-    }
-
-    /// <summary>
-    /// The keyword that declares <paramref name="type"/> after <c>partial</c>: <c>class</c>, <c>struct</c>,
-    /// <c>interface</c>, <c>record</c> or <c>record struct</c>.
-    /// </summary>
-    public static string GetKeyword(INamedTypeSymbol type) => type.IsRecord
-        ? type.TypeKind == TypeKind.Struct ? "record struct" : "record"
-        : type.TypeKind == TypeKind.Struct ? "struct" : type.TypeKind == TypeKind.Interface ? "interface" : "class";
-}
-
-/// <summary>The native shadow struct and the marshaling methods of one user struct, as the wrapper declares them.</summary>
-/// <param name="AotStructPath">The <c>AotContexts</c> path, which identifies the struct within a class.</param>
-/// <param name="CudaText">The CUDA declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
-/// <param name="CpuText">The CPU declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
-internal readonly record struct StructHostSource(string AotStructPath, string CudaText, string CpuText)
-{
-    public string GetText(bool isCuda) => isCuda ? CudaText : CpuText;
-}
-
-/// <summary>One kernel of a <see cref="KernelClassModel"/>, with what its siblings decide.</summary>
-/// <param name="Host">The kernel's own launch ABI.</param>
-/// <param name="MemberKey">The suffix of the per-kernel host members: the name, or <c>{name}__o{n}</c> for an overloaded kernel.</param>
-/// <param name="IsOverloaded">Whether another <c>[GpuKernel]</c> of the class has the same name.</param>
-/// <param name="IsIndistinguishable">Whether an earlier overload has the same wrapper parameter list (GSH0059), so the wrappers are left out.</param>
-/// <param name="CudaSource">The CUDA source of the kernel.</param>
-/// <param name="CppSource">The C++ source of the kernel.</param>
-/// <param name="ManagedCSharpSource">The managed fallback of the kernel.</param>
-/// <param name="InternalError">The exception that stopped the transpilation (GSH0048), or empty.</param>
-/// <param name="ErrorSites">
-/// The source locations of the run-time error sites of the kernel, which the class reports by site ID.
-/// </param>
-internal readonly record struct KernelEmission(
-    KernelHostModel Host,
-    string MemberKey,
-    bool IsOverloaded,
-    bool IsIndistinguishable,
-    string CudaSource,
-    string CppSource,
-    string ManagedCSharpSource,
-    string InternalError,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default)
-{
-    public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
-}
-
-/// <summary>The kernels of one class, which the generator emits as one wrapper source.</summary>
-internal readonly record struct KernelClassModel(
-    HostClassHeader Class,
-    EquatableArray<KernelEmission> Kernels,
-    EquatableArray<StructHostSource> Structs,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default)
-{
-    /// <summary>
-    /// Builds the class model from the kernels of one class, in the order given; the overloads, member keys and the
-    /// indistinguishable overloads are derived from these models only.
-    /// </summary>
-    public static KernelClassModel Create(HostClassHeader header, IReadOnlyList<TranspiledKernelResult> kernels)
-    {
-        var hosts = ImmutableArray.CreateBuilder<KernelHostModel>(kernels.Count);
-        kernels
-            .AsStackEnumerable()
-            .Select(static kernel => kernel.Host)
-            .AddTo(hosts);
-
-        var emissions = ImmutableArray.CreateBuilder<KernelEmission>(kernels.Count);
-        var structs = ImmutableArray.CreateBuilder<StructHostSource>();
-        var structIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var rawClassSites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
-        for (var i = 0; i < kernels.Count; i++)
-        {
-            var kernel = kernels[i];
-            if (!kernel.ErrorSites.IsDefaultOrEmpty)
-            {
-                foreach (var site in kernel.ErrorSites)
-                {
-                    rawClassSites.Add(site);
-                }
-            }
-
-            var isOverloaded = IsOverloaded(hosts, i);
-            var memberKey = isOverloaded
-                ? $"{kernel.Host.Name}__o{kernel.Host.OverloadOrdinal.ToString(CultureInfo.InvariantCulture)}"
-                : kernel.Host.Name;
-            emissions.Add(new KernelEmission(
-                kernel.Host,
-                memberKey,
-                isOverloaded,
-                TryFindIndistinguishableOverload(hosts, i, out _, out _),
-                kernel.CudaSource,
-                kernel.CppSource,
-                kernel.ManagedCSharpSource,
-                kernel.InternalError,
-                kernel.ErrorSites));
-
-            foreach (var s in kernel.Host.Structs)
-            {
-                if (!structIndices.TryGetValue(s.AotStructPath, out var index))
-                {
-                    structIndices.Add(s.AotStructPath, structs.Count);
-                    structs.Add(s);
-                }
-                else if (structs[index].CpuText.Length == 0 && s.CpuText.Length > 0)
-                {
-                    // One kernel converts an array of the struct on CUDA only, another passes the struct on the CPU too
-                    structs[index] = s;
-                }
-            }
-        }
-
-        ErrorSiteTable.TryBuildModuleSites(rawClassSites, out var classErrorSites, out _, out _);
-        return new KernelClassModel(
-            header,
-            emissions.MoveToImmutable().AsEquatableArray(),
-            structs.ToImmutable().AsEquatableArray(),
-            classErrorSites.AsEquatableArray());
-    }
-
-    /// <summary>Whether another kernel of <paramref name="kernels"/> has the name of <c>kernels[index]</c>.</summary>
-    public static bool IsOverloaded(IReadOnlyList<KernelHostModel> kernels, int index) =>
-        kernels
-            .AsStackEnumerable()
-            .Count(kernels[index].Name, static (k, name) => k.Name == name) > 1;
-
-    /// <summary>
-    /// Finds an earlier overload of <c>kernels[index]</c> whose <c>Launch{Name}</c> or typed <c>Launch{Name}Ptr</c> has the
-    /// same parameter list, which C# would reject as a duplicate member (GSH0059).
-    /// </summary>
-    /// <param name="kernels">The kernels of one class.</param>
-    /// <param name="index">The kernel to check.</param>
-    /// <param name="earlier">The index of the earlier overload, or -1.</param>
-    /// <param name="wrapperName">The wrapper that would be duplicated, or empty.</param>
-    public static bool TryFindIndistinguishableOverload(IReadOnlyList<KernelHostModel> kernels, int index,
-        out int earlier, out string wrapperName)
-    {
-        earlier = -1;
-        wrapperName = string.Empty;
-        if (!IsOverloaded(kernels, index))
-        {
-            return false;
-        }
-
-        var kernel = kernels[index];
-        for (var i = 0; i < kernels.Count; i++)
-        {
-            var other = kernels[i];
-            if (other.Name != kernel.Name || other.OverloadOrdinal >= kernel.OverloadOrdinal)
-            {
-                continue;
-            }
-
-            if (string.Equals(other.ManagedSignatureKey, kernel.ManagedSignatureKey, StringComparison.Ordinal))
-            {
-                earlier = i;
-                wrapperName = KernelHostNames.GetLaunchName(kernel);
-                return true;
-            }
-
-            if (string.Equals(other.TypedPointerSignatureKey, kernel.TypedPointerSignatureKey, StringComparison.Ordinal))
-            {
-                earlier = i;
-                wrapperName = KernelHostNames.GetTypedPointerLaunchName(kernel);
-                return true;
-            }
-        }
-
-        return false;
-    }
-}
-
-/// <summary>A kernel whose function pointer the CUDA module context warms up.</summary>
-/// <param name="Class">The class that declares the warmup method.</param>
-/// <param name="MemberKey">The suffix of <c>WarmupFunctionPointer{key}</c>.</param>
-internal readonly record struct KernelWarmup(HostClassHeader Class, string MemberKey);
-
-/// <summary>The kernels of one compilation: the class models, and the warmups in the order of the kernels.</summary>
-internal readonly record struct KernelModuleModel(
-    EquatableArray<KernelClassModel> Classes,
-    EquatableArray<KernelWarmup> Warmups)
-{
-    /// <summary>Groups <paramref name="kernels"/> by class, in the order the classes first appear.</summary>
-    public static KernelModuleModel Create(ImmutableArray<TranspiledKernelResult> kernels)
-    {
-        var kernelsByClass = new Dictionary<string, ImmutableArray<TranspiledKernelResult>.Builder>(StringComparer.Ordinal);
-        var classIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
-        foreach (var kernel in kernels)
-        {
-            if (!kernelsByClass.TryGetValue(kernel.Class.HintName, out var group))
-            {
-                group = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
-                kernelsByClass[kernel.Class.HintName] = group;
-                classIndices[kernel.Class.HintName] = classOrder.Count;
-                classOrder.Add(kernel.Class);
-            }
-
-            group.Add(kernel);
-        }
-
-        var classes = ImmutableArray.CreateBuilder<KernelClassModel>(classOrder.Count);
-        classOrder
-            .AsStackEnumerable()
-            .Select(kernelsByClass, static (header, groups) => KernelClassModel.Create(header, groups[header.HintName]))
-            .AddTo(classes);
-        var classModels = classes.MoveToImmutable();
-
-        // The module context warms the kernels up in their own order, which may interleave the classes
-        var positions = new Dictionary<string, int>(StringComparer.Ordinal);
-        var warmups = ImmutableArray.CreateBuilder<KernelWarmup>(kernels.Length);
-        foreach (var kernel in kernels)
-        {
-            var hintName = kernel.Class.HintName;
-            positions.TryGetValue(hintName, out var position);
-            positions[hintName] = position + 1;
-            var emission = classModels[classIndices[hintName]].Kernels[position];
-            if (!emission.IsIndistinguishable && !emission.Host.HasReservedLaunchParameterName &&
-                emission.Host.LauncherUnavailableReason is null)
-            {
-                warmups.Add(new KernelWarmup(kernel.Class, emission.MemberKey));
-            }
-        }
-
-        return new KernelModuleModel(classModels.AsEquatableArray(), warmups.ToImmutable().AsEquatableArray());
-    }
-}
 
 /// <summary>The managed state machines of the device functions of one class that may suspend.</summary>
 /// <param name="Class">The class that the state machines go into.</param>

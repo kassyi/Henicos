@@ -30,6 +30,14 @@ internal readonly record struct CSharpExecutionPlan
     /// <summary>Whether the kernel returns a value.</summary>
     public bool ReturnsValue => ReturnTypeName is not null;
 
+    /// <summary>
+    /// Whether a <see langword="ref"/> or <see langword="out"/> argument is copied back to the caller after the run,
+    /// also when a GPU thread throws.
+    /// </summary>
+    public bool CopiesBack => !Arguments.IsDefault && Arguments
+        .AsStackEnumerable()
+        .Any(static a => a.Kind is CSharpArgumentKind.Ref or CSharpArgumentKind.Out);
+
     /// <summary>The plan of the launcher of <paramref name="kernel"/>.</summary>
     /// <param name="kernel">The kernel.</param>
     /// <param name="isDevicePtr">Whether the launcher takes device pointers (<c>Launch{Kernel}Ptr</c>).</param>

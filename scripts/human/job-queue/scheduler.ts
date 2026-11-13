@@ -40,9 +40,19 @@ export interface SchedulerJob {
   keepIfFailed?: boolean;
   /** The memory budget a test run takes from the memory pool, in MB; 0 or absent for a job that runs no tests. */
   memoryMb?: number;
+  /**
+   * start <id>: granted at once, over the slots and the memory pool, like a GPU holder, for a job a person wants to run
+   * beside the running ones. It still waits for its predecessor (--after); a GPU turn never takes it.
+   */
+  startNow?: boolean;
   backfilled?: boolean;
   /** Its run started before this scheduler (re-registered after a restart): no run time is recorded for it. */
   adopted?: boolean;
+  /**
+   * Its client is away (the connection dropped, or the job was restored after a restart): a waiting job keeps its place
+   * but is not granted, since nobody would receive the grant.
+   */
+  detached?: boolean;
 }
 
 /** When a job is expected to start and end. */
@@ -164,12 +174,19 @@ export class Scheduler<J extends SchedulerJob> {
   outcomes: ReadonlyMap<number, string> = new Map();
 
   /**
-   * True until the job's predecessor (--after) has a recorded outcome that lets it run: "succeeded", or any outcome
-   * with
-   * --keep-if-failed. A predecessor that runs, waits, is not back yet after a restart, or failed (without
-   * --keep-if-failed) blocks it; the server cancels the jobs whose predecessor failed.
+   * True while the job may not be granted: its client is away (detached), or its predecessor blocks it
+   * (awaitsPredecessor). Like any blocked job, it does not hold up the jobs behind it.
    */
   isBlocked(job: SchedulerJob): boolean {
+    return job.detached === true || this.awaitsPredecessor(job);
+  }
+
+  /**
+   * True until the job's predecessor (--after) has a recorded outcome that lets it run: "succeeded", or any outcome
+   * with --keep-if-failed. A predecessor that runs, waits, is not back yet after a restart, or failed (without
+   * --keep-if-failed) blocks it; the server cancels the jobs whose predecessor failed.
+   */
+  awaitsPredecessor(job: SchedulerJob): boolean {
     if (job.after === null) {
       return false;
     }
@@ -287,7 +304,10 @@ export class Scheduler<J extends SchedulerJob> {
       this.start(job);
       granted.push(job);
     };
-    this.waiting.filter((job) => job.gpu && !job.gpuTurn && !this.isBlocked(job)).forEach(take);
+    // GPU holders and the jobs started by hand, over the pools
+    this.waiting
+      .filter((job) => (job.gpu || job.startNow === true) && !job.gpuTurn && !this.isBlocked(job))
+      .forEach(take);
     this.order(now);
     // The GPU goes to the waiting turns one at a time, in the same order as the slots, so that none is passed for ever
     const turn = this.gpuBusy() ? undefined : this.waiting.find((job) => job.gpuTurn === true && !this.isBlocked(job));

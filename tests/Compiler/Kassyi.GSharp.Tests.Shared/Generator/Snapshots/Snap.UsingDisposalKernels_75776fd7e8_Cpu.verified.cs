@@ -2271,13 +2271,10 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingP
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder::__gsharp_dispose() {
 ([&]() {
-auto&& __gsharp_seq_0 = ([&]() -> decltype(auto) {
-auto __gsharp_seq_1 = __gsharp_mb_Log;
-auto __gsharp_seq_2 = (__gsharp_array_at(__gsharp_mb_Log, 0, 1963989736u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, 1963989736u),1));
-return __gsharp_array_at(__gsharp_seq_1, __gsharp_seq_2, 1129062536u);
-}());
-int __gsharp_seq_3 = __gsharp_mb_Id;
-return __gsharp_seq_0 = __gsharp_seq_3;
+auto __gsharp_seq_0 = __gsharp_mb_Log;
+auto __gsharp_seq_1 = (__gsharp_array_at(__gsharp_mb_Log, 0, 1963989736u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_mb_Log, 0, 1963989736u),1));
+int __gsharp_seq_2 = __gsharp_mb_Id;
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 1129062536u) = __gsharp_seq_2;
 }());
 }
 #endif

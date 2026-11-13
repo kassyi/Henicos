@@ -459,7 +459,7 @@ internal static class FuzzWorkspaceReducer
         bool runTimedOut;
         if (config.IsCudaProject && !config.NoGpuLock && !string.IsNullOrWhiteSpace(config.RepoRoot))
         {
-            string lockScript = Path.Combine(Path.GetFullPath(config.RepoRoot), "scripts", "agent", "gpu-lock.js");
+            string lockScript = Path.Combine(Path.GetFullPath(config.RepoRoot), "scripts", "human", "gpu-lock.js");
             string lockArgs = $"\"{lockScript}\" -- \"dotnet {runArgs}\"";
             runCode = RunProcess("node", lockArgs, out stdout, out _, out runTimedOut, timeoutMs: 120_000);
         }

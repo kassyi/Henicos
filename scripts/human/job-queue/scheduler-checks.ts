@@ -335,6 +335,25 @@ export function checkDependencies(assert: AssertModule): void {
   assert.deepStrictEqual(filling.grant(1000), [free], "a blocked job is not backfilled");
 }
 
+/**
+ * A detached waiting job (its client is away) keeps its place but is not granted, also as a GPU holder or a GPU turn,
+ * and does not hold up the jobs behind it; it is granted once its client is back.
+ */
+export function checkDetached(assert: AssertModule): void {
+  const s = new Scheduler<SchedulerJob>(2, 0, "fifo");
+  const away = Object.assign(job(1, 2, 0), { detached: true });
+  const next = job(2, 1, 1);
+  const holder = Object.assign(job(3, 1, 2, true), { detached: true });
+  const turn = Object.assign(job(4, 1, 3), { gpuTurn: true, detached: true });
+  assert.deepStrictEqual(s.enqueue(away, 0), [], "nobody would receive the grant");
+  assert.deepStrictEqual(s.enqueue(next, 0), [next], "a detached first job does not hold up the next one");
+  assert.deepStrictEqual([s.enqueue(holder, 0), s.enqueue(turn, 0)], [[], []], "nor a GPU holder or turn");
+  assert.strictEqual(s.awaitsPredecessor(away), false, "it waits for its client, not for a predecessor");
+  s.remove(next, 1);
+  away.detached = false;
+  assert.deepStrictEqual(s.grant(2), [away], "granted once its client is back");
+}
+
 /** GPU turns: one at a time, in the order of the slots, taking no slots, and never while a GPU holder runs. */
 export function checkGpuTurns(assert: AssertModule): void {
   const turn = (id: number, queuedAt: number, estimate: Estimate | null = null): SchedulerJob =>
@@ -493,6 +512,25 @@ export function checkRunHistory(assert: AssertModule): void {
   }
 }
 
+/** start <id>: granted at once over the slots and the memory pool, never as a GPU turn or before its predecessor. */
+export function checkStartNow(assert: AssertModule): void {
+  const s = new Scheduler<SchedulerJob>(2, 0, "hrrn", 1000);
+  const a = Object.assign(job(1, 2, 1), { memoryMb: 800 });
+  const b = Object.assign(job(2, 1, 2), { memoryMb: 800 });
+  assert.deepStrictEqual(s.enqueue(a), [a]);
+  assert.deepStrictEqual(s.enqueue(b), [], "no free slot");
+  b.startNow = true;
+  assert.deepStrictEqual(s.grant(), [b], "started by hand: granted over the slots and the memory pool");
+  assert.strictEqual(s.used, 3);
+  assert.strictEqual(s.memoryUsed, 1600);
+  const turn = Object.assign(job(3, 1, 3), { gpuTurn: true, startNow: true });
+  const holder = job(4, 1, 4, true);
+  s.enqueue(holder);
+  assert.deepStrictEqual(s.enqueue(turn), [], "a GPU turn waits for the GPU even when started by hand");
+  const blocked = Object.assign(job(5, 1, 5), { after: 99, startNow: true });
+  assert.deepStrictEqual(s.enqueue(blocked), [], "and so does a job whose predecessor has not ended");
+}
+
 export const SchedulerChecks: Record<string, (assert: AssertModule) => void> = {
   checkBasics,
   checkBackfill,
@@ -500,7 +538,9 @@ export const SchedulerChecks: Record<string, (assert: AssertModule) => void> = {
   checkForecast,
   checkPlacement,
   checkDependencies,
+  checkDetached,
   checkGpuTurns,
   checkMemory,
+  checkStartNow,
   checkRunHistory,
 };

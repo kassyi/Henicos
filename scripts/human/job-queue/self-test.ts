@@ -4,44 +4,24 @@
 
 import * as assert from "node:assert";
 import * as fs from "node:fs";
-import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
-import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import {
-  CpusVariable,
-  GpuLockHeldVariable,
-  EntryScript,
-  InGpuLockVariable,
-  JobVariable,
-  OrphanPollMs,
-  ProtocolVersion,
-  ShellVariable,
-  StartupGraceMs,
-  StateDirectoryVariable,
-} from "./constants.ts";
-import { request } from "./client.ts";
+import { spawn, spawnSync } from "node:child_process";
+import { EntryScript, OrphanPollMs, StartupGraceMs } from "./constants.ts";
+import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
-import { onMessages, send, type StatusJob, type StatusReply } from "./protocol.ts";
+import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
-import { gitBashPath, isTestCommand, limitMsbuildNodes, quoteArgument } from "./shell.ts";
-import { defaultMemoryPoolMb, defaultSlots, MinimumSlots, parseBudgets, testMemoryMb } from "./machine.ts";
-import {
-  delay,
-  stopChild,
-  removeDirectory,
-  type Client,
-  startTestScheduler,
-  statusOf,
-  usedWithin,
-  waitFor,
-  jobWith,
-  runningWith,
-  jobsWith,
-  registration,
-} from "./self-test-support.ts";
+import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
+import { ClientChecks } from "./self-test-client.ts";
+import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
+import { MachineProfile, MinimumSlots, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./machine.ts";
+import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
-import { checkGpuTurnsEndToEnd, checkRegrant, checkWait } from "./self-test-parts.ts";
+import { checkGpuTurnsEndToEnd, checkRegrant, checkStart, checkWait } from "./self-test-parts.ts";
+import { checkReconnects } from "./self-test-reconnect.ts";
+import { checkRestarts } from "./self-test-restart.ts";
+import { checkView } from "./self-test-view.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
@@ -50,21 +30,27 @@ const OrphanReleaseMs = 30000;
 /** Checks of the pure helpers: the node limit, quoting, which commands run tests. */
 function checkShellHelpers(): void {
   assert.strictEqual(
-    limitMsbuildNodes("dotnet test X.csproj && dotnet build", 6),
+    CommandShell.limitMsbuildNodes("dotnet test X.csproj && dotnet build", 6),
     "dotnet test -m:6 X.csproj && dotnet build -m:6",
   );
-  assert.strictEqual(limitMsbuildNodes("dotnet build-server shutdown", 6), "dotnet build-server shutdown");
-  assert.strictEqual(limitMsbuildNodes("dotnet test -m:2", 6), "dotnet test -m:2");
-  assert.strictEqual(limitMsbuildNodes("dotnet build -m:2 && dotnet test", 6), "dotnet build -m:2 && dotnet test -m:6");
-  assert.strictEqual(limitMsbuildNodes("dotnet build --maxcpucount 4", 6), "dotnet build --maxcpucount 4");
-  assert.strictEqual(limitMsbuildNodes("dotnet.exe build", 6), "dotnet.exe build -m:6");
+  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet build-server shutdown", 6), "dotnet build-server shutdown");
+  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet test -m:2", 6), "dotnet test -m:2");
   assert.strictEqual(
-    limitMsbuildNodes('"C:\\Program Files\\dotnet\\dotnet.exe" test x', 6),
+    CommandShell.limitMsbuildNodes("dotnet build -m:2 && dotnet test", 6),
+    "dotnet build -m:2 && dotnet test -m:6",
+  );
+  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet build --maxcpucount 4", 6), "dotnet build --maxcpucount 4");
+  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet.exe build", 6), "dotnet.exe build -m:6");
+  assert.strictEqual(
+    CommandShell.limitMsbuildNodes('"C:\\Program Files\\dotnet\\dotnet.exe" test x', 6),
     '"C:\\Program Files\\dotnet\\dotnet.exe" test -m:6 x',
   );
-  assert.strictEqual(limitMsbuildNodes("dotnet run --project x", 6), "dotnet run --project x");
-  assert.strictEqual(limitMsbuildNodes('dotnet test --filter "A|B" -m:2', 6), 'dotnet test --filter "A|B" -m:2');
-  assert.strictEqual(limitMsbuildNodes("dotnet test bin/x.Tests.dll", 6), "dotnet test bin/x.Tests.dll");
+  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet run --project x", 6), "dotnet run --project x");
+  assert.strictEqual(
+    CommandShell.limitMsbuildNodes('dotnet test --filter "A|B" -m:2', 6),
+    'dotnet test --filter "A|B" -m:2',
+  );
+  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet test bin/x.Tests.dll", 6), "dotnet test bin/x.Tests.dll");
   assert.strictEqual(quoteArgument("pwsh", "@x.rsp"), "'@x.rsp'", "PowerShell would splat @x");
   assert.strictEqual(quoteArgument("pwsh", "-Dfoo.bar=1"), "'-Dfoo.bar=1'", "PowerShell splits -a.b at the dot");
   assert.strictEqual(quoteArgument("bash", "C:\\dir\\f.txt"), "'C:\\dir\\f.txt'", "bash reads \\ as an escape");
@@ -79,10 +65,10 @@ function checkShellHelpers(): void {
 
 /** The defaults that follow the machine, and the memory a test run needs. */
 function checkMachineDefaults(): void {
-  assert.strictEqual(defaultSlots(24), 8);
-  assert.strictEqual(defaultSlots(8), 3);
-  assert.strictEqual(defaultSlots(4), MinimumSlots, "a small machine still runs a build beside a test run");
-  assert.strictEqual(defaultMemoryPoolMb(64 * 1024 ** 3), 32 * 1024);
+  assert.strictEqual(new MachineProfile(24).slots, 8);
+  assert.strictEqual(new MachineProfile(8).slots, 3);
+  assert.strictEqual(new MachineProfile(4).slots, MinimumSlots, "a small machine still runs a build beside a test run");
+  assert.strictEqual(new MachineProfile(undefined, 64 * 1024 ** 3).memoryPoolMb, 32 * 1024);
   const budgets = parseBudgets(
     ["# comment", "Kassyi.GSharp.Tests.Cpu: 2880, stress 6720", "Kassyi.GSharp.Tests.Integration: 128", ""].join("\n"),
   );
@@ -99,10 +85,40 @@ function checkMachineDefaults(): void {
   );
   assert.strictEqual(memory("dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu"), 0, "a build takes no memory");
   assert.strictEqual(testMemoryMb("just test", true, new Map()), 0, "without budgets nothing is held back");
+  checkCpuOnlyProjects();
+}
+
+/** The hint of run --gpu: only when every named test project's csproj says it runs on the CPU. */
+function checkCpuOnlyProjects(): void {
+  const tests = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-tests-"));
+  try {
+    const project = (category: string, name: string, body: string): void => {
+      fs.mkdirSync(path.join(tests, category, name), { recursive: true });
+      fs.writeFileSync(
+        path.join(tests, category, name, `${name}.csproj`),
+        `<Project><PropertyGroup>${body}</PropertyGroup></Project>`,
+      );
+    };
+    project("Compiler", "Suite.Cpu", "<GSharpTargetDialect>Cpu</GSharpTargetDialect>");
+    project("Compiler", "Suite.Cuda", "<GSharpTargetDialect>Cuda</GSharpTargetDialect>");
+    project("Stdlib", "Suite.Math", "<CudaCapability>89</CudaCapability>");
+    const names = ["Suite.Cpu", "Suite.Cuda", "Suite.Math", "Suite.Missing"];
+    const cpuOnly = (command: string): string[] => cpuOnlyTestProjects(command, names, tests);
+    assert.deepStrictEqual(cpuOnly("dotnet test tests/Compiler/Suite.Cpu --no-build"), ["Suite.Cpu"]);
+    assert.deepStrictEqual(
+      cpuOnly("dotnet test tests/Compiler/Suite.Cpu && dotnet test tests/Compiler/Suite.Cuda"),
+      [],
+    );
+    assert.deepStrictEqual(cpuOnly("dotnet test tests/Stdlib/Suite.Math"), [], "no dialect in the csproj: no hint");
+    assert.deepStrictEqual(cpuOnly("dotnet test Suite.Missing"), [], "no csproj: no hint");
+    assert.deepStrictEqual(cpuOnly("just test"), [], "a command that names no project: no hint");
+  } finally {
+    fs.rmSync(tests, { recursive: true, force: true });
+  }
 }
 
 export async function selfTest(): Promise<void> {
-  for (const [name, check] of Object.entries(SchedulerChecks)) {
+  for (const [name, check] of Object.entries({ ...SchedulerChecks, ...JobStateChecks })) {
     try {
       check(assert);
     } catch (error) {
@@ -111,56 +127,25 @@ export async function selfTest(): Promise<void> {
     }
   }
   checkShellHelpers();
-
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-"));
-  const env: NodeJS.ProcessEnv = { ...process.env };
-  delete env[JobVariable];
-  delete env[InGpuLockVariable];
-  delete env[CpusVariable];
-  delete env[GpuLockHeldVariable]; // a self-test run under gpu-lock.js must still queue its GPU-less clients
-  env[StateDirectoryVariable] = dir; // a scheduler that a client starts logs here, not into the main checkout
-  // The test commands below are written for cmd / sh; the shells themselves are checked in part 6.
-  env[ShellVariable] = process.platform === "win32" ? "cmd" : "sh";
-  // --gpu jobs take a private GPU lock, never the machine's (gpu-lock.js reads GSHARP_GPU_LOCK_PATH), without the pool
-  // readings
-  env.GSHARP_GPU_LOCK_PATH = path.join(dir, "gpu-lock");
-  env.GSHARP_GPU_POOL_WATCH = "0";
-  const children: ChildProcess[] = [];
-  // --slots: a scheduler that a client restarts gets the same capacity as the test one.
-  const client = (port: number, command: string, extra: string[] = []): Client => {
-    const args = [EntryScript, "run", "--port", String(port), "--slots", "2", "--weight", "1", ...extra, "--", command];
-    const child = spawn(process.execPath, args, { stdio: "ignore", windowsHide: true, env }) as Client;
-    children.push(child);
-    child.done = new Promise((resolve) => child.on("close", resolve));
-    return child;
-  };
-  const sleeper = (ms: number): string => `"${process.execPath}" -e "setTimeout(function(){},${ms})"`;
-  // A command that ends with `code` once `file` exists, so that a check decides when a job ends
-  const gated = (code: number, file: string): string =>
-    `"${process.execPath}" -e "var f=process.argv[1];` +
-    `setInterval(function(){if(require('fs').existsSync(f))process.exit(${code})},50)" "${file}"`;
-  const open = (file: string): void => fs.writeFileSync(file, "");
-  // A command that writes `file` once it runs, then sleeps: the client reports its shell's process at once, and a
-  // client killed before the shell started the command ends the shell with it, so that no command is left to hold a
-  // slot
-  const started = (ms: number, file: string): string =>
-    `"${process.execPath}" -e "require('fs').writeFileSync(process.argv[1],'');` +
-    `setTimeout(function(){},${ms})" "${file}"`;
-  const whenExists = async (file: string): Promise<void> => {
-    for (let i = 0; i < 150 && !fs.existsSync(file); i++) {
-      await delay(100);
+  for (const [name, check] of Object.entries({ ...JobServerChecks, ...ClientChecks })) {
+    try {
+      await check(assert);
+    } catch (error) {
+      process.stderr.write(`${name} failed\n`);
+      throw error;
     }
-    assert.ok(fs.existsSync(file), `the command started: ${file}`);
-  };
-  const exiting = (code: number, ms = 0): string =>
-    `"${process.execPath}" -e "setTimeout(function(){process.exit(${code})},${ms})"`;
-  const servers: ChildProcess[] = [];
-  const ports: number[] = [];
+  }
+  checkView();
+
+  const fixture = new QueueFixture();
+  const { dir, env, children, servers, ports } = fixture;
+  const { client, sleeper, open, started, whenExists, startScheduler } = fixture;
+  const { statusOf, usedWithin, waitFor, jobWith, runningWith, jobsWith, rawClient } = fixture;
   try {
     // 1. At most 2 jobs at once, in arrival order; a client killed with its command frees its slot.
     const port = 20000 + Math.floor(Math.random() * 20000);
     ports.push(port);
-    servers.push(await startTestScheduler(port, 2, env));
+    await startScheduler(port, 2);
     await delay(StartupGraceMs);
     const marker = path.join(dir, "log.txt");
     const script = path.join(dir, "job.js");
@@ -285,20 +270,14 @@ export async function selfTest(): Promise<void> {
     assert.deepStrictEqual([empty.used, empty.running.length, empty.waiting.length], [0, 0, 0]);
     // Run times are recorded for the commands that ended by themselves, not for killed, lost or cancelled ones, nor
     // for one stopped early (done with completed: false, as a client sends after a signal)
-    const rawRun = (command: string, completed: boolean): Promise<void> =>
-      new Promise((resolve) => {
-        const s = net.connect(port, "127.0.0.1", () =>
-          send(s, { version: ProtocolVersion, ...registration(command, 1, process.pid) }),
-        );
-        onMessages(s, (m) => {
-          if (m.type === "granted") {
-            send(s, { version: ProtocolVersion, type: "done", completed, exitCode: 0 });
-            s.end();
-          }
-        });
-        s.on("close", () => resolve());
-        s.on("error", () => resolve());
-      });
+    const rawRun = async (command: string, completed: boolean): Promise<void> => {
+      const c = await rawClient(port);
+      c.send(registration(command, 1, process.pid));
+      assert.ok((await c.until("granted")) !== null, `granted: ${command}`);
+      c.send({ type: "done", completed, exitCode: 0 });
+      c.socket.end();
+      await c.closed;
+    };
     await rawRun("stopped early", false);
     await rawRun("ran to its end", true);
     // The scheduler records when it sees the close, after our side closed; the early run's close came before
@@ -403,11 +382,6 @@ export async function selfTest(): Promise<void> {
     // 8. A client that lost only its connection re-registers: its kept slot is replaced under the same id, and a
     //    waiting job does not get it in between (capacity 2: A weighs 2, W waits with 2).
     await usedWithin(port, 0, 5000);
-    const raw = (): Promise<net.Socket> =>
-      new Promise((resolve) => {
-        const socket = net.connect(port, "127.0.0.1", () => resolve(socket));
-        socket.on("error", () => socket.destroy());
-      });
     // Unix: a group leader, as the command a client starts, so that the scheduler sees its group alive
     const sleeperProcess = spawn(process.execPath, ["-e", "setTimeout(function(){},20000)"], {
       windowsHide: true,
@@ -415,30 +389,23 @@ export async function selfTest(): Promise<void> {
     });
     children.push(sleeperProcess);
     const fakeClientPid = process.pid;
-    const first = await raw();
-    send(first, { version: ProtocolVersion, ...registration("A", 2, fakeClientPid) });
-    await delay(300);
-    send(first, {
-      version: ProtocolVersion,
-      type: "started",
-      commandPid: sleeperProcess.pid ?? 0,
-      spawnedAt: Date.now(),
-    });
-    const waiter = await raw();
-    send(waiter, { version: ProtocolVersion, ...registration("W", 2, 1) });
-    await delay(300);
-    const keptId = (await jobWith(port, "A")).id;
-    first.destroy();
-    await delay(500);
-    const again = await raw();
-    send(again, {
-      version: ProtocolVersion,
-      ...registration("A", 2, fakeClientPid),
-      type: "adopt",
-      commandPid: sleeperProcess.pid ?? 0,
-      spawnedAt: Date.now(),
-    });
-    await delay(500);
+    const first = await rawClient(port);
+    const requestA = registration("A", 2, fakeClientPid);
+    first.send(requestA);
+    assert.ok((await first.until("granted")) !== null, "A is granted");
+    const spawnedAt = Date.now();
+    first.send({ type: "started", commandPid: sleeperProcess.pid ?? 0, spawnedAt });
+    const waiter = await rawClient(port);
+    waiter.send(registration("W", 2, 1));
+    await waiter.until("queued");
+    const keptId = (await runningWith(port, "A")).id;
+    first.close();
+    await waitFor(port, "A is seen lost", (s) =>
+      s.running.some((j) => j.id === keptId && j.orphan) ? true : undefined,
+    );
+    const again = await rawClient(port);
+    again.send({ ...requestA, type: "adopt", id: keptId, commandPid: sleeperProcess.pid ?? 0, spawnedAt });
+    assert.ok((await again.until("adopted")) !== null, "A re-registers");
     const readopted = await statusOf(port);
     assert.deepStrictEqual(
       [readopted.used, readopted.running.map((j) => j.command), readopted.waiting.map((j) => j.command)],
@@ -446,8 +413,8 @@ export async function selfTest(): Promise<void> {
       "re-registration replaces the kept slot without handing it to W",
     );
     assert.strictEqual(readopted.running[0]?.id, keptId, "the re-registered job keeps its id");
-    again.destroy();
-    waiter.destroy();
+    again.close();
+    waiter.close();
     stopChild(sleeperProcess);
 
     // 5. A job whose client was lost before a restart still holds its slot after it (restored from jobs-<port>.json).
@@ -459,7 +426,7 @@ export async function selfTest(): Promise<void> {
     const beforeRestart = await waitFor(port, "the client is seen lost", (s) => (s.running[0]?.orphan ? s : undefined));
     await request(port, { type: "stop" });
     await delay(300);
-    servers.push(await startTestScheduler(port, 2, env));
+    await startScheduler(port, 2);
     const restored = await statusOf(port);
     assert.strictEqual(restored.used, 1, "the job of the lost client is restored after the restart");
     assert.strictEqual(restored.running[0]?.orphan, true);
@@ -473,25 +440,29 @@ export async function selfTest(): Promise<void> {
 
     // 9. hrrn re-grants while jobs wait, not only when a job ends: a short job that overtakes the waiting wide one
     //    starts within RegrantMs, although nothing ends before the running job (20 s).
-    await checkRegrant(port + 1, env, client, sleeper, servers, ports);
+    await checkRegrant(fixture, port + 1);
 
     // 10. move, set-weight and --after end to end, and their survival across a scheduler restart.
-    await checkPlacementAndDependencies(port + 2, env, client, { sleeper, exiting, gated, open, dir }, servers, ports);
+    await checkPlacementAndDependencies(fixture, port + 2);
 
     // 11. --gpu jobs wait for their GPU turn in the scheduler: in order, visible and cancellable while they wait.
-    await checkGpuTurnsEndToEnd(port + 3, env, client, { gated, open, dir }, servers, ports);
+    await checkGpuTurnsEndToEnd(fixture, port + 3);
 
     // 12. wait <id> exits with the outcome of a job: when a running job ends (also across a restart), at once for an
     //     ended one, with 2 for an unknown id.
-    await checkWait(port + 4, env, client, { gated, open, exiting, dir }, servers, ports);
+    await checkWait(fixture, port + 4);
+
+    // 13. start <id> runs a waiting job beside the running ones, over the pool.
+    await checkStart(fixture, port + 5);
+
+    // 14. A client that comes back: re-registrations that race with the old connection's close or the observation of
+    //     its processes, and another process that reuses its pid.
+    await checkReconnects(fixture, port + 6);
+
+    // 15. A restarted scheduler holds every job of its state file from the first event; an older file keeps the grace.
+    await checkRestarts(fixture, port + 10);
   } finally {
-    children.forEach((child) => child.exitCode === null && stopChild(child));
-    servers.forEach((server) => server.kill("SIGKILL"));
-    for (const port of ports) {
-      await request(port, { type: "stop" }).catch(() => null);
-    }
-    await delay(200);
-    removeDirectory(dir);
+    await fixture.cleanup();
   }
   process.stdout.write("job-queue self-test passed\n");
 }
