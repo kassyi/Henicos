@@ -1,17 +1,6 @@
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
-/// Represents a deterministic 31-bit compile-time error site entry recorded for device and native CPU runtime trap reporting (#729).
-/// </summary>
-internal readonly record struct ErrorSiteEntry(
-    uint SiteId,
-    string File,
-    int Line,
-    int Column,
-    string MemberName,
-    string DefaultMessage);
-
-/// <summary>
 /// Computes stable, deterministic 31-bit site IDs and collects source locations (<c>file</c>, <c>line</c>, <c>column</c>, <c>memberName</c>, <c>defaultMessage</c>)
 /// for runtime error reporting on CUDA and Native CPU (#729).
 /// </summary>

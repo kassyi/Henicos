@@ -14,6 +14,11 @@
 
   <ItemGroup>
     <Compile Include="..\Kassyi.GSharp.Compiler\SourceWriter.cs" Link="SourceWriter.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\SourceWriterScope.cs" Link="SourceWriterScope.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\SourceWriterInlineScope.cs" Link="SourceWriterInlineScope.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\SourceWriterImmediatelyInvokedLambdaScope.cs" Link="SourceWriterImmediatelyInvokedLambdaScope.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\SourceWriterWarningSuppression.cs" Link="SourceWriterWarningSuppression.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\SourceWriterInterpolatedStringHandler.cs" Link="SourceWriterInterpolatedStringHandler.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\XmlDocEscaping.cs" Link="XmlDocEscaping.cs" />
     <!-- The demangle mode decodes with the same rules the compiler encodes with. -->
     <Compile Include="..\..\Shared\Naming\GSharpNameEncoding.cs" Link="Naming\GSharpNameEncoding.cs" />

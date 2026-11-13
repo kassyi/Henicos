@@ -1,12 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
-internal enum CppLocation
-{
-    None,
-    Storage,
-    AutoPropertyStorage
-}
-
 /// <summary>
 /// Provides shared logic for handling 'ref', 'out', and pointer semantics in the AST.
 /// </summary>
