@@ -4,6 +4,7 @@
 
 import * as assert from "node:assert";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as net from "node:net";
 import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
@@ -13,7 +14,7 @@ import { RunHistory } from "./history.ts";
 import { onMessages, send, type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
-import { MachineProfile, MinimumSlots, parseBudgets, testMemoryMb } from "./machine.ts";
+import { MachineProfile, MinimumSlots, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./machine.ts";
 import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
 import { checkGpuTurnsEndToEnd, checkRegrant, checkStart, checkWait } from "./self-test-parts.ts";
@@ -81,6 +82,36 @@ function checkMachineDefaults(): void {
   );
   assert.strictEqual(memory("dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu"), 0, "a build takes no memory");
   assert.strictEqual(testMemoryMb("just test", true, new Map()), 0, "without budgets nothing is held back");
+  checkCpuOnlyProjects();
+}
+
+/** The hint of run --gpu: only when every named test project's csproj says it runs on the CPU. */
+function checkCpuOnlyProjects(): void {
+  const tests = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-tests-"));
+  try {
+    const project = (category: string, name: string, body: string): void => {
+      fs.mkdirSync(path.join(tests, category, name), { recursive: true });
+      fs.writeFileSync(
+        path.join(tests, category, name, `${name}.csproj`),
+        `<Project><PropertyGroup>${body}</PropertyGroup></Project>`,
+      );
+    };
+    project("Compiler", "Suite.Cpu", "<GSharpTargetDialect>Cpu</GSharpTargetDialect>");
+    project("Compiler", "Suite.Cuda", "<GSharpTargetDialect>Cuda</GSharpTargetDialect>");
+    project("Stdlib", "Suite.Math", "<CudaCapability>89</CudaCapability>");
+    const names = ["Suite.Cpu", "Suite.Cuda", "Suite.Math", "Suite.Missing"];
+    const cpuOnly = (command: string): string[] => cpuOnlyTestProjects(command, names, tests);
+    assert.deepStrictEqual(cpuOnly("dotnet test tests/Compiler/Suite.Cpu --no-build"), ["Suite.Cpu"]);
+    assert.deepStrictEqual(
+      cpuOnly("dotnet test tests/Compiler/Suite.Cpu && dotnet test tests/Compiler/Suite.Cuda"),
+      [],
+    );
+    assert.deepStrictEqual(cpuOnly("dotnet test tests/Stdlib/Suite.Math"), [], "no dialect in the csproj: no hint");
+    assert.deepStrictEqual(cpuOnly("dotnet test Suite.Missing"), [], "no csproj: no hint");
+    assert.deepStrictEqual(cpuOnly("just test"), [], "a command that names no project: no hint");
+  } finally {
+    fs.rmSync(tests, { recursive: true, force: true });
+  }
 }
 
 export async function selfTest(): Promise<void> {

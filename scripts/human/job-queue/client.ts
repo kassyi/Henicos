@@ -25,6 +25,7 @@ import {
 import { describeOutlook } from "./client-commands.ts";
 import { OlderSchedulerHint, SchedulerLauncher, delay, type Endpoint } from "./client-connect.ts";
 import { errorMessage } from "./history.ts";
+import { MachineProfile } from "./machine.ts";
 import {
   numberField,
   onMessages,
@@ -153,6 +154,15 @@ export async function run(options: RunOptions): Promise<void> {
     if (/fuzz-diff|fuzz-differential|long-checks/.test(options.command)) {
       // They take the GPU lock themselves for their GPU steps; holding it here would make them wait for ever
       usageError("fuzz-diff and long-checks take the GPU lock themselves: queue them without --gpu.");
+    }
+    const cpuOnly = new MachineProfile().cpuOnlyTestProjects(options.command);
+    if (cpuOnly.length > 0) {
+      // A hint, not a refusal: the command may use the GPU in a way the project file does not show
+      prefix(
+        `--gpu, but ${cpuOnly.join(", ")} ${cpuOnly.length === 1 ? "runs" : "run"} on the CPU only ` +
+          "(GSharpTargetDialect Cpu): " +
+          "this job waits for the GPU and keeps the GPU jobs behind it waiting; queue it without --gpu",
+      );
     }
     // Wait for the turn at the GPU in the scheduler (in order, visible and cancellable), then take the lock: the GPU
     // lock alone gives it to whichever waiter polls first. An --after predecessor blocks the turn there too.

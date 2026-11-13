@@ -6,12 +6,68 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
-// The evaluation of a seed whose oracle throws: every checked path must throw the same exception, and with
-// DifferentialCase.ComparesOutputsAfterException leave the writes the oracle made before it
+// The evaluation of a seed whose oracle throws, or that expects an exception: every checked path must throw the same
+// exception and leave the writes the oracle made: every thread runs to its end or to its own exception, as on the GPU
 public static partial class DifferentialRunner
 {
-    // afterException: the outputs of the oracle at its exception, which the paths that throw must match
-    // (DifferentialCase.ComparesOutputsAfterException), or null
+    // Runs the oracle in every order of the case, each on its own copy of the inputs, and requires the same outcome in
+    // all of them: the same exception type, or none, and the same outputs (an output that depends on the order is a
+    // race, also when a thread throws). Returns the outputs of the first order, and in thrown its exception or null
+    private static DiffBuffers RunOracleOrders(
+        DifferentialCase testCase,
+        Action<DiffBuffers, LaunchShape> oracle,
+        DiffBuffers initial,
+        LaunchShape shape,
+        int seed,
+        out Exception? thrown
+    )
+    {
+        var orders = testCase.OracleOrders ?? [ThreadOrder.Forward, ThreadOrder.Reverse, ThreadOrder.Permutation(seed)];
+        var firstOrder = orders.Count > 0 ? orders[0] : ThreadOrder.Forward;
+        var expected = initial.Clone();
+        expected.Shape = shape;
+        var firstThrown = TryRunOrder(shape, firstOrder, () => oracle(expected, shape));
+        for (int i = 1; i < orders.Count; i++)
+        {
+            var order = orders[i];
+            var other = initial.Clone();
+            other.Shape = shape;
+            var otherThrown = TryRunOrder(shape, order, () => oracle(other, shape));
+            if (firstThrown?.GetType() != otherThrown?.GetType())
+            {
+                throw new DifferentialHarnessException(
+                    $"{testCase.Name}: oracle exception depends on thread order for seed {seed}: " +
+                    $"{firstOrder} {Outcome(firstThrown)}, but {order} {Outcome(otherThrown)}"
+                );
+            }
+
+            CheckOrderIndependence(testCase, seed, expected, other, order);
+        }
+
+        thrown = firstThrown;
+        return expected;
+    }
+
+    private static string Outcome(Exception? thrown) => thrown is null ? "succeeded" : $"threw {thrown.GetType().Name}";
+
+    // The outputs of the oracle for a seed whose exception the case states (ExpectedException or ExceptionPolicy): the
+    // oracle must throw that exception as well, and the paths must leave its writes
+    private static DiffBuffers RunOracleExpecting(DifferentialCase testCase, in ShapeRun at, ExceptionPolicy policy)
+    {
+        var oracle = testCase.EffectiveOracle ?? throw new DifferentialHarnessException($"{testCase.Name}: no oracle");
+        var expected = RunOracleOrders(testCase, oracle, at.Initial, at.Shape, at.Seed, out var thrown);
+        if (thrown?.GetType() != policy.ExceptionType)
+        {
+            throw new DifferentialHarnessException(
+                $"{testCase.Name}: the case expects {policy} for seed {at.Seed}, but the oracle {Outcome(thrown)}"
+            );
+        }
+
+        return expected;
+    }
+
+    // afterException: the outputs of the oracle at its exception, which the paths that throw must match, or null when
+    // the case has no oracle
     private static bool EvaluateExceptionExpectation(
         in CaseRun run,
         in ShapeRun at,
