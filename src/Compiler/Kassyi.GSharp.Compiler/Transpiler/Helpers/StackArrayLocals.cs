@@ -57,7 +57,7 @@ internal static class StackArrayLocals
     {
         // An empty span local is already a GSharpArray<T> (VariableDeclarationTranspilerRule)
         if (!IsStackArrayReference(expression, context.Query.SemanticModel) ||
-            TryGetLength(expression, context.Query.SemanticModel, out var length) && length == 0)
+            (TryGetLength(expression, context.Query.SemanticModel, out var length) && length == 0))
         {
             context.Visitor.Visit(expression);
             return;

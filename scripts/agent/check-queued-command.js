@@ -2,8 +2,8 @@
 'use strict';
 
 // PreToolUse hook of Claude Code (Bash and PowerShell, .claude/settings.json) and Antigravity (run_command,
-// .agents/hooks.json): denies a build or test command that does not go through the build queue
-// (scripts/agent/build-queue.js), so that agents running side by side do not oversubscribe the machine. The input
+// .agents/hooks.json): denies a build or test command that does not go through the job queue
+// (scripts/human/job-queue.js), so that agents running side by side do not oversubscribe the machine. The input
 // format tells the two apart. A command that may run produces no output: an Antigravity "allow" would skip the
 // user's permission prompt.
 //
@@ -23,7 +23,7 @@
 //     unless just only prints it (--dry-run, --show, --list) or mutate / long-checks get --dry-run,
 //   - node with one of the long test scripts or gpu-lock.js, unless they only print (--help, --self-test, --dry-run
 //     before any --), or gpu-lock.js takes a private lock (--lock-path, for its own tests).
-// A segment that runs build-queue.js is allowed with everything quoted in it, and a git or gh segment is left alone.
+// A segment that runs job-queue.js is allowed with everything quoted in it, and a git or gh segment is left alone.
 // Out of reach: a command held in a variable and run later ($c = 'dotnet test'; cmd /c $c) and the contents of a
 // script file the command runs.
 //
@@ -552,7 +552,10 @@ function segmentReason(segment) {
   return null;
 }
 
-/** True when the segment runs build-queue.js (which queues the command quoted in it) or is a git / gh command. */
+/**
+ * True when the segment runs job-queue.js (which queues the command quoted in it; build-queue.js is its name in older
+ * checkouts) or is a git / gh command.
+ */
 function isExempt(segment) {
   const list = dropPrefixes(words(segment.trim()));
   if (list.length === 0) {
@@ -562,7 +565,7 @@ function isExempt(segment) {
   if (name === 'git' || name === 'gh') {
     return true;
   }
-  return name === 'node' && /(^|[\\/])build-queue\.js$/.test(unquote(list[1] || ''));
+  return name === 'node' && /(^|[\\/])(job|build)-queue\.js$/.test(unquote(list[1] || ''));
 }
 
 /**
@@ -628,11 +631,17 @@ function check(command, kind = dialect) {
 
 function denialText(reasons) {
   return (
-    `${reasons.join(', ')} must run through the build queue, so that parallel agents do not oversubscribe the machine:\n` +
-    '  node scripts/agent/build-queue.js run -- "<command>"\n' +
-    '  node scripts/agent/build-queue.js run --gpu -- "<command>"   (uses the GPU; replaces gpu-lock.js)\n' +
-    'The queue waits for a free slot and then runs the command here. `node scripts/agent/build-queue.js status` lists ' +
-    'the jobs. Long waits: run it in the background. Text that only names such a command (a message, a search ' +
+    `${reasons.join(', ')} must run through the job queue, ` +
+    'so that parallel agents do not oversubscribe the machine:\n' +
+    '  node scripts/human/job-queue.js run -- "<command>"\n' +
+    '  node scripts/human/job-queue.js run --gpu -- "<command>"   (uses the GPU; replaces gpu-lock.js)\n' +
+    'The queue waits for a free slot and then runs the command here. ' +
+    'It prints `queued #<id>` at once: keep the id and ' +
+    'read the expected start and end with `node scripts/human/job-queue.js status <id> --json` (`status` lists every ' +
+    'job); `node scripts/human/job-queue.js wait <id>` run in the background calls you when it ends ' +
+    '(exit 0 succeeded). Steps that belong together go into one job as one quoted string, ' +
+    '`run -- "dotnet build X && dotnet test X --no-build"`: it waits once, and nothing runs between the steps. ' +
+    'Long waits: run it in the background. Text that only names such a command (a message, a search ' +
     'pattern) passes when it is quoted. The queued command runs in the shell you call `run` from (Git Bash, PowerShell; ' +
     '`--shell bash|pwsh|cmd|sh` to choose), so write it as you would here.'
   );
@@ -693,7 +702,7 @@ function selfTest() {
     '"C:\\Program Files\\dotnet\\dotnet.exe" build',
     'echo start; dotnet msbuild -t:Restore',
     'git status && dotnet test',
-    'echo build-queue.js; dotnet test',
+    'echo job-queue.js; dotnet test',
     'timeout 600 dotnet test',
     'nohup dotnet build &',
     '(dotnet build)',
@@ -753,9 +762,10 @@ function selfTest() {
     '! dotnet build',
   ];
   const allowed = [
-    'node scripts/agent/build-queue.js run -- "dotnet test X"',
-    'node scripts/agent/build-queue.js run --gpu -- "just test-category Runtime"',
-    'cd tmp/w && node scripts/agent/build-queue.js run -- "dotnet build && dotnet test"',
+    'node scripts/human/job-queue.js run -- "dotnet test X"',
+    'node scripts/human/job-queue.js run --gpu -- "just test-category Runtime"',
+    'cd tmp/w && node scripts/human/job-queue.js run -- "dotnet build && dotnet test"',
+    'node scripts/agent/build-queue.js run -- dotnet test X',
     'git commit -m "run dotnet test before merging"',
     'gh issue create --body "just test fails"',
     'dotnet build-server shutdown',

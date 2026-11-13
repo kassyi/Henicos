@@ -3,6 +3,7 @@ using System.Text;
 using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Tests.Shared.Helpers;
+using Microsoft.CodeAnalysis.Text;
 
 #nullable enable
 
@@ -46,6 +47,8 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     private static readonly string s_managedVersionCallee =
         RoslynTestUtility.ReadTestCase("Generators/GpuDevice_ManagedVersionCallee.cu.cs");
 
+    private const string UnrelatedSource = "namespace Other { class Unrelated { } }";
+
     private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
 
     [Theory]
@@ -54,13 +57,12 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [Scenario(TestScenario.Boundary)]
     public Task StepReasons_AfterEdits(string dialect)
     {
-        var compilation = CreateCompilation();
+        var unrelated = CreateCompilation(("", s_sourceCode), ("", UnrelatedSource));
+        var compilation = unrelated.RemoveSyntaxTrees(unrelated.SyntaxTrees[1]);
         var driver = CreateDriver(dialect).RunGenerators(compilation);
         var report = new StringBuilder();
         Record(report, "First run", driver);
 
-        var unrelated = compilation.AddSyntaxTrees(
-            CSharpSyntaxTree.ParseText("namespace Other { class Unrelated { } }", s_parseOptions));
         Record(report, "After adding an unrelated file", driver.RunGenerators(unrelated));
 
         Record(report, "After editing one kernel body", driver.RunGenerators(EditOneKernel(compilation)));
@@ -105,7 +107,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         var text = tree.GetText().ToString();
         var editedText = text.Replace("data[i] * 2f", "data[i] * 3f", StringComparison.Ordinal);
         Assert.NotEqual(text, editedText);
-        var edited = compilation.ReplaceSyntaxTree(tree, CSharpSyntaxTree.ParseText(editedText, s_parseOptions));
+        var edited = WithChangedText(compilation, tree, editedText);
 
         var driver = CreateDriver(dialect).RunGenerators(compilation).RunGenerators(edited);
 
@@ -150,8 +152,8 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [Scenario(TestScenario.Boundary)]
     public void AddingAnOverloadInAnotherFile_MatchesAFreshRun(string dialect)
     {
-        var first = CreateCompilation(s_overloadA);
-        var withBoth = first.AddSyntaxTrees(CSharpSyntaxTree.ParseText(s_overloadB, s_parseOptions));
+        var withBoth = CreateCompilation(("", s_overloadA), ("", s_overloadB));
+        var first = withBoth.RemoveSyntaxTrees(withBoth.SyntaxTrees[1]);
 
         var incremental = CreateDriver(dialect).RunGenerators(first).RunGenerators(withBoth);
 
@@ -164,9 +166,8 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     [Scenario(TestScenario.Boundary)]
     public void RemovingAnOverloadInAnotherFile_MatchesAFreshRun(string dialect)
     {
-        var bTree = CSharpSyntaxTree.ParseText(s_overloadB, s_parseOptions);
-        var withBoth = CreateCompilation(s_overloadA).AddSyntaxTrees(bTree);
-        var onlyA = withBoth.RemoveSyntaxTrees(bTree);
+        var withBoth = CreateCompilation(("", s_overloadA), ("", s_overloadB));
+        var onlyA = withBoth.RemoveSyntaxTrees(withBoth.SyntaxTrees[1]);
 
         var incremental = CreateDriver(dialect).RunGenerators(withBoth).RunGenerators(onlyA);
 
@@ -256,12 +257,8 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         var iteratorAfter = IteratorBefore.Replace("seed + 10", "seed + 20", StringComparison.Ordinal);
         Assert.NotEqual(IteratorBefore, iteratorAfter);
 
-        var kernelTree = CSharpSyntaxTree.ParseText(KernelSource, s_parseOptions, path: "kernel.cs");
-        var iteratorTreeBefore = CSharpSyntaxTree.ParseText(IteratorBefore, s_parseOptions, path: "iterator.cs");
-        var iteratorTreeAfter = CSharpSyntaxTree.ParseText(iteratorAfter, s_parseOptions, path: "iterator.cs");
-
-        var before = CreateCompilation(kernelTree, iteratorTreeBefore);
-        var after = before.ReplaceSyntaxTree(iteratorTreeBefore, iteratorTreeAfter);
+        var before = CreateCompilation(("kernel.cs", KernelSource), ("iterator.cs", IteratorBefore));
+        var after = WithChangedText(before, before.SyntaxTrees[1], iteratorAfter);
 
         var incremental = CreateDriver(dialect).RunGenerators(before).RunGenerators(after);
 
@@ -292,12 +289,10 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
             "new SharedMemory<int>(32)", "new SharedMemory<int>(n)", StringComparison.Ordinal);
         Assert.NotEqual(s_dynamicSharedMemoryCallee, calleeAfter);
 
-        var kernelTree = CSharpSyntaxTree.ParseText(s_dynamicSharedMemoryCaller, s_parseOptions, path: "kernel.cs");
-        var calleeTreeBefore = CSharpSyntaxTree.ParseText(s_dynamicSharedMemoryCallee, s_parseOptions, path: "callee.cs");
-        var calleeTreeAfter = CSharpSyntaxTree.ParseText(calleeAfter, s_parseOptions, path: "callee.cs");
-
-        var before = CreateCompilation(kernelTree, calleeTreeBefore);
-        var after = before.ReplaceSyntaxTree(calleeTreeBefore, calleeTreeAfter);
+        var before = CreateCompilation(
+            ("kernel.cs", s_dynamicSharedMemoryCaller),
+            ("callee.cs", s_dynamicSharedMemoryCallee));
+        var after = WithChangedText(before, before.SyntaxTrees[1], calleeAfter);
 
         var first = CreateDriver("Cuda").RunGenerators(before);
         var wrapperBefore = Assert.Single(
@@ -331,12 +326,8 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         var calleeAfter = s_managedVersionCallee.Replace("z.V = x.V + y.V;", "z = x + y;", StringComparison.Ordinal);
         Assert.NotEqual(s_managedVersionCallee, calleeAfter);
 
-        var kernelTree = CSharpSyntaxTree.ParseText(s_managedVersionCaller, s_parseOptions, path: "kernel.cs");
-        var calleeTreeBefore = CSharpSyntaxTree.ParseText(s_managedVersionCallee, s_parseOptions, path: "callee.cs");
-        var calleeTreeAfter = CSharpSyntaxTree.ParseText(calleeAfter, s_parseOptions, path: "callee.cs");
-
-        var before = CreateCompilation(kernelTree, calleeTreeBefore);
-        var after = before.ReplaceSyntaxTree(calleeTreeBefore, calleeTreeAfter);
+        var before = CreateCompilation(("kernel.cs", s_managedVersionCaller), ("callee.cs", s_managedVersionCallee));
+        var after = WithChangedText(before, before.SyntaxTrees[1], calleeAfter);
 
         var first = CreateDriver("Cpu").RunGenerators(before);
         var sourcesBefore = first.GetRunResult().Results.Single().GeneratedSources;
@@ -373,11 +364,11 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     public void UnrelatedEdit_LeavesManagedVersionsCached()
     {
         var callee = s_managedVersionCallee.Replace("z.V = x.V + y.V;", "z = x + y;", StringComparison.Ordinal);
-        var compilation = CreateCompilation(
-            CSharpSyntaxTree.ParseText(s_managedVersionCaller, s_parseOptions, path: "kernel.cs"),
-            CSharpSyntaxTree.ParseText(callee, s_parseOptions, path: "callee.cs"));
-        var unrelated = compilation.AddSyntaxTrees(
-            CSharpSyntaxTree.ParseText("namespace Other { class Unrelated { } }", s_parseOptions, path: "other.cs"));
+        var unrelated = CreateCompilation(
+            ("kernel.cs", s_managedVersionCaller),
+            ("callee.cs", callee),
+            ("other.cs", UnrelatedSource));
+        var compilation = unrelated.RemoveSyntaxTrees(unrelated.SyntaxTrees[2]);
 
         var incremental = CreateDriver("Cpu").RunGenerators(compilation).RunGenerators(unrelated);
 
@@ -405,9 +396,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
 
     // The paths fix the declaration order of the partial class's parts
     private static CSharpCompilation CreateSiblingCompilation(string siblingSource) =>
-        CreateCompilation(
-            CSharpSyntaxTree.ParseText(s_overloadA, s_parseOptions, path: "a.cs"),
-            CSharpSyntaxTree.ParseText(siblingSource, s_parseOptions, path: "c.cs"));
+        CreateCompilation(("a.cs", s_overloadA), ("c.cs", siblingSource));
 
     private static string MarkAsKernel(string siblingSource)
     {
@@ -450,35 +439,46 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
 
         for (int i = 0; i < expectedSources.Count; i++)
         {
-            var expectedLines = expectedSources[i].SourceText.ToString().Split('\n');
-            var actualLines = actualSources[i].SourceText.ToString().Split('\n');
-            if (expectedLines.SequenceEqual(actualLines))
+            var expectedText = expectedSources[i].SourceText.ToString();
+            var actualText = actualSources[i].SourceText.ToString();
+            if (expectedText != actualText)
             {
-                continue;
+                var hintName = expectedSources[i].HintName;
+                Assert.Fail($"'{hintName}' differs at {FirstDifferentLine(expectedText, actualText)}");
             }
+        }
+    }
 
-            int line = 0;
-            while (line < expectedLines.Length && line < actualLines.Length && expectedLines[line] == actualLines[line])
+    // line <n>, with the fresh and the incremental text of the first line that differs
+    private static string FirstDifferentLine(string fresh, string incremental)
+    {
+        var freshLines = fresh.AsSpan().EnumerateLines();
+        var incrementalLines = incremental.AsSpan().EnumerateLines();
+        for (var line = 1; ; line++)
+        {
+            var hasFresh = freshLines.MoveNext();
+            var hasIncremental = incrementalLines.MoveNext();
+            var freshLine = hasFresh ? freshLines.Current.ToString() : "<end of text>";
+            var incrementalLine = hasIncremental ? incrementalLines.Current.ToString() : "<end of text>";
+            if (freshLine != incrementalLine || !hasFresh || !hasIncremental)
             {
-                line++;
+                return $"line {line}.{Environment.NewLine}" +
+                       $"Fresh:       {freshLine}{Environment.NewLine}Incremental: {incrementalLine}";
             }
-
-            var expectedLine = line < expectedLines.Length ? expectedLines[line] : "<end of text>";
-            var actualLine = line < actualLines.Length ? actualLines[line] : "<end of text>";
-            Assert.Fail(
-                $"'{expectedSources[i].HintName}' differs at line {line + 1}.{Environment.NewLine}" +
-                $"Fresh:       {expectedLine}{Environment.NewLine}Incremental: {actualLine}");
         }
     }
 
     // One overload's body changes; the other kernels and the device function do not
     private static Compilation EditOneKernel(Compilation compilation)
     {
+        // data[i] = data[i] * factor;  ->  data[i] = data[i] * factor + 1;
         var tree = compilation.SyntaxTrees.Single();
-        var text = tree.GetText().ToString();
-        var editedText = text.Replace("data[i] = data[i] * factor;", "data[i] = data[i] * factor + 1;");
-        Assert.NotEqual(text, editedText);
-        return compilation.ReplaceSyntaxTree(tree, CSharpSyntaxTree.ParseText(editedText, s_parseOptions));
+        var product = Assert.Single(
+            tree.GetRoot().DescendantNodes().OfType<AssignmentExpressionSyntax>(),
+            static assignment => assignment.Right.IsKind(SyntaxKind.MultiplyExpression)
+        ).Right;
+        var edited = tree.GetText().WithChanges(new TextChange(new TextSpan(product.Span.End, 0), " + 1"));
+        return compilation.ReplaceSyntaxTree(tree, tree.WithChangedText(edited));
     }
 
     // Writes the run reasons of each tracked step; the elapsed times vary by machine, so they go to the test output only
@@ -525,14 +525,14 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
 
     private static CSharpCompilation CreateCompilation() => CreateCompilation(s_sourceCode);
 
-    private static CSharpCompilation CreateCompilation(string source) =>
-        CreateCompilation(CSharpSyntaxTree.ParseText(source, s_parseOptions));
+    private static CSharpCompilation CreateCompilation(string source) => CreateCompilation(("", source));
 
-    private static CSharpCompilation CreateCompilation(params SyntaxTree[] trees) =>
-        CSharpCompilation.Create("CachingTest")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(trees);
+    private static CSharpCompilation CreateCompilation(params (string Path, string Source)[] files) =>
+        RoslynTestUtility.CreateCompilationAt(files).WithAssemblyName("CachingTest");
+
+    // The compilation with the text of one file replaced; the new tree keeps the path and parse options of the old one
+    private static Compilation WithChangedText(Compilation compilation, SyntaxTree tree, string text) =>
+        compilation.ReplaceSyntaxTree(tree, tree.WithChangedText(SourceText.From(text)));
 
     private static GeneratorDriver CreateDriver(string dialect) =>
         CSharpGeneratorDriver.Create(

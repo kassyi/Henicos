@@ -40,7 +40,9 @@ public class IntrinsicDialectCoverageTests
     // Gpu.Unsafe is the C heap on the CPU dialect
     private static readonly HashSet<string> s_standardLibrary = ["malloc", "free"];
 
+#pragma warning disable RS0030 // Category 5: Parses C++ prelude source text which has no syntax tree
     private static readonly Regex s_include = new("^[ \\t]*#include[ \\t]+\"(?<path>[^\"]+)\"", RegexOptions.Multiline);
+#pragma warning restore RS0030
 
     private static readonly Lazy<Compilation> s_core = new(static () => RoslynTestUtility.CreateCompilation(""));
 
@@ -229,7 +231,9 @@ public class IntrinsicDialectCoverageTests
 
         var content = File.ReadAllText(Path.Combine(resources, relativePath));
         text.AppendLine(content);
+#pragma warning disable RS0030 // Category 5: Parses C++ prelude source text which has no syntax tree
         foreach (Match include in s_include.Matches(content))
+#pragma warning restore RS0030
         {
             Append(resources, include.Groups["path"].Value, text, seen);
         }
@@ -239,10 +243,14 @@ public class IntrinsicDialectCoverageTests
     // a declaration without a body and a use inside an expression are not.
     private static bool Defines(string prelude, string name)
     {
+#pragma warning disable RS0030 // Category 5: Parses C++ prelude source text which has no syntax tree
         var escaped = Regex.Escape(name);
+#pragma warning restore RS0030
         var macro = $@"#define[ \t]+{escaped}\b";
         // <return type and specifiers> <name>(<parameters>) <qualifiers> {
         var function = $@"(?!return\b|else\b)[\w:<>,\*& \t]*[ \t\*&]{escaped}[ \t]*\([^;{{}}]*\)[^;{{}}]*\{{";
+#pragma warning disable RS0030 // Category 5: Parses C++ prelude source text which has no syntax tree
         return Regex.IsMatch(prelude, $@"^[ \t]*(?:{macro}|{function})", RegexOptions.Multiline);
+#pragma warning restore RS0030
     }
 }

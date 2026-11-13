@@ -32,7 +32,9 @@ public class NoDynamicInGeneratedCodeTests
                 continue;
             }
 
+#pragma warning disable RS0030 // Category 8: parses the verified snapshot files read from disk
             var tree = CSharpSyntaxTree.ParseText(code);
+#pragma warning restore RS0030
             var root = tree.GetRoot();
 
             foreach (var node in root.DescendantNodes())

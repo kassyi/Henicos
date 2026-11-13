@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -30,9 +31,15 @@ public partial class EmissionShapeTests
     {
         var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect), "ElidedKernel");
 
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Matches(Regex.Escape(ArrayRef) + @"__gsharp_id_\d+_values, ", kernel);
+#pragma warning restore RS0030
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Matches(Regex.Escape(ArrayAt) + @"__gsharp_id_\d+_values, ", kernel);
+#pragma warning restore RS0030
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Matches(Regex.Escape(ArrayRef) + @"__gsharp_id_\d+_bias, ", kernel);
+#pragma warning restore RS0030
     }
 
     // A field, a written kernel parameter, a local and a conditional with a null branch are checked once per read; a
@@ -45,13 +52,21 @@ public partial class EmissionShapeTests
     {
         var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect), "CheckedKernel");
 
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Equal(6, Regex.Matches(kernel, Regex.Escape(ArrayRef)).Count);
+#pragma warning restore RS0030
         // written[0], and the reads and writes of the parameter o, which may be null as well
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Equal(9, Regex.Matches(kernel, Regex.Escape(ArrayAt)).Count);
+#pragma warning restore RS0030
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayAt + "__gsharp_id_1_written, ")));
+#pragma warning restore RS0030
         Assert.Contains(ArrayRef + "__gsharp_id_0_h.__gsharp_mb_Data, ", kernel, StringComparison.Ordinal);
         Assert.Contains(ArrayAt + "__gsharp_id_1_written, ", kernel, StringComparison.Ordinal);
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Matches(Regex.Escape(ArrayRef) + @"__gsharp_id_\d+_copy, ", kernel);
+#pragma warning restore RS0030
     }
 
     // A parameter written in a tuple deconstruction, through an out argument or inside a local function may hold null
@@ -102,19 +117,33 @@ public partial class EmissionShapeTests
     [InlineData("Cuda")]
     public void ArrayNullCheck_KernelBody_ReportsASiteOfTheErrorSiteTable(string dialect)
     {
-        var generated = Generate("ArrayNullCheckShapeKernels", dialect, withPath: true);
-        var kernel = KernelSource(generated, "CheckedKernel");
+        var trees = GenerateTrees("ArrayNullCheckShapeKernels", dialect, withPath: true);
+        var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect, withPath: true), "CheckedKernel");
 
         Assert.DoesNotContain("G#: a null array is read at", kernel, StringComparison.Ordinal);
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         var check = Regex.Match(kernel, Regex.Escape(ArrayRef) + @"__gsharp_id_0_h\.__gsharp_mb_Data, (\d+)u\)\.length");
+#pragma warning restore RS0030
         Assert.True(check.Success, "h.Data.Length does not go through a site of the error site table.");
-        var entry = Regex.Match(generated, @"new global::Kassyi\.GSharp\.Runtime\.Aot\.GSharpErrorSite\(" + check.Groups[1].Value + @"u, [^\n]*");
-        Assert.True(entry.Success, "The error site table has no entry for the site of h.Data.Length.");
-        Assert.True(
-            entry.Value.EndsWith(
-                "u, \"ArrayNullCheckShapeKernels.cu.cs\", 44, 16, \"CheckedKernel\", \"G#: a null array is read\"),",
-                StringComparison.Ordinal),
-            entry.Value);
+        var siteId = uint.Parse(check.Groups[1].Value, CultureInfo.InvariantCulture);
+
+        // new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(<site>u, <file>, <line>, <column>, <member>, <message>)
+        var entry = Assert.Single(
+            trees
+                .SelectMany(static tree => tree.GetRoot().DescendantNodes().OfType<ObjectCreationExpressionSyntax>())
+                .Where(static creation => creation.Type is QualifiedNameSyntax
+                {
+                    Right.Identifier.ValueText: nameof(GSharpErrorSite)
+                }),
+            creation => creation.ArgumentList?.Arguments[0].Expression is
+                LiteralExpressionSyntax { Token.Value: uint id } && id == siteId);
+        var arguments = Assert.IsType<ArgumentListSyntax>(entry.ArgumentList).Arguments;
+        object[] expected =
+            [siteId, "ArrayNullCheckShapeKernels.cu.cs", 44, 16, "CheckedKernel", "G#: a null array is read"];
+        Assert.Equal(
+            expected,
+            arguments.Select(static argument =>
+                Assert.IsType<LiteralExpressionSyntax>(argument.Expression).Token.Value));
     }
 
     // The Ptr launcher passes IntPtr.Zero as a null array, optional or not, as the array launcher passes null; only a
@@ -148,11 +177,17 @@ public partial class EmissionShapeTests
         var kernel = KernelSource(generated, "BoundaryKernel");
 
         Assert.Contains(ArrayAt + "__gsharp_id_0_p.__gsharp_mb_Data, ", kernel, StringComparison.Ordinal);
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayRef + "__gsharp_id_1_h.__gsharp_mb_Data, ")));
+#pragma warning restore RS0030
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayRef + "__gsharp_id_0_p.__gsharp_mb_Data, ")));
+#pragma warning restore RS0030
         var structRef = @"__gsharp_struct_ref\(__gsharp_id_\d+_(made|p), [^,]+, " +
             @"\[\]\(const auto& s\) -> decltype\(auto\) \{ return \(s\.__gsharp_mb_Data\); \}\)";
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Equal(2, Regex.Matches(kernel, structRef).Count);
+#pragma warning restore RS0030
 
         var readFirst = generated[generated.LastIndexOf("ReadFirst(GSharpArray", StringComparison.Ordinal)..];
         readFirst = readFirst[..readFirst.IndexOf('}', StringComparison.Ordinal)];
@@ -204,7 +239,9 @@ public partial class EmissionShapeTests
         var kernel = KernelSource(Generate("ArrayNullCheckShapeKernels", dialect), "NotNullKernel");
 
         // One check per call: the field and the kernel parameter, which may be null as well
+#pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Equal(2, Regex.Matches(kernel, Regex.Escape("__gsharp_array_not_null(")).Count);
+#pragma warning restore RS0030
         Assert.Contains("__gsharp_array_not_null(__gsharp_id_0_h.__gsharp_mb_Data, ", kernel, StringComparison.Ordinal);
         Assert.Contains("__gsharp_array_not_null(__gsharp_id_1_values, ", kernel, StringComparison.Ordinal);
         // The local the call initializes is proven: neither its reads nor the call that passes it are checked

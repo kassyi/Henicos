@@ -3,6 +3,7 @@
 using System.Collections.Immutable;
 using System.Threading;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -123,7 +124,9 @@ public class CallTargetClassifierTests
         Assert.Equal(CallTargetKind.MisusedMacro, plan.Kind);
         Assert.Equal("GSH0003", plan.Descriptor.Id);
         Assert.Equal(new object[] { syntax }, plan.MessageArgs);
-        Assert.Equal(reportedAt, plan.ReportAt?.ToString());
+        var targetNode = plan.ReportAt is ArgumentSyntax argument ? argument.Expression : plan.ReportAt;
+        Assert.NotNull(targetNode);
+        SyntaxAssert.Equivalent(reportedAt, targetNode);
     }
 
     // The first invocation that binds to no method (nameof, dynamic, a function pointer) in the body of the named

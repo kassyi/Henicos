@@ -23,6 +23,11 @@
 
   <ItemGroup>
     <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\SourceWriter.cs" Link="SourceWriter.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\SourceWriterScope.cs" Link="SourceWriterScope.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\SourceWriterInlineScope.cs" Link="SourceWriterInlineScope.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\SourceWriterImmediatelyInvokedLambdaScope.cs" Link="SourceWriterImmediatelyInvokedLambdaScope.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\SourceWriterWarningSuppression.cs" Link="SourceWriterWarningSuppression.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\SourceWriterInterpolatedStringHandler.cs" Link="SourceWriterInterpolatedStringHandler.cs" />
   </ItemGroup>
 
 </Project>

@@ -228,9 +228,9 @@ internal static class HoistedVariableAnalysis
 
     private sealed class HoistAnalyzer : CSharpSyntaxWalker
     {
-        public readonly ImmutableArray<TextSpan>.Builder BarrierSpans = ImmutableArray.CreateBuilder<TextSpan>();
+        public ImmutableArray<TextSpan>.Builder BarrierSpans { get; } = ImmutableArray.CreateBuilder<TextSpan>();
 
-        public readonly ImmutableArray<(VariableDeclaratorSyntax Decl, int ScopeEnd)>.Builder Variables =
+        public ImmutableArray<(VariableDeclaratorSyntax Decl, int ScopeEnd)>.Builder Variables { get; } =
             ImmutableArray.CreateBuilder<(VariableDeclaratorSyntax, int)>();
 
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
