@@ -4,6 +4,17 @@
 (`.agents/hooks.json`) and keeps one JSON file per agent chat, so that a status window can show which chats wait for
 the person and what they asked. It only writes the files; drawing them is the job of the live view.
 
+## Files
+
+| File | Responsibility |
+| :- | :- |
+|  | The entry: arguments, , , , ; re-exports  and the helpers the self-test uses |
+|  | : reads the payload on stdin, always exits 0, picks the output the agent expects |
+|  | What each Claude Code and Antigravity event means (the state to record), with no file access but the transcript read |
+|  | The question of a text, the last text of a transcript read from its end, the questions and options of a choice question |
+|  | The chat files: the main checkout lookup, the atomic write, removing stale files, the error log,  |
+|  |  |
+
 ## Where
 
 `<main checkout>/tmp/chat-status/`, the same directory for every worktree (the main checkout is found from the `.git`
