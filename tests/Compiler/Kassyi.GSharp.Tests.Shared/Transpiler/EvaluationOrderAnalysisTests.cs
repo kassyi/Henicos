@@ -60,6 +60,24 @@ public class EvaluationOrderAnalysisTests
     public void LastSpilledOperand_IndependentOperands_IsNone(string method) =>
         Assert.Equal(-1, EvaluationOrder.LastSpilledOperand(GetOperandEffects(method)));
 
+    // A store through the array and the index in temporaries: an array that may be null is checked at the store; a
+    // stack array is never null and is bound by reference, since a copy of a C array would decay to a pointer
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ElementTarget", false, true)]
+    [InlineData("StackArrayElementTarget", true, false)]
+    public void PlanElementStore_ArrayKind_BindsAndChecksAsTheArrayNeeds(string method, bool byReference,
+        bool checks)
+    {
+        var (element, model) = GetResult(method);
+
+        var plan = ArrayNullCheck.PlanElementStore((ElementAccessExpressionSyntax)element, model, table: null,
+            currentMemberName: null);
+
+        Assert.Equal(byReference, plan.BindsArrayByReference);
+        Assert.Equal(checks, plan.Site is not null);
+    }
+
     // A check that may throw in one operand and a write to memory in the other: C# decides whether the write is made
     // before the exception (#1786 (a throwing check in a later operand runs before an earlier call on MSVC))
     [Theory]

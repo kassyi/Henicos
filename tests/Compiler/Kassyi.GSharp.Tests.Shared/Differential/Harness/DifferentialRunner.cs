@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// For each seed and launch shape: build the inputs, run the oracle in three thread orders and require the same output,
 /// run every path on its own copy of the inputs, and compare every buffer cell by cell.
 /// </summary>
-public static class DifferentialRunner
+public static partial class DifferentialRunner
 {
     private readonly record struct CaseRun(
         DifferentialCase Case,
@@ -333,160 +333,6 @@ public static class DifferentialRunner
         return false;
     }
 
-    // afterException: the outputs of the oracle at its exception, which the paths that throw must match
-    // (DifferentialCase.ComparesOutputsAfterException), or null
-    private static bool EvaluateExceptionExpectation(
-        in CaseRun run,
-        in ShapeRun at,
-        ExceptionPolicy policy,
-        bool allowSubprocess,
-        DiffBuffers? afterException
-    )
-    {
-        var testCase = run.Case;
-        var cells = new List<PathCell>(run.Paths.Count);
-        var thrownOutputs = new List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)>();
-        bool anyDiffers = false;
-        bool launchedSubprocess = false;
-
-        foreach (var path in run.Paths)
-        {
-            if (run.Case.SkippedPaths is not null && run.Case.SkippedPaths.TryGetValue(path.Path, out string? skipReason))
-            {
-                cells.Add(new PathCell(path.Path, $"skipped ({skipReason})", Differs: false, Known: null));
-                continue;
-            }
-
-            if ((policy.Paths & path.Path) == 0)
-            {
-                cells.Add(new PathCell(path.Path, "skipped (unchecked path)", Differs: false, Known: null));
-                continue;
-            }
-
-            Exception? thrown = null;
-            DiffBuffers? ranBuffers = null;
-            bool skippedBySampling = false;
-
-            // [WHY] A failing CUDA thread records its error and exits, so a fault seed runs in this process like on the
-            // other paths. A CUDA exception cell that is a known divergence is the exception: CUDA does not check what C#
-            // checks there (a release build has no bounds or null check), so the launch may read or write an illegal
-            // address, a real GPU fault that leaves the context of the process unusable
-            if (path.Path == DiffPath.Cuda && ReferenceEquals(path.Run, DiffPaths.DirectRunner) &&
-                run.FindEntry(KnownDivergence.ExceptionColumn, path.Path, at.Shape) is not null)
-            {
-                bool shouldRunSubprocess =
-                    testCase.CudaTrapSampling == CudaTrapSampling.AllFaults ||
-                    CudaTrapSubprocessRunner.IsFullSamplingEnabled ||
-                    allowSubprocess;
-
-                if (!CudaTrapGate.IsEnabled)
-                {
-                    // The CUDA cell is compared only by `just test-gpu-trap` (#1457), and the report lists the seeds left
-                    // out
-                    run.Report.AddSkippedCudaTrap(at.Seed, at.Shape);
-                    cells.Add(new PathCell(path.Path, $"skipped (CUDA fault seed {CudaTrapGate.SkipReason})", Differs: false, Known: null));
-                    continue;
-                }
-
-                if (shouldRunSubprocess)
-                {
-                    launchedSubprocess = true;
-                    var (shapeIndex, seed) = (at.ShapeIndex, at.Seed);
-                    thrown = CudaTrapGate.RunPaced(
-                        () => CudaTrapSubprocessRunner.RunInSubprocess(testCase.Name, shapeIndex, seed)
-                    );
-                }
-                else
-                {
-                    skippedBySampling = true;
-                }
-            }
-            else
-            {
-                thrown = LaunchExpectingException(testCase, path, at, out ranBuffers);
-            }
-
-            if (skippedBySampling)
-            {
-                cells.Add(new PathCell(path.Path, "sampled on first fault seed", Differs: false, Known: null));
-                continue;
-            }
-
-            if (thrown is null)
-            {
-                anyDiffers = true;
-                var entry = run.FindEntry(KnownDivergence.ExceptionColumn, path.Path, at.Shape);
-                cells.Add(new PathCell(path.Path, "no exception thrown", Differs: true, entry));
-            }
-            else if (!policy.Matches(thrown, path.Path, out string? mismatchReason))
-            {
-                anyDiffers = true;
-                var actual = ExceptionPolicy.Unwrap(thrown);
-                var entry = run.FindEntry(KnownDivergence.ExceptionColumn, path.Path, at.Shape);
-                cells.Add(new PathCell(path.Path, $"{actual.GetType().Name} ({mismatchReason})", Differs: true, entry));
-            }
-            else
-            {
-                var actual = ExceptionPolicy.Unwrap(thrown);
-                cells.Add(new PathCell(path.Path, actual.GetType().Name, Differs: false, Known: null));
-                if (ranBuffers is not null)
-                {
-                    thrownOutputs.Add((path, ranBuffers, null));
-                }
-            }
-        }
-
-        if (afterException is not null)
-        {
-            Compare(in run, in at, afterException, thrownOutputs);
-        }
-
-        if (anyDiffers)
-        {
-            run.Report.Add(new CellMismatch(
-                at.Seed,
-                new CellLocation(KnownDivergence.ExceptionColumn, 0, KnownDivergence.ExceptionColumn),
-                FormatInputs(at.Initial, at.Shape.Rows, 0),
-                policy.ToString(),
-                cells,
-                at.Shape
-            ));
-        }
-
-        return launchedSubprocess;
-    }
-
-    // Launches the case on path in this process: the exception it throws, or null, and the buffers it wrote
-    private static Exception? LaunchExpectingException(
-        DifferentialCase testCase,
-        DiffPathRunner path,
-        in ShapeRun at,
-        out DiffBuffers buffers
-    )
-    {
-        var shape = at.Shape;
-        var initial = at.Initial;
-        var launched = initial.Clone();
-        launched.Shape = shape;
-        buffers = launched;
-        try
-        {
-            path.Run(() => testCase.Launch(launched, shape));
-            if (path.Path == DiffPath.Cuda && testCase.LaunchPtr is { } launchPtr)
-            {
-                var ptrBuffers = initial.Clone();
-                ptrBuffers.Shape = shape;
-                path.Run(() => launchPtr(ptrBuffers, shape));
-            }
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            return ex;
-        }
-    }
-
     private static DiffBuffers? RunOracle(
         DifferentialCase testCase,
         DiffBuffers initial,
@@ -631,11 +477,14 @@ public static class DifferentialRunner
         }
     }
 
+    // absentPathsMatch: a path without buffers among actuals is left out of the comparison instead of differing in
+    // every cell (the comparison after an exception, whose exception cells report the paths that did not throw)
     private static void Compare(
         in CaseRun run,
         in ShapeRun at,
         DiffBuffers expected,
-        List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)> actuals
+        List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)> actuals,
+        bool absentPathsMatch = false
     )
     {
         for (int b = 0; b < expected.All.Count; b++)
@@ -657,15 +506,8 @@ public static class DifferentialRunner
             var skippedPaths = run.Case.SkippedPaths;
             for (int i = 0; i < oracle.Length; i++)
             {
-                if (run.Paths.All(p =>
-                {
-                    if (skippedPaths is not null && skippedPaths.ContainsKey(p.Path))
-                    {
-                        return true;
-                    }
-                    var match = actualBuffers.FirstOrDefault(a => a.Path.Path == p.Path);
-                    return match.Primary is not null && oracle.CellsMatch(match.Primary, i) && (match.Ptr is null || oracle.CellsMatch(match.Ptr, i));
-                }))
+                if (run.Paths.All(p => skippedPaths is not null && skippedPaths.ContainsKey(p.Path) ||
+                                       PathMatches(oracle, actualBuffers, p.Path, i, absentPathsMatch)))
                 {
                     continue;
                 }
@@ -758,6 +600,24 @@ public static class DifferentialRunner
     }
 
     // The inputs with one value per row, as name=value
+    // Whether the buffers of path match the oracle at cell i; a path without buffers matches when absentPathsMatch
+    private static bool PathMatches(
+        DiffBuffer oracle,
+        List<(DiffPathRunner Path, DiffBuffer Primary, DiffBuffer? Ptr)> actualBuffers,
+        DiffPath path,
+        int i,
+        bool absentPathsMatch
+    )
+    {
+        var match = actualBuffers.FirstOrDefault(a => a.Path.Path == path);
+        if (match.Primary is null)
+        {
+            return absentPathsMatch;
+        }
+
+        return oracle.CellsMatch(match.Primary, i) && (match.Ptr is null || oracle.CellsMatch(match.Ptr, i));
+    }
+
     private static string FormatInputs(DiffBuffers initial, int rows, int row) =>
         string.Join("  ", initial.All
             .Where(b => !b.IsOutput && b.Length == rows && row < rows)

@@ -165,18 +165,30 @@ internal static class ArrayNullCheck
         !IsIndexOrRange(argument.Expression, model);
 
     /// <summary>
-    /// Writes the element <paramref name="node"/> (<see cref="IsArrayElement"/>) of an array and an index already
-    /// evaluated into the temporaries <paramref name="receiver"/> and <paramref name="index"/>:
-    /// <c>__gsharp_array_at(__gsharp_seq_&lt;receiver&gt;, __gsharp_seq_&lt;index&gt;, &lt;site&gt;)</c> when the array
-    /// needs the null check, otherwise <c>__gsharp_seq_&lt;receiver&gt;[__gsharp_seq_&lt;index&gt;]</c>.
+    /// The plan of a store into the element <paramref name="node"/> (<see cref="IsArrayElement"/>) through an array and
+    /// an index in temporaries: a stack array is bound by reference, and an array that may be null is checked at the
+    /// store, with a site of <paramref name="table"/> (or a message naming the place when the method has no table).
     /// </summary>
-    public static void AppendElementOfTemps(ElementAccessExpressionSyntax node, int receiver, int index,
-        ref TranspileContext context)
+    public static ElementStorePlan PlanElementStore(ElementAccessExpressionSyntax node, SemanticModel model,
+        ErrorSiteTable? table, string? currentMemberName) =>
+        new(
+            StackArrayLocals.IsStackArrayReference(node.Expression, model),
+            NeedsCheck(node.Expression, model)
+                ? PlanSite(node.Expression, null, SiteMessage, TrapKind, model, table, currentMemberName)
+                : null
+        );
+
+    /// <summary>
+    /// Writes the element of an array and an index already evaluated into the temporaries <paramref name="receiver"/>
+    /// and <paramref name="index"/>, as <paramref name="plan"/> says:
+    /// <c>__gsharp_array_at(__gsharp_seq_&lt;receiver&gt;, __gsharp_seq_&lt;index&gt;, &lt;site&gt;)</c> with a check,
+    /// otherwise <c>__gsharp_seq_&lt;receiver&gt;[__gsharp_seq_&lt;index&gt;]</c>.
+    /// </summary>
+    public static void AppendElementOfTemps(in ElementStorePlan plan, int receiver, int index, SourceWriter writer)
     {
-        var writer = context.Emitter.Writer;
-        if (NeedsCheck(node.Expression, context.Query.SemanticModel))
+        if (plan.Site is { } site)
         {
-            AppendElementCall(writer, receiver, index, PlanSite(node.Expression, ref context));
+            AppendElementCall(writer, receiver, index, site);
             return;
         }
 

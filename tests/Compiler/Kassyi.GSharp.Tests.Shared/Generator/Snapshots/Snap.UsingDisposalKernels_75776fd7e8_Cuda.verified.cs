@@ -138,8 +138,8 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(341444517u, "UsingDisposal
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1043549265u, "UsingDisposalKernels.cs", 16, 18, "Dispose", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(875306987u, "UsingDisposalKernels.cs", 17, 9, "Dispose", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1203236282u, "UsingDisposalKernels.cs", 17, 13, "Dispose", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1963989736u, "UsingDisposalKernels.cs", 27, 36, "Dispose", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1129062536u, "UsingDisposalKernels.cs", 27, 30, "Dispose", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1963989736u, "UsingDisposalKernels.cs", 27, 36, "Dispose", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

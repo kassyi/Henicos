@@ -3,55 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
-/// <summary>
-/// The forms of <see cref="ThrowOrderDifferentialKernels.ThrowOrderKernel"/>: one operand writes memory (a call, an
-/// assignment, <c>++</c>; <c>o[1]</c> records the write), another holds a check that may throw (the null check of
-/// <c>a</c>, the check of an element of <c>s</c>).
-/// </summary>
-public static class ThrowOrderForms
-{
-    // --- The write first, the check later: C# makes the write, then throws ---
-    public const int CallThenLength = 0;
-    public const int AssignmentThenLength = 1;
-    public const int IncrementThenLength = 2;
-    public const int CallThenLengthArgument = 3;
-    public const int CallThenCheckedArgument = 4;
-    public const int CallThenNotNull = 5;
-    public const int IndexCallThenCompoundLength = 6;
-    public const int IndexCallThenAssignedLength = 7;
-
-    // --- The check first, the write later: C# throws before the write ---
-    public const int LengthThenCall = 8;
-    public const int LengthThenAssignment = 9;
-    public const int LengthThenIncrement = 10;
-    public const int LengthArgumentThenCall = 11;
-    public const int IndexLengthThenCompoundCall = 12;
-    public const int IndexLengthThenAssignedCall = 13;
-
-    // --- C# checks in the callee, after every argument: the write is made ---
-    public const int CheckedArgumentThenCall = 14;
-
-    // --- A simple assignment checks its array element when it stores the value, after the right side; a compound
-    // assignment as it reads the element, before the right side ---
-    public const int ElementThenAssignedCall = 15;
-    public const int ReadIndexElementThenAssignedCall = 16;
-    public const int ElementThenCompoundCall = 17;
-    public const int NullElementThenAssignedCall = 18;
-
-    // --- An element of a struct array: C# on the CLR checks it when it stores, after the right side, as for int ---
-    public const int StructElementThenAssignedCall = 19;
-    public const int StructReadIndexElementThenAssignedCall = 20;
-
-    public const int Count = 21;
-
-    /// <summary>Whether the form reads <c>a</c>, so that a null <c>a</c> makes it throw.</summary>
-    public static bool ReadsA(int form) => form is < ElementThenAssignedCall or NullElementThenAssignedCall;
-
-    /// <summary>Whether the form stores into <c>s</c>, so that a null <c>s</c> makes it throw.</summary>
-    public static bool StoresS(int form) => form >= StructElementThenAssignedCall;
-}
-
-/// <summary>An element of the struct array of <see cref="ThrowOrderDifferentialKernels.ThrowOrderKernel"/>.</summary>
+/// <summary>An element of the struct arrays of <see cref="ThrowOrderDifferentialKernels"/>.</summary>
 public struct ThrowOrderPair
 {
     public int X;
@@ -62,85 +14,101 @@ public struct ThrowOrderPair
 /// Kernels whose operands write memory on one side and hold a check that may throw on the other (#1786 (a throwing
 /// check in a later operand runs before an earlier call on MSVC)): C# evaluates the operands from left to right, so the
 /// write of an earlier operand is made before the exception of a later one and the write of a later operand is never
-/// made after the exception of an earlier one. Thread 0 evaluates one form (<see cref="ThrowOrderForms"/>).
+/// made after the exception of an earlier one. <c>o[1]</c> records the write (a call, an assignment, <c>++</c>); the
+/// check is the null check of <c>a</c> or of the element of <c>s</c>. Each kernel runs on one thread.
 /// </summary>
 #pragma warning disable CS8602, CS8604 // C#: NullReferenceException on a null array, which the tests check
 public static partial class ThrowOrderDifferentialKernels
 {
-    [GpuKernel]
-    public static void ThrowOrderKernel(int[] o, int[]? a, ThrowOrderPair[]? s, int k, int form)
-    {
-        if (ThreadIndex.X != 0)
-        {
-            return;
-        }
+    // --- The write first, the check later: C# makes the write, then throws ---
 
-        switch (form)
-        {
-            case ThrowOrderForms.CallThenLength:
-                o[0] = Bump(o) + a.Length;
-                break;
-            case ThrowOrderForms.AssignmentThenLength:
-                o[0] = (o[1] = 5) + a.Length;
-                break;
-            case ThrowOrderForms.IncrementThenLength:
-                o[0] = o[1]++ + a.Length;
-                break;
-            case ThrowOrderForms.CallThenLengthArgument:
-                o[0] = Add(Bump(o), a.Length);
-                break;
-            case ThrowOrderForms.CallThenCheckedArgument:
-                o[0] = AddLength(Bump(o), a);
-                break;
-            case ThrowOrderForms.CallThenNotNull:
-                o[0] = Bump(o) + Gpu.NotNull(a).Length;
-                break;
-            case ThrowOrderForms.IndexCallThenCompoundLength:
-                o[Bump(o)] += a.Length;
-                break;
-            case ThrowOrderForms.IndexCallThenAssignedLength:
-                o[Bump(o)] = a.Length;
-                break;
-            case ThrowOrderForms.LengthThenCall:
-                o[0] = a.Length + Bump(o);
-                break;
-            case ThrowOrderForms.LengthThenAssignment:
-                o[0] = a.Length + (o[1] = 5);
-                break;
-            case ThrowOrderForms.LengthThenIncrement:
-                o[0] = a.Length + o[1]++;
-                break;
-            case ThrowOrderForms.LengthArgumentThenCall:
-                o[0] = Add(a.Length, Bump(o));
-                break;
-            case ThrowOrderForms.IndexLengthThenCompoundCall:
-                o[a.Length] += Bump(o);
-                break;
-            case ThrowOrderForms.IndexLengthThenAssignedCall:
-                o[a.Length] = Bump(o);
-                break;
-            case ThrowOrderForms.CheckedArgumentThenCall:
-                o[0] = LengthAdd(a, Bump(o));
-                break;
-            case ThrowOrderForms.ElementThenAssignedCall:
-                o[k] = Bump(o);
-                break;
-            case ThrowOrderForms.ReadIndexElementThenAssignedCall:
-                o[Pick(o, k)] = Bump(o);
-                break;
-            case ThrowOrderForms.ElementThenCompoundCall:
-                o[k] += Bump(o);
-                break;
-            case ThrowOrderForms.NullElementThenAssignedCall:
-                a[Pick(o, k)] = Bump(o);
-                break;
-            case ThrowOrderForms.StructElementThenAssignedCall:
-                s[k] = Make(o);
-                break;
-            case ThrowOrderForms.StructReadIndexElementThenAssignedCall:
-                s[Pick(o, k)] = Make(o);
-                break;
-        }
+    [GpuKernel]
+    public static void CallThenLengthKernel(int[] o, int[]? a) => o[0] = Bump(o) + a.Length;
+
+    [GpuKernel]
+    public static void AssignmentThenLengthKernel(int[] o, int[]? a) => o[0] = (o[1] = 5) + a.Length;
+
+    [GpuKernel]
+    public static void IncrementThenLengthKernel(int[] o, int[]? a) => o[0] = o[1]++ + a.Length;
+
+    [GpuKernel]
+    public static void CallThenLengthArgumentKernel(int[] o, int[]? a) => o[0] = Add(Bump(o), a.Length);
+
+    // C# throws in AddLength, after every argument; G# checks the non-nullable argument at the call
+    [GpuKernel]
+    public static void CallThenCheckedArgumentKernel(int[] o, int[]? a) => o[0] = AddLength(Bump(o), a);
+
+    [GpuKernel]
+    public static void CallThenNotNullKernel(int[] o, int[]? a) => o[0] = Bump(o) + Gpu.NotNull(a).Length;
+
+    [GpuKernel]
+    public static void IndexCallThenCompoundLengthKernel(int[] o, int[]? a) => o[Bump(o)] += a.Length;
+
+    [GpuKernel]
+    public static void IndexCallThenAssignedLengthKernel(int[] o, int[]? a) => o[Bump(o)] = a.Length;
+
+    // --- The check first, the write later: C# throws before the write ---
+
+    [GpuKernel]
+    public static void LengthThenCallKernel(int[] o, int[]? a) => o[0] = a.Length + Bump(o);
+
+    [GpuKernel]
+    public static void LengthThenAssignmentKernel(int[] o, int[]? a) => o[0] = a.Length + (o[1] = 5);
+
+    [GpuKernel]
+    public static void LengthThenIncrementKernel(int[] o, int[]? a) => o[0] = a.Length + o[1]++;
+
+    [GpuKernel]
+    public static void LengthArgumentThenCallKernel(int[] o, int[]? a) => o[0] = Add(a.Length, Bump(o));
+
+    [GpuKernel]
+    public static void IndexLengthThenCompoundCallKernel(int[] o, int[]? a) => o[a.Length] += Bump(o);
+
+    [GpuKernel]
+    public static void IndexLengthThenAssignedCallKernel(int[] o, int[]? a) => o[a.Length] = Bump(o);
+
+    // C# throws in LengthAdd, after every argument: the write is made
+    [GpuKernel]
+    public static void CheckedArgumentThenCallKernel(int[] o, int[]? a) => o[0] = LengthAdd(a, Bump(o));
+
+    // --- A simple assignment checks its array element when it stores the value, after the right side, for an int
+    // array and a struct array alike; a compound assignment checks it as it reads the element, before ---
+
+    [GpuKernel]
+    public static void ElementThenAssignedCallKernel(int[] o, int k) => o[k] = Bump(o);
+
+    [GpuKernel]
+    public static void ReadIndexElementThenAssignedCallKernel(int[] o, int k) => o[Pick(o, k)] = Bump(o);
+
+    [GpuKernel]
+    public static void ElementThenCompoundCallKernel(int[] o, int k) => o[k] += Bump(o);
+
+    [GpuKernel]
+    public static void NullElementThenAssignedCallKernel(int[] o, int[]? a, int k) => a[Pick(o, k)] = Bump(o);
+
+    [GpuKernel]
+    public static void StructElementThenAssignedCallKernel(int[] o, ThrowOrderPair[]? s, int k) => s[k] = Make(o);
+
+    [GpuKernel]
+    public static void StructReadIndexElementThenAssignedCallKernel(int[] o, ThrowOrderPair[]? s, int k) =>
+        s[Pick(o, k)] = Make(o);
+
+    // --- A deconstruction names every target location, its element check included, before the values ---
+
+    [GpuKernel]
+    public static void DeconstructionElementThenCallKernel(int[] o, int[]? a, int k)
+    {
+        int x;
+        (a[k], x) = (Bump(o), 1);
+        o[0] = x;
+    }
+
+    [GpuKernel]
+    public static void DeconstructionStructElementThenCallKernel(int[] o, ThrowOrderPair[]? s, int k)
+    {
+        int x;
+        (s[k], x) = (Make(o), 1);
+        o[0] = x;
     }
 
     // Writes memory and returns 1, a valid index of o

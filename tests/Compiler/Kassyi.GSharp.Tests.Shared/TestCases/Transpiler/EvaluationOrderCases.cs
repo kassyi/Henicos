@@ -489,5 +489,11 @@ public static void LocalFunctionCall()
     public static void ElementTarget(int[] d, int i) { var result = d[i]; }
     public static void EnumElementTarget(System.DayOfWeek[] d, int i) { var result = d[i]; }
     public static void StructElementTarget(OrderInner[] d, int i) { var result = d[i]; }
+
+    public static void StackArrayElementTarget(int i)
+    {
+        int[] s = new int[4];
+        var result = s[i];
+    }
     public static void ElementTargetWithCheckedIndex(int[] d, int[] a) { var result = d[a.Length]; }
 }
