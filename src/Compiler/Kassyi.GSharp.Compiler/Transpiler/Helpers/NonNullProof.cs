@@ -113,9 +113,10 @@ internal static class NonNullProof
     public static void FailIfReferencedWithoutCall(ExpressionSyntax reference, IMethodSymbol method,
         ref TranspileContext context)
     {
-        var called = reference.Parent is InvocationExpressionSyntax invocation && invocation.Expression == reference ||
-                     reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference &&
-                     access.Parent is InvocationExpressionSyntax outer && outer.Expression == access;
+        var called =
+            (reference.Parent is InvocationExpressionSyntax invocation && invocation.Expression == reference) ||
+            (reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference &&
+             access.Parent is InvocationExpressionSyntax outer && outer.Expression == access);
         if (!called && !method.IsExtensionMethod &&
             CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect) && ChecksArguments(method))
         {
@@ -180,7 +181,7 @@ internal static class NonNullProof
     public static bool NeedsBoundaryCheck(IParameterSymbol parameter) =>
         parameter.RefKind == RefKind.None &&
         (IsNonNullableArray(parameter.Type, parameter.NullableAnnotation) ||
-         parameter.Type.IsValueType && GetNonNullableArrayFields(parameter.Type).Length > 0);
+         (parameter.Type.IsValueType && GetNonNullableArrayFields(parameter.Type).Length > 0));
 
     /// <summary>Whether a call of <paramref name="method"/> checks some of its arguments (<see cref="NeedsBoundaryCheck"/>).</summary>
     public static bool ChecksArguments(IMethodSymbol method)
