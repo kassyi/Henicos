@@ -178,9 +178,9 @@ internal static class ExpressionTraps
         type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
 
     // x / y and x % y of an integer type, as the divisor check decides it (DivisionCheckRule, the definition the
-    // transpiler writes from): y == 0 raises DivideByZeroException; MinValue / -1, whose GPU result G# gives, is counted
-    // with it. A native-sized integer (nint, nuint), which the rule has no range for, may fail unless its divisor is a
-    // constant other than 0 and -1
+    // transpiler writes from): y == 0 raises DivideByZeroException; MinValue / -1, whose GPU result G# gives, is
+    // counted with it. A native-sized integer (nint, nuint), which the rule has no range for, may fail unless its
+    // divisor is a constant other than 0 and -1
     private static bool MayFailDivision(BinaryOperatorKind kind, ITypeSymbol? operatorType, IOperation dividend,
         IOperation divisor)
     {
@@ -195,7 +195,8 @@ internal static class ExpressionTraps
             : DivisionCheckRule.MayThrow(IntegerSemantics.DecideDivision(dividend, divisor, type));
     }
 
-    // x /= y and x %= y: the division of the operator type of the assignment (the promotion of the target and the value)
+    // x /= y and x %= y: the division of the operator type of the assignment (the promotion of the target and the
+    // value)
     private static bool MayFailCompoundDivision(ICompoundAssignmentOperation compound)
     {
         if (compound.OperatorKind is not (BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder))

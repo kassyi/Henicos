@@ -186,8 +186,8 @@ public sealed class GpuDeviceExportAttribute : Attribute
     public bool ReachesSharedMemory { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the device function reaches code whose C# meaning only the generated code gives (an operator
-    /// macro, a float or double StackLinq Sum, Gpu.InlinePtx); a kernel that calls it cannot run as C#
+    /// Gets or sets whether the device function reaches code whose C# meaning only the generated code gives (an
+    /// operator macro, a float or double StackLinq Sum, Gpu.InlinePtx); a kernel that calls it cannot run as C#
     /// (<c>KernelExecution.CSharp</c>). Unlike <see cref="ManagedVersion"/>, it does not count an int or long division
     /// that may divide the minimum by -1, whose C# meaning the C# execution keeps; a record without it reads
     /// <see cref="ManagedVersion"/> in its place.

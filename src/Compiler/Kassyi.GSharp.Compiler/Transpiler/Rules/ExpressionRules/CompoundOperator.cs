@@ -17,7 +17,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// library is a host-only template for operands of two types (<c>fmod(double, int)</c>), so the value temporary is
 /// declared with the target type, as C# converts it.
 /// </param>
-/// <param name="Site">The place of the divisor check of a division helper (<see cref="DivisorCheck"/>), or null.</param>
+/// <param name="Site">The place of the divisor check of a division helper (<see cref="DivisorCheck"/>), or
+/// null.</param>
 internal readonly record struct CompoundOperator(string Operator, string? Helper, int ShiftMask,
     bool ConvertsValue = false, NullCheckSite? Site = null)
 {

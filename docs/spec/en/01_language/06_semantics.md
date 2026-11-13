@@ -72,8 +72,9 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
     such a function has none;
   - the compound assignment (`/=`, `%=`) of an indexer whose receiver or argument writes, may throw, or reads what
     the right side writes (`g[k++] /= -1`): the getter and the setter would evaluate it twice;
-  - the compound assignment of a property of a value type whose receiver is not a variable (the result of a call), or of
-    a property of a type parameter.
+  - the compound assignment of a property of a value type whose receiver is not a variable (a call that returns the
+    value type by value, `MakeCell().P /= d`; a call that returns a `ref` is a variable and is rewritten), or of a
+    property of a type parameter.
   The other compound assignments are rewritten, also where the right side writes the variable of the target or the
   receiver of the property: the target is found once and read before the right side.
 - The null check of an array read is removed where the array cannot be `null`: a stack array, and a parameter of a

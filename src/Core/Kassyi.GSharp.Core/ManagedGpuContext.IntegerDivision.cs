@@ -88,7 +88,8 @@ public static partial class ManagedGpuContext
     // the value read and stores into the same location:
     // __gsharp_div_store_i32(ref __gsharp_read_ref_i32(ref a[i], out var c), c, f())
 
-    /// <summary>Reads <paramref name="target"/> into <paramref name="current"/> and returns the same location.</summary>
+    /// <summary>Reads <paramref name="target"/> into <paramref name="current"/> and returns the same
+    /// location.</summary>
     /// <param name="target">The location of the compound assignment.</param>
     /// <param name="current">The value of the location before the value of the assignment runs.</param>
     /// <returns><paramref name="target"/>.</returns>
@@ -100,7 +101,8 @@ public static partial class ManagedGpuContext
         return ref target;
     }
 
-    /// <summary>Reads <paramref name="target"/> into <paramref name="current"/> and returns the same location.</summary>
+    /// <summary>Reads <paramref name="target"/> into <paramref name="current"/> and returns the same
+    /// location.</summary>
     /// <param name="target">The location of the compound assignment.</param>
     /// <param name="current">The value of the location before the value of the assignment runs.</param>
     /// <returns><paramref name="target"/>.</returns>
@@ -157,8 +159,8 @@ public static partial class ManagedGpuContext
         target = __gsharp_rem_i64(current, b);
 
     // The compound assignment of a property whose receiver is found once and read before the value (the receiver or an
-    // argument writes, may throw, or the value writes what it reads): the getter and the setter take the receiver, which
-    // the reader hands on. A value type goes through a reference to its variable, a reference type by its object.
+    // argument writes, may throw, or the value writes what it reads): the getter and the setter take the receiver,
+    // which the reader hands on. A value type goes through a reference to its variable, a reference type by its object.
     // __gsharp_div_property_store(ref __gsharp_read_property(ref h, static (ref H r) => r.P, out var c), c, v,
     //     static (ref H r, int x) => r.P = x)
 

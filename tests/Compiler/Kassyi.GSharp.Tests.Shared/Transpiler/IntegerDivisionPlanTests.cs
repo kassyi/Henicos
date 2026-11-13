@@ -39,8 +39,8 @@ public class IntegerDivisionPlanTests
         Assert.True(IntegerSemantics.TakesErrorSite(expected));
     }
 
-    // mutant: OperationRanges.Of without the range of a converted operand writes the narrow and unsigned dividends by -1
-    // as a Prelude call
+    // mutant: OperationRanges.Of without the range of a converted operand writes the narrow and unsigned dividends by
+    // -1 as a Prelude call
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("ConstantDivisor")]
@@ -77,6 +77,7 @@ public class IntegerDivisionPlanTests
     [InlineData("ElementPropertyCompound", "__gsharp_div_property_store", "PropertyByReference")]
     [InlineData("PropertyWritingItsReceiver", "__gsharp_div_property_store", "PropertyByReference")]
     [InlineData("ObjectPropertyCompound", "__gsharp_div_property_store_of", "PropertyOfObject")]
+    [InlineData("RefCallReceiverProperty", "__gsharp_div_property_store", "PropertyByReference")]
     public void ManagedPlan_DivisionThatMayDivideMinimumByMinusOne_CallsTheContext(string name, string helper,
         string form)
     {
@@ -118,6 +119,13 @@ public class IntegerDivisionPlanTests
     [Scenario(TestScenario.SadPath)]
     public void ManagedPlan_IndexerWithWritingArgument_KeepsTheOperator() =>
         Assert.Null(GetManagedPlan("IndexerWithWritingArgument"));
+
+    // A property of a value type that a call returns by value has no variable to bind and keeps the operator (a
+    // conditional access, b?.Q /= d, is not an assignment target in C#: CS0131)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ManagedPlan_PropertyOfAReturnedValueType_KeepsTheOperator() =>
+        Assert.Null(GetManagedPlan("ValueCallReceiverProperty"));
 
     private static ManagedDivisionPlan? GetManagedPlan(string name)
     {

@@ -528,8 +528,8 @@ IntegerSemantics:
     RemainderStoreInt32: { Value: __gsharp_rem_store_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
     RemainderStoreInt64: { Value: __gsharp_rem_store_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
     DivisionCurrentPrefix: __gsharp_div_current_
-    # The same for a property whose receiver is found once: a value type through a reference to its variable, a reference
-    # type by the object it holds; the getter and the setter are static lambdas
+    # The same for a property whose receiver is found once: a value type through a reference to its variable, a
+    # reference type by the object it holds; the getter and the setter are static lambdas
     ReadProperty: { Value: __gsharp_read_property, Managed: ManagedGpuContext.IntegerDivision.cs }
     ReadPropertyOf: { Value: __gsharp_read_property_of, Managed: ManagedGpuContext.IntegerDivision.cs }
     DividePropertyStore: { Value: __gsharp_div_property_store, Managed: ManagedGpuContext.IntegerDivision.cs }

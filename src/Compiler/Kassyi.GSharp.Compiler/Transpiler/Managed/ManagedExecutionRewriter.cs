@@ -89,8 +89,8 @@ internal sealed partial class ManagedExecutionRewriter(
     }
 
     // The compound form of the same division:
-    // global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(ref <target>, <value>), which stores and returns the result,
-    // or, for a property, <target> = global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(<target>, <value>)
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(ref <target>, <value>), which stores and returns the
+    // result, or, for a property, <target> = global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(<target>, <value>)
     public override SyntaxNode? VisitAssignmentExpression(AssignmentExpressionSyntax node)
     {
         var visited = base.VisitAssignmentExpression(node);
@@ -107,26 +107,32 @@ internal sealed partial class ManagedExecutionRewriter(
             return CallContext(plan.Helper, ByReference(target), value).WithTriviaFrom(node);
         }
 
-        if (plan is { Form: ManagedDivisionForm.ReadFirst, Reader: { } reader })
+        // The form the plan chose is the one written; a plan whose shape cannot be written is an internal error
+        switch (plan)
         {
-            return ReadFirst(plan.Helper, reader, target, value).WithTriviaFrom(node);
+            case { Form: ManagedDivisionForm.ReadFirst, Reader: { } reader }:
+                return ReadFirst(plan.Helper, reader, target, value).WithTriviaFrom(node);
+            case
+            {
+                Form: ManagedDivisionForm.PropertyByReference or ManagedDivisionForm.PropertyOfObject,
+                Reader: { } propertyReader,
+                ReceiverType: { } receiverType,
+                ValueType: { } valueType
+            } when rewritten.Left is MemberAccessExpressionSyntax property:
+                return ReadFirstProperty(plan, propertyReader, property, receiverType, valueType, value)
+                    .WithTriviaFrom(node);
+            case { Form: ManagedDivisionForm.Reassign }:
+                // <target> = <helper>(<target>, <value>)
+                return SyntaxFactory.AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    target,
+                    CallContext(plan.Helper, SyntaxFactory.Argument(target), value)
+                ).WithTriviaFrom(node);
+            default:
+                throw new InvalidOperationException(
+                    $"The division plan {plan.Form} of '{node}' cannot be written: its plan data is incomplete or " +
+                    "the target is not the shape the plan chose.");
         }
-
-        if (plan is { Form: ManagedDivisionForm.PropertyByReference or ManagedDivisionForm.PropertyOfObject } &&
-            plan.Reader is { } propertyReader &&
-            rewritten.Left is MemberAccessExpressionSyntax property &&
-            semanticModel.GetTypeSymbol(node.Left) is { } valueType &&
-            semanticModel.GetTypeSymbol(((MemberAccessExpressionSyntax)node.Left).Expression) is { } receiverType)
-        {
-            return ReadFirstProperty(plan, propertyReader, property, receiverType, valueType, value)
-                .WithTriviaFrom(node);
-        }
-
-        return SyntaxFactory.AssignmentExpression(
-            SyntaxKind.SimpleAssignmentExpression,
-            target,
-            CallContext(plan.Helper, SyntaxFactory.Argument(target), value)
-        ).WithTriviaFrom(node);
     }
 
     // global::Kassyi.GSharp.Core.ManagedGpuContext.<member>(<first>, <second>)
@@ -138,7 +144,8 @@ internal sealed partial class ManagedExecutionRewriter(
 
     // The compound assignment of a property whose receiver is bound once (ManagedDivisionForm.PropertyByReference and
     // PropertyOfObject): the getter and the setter are static lambdas over the receiver, which the reader hands on
-    //   <store>(ref <reader>(ref <receiver>, static (ref T r) => r.P, out var c), c, <value>, static (ref T r, int v) => r.P = v)
+    //   <store>(ref <reader>(ref <receiver>, static (ref T r) => r.P, out var c), c, <value>,
+    //       static (ref T r, int v) => r.P = v)
     // and for an object <store>(<reader>(<receiver>, static r => r.P, out var c), c, <value>, static (r, v) => r.P = v)
     private ExpressionSyntax ReadFirstProperty(ManagedDivisionPlan plan, string reader,
         MemberAccessExpressionSyntax property, ITypeSymbol receiverType, ITypeSymbol valueType,
@@ -147,17 +154,12 @@ internal sealed partial class ManagedExecutionRewriter(
         var current = GSharpInternalNames.IntegerSemantics.DivisionCurrentPrefix +
                       _nextDivisionCurrentId++.ToString(CultureInfo.InvariantCulture);
         var name = property.Name.Identifier.ValueText;
-        using var typeNames = new SourceWriter();
-        typeNames.AppendCsharpTypeName(receiverType);
-        var receiverName = typeNames.ToString();
-        var valueName = valueType.SpecialType == SpecialType.System_Int64 ? "long" : "int";
+        var receiverTypeSyntax = receiverType.ToCsharpTypeSyntax();
+        var valueTypeSyntax = SyntaxFactory.PredefinedType(SyntaxFactory.Token(
+            valueType.SpecialType == SpecialType.System_Int64 ? SyntaxKind.LongKeyword : SyntaxKind.IntKeyword));
         var byReference = plan.Form == ManagedDivisionForm.PropertyByReference;
-        var getter = byReference
-            ? $"static (ref {receiverName} r) => r.{name}"
-            : $"static ({receiverName} r) => r.{name}";
-        var setter = byReference
-            ? $"static (ref {receiverName} r, {valueName} v) => r.{name} = v"
-            : $"static ({receiverName} r, {valueName} v) => r.{name} = v";
+        var getter = CreatePropertyGetter(receiverTypeSyntax, name, byReference);
+        var setter = CreatePropertySetter(receiverTypeSyntax, valueTypeSyntax, name, byReference);
         var declaration = SyntaxFactory.DeclarationExpression(
             SyntaxFactory.IdentifierName("var"),
             SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(current))
@@ -169,7 +171,7 @@ internal sealed partial class ManagedExecutionRewriter(
             ManagedNames.CreateMemberAccess(reader),
             SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([
                 receiverArgument,
-                SyntaxFactory.Argument(SyntaxFactory.ParseExpression(getter)),
+                SyntaxFactory.Argument(getter),
                 SyntaxFactory.Argument(declaration).WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.OutKeyword))
             ]))
         );
@@ -177,13 +179,55 @@ internal sealed partial class ManagedExecutionRewriter(
             byReference ? ByReference(read) : SyntaxFactory.Argument(read),
             SyntaxFactory.Argument(SyntaxFactory.IdentifierName(current)),
             value,
-            SyntaxFactory.Argument(SyntaxFactory.ParseExpression(setter))
+            SyntaxFactory.Argument(setter)
         ]);
         return SyntaxFactory.InvocationExpression(
             ManagedNames.CreateMemberAccess(plan.Helper),
             SyntaxFactory.ArgumentList(arguments)
         );
     }
+
+    // static (ref <receiver> r) => r.<name>     or, for an object, static (<receiver> r) => r.<name>
+    private static ParenthesizedLambdaExpressionSyntax CreatePropertyGetter(TypeSyntax receiverType, string name,
+        bool byReference) =>
+        SyntaxFactory.ParenthesizedLambdaExpression(
+            SyntaxFactory.ParameterList(SyntaxFactory.SingletonSeparatedList(
+                CreateReceiverParameter(receiverType, byReference)
+            )),
+            CreatePropertyAccess(name)
+        ).WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.StaticKeyword)));
+
+    // static (ref <receiver> r, <value> v) => r.<name> = v
+    // or, for an object, static (<receiver> r, <value> v) => r.<name> = v
+    private static ParenthesizedLambdaExpressionSyntax CreatePropertySetter(TypeSyntax receiverType,
+        TypeSyntax valueType, string name, bool byReference) =>
+        SyntaxFactory.ParenthesizedLambdaExpression(
+            SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList([
+                CreateReceiverParameter(receiverType, byReference),
+                SyntaxFactory.Parameter(SyntaxFactory.Identifier("v")).WithType(valueType)
+            ])),
+            SyntaxFactory.AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                CreatePropertyAccess(name),
+                SyntaxFactory.IdentifierName("v")
+            )
+        ).WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.StaticKeyword)));
+
+    // [ref] <receiver> r
+    private static ParameterSyntax CreateReceiverParameter(TypeSyntax receiverType, bool byReference) =>
+        SyntaxFactory.Parameter(SyntaxFactory.Identifier("r"))
+            .WithType(receiverType)
+            .WithModifiers(byReference
+                ? SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.RefKeyword))
+                : default);
+
+    // r.<name>
+    private static MemberAccessExpressionSyntax CreatePropertyAccess(string name) =>
+        SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            SyntaxFactory.IdentifierName("r"),
+            SyntaxFactory.IdentifierName(name)
+        );
 
     // ref <expression>
     private static ArgumentSyntax ByReference(ExpressionSyntax expression) =>

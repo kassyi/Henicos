@@ -52,9 +52,9 @@ internal static class OperationRanges
 
     /// <summary>
     /// The values of <c>ThreadIndex</c>, <c>BlockIndex</c>, <c>BlockDimension</c> and <c>GridDimension</c> of G#: a
-    /// block holds at most 1024 threads on every path (the launch limits that the CPU paths enforce as the GPU does), so
-    /// a thread index is 0 to 1023 and a block dimension 1 to 1024; a block index is not negative and a grid dimension
-    /// is at least 1. Null for any other operand.
+    /// block holds at most 1024 threads on every path (the launch limits that the CPU paths enforce as the GPU does),
+    /// so a thread index is 0 to 1023 and a block dimension 1 to 1024; a block index is not negative and a grid
+    /// dimension is at least 1. Null for any other operand.
     /// </summary>
     public static IntegerRange? OfLaunchIntrinsic(IOperation operand)
     {

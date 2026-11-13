@@ -76,6 +76,16 @@ public static class Divisions
 
     public static int PropertyWritingItsReceiver(Cell h, Cell h2) => h.P /= (h = h2).P;
 
+    // The receiver is the variable a ref-returning call gives, which ref can take
+    public static int RefCallReceiverProperty(Cell[] s, int d) => First(s).P /= d;
+
+    // The receiver is a copy that a call returns: there is no variable to bind, so the operator stays
+    public static int ValueCallReceiverProperty(int d) => MakeCell().P /= d;
+
+    private static ref Cell First(Cell[] s) => ref s[0];
+
+    private static Cell MakeCell() => new();
+
     // The receiver of a property of a reference type is the object it holds when the compound assignment starts
     public static int ObjectPropertyCompound(int d) => Box.Make().Q /= d;
 }

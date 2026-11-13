@@ -7,10 +7,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>
 /// The managed form of an int or long <c>/</c> or <c>%</c> (and <c>/=</c>, <c>%=</c>) that may divide the minimum of
 /// the type by -1 (#718): .NET throws <see cref="OverflowException"/> there, while G# gives the GPU result (MinValue,
-/// and 0 for the remainder) on every path. The managed path calls a <c>ManagedGpuContext</c> function instead, in kernel
-/// bodies and, through the managed version of a device function (#711), in device functions. A division that cannot
-/// reach that case (<see cref="DivisionCheckRule.MayDivideMinimumByMinusOne"/>) keeps the C# operator, and so does a
-/// division by 0, which .NET throws as C# does.
+/// and 0 for the remainder) on every path. The managed path calls a <c>ManagedGpuContext</c> function instead, in
+/// kernel bodies and, through the managed version of a device function (#711), in device functions. A division that
+/// cannot reach that case (<see cref="DivisionCheckRule.MayDivideMinimumByMinusOne"/>) keeps the C# operator, and so
+/// does a division by 0, which .NET throws as C# does.
 /// </summary>
 internal static class ManagedDivision
 {
@@ -103,10 +103,11 @@ internal static class ManagedDivision
         return new ManagedDivisionPlan(store, ManagedDivisionForm.ReadFirst, read);
     }
 
-    // A property or indexer: get once, divide, set once, as the compound assignment does. The receiver and the arguments
-    // are written twice (for the get and for the set) when they neither write nor throw and the value does not write
-    // what they read. Otherwise a property (not an indexer) binds its receiver once: a value type by reference to its
-    // variable, a reference type by its value, as C# evaluates the receiver once and reads the property before the value
+    // A property or indexer: get once, divide, set once, as the compound assignment does. The receiver and the
+    // arguments are written twice (for the get and for the set) when they neither write nor throw and the value does
+    // not write what they read. Otherwise a property (not an indexer) binds its receiver once: a value type by
+    // reference to its variable, a reference type by its value, as C# evaluates the receiver once and reads the
+    // property before the value
     private static ManagedDivisionPlan? PlanProperty(IPropertyReferenceOperation property, VariableSet valueWrites,
         string helper, bool divide, SemanticModel model)
     {
@@ -115,7 +116,10 @@ internal static class ManagedDivision
             return new ManagedDivisionPlan(helper, ManagedDivisionForm.Reassign);
         }
 
+        // The rewriter writes the getter and the setter over the receiver of a written <receiver>.<name>; a target that
+        // is not one (a conditional access is not an assignment target in C# at all) keeps the operator
         if (!property.Arguments.IsEmpty ||
+            property.Syntax is not MemberAccessExpressionSyntax ||
             property.Instance is not { Type: { } receiverType } receiver ||
             property.Property is not { GetMethod: not null, SetMethod.IsInitOnly: false })
         {
@@ -128,11 +132,14 @@ internal static class ManagedDivision
             return new ManagedDivisionPlan(
                 divide ? Names.DividePropertyStoreOf : Names.RemainderPropertyStoreOf,
                 ManagedDivisionForm.PropertyOfObject,
-                Names.ReadPropertyOf);
+                Names.ReadPropertyOf,
+                receiverType,
+                property.Type);
         }
 
         return receiverType.IsValueType && receiverType.TypeKind != TypeKind.TypeParameter && IsReferenceable(receiver)
-            ? new ManagedDivisionPlan(store, ManagedDivisionForm.PropertyByReference, Names.ReadProperty)
+            ? new ManagedDivisionPlan(store, ManagedDivisionForm.PropertyByReference, Names.ReadProperty,
+                receiverType, property.Type)
             : null;
     }
 
@@ -165,12 +172,14 @@ internal static class ManagedDivision
         );
     }
 
-    // A location that ref can take: a local, a parameter, a field, an array element, a ref-returning property or indexer
+    // A location that ref can take: a local, a parameter, a field, an array element, a ref-returning property, indexer
+    // or call
     private static bool IsReferenceable(IOperation target) => target switch
     {
         ILocalReferenceOperation or IParameterReferenceOperation or IArrayElementReferenceOperation => true,
         IFieldReferenceOperation { Field.IsReadOnly: false } => true,
         IPropertyReferenceOperation { Property.ReturnsByRef: true } => true,
+        IInvocationOperation { TargetMethod.ReturnsByRef: true } => true,
         _ => false
     };
 
@@ -240,9 +249,19 @@ internal enum ManagedDivisionForm
 }
 
 /// <summary>The <c>ManagedGpuContext</c> function of a division and the form it is written in.</summary>
-/// <param name="Helper">The name of the function (<c>__gsharp_div_i32</c>, <c>__gsharp_div_assign_i32</c>, ...).</param>
+/// <param name="Helper">The name of the function (<c>__gsharp_div_i32</c>, <c>__gsharp_div_assign_i32</c>,
+/// ...).</param>
 /// <param name="Form">How the call is written.</param>
 /// <param name="Reader">
-/// The function that reads the target first (<see cref="ManagedDivisionForm.ReadFirst"/>), or null.
+/// The function that reads the target first (the forms <see cref="ManagedDivisionForm.ReadFirst"/>,
+/// <see cref="ManagedDivisionForm.PropertyByReference"/> and <see cref="ManagedDivisionForm.PropertyOfObject"/>), or
+/// null.
 /// </param>
-internal readonly record struct ManagedDivisionPlan(string Helper, ManagedDivisionForm Form, string? Reader = null);
+/// <param name="ReceiverType">The type of the receiver of a property that is bound once, or null.</param>
+/// <param name="ValueType">The type of that property, or null.</param>
+internal readonly record struct ManagedDivisionPlan(
+    string Helper,
+    ManagedDivisionForm Form,
+    string? Reader = null,
+    ITypeSymbol? ReceiverType = null,
+    ITypeSymbol? ValueType = null);
