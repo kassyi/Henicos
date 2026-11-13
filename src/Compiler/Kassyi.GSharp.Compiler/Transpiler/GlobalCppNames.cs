@@ -154,22 +154,14 @@ internal static class GlobalCppNames
     /// <summary>The C# path of <paramref name="method"/>: the path of its containing type and the method.</summary>
     public static GlobalNamePath GetFunctionPath(IMethodSymbol method)
     {
-        if (GenericInstanceTable.TryGet(GetDefinition(method), out var instance))
+        var definition = GetDefinition(method);
+        if (GenericInstanceTable.TryGet(definition, out var instance))
         {
             return GenericInstanceNames.GetInstancePath(instance);
         }
 
-        var definition = GetDefinition(method);
-        var typePath = GetTypePath(definition.ContainingType);
-        var segments = ImmutableArray.CreateBuilder<GlobalNameSegment>(typePath.Segments.Count + 1);
-        foreach (var segment in typePath.Segments)
-        {
-            segments.Add(segment);
-        }
-
-        segments.Add(new GlobalNameSegment(definition.Name, arity: definition.Arity,
-            overloadOrdinal: GetOverloadOrdinal(definition)));
-        return new GlobalNamePath(segments.MoveToImmutable());
+        return GetTypePath(definition.ContainingType).Append(new GlobalNameSegment(definition.Name,
+            arity: definition.Arity, overloadOrdinal: GetOverloadOrdinal(definition)));
     }
 
     private static IMethodSymbol GetDefinition(IMethodSymbol method)
@@ -301,6 +293,13 @@ internal static class GlobalCppNames
         }
 
         modifiers.Reverse();
+        if (current is IFunctionPointerTypeSymbol)
+        {
+            // The name grammar has no form for a signature; nothing that names a type can reach one on the device
+            throw new InvalidOperationException(
+                $"The function pointer type '{current.GetFullyQualifiedCsharpName()}' has no global C++ name.");
+        }
+
         var segments = current is INamedTypeSymbol named
             ? BuildTypeSegments(named)
             : ImmutableArray.Create(new GlobalNameSegment(current.Name));

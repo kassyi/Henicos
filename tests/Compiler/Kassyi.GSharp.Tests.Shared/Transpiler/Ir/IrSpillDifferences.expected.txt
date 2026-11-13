@@ -159,6 +159,10 @@
     ir:     spill(b[i]) check(cells[b[i]]) split(Suspend())
     syntax: split(Suspend())
 #991 a location C# checks before the split + #991 a part of a target location that the split may change
+  IrSplitLoweringCases.cs Cases.CheckOfAFieldTarget: cells[b[i]].F = Suspend();
+    ir:     spill(b[i]) check(cells[b[i]]) split(Suspend())
+    syntax: split(Suspend())
+#991 a location C# checks before the split + #991 a part of a target location that the split may change
   SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.OperandOrderKernel: cells[NextIndex(counter, l)].F = SyncThen(l + 1);
     ir:     spill(NextIndex(counter, l)) check(cells[NextIndex(counter, l)]) spill(l + 1) split(SyncThen(l + 1))
     syntax: spill(l + 1) split(SyncThen(l + 1))
@@ -197,6 +201,14 @@
 #991 an earlier operand of an operation that does not split
   IrSpillPlannerCases.cs Cases.UserDefinedConversionBeforeASplit: result[0] = Take(a[0], Suspend());
     ir:     spill(a[0]) split(Suspend())
+    syntax: split(Suspend())
+#991 an earlier operand of an operation that does not split
+  IrSplitLoweringCases.cs Cases.EarlierArgumentOfACallThatDoesNotSplit: result[0] = Pair(a[0], Suspend());
+    ir:     spill(a[0]) split(Suspend())
+    syntax: split(Suspend())
+#991 an earlier operand of an operation that does not split
+  IrSplitLoweringCases.cs Cases.OperandWithoutNaturalType: result[0] = TakeLong(c ? 1u : -1, Suspend());
+    ir:     spill(c ? 1u : -1) split(Suspend())
     syntax: split(Suspend())
 #991 an earlier operand of an operation that does not split
   SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.OperandOrderKernel: output[o + 3] = Triple(Add3(d, l), Double(d, l), Warp.ShuffleSync(Full, d[l], l));

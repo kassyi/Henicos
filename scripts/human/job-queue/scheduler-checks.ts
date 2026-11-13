@@ -21,7 +21,7 @@ export function job(
   return { id, weight, queuedAt, gpu, estimate, grantedAt: 0, pin: null, before: null, after: null };
 }
 
-const times = (typicalS: number, longestS: number): Estimate => ({
+export const times = (typicalS: number, longestS: number): Estimate => ({
   typicalMs: typicalS * 1000,
   longestMs: longestS * 1000,
 });

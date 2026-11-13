@@ -112,8 +112,8 @@ internal sealed class FuzzSplitKernelBuilder(KernelGenerationState state, FuzzSp
         state.Statements.Add($"arr[3] = {_ints[0].Name};");
     }
 
-    /// <summary>Writes one split statement of a kind in <c>forms</c>, skipping the shapes avoided for open
-    /// issues.</summary>
+    /// <summary>Writes one split statement of a kind in <c>forms</c>, skipping the shapes that need the stack array
+    /// while it is avoided.</summary>
     internal void EmitSplitStatement()
     {
         var enabled = new List<FuzzSplitShape[]>(4);
@@ -123,11 +123,10 @@ internal sealed class FuzzSplitKernelBuilder(KernelGenerationState state, FuzzSp
         AddIfEnabled(enabled, FuzzSplitForms.SuspendingCall, FuzzSplitStatementShapes.SuspendingCall);
 
         var shapes = Rng.Choose(enabled);
-        bool avoidArgumentOrder = state.IssueFilter.IsAvoided(FuzzSplitKernelEmitter.SplitArgumentOrderIssue);
         var allowed = new List<FuzzSplitShape>(shapes.Length);
         foreach (var shape in shapes)
         {
-            if (!(shape.ArgumentOrderIssue && avoidArgumentOrder) && (!shape.NeedsArray || _hasArray))
+            if (!shape.NeedsArray || _hasArray)
             {
                 allowed.Add(shape);
             }

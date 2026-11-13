@@ -2,14 +2,6 @@
   "version": 1,
   "issues": [
     {
-      "issue": 991,
-      "kind": "avoid",
-      "summary": "CPU paths evaluate operands around a shuffle or suspending call out of C# order",
-      "profiles": ["M", "C", "G"],
-      "paths": ["Managed", "Native"],
-      "avoidedShape": "Split point in a ?: / || / && arm, argument or compound right side that writes"
-    },
-    {
       "issue": 1554,
       "kind": "avoid",
       "summary": "A stack array live across a barrier fails the native build with no diagnostic",

@@ -55,7 +55,7 @@ open a lambda by hand for that purpose.
 Fixed text without a separately written closer is a literal: `Append("()")`, `Append(",")`, `Append("if")`,
 `AppendLine(";")`. `SourceWriter` has no per-token methods (`AppendComma`, `AppendKeyword`, ...); they only hid the text.
 Conditional text, generated-file headers and the name helpers are listed in
-[helpers.md §3](../skills/gsharp-transpiler-guidelines/references/helpers.md#3-emitting-code).
+[helpers/emitting.md](../skills/gsharp-transpiler-guidelines/references/helpers/emitting.md).
 
 ## 3. Dense, Left-Aligned Output
 

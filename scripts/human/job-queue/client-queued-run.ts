@@ -31,7 +31,7 @@ import {
   type Placement,
 } from "./protocol.ts";
 import { CommandShell } from "./shell.ts";
-import { prefix } from "./system.ts";
+import { prefix, resolveWorktree } from "./system.ts";
 
 /**
  * The queued path of run: register, wait for the grant, run the command, report its end. With `gpuTurn`, the job waits
@@ -50,6 +50,8 @@ export class QueuedRun {
   private jobId = 0;
   private spawnedAt = 0;
   private socket: net.Socket | null = null;
+  /** The root of the worktree the job runs in, the scheduler's round-robin key; resolved at the first registration. */
+  private worktree: string | null = null;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
@@ -395,6 +397,8 @@ export class QueuedRun {
       commandPid: running !== null && running.pid !== undefined ? running.pid : 0,
       spawnedAt: this.spawnedAt,
       cwd: process.cwd(),
+      // Resolved once per job (git), kept for the re-registrations after a scheduler restart
+      worktree: (this.worktree ??= resolveWorktree(process.cwd())),
       command: options.command,
       queuedAt: this.queuedAt,
       id: this.jobId, // keeps the job id across a scheduler restart

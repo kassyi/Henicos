@@ -164,20 +164,6 @@ internal static class AutoResultEmitter
         writer.AppendLine($"if ({DeviceAutoResult} != {IntPtrType}.Zero) {CudaDriverApiType}.cuMemFreeAsync({DeviceAutoResult}, hStream);");
     }
 
-    // , <result or shadow>* __gsharp_auto_result
-    // A returned struct whose layouts differ is written into its native shadow array (#704)
-    /// <summary>CPU: emits the auto result parameter of the native launcher's delegate.</summary>
-    internal static void WriteCpuDelegateParameter(SourceWriter writer, in KernelHostModel kernel)
-    {
-        if (kernel.ReturnTypeName is not { } returnType)
-        {
-            return;
-        }
-
-        var elementType = kernel.IsCpuConvertedReturn ? GetShadowPath(kernel.CpuReturn) : returnType;
-        writer.Append($", {elementType}* {Buffer}");
-    }
-
     // byte[]? __gsharp_auto_result_shadow = null;
     // int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(<shadow>));
     /// <summary>

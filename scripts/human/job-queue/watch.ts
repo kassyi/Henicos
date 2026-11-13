@@ -81,9 +81,9 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
     case "q":
       return { state, action: "quit" };
     case "?":
-      return { state: { ...state, help: !state.help } };
+      return { state: { ...state, help: state.help >= state.helpPages ? 0 : state.help + 1 } };
     case "\x1b": // closes the help first, then clears the selection
-      return { state: state.help ? { ...state, help: false } : { ...state, selectedId: null } };
+      return { state: state.help > 0 ? { ...state, help: 0 } : { ...state, selectedId: null } };
     case "r":
       return { state, action: "refresh" };
     case "\x1b[A":
@@ -104,7 +104,7 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
       return { state: note(state, "no job selected; pick one with ↑↓", now) };
     }
     if (key === "c") {
-      return { state: { ...state, help: false, prompt: { kind: "cancel", id: selected.id } } };
+      return { state: { ...state, help: 0, prompt: { kind: "cancel", id: selected.id } } };
     }
     if (key === "s" && selected.state === "waiting") {
       // what start refuses, said before asking
@@ -114,7 +114,7 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
           ? `#${selected.id} waits for #${selected.blockedBy} to end`
           : null;
       return refusal === null
-        ? { state: { ...state, help: false, prompt: { kind: "start", id: selected.id } } }
+        ? { state: { ...state, help: 0, prompt: { kind: "start", id: selected.id } } }
         : { state: note(state, refusal, now) };
     }
     if (selected.state !== "waiting") {
@@ -123,7 +123,7 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
       };
     }
     return {
-      state: { ...state, help: false, prompt: { kind: key === "m" ? "move" : "weight", id: selected.id, digits: "" } },
+      state: { ...state, help: 0, prompt: { kind: key === "m" ? "move" : "weight", id: selected.id, digits: "" } },
     };
   }
   return { state };

@@ -389,5 +389,5 @@ public class IrSpillRewriterTests
         IrLoweredInvariants.Verify(plan, lowered, IrTestCases.Compile(Cases));
 
     private static IrLoweredStatement Rebuild(IrLoweredStatement lowered, ImmutableArray<IrStatement> statements) =>
-        new(lowered.Original, statements, lowered.Temporaries);
+        new(lowered.Original, statements, lowered.Temporaries, lowered.Remaining);
 }

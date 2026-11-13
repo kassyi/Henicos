@@ -9,5 +9,6 @@ global using System.Threading;
 global using System.Threading.Tasks;
 global using Kassyi.GSharp.Compiler.Tasks.Helpers;
 global using Kassyi.GSharp.Compiler.Tasks.Toolchains;
+global using Kassyi.GSharp.Cuda;
 global using Microsoft.Build.Framework;
 global using Microsoft.Build.Utilities;

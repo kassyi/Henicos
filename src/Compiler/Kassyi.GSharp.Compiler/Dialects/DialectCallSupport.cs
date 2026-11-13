@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Dialects;
+namespace Kassyi.GSharp.Compiler.Dialects;
 
 /// <summary>
 /// Centralizes per-dialect call and feature support checks across the analyzer, C++/CUDA transpiler, and managed rewriter.

@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler.Dialects;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;

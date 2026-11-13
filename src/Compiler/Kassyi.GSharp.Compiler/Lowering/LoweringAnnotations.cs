@@ -150,6 +150,13 @@ public static class LoweringAnnotations
     public const string SpilledTypeSpanAnnotationKind = "GSharp.SpilledTypeSpan";
 
     /// <summary>
+    /// Marks a statement that the split pass of the IR wrote out (<see cref="IrSplitLoweringPass"/>): every operand C#
+    /// evaluates before a split is already in a temporary and every split is at the top of its statement, so the
+    /// syntax-based passes that hoist split points out of expressions leave it as it is.
+    /// </summary>
+    public const string IrLoweredAnnotationKind = "GSharpIrLowered";
+
+    /// <summary>
     /// Copies the <see cref="OriginalSpanAnnotationKind"/> annotations of <paramref name="original"/>, the node that
     /// <paramref name="node"/> replaces, onto <paramref name="node"/>, so that a diagnostic on it is reported at the
     /// user's source.

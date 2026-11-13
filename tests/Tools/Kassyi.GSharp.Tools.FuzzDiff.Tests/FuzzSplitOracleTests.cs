@@ -80,13 +80,6 @@ public class FuzzSplitOracleTests
 
         foreach (var (kernel, expected) in s_handCases)
         {
-            if (kernel == "CompoundShuffleKernel")
-            {
-                // The CPU paths give 8 here: #991 (Suspending call arguments still misordered on CPU) lists this
-                // compound-assignment shape; the fuzzer avoids it until that issue is fixed.
-                continue;
-            }
-
             var launch = FuzzTestCompilationHelper.CreateStaticDelegate<Action<ulong[]>>(runnerType, kernel);
             ulong[] checksum = new ulong[Rows];
             ManagedKernelRun.Run(() => launch(checksum));

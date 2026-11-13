@@ -1,6 +1,11 @@
 namespace Repro
 {
     public struct Generic<T> { }
+    public struct Vec<T> { }
+    public struct S<T> { }
+    public struct X { }
+    public struct S_g1_bX_e { }
+    public class Holder<T> { public struct Inner { } }
 }
 public struct GlobalType { }
 namespace Functions
