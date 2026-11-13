@@ -8,8 +8,8 @@ using Kassyi.GSharp.Compiler.Transpiler.Managed;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 
 /// <summary>
-/// Transpiles methods for the CPU with the split pass of the IR in front of the syntax passes
-/// (<see cref="AstLoweringPipeline.WithIrSplitLowering"/>) and compares the result with the syntax passes alone: the
+/// Transpiles methods for the CPU with the split pass of the IR in front of the syntax passes and compares the result
+/// with the syntax passes alone (<see cref="AstLoweringPipeline.WithoutIrSplitLowering"/>): the
 /// failures the transpiler reports and where (generator-invariants: lowered trees keep their original spans), and the
 /// output of a compound assignment of each operator whose target the IR reads into a temporary.
 /// </summary>
@@ -40,12 +40,13 @@ public class IrSplitLoweringOutputTests(ITestOutputHelper output)
                 }
 
                 Interlocked.Increment(ref methods);
-                var without = Failures(declaration, model, symbol);
-                string[] with;
-                using (AstLoweringPipeline.WithIrSplitLowering())
+                string[] without;
+                using (AstLoweringPipeline.WithoutIrSplitLowering())
                 {
-                    with = Failures(declaration, model, symbol);
+                    without = Failures(declaration, model, symbol);
                 }
+
+                var with = Failures(declaration, model, symbol);
 
                 Interlocked.Add(ref failures, without.Length);
                 if (!without.SequenceEqual(with, StringComparer.Ordinal))
@@ -72,15 +73,10 @@ public class IrSplitLoweringOutputTests(ITestOutputHelper output)
         AstLoweringPipeline.HoistSplitPointsWithIr(declaration.Body ?? throw new InvalidOperationException(), false,
             model, symbol, out var outcomes);
         var failures = new List<TranspileFailure>();
-        string native;
-        string managed;
-        using (AstLoweringPipeline.WithIrSplitLowering())
-        {
-            native = MethodTranspiler.GenerateCudaSource(declaration, model, failures.Add, isDevice: false,
-                new StandardCppDialect(), out _);
-            var plan = MethodEmissionPlan.Create(declaration, model, isKernel: true);
-            managed = ManagedCSharpTranspiler.Generate(in plan);
-        }
+        var native = MethodTranspiler.GenerateCudaSource(declaration, model, failures.Add, isDevice: false,
+            new StandardCppDialect(), out _);
+        var plan = MethodEmissionPlan.Create(declaration, model, isKernel: true);
+        var managed = ManagedCSharpTranspiler.Generate(in plan);
 
         Assert.All(outcomes, static outcome => Assert.True(outcome.IsLowered));
         Assert.True(outcomes.Count >= 12, $"Only {outcomes.Count} statements written by the IR.");

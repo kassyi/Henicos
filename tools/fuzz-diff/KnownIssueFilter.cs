@@ -46,7 +46,6 @@ public sealed class KnownIssueFilter
     /// <summary>Gets the complete list of issue numbers that have an avoidance handler in the generator.</summary>
     public static IReadOnlyList<int> SupportedAvoidanceIssues { get; } =
     [
-        FuzzSplitKernelEmitter.SplitArgumentOrderIssue,
         FuzzSplitKernelEmitter.StackArrayAcrossSplitIssue,
         Issue1079NarrowIncDecValue,
         Issue998MixedWidthNullCoalesce,
