@@ -157,6 +157,7 @@ async function checkReRequestBeforeClose(fixture: QueueFixture, port: number): P
   const requeued = await again.until("queued");
   assert.strictEqual(requeued?.id, queued.id, "the same client queues again under its id");
   await a.closed; // the scheduler ended the old connection
+  await delay(300); // its close reaches the scheduler a moment later: it must change nothing
   const status = await statusOf(port);
   const jobs = status.running.concat(status.waiting).filter((j) => j.command === "R3-A");
   assert.deepStrictEqual(
