@@ -30,6 +30,12 @@ internal readonly record struct KernelHostModel
     public string LaunchExportName { get; init; }
 
     /// <summary>
+    /// The accessibility of the launchers and of the managed state machine: the widest under which they name only
+    /// types at least as accessible as themselves, whatever the kernel's own accessibility (#1284).
+    /// </summary>
+    public Accessibility LauncherAccessibility { get; init; }
+
+    /// <summary>
     /// The method through which a container warms up the kernel of a class the module context cannot name
     /// (<see cref="HostClassHeader.WarmupRelayHosts"/>).
     /// </summary>
@@ -153,6 +159,7 @@ internal readonly record struct KernelHostModel
             ContextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, kernel),
             StateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, kernel),
             LaunchExportName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.LaunchExportPrefix, kernel),
+            LauncherAccessibility = GeneratedMemberAccessibility.OfSignature(kernel).ChooseIn(kernel.ContainingType),
             WarmupRelayName =
                 GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Launcher.WarmupRelayPrefix, kernel),
             ReturnTypeName = kernel.ReturnType.SpecialType == SpecialType.System_Void
@@ -306,175 +313,6 @@ internal readonly record struct StructLayoutGuard(
 /// <param name="FullyQualifiedTypeName">The <c>global::</c>-qualified field type.</param>
 /// <param name="ExpectedOffset">The predicted host offset in bytes.</param>
 internal readonly record struct FieldOffsetGuard(string Name, string FullyQualifiedTypeName, int ExpectedOffset);
-
-/// <summary>The native shadow struct and the marshaling methods of one user struct, as the wrapper declares them.</summary>
-/// <param name="AotStructPath">The <c>AotContexts</c> path, which identifies the struct within a class.</param>
-/// <param name="CudaText">The CUDA declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
-/// <param name="CpuText">The CPU declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
-internal readonly record struct StructHostSource(string AotStructPath, string CudaText, string CpuText)
-{
-    public string GetText(bool isCuda) => isCuda ? CudaText : CpuText;
-}
-
-/// <summary>One kernel of a <see cref="KernelClassModel"/>, with what its siblings decide.</summary>
-/// <param name="Host">The kernel's own launch ABI.</param>
-/// <param name="MemberKey">The suffix of the per-kernel host members: the name, or <c>{name}__o{n}</c> for an overloaded kernel.</param>
-/// <param name="IsOverloaded">Whether another <c>[GpuKernel]</c> of the class has the same name.</param>
-/// <param name="IsIndistinguishable">Whether an earlier overload has the same wrapper parameter list (GSH0059), so the wrappers are left out.</param>
-/// <param name="CudaSource">The CUDA source of the kernel.</param>
-/// <param name="CppSource">The C++ source of the kernel.</param>
-/// <param name="ManagedCSharpSource">The managed fallback of the kernel.</param>
-/// <param name="InternalError">The exception that stopped the transpilation (GSH0048), or empty.</param>
-/// <param name="ErrorSites">
-/// The source locations of the run-time error sites of the kernel, which the class reports by site ID.
-/// </param>
-internal readonly record struct KernelEmission(
-    KernelHostModel Host,
-    string MemberKey,
-    bool IsOverloaded,
-    bool IsIndistinguishable,
-    string CudaSource,
-    string CppSource,
-    string ManagedCSharpSource,
-    string InternalError,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default)
-{
-    public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
-
-    /// <summary>
-    /// Whether the kernel has a CUDA warmup method for the module context to call: it has launchers (GSH0059, GSH0106
-    /// and GSH0108 leave them out).
-    /// </summary>
-    public bool HasWarmup => !IsIndistinguishable && !Host.HasReservedLaunchParameterName &&
-                             Host.LauncherUnavailableReason is null;
-}
-
-/// <summary>The kernels of one class, which the generator emits as one wrapper source.</summary>
-internal readonly record struct KernelClassModel(
-    HostClassHeader Class,
-    EquatableArray<KernelEmission> Kernels,
-    EquatableArray<StructHostSource> Structs,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default,
-    EquatableArray<WarmupRelay> WarmupRelays = default)
-{
-    /// <summary>
-    /// Builds the class model from the kernels of one class, in the order given; the overloads, member keys and the
-    /// indistinguishable overloads are derived from these models only.
-    /// </summary>
-    public static KernelClassModel Create(HostClassHeader header, IReadOnlyList<TranspiledKernelResult> kernels)
-    {
-        var hosts = ImmutableArray.CreateBuilder<KernelHostModel>(kernels.Count);
-        kernels
-            .AsStackEnumerable()
-            .Select(static kernel => kernel.Host)
-            .AddTo(hosts);
-
-        var emissions = ImmutableArray.CreateBuilder<KernelEmission>(kernels.Count);
-        var structs = ImmutableArray.CreateBuilder<StructHostSource>();
-        var structIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var rawClassSites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
-        for (var i = 0; i < kernels.Count; i++)
-        {
-            var kernel = kernels[i];
-            if (!kernel.ErrorSites.IsDefaultOrEmpty)
-            {
-                foreach (var site in kernel.ErrorSites)
-                {
-                    rawClassSites.Add(site);
-                }
-            }
-
-            var isOverloaded = IsOverloaded(hosts, i);
-            var memberKey = isOverloaded
-                ? $"{kernel.Host.Name}__o{kernel.Host.OverloadOrdinal.ToString(CultureInfo.InvariantCulture)}"
-                : kernel.Host.Name;
-            emissions.Add(new KernelEmission(
-                kernel.Host,
-                memberKey,
-                isOverloaded,
-                TryFindIndistinguishableOverload(hosts, i, out _, out _),
-                kernel.CudaSource,
-                kernel.CppSource,
-                kernel.ManagedCSharpSource,
-                kernel.InternalError,
-                kernel.ErrorSites));
-
-            foreach (var s in kernel.Host.Structs)
-            {
-                if (!structIndices.TryGetValue(s.AotStructPath, out var index))
-                {
-                    structIndices.Add(s.AotStructPath, structs.Count);
-                    structs.Add(s);
-                }
-                else if (structs[index].CpuText.Length == 0 && s.CpuText.Length > 0)
-                {
-                    // One kernel converts an array of the struct on CUDA only, another passes the struct on the CPU too
-                    structs[index] = s;
-                }
-            }
-        }
-
-        ErrorSiteTable.TryBuildModuleSites(rawClassSites, out var classErrorSites, out _, out _);
-        var kernelEmissions = emissions.MoveToImmutable();
-        return new KernelClassModel(
-            header,
-            kernelEmissions.AsEquatableArray(),
-            structs.ToImmutable().AsEquatableArray(),
-            classErrorSites.AsEquatableArray(),
-            WarmupRelayPlan.Create(header, kernelEmissions));
-    }
-
-    /// <summary>Whether another kernel of <paramref name="kernels"/> has the name of <c>kernels[index]</c>.</summary>
-    public static bool IsOverloaded(IReadOnlyList<KernelHostModel> kernels, int index) =>
-        kernels
-            .AsStackEnumerable()
-            .Count(kernels[index].Name, static (k, name) => k.Name == name) > 1;
-
-    /// <summary>
-    /// Finds an earlier overload of <c>kernels[index]</c> whose <c>Launch{Name}</c> or typed <c>Launch{Name}Ptr</c> has the
-    /// same parameter list, which C# would reject as a duplicate member (GSH0059).
-    /// </summary>
-    /// <param name="kernels">The kernels of one class.</param>
-    /// <param name="index">The kernel to check.</param>
-    /// <param name="earlier">The index of the earlier overload, or -1.</param>
-    /// <param name="wrapperName">The wrapper that would be duplicated, or empty.</param>
-    public static bool TryFindIndistinguishableOverload(IReadOnlyList<KernelHostModel> kernels, int index,
-        out int earlier, out string wrapperName)
-    {
-        earlier = -1;
-        wrapperName = string.Empty;
-        if (!IsOverloaded(kernels, index))
-        {
-            return false;
-        }
-
-        var kernel = kernels[index];
-        for (var i = 0; i < kernels.Count; i++)
-        {
-            var other = kernels[i];
-            if (other.Name != kernel.Name || other.OverloadOrdinal >= kernel.OverloadOrdinal)
-            {
-                continue;
-            }
-
-            if (string.Equals(other.ManagedSignatureKey, kernel.ManagedSignatureKey, StringComparison.Ordinal))
-            {
-                earlier = i;
-                wrapperName = KernelHostNames.GetLaunchName(kernel);
-                return true;
-            }
-
-            if (string.Equals(other.TypedPointerSignatureKey, kernel.TypedPointerSignatureKey, StringComparison.Ordinal))
-            {
-                earlier = i;
-                wrapperName = KernelHostNames.GetTypedPointerLaunchName(kernel);
-                return true;
-            }
-        }
-
-        return false;
-    }
-}
 
 /// <summary>The managed state machines of the device functions of one class that may suspend.</summary>
 /// <param name="Class">The class that the state machines go into.</param>
