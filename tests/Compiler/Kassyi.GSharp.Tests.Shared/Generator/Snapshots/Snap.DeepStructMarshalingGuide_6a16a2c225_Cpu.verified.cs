@@ -137,21 +137,12 @@ public static unsafe void Unmarshal_FermatContext(ref global::Kassyi.GSharp.Test
 host.Modulus = native.Modulus;
 Unmarshal_DualNttContext(ref host.Ntt, ref native.Ntt, hStream);
 }
-public static void CopyArrays_FermatContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext host)
+public static void CopyArrays_FermatContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.OperandA != null)
-{
-host.OperandA = (global::System.UInt32[])host.OperandA.Clone();
-}
-if (host.OperandB != null)
-{
-host.OperandB = (global::System.UInt32[])host.OperandB.Clone();
-}
-if (host.Result != null)
-{
-host.Result = (global::System.UInt32[])host.Result.Clone();
-}
-CopyArrays_DualNttContext(ref host.Ntt);
+_ = copies.Copy(ref host.OperandA);
+_ = copies.Copy(ref host.OperandB);
+_ = copies.Copy(ref host.Result);
+CopyArrays_DualNttContext(ref host.Ntt, copies);
 }
 public static bool HoldsArray_FermatContext(global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext host, object array)
 {
@@ -233,20 +224,11 @@ public static unsafe void Unmarshal_DualNttContext(ref global::Kassyi.GSharp.Tes
 {
 host.Length = native.Length;
 }
-public static void CopyArrays_DualNttContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host)
+public static void CopyArrays_DualNttContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Buffer1 != null)
-{
-host.Buffer1 = (global::System.UInt32[])host.Buffer1.Clone();
-}
-if (host.Buffer2 != null)
-{
-host.Buffer2 = (global::System.UInt32[])host.Buffer2.Clone();
-}
-if (host.Twiddles != null)
-{
-host.Twiddles = (global::System.UInt32[])host.Twiddles.Clone();
-}
+_ = copies.Copy(ref host.Buffer1);
+_ = copies.Copy(ref host.Buffer2);
+_ = copies.Copy(ref host.Twiddles);
 }
 public static bool HoldsArray_DualNttContext(global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host, object array)
 {
@@ -335,24 +317,12 @@ public static unsafe void Unmarshal_CryptoContext(ref global::Kassyi.GSharp.Test
 {
 host.Length = native.Length;
 }
-public static void CopyArrays_CryptoContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host)
+public static void CopyArrays_CryptoContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.OperandA != null)
-{
-host.OperandA = (global::System.UInt32[])host.OperandA.Clone();
-}
-if (host.OperandB != null)
-{
-host.OperandB = (global::System.UInt32[])host.OperandB.Clone();
-}
-if (host.Result != null)
-{
-host.Result = (global::System.UInt32[])host.Result.Clone();
-}
-if (host.Scratch != null)
-{
-host.Scratch = (global::System.UInt32[])host.Scratch.Clone();
-}
+_ = copies.Copy(ref host.OperandA);
+_ = copies.Copy(ref host.OperandB);
+_ = copies.Copy(ref host.Result);
+_ = copies.Copy(ref host.Scratch);
 }
 public static bool HoldsArray_CryptoContext(global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host, object array)
 {

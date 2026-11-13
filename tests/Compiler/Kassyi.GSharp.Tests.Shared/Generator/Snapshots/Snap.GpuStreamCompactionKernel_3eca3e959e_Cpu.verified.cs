@@ -130,12 +130,9 @@ public static unsafe void Unmarshal_GpuBigIntVectorKernels_ElementCountContext(r
 host.Skip = native.Skip;
 host.Limit = native.Limit;
 }
-public static void CopyArrays_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host)
+public static void CopyArrays_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Base != null)
-{
-host.Base = (global::System.UInt32[])host.Base.Clone();
-}
+_ = copies.Copy(ref host.Base);
 }
 public static bool HoldsArray_GpuBigIntVectorKernels_ElementCountContext(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, object array)
 {

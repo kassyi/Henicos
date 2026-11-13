@@ -195,12 +195,9 @@ public static unsafe void Unmarshal_ConvertBag(ref global::Kassyi.GSharp.Tests.S
 {
 host.N = native.N;
 }
-public static void CopyArrays_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host)
+public static void CopyArrays_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Data != null)
-{
-host.Data = (global::System.Int32[])host.Data.Clone();
-}
+_ = copies.Copy(ref host.Data);
 }
 public static bool HoldsArray_ConvertBag(global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, object array)
 {
@@ -1183,16 +1180,12 @@ last = default;
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CSharpExecutionKernels.RefOutKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::System.Int32 __gsharp_csharp_arg_0 = total;
-global::System.Int32 __gsharp_csharp_arg_1 = default;
-try
+fixed (global::System.Int32* __gsharp_csharp_pin_0 = &total)
+fixed (global::System.Int32* __gsharp_csharp_pin_1 = &last)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.CSharpExecutionKernels.RefOutKernel(ref __gsharp_csharp_arg_0, out __gsharp_csharp_arg_1));
-}
-finally
-{
-total = __gsharp_csharp_arg_0;
-last = __gsharp_csharp_arg_1;
+global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.CSharpExecutionKernels.RefOutKernel(ref *__gsharp_csharp_arg_0, out *__gsharp_csharp_arg_1));
 }
 return;
 }
@@ -3969,17 +3962,13 @@ last = default;
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CSharpExecutionKernels.RefOutThenFailKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::System.Int32 __gsharp_csharp_arg_0 = total;
-global::System.Int32 __gsharp_csharp_arg_1 = default;
 global::System.Int32[] __gsharp_csharp_arg_2 = at;
-try
+fixed (global::System.Int32* __gsharp_csharp_pin_0 = &total)
+fixed (global::System.Int32* __gsharp_csharp_pin_1 = &last)
 {
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.CSharpExecutionKernels.RefOutThenFailKernel(ref __gsharp_csharp_arg_0, out __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
-}
-finally
-{
-total = __gsharp_csharp_arg_0;
-last = __gsharp_csharp_arg_1;
+global::System.Int32* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
+global::System.Int32* __gsharp_csharp_arg_1 = __gsharp_csharp_pin_1;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.CSharpExecutionKernels.RefOutThenFailKernel(ref *__gsharp_csharp_arg_0, out *__gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 }
 return;
 }

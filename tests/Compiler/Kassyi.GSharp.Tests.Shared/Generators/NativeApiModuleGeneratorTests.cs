@@ -110,11 +110,11 @@ public class NativeApiModuleGeneratorTests
         Assert.Contains("__gsharp_d_1.CopyToHost(new global::System.Span<double>(ref __gsharp_out_1));", source);
         Assert.Contains("result = __gsharp_out_1;", source);
         Assert.DoesNotContain("\nresult = default;", source);
-        Assert.Contains("__gsharp_d_0.CopyToHost(new global::System.Span<int>(ref total));", source);
+        Assert.Contains("__gsharp_d_0?.CopyToHost(new global::System.Span<int>(ref total));", source);
         Assert.DoesNotContain("__gsharp_d_2.CopyToHost", source);
         Assert.DoesNotContain("__gsharp_d_3.CopyToHost", source);
         Assert.Contains(
-            "__gsharp_d_5.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<float>(grid));",
+            "__gsharp_d_5?.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<float>(grid));",
             source);
         Assert.Contains(
             "__gsharp_d_6?.CopyToHost(global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.Flatten<int>(cube));",
