@@ -13,34 +13,20 @@ internal static class IrSplitAnnotationCheck
     /// <summary>
     /// Whether the syntax of each call the plan splits carries the annotation the lowering puts on such a call.
     /// </summary>
-    public static bool SplitsAreAnnotated(ImmutableArray<IrSpillStep> steps, IrSyntaxIndex index)
+    public static bool SplitsAreAnnotated(ImmutableArray<IrSpillStep> steps, IrSyntaxIndex index) =>
+        steps
+            .AsStackEnumerable()
+            .All(index, static (step, syntaxIndex) => IsStepAnnotated(step, syntaxIndex));
+
+    // A split is annotated as the lowering annotates it; a conditional holds splits only in its branches
+    private static bool IsStepAnnotated(IrSpillStep step, IrSyntaxIndex index) => step switch
     {
-        foreach (var step in steps)
-        {
-            switch (step)
-            {
-                case IrSpillSplit { Node: IrCall call }:
-                    if (!index.TryGet(call.Source, out var syntax) || !IsAnnotatedAs(syntax, call))
-                    {
-                        return false;
-                    }
-
-                    break;
-                case IrSpillConditional conditional:
-                    foreach (var branch in conditional.Branches)
-                    {
-                        if (!SplitsAreAnnotated(branch, index))
-                        {
-                            return false;
-                        }
-                    }
-
-                    break;
-            }
-        }
-
-        return true;
-    }
+        IrSpillSplit { Node: IrCall call } => index.TryGet(call.Source, out var syntax) && IsAnnotatedAs(syntax, call),
+        IrSpillConditional conditional => conditional.Branches
+            .AsStackEnumerable()
+            .All(index, static (branch, syntaxIndex) => SplitsAreAnnotated(branch, syntaxIndex)),
+        _ => true
+    };
 
     /// <summary>
     /// Whether every annotated call of <paramref name="statement"/> is a statement of its own (<c>c;</c>) or the
