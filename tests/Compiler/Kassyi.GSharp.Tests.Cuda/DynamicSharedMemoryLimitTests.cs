@@ -59,7 +59,7 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
 
     private static IntPtr GetFunction(string kernel)
     {
-        var module = GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule();
+        var module = GSharpModuleContext_Kassyi_x00002eGSharp_x00002eTests_x00002eCuda.GetOrLoadModule();
         return GpuKernelLoader.GetFunction(module, KernelPrefix + kernel);
     }
 
