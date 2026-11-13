@@ -26,12 +26,12 @@ public static partial class ManagedGpuContext
     }
 
     /// <summary>
-    /// Throws <see cref="InvalidOperationException"/> when the current host thread runs a kernel as C# one GPU thread
-    /// at a time, which <paramref name="construct"/> cannot take part in: no other thread of its block or grid runs
-    /// beside it, so an operation that waits for them or reads their values has no meaning there.
+    /// Throws <see cref="CSharpExecutionUnsupportedException"/> when the current host thread runs a kernel as C# one GPU
+    /// thread at a time, which <paramref name="construct"/> cannot take part in: no other thread of its block or grid
+    /// runs beside it, so an operation that waits for them or reads their values has no meaning there.
     /// </summary>
     /// <param name="construct">The operation, as the user writes it (<c>Gpu.SyncThreads()</c>).</param>
-    /// <exception cref="InvalidOperationException">The current host thread runs a kernel as C#.</exception>
+    /// <exception cref="CSharpExecutionUnsupportedException">The current host thread runs a kernel as C#.</exception>
     /// <remarks>
     /// [WHY] Not <see cref="GpuOnlyException"/>: the operation runs on the host in a managed launch, and a member is
     /// GPU-only exactly when it throws that exception outside one (<c>GpuOnlyMembers</c> of the compiler).
@@ -40,7 +40,7 @@ public static partial class ManagedGpuContext
     {
         if (IsCSharpExecution)
         {
-            throw new InvalidOperationException(
+            throw new CSharpExecutionUnsupportedException(
                 $"G#: {construct} cannot run in a kernel launched under KernelExecution.CSharp, which runs the " +
                 "C# body of the kernel one GPU thread at a time, so no other thread of the block or grid runs " +
                 "beside it. Launch the kernel under KernelExecution.Default or KernelExecution.Managed.");

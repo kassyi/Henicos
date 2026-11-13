@@ -50,10 +50,7 @@ public class MathAbsAndFloatConversionDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel(
-            b.Get<int>("vals"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_mathAbsSingle = new(
@@ -79,10 +76,7 @@ public class MathAbsAndFloatConversionDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel(
-            b.Get<float>("vals"),
-            b.Get<float>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_mathAbsDouble = new(
@@ -108,10 +102,7 @@ public class MathAbsAndFloatConversionDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.MathAbsDoubleKernel(
-            b.Get<double>("vals"),
-            b.Get<double>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_floatDivisionByZero = new(
@@ -142,12 +133,7 @@ public class MathAbsAndFloatConversionDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.FloatDivisionByZeroKernel(
-            b.Get<float>("fVals"),
-            b.Get<double>("dVals"),
-            b.Get<float>("fDst"),
-            b.Get<double>("dDst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_floatToIntegerConversion = new(
@@ -180,11 +166,7 @@ public class MathAbsAndFloatConversionDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.FloatToIntegerConversionKernel(
-            b.Get<float>("fVals"),
-            b.Get<double>("dVals"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

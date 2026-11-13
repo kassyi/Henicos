@@ -194,7 +194,7 @@ public static class DifferentialRunner
 
     private static void ValidateCase(DifferentialCase testCase, IReadOnlyList<int> seeds, IReadOnlyList<DiffPathRunner> paths)
     {
-        bool hasOracle = testCase.Oracle is not null;
+        bool hasOracle = testCase.EffectiveOracle is not null;
         bool hasReference = testCase.Reference is not null;
         bool hasVerifier = testCase.Verify is not null || testCase.VerifyAgainstInitial is not null;
         bool hasExpectedException = testCase.ExpectedException is not null || testCase.ExceptionPolicy is not null;
@@ -202,6 +202,11 @@ public static class DifferentialRunner
         if (hasOracle && hasReference)
         {
             throw new DifferentialHarnessException($"{testCase.Name}: set at most one of Oracle and Reference");
+        }
+
+        if (testCase.Oracle is not null && testCase.OracleIsLaunch)
+        {
+            throw new DifferentialHarnessException($"{testCase.Name}: set at most one of Oracle and OracleIsLaunch");
         }
 
         if (!hasOracle && !hasReference && !hasVerifier && !hasExpectedException)
@@ -261,7 +266,7 @@ public static class DifferentialRunner
     private static bool RunOneShape(in CaseRun run, in ShapeRun at, bool allowSubprocess)
     {
         var testCase = run.Case;
-        bool hasOracle = testCase.Oracle is not null;
+        bool hasOracle = testCase.EffectiveOracle is not null;
         bool hasReference = testCase.Reference is not null;
 
         var activeExPolicy = testCase.ExpectedException?.Invoke(new DiffRandom(at.Seed), at.Shape) ?? testCase.ExceptionPolicy;
@@ -469,7 +474,7 @@ public static class DifferentialRunner
             return expected;
         }
 
-        var oracle = testCase.Oracle ?? throw new DifferentialHarnessException($"{testCase.Name}: no oracle");
+        var oracle = testCase.EffectiveOracle ?? throw new DifferentialHarnessException($"{testCase.Name}: no oracle");
         var orders = testCase.OracleOrders ?? [ThreadOrder.Forward, ThreadOrder.Reverse, ThreadOrder.Permutation(seed)];
         var firstOrder = orders.Count > 0 ? orders[0] : ThreadOrder.Forward;
 
@@ -537,7 +542,7 @@ public static class DifferentialRunner
             SequentialOracle.Run(shape, order, run);
             return null;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not DifferentialHarnessException)
         {
             return ExceptionPolicy.Unwrap(ex);
         }
@@ -549,7 +554,7 @@ public static class DifferentialRunner
         {
             run();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not DifferentialHarnessException)
         {
             throw new DifferentialHarnessException(
                 $"{testCase.Name}: the {what} threw for seed {seed}; keep inputs that C# rejects out of the generator",

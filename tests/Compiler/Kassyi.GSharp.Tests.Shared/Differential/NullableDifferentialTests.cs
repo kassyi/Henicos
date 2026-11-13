@@ -45,13 +45,7 @@ public class NullableDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.NullableCoalesceAndSideEffects(
-            b.Get<int>("hasA"),
-            b.Get<int>("valsA"),
-            b.Get<int>("hasB"),
-            b.Get<int>("valsB"),
-            b.Get<int>("fallbacks"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_deviceFunctionsAndKleene = new(
@@ -85,12 +79,7 @@ public class NullableDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.NullableDeviceFunctionsAndKleeneLogic(
-            b.Get<int>("hasA"),
-            b.Get<int>("valsA"),
-            b.Get<int>("hasB"),
-            b.Get<int>("valsB"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_floatCoalesceWithNaN = new(
@@ -120,11 +109,7 @@ public class NullableDifferentialTests
             b.Get<float>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.NullableFloatCoalesceWithNaN(
-            b.Get<int>("hasA"),
-            b.Get<float>("valsA"),
-            b.Get<float>("fallbacks"),
-            b.Get<float>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_coalesceWiderWithNarrower = new(
@@ -161,13 +146,7 @@ public class NullableDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable(
-            b.Get<int>("hasA"),
-            b.Get<int>("valsA"),
-            b.Get<int>("hasB"),
-            b.Get<short>("valsB"),
-            b.Get<ushort>("uValsB"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     // The reproductions of #998 run 64 rows across one-dimensional launch shapes
@@ -183,8 +162,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchEmptyStackSpanNullComparisonReproKernel(
             b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), ReproRows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullableArrayLikeDefaultValueNullCheck = new(
@@ -197,8 +175,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableArrayLikeDefaultValueNullCheckReproKernel(
             b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.NullableArrayLikeDefaultValueNullCheckReproKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), ReproRows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_narrowNullableCoalesceVarPromotion = new(
@@ -213,8 +190,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNarrowNullableCoalesceVarPromotionReproKernel(
             b.Get<int>("conds"), b.Get<byte>("ba"), b.Get<ushort>("usa"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.NarrowNullableCoalesceVarPromotionReproKernel(
-            b.Get<int>("conds"), b.Get<byte>("ba"), b.Get<ushort>("usa"), b.Get<int>("dst"), ReproRows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullableMemoryParamAndLocal = new(
@@ -226,8 +202,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableMemoryParamAndLocalReproKernel(
             b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.NullableMemoryParamAndLocalReproKernel(
-            b.Get<int>("dst"), ReproRows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullableMemoryKernelParamToLocal_Null = new(
@@ -239,8 +214,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableMemoryKernelParamToLocalReproKernel(
             null, b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.NullableMemoryKernelParamToLocalReproKernel(
-            null, b.Get<int>("dst"), ReproRows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullableMemoryKernelParamToLocal_WithValue = new(
@@ -253,8 +227,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNullableMemoryKernelParamToLocalReproKernel(
             b.Get<int>("bias"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.NullableMemoryKernelParamToLocalReproKernel(
-            b.Get<int>("bias"), b.Get<int>("dst"), ReproRows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_liftedDoubleToNullableIntCast = new(
@@ -286,8 +259,7 @@ public class NullableDifferentialTests
         Launch = static (b, s) => NullableDifferentialKernels.LaunchLiftedDoubleToNullableIntCastReproKernel(
             b.Get<double>("src"), b.Get<int>("conds"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => NullableDifferentialKernels.LiftedDoubleToNullableIntCastReproKernel(
-            b.Get<double>("src"), b.Get<int>("conds"), b.Get<int>("dst"), ReproRows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

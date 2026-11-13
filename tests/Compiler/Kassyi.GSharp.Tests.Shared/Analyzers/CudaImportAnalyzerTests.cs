@@ -89,4 +89,66 @@ public class CudaImportAnalyzerTests
             $"which the launcher cannot pass to the kernel: {reason}",
             message);
     }
+
+    // Each declaration that G# cannot add a generated body to is reported over the method name: an extern method, a
+    // method with a body, a generic method, a method that returns a value, a method whose implementation the user
+    // wrote, and a method of a type that is not partial (also an enclosing type) or is file-local. Passable is not
+    // reported.
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Declarations_GeneratorCannotImplement_ReportGSH0113OverTheMethodName()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer(DeclarationTestCase, s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var actual = diagnostics
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .Select(static d => (d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn))
+            .OrderBy(static d => d.StartLine)
+            .ToArray();
+        const string Id = "GSH0113";
+        Assert.Equal(
+            [
+                (Id, 9, 31, 9, 39),
+                (Id, 12, 24, 12, 30),
+                (Id, 15, 32, 15, 39),
+                (Id, 18, 31, 18, 38),
+                (Id, 21, 32, 21, 43),
+                (Id, 32, 32, 32, 35),
+                (Id, 40, 36, 40, 39),
+                (Id, 47, 32, 47, 35),
+            ],
+            actual);
+        Assert.All(diagnostics, static d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(9, "Imports.External", CudaImportDeclaration.NotPartialReason)]
+    [InlineData(12, "Imports.Bodied", CudaImportDeclaration.NotPartialReason)]
+    [InlineData(15, "Imports.Generic", CudaImportDeclaration.GenericMethodReason)]
+    [InlineData(18, "Imports.Counted", CudaImportDeclaration.ReturnsValueReason)]
+    [InlineData(21, "Imports.Implemented", CudaImportDeclaration.ImplementedReason)]
+    [InlineData(32, "NotPartial.Run",
+        "its containing type 'NotPartial' is not partial, so the generated part cannot add the body to it.")]
+    [InlineData(40, "Inner.Run",
+        "its containing type 'Outer' is not partial, so the generated part cannot add the body to it.")]
+    [InlineData(47, "FileLocal.Run",
+        "its containing type 'FileLocal' is file-local, so the generated part, in another file, cannot add the body " +
+        "to it.")]
+    public async Task Declaration_GeneratorCannotImplement_NamesMethodAndReason(int line, string method, string reason)
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer(DeclarationTestCase, s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var diagnostic = Assert.Single(
+            diagnostics,
+            d => d.Location.GetLineSpan().StartLinePosition.Line + 1 == line);
+        Assert.Equal($"[CudaImport] method '{method}' cannot have a generated launcher: {reason}",
+            diagnostic.GetMessage());
+    }
+
+    private const string DeclarationTestCase = "NativeApi/CudaImportDeclarationDiagnostics.cs";
 }

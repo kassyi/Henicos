@@ -26,7 +26,7 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// <param name="callerFilePath">The file of the declaration, filled in by the compiler. Do not pass it.</param>
     /// <param name="callerLineNumber">The line of the declaration, filled in by the compiler. Do not pass it.</param>
     /// <param name="callerMemberName">The method of the declaration, filled in by the compiler. Do not pass it.</param>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="CSharpExecutionUnsupportedException">
     /// The kernel runs under <c>KernelExecution.CSharp</c>, one GPU thread at a time, so no other thread shares the
     /// memory.
     /// </exception>
