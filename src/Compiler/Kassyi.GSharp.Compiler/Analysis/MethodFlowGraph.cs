@@ -71,14 +71,15 @@ internal sealed class MethodFlowGraph(SemanticModel semanticModel, MethodDeclara
     }
 
     /// <summary>
-    /// The Roslyn graph of the body of <paramref name="method"/>; none when the method has no body or the body does not
-    /// bind (an invalid operation).
+    /// The Roslyn graph of the body of <paramref name="method"/>, a method or accessor declaration or the expression
+    /// body of a property or indexer; none when it has no body or the body does not bind (an invalid operation).
     /// </summary>
-    public static bool TryCreate(SemanticModel semanticModel, MethodDeclarationSyntax method,
+    public static bool TryCreate(SemanticModel semanticModel, SyntaxNode method,
         [NotNullWhen(true)] out ControlFlowGraph? graph)
     {
         graph = null;
-        if (semanticModel.GetOperation(method) is not IMethodBodyOperation body)
+        var body = semanticModel.GetOperation(method);
+        if (body is not (IMethodBodyOperation or IBlockOperation { Parent: null }))
         {
             return false;
         }
@@ -91,7 +92,9 @@ internal sealed class MethodFlowGraph(SemanticModel semanticModel, MethodDeclara
             }
         }
 
-        graph = ControlFlowGraph.Create(body);
+        graph = body is IMethodBodyOperation methodBody
+            ? ControlFlowGraph.Create(methodBody)
+            : ControlFlowGraph.Create((IBlockOperation)body);
         return true;
     }
 

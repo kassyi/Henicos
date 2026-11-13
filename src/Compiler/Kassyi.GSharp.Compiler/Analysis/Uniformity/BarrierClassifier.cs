@@ -184,7 +184,7 @@ internal sealed class BarrierClassifier(UniformityState state)
             return;
         }
 
-        var masks = state.Reader.GetArgumentMasks(call, graph, current);
+        var masks = state.Reader.GetArgumentMasks(call.Arguments, graph, current);
         siteMasks[call.Syntax] = siteMasks.TryGetValue(call.Syntax, out var seen)
             ? new ArgumentMasks(seen.Block | masks.Block, seen.Grid | masks.Grid)
             : masks;
@@ -301,7 +301,7 @@ internal sealed class BarrierClassifier(UniformityState state)
     // with uniform ones (the callee reports that case itself), or when the threads that leave the callee early meet the
     // others at a split point after the call
     private BarrierDivergence GetLocalCallSiteDivergence(SyntaxNode call, IMethodSymbol definition,
-        MethodDeclarationSyntax declaration, ArgumentMasks masks)
+        SyntaxNode declaration, ArgumentMasks masks)
     {
         var summary = state.Reader.GetCalleeSummary(definition, declaration, masks);
         var uniform = state.Reader.GetCalleeSummary(definition, declaration, default);

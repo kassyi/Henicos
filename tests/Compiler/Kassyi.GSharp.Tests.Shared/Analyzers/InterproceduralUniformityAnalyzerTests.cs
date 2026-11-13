@@ -90,6 +90,32 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
             actual);
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task PropertyResults_GettersWithBodies_FollowTheGetterBody()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs");
+
+        var warning = GSharpDiagnostics.LaunchDependentDivergentBarrier.Id;
+
+        // 37: an expression-bodied getter that returns the lane. 51: a getter with a block body. 65: an indexer
+        // getter that returns the lane for one index. 79: a struct member without [GpuDeviceFunction]. 110: a getter
+        // that reads a field of a thread-variant receiver. 124: the control, the lane read directly. 148: a
+        // [GpuDeviceFunction] member of a thread-variant struct value. Nothing at 94, where the same getter reads a
+        // field of a uniform receiver
+        Assert.Equal(
+            [
+                (warning, 37, 13, 37, 30),
+                (warning, 51, 13, 51, 30),
+                (warning, 65, 13, 65, 30),
+                (warning, 79, 13, 79, 30),
+                (warning, 110, 13, 110, 30),
+                (warning, 124, 13, 124, 30),
+                (warning, 148, 13, 148, 30)
+            ],
+            actual);
+    }
+
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath)
     {
