@@ -8,86 +8,6 @@ internal static class WrapperEmitter
     private const string NegativeLengthMessage = "The array length must not be negative.";
     private const string InconsistentProxyMessage = "A null array has no elements, so its length must be 0.";
 
-    internal readonly struct InteropParameterInfo(
-        string modifier,
-        string? typeName,
-        bool isIntPtr,
-        string? defaultValue = null)
-    {
-        private string Modifier { get; } = modifier;
-        private string? TypeName { get; } = typeName;
-        private bool IsIntPtr { get; } = isIntPtr;
-        private string? DefaultValue { get; } = defaultValue;
-
-        public void WriteTo(SourceWriter writer, string name)
-        {
-            if (IsIntPtr)
-            {
-                writer.Append("global::System.IntPtr ");
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(Modifier))
-                {
-                    writer.Append(Modifier);
-                    writer.Append(' ');
-                }
-
-                if (TypeName != null)
-                {
-                    writer.Append(TypeName);
-                    writer.Append(' ');
-                }
-            }
-
-            writer.Append(name);
-
-            if (DefaultValue == null)
-            {
-                return;
-            }
-
-            writer.Append(" = ");
-            writer.Append(DefaultValue);
-        }
-    }
-
-    internal static InteropParameterInfo GetInteropParameterInfo(in KernelParameterShape shape, bool isDevicePtr)
-    {
-        switch (isDevicePtr ? PointerLaunchPlan.Classify(shape) : PointerArgumentKind.Value)
-        {
-            case PointerArgumentKind.Array:
-                return new InteropParameterInfo(
-                    string.Empty,
-                    HostTypeNames.ArrayProxy,
-                    false,
-                    shape.HasExplicitDefault ? "default" : null
-                );
-            case PointerArgumentKind.NullableArray:
-                return new InteropParameterInfo(
-                    string.Empty,
-                    HostTypeNames.ArrayProxy + "?",
-                    false,
-                    shape.HasExplicitDefault ? "default" : null
-                );
-            case PointerArgumentKind.Reference:
-                return new InteropParameterInfo(string.Empty, null, true, shape.HasExplicitDefault ? "default" : null);
-            case PointerArgumentKind.ShadowStruct:
-                return new InteropParameterInfo(string.Empty, shape.AotStructPath, false, shape.DefaultValueLiteral);
-            default:
-            {
-                var modifier = shape.RefKind switch
-                {
-                    RefKind.Ref => "ref",
-                    RefKind.Out => "out",
-                    _ => string.Empty
-                };
-
-                return new InteropParameterInfo(modifier, shape.DeclaredTypeName, false, shape.DefaultValueLiteral);
-            }
-        }
-    }
-
     // CS0162 = Lowered state machines emit statements or 'goto case' transitions immediately after unconditional throw or goto
     // CS0164 = Lowered state machines preserve user labels (e.g. sync:) or synthesized branch targets (__gsharp_sg_next_<n>) that no jump targets
     // CS0219 = Lowered state machines declare locals (e.g. int unused = 0) that are assigned but never read
@@ -300,7 +220,9 @@ internal static class WrapperEmitter
         {
             foreach (var p in kernel.Host.Parameters)
             {
-                GetInteropParameterInfo(p, isDevicePtr).WriteTo(writer, p.Identifier);
+                LauncherSignatures
+                    .GetParameter(p, isDevicePtr ? LauncherKind.Pointer : LauncherKind.Managed)
+                    .WriteTo(writer, p.Identifier);
                 writer.Append(", ");
             }
 

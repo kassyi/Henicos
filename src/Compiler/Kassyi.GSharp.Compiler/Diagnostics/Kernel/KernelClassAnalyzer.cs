@@ -1,12 +1,13 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
-/// Checks the kernels of a class together: overloads whose launch wrappers cannot be told apart (GSH0059), and
-/// parameter and return structs that map to the same <c>AotContexts</c> name (GSH0058).
+/// Checks the kernels of a class together: kernels whose launchers or warmup methods have the name and parameter types
+/// of those of another kernel (GSH0059), and parameter and return structs that map to the same <c>AotContexts</c> name
+/// (GSH0058).
 /// </summary>
 /// <remarks>
-/// The generator leaves the reported overload and struct out of the generated code with the same helpers
-/// (<see cref="KernelClassModel.TryFindIndistinguishableOverload"/>, <see cref="StructMarshalingEmitter.CollectUniqueStructs"/>),
+/// The generator leaves the reported kernel and struct out of the generated code with the same helpers
+/// (<see cref="LauncherSignatures.FindConflicts"/>, <see cref="StructMarshalingEmitter.CollectUniqueStructs"/>),
 /// so the generated code stays valid while this analyzer reports why.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -47,17 +48,18 @@ public class KernelClassAnalyzer : DiagnosticAnalyzer
             .Select(static kernel => KernelHostModel.Create(kernel, default))
             .AddTo(hosts);
 
+        var conflicts = LauncherSignatures.FindConflicts(hosts);
         for (var i = 0; i < kernels.Count; i++)
         {
-            if (KernelClassModel.TryFindIndistinguishableOverload(hosts, i, out var earlier, out var wrapper))
+            if (conflicts[i] is { IsConflict: true } conflict)
             {
                 var kernel = kernels[i];
                 context.ReportDiagnostic(
                     GSharpDiagnostics.IndistinguishableKernelOverloads,
                     kernel.Locations.Length > 0 ? kernel.Locations[0] : Location.None,
-                    hosts[earlier].DisplaySignature,
+                    hosts[conflict.Earlier].DisplaySignature,
                     hosts[i].DisplaySignature,
-                    wrapper);
+                    conflict.Member);
             }
         }
 

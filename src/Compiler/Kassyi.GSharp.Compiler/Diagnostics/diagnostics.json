@@ -527,8 +527,8 @@
   {
     "name": "IndistinguishableKernelOverloads",
     "id": "GSH0059",
-    "title": "Kernel overloads cannot be told apart by their launch wrappers",
-    "messageFormat": "The [GpuKernel] overloads '{0}' and '{1}' produce the same {2} launch wrapper signature. Rename one of the kernels.",
+    "title": "Two kernels produce generated methods with the same signature",
+    "messageFormat": "The [GpuKernel] methods '{0}' and '{1}' both produce the generated method '{2}'. Rename one of the kernels.",
     "category": "GSharpCompiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true

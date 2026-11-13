@@ -161,7 +161,7 @@ examples:
 | [**GSH0056**](../03_bcl_api/diagnostics/GSH0056.md) | Error | GPU method name is a C++ keyword (Deprecated) | No longer reported: a `[GpuKernel]` or `[GpuDeviceFunction]` method whose name is a C++/CUDA keyword is renamed automatically. |
 | [**GSH0057**](../03_bcl_api/diagnostics/GSH0057.md) | Error | Malformed trusted key line | Triggered when a line in `trusted_keys.txt` is not a valid key followed by a matching fnv1a64 fingerprint. |
 | [**GSH0058**](../03_bcl_api/diagnostics/GSH0058.md) | Error | Two structs share one AotContexts name | Triggered when two structs collide on their generated AotContexts name. |
-| [**GSH0059**](../03_bcl_api/diagnostics/GSH0059.md) | Error | Kernel overloads cannot be told apart by their launch wrappers | Triggered when overloaded kernels produce identical launch wrapper signatures. |
+| [**GSH0059**](../03_bcl_api/diagnostics/GSH0059.md) | Error | Two kernels produce generated methods with the same signature | Triggered when two kernels of a type produce a launch wrapper or warmup method with the same name and parameter types. |
 | [**GSH0060**](../03_bcl_api/diagnostics/GSH0060.md) | Error | User-defined operators are not supported in GPU code | Triggered when a user-defined operator is used in device code. |
 | [**GSH0061**](../03_bcl_api/diagnostics/GSH0061.md) | Error | Device functions that reach a barrier cannot be recursive | Triggered when a recursive device function reaches a barrier. |
 | [**GSH0062**](../03_bcl_api/diagnostics/GSH0062.md) | Error | A call that suspends at a barrier is not supported in this context | Triggered when a suspending call is made from an unsupported context. |

@@ -72,7 +72,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0056](GSH0056.md) | Error | GPU method name is a C++ keyword (Deprecated) |
 | [GSH0057](GSH0057.md) | Error | Malformed trusted key line |
 | [GSH0058](GSH0058.md) | Error | Two structs share one AotContexts name |
-| [GSH0059](GSH0059.md) | Error | Kernel overloads cannot be told apart by their launch wrappers |
+| [GSH0059](GSH0059.md) | Error | Two kernels produce generated methods with the same signature |
 | [GSH0060](GSH0060.md) | Error | User-defined operators are not supported in GPU code |
 | [GSH0061](GSH0061.md) | Error | Device functions that reach a barrier cannot be recursive |
 | [GSH0062](GSH0062.md) | Error | A call that suspends at a barrier is not supported in this context |
