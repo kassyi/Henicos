@@ -14,7 +14,7 @@ internal static class DeviceIntrinsicEffects
         method.Name.StartsWith(TypeConstants.GpuMacros.InlinePtx, StringComparison.Ordinal) ||
         method.Name.StartsWith("Sync", StringComparison.Ordinal) ||
         method.Name.StartsWith("Fence", StringComparison.Ordinal) ||
-        method.ContainingType is { Name: TypeConstants.WarpType } warp && warp.ContainingNamespace.IsCoreNamespace();
+        (method.ContainingType is { Name: TypeConstants.WarpType } warp && warp.ContainingNamespace.IsCoreNamespace());
 #pragma warning restore HNT0003
 
     // The math of System (Math, MathF, the methods of the primitive types), System.Numerics, FastMath, Gpu.NotNull
