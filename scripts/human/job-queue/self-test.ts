@@ -17,6 +17,7 @@ import { MachineProfile, MinimumSlots, parseBudgets, testMemoryMb } from "./mach
 import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
 import { checkGpuTurnsEndToEnd, checkRegrant, checkWait } from "./self-test-parts.ts";
+import { checkReconnects } from "./self-test-reconnect.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
@@ -415,6 +416,10 @@ export async function selfTest(): Promise<void> {
     // 12. wait <id> exits with the outcome of a job: when a running job ends (also across a restart), at once for an
     //     ended one, with 2 for an unknown id.
     await checkWait(fixture, port + 4);
+
+    // 13. A client that comes back: re-registrations that race with the old connection's close or the observation of
+    //     its processes, and another process that reuses its pid.
+    await checkReconnects(fixture, port + 5);
   } finally {
     await fixture.cleanup();
   }

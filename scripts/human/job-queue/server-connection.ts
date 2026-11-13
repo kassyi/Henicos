@@ -72,7 +72,7 @@ export class Connection {
     const server = this.server;
     const scheduler = server.scheduler;
     const job = this.job;
-    if (job === null || job.cancelled) {
+    if (job === null) {
       return;
     }
     if (server.stopping && !job.done) {
@@ -85,7 +85,6 @@ export class Connection {
       const cancelled = job;
       this.job = null;
       const outcome = outcomeOfEnd({ ...cancelled, cancelled: false }, true);
-      cancelled.cancelled = outcome === "cancelled";
       server.release(cancelled, "cancelled", outcome);
       return;
     }

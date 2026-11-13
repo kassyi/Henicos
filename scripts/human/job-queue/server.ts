@@ -289,7 +289,6 @@ export class JobServer {
       done: false,
       completed: false,
       exitCode: null,
-      cancelled: false,
       cancelPending: false,
     };
   }
@@ -332,7 +331,7 @@ export class JobServer {
       (why === "done" || why === "client closed") &&
       !job.gpuTurn &&
       job.completed &&
-      !job.cancelled &&
+      outcome !== "cancelled" &&
       !job.adopted &&
       job.grantedAt > 0
     ) {
@@ -365,7 +364,7 @@ export class JobServer {
     for (let changed = true; changed; ) {
       changed = false;
       for (const job of [...scheduler.waiting]) {
-        if (job.after === null || job.cancelled || !scheduler.waiting.includes(job)) {
+        if (job.after === null || !scheduler.waiting.includes(job)) {
           continue;
         }
         const after = job.after;
@@ -410,7 +409,6 @@ export class JobServer {
       job.cancelPending = true;
       return;
     }
-    job.cancelled = true;
     if (scheduler.running.includes(job) || scheduler.waiting.includes(job)) {
       this.release(job, "cancelled", "cancelled");
     }
@@ -468,7 +466,7 @@ export class JobServer {
     const live = await this.orphanProcesses(orphans);
     orphans.forEach((_, index) => (live[index] ?? []).forEach(ProcessTable.killTree));
     const jobs = requested.filter(
-      (job) => !job.cancelled && (scheduler.running.includes(job) || scheduler.waiting.includes(job)),
+      (job) => this.records.get(job.id) === job && (scheduler.running.includes(job) || scheduler.waiting.includes(job)),
     );
     jobs.forEach((job) => this.cancelJob(job, "cancel requested"));
     this.settle();

@@ -33,7 +33,6 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   completed: boolean;
   /** The command's exit code from "done"; null when the client did not send one (protocol 2, or no "done"). */
   exitCode: number | null;
-  cancelled: boolean;
   cancelPending: boolean;
 }
 

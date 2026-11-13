@@ -5,7 +5,7 @@ import { ProtocolVersion } from "./constants.ts";
 import { idField, numberField, send, type Incoming } from "./protocol.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
-import { outcomeOfEnd, type CommandEnd } from "./server-job-state.ts";
+import { outcomeOfEnd, planRegistration, type ClientIdentity, type CommandEnd } from "./server-job-state.ts";
 
 /** How the command ended, as "done" and "report" say it. */
 function endOf(message: Incoming): CommandEnd {
@@ -17,14 +17,102 @@ function endOf(message: Incoming): CommandEnd {
   };
 }
 
-/** request: a new job, or a waiting job that queues again after a restart under its id. */
+/** What a request or adopt says about the client that sends it. */
+function identityOf(message: Incoming): ClientIdentity {
+  return {
+    pid: numberField(message, "pid"),
+    queuedAt: numberField(message, "queuedAt"),
+    commandPid: numberField(message, "commandPid"),
+    spawnedAt: numberField(message, "spawnedAt"),
+  };
+}
+
+/**
+ * Plans a request or adopt against the record under the id the client brings, and applies what the plan does not
+ * leave to the caller: a refusal, a re-bind, or the end of an old record. Returns the id to create a record under, or
+ * null when the message is answered.
+ */
+function register(connection: Connection, message: Incoming, type: "request" | "adopt"): number | null {
+  const server = connection.server;
+  const wanted = idField(message, "id");
+  const record = wanted === null ? undefined : server.find(wanted);
+  const final = wanted === null ? undefined : server.outcomes.get(wanted);
+  const plan = planRegistration(type, record, final, identityOf(message));
+  switch (plan.kind) {
+    case "refuse-cancelled":
+      server.log(`${type} #${String(wanted)}: cancelled while its client was away`);
+      connection.reply({ type: "cancelled", id: wanted ?? 0, reason: "cancelled while its client was away" });
+      return null;
+    case "rebind":
+      if (record !== undefined) {
+        rebind(connection, record, message, plan);
+      }
+      return null;
+    case "create-as-new-id":
+      if (plan.finalize && record !== undefined) {
+        server.finish(record, "lost", `its client queued again as a new job`);
+      }
+      return server.nextId++;
+    case "create":
+      if (record !== undefined && record.stub) {
+        // The job of an earlier scheduler is back: its record replaces the id-only one
+        server.scheduler.detach(record);
+        server.records.delete(record.id);
+      }
+      return server.chooseId(wanted);
+  }
+}
+
+/** The client's own record gets the new connection; its weight, place and dependency stay the server's. */
+function rebind(
+  connection: Connection,
+  job: ServerJob,
+  message: Incoming,
+  plan: { to: "waiting" | "running"; resendGrant: boolean; resendCancel: boolean },
+): void {
+  const { server, socket } = connection;
+  const scheduler = server.scheduler;
+  server.bind(job, connection);
+  server.forget(job.id);
+  if (job.commandPid === 0 && numberField(message, "commandPid") > 0) {
+    job.commandPid = numberField(message, "commandPid");
+    job.spawnedAt = numberField(message, "spawnedAt");
+  }
+  if (plan.to === "running" && job.phase !== "running") {
+    // Its command runs: the grant was not saved before a crash, or a provisional end is taken back
+    scheduler.detach(job);
+    job.provisional = null;
+    job.grantedAt = job.spawnedAt;
+    job.phase = "running";
+    scheduler.adopt(job);
+  }
+  server.log(`re-bind #${job.id} (${job.phase}) pid ${job.pid}: ${job.command}`);
+  if (job.phase === "waiting") {
+    job.lastPosition = -1;
+    send(socket, { type: "queued", id: job.id, ...server.outlook(job, scheduler.forecast()) });
+  } else if (plan.resendGrant) {
+    send(socket, server.grantMessage(job));
+  } else {
+    send(socket, { type: "adopted", id: job.id, protocol: ProtocolVersion });
+  }
+  if (plan.resendCancel) {
+    send(socket, { type: "cancelled", id: job.id, reason: "cancel requested" });
+  }
+  server.idleSince = Date.now();
+}
+
+/** request: a new job, or a waiting job that queues again (after a restart, or a dropped connection) under its id. */
 function request(connection: Connection, message: Incoming): void {
   const { server, socket } = connection;
   const scheduler = server.scheduler;
   if (connection.job !== null) {
     return;
   }
-  const created = server.createJob({ ...message, grantedAt: 0 }, server.chooseId(idField(message, "id")), "waiting");
+  const id = register(connection, message, "request");
+  if (id === null) {
+    return;
+  }
+  const created = server.createJob({ ...message, grantedAt: 0 }, id, "waiting");
   const after = created.after;
   // A predecessor was queued before this job, so its id is lower: a later or the same id would wait for ever
   // (on itself, or in a cycle of two), also during the startup grace, when the predecessor is not checked yet
@@ -48,7 +136,6 @@ function request(connection: Connection, message: Incoming): void {
     return;
   }
   server.forget(created.id);
-  server.outcomes.delete(created.id); // the job is here again: an older record of its id no longer holds
   const job = created;
   server.records.set(job.id, job);
   server.bind(job, connection);
@@ -64,32 +151,21 @@ function request(connection: Connection, message: Incoming): void {
 /** adopt: a running job re-registers after its connection dropped or the scheduler restarted. */
 function adopt(connection: Connection, message: Incoming): void {
   const { server, socket } = connection;
-  const scheduler = server.scheduler;
   if (connection.job !== null) {
     return;
   }
-  // The same client lost only its connection: the slot the scheduler kept for it is this job, under the same id.
-  // Adopt first, so that removing the kept job hands no slot to a waiting job. The old connection may not have closed
-  // yet (its close can arrive after this adopt): match by client pid whatever the socket state, and mark the old job
-  // so that its later close does nothing.
-  const pid = numberField(message, "pid");
-  const kept = scheduler.running.filter((other) => other.pid === pid);
-  const keptId = kept.length > 0 ? (kept[0] as ServerJob).id : null;
+  // Its own record (held while the client was away) is re-bound under its id; a record of another client with the
+  // same pid is never touched
+  const id = register(connection, message, "adopt");
+  if (id === null) {
+    return;
+  }
   // A re-registering job started its command before this scheduler: its run time counts from that start
-  const job = server.createJob(
-    { ...message, grantedAt: numberField(message, "spawnedAt") },
-    keptId ?? server.chooseId(idField(message, "id")),
-    "running",
-  );
+  const job = server.createJob({ ...message, grantedAt: numberField(message, "spawnedAt") }, id, "running");
+  server.forget(job.id);
   server.records.set(job.id, job);
   server.bind(job, connection);
-  scheduler.adopt(job);
-  server.outcomes.delete(job.id); // the job runs: an older record of its id no longer holds
-  server.forget(job.id);
-  kept.forEach((other) => {
-    other.cancelled = true;
-    server.release(other, `re-registered as #${job.id}`, null);
-  });
+  server.scheduler.adopt(job);
   server.log(`adopt #${job.id} weight ${job.weight} pid ${job.pid} command ${job.commandPid}: ${job.command}`);
   send(socket, { type: "adopted", id: job.id, protocol: ProtocolVersion });
   server.idleSince = Date.now();
@@ -124,7 +200,6 @@ function done(connection: Connection, message: Incoming): void {
     // Cancelled: the client says so (also to a scheduler that restarted meanwhile and has no cancelPending), or this
     // scheduler cancelled it and the command did not succeed first (a success that crosses the cancel wins)
     const outcome = outcomeOfEnd(endOf(message), ended.cancelPending);
-    ended.cancelled = outcome === "cancelled"; // a cancel the client carried out: no run time
     server.release(ended, "done", outcome);
     send(socket, { type: "done-ok", id: ended.id });
   }
