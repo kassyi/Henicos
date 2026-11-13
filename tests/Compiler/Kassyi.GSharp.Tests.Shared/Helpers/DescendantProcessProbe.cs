@@ -7,9 +7,11 @@ using System.Threading;
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 /// <summary>
-/// A uniquely named copy of a sleeping program (<c>ping.exe</c> on Windows, <c>sleep</c> elsewhere), started as a
+/// A uniquely named copy of a program that waits (<c>ping.exe</c> on Windows; elsewhere <c>/bin/sh</c> running
+/// <c>sleep</c>, since <c>sleep</c> itself may be a multi-call binary that dispatches on its own name), started as a
 /// grandchild through a shell, so a test can tell whether that grandchild still runs. Disposing the probe kills every
-/// process of that name and deletes the copy, so a failing test leaves no process behind.
+/// process of that name, with the children of the copies on Linux, and deletes the copy, so a failing test leaves no
+/// process behind.
 /// </summary>
 internal sealed class DescendantProcessProbe : IDisposable
 {
@@ -50,7 +52,7 @@ internal sealed class DescendantProcessProbe : IDisposable
             : new ProcessStartInfo
             {
                 FileName = "sh",
-                Arguments = $"-c \"'{_executable}' {seconds}; true\""
+                Arguments = $"-c \"'{_executable}' -c 'sleep {seconds}; :'; true\""
             };
 
     /// <summary>
@@ -68,7 +70,7 @@ internal sealed class DescendantProcessProbe : IDisposable
             : new ProcessStartInfo
             {
                 FileName = "sh",
-                Arguments = $"-c \"'{_executable}' {seconds} >/dev/null 2>&1 </dev/null &\""
+                Arguments = $"-c \"'{_executable}' -c 'sleep {seconds}; :' >/dev/null 2>&1 </dev/null &\""
             };
 
     /// <summary>Gets the number of running processes of the copy.</summary>
@@ -115,6 +117,7 @@ internal sealed class DescendantProcessProbe : IDisposable
         {
             try
             {
+                KillChildrenOnLinux(process.Id);
                 process.Kill();
                 process.WaitForExit(10_000);
             }
@@ -165,13 +168,54 @@ internal sealed class DescendantProcessProbe : IDisposable
         }
     }
 
-    private static string SleeperPath()
+    private static string SleeperPath() =>
+        OperatingSystem.IsWindows() ? Path.Combine(Environment.SystemDirectory, "PING.EXE") : "/bin/sh";
+
+    // The copy of sh waits for its sleep; killing the copy alone would leave that sleep running.
+    private static void KillChildrenOnLinux(int parentId)
     {
-        if (OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsLinux())
         {
-            return Path.Combine(Environment.SystemDirectory, "PING.EXE");
+            return;
         }
 
-        return File.Exists("/bin/sleep") ? "/bin/sleep" : "/usr/bin/sleep";
+        foreach (var directory in Directory.EnumerateDirectories("/proc"))
+        {
+            if (!int.TryParse(Path.GetFileName(directory), out var processId) || ReadParentId(directory) != parentId)
+            {
+                continue;
+            }
+
+            try
+            {
+                using var child = Process.GetProcessById(processId);
+                child.Kill();
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException
+                or System.ComponentModel.Win32Exception)
+            {
+                // The child ended between the listing and the kill.
+                Console.WriteLine($"Probe child {processId} already gone: {ex.Message}");
+            }
+        }
+    }
+
+    // Field 4 of /proc/<pid>/stat, counted after the closing parenthesis of the command name.
+    private static int? ReadParentId(string directory)
+    {
+        try
+        {
+            var stat = File.ReadAllText(Path.Combine(directory, "stat"));
+            var fields = stat.AsSpan(stat.LastIndexOf(')') + 1).TrimStart(' ');
+            fields = fields.Slice(fields.IndexOf(' ') + 1);
+            var end = fields.IndexOf(' ');
+            return int.TryParse(end < 0 ? fields : fields.Slice(0, end), out var parentId) ? parentId : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The process ended or belongs to another user: not a child of the probe.
+            Console.WriteLine($"Skipping {directory}: {ex.Message}");
+            return null;
+        }
     }
 }
