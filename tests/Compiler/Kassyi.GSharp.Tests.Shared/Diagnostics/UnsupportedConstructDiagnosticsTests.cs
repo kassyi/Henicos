@@ -479,25 +479,36 @@ public class UnsupportedConstructDiagnosticsTests
                 "Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable"));
     }
 
-    // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 300,000,000 doubles (line 129) and 2^29
-    // doubles (line 138) are 2,400,000,000 and 2^32 bytes, which wrap in int to a negative number and to 0 (#1280);
-    // 4096 doubles (exactly 32768 bytes) and 10000 bytes are not reported. ComprehensiveSpecKernel:
-    // SharedMemory<int>(10000); the dynamic size is not checked.
-    [Theory]
-    [InlineData("Analyzers/StructSizeDiagnostics.cs", "Cpu")]
-    [InlineData("Analyzers/StructSizeDiagnostics.cs", "Cuda")]
-    [InlineData("ComprehensiveSpecKernel.cu.cs", "Cpu")]
-    [InlineData("ComprehensiveSpecKernel.cu.cs", "Cuda")]
-    [Scenario(TestScenario.Boundary)]
-    public async Task LargeStaticSharedMemory_ExceedingLimit_ReportsGsh0013AtSize(string testCase, string dialect)
+    // StructSizeDiagnostics: DoubleSharedKernel, SharedMemory<double>(5000), is 40000 bytes; HugeSharedKernel and
+    // WrapToZeroSharedKernel are 2,400,000,000 and 2^32 bytes, which wrap in int to a negative number and to 0 (#1280);
+    // DoubleAtLimitKernel (exactly 32768 bytes) and ByteSharedKernel (10000 bytes) are not reported.
+    // ComprehensiveSpecKernel: SharedMemory<int>(10000); the dynamic size is not checked.
+    public static TheoryData<string, string, (int, int, int, int)[]> LargeStaticSharedMemoryCases()
     {
-        (DiagnosticOrigin, int, int, int, int)[] expected = testCase == "ComprehensiveSpecKernel.cu.cs"
-            ? [(Analyzer, 107, 63, 107, 68)]
-            : [(Analyzer, 104, 63, 104, 67), (Analyzer, 129, 63, 129, 74), (Analyzer, 138, 63, 138, 74)];
+        (int, int, int, int)[] structSize = [(104, 63, 104, 67), (129, 63, 129, 74), (138, 63, 138, 74)];
+        (int, int, int, int)[] comprehensive = [(107, 63, 107, 68)];
+        return new TheoryData<string, string, (int, int, int, int)[]>
+        {
+            { "Analyzers/StructSizeDiagnostics.cs", "Cpu", structSize },
+            { "Analyzers/StructSizeDiagnostics.cs", "Cuda", structSize },
+            { "ComprehensiveSpecKernel.cu.cs", "Cpu", comprehensive },
+            { "ComprehensiveSpecKernel.cu.cs", "Cuda", comprehensive }
+        };
+    }
 
+    [Theory]
+    [MemberData(nameof(LargeStaticSharedMemoryCases))]
+    [Scenario(TestScenario.Boundary)]
+    public async Task LargeStaticSharedMemory_ExceedingLimit_ReportsGsh0013AtSize(
+        string testCase,
+        string dialect,
+        (int StartLine, int StartColumn, int EndLine, int EndColumn)[] expected)
+    {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(testCase, dialect);
 
-        Assert.Equal(expected, diagnostics.Ranges(GSharpDiagnostics.ExcessiveSharedMemoryWarning.Id));
+        Assert.Equal(
+            expected.Select(static r => (Analyzer, r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)),
+            diagnostics.Ranges(GSharpDiagnostics.ExcessiveSharedMemoryWarning.Id));
     }
 
     // #439: the getter of a computed property (line 12) is a member of the emitted struct and the method group (line 37)
