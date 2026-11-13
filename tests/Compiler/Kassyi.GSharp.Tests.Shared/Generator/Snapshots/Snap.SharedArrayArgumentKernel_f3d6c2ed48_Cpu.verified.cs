@@ -39,8 +39,10 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(965191853u, "SharedArrayAr
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(447172234u, "SharedArrayArgumentKernels.cs", 46, 43, "OptionalArgumentsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1165617673u, "SharedArrayArgumentKernels.cs", 47, 13, "OptionalArgumentsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(902468542u, "SharedArrayArgumentKernels.cs", 47, 43, "OptionalArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(762193001u, "SharedArrayArgumentKernels.cs", 57, 13, "FieldAndArgumentKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1591024374u, "SharedArrayArgumentKernels.cs", 58, 13, "FieldAndArgumentKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1033350212u, "SharedArrayArgumentKernels.cs", 58, 20, "FieldAndArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(265791326u, "SharedArrayArgumentKernels.cs", 58, 27, "FieldAndArgumentKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(91878730u, "SharedArrayArgumentKernels.cs", 68, 13, "ReadOnlyAndWritableKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1632238466u, "SharedArrayArgumentKernels.cs", 69, 13, "ReadOnlyAndWritableKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1310480628u, "SharedArrayArgumentKernels.cs", 69, 20, "ReadOnlyAndWritableKernel", "G#: a null array is read"),
@@ -52,7 +54,9 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1380812317u, "SharedArrayA
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(634246350u, "SharedArrayArgumentKernels.cs", 100, 13, "TwoInKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1411737955u, "SharedArrayArgumentKernels.cs", 101, 13, "TwoInKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(954042822u, "SharedArrayArgumentKernels.cs", 101, 25, "TwoInKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(19154153u, "SharedArrayArgumentKernels.cs", 111, 13, "ThreeHoldersKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1428279700u, "SharedArrayArgumentKernels.cs", 112, 13, "ThreeHoldersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1408691315u, "SharedArrayArgumentKernels.cs", 112, 20, "ThreeHoldersKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(882927110u, "SharedArrayArgumentKernels.cs", 113, 13, "ThreeHoldersKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1476535940u, "SharedArrayArgumentKernels.cs", 113, 20, "ThreeHoldersKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(404404952u, "SharedArrayArgumentKernels.cs", 113, 27, "ThreeHoldersKernel", "G#: a null array is read"),
@@ -84,7 +88,10 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1345451554u, "SharedArrayA
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(377669707u, "SharedArrayArgumentKernels.cs", 194, 13, "TwoInDifferentTypesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(859578978u, "SharedArrayArgumentKernels.cs", 194, 25, "TwoInDifferentTypesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1839728124u, "SharedArrayArgumentKernels.cs", 206, 13, "InAndFieldKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1787678917u, "SharedArrayArgumentKernels.cs", 207, 13, "InAndFieldKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(691162011u, "SharedArrayArgumentKernels.cs", 208, 13, "InAndFieldKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1402955337u, "SharedArrayArgumentKernels.cs", 208, 25, "InAndFieldKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1026662888u, "SharedArrayArgumentKernels.cs", 208, 36, "InAndFieldKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(522887954u, "SharedArrayArgumentKernels.cs", 218, 13, "InAndElementFieldKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(381137415u, "SharedArrayArgumentKernels.cs", 218, 13, "InAndElementFieldKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(815715108u, "SharedArrayArgumentKernels.cs", 219, 13, "InAndElementFieldKernel", "G#: a null array is read"),
@@ -759,8 +766,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_id_0_h.__gsharp_mb_Data[0]=4;
-__gsharp_array_at(__gsharp_id_1_a, 1, 1591024374u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_a, 0, 1033350212u),__gsharp_id_0_h.__gsharp_mb_Data[0]);
+__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, 762193001u)=4;
+__gsharp_array_at(__gsharp_id_1_a, 1, 1591024374u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_a, 0, 1033350212u),__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, 265791326u));
 }
 __gsharp_state=-1;
 return;
@@ -877,9 +884,6 @@ private unsafe delegate void __gsharp_delegate_FieldAndArgumentKernel(uint gridD
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchFieldAndArgumentKernel(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder h, global::System.Int32[] a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (h.Data is null){
-throw new global::System.ArgumentNullException("h", "h.Data is null, but the field is not nullable.");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedArrayArgumentKernels.FieldAndArgumentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -2087,8 +2091,8 @@ __gsharp_switch_1_state_0:
 {
 if((int)threadIdx.x==0)
 {
-__gsharp_id_0_h.__gsharp_mb_Data[0]=1;
-__gsharp_array_at(__gsharp_id_1_a, 1, 1428279700u)=__gsharp_add_i32(__gsharp_id_0_h.__gsharp_mb_Data[0],1);
+__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, 19154153u)=1;
+__gsharp_array_at(__gsharp_id_1_a, 1, 1428279700u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Data, 0, 1408691315u),1);
 __gsharp_array_at(__gsharp_id_1_a, 2, 882927110u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_b, 0, 1476535940u),__gsharp_array_at(__gsharp_id_2_b, 1, 404404952u)),1);
 }
 __gsharp_state=-1;
@@ -2207,9 +2211,6 @@ private unsafe delegate void __gsharp_delegate_ThreeHoldersKernel(uint gridDimX,
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchThreeHoldersKernel(global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder h, global::System.Int32[] a, global::System.Int32[] b, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (h.Data is null){
-throw new global::System.ArgumentNullException("h", "h.Data is null, but the field is not nullable.");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedArrayArgumentKernels.ThreeHoldersKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -4328,8 +4329,8 @@ __gsharp_switch_1_state_0:
 if((int)threadIdx.x==0)
 {
 __gsharp_array_at(__gsharp_id_0_input, 1, 1839728124u)=9;
-__gsharp_id_1_h.__gsharp_mb_Data[0]=4;
-__gsharp_id_1_h.__gsharp_mb_Data[1]=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_input, 0, 1402955337u),__gsharp_id_1_h.__gsharp_mb_Data[1]);
+__gsharp_array_at(__gsharp_id_1_h.__gsharp_mb_Data, 0, 1787678917u)=4;
+__gsharp_array_at(__gsharp_id_1_h.__gsharp_mb_Data, 1, 691162011u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_input, 0, 1402955337u),__gsharp_array_at(__gsharp_id_1_h.__gsharp_mb_Data, 1, 1026662888u));
 }
 __gsharp_state=-1;
 return;
@@ -4447,9 +4448,6 @@ private unsafe delegate void __gsharp_delegate_InAndFieldKernel(uint gridDimX, u
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInAndFieldKernel(global::System.Int32[] input, global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder h, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (h.Data is null){
-throw new global::System.ArgumentNullException("h", "h.Data is null, but the field is not nullable.");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedArrayArgumentKernels.InAndFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {

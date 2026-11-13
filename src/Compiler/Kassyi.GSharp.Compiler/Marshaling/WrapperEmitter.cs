@@ -393,57 +393,13 @@ internal static class WrapperEmitter
         }
     }
 
-    /// <summary>
-    /// Emits the checks of the array arguments of the <c>Launch{Kernel}</c> launcher. An array-like argument is passed
-    /// as a C# call passes it, a null, empty or default one included; only a null in a non-nullable array field of a
-    /// by-value struct argument is rejected.
-    /// </summary>
-    internal static void WriteArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel) =>
-        WriteStructFieldChecks(writer, kernel, isPointer: false);
-
-    // if (<name>.<field path> is null)
-    // { throw new ArgumentNullException("<name>", "<name>.<field path> is null, ..."); }
-    // if (<name>.<field path>.Data == IntPtr.Zero) { ... }   (the shadow struct of the pointer launcher)
-    // [WHY] The kernel reads a non-nullable array field of a by-value struct argument without a null check
-    // (NonNullProof); the launcher enforces the annotation of the field (#1409)
-    private static void WriteStructFieldChecks(SourceWriter writer, in KernelHostModel kernel, bool isPointer)
-    {
-        foreach (var shape in kernel.Parameters)
-        {
-            if (shape.NonNullableArrayFields.IsDefaultOrEmpty)
-            {
-                continue;
-            }
-
-            var name = shape.Identifier;
-            foreach (var path in shape.NonNullableArrayFields)
-            {
-                writer.Append("if ");
-                using (writer.Parentheses())
-                {
-                    writer.Append(isPointer
-                        ? $"{name}.{path}.Data == {HostTypeNames.IntPtr}.Zero"
-                        : $"{name}.{path} is null");
-                }
-
-                using (writer.Scope())
-                {
-                    var message = Literal($"{shape.Name}.{path} is null, but the field is not nullable.");
-                    writer.AppendLine(
-                        $"throw new {HostTypeNames.ArgumentNullException}({Literal(shape.Name)}, {message});");
-                }
-            }
-        }
-    }
-
     private static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
 
     /// <summary>
     /// Emits the checks of the <c>GSharpArrayProxy</c> arguments of the <c>Launch{Kernel}Ptr</c> launcher: a proxy with
     /// a negative length, or with no data and a length other than 0, describes no array and is rejected. Any other
     /// proxy is passed as it is: <c>Data == 0</c> is a null array, and an empty array has a non-null <c>Data</c>
-    /// (<c>GSharpArrayProxy.EmptyArrayData</c>). The non-nullable array fields of a by-value struct argument must not
-    /// be null.
+    /// (<c>GSharpArrayProxy.EmptyArrayData</c>).
     /// </summary>
     internal static void WritePointerArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
     {
@@ -479,8 +435,6 @@ internal static class WrapperEmitter
                 writer.AppendLine($"{Literal(shape.Name)});");
             }
         }
-
-        WriteStructFieldChecks(writer, kernel, isPointer: true);
     }
 
     private static void WriteErrorSiteTableField(SourceWriter writer, EquatableArray<ErrorSiteEntry> errorSites)
