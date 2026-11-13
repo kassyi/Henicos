@@ -28,7 +28,8 @@ internal static class GenericInstanceNames
     /// <remarks>
     /// The segment carries every type argument, those of the containing types first, since the copy of a member of
     /// <c>Outer&lt;T&gt;</c> is declared in <c>Outer&lt;T&gt;</c> itself, and the overload ordinal of the declaration.
-    /// The prefix keeps it apart from every user name (GSH0055 rejects <c>__</c> in them).
+    /// The prefix belongs to the reserved <c>__gsharp_</c> family; GSH0055 rejects <c>__</c> in the names declared in
+    /// GPU code, so only a host member of the same type could take it.
     /// </remarks>
     public static string GetCopyName(GenericInstance instance)
     {
@@ -44,24 +45,16 @@ internal static class GenericInstanceNames
     /// for example <c>Ns.Kernels.Scale&lt;System.Int32&gt;</c>.
     /// </summary>
     /// <remarks>
-    /// A call of the constructed method and the closed copy registered for it in <see cref="GenericInstanceTable"/>
-    /// both reach this path (<see cref="GlobalCppNames.GetFunctionName"/>), so the two name one function.
+    /// The closed copy registered for the instance in <see cref="GenericInstanceTable"/> is named by this path
+    /// (<see cref="GlobalCppNames.GetFunctionPath"/>). A call of the constructed method does not reach it yet: it still
+    /// gets the path of the definition until the calls are switched to the copies.
     /// </remarks>
-    public static GlobalNamePath GetInstancePath(GenericInstance instance)
-    {
-        var method = instance.Method;
-        var typePath = GlobalCppNames.GetTypePath(method.ContainingType);
-        var segments = ImmutableArray.CreateBuilder<GlobalNameSegment>(typePath.Segments.Count + 1);
-        foreach (var segment in typePath.Segments)
-        {
-            segments.Add(segment);
-        }
-
-        segments.Add(new GlobalNameSegment(instance.Definition.Name,
-            typeArguments: GetTypeArgumentPaths(method.TypeArguments),
-            overloadOrdinal: GlobalCppNames.GetOverloadOrdinal(instance.Definition)));
-        return new GlobalNamePath(segments.MoveToImmutable());
-    }
+    public static GlobalNamePath GetInstancePath(GenericInstance instance) =>
+        GlobalCppNames.GetTypePath(instance.Method.ContainingType).Append(
+            new GlobalNameSegment(instance.Definition.Name,
+                typeArguments: GetTypeArgumentPaths(instance.Method.TypeArguments),
+                overloadOrdinal: GlobalCppNames.GetOverloadOrdinal(instance.Definition))
+        );
 
     private static ImmutableArray<GlobalNamePath> GetTypeArgumentPaths(ImmutableArray<ITypeSymbol> arguments)
     {
