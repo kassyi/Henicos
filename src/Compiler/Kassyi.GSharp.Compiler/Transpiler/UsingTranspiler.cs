@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -11,7 +13,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <c>return</c>, <c>break</c>, <c>continue</c>, <c>goto</c>, also the <c>goto case</c> and <c>return</c> of a lowered
 /// state machine) and in reverse order of declaration, as C# disposes nested usings. So each resource gets a guard
 /// (<c>__gsharp_using_scope&lt;T&gt;</c>, Prelude) instead of a call written before each exit, which would have to
-/// track which usings every jump leaves. Device code has no exceptions, so <c>finally</c> has no other path to cover.
+/// track which usings every jump leaves. On CUDA device code has no exceptions, so <c>finally</c> has no other path to
+/// cover. On the CPU a failed check ends the step with an exception, and a destructor that disposes while it unwinds
+/// could not let a failure of <c>Dispose</c> leave; the CPU dialect writes the <c>finally</c> out instead
+/// (<see cref="UsingCpuEmitter"/>).
 /// </para>
 /// <para>
 /// A resource is a value of a user struct: device code cannot hold a class (GSH0001), and a struct that implements
@@ -37,11 +42,25 @@ internal static class UsingTranspiler
     public static bool IsUsingDeclaration(StatementSyntax statement) =>
         statement is LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword };
 
-    /// <summary>Whether <paramref name="block"/> declares a resource with a <c>using</c> declaration of its own.</summary>
+    /// <summary>
+    /// Whether <paramref name="block"/> declares a resource with a <c>using</c> declaration of its own, also under a
+    /// label.
+    /// </summary>
     public static bool DeclaresUsing(BlockSyntax block) =>
         block.Statements
             .AsStackEnumerable()
-            .Any(IsUsingDeclaration);
+            .Any(static statement => IsUsingDeclaration(Unlabeled(statement)));
+
+    // The statement under the labels of a labeled statement
+    private static StatementSyntax Unlabeled(StatementSyntax statement)
+    {
+        while (statement is LabeledStatementSyntax labeled)
+        {
+            statement = labeled.Statement;
+        }
+
+        return statement;
+    }
 
     /// <summary>
     /// The method that a <c>using</c> of <paramref name="type"/> calls: the implementation of
@@ -90,15 +109,17 @@ internal static class UsingTranspiler
             return;
         }
 
+        if (!context.Emitter.Dialect.IsCuda)
+        {
+            UsingCpuEmitter.TranspileUsingStatement(node, ref context);
+            return;
+        }
+
         using (context.Emitter.Writer.Scope())
         {
             if (node.Declaration != null)
             {
-                StatementPrelude.Emit(node.Declaration, ref context);
-                context.Visitor.Visit(node.Declaration);
-                context.Emitter.Writer.Append(';');
-                WriteGuards(node.Declaration, ref context);
-                context.Emitter.Writer.AppendLine();
+                WriteResourcesWithGuards(node.Declaration, ref context);
             }
             else if (node.Expression != null)
             {
@@ -118,40 +139,63 @@ internal static class UsingTranspiler
     }
 
     /// <summary>
-    /// Writes the guards of a <c>using</c> declaration (<c>using var x = ...;</c>) after the declaration; they dispose
-    /// the variables at the end of the enclosing block, as C# does.
+    /// Writes a <c>using</c> declaration (<c>using var x = ...;</c>) with a guard after each variable; the guards
+    /// dispose the variables at the end of the enclosing block, as C# does. The CPU dialect writes its <c>using</c>
+    /// declarations itself (<see cref="UsingCpuEmitter"/>).
     /// </summary>
     public static void TranspileUsingDeclaration(LocalDeclarationStatementSyntax node, ref TranspileContext context)
     {
         if (node.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, AwaitUsing);
+            WriteDeclaration(node, node.Declaration, ref context);
             return;
         }
 
-        WriteGuards(node.Declaration, ref context);
+        // [WHY] On the CPU a guard would dispose while a failure unwinds, where a failing Dispose ends the process
+        if (!context.Emitter.Dialect.IsCuda)
+        {
+            throw new InvalidOperationException(
+                "A using declaration of the CPU dialect is written with the statements after it (UsingCpuEmitter).");
+        }
+
+        WriteResourcesWithGuards(node.Declaration, ref context);
     }
 
-    // A line break, then __gsharp_using_scope<T> __gsharp_using_guard_<n>{<variable>}; for each variable
-    private static void WriteGuards(VariableDeclarationSyntax declaration, ref TranspileContext context)
+    // <type> <name> = <init>; __gsharp_using_scope<T> __gsharp_using_guard_<n>{<name>}; for each variable
+    // [WHY] C# treats several declarators as nested usings: each variable is protected before the next initializer
+    // runs, so a failure there disposes the variables before it.
+    private static void WriteResourcesWithGuards(VariableDeclarationSyntax declaration, ref TranspileContext context)
     {
         var type = context.Query.SemanticModel.GetTypeSymbol(declaration.Type);
         if (!TryUseDispose(type, declaration.Type, ref context, out var resourceType))
         {
+            WriteDeclaration(declaration.Parent ?? declaration, declaration, ref context);
             return;
         }
 
         foreach (var variable in declaration.Variables)
         {
-            context.Emitter.Writer.AppendLine();
+            StatementPrelude.Emit(variable, ref context);
+            VariableDeclarationTranspilerRule.WriteUsingResource(declaration, variable, ref context);
+            context.Emitter.Writer.AppendLine(";");
             WriteGuardHead(resourceType, ref context);
             using (context.Emitter.Writer.Braces())
             {
                 CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
             }
 
-            context.Emitter.Writer.Append(';');
+            context.Emitter.Writer.AppendLine(";");
         }
+    }
+
+    // <declaration>; without guards
+    private static void WriteDeclaration(SyntaxNode owner, VariableDeclarationSyntax declaration,
+        ref TranspileContext context)
+    {
+        StatementPrelude.Emit(owner, ref context);
+        context.Visitor.Visit(declaration);
+        context.Emitter.Writer.AppendLine(";");
     }
 
     // T __gsharp_using_resource_<n> = <expression>;
@@ -191,7 +235,7 @@ internal static class UsingTranspiler
     }
 
     // Records the struct whose Dispose the method calls, or reports why the using cannot dispose its resource
-    private static bool TryUseDispose(ITypeSymbol? type, SyntaxNode node, ref TranspileContext context,
+    internal static bool TryUseDispose(ITypeSymbol? type, SyntaxNode node, ref TranspileContext context,
         [NotNullWhen(true)] out INamedTypeSymbol? resourceType)
     {
         resourceType = null;

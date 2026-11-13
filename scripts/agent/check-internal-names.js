@@ -2,7 +2,8 @@
 // Cross-checks the compiler-internal names that appear in the snapshot output against the places that spell them.
 // Usage (from anywhere in the repository): node scripts/agent/check-internal-names.js
 //   Section 1: __gsharp_* names in the output that no YAML value, Prelude declaration, source spelling or prefix explains.
-//   Section 2: other __ names in the output, minus CUDA/C++ builtins, for a manual look.
+//   Section 2: other __ names in the output, minus CUDA/C++ builtins and the macros the Prelude defines (#define), for
+//   a manual look.
 'use strict';
 
 const fs = require('fs');
@@ -57,6 +58,13 @@ const known = new Set([
         .flatMap(file => matches(read(file), /__gsharp_[A-Za-z0-9_]*/g)),
 ]);
 
+// The macros the Prelude sources define (__GSHARP_COLD and the like), which explain themselves where they are defined.
+const preludeSources = ['Prelude.cu', 'Prelude.cpp', 'StackLinq.cuh']
+    .map(name => path.join(compiler, 'Resources', name));
+const preludeMacros = new Set(preludeSources
+    .concat(listFiles(path.join(compiler, 'Resources', 'Prelude'), name => name.endsWith('.hpp')))
+    .flatMap(file => [...read(file).matchAll(/^[ 	]*#[ 	]*define[ 	]+(__[A-Za-z][A-Za-z0-9_]*)/gm)].map(m => m[1])));
+
 // Prefixes (values ending in _), except the bare family prefix that every name shares.
 const prefixes = [...known].filter(name => /_.+_$/.test(name) && name !== '__gsharp_');
 
@@ -89,7 +97,7 @@ const counts = new Map();
 for (const text of snapshots) {
     for (const m of text.matchAll(/(?:^|[^A-Za-z0-9_])(__[A-Za-z][A-Za-z0-9_]*)/gm)) {
         const name = m[1];
-        if (name.startsWith('__gsharp') || builtins.test(name)) {
+        if (name.startsWith('__gsharp') || builtins.test(name) || preludeMacros.has(name)) {
             continue;
         }
         const key = name.replace(/^(__GSHARP_STRUCT_).*/, '$1*');

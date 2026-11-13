@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <limits>
 #include <new>
+#include <exception>
 
 // NaN and infinity: a C# constant such as float.NaN has no C++ literal (ConstexprLiteral)
 #define __gsharp_nan_f (std::numeric_limits<float>::quiet_NaN())
@@ -38,6 +39,15 @@
 #define __noinline__ __attribute__((noinline))
 #else
 #define __noinline__
+#endif
+// A function that only a failing check calls: kept out of line and away from the code that does not fail, as the .NET
+// JIT keeps its throw helpers
+#if defined(_MSC_VER)
+#define __GSHARP_COLD __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#define __GSHARP_COLD __attribute__((noinline, cold))
+#else
+#define __GSHARP_COLD
 #endif
 #define __shared__
 #if defined(_MSC_VER)
