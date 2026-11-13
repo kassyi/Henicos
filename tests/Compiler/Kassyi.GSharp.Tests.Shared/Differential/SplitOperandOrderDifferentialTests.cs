@@ -35,8 +35,6 @@ public class SplitOperandOrderDifferentialTests
                 .In("d", Small(rng, shape.Rows, 4))
                 .In("e", Small(rng, shape.Rows, 5))
                 .In("f", new int[shape.Rows])
-                .In("g", Small(rng, shape.Rows, 6))
-                .In("h", Small(rng, shape.Rows, 7))
                 .In("counter", new int[shape.Rows])
                 .In("cells", new SplitOrderCell[shape.Rows])
                 .In("flag", new[] { rng.Seed == 0 })
@@ -48,8 +46,6 @@ public class SplitOperandOrderDifferentialTests
                 b.Get<int>("d"),
                 b.Get<int>("e"),
                 b.Get<int>("f"),
-                b.Get<int>("g"),
-                b.Get<int>("h"),
                 b.Get<int>("counter"),
                 b.Get<SplitOrderCell>("cells"),
                 b.Get<bool>("flag")[0],
@@ -107,7 +103,7 @@ public class SplitOperandOrderDifferentialTests
     private static void OperandOrder(DiffBuffers buffers)
     {
         var (a, b, c, d) = (buffers.Get<int>("a"), buffers.Get<int>("b"), buffers.Get<int>("c"), buffers.Get<int>("d"));
-        var (e, f, g, h) = (buffers.Get<int>("e"), buffers.Get<int>("f"), buffers.Get<int>("g"), buffers.Get<int>("h"));
+        var (e, f) = (buffers.Get<int>("e"), buffers.Get<int>("f"));
         var counter = buffers.Get<int>("counter");
         var cells = buffers.Get<SplitOrderCell>("cells");
         var flag = buffers.Get<bool>("flag")[0];
@@ -127,9 +123,9 @@ public class SplitOperandOrderDifferentialTests
             int m = K.Mark(f, l), q = flag ? f[l] : -1;
             output[o + 8] = m;
             output[o + 9] = q;
-            int p = K.Bump(g, l), r = p + g[l];
+            int p = K.Bump(b, l), r = p + b[l];
             output[o + 10] = r;
-            output[o + 11] = K.Bump(h, l) + h[l];
+            output[o + 11] = K.Bump(c, l) + c[l];
             output[o + 12] = l * 5;
             cells[K.NextIndex(counter, l)].F = l + 1;
             output[o + 13] = counter[l];

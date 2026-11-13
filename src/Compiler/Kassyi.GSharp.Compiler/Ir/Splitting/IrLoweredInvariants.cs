@@ -65,41 +65,62 @@ internal sealed class IrLoweredInvariants
         switch (statement)
         {
             case IrLocalDeclaration { Variable.Kind: IrVariableKind.Temporary } declaration:
-                CheckExpression(declaration.Initializer, scope, topLevel: true);
-                if (!_declared.Add(declaration.Variable))
-                {
-                    Report("R2", $"{declaration.Variable.Name} is declared twice");
-                }
-
-                return scope.Push(declaration.Variable);
-            case IrExpressionStatement expression:
-                CheckExpression(expression.Expression, scope, topLevel: true);
-                return scope;
-            case IrIf { Source.Synthesized: false } @if:
-                // The original if: its branches are statements of their own
-                CheckExpression(@if.Condition, scope, topLevel: false);
-                return scope;
+                return CheckTemporary(declaration, scope);
             case IrIf @if:
-                CheckExpression(@if.Condition, scope, topLevel: false);
-                CheckStatement(@if.Then, scope);
-                if (@if.Else is { } @else)
-                {
-                    CheckStatement(@else, scope);
-                }
-
+                CheckIf(@if, scope);
                 return scope;
             case IrBlock block:
                 CheckStatements(block.Statements, scope);
                 return scope;
+            default:
+                // An expression statement may be the call that splits; the others hold it nowhere
+                CheckExpression(ExpressionOf(statement), scope, topLevel: statement is IrExpressionStatement);
+                return scope;
+        }
+    }
+
+    // var t = <initializer>;
+    private ImmutableStack<IrVariable> CheckTemporary(IrLocalDeclaration declaration, ImmutableStack<IrVariable> scope)
+    {
+        CheckExpression(declaration.Initializer, scope, topLevel: true);
+        if (!_declared.Add(declaration.Variable))
+        {
+            Report("R2", $"{declaration.Variable.Name} is declared twice");
+        }
+
+        return scope.Push(declaration.Variable);
+    }
+
+    // The branches of the original if are statements of their own; those of an if the rewrite made are its output
+    private void CheckIf(IrIf @if, ImmutableStack<IrVariable> scope)
+    {
+        CheckExpression(@if.Condition, scope, topLevel: false);
+        if (!@if.Source.Synthesized)
+        {
+            return;
+        }
+
+        CheckStatement(@if.Then, scope);
+        if (@if.Else is { } @else)
+        {
+            CheckStatement(@else, scope);
+        }
+    }
+
+    // The one expression of a simple statement; any other statement is not an output of the rewrite (R4)
+    private IrExpression? ExpressionOf(IrStatement statement)
+    {
+        switch (statement)
+        {
+            case IrExpressionStatement expression:
+                return expression.Expression;
             case IrLocalDeclaration declaration:
-                CheckExpression(declaration.Initializer, scope, topLevel: false);
-                return scope;
+                return declaration.Initializer;
             case IrReturn @return:
-                CheckExpression(@return.Value, scope, topLevel: false);
-                return scope;
+                return @return.Value;
             default:
                 Report("R4", $"a statement of kind {statement.GetType().Name} is in the output");
-                return scope;
+                return null;
         }
     }
 

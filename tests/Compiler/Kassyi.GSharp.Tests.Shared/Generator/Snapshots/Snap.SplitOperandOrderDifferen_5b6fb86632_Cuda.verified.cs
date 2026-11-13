@@ -773,71 +773,71 @@ static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__Sp
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SplitOrderCell)==4,""Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SplitOrderCell,__gsharp_mb_F)==0,""Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell.F: offset"");
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__OperandOrderKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c, GSharpArray<int> __gsharp_id_3_d, GSharpArray<int> __gsharp_id_4_e, GSharpArray<int> __gsharp_id_5_f, GSharpArray<int> __gsharp_id_6_g, GSharpArray<int> __gsharp_id_7_h, GSharpArray<int> __gsharp_id_8_counter, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SplitOrderCell> __gsharp_id_9_cells, bool __gsharp_id_10_flag, GSharpArray<int> __gsharp_id_11_output, unsigned int __gsharp_epoch){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__OperandOrderKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c, GSharpArray<int> __gsharp_id_3_d, GSharpArray<int> __gsharp_id_4_e, GSharpArray<int> __gsharp_id_5_f, GSharpArray<int> __gsharp_id_6_counter, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__SplitOrderCell> __gsharp_id_7_cells, bool __gsharp_id_8_flag, GSharpArray<int> __gsharp_id_9_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_12_l = (int)threadIdx.x;
-int __gsharp_id_13_o = __gsharp_mul_i32(__gsharp_id_12_l,16);
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_id_13_o+0, 1232080265u)=([&]() {
-auto __gsharp_seq_0 = (__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_12_l, 373899595u)=__gsharp_add_i32(__gsharp_id_12_l,100));
-auto __gsharp_seq_1 = __shfl_sync(4294967295U,__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_12_l, 1584521887u),__gsharp_id_12_l,32);
+int __gsharp_id_10_l = (int)threadIdx.x;
+int __gsharp_id_11_o = __gsharp_mul_i32(__gsharp_id_10_l,16);
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_id_11_o+0, 1232080265u)=([&]() {
+auto __gsharp_seq_0 = (__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_10_l, 373899595u)=__gsharp_add_i32(__gsharp_id_10_l,100));
+auto __gsharp_seq_1 = __shfl_sync(4294967295U,__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_10_l, 1584521887u),__gsharp_id_10_l,32);
 return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
 }());
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,1), 1170403337u)=([&]() {
-auto __gsharp_seq_2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Bump(__gsharp_id_1_b,__gsharp_id_12_l);
-auto __gsharp_seq_3 = __shfl_sync(4294967295U,__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_12_l, 1886513973u),__gsharp_id_12_l,32);
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,1), 1170403337u)=([&]() {
+auto __gsharp_seq_2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Bump(__gsharp_id_1_b,__gsharp_id_10_l);
+auto __gsharp_seq_3 = __shfl_sync(4294967295U,__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_10_l, 1886513973u),__gsharp_id_10_l,32);
 return __gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
 }());
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,2), 260266873u)=([&]() {
-auto __gsharp_seq_4 = __gsharp_array_at(__gsharp_id_2_c, __gsharp_id_12_l, 1726182157u);
-auto __gsharp_seq_5 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenBump(__gsharp_id_2_c,__gsharp_id_12_l);
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,2), 260266873u)=([&]() {
+auto __gsharp_seq_4 = __gsharp_array_at(__gsharp_id_2_c, __gsharp_id_10_l, 1726182157u);
+auto __gsharp_seq_5 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenBump(__gsharp_id_2_c,__gsharp_id_10_l);
 return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
 }());
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,3), 551694589u)=([&]() {
-int __gsharp_seq_6 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Add3(__gsharp_id_3_d,__gsharp_id_12_l);
-int __gsharp_seq_7 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Double(__gsharp_id_3_d,__gsharp_id_12_l);
-int __gsharp_seq_8 = __shfl_sync(4294967295U,__gsharp_array_at(__gsharp_id_3_d, __gsharp_id_12_l, 354089375u),__gsharp_id_12_l,32);
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,3), 551694589u)=([&]() {
+int __gsharp_seq_6 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Add3(__gsharp_id_3_d,__gsharp_id_10_l);
+int __gsharp_seq_7 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Double(__gsharp_id_3_d,__gsharp_id_10_l);
+int __gsharp_seq_8 = __shfl_sync(4294967295U,__gsharp_array_at(__gsharp_id_3_d, __gsharp_id_10_l, 354089375u),__gsharp_id_10_l,32);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Triple(__gsharp_seq_6,__gsharp_seq_7,__gsharp_seq_8);
 }());
-int __gsharp_id_14_x = __gsharp_id_12_l;
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,4), 1119950357u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncSum(0,([&]() {
-auto __gsharp_seq_9 = __gsharp_id_14_x;
-auto __gsharp_seq_10 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetTenReturnOne(&__gsharp_id_14_x);
+int __gsharp_id_12_x = __gsharp_id_10_l;
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,4), 1119950357u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncSum(0,([&]() {
+auto __gsharp_seq_9 = __gsharp_id_12_x;
+auto __gsharp_seq_10 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetTenReturnOne(&__gsharp_id_12_x);
 return __gsharp_add_i32(__gsharp_seq_9,__gsharp_seq_10);
 }()));
-int __gsharp_id_15_y;
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,5), 323554433u)=([&]() {
-int __gsharp_seq_11 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetOut(&__gsharp_id_15_y,__gsharp_id_12_l);
-int __gsharp_seq_12 = __gsharp_id_15_y;
+int __gsharp_id_13_y;
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,5), 323554433u)=([&]() {
+int __gsharp_seq_11 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SetOut(&__gsharp_id_13_y,__gsharp_id_10_l);
+int __gsharp_seq_12 = __gsharp_id_13_y;
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncSum(__gsharp_seq_11,__gsharp_seq_12);
 }());
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,6), 1703014189u)=([&]() {
-int __gsharp_seq_13 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Bump(__gsharp_id_4_e,__gsharp_id_12_l);
-int __gsharp_seq_14 = (__gsharp_id_10_flag?__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThen(__gsharp_array_at(__gsharp_id_4_e, __gsharp_id_12_l, 390227583u)):(-1));
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,6), 1703014189u)=([&]() {
+int __gsharp_seq_13 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Bump(__gsharp_id_4_e,__gsharp_id_10_l);
+int __gsharp_seq_14 = (__gsharp_id_8_flag?__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThen(__gsharp_array_at(__gsharp_id_4_e, __gsharp_id_10_l, 390227583u)):(-1));
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncSum(__gsharp_seq_13,__gsharp_seq_14);
 }());
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,7), 901123361u)=__gsharp_array_at(__gsharp_id_4_e, __gsharp_id_12_l, 27937401u);
-int __gsharp_id_16_m = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Mark(__gsharp_id_5_f,__gsharp_id_12_l);
-int __gsharp_id_17_q = (__gsharp_id_10_flag?__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncRead(__gsharp_id_5_f,__gsharp_id_12_l):(-1));
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,8), 109887833u)=__gsharp_id_16_m;
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,9), 1510124173u)=__gsharp_id_17_q;
-int __gsharp_id_18_p = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Bump(__gsharp_id_6_g,__gsharp_id_12_l);
-int __gsharp_id_19_r = __gsharp_add_i32(__gsharp_id_18_p,__shfl_sync(4294967295U,__gsharp_array_at(__gsharp_id_6_g, __gsharp_id_12_l, 856649627u),__gsharp_id_12_l,32));
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,10), 2084847333u)=__gsharp_id_19_r;
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,11), 351390629u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__BumpPlusSync(__gsharp_id_7_h,__gsharp_id_12_l);
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,12), 1397418721u)=__shfl_sync(4294967295U,__gsharp_mul_i32(__gsharp_id_12_l,5),__gsharp_id_12_l,32);
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,7), 901123361u)=__gsharp_array_at(__gsharp_id_4_e, __gsharp_id_10_l, 27937401u);
+int __gsharp_id_14_m = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Mark(__gsharp_id_5_f,__gsharp_id_10_l);
+int __gsharp_id_15_q = (__gsharp_id_8_flag?__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncRead(__gsharp_id_5_f,__gsharp_id_10_l):(-1));
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,8), 109887833u)=__gsharp_id_14_m;
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,9), 1510124173u)=__gsharp_id_15_q;
+int __gsharp_id_16_p = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Bump(__gsharp_id_1_b,__gsharp_id_10_l);
+int __gsharp_id_17_r = __gsharp_add_i32(__gsharp_id_16_p,__shfl_sync(4294967295U,__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_10_l, 856649627u),__gsharp_id_10_l,32));
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,10), 2084847333u)=__gsharp_id_17_r;
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,11), 351390629u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__BumpPlusSync(__gsharp_id_2_c,__gsharp_id_10_l);
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,12), 1397418721u)=__shfl_sync(4294967295U,__gsharp_mul_i32(__gsharp_id_10_l,5),__gsharp_id_10_l,32);
 ([&]() {
-auto&& __gsharp_seq_15 = __gsharp_array_at(__gsharp_id_9_cells, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__NextIndex(__gsharp_id_8_counter,__gsharp_id_12_l), 904299642u).__gsharp_mb_F;
-int __gsharp_seq_16 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThen(__gsharp_add_i32(__gsharp_id_12_l,1));
+auto&& __gsharp_seq_15 = __gsharp_array_at(__gsharp_id_7_cells, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__NextIndex(__gsharp_id_6_counter,__gsharp_id_10_l), 904299642u).__gsharp_mb_F;
+int __gsharp_seq_16 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThen(__gsharp_add_i32(__gsharp_id_10_l,1));
 return __gsharp_seq_15 = __gsharp_seq_16;
 }());
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,13), 1388628501u)=__gsharp_array_at(__gsharp_id_8_counter, __gsharp_id_12_l, 1790398024u);
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,14), 1310698981u)=__gsharp_array_at(__gsharp_id_9_cells, __gsharp_id_12_l, 1428946000u).__gsharp_mb_F;
-int __gsharp_id_20_sum = 0;
-for(int __gsharp_id_21_k = 0;__gsharp_id_21_k<2;__gsharp_id_21_k++)
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,13), 1388628501u)=__gsharp_array_at(__gsharp_id_6_counter, __gsharp_id_10_l, 1790398024u);
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,14), 1310698981u)=__gsharp_array_at(__gsharp_id_7_cells, __gsharp_id_10_l, 1428946000u).__gsharp_mb_F;
+int __gsharp_id_18_sum = 0;
+for(int __gsharp_id_19_k = 0;__gsharp_id_19_k<2;__gsharp_id_19_k++)
 {
-__gsharp_id_20_sum=__gsharp_add_i32(__gsharp_id_20_sum,__gsharp_add_i32(__gsharp_id_21_k,__shfl_sync(4294967295U,__gsharp_id_20_sum,__gsharp_id_12_l,32)));
+__gsharp_id_18_sum=__gsharp_add_i32(__gsharp_id_18_sum,__gsharp_add_i32(__gsharp_id_19_k,__shfl_sync(4294967295U,__gsharp_id_18_sum,__gsharp_id_10_l,32)));
 }
-__gsharp_array_at(__gsharp_id_11_output, __gsharp_add_i32(__gsharp_id_13_o,15), 1803027577u)=__gsharp_add_i32(__gsharp_id_20_sum,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncSum(__gsharp_id_20_sum,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Bump(__gsharp_id_0_a,__gsharp_id_12_l)));
+__gsharp_array_at(__gsharp_id_9_output, __gsharp_add_i32(__gsharp_id_11_o,15), 1803027577u)=__gsharp_add_i32(__gsharp_id_18_sum,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncSum(__gsharp_id_18_sum,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__Bump(__gsharp_id_0_a,__gsharp_id_10_l)));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OperandOrderKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__OperandOrderKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -847,7 +847,7 @@ public static void WarmupFunctionPointerOperandOrderKernel() => global::Kassyi.G
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchOperandOrderKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, global::System.Int32[] d, global::System.Int32[] e, global::System.Int32[] f, global::System.Int32[] g, global::System.Int32[] h, global::System.Int32[] counter, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell[] cells, global::System.Boolean flag, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchOperandOrderKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, global::System.Int32[] d, global::System.Int32[] e, global::System.Int32[] f, global::System.Int32[] counter, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell[] cells, global::System.Boolean flag, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (!__gsharp_layout_checked_OperandOrderKernel)
 {
@@ -875,13 +875,11 @@ global::System.IntPtr __gsharp_d_4 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_5 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_6 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_7 = global::System.IntPtr.Zero;
-global::System.IntPtr __gsharp_d_8 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_9 = global::System.IntPtr.Zero;
-global::System.IntPtr __gsharp_d_11 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[13];
+void** __gsharp_kernel_params = stackalloc void*[11];
 // Marshal array: a
 int __gsharp_size_0 = checked((a?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -1059,42 +1057,42 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 __gsharp_proxy_5[0] = __gsharp_d_5;
 }
 __gsharp_kernel_params[5] = __gsharp_proxy_5;
-// Marshal array: g
-int __gsharp_size_6 = checked((g?.Length ?? 0) * sizeof(global::System.Int32));
+// Marshal array: counter
+int __gsharp_size_6 = checked((counter?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_6 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_6[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(g) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
-((int*)(__gsharp_proxy_6 + 1))[0] = (g?.Length ?? 0);
+__gsharp_proxy_6[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(counter) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_6 + 1))[0] = (counter?.Length ?? 0);
 ((int*)(__gsharp_proxy_6 + 1))[1] = 0;
 if (__gsharp_size_6 > 0)
 {
-if (global::System.Object.ReferenceEquals(g, a))
+if (global::System.Object.ReferenceEquals(counter, a))
 {
 __gsharp_d_6 = __gsharp_d_0;
 }
-else if (global::System.Object.ReferenceEquals(g, b))
+else if (global::System.Object.ReferenceEquals(counter, b))
 {
 __gsharp_d_6 = __gsharp_d_1;
 }
-else if (global::System.Object.ReferenceEquals(g, c))
+else if (global::System.Object.ReferenceEquals(counter, c))
 {
 __gsharp_d_6 = __gsharp_d_2;
 }
-else if (global::System.Object.ReferenceEquals(g, d))
+else if (global::System.Object.ReferenceEquals(counter, d))
 {
 __gsharp_d_6 = __gsharp_d_3;
 }
-else if (global::System.Object.ReferenceEquals(g, e))
+else if (global::System.Object.ReferenceEquals(counter, e))
 {
 __gsharp_d_6 = __gsharp_d_4;
 }
-else if (global::System.Object.ReferenceEquals(g, f))
+else if (global::System.Object.ReferenceEquals(counter, f))
 {
 __gsharp_d_6 = __gsharp_d_5;
 }
 else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_6, (global::System.IntPtr)__gsharp_size_6, hStream));
-fixed (global::System.Int32* __gsharp_p_6 = g)
+fixed (global::System.Int32* __gsharp_p_6 = counter)
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_6, (global::System.IntPtr)__gsharp_p_6, (global::System.IntPtr)__gsharp_size_6, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
@@ -1103,46 +1101,46 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 __gsharp_proxy_6[0] = __gsharp_d_6;
 }
 __gsharp_kernel_params[6] = __gsharp_proxy_6;
-// Marshal array: h
-int __gsharp_size_7 = checked((h?.Length ?? 0) * sizeof(global::System.Int32));
+// Marshal array: cells
+int __gsharp_size_7 = checked((cells?.Length ?? 0) * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell));
 global::System.IntPtr* __gsharp_proxy_7 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_7[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(h) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
-((int*)(__gsharp_proxy_7 + 1))[0] = (h?.Length ?? 0);
+__gsharp_proxy_7[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(cells) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_7 + 1))[0] = (cells?.Length ?? 0);
 ((int*)(__gsharp_proxy_7 + 1))[1] = 0;
 if (__gsharp_size_7 > 0)
 {
-if (global::System.Object.ReferenceEquals(h, a))
+if (global::System.Object.ReferenceEquals(cells, a))
 {
 __gsharp_d_7 = __gsharp_d_0;
 }
-else if (global::System.Object.ReferenceEquals(h, b))
+else if (global::System.Object.ReferenceEquals(cells, b))
 {
 __gsharp_d_7 = __gsharp_d_1;
 }
-else if (global::System.Object.ReferenceEquals(h, c))
+else if (global::System.Object.ReferenceEquals(cells, c))
 {
 __gsharp_d_7 = __gsharp_d_2;
 }
-else if (global::System.Object.ReferenceEquals(h, d))
+else if (global::System.Object.ReferenceEquals(cells, d))
 {
 __gsharp_d_7 = __gsharp_d_3;
 }
-else if (global::System.Object.ReferenceEquals(h, e))
+else if (global::System.Object.ReferenceEquals(cells, e))
 {
 __gsharp_d_7 = __gsharp_d_4;
 }
-else if (global::System.Object.ReferenceEquals(h, f))
+else if (global::System.Object.ReferenceEquals(cells, f))
 {
 __gsharp_d_7 = __gsharp_d_5;
 }
-else if (global::System.Object.ReferenceEquals(h, g))
+else if (global::System.Object.ReferenceEquals(cells, counter))
 {
 __gsharp_d_7 = __gsharp_d_6;
 }
 else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_7, (global::System.IntPtr)__gsharp_size_7, hStream));
-fixed (global::System.Int32* __gsharp_p_7 = h)
+fixed (global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell* __gsharp_p_7 = cells)
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_7, (global::System.IntPtr)__gsharp_p_7, (global::System.IntPtr)__gsharp_size_7, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
@@ -1151,106 +1149,52 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 __gsharp_proxy_7[0] = __gsharp_d_7;
 }
 __gsharp_kernel_params[7] = __gsharp_proxy_7;
-// Marshal array: counter
-int __gsharp_size_8 = checked((counter?.Length ?? 0) * sizeof(global::System.Int32));
-global::System.IntPtr* __gsharp_proxy_8 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_8[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(counter) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
-((int*)(__gsharp_proxy_8 + 1))[0] = (counter?.Length ?? 0);
-((int*)(__gsharp_proxy_8 + 1))[1] = 0;
-if (__gsharp_size_8 > 0)
-{
-if (global::System.Object.ReferenceEquals(counter, a))
-{
-__gsharp_d_8 = __gsharp_d_0;
-}
-else if (global::System.Object.ReferenceEquals(counter, b))
-{
-__gsharp_d_8 = __gsharp_d_1;
-}
-else if (global::System.Object.ReferenceEquals(counter, c))
-{
-__gsharp_d_8 = __gsharp_d_2;
-}
-else if (global::System.Object.ReferenceEquals(counter, d))
-{
-__gsharp_d_8 = __gsharp_d_3;
-}
-else if (global::System.Object.ReferenceEquals(counter, e))
-{
-__gsharp_d_8 = __gsharp_d_4;
-}
-else if (global::System.Object.ReferenceEquals(counter, f))
-{
-__gsharp_d_8 = __gsharp_d_5;
-}
-else if (global::System.Object.ReferenceEquals(counter, g))
-{
-__gsharp_d_8 = __gsharp_d_6;
-}
-else if (global::System.Object.ReferenceEquals(counter, h))
-{
-__gsharp_d_8 = __gsharp_d_7;
-}
-else
-{
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_8, (global::System.IntPtr)__gsharp_size_8, hStream));
-fixed (global::System.Int32* __gsharp_p_8 = counter)
-{
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_8, (global::System.IntPtr)__gsharp_p_8, (global::System.IntPtr)__gsharp_size_8, hStream));
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-}
-}
-__gsharp_proxy_8[0] = __gsharp_d_8;
-}
-__gsharp_kernel_params[8] = __gsharp_proxy_8;
-// Marshal array: cells
-int __gsharp_size_9 = checked((cells?.Length ?? 0) * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell));
+// Marshal scalar: flag
+__gsharp_kernel_params[8] = &flag;
+// Marshal array: output
+int __gsharp_size_9 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_9 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_9[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(cells) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
-((int*)(__gsharp_proxy_9 + 1))[0] = (cells?.Length ?? 0);
+__gsharp_proxy_9[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_9 + 1))[0] = (output?.Length ?? 0);
 ((int*)(__gsharp_proxy_9 + 1))[1] = 0;
 if (__gsharp_size_9 > 0)
 {
-if (global::System.Object.ReferenceEquals(cells, a))
+if (global::System.Object.ReferenceEquals(output, a))
 {
 __gsharp_d_9 = __gsharp_d_0;
 }
-else if (global::System.Object.ReferenceEquals(cells, b))
+else if (global::System.Object.ReferenceEquals(output, b))
 {
 __gsharp_d_9 = __gsharp_d_1;
 }
-else if (global::System.Object.ReferenceEquals(cells, c))
+else if (global::System.Object.ReferenceEquals(output, c))
 {
 __gsharp_d_9 = __gsharp_d_2;
 }
-else if (global::System.Object.ReferenceEquals(cells, d))
+else if (global::System.Object.ReferenceEquals(output, d))
 {
 __gsharp_d_9 = __gsharp_d_3;
 }
-else if (global::System.Object.ReferenceEquals(cells, e))
+else if (global::System.Object.ReferenceEquals(output, e))
 {
 __gsharp_d_9 = __gsharp_d_4;
 }
-else if (global::System.Object.ReferenceEquals(cells, f))
+else if (global::System.Object.ReferenceEquals(output, f))
 {
 __gsharp_d_9 = __gsharp_d_5;
 }
-else if (global::System.Object.ReferenceEquals(cells, g))
+else if (global::System.Object.ReferenceEquals(output, counter))
 {
 __gsharp_d_9 = __gsharp_d_6;
 }
-else if (global::System.Object.ReferenceEquals(cells, h))
+else if (global::System.Object.ReferenceEquals(output, cells))
 {
 __gsharp_d_9 = __gsharp_d_7;
-}
-else if (global::System.Object.ReferenceEquals(cells, counter))
-{
-__gsharp_d_9 = __gsharp_d_8;
 }
 else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_9, (global::System.IntPtr)__gsharp_size_9, hStream));
-fixed (global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell* __gsharp_p_9 = cells)
+fixed (global::System.Int32* __gsharp_p_9 = output)
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_9, (global::System.IntPtr)__gsharp_p_9, (global::System.IntPtr)__gsharp_size_9, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
@@ -1259,69 +1203,7 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 __gsharp_proxy_9[0] = __gsharp_d_9;
 }
 __gsharp_kernel_params[9] = __gsharp_proxy_9;
-// Marshal scalar: flag
-__gsharp_kernel_params[10] = &flag;
-// Marshal array: output
-int __gsharp_size_11 = checked((output?.Length ?? 0) * sizeof(global::System.Int32));
-global::System.IntPtr* __gsharp_proxy_11 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_11[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(output) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
-((int*)(__gsharp_proxy_11 + 1))[0] = (output?.Length ?? 0);
-((int*)(__gsharp_proxy_11 + 1))[1] = 0;
-if (__gsharp_size_11 > 0)
-{
-if (global::System.Object.ReferenceEquals(output, a))
-{
-__gsharp_d_11 = __gsharp_d_0;
-}
-else if (global::System.Object.ReferenceEquals(output, b))
-{
-__gsharp_d_11 = __gsharp_d_1;
-}
-else if (global::System.Object.ReferenceEquals(output, c))
-{
-__gsharp_d_11 = __gsharp_d_2;
-}
-else if (global::System.Object.ReferenceEquals(output, d))
-{
-__gsharp_d_11 = __gsharp_d_3;
-}
-else if (global::System.Object.ReferenceEquals(output, e))
-{
-__gsharp_d_11 = __gsharp_d_4;
-}
-else if (global::System.Object.ReferenceEquals(output, f))
-{
-__gsharp_d_11 = __gsharp_d_5;
-}
-else if (global::System.Object.ReferenceEquals(output, g))
-{
-__gsharp_d_11 = __gsharp_d_6;
-}
-else if (global::System.Object.ReferenceEquals(output, h))
-{
-__gsharp_d_11 = __gsharp_d_7;
-}
-else if (global::System.Object.ReferenceEquals(output, counter))
-{
-__gsharp_d_11 = __gsharp_d_8;
-}
-else if (global::System.Object.ReferenceEquals(output, cells))
-{
-__gsharp_d_11 = __gsharp_d_9;
-}
-else
-{
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_11, (global::System.IntPtr)__gsharp_size_11, hStream));
-fixed (global::System.Int32* __gsharp_p_11 = output)
-{
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_11, (global::System.IntPtr)__gsharp_p_11, (global::System.IntPtr)__gsharp_size_11, hStream));
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-}
-}
-__gsharp_proxy_11[0] = __gsharp_d_11;
-}
-__gsharp_kernel_params[11] = __gsharp_proxy_11;
-__gsharp_kernel_params[12] = &__gsharp_epoch;
+__gsharp_kernel_params[10] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -1385,48 +1267,30 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-// Copy back array: g
-if (__gsharp_size_6 > 0 && __gsharp_d_6 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(g, a) && !global::System.Object.ReferenceEquals(g, b) && !global::System.Object.ReferenceEquals(g, c) && !global::System.Object.ReferenceEquals(g, d) && !global::System.Object.ReferenceEquals(g, e) && !global::System.Object.ReferenceEquals(g, f))
+// Copy back array: counter
+if (__gsharp_size_6 > 0 && __gsharp_d_6 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(counter, a) && !global::System.Object.ReferenceEquals(counter, b) && !global::System.Object.ReferenceEquals(counter, c) && !global::System.Object.ReferenceEquals(counter, d) && !global::System.Object.ReferenceEquals(counter, e) && !global::System.Object.ReferenceEquals(counter, f))
 {
-fixed (global::System.Int32* __gsharp_p_6 = g)
+fixed (global::System.Int32* __gsharp_p_6 = counter)
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_6, __gsharp_d_6, (global::System.IntPtr)__gsharp_size_6, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-// Copy back array: h
-if (__gsharp_size_7 > 0 && __gsharp_d_7 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(h, a) && !global::System.Object.ReferenceEquals(h, b) && !global::System.Object.ReferenceEquals(h, c) && !global::System.Object.ReferenceEquals(h, d) && !global::System.Object.ReferenceEquals(h, e) && !global::System.Object.ReferenceEquals(h, f) && !global::System.Object.ReferenceEquals(h, g))
+// Copy back array: cells
+if (__gsharp_size_7 > 0 && __gsharp_d_7 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(cells, a) && !global::System.Object.ReferenceEquals(cells, b) && !global::System.Object.ReferenceEquals(cells, c) && !global::System.Object.ReferenceEquals(cells, d) && !global::System.Object.ReferenceEquals(cells, e) && !global::System.Object.ReferenceEquals(cells, f) && !global::System.Object.ReferenceEquals(cells, counter))
 {
-fixed (global::System.Int32* __gsharp_p_7 = h)
+fixed (global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell* __gsharp_p_7 = cells)
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_7, __gsharp_d_7, (global::System.IntPtr)__gsharp_size_7, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-// Copy back array: counter
-if (__gsharp_size_8 > 0 && __gsharp_d_8 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(counter, a) && !global::System.Object.ReferenceEquals(counter, b) && !global::System.Object.ReferenceEquals(counter, c) && !global::System.Object.ReferenceEquals(counter, d) && !global::System.Object.ReferenceEquals(counter, e) && !global::System.Object.ReferenceEquals(counter, f) && !global::System.Object.ReferenceEquals(counter, g) && !global::System.Object.ReferenceEquals(counter, h))
+// Copy back array: output
+if (__gsharp_size_9 > 0 && __gsharp_d_9 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(output, a) && !global::System.Object.ReferenceEquals(output, b) && !global::System.Object.ReferenceEquals(output, c) && !global::System.Object.ReferenceEquals(output, d) && !global::System.Object.ReferenceEquals(output, e) && !global::System.Object.ReferenceEquals(output, f) && !global::System.Object.ReferenceEquals(output, counter) && !global::System.Object.ReferenceEquals(output, cells))
 {
-fixed (global::System.Int32* __gsharp_p_8 = counter)
-{
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_8, __gsharp_d_8, (global::System.IntPtr)__gsharp_size_8, hStream));
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-}
-}
-// Copy back array: cells
-if (__gsharp_size_9 > 0 && __gsharp_d_9 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(cells, a) && !global::System.Object.ReferenceEquals(cells, b) && !global::System.Object.ReferenceEquals(cells, c) && !global::System.Object.ReferenceEquals(cells, d) && !global::System.Object.ReferenceEquals(cells, e) && !global::System.Object.ReferenceEquals(cells, f) && !global::System.Object.ReferenceEquals(cells, g) && !global::System.Object.ReferenceEquals(cells, h) && !global::System.Object.ReferenceEquals(cells, counter))
-{
-fixed (global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell* __gsharp_p_9 = cells)
+fixed (global::System.Int32* __gsharp_p_9 = output)
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_9, __gsharp_d_9, (global::System.IntPtr)__gsharp_size_9, hStream));
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-}
-}
-// Copy back array: output
-if (__gsharp_size_11 > 0 && __gsharp_d_11 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(output, a) && !global::System.Object.ReferenceEquals(output, b) && !global::System.Object.ReferenceEquals(output, c) && !global::System.Object.ReferenceEquals(output, d) && !global::System.Object.ReferenceEquals(output, e) && !global::System.Object.ReferenceEquals(output, f) && !global::System.Object.ReferenceEquals(output, g) && !global::System.Object.ReferenceEquals(output, h) && !global::System.Object.ReferenceEquals(output, counter) && !global::System.Object.ReferenceEquals(output, cells))
-{
-fixed (global::System.Int32* __gsharp_p_11 = output)
-{
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_11, __gsharp_d_11, (global::System.IntPtr)__gsharp_size_11, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
@@ -1444,9 +1308,7 @@ if (__gsharp_d_4 != global::System.IntPtr.Zero && __gsharp_d_4 != __gsharp_d_0 &
 if (__gsharp_d_5 != global::System.IntPtr.Zero && __gsharp_d_5 != __gsharp_d_0 && __gsharp_d_5 != __gsharp_d_1 && __gsharp_d_5 != __gsharp_d_2 && __gsharp_d_5 != __gsharp_d_3 && __gsharp_d_5 != __gsharp_d_4) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_5, hStream);
 if (__gsharp_d_6 != global::System.IntPtr.Zero && __gsharp_d_6 != __gsharp_d_0 && __gsharp_d_6 != __gsharp_d_1 && __gsharp_d_6 != __gsharp_d_2 && __gsharp_d_6 != __gsharp_d_3 && __gsharp_d_6 != __gsharp_d_4 && __gsharp_d_6 != __gsharp_d_5) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_6, hStream);
 if (__gsharp_d_7 != global::System.IntPtr.Zero && __gsharp_d_7 != __gsharp_d_0 && __gsharp_d_7 != __gsharp_d_1 && __gsharp_d_7 != __gsharp_d_2 && __gsharp_d_7 != __gsharp_d_3 && __gsharp_d_7 != __gsharp_d_4 && __gsharp_d_7 != __gsharp_d_5 && __gsharp_d_7 != __gsharp_d_6) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_7, hStream);
-if (__gsharp_d_8 != global::System.IntPtr.Zero && __gsharp_d_8 != __gsharp_d_0 && __gsharp_d_8 != __gsharp_d_1 && __gsharp_d_8 != __gsharp_d_2 && __gsharp_d_8 != __gsharp_d_3 && __gsharp_d_8 != __gsharp_d_4 && __gsharp_d_8 != __gsharp_d_5 && __gsharp_d_8 != __gsharp_d_6 && __gsharp_d_8 != __gsharp_d_7) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_8, hStream);
-if (__gsharp_d_9 != global::System.IntPtr.Zero && __gsharp_d_9 != __gsharp_d_0 && __gsharp_d_9 != __gsharp_d_1 && __gsharp_d_9 != __gsharp_d_2 && __gsharp_d_9 != __gsharp_d_3 && __gsharp_d_9 != __gsharp_d_4 && __gsharp_d_9 != __gsharp_d_5 && __gsharp_d_9 != __gsharp_d_6 && __gsharp_d_9 != __gsharp_d_7 && __gsharp_d_9 != __gsharp_d_8) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_9, hStream);
-if (__gsharp_d_11 != global::System.IntPtr.Zero && __gsharp_d_11 != __gsharp_d_0 && __gsharp_d_11 != __gsharp_d_1 && __gsharp_d_11 != __gsharp_d_2 && __gsharp_d_11 != __gsharp_d_3 && __gsharp_d_11 != __gsharp_d_4 && __gsharp_d_11 != __gsharp_d_5 && __gsharp_d_11 != __gsharp_d_6 && __gsharp_d_11 != __gsharp_d_7 && __gsharp_d_11 != __gsharp_d_8 && __gsharp_d_11 != __gsharp_d_9) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_11, hStream);
+if (__gsharp_d_9 != global::System.IntPtr.Zero && __gsharp_d_9 != __gsharp_d_0 && __gsharp_d_9 != __gsharp_d_1 && __gsharp_d_9 != __gsharp_d_2 && __gsharp_d_9 != __gsharp_d_3 && __gsharp_d_9 != __gsharp_d_4 && __gsharp_d_9 != __gsharp_d_5 && __gsharp_d_9 != __gsharp_d_6 && __gsharp_d_9 != __gsharp_d_7) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_9, hStream);
 }
 }
 }
@@ -1454,7 +1316,7 @@ if (__gsharp_d_11 != global::System.IntPtr.Zero && __gsharp_d_11 != __gsharp_d_0
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchOperandOrderKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy b, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy c, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy d, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy e, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy f, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy g, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy h, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy counter, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy cells, global::System.Boolean flag, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchOperandOrderKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy b, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy c, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy d, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy e, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy f, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy counter, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy cells, global::System.Boolean flag, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("a", a.Length, "The array length must not be negative.");
@@ -1492,18 +1354,6 @@ throw new global::System.ArgumentOutOfRangeException("f", f.Length, "The array l
 if (f.Data == global::System.IntPtr.Zero && f.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "f");
 }
-if (g.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("g", g.Length, "The array length must not be negative.");
-}
-if (g.Data == global::System.IntPtr.Zero && g.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "g");
-}
-if (h.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("h", h.Length, "The array length must not be negative.");
-}
-if (h.Data == global::System.IntPtr.Zero && h.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "h");
-}
 if (counter.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("counter", counter.Length, "The array length must not be negative.");
 }
@@ -1534,7 +1384,7 @@ global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfun
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {
-void** __gsharp_kernel_params = stackalloc void*[13];
+void** __gsharp_kernel_params = stackalloc void*[11];
 // Marshal device array: a
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
 __gsharp_proxy_0[0] = a.Data;
@@ -1571,39 +1421,27 @@ __gsharp_proxy_5[0] = f.Data;
 ((int*)(__gsharp_proxy_5 + 1))[0] = f.Length;
 ((int*)(__gsharp_proxy_5 + 1))[1] = 0;
 __gsharp_kernel_params[5] = __gsharp_proxy_5;
-// Marshal device array: g
+// Marshal device array: counter
 global::System.IntPtr* __gsharp_proxy_6 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_6[0] = g.Data;
-((int*)(__gsharp_proxy_6 + 1))[0] = g.Length;
+__gsharp_proxy_6[0] = counter.Data;
+((int*)(__gsharp_proxy_6 + 1))[0] = counter.Length;
 ((int*)(__gsharp_proxy_6 + 1))[1] = 0;
 __gsharp_kernel_params[6] = __gsharp_proxy_6;
-// Marshal device array: h
+// Marshal device array: cells
 global::System.IntPtr* __gsharp_proxy_7 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_7[0] = h.Data;
-((int*)(__gsharp_proxy_7 + 1))[0] = h.Length;
+__gsharp_proxy_7[0] = cells.Data;
+((int*)(__gsharp_proxy_7 + 1))[0] = cells.Length;
 ((int*)(__gsharp_proxy_7 + 1))[1] = 0;
 __gsharp_kernel_params[7] = __gsharp_proxy_7;
-// Marshal device array: counter
-global::System.IntPtr* __gsharp_proxy_8 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_8[0] = counter.Data;
-((int*)(__gsharp_proxy_8 + 1))[0] = counter.Length;
-((int*)(__gsharp_proxy_8 + 1))[1] = 0;
-__gsharp_kernel_params[8] = __gsharp_proxy_8;
-// Marshal device array: cells
+// Marshal scalar: flag
+__gsharp_kernel_params[8] = &flag;
+// Marshal device array: output
 global::System.IntPtr* __gsharp_proxy_9 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_9[0] = cells.Data;
-((int*)(__gsharp_proxy_9 + 1))[0] = cells.Length;
+__gsharp_proxy_9[0] = output.Data;
+((int*)(__gsharp_proxy_9 + 1))[0] = output.Length;
 ((int*)(__gsharp_proxy_9 + 1))[1] = 0;
 __gsharp_kernel_params[9] = __gsharp_proxy_9;
-// Marshal scalar: flag
-__gsharp_kernel_params[10] = &flag;
-// Marshal device array: output
-global::System.IntPtr* __gsharp_proxy_11 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_11[0] = output.Data;
-((int*)(__gsharp_proxy_11 + 1))[0] = output.Length;
-((int*)(__gsharp_proxy_11 + 1))[1] = 0;
-__gsharp_kernel_params[11] = __gsharp_proxy_11;
-__gsharp_kernel_params[12] = &__gsharp_epoch;
+__gsharp_kernel_params[10] = &__gsharp_epoch;
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
 __gsharp_hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

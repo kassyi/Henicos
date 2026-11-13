@@ -120,8 +120,8 @@ public static partial class SplitOperandOrderDifferentialKernels
     public static int BumpPlusSync(int[] data, int i) => Bump(data, i) + SyncThen(data[i]);
 
     [GpuKernel]
-    public static void OperandOrderKernel(int[] a, int[] b, int[] c, int[] d, int[] e, int[] f, int[] g, int[] h,
-        int[] counter, SplitOrderCell[] cells, bool flag, int[] output)
+    public static void OperandOrderKernel(int[] a, int[] b, int[] c, int[] d, int[] e, int[] f, int[] counter,
+        SplitOrderCell[] cells, bool flag, int[] output)
     {
         int l = ThreadIndex.X;
         int o = l * 16;
@@ -137,9 +137,9 @@ public static partial class SplitOperandOrderDifferentialKernels
         int m = Mark(f, l), q = flag ? SyncRead(f, l) : -1;
         output[o + 8] = m;
         output[o + 9] = q;
-        int p = Bump(g, l), r = p + Warp.ShuffleSync(Full, g[l], l);
+        int p = Bump(b, l), r = p + Warp.ShuffleSync(Full, b[l], l);
         output[o + 10] = r;
-        output[o + 11] = BumpPlusSync(h, l);
+        output[o + 11] = BumpPlusSync(c, l);
         output[o + 12] = Warp.ShuffleSync(Full, l * 5, l);
         cells[NextIndex(counter, l)].F = SyncThen(l + 1);
         output[o + 13] = counter[l];
