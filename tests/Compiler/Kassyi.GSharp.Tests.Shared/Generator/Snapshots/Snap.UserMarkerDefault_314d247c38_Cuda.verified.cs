@@ -105,7 +105,7 @@ return __gsharp_self;
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel(GSharpArray<int> __gsharp_id_0_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_0_output, 0, 796983403u)=__gsharp_add_i32(__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag{}.__gsharp_mb_X,1);
+__gsharp_array_at(__gsharp_id_0_output, 0, 796983403u)=__gsharp_add_i32(__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag>{}.__gsharp_mb_X,1);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UserMarkerDefaultKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
