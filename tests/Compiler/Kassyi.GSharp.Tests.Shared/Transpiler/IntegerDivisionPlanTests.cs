@@ -1,5 +1,5 @@
 #nullable enable
-using Kassyi.GSharp.Compiler.Transpiler.Helpers;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -74,6 +74,9 @@ public class IntegerDivisionPlanTests
     [InlineData("CompoundWithWritingValue", "__gsharp_div_assign_i32", "AssignByReference")]
     [InlineData("CompoundWritingItsLocal", "__gsharp_div_i32", "Reassign")]
     [InlineData("CompoundWritingItsElement", "__gsharp_div_store_i32", "ReadFirst")]
+    [InlineData("ElementPropertyCompound", "__gsharp_div_property_store", "PropertyByReference")]
+    [InlineData("PropertyWritingItsReceiver", "__gsharp_div_property_store", "PropertyByReference")]
+    [InlineData("ObjectPropertyCompound", "__gsharp_div_property_store_of", "PropertyOfObject")]
     public void ManagedPlan_DivisionThatMayDivideMinimumByMinusOne_CallsTheContext(string name, string helper,
         string form)
     {
@@ -81,12 +84,20 @@ public class IntegerDivisionPlanTests
 
         Assert.Equal(helper, plan.Helper);
         Assert.Equal(Enum.Parse<ManagedDivisionForm>(form), plan.Form);
-        Assert.Equal(plan.Form == ManagedDivisionForm.ReadFirst ? "__gsharp_read_ref_i32" : null, plan.Reader);
+        Assert.Equal(
+            plan.Form switch
+            {
+                ManagedDivisionForm.ReadFirst => "__gsharp_read_ref_i32",
+                ManagedDivisionForm.PropertyByReference => "__gsharp_read_property",
+                ManagedDivisionForm.PropertyOfObject => "__gsharp_read_property_of",
+                _ => null
+            },
+            plan.Reader
+        );
     }
 
     // .NET already gives the GPU result there: a divisor that cannot be -1 (0 included, which throws as in C#; a
-    // length or a block dimension), a dividend that cannot be the minimum, an unsigned or narrow operator. An indexer
-    // whose argument writes keeps the operator: the get and the set would evaluate it twice
+    // length or a block dimension), a dividend that cannot be the minimum, an unsigned or narrow operator
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("ByteDivisor")]
@@ -96,11 +107,17 @@ public class IntegerDivisionPlanTests
     [InlineData("NarrowDividendByMinusOne")]
     [InlineData("UnsignedDividendByMinusOne")]
     [InlineData("NarrowCompoundRemainder")]
-    [InlineData("IndexerWithWritingArgument")]
     [InlineData("LengthDivisor")]
     [InlineData("LaunchDimensionDivisor")]
     public void ManagedPlan_DivisionThatCannotDivideMinimumByMinusOne_KeepsTheOperator(string name) =>
         Assert.Null(GetManagedPlan(name));
+
+    // A known gap, not a safe case: the divisor is -1, so .NET throws OverflowException. An indexer whose argument
+    // writes (k++) would be evaluated twice by the get and the set, and has no receiver to bind once
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ManagedPlan_IndexerWithWritingArgument_KeepsTheOperator() =>
+        Assert.Null(GetManagedPlan("IndexerWithWritingArgument"));
 
     private static ManagedDivisionPlan? GetManagedPlan(string name)
     {

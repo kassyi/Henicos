@@ -484,7 +484,13 @@ internal static class DeviceExportEmitter
             AppendBoolProperty(writer, AttributeNames.Traits.HasExitOnlyBarrier, traits.HasExitOnlyBarrier);
             AppendBoolProperty(writer, AttributeNames.Traits.ReachesArrivalBarrier, traits.ReachesArrivalBarrier);
             AppendBoolProperty(writer, AttributeNames.Traits.ReachesSharedMemory, traits.ReachesSharedMemory);
-            AppendBoolProperty(writer, AttributeNames.Traits.ReachesGeneratedMeaning, traits.ReachesGeneratedMeaning);
+            // [WHY] Written whenever ManagedVersion is, also as false: a reader takes a record without the key for one of
+            // an older G#, whose ManagedVersion meant exactly this trait (DeviceExportTable)
+            if (traits.ManagedVersion || traits.ReachesGeneratedMeaning)
+            {
+                writer.Append($", {AttributeNames.Traits.ReachesGeneratedMeaning} = ");
+                writer.Append(traits.ReachesGeneratedMeaning ? "true" : "false");
+            }
         }
 
         writer.AppendLine("]");

@@ -106,7 +106,7 @@ public class IntegerDivisionCheckTests : TranspilerTestBase
         Assert.Equal([10, 0, 10, 10], o);
         if (!forceManaged)
         {
-            Assert.Equal(KernelFile + "(14,16)", exception.Data["GSharp.SourceLocation"]);
+            Assert.Equal(KernelFile + "(19,16)", exception.Data["GSharp.SourceLocation"]);
         }
     }
 
@@ -128,7 +128,7 @@ public class IntegerDivisionCheckTests : TranspilerTestBase
         // A CUDA device function reports its place through a message ID, not the text
         if (!forceManaged && !IsCudaDialect)
         {
-            Assert.Equal("Attempted to divide by zero. at " + KernelFile + "(33,54)", exception.Message);
+            Assert.Equal("Attempted to divide by zero. at " + KernelFile + "(38,54)", exception.Message);
         }
 
         Assert.Equal(1L, o[0]);
@@ -165,6 +165,28 @@ public class IntegerDivisionCheckTests : TranspilerTestBase
 
         Assert.Equal([int.MinValue, int.MinValue, int.MinValue], a);
         Assert.Equal([int.MinValue, 1], o);
+    }
+
+    // mutant: ManagedDivision.PlanProperty without the receiver binding keeps the C# operator (OverflowException)
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PropertyCompound_ReceiverThatThrowsOrIsWritten_ReadsThePropertyFirst(bool forceManaged)
+    {
+        DivisionCell[] cells =
+        [
+            new() { P = int.MinValue },
+            new() { P = int.MinValue },
+            new() { P = -1 },
+        ];
+        int[] d = [-1];
+        var o = new int[1];
+
+        Run(forceManaged, () => IntegerDivisionCheckKernels.LaunchPropertyCompoundKernel(cells, d, o, blockDimX: 1));
+
+        Assert.Equal(int.MinValue, cells[0].P);
+        Assert.Equal([int.MinValue], o);
     }
 
     // The managed execution path exists only on the CPU dialects

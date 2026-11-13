@@ -70,6 +70,26 @@ public static class Divisions
     public static int IndexerWithWritingArgument(Grid g, int k) => g[k++] /= -1;
 
     public static int IndexerWithRepeatableArgument(Grid g, int k) => g[k] /= -1;
+
+    // The receiver of a property of a value type may throw (the element) or be written by the value: it is found once
+    public static int ElementPropertyCompound(Cell[] s, int d) => s[0].P /= d;
+
+    public static int PropertyWritingItsReceiver(Cell h, Cell h2) => h.P /= (h = h2).P;
+
+    // The receiver of a property of a reference type is the object it holds when the compound assignment starts
+    public static int ObjectPropertyCompound(int d) => Box.Make().Q /= d;
+}
+
+public struct Cell
+{
+    public int P { get; set; }
+}
+
+public sealed class Box
+{
+    public int Q { get; set; }
+
+    public static Box Make() => new();
 }
 
 public static class Holder

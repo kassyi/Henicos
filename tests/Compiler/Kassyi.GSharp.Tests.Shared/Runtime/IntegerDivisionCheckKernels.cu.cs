@@ -3,6 +3,11 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
+public struct DivisionCell
+{
+    public int P { get; set; }
+}
+
 public static partial class IntegerDivisionCheckKernels
 {
     // Each element is written before the next thread runs, so the elements of the threads before a failing one hold
@@ -38,6 +43,19 @@ public static partial class IntegerDivisionCheckKernels
     {
         int i = (int)ThreadIndex.X;
         a[i] /= d[i];
+    }
+
+    // The property of a value type found through its variable: an array element (which may throw) and a local that the
+    // value assigns. C# finds the variable once and reads the property before the value, so int.MinValue /= -1 is the
+    // GPU result in both, not 1
+    [GpuKernel]
+    public static void PropertyCompoundKernel(DivisionCell[] cells, int[] d, int[] o)
+    {
+        cells[0].P /= d[0];
+        DivisionCell h = cells[1];
+        DivisionCell h2 = cells[2];
+        h.P /= (h = h2).P;
+        o[0] = h.P;
     }
 
     // Compound assignments whose value writes something: another variable, the target local, the target element. C#

@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"inline long long __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__Remainder(long long __gsharp_id_0_a, long long __gsharp_id_1_d);
 
 inline long long __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__Remainder(long long __gsharp_id_0_a, long long __gsharp_id_1_d){
-return __gsharp_rem_i64(__gsharp_id_0_a,__gsharp_id_1_d,""Attempted to divide by zero. at IntegerDivisionCheckKernels.cs(33,54)"");
+return __gsharp_rem_i64(__gsharp_id_0_a,__gsharp_id_1_d,""Attempted to divide by zero. at IntegerDivisionCheckKernels.cs(38,54)"");
 }
 
 ";
@@ -56,31 +56,38 @@ public partial class IntegerDivisionCheckKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1395555225u, "IntegerDivisionCheckKernels.cs", 14, 9, "QuotientKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(529105483u, "IntegerDivisionCheckKernels.cs", 14, 16, "QuotientKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1260564916u, "IntegerDivisionCheckKernels.cs", 14, 16, "QuotientKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1069236962u, "IntegerDivisionCheckKernels.cs", 14, 23, "QuotientKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2078254863u, "IntegerDivisionCheckKernels.cs", 22, 9, "DeviceFunctionRemainderKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1775257620u, "IntegerDivisionCheckKernels.cs", 22, 26, "DeviceFunctionRemainderKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1255379952u, "IntegerDivisionCheckKernels.cs", 22, 32, "DeviceFunctionRemainderKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(608917541u, "IntegerDivisionCheckKernels.cs", 29, 9, "CompoundKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(512467649u, "IntegerDivisionCheckKernels.cs", 29, 9, "CompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(250184310u, "IntegerDivisionCheckKernels.cs", 29, 17, "CompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1204363747u, "IntegerDivisionCheckKernels.cs", 40, 9, "SignedCompoundKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1426459927u, "IntegerDivisionCheckKernels.cs", 40, 9, "SignedCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1946363270u, "IntegerDivisionCheckKernels.cs", 40, 17, "SignedCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(621431787u, "IntegerDivisionCheckKernels.cs", 50, 9, "ValueWritingCompoundKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1609231689u, "IntegerDivisionCheckKernels.cs", 50, 9, "ValueWritingCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(293390322u, "IntegerDivisionCheckKernels.cs", 50, 17, "ValueWritingCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1192816306u, "IntegerDivisionCheckKernels.cs", 51, 17, "ValueWritingCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(479103952u, "IntegerDivisionCheckKernels.cs", 52, 9, "ValueWritingCompoundKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(355331047u, "IntegerDivisionCheckKernels.cs", 52, 19, "ValueWritingCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(100581975u, "IntegerDivisionCheckKernels.cs", 53, 9, "ValueWritingCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(586108625u, "IntegerDivisionCheckKernels.cs", 54, 9, "ValueWritingCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(901970081u, "IntegerDivisionCheckKernels.cs", 55, 9, "ValueWritingCompoundKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1131711159u, "IntegerDivisionCheckKernels.cs", 55, 9, "ValueWritingCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1631596924u, "IntegerDivisionCheckKernels.cs", 55, 18, "ValueWritingCompoundKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(924617638u, "IntegerDivisionCheckKernels.cs", 55, 25, "ValueWritingCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(59077663u, "IntegerDivisionCheckKernels.cs", 19, 9, "QuotientKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1901261575u, "IntegerDivisionCheckKernels.cs", 19, 16, "QuotientKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(652867144u, "IntegerDivisionCheckKernels.cs", 19, 16, "QuotientKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1731309802u, "IntegerDivisionCheckKernels.cs", 19, 23, "QuotientKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(431016817u, "IntegerDivisionCheckKernels.cs", 27, 9, "DeviceFunctionRemainderKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1133612296u, "IntegerDivisionCheckKernels.cs", 27, 26, "DeviceFunctionRemainderKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1436499260u, "IntegerDivisionCheckKernels.cs", 27, 32, "DeviceFunctionRemainderKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1558943925u, "IntegerDivisionCheckKernels.cs", 34, 9, "CompoundKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(57053233u, "IntegerDivisionCheckKernels.cs", 34, 9, "CompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(374664018u, "IntegerDivisionCheckKernels.cs", 34, 17, "CompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(92920649u, "IntegerDivisionCheckKernels.cs", 45, 9, "SignedCompoundKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1921788509u, "IntegerDivisionCheckKernels.cs", 45, 9, "SignedCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2006156882u, "IntegerDivisionCheckKernels.cs", 45, 17, "SignedCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(909863007u, "IntegerDivisionCheckKernels.cs", 54, 9, "PropertyCompoundKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(412687565u, "IntegerDivisionCheckKernels.cs", 54, 9, "PropertyCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(943369778u, "IntegerDivisionCheckKernels.cs", 54, 23, "PropertyCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(786489359u, "IntegerDivisionCheckKernels.cs", 55, 26, "PropertyCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1039047977u, "IntegerDivisionCheckKernels.cs", 56, 27, "PropertyCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(894375740u, "IntegerDivisionCheckKernels.cs", 57, 9, "PropertyCompoundKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1750578489u, "IntegerDivisionCheckKernels.cs", 58, 9, "PropertyCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(443351049u, "IntegerDivisionCheckKernels.cs", 68, 9, "ValueWritingCompoundKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1325385139u, "IntegerDivisionCheckKernels.cs", 68, 9, "ValueWritingCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(193443310u, "IntegerDivisionCheckKernels.cs", 68, 17, "ValueWritingCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2031814966u, "IntegerDivisionCheckKernels.cs", 69, 17, "ValueWritingCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(105710588u, "IntegerDivisionCheckKernels.cs", 70, 9, "ValueWritingCompoundKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1062779583u, "IntegerDivisionCheckKernels.cs", 70, 19, "ValueWritingCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1472013583u, "IntegerDivisionCheckKernels.cs", 71, 9, "ValueWritingCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1796848213u, "IntegerDivisionCheckKernels.cs", 72, 9, "ValueWritingCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2017191945u, "IntegerDivisionCheckKernels.cs", 73, 9, "ValueWritingCompoundKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(242789247u, "IntegerDivisionCheckKernels.cs", 73, 9, "ValueWritingCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1343706236u, "IntegerDivisionCheckKernels.cs", 73, 18, "ValueWritingCompoundKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(636726950u, "IntegerDivisionCheckKernels.cs", 73, 25, "ValueWritingCompoundKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -104,7 +111,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_i = (int)(int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_2_o, __gsharp_id_3_i, 1395555225u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_3_i, 1260564916u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_id_3_i, 1069236962u),529105483u);
+__gsharp_array_at(__gsharp_id_2_o, __gsharp_id_3_i, 59077663u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_3_i, 652867144u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_id_3_i, 1731309802u),1901261575u);
 __gsharp_state=-1;
 return;
 }
@@ -376,7 +383,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_i = (int)(int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_2_o, __gsharp_id_3_i, 2078254863u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__Remainder(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_3_i, 1775257620u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_id_3_i, 1255379952u));
+__gsharp_array_at(__gsharp_id_2_o, __gsharp_id_3_i, 431016817u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__Remainder(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_3_i, 1133612296u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_id_3_i, 1436499260u));
 __gsharp_state=-1;
 return;
 }
@@ -648,7 +655,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = (int)(int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_i, 512467649u)=__gsharp_div_u32(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_i, 512467649u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_id_2_i, 250184310u),608917541u);
+__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_i, 57053233u)=__gsharp_div_u32(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_i, 57053233u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_id_2_i, 374664018u),1558943925u);
 __gsharp_state=-1;
 return;
 }
@@ -918,7 +925,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = (int)(int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_i, 1426459927u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_i, 1426459927u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_id_2_i, 1946363270u),1204363747u);
+__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_i, 1921788509u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_i, 1921788509u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_id_2_i, 2006156882u),92920649u);
 __gsharp_state=-1;
 return;
 }
@@ -1171,6 +1178,306 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 }
 }
 #pragma warning restore CS8500
+public const string PropertyCompoundKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell
+{
+int __gsharp_mb_P;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell)==4,""Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell)==4,""Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell,__gsharp_mb_P)==0,""Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell.P: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel* __gsharp_all_contexts = nullptr;
+bool __gsharp_yielded_for_grid_sync = false;
+bool __gsharp_yielded_for_block_barrier = false;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell> __gsharp_id_0_cells, GSharpArray<int> __gsharp_id_1_d, GSharpArray<int> __gsharp_id_2_o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
+auto* __gsharp_root = __gsharp_ctx;
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_array_at(__gsharp_id_0_cells, 0, 412687565u).__gsharp_mb_P=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_cells, 0, 412687565u).__gsharp_mb_P,__gsharp_array_at(__gsharp_id_1_d, 0, 943369778u),909863007u);
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell __gsharp_id_3_h = __gsharp_array_at(__gsharp_id_0_cells, 1, 786489359u);
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell __gsharp_id_4_h2 = __gsharp_array_at(__gsharp_id_0_cells, 2, 1039047977u);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_3_h.__gsharp_mb_P;
+auto __gsharp_seq_1 = __gsharp_seq_0;
+auto __gsharp_seq_2 = (__gsharp_id_3_h=__gsharp_id_4_h2).__gsharp_mb_P;
+return __gsharp_seq_0 = (int)__gsharp_div_i32(__gsharp_seq_1,__gsharp_seq_2,894375740u);
+}());
+__gsharp_array_at(__gsharp_id_2_o, 0, 1750578489u)=__gsharp_id_3_h.__gsharp_mb_P;
+__gsharp_state=-1;
+return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+#undef __gsharp_yielded_for_block_barrier
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Runtime__DivisionCell> __gsharp_id_0_cells, GSharpArray<int> __gsharp_id_1_d, GSharpArray<int> __gsharp_id_2_o)
+{
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot __gsharp_launch_error;
+#pragma omp parallel for schedule(dynamic)
+for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+try
+{
+int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
+int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
+int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active)
+{
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+try
+{
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel(__gsharp_id_0_cells, __gsharp_id_1_d, __gsharp_id_2_o, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in IntegerDivisionCheckKernels.PropertyCompoundKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
+}
+catch (const __gsharp_step_abort&)
+{
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state = -1;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier = false;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync = false;
+}
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_any_active = true;
+}
+}
+}
+if (!__gsharp_any_active)
+{
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+if (__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier)
+{
+__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier = false;
+__gsharp_any_active = true;
+}
+}
+}
+}
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
+}
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
+}
+}
+";
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel {
+public int __gsharp_state;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel(global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell[] cells, int[] d, int[] o, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel __gsharp_ctx) {
+{
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_property_store(ref global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_read_property(ref cells[0], static (ref global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell r) => r.P, out var __gsharp_div_current_0), __gsharp_div_current_0, d[0], static (ref global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell r, int v) => r.P = v);
+global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell h = cells[1];
+global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell h2 = cells[2];
+global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_property_store(ref global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_read_property(ref h, static (ref global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell r) => r.P, out var __gsharp_div_current_1), __gsharp_div_current_1, (h = h2).P, static (ref global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell r, int v) => r.P = v);
+o[0] = h.P;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+}
+}
+
+private static bool __gsharp_layout_checked_PropertyCompoundKernel;
+[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
+private unsafe delegate void __gsharp_delegate_PropertyCompoundKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy cells, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy d, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy o);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchPropertyCompoundKernel(global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell[] cells, global::System.Int32[] d, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "IntegerDivisionCheckKernels.PropertyCompoundKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell[] __gsharp_csharp_arg_0 = cells;
+global::System.Int32[] __gsharp_csharp_arg_1 = d;
+global::System.Int32[] __gsharp_csharp_arg_2 = o;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Runtime.IntegerDivisionCheckKernels.PropertyCompoundKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
+return;
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "IntegerDivisionCheckKernels.PropertyCompoundKernel");
+int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel[__gsharp_context_count];
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+global::System.Runtime.ExceptionServices.ExceptionDispatchInfo? __gsharp_first_failure = null;
+bool __gsharp_any_grid_active = true;
+try
+{
+while (__gsharp_any_grid_active)
+{
+__gsharp_any_grid_active = false;
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
+bool __gsharp_any_block_active = true;
+while (__gsharp_any_block_active)
+{
+__gsharp_any_block_active = false;
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_grid_active = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel(cells, d, o, __gsharp_contexts[__gsharp_linear_tid]);
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("IntegerDivisionCheckKernels.PropertyCompoundKernel");
+}
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
+}
+}
+catch (global::System.Exception __gsharp_failure)
+{
+__gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_block_active = true;
+}
+}
+}
+if (!__gsharp_any_block_active)
+{
+for (int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block; __gsharp_linear_tid < (__gsharp_block_index + 1) * __gsharp_threads_per_block; __gsharp_linear_tid++)
+{
+if (__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+__gsharp_any_block_active = true;
+}
+}
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+}
+catch (global::System.Exception) when (__gsharp_first_failure is not null)
+{
+__gsharp_first_failure.Throw();
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
+__gsharp_first_failure?.Throw();
+return;
+}
+if (!__gsharp_layout_checked_PropertyCompoundKernel)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell>());
+__gsharp_layout_checked_PropertyCompoundKernel = true;
+}
+__gsharp_delegate_PropertyCompoundKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_PropertyCompoundKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__PropertyCompoundKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::Kassyi.GSharp.Tests.Shared.Runtime.DivisionCell* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(cells))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(d))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(o))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (cells?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (d?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (o?.Length ?? 0) });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+}
+#pragma warning restore CS8500
 public const string ValueWritingCompoundKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__ValueWritingCompoundKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__IntegerDivisionCheckKernels__ValueWritingCompoundKernel* __gsharp_all_contexts = nullptr;
@@ -1188,21 +1495,21 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_j = 0;
-__gsharp_array_at(__gsharp_id_0_a, 0, 1609231689u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_a, 0, 1609231689u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_sub_i32((__gsharp_id_3_j=__gsharp_add_i32(__gsharp_id_3_j,1)),1), 293390322u),621431787u);
-int __gsharp_id_4_x = __gsharp_array_at(__gsharp_id_0_a, 2, 1192816306u);
+__gsharp_array_at(__gsharp_id_0_a, 0, 1325385139u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_a, 0, 1325385139u),__gsharp_array_at(__gsharp_id_1_d, __gsharp_sub_i32((__gsharp_id_3_j=__gsharp_add_i32(__gsharp_id_3_j,1)),1), 193443310u),443351049u);
+int __gsharp_id_4_x = __gsharp_array_at(__gsharp_id_0_a, 2, 2031814966u);
 ([&]() {
 auto&& __gsharp_seq_0 = __gsharp_id_4_x;
 auto __gsharp_seq_1 = __gsharp_seq_0;
-auto __gsharp_seq_2 = (__gsharp_id_4_x=__gsharp_array_at(__gsharp_id_1_d, 1, 355331047u));
-return __gsharp_seq_0 = (int)__gsharp_div_i32(__gsharp_seq_1,__gsharp_seq_2,479103952u);
+auto __gsharp_seq_2 = (__gsharp_id_4_x=__gsharp_array_at(__gsharp_id_1_d, 1, 1062779583u));
+return __gsharp_seq_0 = (int)__gsharp_div_i32(__gsharp_seq_1,__gsharp_seq_2,105710588u);
 }());
-__gsharp_array_at(__gsharp_id_2_o, 0, 100581975u)=__gsharp_id_4_x;
-__gsharp_array_at(__gsharp_id_2_o, 1, 586108625u)=__gsharp_id_3_j;
+__gsharp_array_at(__gsharp_id_2_o, 0, 1472013583u)=__gsharp_id_4_x;
+__gsharp_array_at(__gsharp_id_2_o, 1, 1796848213u)=__gsharp_id_3_j;
 ([&]() {
-auto&& __gsharp_seq_3 = __gsharp_array_at(__gsharp_id_0_a, 1, 1131711159u);
+auto&& __gsharp_seq_3 = __gsharp_array_at(__gsharp_id_0_a, 1, 242789247u);
 auto __gsharp_seq_4 = __gsharp_seq_3;
-auto __gsharp_seq_5 = (__gsharp_array_at(__gsharp_id_0_a, 1, 1631596924u)=__gsharp_array_at(__gsharp_id_1_d, 2, 924617638u));
-return __gsharp_seq_3 = (int)__gsharp_div_i32(__gsharp_seq_4,__gsharp_seq_5,901970081u);
+auto __gsharp_seq_5 = (__gsharp_array_at(__gsharp_id_0_a, 1, 1343706236u)=__gsharp_array_at(__gsharp_id_1_d, 2, 636726950u));
+return __gsharp_seq_3 = (int)__gsharp_div_i32(__gsharp_seq_4,__gsharp_seq_5,2017191945u);
 }());
 __gsharp_state=-1;
 return;

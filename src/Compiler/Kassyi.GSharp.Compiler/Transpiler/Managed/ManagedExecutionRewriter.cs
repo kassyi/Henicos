@@ -112,6 +112,16 @@ internal sealed partial class ManagedExecutionRewriter(
             return ReadFirst(plan.Helper, reader, target, value).WithTriviaFrom(node);
         }
 
+        if (plan is { Form: ManagedDivisionForm.PropertyByReference or ManagedDivisionForm.PropertyOfObject } &&
+            plan.Reader is { } propertyReader &&
+            rewritten.Left is MemberAccessExpressionSyntax property &&
+            semanticModel.GetTypeSymbol(node.Left) is { } valueType &&
+            semanticModel.GetTypeSymbol(((MemberAccessExpressionSyntax)node.Left).Expression) is { } receiverType)
+        {
+            return ReadFirstProperty(plan, propertyReader, property, receiverType, valueType, value)
+                .WithTriviaFrom(node);
+        }
+
         return SyntaxFactory.AssignmentExpression(
             SyntaxKind.SimpleAssignmentExpression,
             target,
@@ -125,6 +135,55 @@ internal sealed partial class ManagedExecutionRewriter(
             ManagedNames.CreateMemberAccess(member),
             SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([first, second]))
         );
+
+    // The compound assignment of a property whose receiver is bound once (ManagedDivisionForm.PropertyByReference and
+    // PropertyOfObject): the getter and the setter are static lambdas over the receiver, which the reader hands on
+    //   <store>(ref <reader>(ref <receiver>, static (ref T r) => r.P, out var c), c, <value>, static (ref T r, int v) => r.P = v)
+    // and for an object <store>(<reader>(<receiver>, static r => r.P, out var c), c, <value>, static (r, v) => r.P = v)
+    private ExpressionSyntax ReadFirstProperty(ManagedDivisionPlan plan, string reader,
+        MemberAccessExpressionSyntax property, ITypeSymbol receiverType, ITypeSymbol valueType,
+        ArgumentSyntax value)
+    {
+        var current = GSharpInternalNames.IntegerSemantics.DivisionCurrentPrefix +
+                      _nextDivisionCurrentId++.ToString(CultureInfo.InvariantCulture);
+        var name = property.Name.Identifier.ValueText;
+        using var typeNames = new SourceWriter();
+        typeNames.AppendCsharpTypeName(receiverType);
+        var receiverName = typeNames.ToString();
+        var valueName = valueType.SpecialType == SpecialType.System_Int64 ? "long" : "int";
+        var byReference = plan.Form == ManagedDivisionForm.PropertyByReference;
+        var getter = byReference
+            ? $"static (ref {receiverName} r) => r.{name}"
+            : $"static ({receiverName} r) => r.{name}";
+        var setter = byReference
+            ? $"static (ref {receiverName} r, {valueName} v) => r.{name} = v"
+            : $"static ({receiverName} r, {valueName} v) => r.{name} = v";
+        var declaration = SyntaxFactory.DeclarationExpression(
+            SyntaxFactory.IdentifierName("var"),
+            SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(current))
+        );
+        var receiverArgument = byReference
+            ? ByReference(property.Expression.WithoutTrivia())
+            : SyntaxFactory.Argument(property.Expression.WithoutTrivia());
+        var read = SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(reader),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([
+                receiverArgument,
+                SyntaxFactory.Argument(SyntaxFactory.ParseExpression(getter)),
+                SyntaxFactory.Argument(declaration).WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.OutKeyword))
+            ]))
+        );
+        var arguments = SyntaxFactory.SeparatedList([
+            byReference ? ByReference(read) : SyntaxFactory.Argument(read),
+            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(current)),
+            value,
+            SyntaxFactory.Argument(SyntaxFactory.ParseExpression(setter))
+        ]);
+        return SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(plan.Helper),
+            SyntaxFactory.ArgumentList(arguments)
+        );
+    }
 
     // ref <expression>
     private static ArgumentSyntax ByReference(ExpressionSyntax expression) =>

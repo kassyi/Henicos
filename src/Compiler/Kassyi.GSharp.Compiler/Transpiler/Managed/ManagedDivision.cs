@@ -74,7 +74,7 @@ internal static class ManagedDivision
             Names.RemainderInt64);
         if (operation.Target is IPropertyReferenceOperation { Property.ReturnsByRef: false } property)
         {
-            return PlanProperty(property, valueWrites, helper, model);
+            return PlanProperty(property, valueWrites, helper, divide, model);
         }
 
         if (!IsReferenceable(operation.Target))
@@ -104,25 +104,55 @@ internal static class ManagedDivision
     }
 
     // A property or indexer: get once, divide, set once, as the compound assignment does. The receiver and the arguments
-    // are written twice (for the get and for the set), so they must neither write nor throw, and the value must not
-    // write what they read
+    // are written twice (for the get and for the set) when they neither write nor throw and the value does not write
+    // what they read. Otherwise a property (not an indexer) binds its receiver once: a value type by reference to its
+    // variable, a reference type by its value, as C# evaluates the receiver once and reads the property before the value
     private static ManagedDivisionPlan? PlanProperty(IPropertyReferenceOperation property, VariableSet valueWrites,
-        string helper, SemanticModel model)
+        string helper, bool divide, SemanticModel model)
+    {
+        if (IsRepeatableTarget(property, valueWrites, model))
+        {
+            return new ManagedDivisionPlan(helper, ManagedDivisionForm.Reassign);
+        }
+
+        if (!property.Arguments.IsEmpty ||
+            property.Instance is not { Type: { } receiverType } receiver ||
+            property.Property is not { GetMethod: not null, SetMethod.IsInitOnly: false })
+        {
+            return null;
+        }
+
+        var store = divide ? Names.DividePropertyStore : Names.RemainderPropertyStore;
+        if (receiverType.IsReferenceType)
+        {
+            return new ManagedDivisionPlan(
+                divide ? Names.DividePropertyStoreOf : Names.RemainderPropertyStoreOf,
+                ManagedDivisionForm.PropertyOfObject,
+                Names.ReadPropertyOf);
+        }
+
+        return receiverType.IsValueType && receiverType.TypeKind != TypeKind.TypeParameter && IsReferenceable(receiver)
+            ? new ManagedDivisionPlan(store, ManagedDivisionForm.PropertyByReference, Names.ReadProperty)
+            : null;
+    }
+
+    private static bool IsRepeatableTarget(IPropertyReferenceOperation property, VariableSet valueWrites,
+        SemanticModel model)
     {
         if (property.Instance is { } instance && !IsRepeatable(instance, valueWrites, model))
         {
-            return null;
+            return false;
         }
 
         foreach (var argument in property.Arguments)
         {
             if (!IsRepeatable(argument.Value, valueWrites, model))
             {
-                return null;
+                return false;
             }
         }
 
-        return new ManagedDivisionPlan(helper, ManagedDivisionForm.Reassign);
+        return true;
     }
 
     private static bool MayDivideMinimumByMinusOne(SpecialType type, IOperation dividend, IOperation divisor)
@@ -193,7 +223,20 @@ internal enum ManagedDivisionForm
     /// &lt;value&gt;)</c>: a location in memory found once and read before a value that writes it, as
     /// <c>ref var t = ref &lt;target&gt;; t = t / &lt;value&gt;;</c> does.
     /// </summary>
-    ReadFirst
+    ReadFirst,
+
+    /// <summary>
+    /// <c>ManagedGpuContext.&lt;helper&gt;(ref ManagedGpuContext.&lt;reader&gt;(ref &lt;receiver&gt;, getter,
+    /// out var c), c, &lt;value&gt;, setter)</c>: the property of a value type found through its variable once, read
+    /// before the value, and set through the same variable.
+    /// </summary>
+    PropertyByReference,
+
+    /// <summary>
+    /// <c>ManagedGpuContext.&lt;helper&gt;(ManagedGpuContext.&lt;reader&gt;(&lt;receiver&gt;, getter, out var c), c,
+    /// &lt;value&gt;, setter)</c>: the same for the object a reference type holds when the compound assignment starts.
+    /// </summary>
+    PropertyOfObject
 }
 
 /// <summary>The <c>ManagedGpuContext</c> function of a division and the form it is written in.</summary>
