@@ -5065,8 +5065,8 @@ return;
 
 case 1:
 {
-// C#: NullReferenceException in Len for a null bias, which the test checks (the call is the only read, so
-// the place of the exception does not depend on the order of evaluation)
+// C#: NullReferenceException in Len for a null bias. The call is the only read: a second operand would put its
+// check before the call on the native path (#1786 (later check runs before an earlier call on MSVC))
 __gsharp_ctx.o[0] = global::Kassyi.GSharp.Tests.Shared.Core.NullArrayFieldKernels.Len(__gsharp_ctx.bias);
 __gsharp_ctx.__gsharp_state = -1;
 return;
