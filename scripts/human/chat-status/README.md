@@ -49,6 +49,7 @@ Claude Code removes its file at `SessionEnd`; Antigravity has no event for the e
       "choices": [{ "label": "Wide", "description": "One line per chat" }]
     }
   ],
+  "asks": null,
   "event": "PreToolUse",
   "updatedAt": 1794595313821
 }
@@ -60,7 +61,8 @@ Claude Code removes its file at `SessionEnd`; Antigravity has no event for the e
 | `state` | `working`, `waiting` (for the person) or `background` (Antigravity: the turn ended while background tasks run) |
 | `kind` | For `waiting`: `reply` (the turn ended), `question` (a choice question), `permission` (a permission prompt), `input` (another notification); otherwise `null` |
 | `since` | When the chat entered this state (ms since the epoch) |
-| `question` | The question, at most 2000 characters: for `reply` the last sentence ending in `?` or `？` of the last assistant text, else its last paragraph; for `question` the question texts, one per line; for `permission` and `input` the notification text |
+| `question` | The question, at most 2000 characters: for `reply` the last paragraph of the last assistant text that has a `?` or `？` outside code spans and fenced blocks (agents ask at the end of a reply, after the summary), else its last paragraph, without list markers, headings, `**` and link targets, and cut from its start when longer, so that the question stays; for `question` the question texts, one per line; for `permission` and `input` the notification text |
+| `asks` | For `reply`: whether `question` has a question mark; otherwise `null` |
 | `options` | For `question`: each question with its choices (`label`, and `description` when the agent gave one) and `multiSelect`; otherwise `null` |
 | `event` | The hook event that wrote the file |
 | `updatedAt` | When the file was written (ms since the epoch) |
@@ -86,5 +88,6 @@ Code it prints nothing; for Antigravity it prints `{}` after `Stop` and `PreInvo
 ## Reading
 
 `require('scripts/human/chat-status.js').listChats({ directory?, now? })` returns the chats not older than 12 hours,
-waiting chats first with the longest wait first, then the others. `node scripts/human/chat-status.js --list [--json]`
+waiting chats first with the longest wait first, then the others. The chat panel of the job queue's live view
+(`status --watch`) draws them. `node scripts/human/chat-status.js --list [--json]`
 prints the same. `node scripts/human/chat-status.js --self-test` checks the script on synthetic payloads and transcripts.
