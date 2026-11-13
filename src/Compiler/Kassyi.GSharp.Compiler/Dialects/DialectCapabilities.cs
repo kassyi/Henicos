@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Dialects;
+namespace Kassyi.GSharp.Compiler.Dialects;
 
 /// <summary>
 /// Specifies the hardware and language capabilities supported by a specific transpiler dialect.

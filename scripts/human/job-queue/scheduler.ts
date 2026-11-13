@@ -4,6 +4,7 @@
 import {
   ForecastSteps,
   OverrunGuessMs,
+  OverdueMs,
   LongestRunMs,
   UnknownTypicalMs,
   DefaultPolicy,
@@ -49,10 +50,25 @@ export interface SchedulerJob {
   /** Its run started before this scheduler (re-registered after a restart): no run time is recorded for it. */
   adopted?: boolean;
   /**
+   * The worktree the job was queued from (the root of its directory): the key of the round-robin. Jobs without one
+   * share the key "".
+   */
+  worktree?: string;
+  /**
    * Its client is away (the connection dropped, or the job was restored after a restart): a waiting job keeps its place
    * but is not granted, since nobody would receive the grant.
    */
   detached?: boolean;
+}
+
+/**
+ * The round-robin's memory: per kind of grant (CPU slots, GPU turns), the grant count at which each worktree was last
+ * served. Kept in memory only; a restarted scheduler starts the rotation afresh.
+ */
+export interface Rotation {
+  grants: number;
+  slots: Map<string, number>;
+  turns: Map<string, number>;
 }
 
 /** When a job is expected to start and end. */
@@ -71,9 +87,14 @@ export interface Expected {
  *     (EASY backfilling): it ends before the first job could start, or it fits in the slots the first job leaves free.
  *   - hrrn: the same backfilling, with the jobs ordered by response ratio (waited time + typical run time) / typical
  *     run time, highest first: a short job goes first, and a long one rises the longer it waits, so that none starves.
- * Backfilling reserves the start of the first job as if every running job took its longest recorded time, and
- * backfills nothing while a running job has no recorded time or has run longer than all of them. Nothing is granted
- * before `holdUntil` (re-registration after a restart).
+ *     Two fairness rules then reorder that list (fairOrder): a job that has waited longer than max(OverdueMs, its
+ *     typical run time) goes ahead of every job that has not, oldest first; the others are taken worktree by worktree
+ *     in turn (one job per worktree per round, the worktree served longest ago first), separately for the CPU slots
+ *     and for the GPU turns.
+ * The manual places (move --first, --before) go ahead of all of that, under every policy. Backfilling reserves the
+ * start of the first job of that order as if every running job took its longest recorded time, and backfills nothing
+ * while a running job has no recorded time or has run longer than all of them. Nothing is granted before `holdUntil`
+ * (re-registration after a restart).
  *
  * Test runs also take their memory budget from a memory pool: a test run is granted only while the budgets of the
  * running jobs and its own fit in `memoryCapacity`, or when no running job holds memory (a run larger than the pool
@@ -88,6 +109,7 @@ export class Scheduler<J extends SchedulerJob> {
   memoryUsed = 0;
   running: J[] = [];
   waiting: J[] = [];
+  rotation: Rotation = { grants: 0, slots: new Map(), turns: new Map() };
 
   constructor(capacity: number, holdUntil = 0, policy: Policy = DefaultPolicy, memoryCapacity = Infinity) {
     this.capacity = capacity;
@@ -234,12 +256,73 @@ export class Scheduler<J extends SchedulerJob> {
     job.before = null;
   }
 
+  /** hrrn: true when the job has waited longer than max(OverdueMs, its typical run time). */
+  isOverdue(job: SchedulerJob, now: number): boolean {
+    const typical = job.estimate ? job.estimate.typicalMs : UnknownTypicalMs;
+    return now - job.queuedAt > Math.max(OverdueMs, typical);
+  }
+
   /**
-   * Sorts the waiting jobs (also the positions the clients are told): the policy order, then the pinned jobs ahead of
-   * it by their pin, then each job placed --before another right in front of that one.
+   * hrrn's fairness on the ratio order: the overdue jobs first, oldest first; then each kind of job (CPU slots, GPU
+   * turns) round-robin across worktrees, in the places that kind had. Within a worktree the ratio order holds; the
+   * worktree served longest ago (or never) goes first in each round, ties by the place of its first job. The jobs
+   * placed by hand keep their places here (order() moves them afterwards).
+   */
+  private fairOrder(now: number, manual: (job: J) => boolean): J[] {
+    const arrival = (a: J, b: J): number => a.queuedAt - b.queuedAt || a.id - b.id;
+    const overdue = this.waiting.filter((job) => !manual(job) && this.isOverdue(job, now)).sort(arrival);
+    const rest = this.waiting.filter((job) => !overdue.includes(job));
+    const kindOf = (job: J): "manual" | "turns" | "slots" =>
+      manual(job) ? "manual" : job.gpuTurn === true ? "turns" : "slots";
+    const lists = {
+      manual: rest.filter((job) => kindOf(job) === "manual"),
+      turns: this.rotate(
+        rest.filter((job) => kindOf(job) === "turns"),
+        this.rotation.turns,
+      ),
+      slots: this.rotate(
+        rest.filter((job) => kindOf(job) === "slots"),
+        this.rotation.slots,
+      ),
+    };
+    return [...overdue, ...rest.map((job) => lists[kindOf(job)].shift() as J)];
+  }
+
+  /** One job per worktree per round, the worktrees ordered by when they were last served (never: first). */
+  private rotate(jobs: J[], served: ReadonlyMap<string, number>): J[] {
+    const groups = new Map<string, J[]>();
+    for (const job of jobs) {
+      const key = job.worktree ?? "";
+      groups.set(key, [...(groups.get(key) ?? []), job]);
+    }
+    // A stable sort: the worktrees served at the same count keep the order of their first jobs
+    const keys = [...groups.keys()].sort((a, b) => (served.get(a) ?? 0) - (served.get(b) ?? 0));
+    const result: J[] = [];
+    for (let round = 0; result.length < jobs.length; round++) {
+      for (const key of keys) {
+        const job = (groups.get(key) as J[])[round];
+        if (job !== undefined) {
+          result.push(job);
+        }
+      }
+    }
+    return result;
+  }
+
+  /** Records a grant from the order (not a GPU holder or a start by hand) for the round-robin. */
+  private serve(job: J): void {
+    const served = job.gpuTurn === true ? this.rotation.turns : this.rotation.slots;
+    served.set(job.worktree ?? "", ++this.rotation.grants);
+  }
+
+  /**
+   * Sorts the waiting jobs (also the positions the clients are told): the policy order (under hrrn with its fairness,
+   * fairOrder), then the pinned jobs ahead of it by their pin, then each job placed --before another right in front of
+   * that one.
    */
   order(now = Date.now()): void {
     const arrival = (a: J, b: J): number => a.queuedAt - b.queuedAt || a.id - b.id;
+    const ids = new Map(this.waiting.map((job) => [job.id, job]));
     if (this.policy === "hrrn") {
       const ratio = (job: J): number => {
         const typical = job.estimate ? Math.max(job.estimate.typicalMs, 1000) : UnknownTypicalMs;
@@ -247,10 +330,11 @@ export class Scheduler<J extends SchedulerJob> {
       };
       const ratios = new Map(this.waiting.map((job) => [job, ratio(job)]));
       this.waiting.sort((a, b) => (ratios.get(b) as number) - (ratios.get(a) as number) || arrival(a, b));
+      const manual = (job: J): boolean => job.pin !== null || (job.before !== null && ids.has(job.before));
+      this.waiting.splice(0, this.waiting.length, ...this.fairOrder(now, manual));
     } else {
       this.waiting.sort(arrival);
     }
-    const ids = new Map(this.waiting.map((job) => [job.id, job]));
     const target = (job: J): J | undefined => (job.before !== null ? ids.get(job.before) : undefined);
     // The jobs on a cycle of --before (placeBefore refuses one, but a restart can bring it back) keep the policy order
     const cyclic = new Set<J>();
@@ -313,6 +397,7 @@ export class Scheduler<J extends SchedulerJob> {
     const turn = this.gpuBusy() ? undefined : this.waiting.find((job) => job.gpuTurn === true && !this.isBlocked(job));
     if (turn !== undefined) {
       take(turn);
+      this.serve(turn);
     }
     for (;;) {
       const first = this.waiting.find((job) => !job.gpuTurn && !this.isBlocked(job));
@@ -320,11 +405,13 @@ export class Scheduler<J extends SchedulerJob> {
         break;
       }
       take(first);
+      this.serve(first);
     }
     if (this.policy !== "fifo") {
       this.backfill(now).forEach((job) => {
         job.backfilled = true;
         take(job);
+        this.serve(job);
       });
     }
     return granted;
@@ -393,6 +480,9 @@ export class Scheduler<J extends SchedulerJob> {
   forecast(now = Date.now()): Map<J, Expected> {
     const duration = (job: SchedulerJob): number => (job.estimate ? job.estimate.typicalMs : UnknownTypicalMs);
     const simulation = new Scheduler<SchedulerJob>(this.capacity, 0, this.policy, this.memoryCapacity);
+    // The replay continues the round-robin where this scheduler is, on its own copy
+    const { grants, slots, turns } = this.rotation;
+    simulation.rotation = { grants, slots: new Map(slots), turns: new Map(turns) };
     // The replay counts every job it ends as succeeded, so that the jobs after it are forecast to start then
     const replayed = new Map(this.outcomes);
     simulation.outcomes = replayed;
