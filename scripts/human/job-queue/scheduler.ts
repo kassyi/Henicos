@@ -38,6 +38,8 @@ export interface SchedulerJob {
   gpuTurn?: boolean;
   /** run --keep-if-failed: the job runs after its predecessor whatever its outcome. */
   keepIfFailed?: boolean;
+  /** The memory budget a test run takes from the memory pool, in MB; 0 or absent for a job that runs no tests. */
+  memoryMb?: number;
   backfilled?: boolean;
   /** Its run started before this scheduler (re-registered after a restart): no run time is recorded for it. */
   adopted?: boolean;
@@ -62,19 +64,43 @@ export interface Expected {
  * Backfilling reserves the start of the first job as if every running job took its longest recorded time, and
  * backfills nothing while a running job has no recorded time or has run longer than all of them. Nothing is granted
  * before `holdUntil` (re-registration after a restart).
+ *
+ * Test runs also take their memory budget from a memory pool: a test run is granted only while the budgets of the
+ * running jobs and its own fit in `memoryCapacity`, or when no running job holds memory (a run larger than the pool
+ * then runs alone). GPU holders are granted at once, over the pool as over the slots.
  */
 export class Scheduler<J extends SchedulerJob> {
   capacity: number;
   holdUntil: number;
   policy: Policy;
+  memoryCapacity: number;
   used = 0;
+  memoryUsed = 0;
   running: J[] = [];
   waiting: J[] = [];
 
-  constructor(capacity: number, holdUntil = 0, policy: Policy = DefaultPolicy) {
+  constructor(capacity: number, holdUntil = 0, policy: Policy = DefaultPolicy, memoryCapacity = Infinity) {
     this.capacity = capacity;
     this.holdUntil = holdUntil;
     this.policy = policy;
+    this.memoryCapacity = memoryCapacity;
+  }
+
+  /** The memory a job takes from the pool: none for a GPU turn (its command registers its own). */
+  memoryOf(job: SchedulerJob): number {
+    return job.gpuTurn ? 0 : Math.max(0, job.memoryMb ?? 0);
+  }
+
+  /** True when the job's memory fits beside `held` MB of running jobs (always when none holds any). */
+  private fitsMemory(job: SchedulerJob, held = this.memoryUsed): boolean {
+    const memory = this.memoryOf(job);
+    return memory === 0 || held === 0 || held + memory <= this.memoryCapacity;
+  }
+
+  private start(job: J): void {
+    this.running.push(job);
+    this.used += job.weight;
+    this.memoryUsed += this.memoryOf(job);
   }
 
   clampWeight(weight: number): number {
@@ -104,8 +130,7 @@ export class Scheduler<J extends SchedulerJob> {
     // The start the client reported, unless it is missing, in the future or older than any run can be
     job.grantedAt = job.grantedAt > now - LongestRunMs && job.grantedAt <= now ? job.grantedAt : now;
     job.adopted = true;
-    this.running.push(job);
-    this.used += job.weight;
+    this.start(job);
   }
 
   /** Removes a job, waiting or running, and returns the jobs granted by the freed slots. */
@@ -120,6 +145,7 @@ export class Scheduler<J extends SchedulerJob> {
     if (running >= 0) {
       this.running.splice(running, 1);
       this.used -= job.weight;
+      this.memoryUsed -= this.memoryOf(job);
     }
     const waiting = this.waiting.indexOf(job);
     if (waiting >= 0) {
@@ -258,8 +284,7 @@ export class Scheduler<J extends SchedulerJob> {
     const take = (job: J): void => {
       this.waiting.splice(this.waiting.indexOf(job), 1);
       job.grantedAt = now;
-      this.running.push(job);
-      this.used += job.weight;
+      this.start(job);
       granted.push(job);
     };
     this.waiting.filter((job) => job.gpu && !job.gpuTurn && !this.isBlocked(job)).forEach(take);
@@ -271,7 +296,7 @@ export class Scheduler<J extends SchedulerJob> {
     }
     for (;;) {
       const first = this.waiting.find((job) => !job.gpuTurn && !this.isBlocked(job));
-      if (first === undefined || this.used + first.weight > this.capacity) {
+      if (first === undefined || this.used + first.weight > this.capacity || !this.fitsMemory(first)) {
         break;
       }
       take(first);
@@ -316,17 +341,23 @@ export class Scheduler<J extends SchedulerJob> {
     // Once every running job has ended, all slots are free: the first job (weight clamped to the capacity) fits
     let spare = free - first.weight;
     let idle = this.capacity - this.used;
+    // Memory: a job that does not end in time also leaves the first job's budget free in the pool
+    let held = this.memoryUsed;
+    const firstMemory = this.memoryOf(first);
     const chosen: J[] = [];
     for (const job of grantable.slice(1)) {
-      if (job.gpu || job.weight > idle) {
+      const memory = this.memoryOf(job);
+      if (job.gpu || job.weight > idle || !this.fitsMemory(job, held)) {
         continue;
       }
       const endsInTime = job.estimate !== null && now + job.estimate.longestMs <= reserved;
-      if (endsInTime || job.weight <= spare) {
+      const leavesMemory = memory === 0 || firstMemory === 0 || held + memory + firstMemory <= this.memoryCapacity;
+      if (endsInTime || (job.weight <= spare && leavesMemory)) {
         if (!endsInTime) {
           spare -= job.weight;
         }
         idle -= job.weight;
+        held += memory;
         chosen.push(job);
       }
     }
@@ -341,7 +372,7 @@ export class Scheduler<J extends SchedulerJob> {
    */
   forecast(now = Date.now()): Map<J, Expected> {
     const duration = (job: SchedulerJob): number => (job.estimate ? job.estimate.typicalMs : UnknownTypicalMs);
-    const simulation = new Scheduler<SchedulerJob>(this.capacity, 0, this.policy);
+    const simulation = new Scheduler<SchedulerJob>(this.capacity, 0, this.policy, this.memoryCapacity);
     // The replay counts every job it ends as succeeded, so that the jobs after it are forecast to start then
     const replayed = new Map(this.outcomes);
     simulation.outcomes = replayed;
@@ -357,8 +388,7 @@ export class Scheduler<J extends SchedulerJob> {
       if (endAt <= now) {
         endAt = now + OverrunGuessMs;
       }
-      simulation.running.push(copy);
-      simulation.used += copy.weight;
+      simulation.start(copy);
       ends.set(copy, endAt);
       result.set(job, { startAt: job.grantedAt, endAt });
     }
@@ -382,8 +412,7 @@ export class Scheduler<J extends SchedulerJob> {
       const regrant = this.policy === "hrrn" && simulation.used < this.capacity ? time + 60 * 1000 : Infinity;
       time = Math.max(time, Math.min(regrant, ...simulation.running.map((copy) => ends.get(copy) as number)));
       for (const copy of simulation.running.filter((other) => (ends.get(other) as number) <= time)) {
-        simulation.running.splice(simulation.running.indexOf(copy), 1);
-        simulation.used -= copy.weight;
+        simulation.detach(copy);
         replayed.set(copy.id, "succeeded");
       }
     }
