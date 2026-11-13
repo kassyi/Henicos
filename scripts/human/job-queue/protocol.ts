@@ -40,8 +40,19 @@ export type ClientMessage =
    * Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock).
    */
   | { type: "await"; id: number }
-  /** The end of a job whose command ended while no scheduler listened, for the jobs that wait for it. */
-  | { type: "report"; id: number; completed: boolean; exitCode: number; cancelled?: boolean };
+  /**
+   * The end of a job whose command ended while its client had no connection, for the jobs that wait for it. pid and
+   * queuedAt name the client (absent from older clients), so that a report never ends another client's job.
+   */
+  | {
+      type: "report";
+      id: number;
+      completed: boolean;
+      exitCode: number;
+      cancelled?: boolean;
+      pid?: number;
+      queuedAt?: number;
+    };
 
 /** A job as `status` shows it. */
 export interface JobView {

@@ -2,12 +2,12 @@
 // handler per message type (server-job-messages.ts, server-control-messages.ts), and what its close means for the job.
 
 import type * as net from "node:net";
-import { AcceptedProtocolVersions, ClientGraceMs, ProtocolVersion } from "./constants.ts";
+import { AcceptedProtocolVersions, ProtocolVersion } from "./constants.ts";
 import { onMessages, type Incoming, type ServerMessage } from "./protocol.ts";
 import { ControlMessages } from "./server-control-messages.ts";
 import type { ServerJob } from "./server-job.ts";
 import { JobMessages } from "./server-job-messages.ts";
-import { outcomeOfEnd } from "./server-job-state.ts";
+import { planClose } from "./server-job-state.ts";
 import type { JobServer } from "./server.ts";
 import { ProcessTable } from "./system.ts";
 
@@ -68,42 +68,27 @@ export class Connection {
     handler(this, message);
   }
 
+  /** What the close means for the record bound to this connection (planClose): nothing ends on a close alone. */
   private closed(): void {
     const server = this.server;
-    const scheduler = server.scheduler;
     const job = this.job;
     if (job === null) {
+      return; // no job, or its record was re-bound to a newer connection or has ended
+    }
+    const step = planClose(job, server.stopping, ProcessTable.isAlive(job.pid));
+    if (step === "ignore") {
       return;
     }
-    if (server.stopping && !job.done) {
-      // The stop ended this connection: the client registers again with the next scheduler, so the job has not ended
-      // (no outcome, no cascade to the jobs that wait for it)
+    if (step === "detach") {
+      // The client comes back (re-binds), reports, or the observation of its processes ends the record
+      server.unbind(job);
+      server.log(
+        job.phase === "running"
+          ? `client of #${job.id} is away; holding its slots${job.commandPid > 0 ? ` (command ${job.commandPid})` : ""}`
+          : `client of #${job.id} is away; it keeps its place`,
+      );
       return;
     }
-    if (job.cancelPending) {
-      // As in "done": a command that succeeded before the cancel reached it (its report said so) stays succeeded
-      const cancelled = job;
-      this.job = null;
-      const outcome = outcomeOfEnd({ ...cancelled, cancelled: false }, true);
-      server.release(cancelled, "cancelled", outcome);
-      return;
-    }
-    if (scheduler.waiting.includes(job) && !job.done && ProcessTable.isAlive(job.pid)) {
-      // Only the connection dropped; the client queues again under the same id. It has not ended: no outcome, and
-      // the jobs that wait for it keep waiting until it is back (or counts as lost after ClientGraceMs)
-      const reconnecting = job;
-      server.unbind(reconnecting);
-      server.expect(reconnecting.id, Date.now() + ClientGraceMs);
-      server.release(reconnecting, "its client reconnects", null);
-      return;
-    }
-    const lost = job;
-    server.unbind(lost);
-    if (scheduler.running.includes(lost) && !lost.done && lost.commandPid > 0) {
-      // The poll releases the slot once no process of the command is left.
-      server.log(`client of #${lost.id} is gone; holding its slot while command ${lost.commandPid} runs`);
-      return;
-    }
-    server.release(lost, "client closed", server.closedOutcome(lost));
+    server.finish(job, step.end, "client closed");
   }
 }

@@ -30,7 +30,14 @@ import { MachineProfile } from "./machine.ts";
 import { Scheduler, type Expected } from "./scheduler.ts";
 import { Connection } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
-import { outcomeOfEnd, type Phase } from "./server-job-state.ts";
+import { planObservation, type Phase } from "./server-job-state.ts";
+
+/** What one observation saw of a detached record, and the epoch of the record it read. */
+export interface Observation {
+  job: ServerJob;
+  epoch: number;
+  seen: { clientAlive: boolean; commandAlive: boolean | null };
+}
 import { JobStore } from "./server-store.ts";
 import { ProcessTable, resolveStateDirectory } from "./system.ts";
 
@@ -79,7 +86,7 @@ export class JobServer {
   readonly pendingAwaits: { socket: net.Socket; id: number }[] = [];
   /** Set by stop: the connections that close from then on were ended by the stop itself. */
   stopping = false;
-  // A running job whose client is gone keeps its slot until its command has exited.
+  // An observation of the detached records is under way (it reads the process table)
   private polling = false;
   readonly server: net.Server;
 
@@ -313,22 +320,25 @@ export class JobServer {
   }
 
   /**
-   * Ends a job: records its outcome (null when the same job lives on, re-registered) and frees its slots. It grants
-   * nothing: settle does, once per event.
+   * Ends a job with a final outcome: frees its slots, removes its record, unbinds its connection and tells the
+   * connections that wait for it. It grants nothing: settle does, once per event.
    */
-  release(job: ServerJob, why: string, outcome: Outcome | null): void {
-    this.log(`end #${job.id} (${why})`);
+  finish(job: ServerJob, outcome: Outcome, why: string): void {
+    this.log(`end #${job.id}: ${outcome} (${why})`);
     if (this.records.get(job.id) === job) {
       this.records.delete(job.id);
     }
-    if (job.connection !== null && job.connection.job === job) {
-      job.connection.job = null;
+    const connection = job.connection;
+    if (connection !== null && connection.job === job) {
+      connection.job = null;
     }
+    job.connection = null;
     // Only a run seen from its grant to its end: the command ended by itself (not stopped by a signal or a cancel), and
     // the job was not lost or adopted after a restart. Not a GPU turn: its time includes the wait for the GPU lock, and
     // the command under the lock records its own run under the same command text.
     if (
       (why === "done" || why === "client closed") &&
+      job.phase === "running" &&
       !job.gpuTurn &&
       job.completed &&
       outcome !== "cancelled" &&
@@ -337,18 +347,27 @@ export class JobServer {
     ) {
       this.history.record(job.command, Date.now() - job.grantedAt, this.nextId);
     }
-    if (outcome !== null) {
-      this.recordOutcome(job.id, outcome);
-    }
     this.scheduler.detach(job);
+    this.recordOutcome(job.id, outcome);
     if (this.scheduler.isIdle()) {
       this.idleSince = Date.now();
     }
   }
 
-  /** Ends a job with a final outcome: frees its slots, removes its record and tells the connections that wait. */
-  finish(job: ServerJob, outcome: Outcome, why: string): void {
-    this.release(job, why, outcome);
+  /**
+   * The command of a detached running record is gone, but its client may still report how it ended: free the slots and
+   * keep the record as provisionally lost (not an outcome: dependents and wait keep waiting).
+   */
+  freeSlots(job: ServerJob, why: string): void {
+    this.log(`#${job.id}: ${why}; lost unless its client reports`);
+    this.scheduler.detach(job);
+    job.phase = "ended";
+    job.provisional = "lost";
+    job.provisionalAt = Date.now();
+    job.epoch++;
+    if (this.scheduler.isIdle()) {
+      this.idleSince = Date.now();
+    }
   }
 
   /**
@@ -389,28 +408,18 @@ export class JobServer {
     this.store.persist();
   }
 
-  /** How a job whose client closed went: by its exit code when it ran, cancelled when it never started. */
-  closedOutcome(job: ServerJob): Outcome {
-    if (this.scheduler.waiting.includes(job)) {
-      return "cancelled";
-    }
-    // Without "done" the exit code is null: lost
-    return outcomeOfEnd({ ...job, cancelled: false }, false);
-  }
-
   /** Cancels one job: a waiting job leaves at once; a running one keeps its slot until its client has stopped it. */
   cancelJob(job: ServerJob, reason: string): void {
-    const scheduler = this.scheduler;
     this.log(`cancel #${job.id} (${reason}): ${job.command}`);
     this.tell(job, { type: "cancelled", id: job.id, reason });
-    if (scheduler.running.includes(job) && job.connection !== null && !job.connection.socket.destroyed) {
+    if (job.phase === "running" && job.connection !== null && !job.connection.socket.destroyed) {
       // The client stops its command and then closes: keep the slot until then, so that the next job does not start
       // beside a command that is still being stopped
       job.cancelPending = true;
       return;
     }
-    if (scheduler.running.includes(job) || scheduler.waiting.includes(job)) {
-      this.release(job, "cancelled", "cancelled");
+    if (job.phase === "running" || job.phase === "waiting") {
+      this.finish(job, "cancelled", "cancelled");
     }
   }
 
@@ -431,42 +440,73 @@ export class JobServer {
     });
   }
 
-  /** Releases the slots of lost clients whose command has exited. */
-  private async pollOrphans(): Promise<void> {
-    const scheduler = this.scheduler;
-    const orphans = scheduler.running.filter((job) => job.connection === null);
-    if (this.polling || orphans.length === 0) {
+  /**
+   * Observes the records whose client is away: whether the client process lives and, for a running record with a known
+   * command, whether a process of the command is left. A step applies only to the record as it was read: one that was
+   * re-bound or changed meanwhile (its epoch moved) is left alone. One settle at the end.
+   */
+  private async observeDetached(): Promise<void> {
+    const detached = [...this.records.values()].filter((job) => job.connection === null);
+    if (this.polling || detached.length === 0) {
       return;
     }
     this.polling = true;
     try {
-      const live = await this.orphanProcesses(orphans);
-      orphans.forEach((job, index) => {
-        const processes = live[index];
-        if (
-          processes !== null &&
-          processes !== undefined &&
-          processes.length === 0 &&
-          scheduler.running.includes(job)
-        ) {
-          this.release(job, "the command of a lost client exited", "lost");
-        }
+      const epochs = detached.map((job) => job.epoch);
+      const withCommand = detached.filter((job) => job.phase === "running" && job.commandPid > 0);
+      const live = await this.orphanProcesses(withCommand);
+      const observations = detached.map((job, index): Observation => {
+        const at = withCommand.indexOf(job);
+        const processes = at < 0 ? [] : live[at];
+        return {
+          job,
+          epoch: epochs[index] as number,
+          seen: {
+            clientAlive: ProcessTable.isAlive(job.pid),
+            commandAlive: processes === null || processes === undefined ? null : processes.length > 0,
+          },
+        };
       });
+      this.applyObservations(observations, Date.now());
       this.settle();
     } finally {
       this.polling = false;
     }
   }
 
+  /** Applies the plan of each observation to its record, unless the record changed since it was read. */
+  applyObservations(observations: Observation[], now: number): void {
+    for (const { job, epoch, seen } of observations) {
+      if (job.epoch !== epoch || this.records.get(job.id) !== job) {
+        continue;
+      }
+      const step = planObservation(job, seen, now);
+      if (step === "keep") {
+        continue;
+      }
+      if ("finalize" in step) {
+        this.finish(
+          job,
+          step.finalize,
+          seen.clientAlive ? "its client did not come back in time" : "its client is gone",
+        );
+      } else if (step.final) {
+        this.finish(job, "lost", "the command of a lost client exited");
+      } else {
+        this.freeSlots(job, "the command of a lost client exited");
+      }
+    }
+  }
+
   /** Cancels jobs and resolves to the ids it cancelled: a job that ended meanwhile (while the processes of lost
    * clients were read) is left out. */
   async cancel(requested: ServerJob[]): Promise<number[]> {
-    const scheduler = this.scheduler;
-    const orphans = requested.filter((job) => job.connection === null && scheduler.running.includes(job));
+    const orphans = requested.filter((job) => job.connection === null && job.phase === "running");
     const live = await this.orphanProcesses(orphans);
     orphans.forEach((_, index) => (live[index] ?? []).forEach(ProcessTable.killTree));
+    // A job that ended meanwhile has no record; a provisional one has no command left to stop
     const jobs = requested.filter(
-      (job) => this.records.get(job.id) === job && (scheduler.running.includes(job) || scheduler.waiting.includes(job)),
+      (job) => this.records.get(job.id) === job && (job.phase === "running" || job.phase === "waiting"),
     );
     jobs.forEach((job) => this.cancelJob(job, "cancel requested"));
     this.settle();
@@ -518,7 +558,7 @@ export class JobServer {
   /** Starts the timers and listens; the state file is restored once the port is ours. */
   start(): void {
     const { options, scheduler } = this;
-    setInterval(() => void this.pollOrphans(), OrphanPollMs).unref();
+    setInterval(() => void this.observeDetached(), OrphanPollMs).unref();
     this.server.on("error", (error: NodeJS.ErrnoException) => {
       if (error.code === "EADDRINUSE") {
         this.log(`port ${options.port} is in use; another scheduler runs`);

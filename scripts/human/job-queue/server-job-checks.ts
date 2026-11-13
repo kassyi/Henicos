@@ -19,7 +19,7 @@ import {
   type JobFacts,
 } from "./server-job-state.ts";
 import { JobServer } from "./server.ts";
-import { connectRaw, registration, removeDirectory } from "./self-test-support.ts";
+import { connectRaw, deadPid, registration, removeDirectory } from "./self-test-support.ts";
 
 type AssertModule = typeof Assert;
 
@@ -286,6 +286,112 @@ export async function checkRecordsFollowTheJobs(assert: AssertModule): Promise<v
   });
 }
 
+/** Resolves once `ready` holds, polling the in-process scheduler (a close reaches it a moment after the client's). */
+async function until(what: string, ready: () => boolean): Promise<void> {
+  for (let i = 0; i < 200 && !ready(); i++) {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  if (!ready()) {
+    throw new Error(`within 5 s: ${what}`);
+  }
+}
+
+/** An observation read before the record was re-bound is not applied: the record stays bound and running. */
+export async function checkObservationEpoch(assert: AssertModule): Promise<void> {
+  await withServer(2, async (server, port) => {
+    const requestA = registration("A", 1, process.pid);
+    const a = await connectRaw(port);
+    a.send(requestA);
+    const granted = await a.until("granted");
+    assert.ok(granted !== null);
+    const job = server.find(Number(granted.id));
+    assert.ok(job !== undefined);
+    const command = { commandPid: deadPid(), spawnedAt: Date.now() };
+    a.send({ type: "started", ...command });
+    a.close();
+    await until("A is detached", () => job.detached);
+    const epoch = job.epoch;
+    const back = await connectRaw(port);
+    back.send({ ...requestA, type: "adopt", id: job.id, ...command });
+    assert.strictEqual((await back.until("adopted"))?.id, job.id);
+    server.applyObservations([{ job, epoch, seen: { clientAlive: true, commandAlive: false } }], Date.now());
+    assert.deepStrictEqual([job.phase, job.detached, server.find(job.id) === job], ["running", false, true]);
+    assert.strictEqual(server.checkInvariant(), null);
+    back.close();
+  });
+}
+
+/**
+ * A re-registration and the close of the old connection commute: whichever reaches the scheduler first, the record
+ * ends up bound to the new connection, in the same place, with the same slots.
+ */
+export async function checkCloseCommutes(assert: AssertModule): Promise<void> {
+  const outcomeOf = async (phase: "waiting" | "running", closeFirst: boolean): Promise<unknown[]> => {
+    let result: unknown[] = [];
+    await withServer(1, async (server, port) => {
+      const holder = await connectRaw(port);
+      if (phase === "waiting") {
+        holder.send(registration("holder", 1, process.pid));
+        assert.ok((await holder.until("granted")) !== null);
+      }
+      const requestA = registration("A", 1, process.pid);
+      const a = await connectRaw(port);
+      a.send(requestA);
+      const first = await a.until(phase === "waiting" ? "queued" : "granted");
+      assert.ok(first !== null);
+      const id = Number(first.id);
+      const back = await connectRaw(port);
+      const again = { ...requestA, id, type: phase === "waiting" ? "request" : "adopt" };
+      if (closeFirst) {
+        a.close();
+        await until("A is detached", () => server.find(id)?.detached === true);
+        back.send(again);
+      } else {
+        back.send(again);
+        await a.closed; // the scheduler ends the old connection; its close arrives after the re-registration
+      }
+      assert.ok((await back.until(phase === "waiting" ? "queued" : "adopted")) !== null);
+      await new Promise((resolve) => setTimeout(resolve, 100)); // a late close would be handled by now
+      const job = server.find(id);
+      result = [job?.id, job?.phase, job?.detached, job?.connection?.socket.destroyed, server.scheduler.used];
+      result.push(server.records.size, server.checkInvariant());
+      [holder, back].forEach((c) => c.close());
+    });
+    return result;
+  };
+  for (const phase of ["waiting", "running"] as const) {
+    const closeFirst = await outcomeOf(phase, true);
+    assert.deepStrictEqual(closeFirst.slice(1, 4), [phase, false, false], `${phase}: bound to the new connection`);
+    assert.deepStrictEqual(await outcomeOf(phase, false), closeFirst, `${phase}: both orders end the same`);
+  }
+}
+
+/** A final outcome survives a re-registration under its id, and a late report. */
+export async function checkFinalOutcomeStays(assert: AssertModule): Promise<void> {
+  await withServer(2, async (server, port) => {
+    server.recordOutcome(50, "succeeded");
+    server.recordOutcome(51, "failed");
+    server.nextId = 52;
+    const c = await connectRaw(port);
+    c.send({ ...registration("again", 1, process.pid), id: 50 });
+    const queued = await c.until("queued");
+    assert.ok(queued !== null && queued.id !== 50, "a new id, not the one that has a final outcome");
+    const report = await connectRaw(port);
+    report.send({ type: "report", id: 51, completed: true, exitCode: 0 });
+    assert.ok((await report.until("reported")) !== null);
+    assert.deepStrictEqual(
+      [server.outcomes.get(50), server.outcomes.get(51)],
+      ["succeeded", "failed"],
+      "final outcomes are never overwritten",
+    );
+    assert.strictEqual(server.checkInvariant(), null);
+    [c, report].forEach((x) => x.close());
+  });
+}
+
 export const JobServerChecks: Record<string, (assert: AssertModule) => Promise<void>> = {
   checkRecordsFollowTheJobs,
+  checkObservationEpoch,
+  checkCloseCommutes,
+  checkFinalOutcomeStays,
 };

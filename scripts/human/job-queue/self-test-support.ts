@@ -7,7 +7,7 @@ import * as fs from "node:fs";
 import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import {
   CpusVariable,
   EntryScript,
@@ -51,6 +51,13 @@ export function removeDirectory(directory: string): void {
 
 /** A child process with a promise of its exit code. */
 export type Client = ChildProcess & { done: Promise<number | null> };
+
+/** The pid of a process that has exited: a client or a command that is gone. */
+export function deadPid(): number {
+  const pid = Number(spawnSync(process.execPath, ["-e", "process.stdout.write(String(process.pid))"]).stdout);
+  assert.ok(pid > 0 && !ProcessTable.isAlive(pid), "a pid of a process that has exited");
+  return pid;
+}
 
 /** A request message as a client sends it, for the raw protocol checks. */
 export function registration(command: string, weight: number, pid: number) {

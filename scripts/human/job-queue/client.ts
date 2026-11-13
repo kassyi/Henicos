@@ -234,7 +234,9 @@ class QueuedRun {
       if (ran && jobId > 0) {
         // No scheduler listens right now (it restarts): report the outcome to the next one, for the jobs that wait for
         // this one, then exit
-        void this.launcher.reportEnd(jobId, completed, code, this.wasCancelled).finally(() => process.exit(code));
+        void this.launcher
+          .reportEnd(jobId, completed, code, this.wasCancelled, this.reporter())
+          .finally(() => process.exit(code));
         return;
       }
       process.exit(code);
@@ -268,9 +270,16 @@ class QueuedRun {
         return;
       }
       current.destroy();
-      void this.launcher.reportEnd(this.jobId, completed, code, this.wasCancelled).finally(() => process.exit(code));
+      void this.launcher
+        .reportEnd(this.jobId, completed, code, this.wasCancelled, this.reporter())
+        .finally(() => process.exit(code));
     };
     setTimeout(() => this.doneReceipt?.(false), 2000);
+  }
+
+  /** Who reports an end: this client, as it registered (so that a report never ends another client's job). */
+  private reporter(): { pid: number; queuedAt: number } {
+    return { pid: process.pid, queuedAt: this.queuedAt };
   }
 
   private onSignal(signal: string, code: number): () => void {

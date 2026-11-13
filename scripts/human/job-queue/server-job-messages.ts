@@ -5,7 +5,13 @@ import { ProtocolVersion } from "./constants.ts";
 import { idField, numberField, send, type Incoming } from "./protocol.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
-import { outcomeOfEnd, planRegistration, type ClientIdentity, type CommandEnd } from "./server-job-state.ts";
+import {
+  outcomeOfEnd,
+  planRegistration,
+  planReport,
+  type ClientIdentity,
+  type CommandEnd,
+} from "./server-job-state.ts";
 
 /** How the command ended, as "done" and "report" say it. */
 function endOf(message: Incoming): CommandEnd {
@@ -191,43 +197,42 @@ function done(connection: Connection, message: Incoming): void {
   job.completed = message.completed === true;
   // Protocol 2 clients send no exit code: their outcome is unknown ('lost')
   job.exitCode = typeof message.exitCode === "number" ? message.exitCode : null;
-  if (!server.stopping && server.scheduler.running.includes(job)) {
+  if (!server.stopping && job.phase === "running") {
     // The command has ended: free the slot and record the outcome now (settle saves it at the end of this message),
     // then give the receipt. A stopping scheduler saves nothing and gives none: the client then reports the outcome to
     // the next one.
     const ended = job;
-    connection.job = null;
     // Cancelled: the client says so (also to a scheduler that restarted meanwhile and has no cancelPending), or this
     // scheduler cancelled it and the command did not succeed first (a success that crosses the cancel wins)
     const outcome = outcomeOfEnd(endOf(message), ended.cancelPending);
-    server.release(ended, "done", outcome);
+    server.finish(ended, outcome, "done");
     send(socket, { type: "done-ok", id: ended.id });
   }
 }
 
 /**
- * report: the end of a job whose command ended while no scheduler listened (its client could not send "done"): its
- * outcome, for the jobs that wait for it. Only for a job that is neither held nor already ended. A job held for a lost
- * client (its connection dropped, the scheduler stayed) ends with the report too.
+ * report: the end of a job whose command ended while its client had no connection (the scheduler restarted, or only the
+ * connection dropped), for the jobs that wait for it (planReport). It ends a held record, and replaces a provisional
+ * "lost"; a final outcome stays as it is.
  */
 function report(connection: Connection, message: Incoming): void {
   const server = connection.server;
-  const scheduler = server.scheduler;
   const id = idField(message, "id");
-  const held = id === null ? undefined : server.find(id);
-  const outcome = outcomeOfEnd(endOf(message), false);
-  if (id !== null && held === undefined && !server.outcomes.has(id)) {
-    server.log(`report #${id}: ${outcome}`);
-    server.recordOutcome(id, outcome);
-  } else if (held !== undefined && held.connection === null && scheduler.running.includes(held)) {
-    server.release(held, `its lost client reported: ${outcome}`, outcome);
-  } else if (held !== undefined && scheduler.running.includes(held) && !held.done) {
-    // Its old connection has not closed here yet (the client saw the close first): end the job with this outcome when
-    // it does
-    held.done = true;
-    held.completed = message.completed === true;
-    held.exitCode = typeof message.exitCode === "number" ? message.exitCode : null;
-    held.cancelPending = held.cancelPending || message.cancelled === true;
+  const record = id === null ? undefined : server.find(id);
+  const reporter = { pid: numberField(message, "pid"), queuedAt: numberField(message, "queuedAt") };
+  const step = id === null ? "ignore" : planReport(record, server.outcomes.get(id), reporter, endOf(message));
+  if (step === "ignore") {
+    server.log(`report #${String(id)} ignored`);
+  } else if (record === undefined) {
+    if (id !== null) {
+      server.log(`report #${id}: ${step.end}`);
+      server.recordOutcome(id, step.end);
+    }
+  } else {
+    // Its old connection may not have closed here yet (the client saw the close first): it ends with the record
+    const old = record.connection;
+    server.finish(record, step.end, "its client reported");
+    old?.socket.destroy();
   }
   connection.reply({ type: "reported", id: id ?? 0 });
 }

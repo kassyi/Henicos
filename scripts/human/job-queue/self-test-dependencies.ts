@@ -241,7 +241,8 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   await usedWithin(port, 0, 15000);
   const blocker = await connection(registration("R-blocker", 2, 1));
   await jobWith(port, "R-blocker");
-  const dropped = await connection(registration("R-dropped", 1, process.pid));
+  const droppedRequest = registration("R-dropped", 1, process.pid);
+  const dropped = await connection(droppedRequest);
   const droppedId = await idOf(dropped);
   const waitingOnDropped = await connection({ ...registration("R-waits-on-dropped", 1, 1), after: droppedId });
   await jobWith(port, "R-waits-on-dropped");
@@ -254,7 +255,7 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
     [droppedId, false],
     "not cancelled",
   );
-  const returned = await connection({ ...registration("R-dropped", 1, process.pid), id: droppedId });
+  const returned = await connection({ ...droppedRequest, id: droppedId });
   assert.strictEqual(await idOf(returned), droppedId, "it queues again under its id");
   // A waiting job whose client left on its own (it sent "done": a timeout, Ctrl+C) has ended, although its process
   // may still run for a moment: its dependent is cancelled at once
