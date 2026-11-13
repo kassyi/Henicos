@@ -359,4 +359,24 @@ public static partial class MarshalingOverlapDifferentialKernels
             observed[0] = first.A;
         }
     }
+
+    [GpuKernel]
+    public static void InFieldAndRefStructKernel(in int field, ref DiffOverlapPoint whole, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            whole.Y += 10;
+            observed[0] = field;
+        }
+    }
+
+    [GpuKernel]
+    public static void InStructAndRefFieldKernel(in DiffOverlapPoint whole, ref int field, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            field += 10;
+            observed[0] = whole.Y;
+        }
+    }
 }

@@ -134,9 +134,10 @@ internal static class SymbolExtensions
 
     /// <summary>
     /// Whether <paramref name="parameter"/> is an <c>in</c> or <c>ref readonly</c> parameter of a kernel that the
-    /// kernel receives by address: the kernel also has a <c>ref</c> or <c>out</c> parameter of the same type, which the
-    /// caller may pass the same variable, and a write through it must show through the <c>in</c> parameter as in C#.
-    /// Any other <c>in</c> parameter of a kernel is a value.
+    /// kernel receives by address: the kernel also has a <c>ref</c> or <c>out</c> parameter whose memory the caller may
+    /// pass the same variable, or a field of it, or a variable that holds it as a field (the types are the same, or one
+    /// is a field of the other, at any depth), and a write through it must show through the <c>in</c> parameter as in
+    /// C#. Any other <c>in</c> parameter of a kernel is a value.
     /// </summary>
     public static bool IsKernelInPassedByAddress(this IParameterSymbol parameter) =>
         parameter is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter, ContainingSymbol: IMethodSymbol kernel } &&
@@ -146,7 +147,34 @@ internal static class SymbolExtensions
         kernel.Parameters
             .AsStackEnumerable()
             .Any(parameter.Type, static (other, type) =>
-                other.RefKind is RefKind.Ref or RefKind.Out && SymbolEqualityComparer.Default.Equals(other.Type, type)
+                other.RefKind is RefKind.Ref or RefKind.Out && MayShareMemory(other.Type, type)
+            );
+
+    // The same type, or one that holds the other as a field, directly or through the fields of its fields
+    private static bool MayShareMemory(ITypeSymbol first, ITypeSymbol second) =>
+        SymbolEqualityComparer.Default.Equals(first, second) ||
+        HoldsAsField(first, second, MaxFieldDepth) ||
+        HoldsAsField(second, first, MaxFieldDepth);
+
+    // A struct is a value that holds its instance fields, so a field of a field type is memory inside it. The depth
+    // bound stops a type that no struct can nest (a primitive type declares a field of its own type)
+    private const int MaxFieldDepth = 8;
+
+    private static bool HoldsAsField(ITypeSymbol holder, ITypeSymbol field, int depth)
+    {
+        if (depth == 0 ||
+            holder is not INamedTypeSymbol { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None } named)
+        {
+            return false;
+        }
+
+        return named.GetMembers()
+            .AsStackEnumerable()
+            .OfType<IFieldSymbol>()
+            .Any((field, depth), static (member, state) =>
+                !member.IsStatic && !member.IsConst &&
+                (SymbolEqualityComparer.Default.Equals(member.Type, state.field) ||
+                    HoldsAsField(member.Type, state.field, state.depth - 1))
             );
 
     /// <summary>T of <see cref="Nullable{T}"/>, or <paramref name="type"/> itself.</summary>

@@ -772,4 +772,63 @@ public sealed class MarshalingOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void InOverlap_OneConvertedStructPassedToAnInAndARefParameter_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_inAndRefConverted);
+
+    // The in is a field of the variable that the ref receives, and the other way round
+    internal static readonly DifferentialCase s_inFieldAndRefStruct = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InFieldAndRefStructKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 1, OutputPolicy.Exact)
+            .Out<int>("final", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("final")[0] = 1;
+            b.Get<int>("final")[1] = 12;
+        },
+        Launch = static (b, s) =>
+        {
+            var point = new DiffOverlapPoint { X = 1, Y = 2 };
+            MarshalingOverlapDifferentialKernels.LaunchInFieldAndRefStructKernel(
+                in point.Y, ref point, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = point.X;
+            b.Get<int>("final")[1] = point.Y;
+        },
+    };
+
+    internal static readonly DifferentialCase s_inStructAndRefField = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InStructAndRefFieldKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 1, OutputPolicy.Exact)
+            .Out<int>("final", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("final")[0] = 1;
+            b.Get<int>("final")[1] = 12;
+        },
+        Launch = static (b, s) =>
+        {
+            var point = new DiffOverlapPoint { X = 1, Y = 2 };
+            MarshalingOverlapDifferentialKernels.LaunchInStructAndRefFieldKernel(
+                in point, ref point.Y, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = point.X;
+            b.Get<int>("final")[1] = point.Y;
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InOverlap_InFieldOfTheVariablePassedToARefStruct_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_inFieldAndRefStruct);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InOverlap_InStructBesideARefToOneOfItsFields_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_inStructAndRefField);
 }
