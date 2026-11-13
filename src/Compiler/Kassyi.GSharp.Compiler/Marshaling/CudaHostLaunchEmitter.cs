@@ -162,36 +162,21 @@ internal static class CudaHostLaunchEmitter
     }
 
     /// <summary>
-    /// Emits, into a relay host of a class the module context cannot name
-    /// (<see cref="HostClassHeader.WarmupRelayHosts"/>), one relay per kernel that has a warmup: a call of the same
-    /// relay of the next host, or of the kernel's warmup method when the next type is the class itself.
+    /// Emits the warmup relays (<see cref="WarmupRelayPlan"/>) that go into the outer declaration
+    /// <paramref name="outerIndex"/> of a kernel class.
     /// </summary>
-    /// <param name="writer">The writer, inside the relay host's declaration.</param>
-    /// <param name="nextHost">The next relay host, or <see langword="null"/> when the next type is the class.</param>
-    /// <param name="kernelClass">The <c>global::</c>-qualified name of the class.</param>
-    /// <param name="kernels">The kernels of the class.</param>
-    public static void WriteWarmupRelays(SourceWriter writer, string? nextHost, string kernelClass,
-        EquatableArray<KernelEmission> kernels)
+    public static void WriteWarmupRelays(SourceWriter writer, EquatableArray<WarmupRelay> relays, int outerIndex)
     {
-        foreach (var kernel in kernels)
+        foreach (var relay in relays)
         {
-            if (!kernel.HasWarmup)
+            if (relay.OuterIndex != outerIndex)
             {
                 continue;
             }
 
-            // internal static void <relay>() => <next host>.<relay>();  or  => <class>.WarmupFunctionPointer<key>();
-            var relay = kernel.Host.WarmupRelayName;
+            // internal static void <relay>() => <target type>.<target method>();
             writer.AppendGeneratedCodeAttributes();
-            writer.Append($"internal static void {relay}() => ");
-            if (nextHost is null)
-            {
-                writer.AppendLine($"{kernelClass}.{KernelHostNames.GetWarmupMethodName(kernel.MemberKey)}();");
-            }
-            else
-            {
-                writer.AppendLine($"{nextHost}.{relay}();");
-            }
+            writer.AppendLine($"internal static void {relay.Name}() => {relay.TargetType}.{relay.TargetMethod}();");
         }
     }
 

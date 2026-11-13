@@ -314,121 +314,6 @@ internal readonly record struct StructLayoutGuard(
 /// <param name="ExpectedOffset">The predicted host offset in bytes.</param>
 internal readonly record struct FieldOffsetGuard(string Name, string FullyQualifiedTypeName, int ExpectedOffset);
 
-/// <summary>The partial class that the generated host members of a kernel or device function go into.</summary>
-/// <param name="HintName">The source hint name of the class's wrapper (<see cref="GlobalCppNames.GetHintName"/>).</param>
-/// <param name="Namespace">
-/// The namespace as C# source spells it (<c>@event.P3</c>), or empty for the global namespace.
-/// </param>
-/// <param name="Name">
-/// The class name and type parameters as C# source spells them (<c>@class</c>, <c>G&lt;T&gt;</c>).
-/// </param>
-/// <param name="Keyword">
-/// The keyword of the user's declaration after <c>partial</c> (<c>class</c>, or <c>record</c> for a record class),
-/// which every part must repeat (CS0261).
-/// </param>
-/// <param name="Accessibility">The declared accessibility keywords, which the generated part must repeat (CS0262).</param>
-/// <param name="IsPublic">Whether the class is public, which decides the CS0649 suppression.</param>
-/// <param name="OuterDeclarations">
-/// The partial declarations of the types that contain the class, outermost first (<c>partial class Outer</c>, names
-/// as <see cref="CSharpTypeNameWriter.GetDeclaredTypeName"/> spells them), so
-/// that a part of a nested class is written inside them.
-/// </param>
-/// <param name="FullyQualifiedName">The <c>global::</c>-qualified C# type name, including any enclosing types.</param>
-/// <param name="WarmupRelayHosts">
-/// The <c>global::</c>-qualified names of the containing types that relay the warmups of the class's kernels, outermost
-/// first, or empty when the module context can name the class (<see cref="CreateWarmupRelayHosts"/>, #1282).
-/// </param>
-/// <param name="DefinedSymbols">
-/// The symbols that the generated files of the class <c>#define</c>, so that C# keeps there the
-/// <c>[Conditional]</c> calls that a <c>#define</c> of the user's file keeps
-/// (<see cref="RemovedCalls.GetSymbolsToDefine"/>).
-/// </param>
-internal readonly record struct HostClassHeader(
-    string HintName,
-    string Namespace,
-    string Name,
-    string Keyword,
-    string Accessibility,
-    bool IsPublic,
-    EquatableArray<string> OuterDeclarations,
-    string FullyQualifiedName,
-    EquatableArray<string> WarmupRelayHosts,
-    EquatableArray<string> DefinedSymbols = default)
-{
-    public bool IsGlobalNamespace => Namespace.Length == 0;
-
-    public static HostClassHeader Create(INamedTypeSymbol type, Compilation compilation) => new(
-        GlobalCppNames.GetHintName(type),
-        type.ContainingNamespace.GetCsharpNamespaceName(),
-        type.GetDeclaredTypeName(),
-        GetKeyword(type),
-        SyntaxFacts.GetText(type.DeclaredAccessibility),
-        type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
-        CreateOuterDeclarations(type),
-        type.GetFullyQualifiedCsharpName(),
-        CreateWarmupRelayHosts(type, compilation),
-        RemovedCalls.GetSymbolsToDefine(type, compilation));
-
-    /// <summary>
-    /// The containing types of <paramref name="type"/> that relay its warmups, outermost first: the innermost container
-    /// that code anywhere in the assembly can name, and each container inside it. Empty when the assembly can name
-    /// <paramref name="type"/> itself.
-    /// </summary>
-    /// <remarks>
-    /// The module context, a class of its own namespace, cannot name a private or protected nested class. Each relay
-    /// host declares an internal method that calls the same method of the next host, and the last one calls the
-    /// warmup method of the class; a nested type is accessible within its container whatever its accessibility.
-    /// </remarks>
-    public static EquatableArray<string> CreateWarmupRelayHosts(INamedTypeSymbol type, Compilation compilation)
-    {
-        if (compilation.IsSymbolAccessibleWithin(type, compilation.Assembly))
-        {
-            return default;
-        }
-
-        var hosts = ImmutableArray.CreateBuilder<string>();
-        for (var outer = type.ContainingType; outer != null; outer = outer.ContainingType)
-        {
-            hosts.Insert(0, outer.GetFullyQualifiedCsharpName());
-            if (compilation.IsSymbolAccessibleWithin(outer, compilation.Assembly))
-            {
-                return hosts.ToImmutable().AsEquatableArray();
-            }
-        }
-
-        // No container is accessible (a file-local type): the module context names the class as before
-        return default;
-    }
-
-    /// <summary>
-    /// The partial declarations of the types that contain <paramref name="type"/>, outermost first
-    /// (<c>partial class Outer&lt;T&gt;</c>), or empty for a type that is not nested.
-    /// </summary>
-    public static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
-    {
-        if (type.ContainingType == null)
-        {
-            return default;
-        }
-
-        var declarations = ImmutableArray.CreateBuilder<string>();
-        for (var outer = type.ContainingType; outer != null; outer = outer.ContainingType)
-        {
-            declarations.Insert(0, $"partial {GetKeyword(outer)} {outer.GetDeclaredTypeName()}");
-        }
-
-        return declarations.ToImmutable().AsEquatableArray();
-    }
-
-    /// <summary>
-    /// The keyword that declares <paramref name="type"/> after <c>partial</c>: <c>class</c>, <c>struct</c>,
-    /// <c>interface</c>, <c>record</c> or <c>record struct</c>.
-    /// </summary>
-    public static string GetKeyword(INamedTypeSymbol type) => type.IsRecord
-        ? type.TypeKind == TypeKind.Struct ? "record struct" : "record"
-        : type.TypeKind == TypeKind.Struct ? "struct" : type.TypeKind == TypeKind.Interface ? "interface" : "class";
-}
-
 /// <summary>The native shadow struct and the marshaling methods of one user struct, as the wrapper declares them.</summary>
 /// <param name="AotStructPath">The <c>AotContexts</c> path, which identifies the struct within a class.</param>
 /// <param name="CudaText">The CUDA declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
@@ -489,7 +374,8 @@ internal readonly record struct KernelClassModel(
     HostClassHeader Class,
     EquatableArray<KernelEmission> Kernels,
     EquatableArray<StructHostSource> Structs,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default)
+    EquatableArray<ErrorSiteEntry> ErrorSites = default,
+    EquatableArray<WarmupRelay> WarmupRelays = default)
 {
     /// <summary>
     /// The accessibility of the <c>AotContexts</c> class: the narrowest that its structs need
@@ -567,11 +453,13 @@ internal readonly record struct KernelClassModel(
 
         NarrowPointerLaunchers(emissions, GetAotContextsAccessibility(structs));
         ErrorSiteTable.TryBuildModuleSites(rawClassSites, out var classErrorSites, out _, out _);
+        var kernelEmissions = emissions.MoveToImmutable();
         return new KernelClassModel(
             header,
-            emissions.MoveToImmutable().AsEquatableArray(),
+            kernelEmissions.AsEquatableArray(),
             structs.ToImmutable().AsEquatableArray(),
-            classErrorSites.AsEquatableArray());
+            classErrorSites.AsEquatableArray(),
+            WarmupRelayPlan.Create(header, kernelEmissions));
     }
 
     // A pointer launcher that takes a shadow struct names the AotContexts class, which the structs of every kernel of
@@ -643,74 +531,6 @@ internal readonly record struct KernelClassModel(
         }
 
         return false;
-    }
-}
-
-/// <summary>
-/// A kernel whose function pointer the CUDA module context warms up, as the call the module context writes.
-/// </summary>
-/// <param name="Type">
-/// The <c>global::</c>-qualified type that declares the method: the kernel's class, or the outermost relay host of a
-/// class the module context cannot name (<see cref="HostClassHeader.WarmupRelayHosts"/>).
-/// </param>
-/// <param name="Method">
-/// <c>WarmupFunctionPointer{key}</c>, or the relay (<see cref="KernelHostModel.WarmupRelayName"/>).
-/// </param>
-internal readonly record struct KernelWarmup(string Type, string Method)
-{
-    public static KernelWarmup Create(in HostClassHeader header, in KernelEmission kernel) =>
-        header.WarmupRelayHosts.IsDefaultOrEmpty
-            ? new KernelWarmup(header.FullyQualifiedName, KernelHostNames.GetWarmupMethodName(kernel.MemberKey))
-            : new KernelWarmup(header.WarmupRelayHosts[0], kernel.Host.WarmupRelayName);
-}
-
-/// <summary>The kernels of one compilation: the class models, and the warmups in the order of the kernels.</summary>
-internal readonly record struct KernelModuleModel(
-    EquatableArray<KernelClassModel> Classes,
-    EquatableArray<KernelWarmup> Warmups)
-{
-    /// <summary>Groups <paramref name="kernels"/> by class, in the order the classes first appear.</summary>
-    public static KernelModuleModel Create(ImmutableArray<TranspiledKernelResult> kernels)
-    {
-        var kernelsByClass = new Dictionary<string, ImmutableArray<TranspiledKernelResult>.Builder>(StringComparer.Ordinal);
-        var classIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
-        foreach (var kernel in kernels)
-        {
-            if (!kernelsByClass.TryGetValue(kernel.Class.HintName, out var group))
-            {
-                group = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
-                kernelsByClass[kernel.Class.HintName] = group;
-                classIndices[kernel.Class.HintName] = classOrder.Count;
-                classOrder.Add(kernel.Class);
-            }
-
-            group.Add(kernel);
-        }
-
-        var classes = ImmutableArray.CreateBuilder<KernelClassModel>(classOrder.Count);
-        classOrder
-            .AsStackEnumerable()
-            .Select(kernelsByClass, static (header, groups) => KernelClassModel.Create(header, groups[header.HintName]))
-            .AddTo(classes);
-        var classModels = classes.MoveToImmutable();
-
-        // The module context warms the kernels up in their own order, which may interleave the classes
-        var positions = new Dictionary<string, int>(StringComparer.Ordinal);
-        var warmups = ImmutableArray.CreateBuilder<KernelWarmup>(kernels.Length);
-        foreach (var kernel in kernels)
-        {
-            var hintName = kernel.Class.HintName;
-            positions.TryGetValue(hintName, out var position);
-            positions[hintName] = position + 1;
-            var emission = classModels[classIndices[hintName]].Kernels[position];
-            if (emission.HasWarmup)
-            {
-                warmups.Add(KernelWarmup.Create(kernel.Class, emission));
-            }
-        }
-
-        return new KernelModuleModel(classModels.AsEquatableArray(), warmups.ToImmutable().AsEquatableArray());
     }
 }
 
