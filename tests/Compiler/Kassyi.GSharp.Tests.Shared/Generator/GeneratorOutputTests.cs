@@ -111,7 +111,7 @@ public class GeneratorOutputTests
         string contextName,
         string fatbinLiteral)
     {
-        var (result, errors) = RunAndCompile(assemblyName, "Cuda");
+        var (result, _, errors) = RunAndCompile(assemblyName, "Cuda");
 
         Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
         var context = GetSource(result, $"{contextName}.g.cs");
@@ -121,6 +121,32 @@ public class GeneratorOutputTests
             $"global::Kassyi.GSharp.Generated.{contextName}.GetFatbin);",
             GetSource(result, "FirstKernels.g.cs"),
             StringComparison.Ordinal);
+    }
+
+    // An assembly a-b that references an assembly a_b gets a module context of its own: when both names gave
+    // GSharpModuleContext_a_b, the referencing assembly declared the class that the referenced one exports (CS0436)
+    // and its launchers could not tell the two modules apart
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ModuleContext_ReferencedAssemblyNameDiffersOnlyInPunctuation_EachAssemblyNamesItsOwnContext()
+    {
+        var (referencedResult, referencedOutput, referencedErrors) = RunAndCompile("a_b", "Cuda");
+        Assert.True(referencedErrors.Count == 0, string.Join(Environment.NewLine, referencedErrors));
+
+        var (result, output, errors) = RunAndCompile("a-b", "Cuda", referencedOutput.ToMetadataReference());
+
+        Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
+        Assert.Contains("public static class GSharpModuleContext_a_ub", GetSource(referencedResult,
+            "GSharpModuleContext_a_ub.g.cs"), StringComparison.Ordinal);
+        Assert.Contains("public static class GSharpModuleContext_a_x00002db", GetSource(result,
+            "GSharpModuleContext_a_x00002db.g.cs"), StringComparison.Ordinal);
+        Assert.Contains("global::Kassyi.GSharp.Generated.GSharpModuleContext_a_x00002db.GetFatbin);",
+            GetSource(result, "FirstKernels.g.cs"), StringComparison.Ordinal);
+        var contextConflicts = output.GetDiagnostics()
+            .Where(static d => d.Id == "CS0436" && d.GetMessage().Contains("GSharpModuleContext"))
+            .Select(static d => d.ToString())
+            .ToList();
+        Assert.True(contextConflicts.Count == 0, string.Join(Environment.NewLine, contextConflicts));
     }
 
     // The CPU wrappers load the native library that the artifact of the same module name is built into; the name is
@@ -136,7 +162,7 @@ public class GeneratorOutputTests
         string? assemblyName,
         string artifactStem)
     {
-        var (result, errors) = RunAndCompile(assemblyName, "Cpu");
+        var (result, _, errors) = RunAndCompile(assemblyName, "Cpu");
 
         Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
         var dllLine = GetSource(result, "FirstKernels.g.cs")
@@ -285,11 +311,13 @@ public class GeneratorOutputTests
             .ToString();
 
     // Runs the generator on the two-class kernel file in an assembly of the given name and compiles its output
-    private static (GeneratorRunResult Result, List<string> Errors) RunAndCompile(string? assemblyName, string dialect)
+    private static (GeneratorRunResult Result, Compilation Output, List<string> Errors) RunAndCompile(
+        string? assemblyName, string dialect, params MetadataReference[] references)
     {
         var compilation = CSharpCompilation.Create(assemblyName)
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
             .AddReferences(RoslynTestUtility.BaseReferences)
+            .AddReferences(references)
             .AddSyntaxTrees(Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_TwoClasses.cu.cs"), "two.cs"));
         var driver = CreateDriver(dialect).RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
         var result = driver.GetRunResult().Results.Single();
@@ -299,7 +327,7 @@ public class GeneratorOutputTests
             .Where(static d => d.Severity == DiagnosticSeverity.Error)
             .Select(static d => d.ToString())
             .ToList();
-        return (result, errors);
+        return (result, output, errors);
     }
 
     private static SyntaxTree Parse(string source, string path) =>

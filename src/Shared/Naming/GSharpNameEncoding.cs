@@ -24,7 +24,7 @@ namespace Kassyi.GSharp.Naming;
 ///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
 ///   <item><description><c>GSharpModuleContext_{module}</c>: the generated C# class that loads the fatbin of an
-/// assembly, with the module name escaped as a segment is (<see cref="TryDecodeModuleName"/>); it decodes to
+/// assembly, with the module name escaped as a segment is (an empty name included); it decodes to
 /// <c>GSharpModuleContext(module)</c>. <c>__gsharp_module_{module}</c>, the field that holds the fatbin of a module
 /// a launcher loads by name, escapes the module name the same way and decodes to
 /// <c>__gsharp_module(module)</c>.</description></item>
@@ -46,10 +46,13 @@ internal static class GSharpNameEncoding
     /// <summary>The prefix of the generated C# class that loads the fatbin module of one assembly.</summary>
     public const string ModuleContextPrefix = "GSharpModuleContext_";
 
-    /// <summary>The prefix of the generated C# field that holds the fatbin of a module a launcher loads by name.</summary>
+    /// <summary>
+    /// The prefix of the generated C# field that holds the fatbin of a module a launcher loads by name.
+    /// </summary>
     public const string ModuleFieldPrefix = "__gsharp_module_";
 
-    private static readonly string[] s_renamedPrefixes = ["__gsharp_", ModuleContextPrefix];
+    // Every renamed identifier starts with one of these (the module field prefix starts with the first)
+    private const string InternalPrefix = "__gsharp_";
 
     public const string SymbolHeaderPrefix = "// gsharp-symbols: ";
 
@@ -390,9 +393,10 @@ internal static class GSharpNameEncoding
         var builder = new StringBuilder(text.Length);
         var copied = 0;
         var index = 0;
+        var finder = new RenamedIdentifierFinder(text);
         while (index < text.Length)
         {
-            var start = IndexOfRenamedIdentifier(text, index);
+            var start = finder.Next(index);
             if (start < 0)
             {
                 break;
@@ -588,9 +592,16 @@ internal static class GSharpNameEncoding
     /// The name of the module context class of a module: <c>GSharpModuleContext_</c> and the module name escaped as a
     /// segment of <see cref="Encode(GlobalNamePath)"/> (<c>Henicos.Benchmarks</c> gives
     /// <c>GSharpModuleContext_Henicos_x00002eBenchmarks</c>), so that any name gives an identifier, two names give two,
-    /// and <see cref="TryDecodeModuleName"/> recovers the name.
+    /// and <see cref="TryDecode"/> recovers the name.
     /// </summary>
     public static string GetModuleContextName(string moduleName) => ModuleContextPrefix + EscapeName(moduleName);
+
+    /// <summary>
+    /// The name of the field that holds the fatbin of an external module (<c>[CudaImport]</c>, YAML
+    /// <c>moduleName</c>): <c>__gsharp_module_</c> and the module name escaped as in
+    /// <see cref="GetModuleContextName"/>, which <see cref="TryDecode"/> recovers.
+    /// </summary>
+    public static string GetModuleFieldName(string moduleName) => ModuleFieldPrefix + EscapeName(moduleName);
 
     /// <summary>Appends <paramref name="name"/> escaped as described in <see cref="Encode(GlobalNamePath)"/>.</summary>
     public static void AppendEscapedName(in SourceWriter writer, string name)
@@ -608,9 +619,11 @@ internal static class GSharpNameEncoding
             }
             else
             {
-                var codePoint = char.ConvertToUtf32(name, i);
-                if (char.IsHighSurrogate(c))
+                // A surrogate pair is one code point; a lone surrogate is escaped as its UTF-16 code unit
+                int codePoint = c;
+                if (char.IsHighSurrogate(c) && i + 1 < name.Length && char.IsLowSurrogate(name[i + 1]))
                 {
+                    codePoint = char.ConvertToUtf32(c, name[i + 1]);
                     i++;
                 }
 
@@ -769,7 +782,8 @@ internal static class GSharpNameEncoding
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var builder = new StringBuilder();
         var index = 0;
-        while (TryFindRenamedIdentifier(text, ref index, out _, out var identifier, out var csharpName))
+        var finder = new RenamedIdentifierFinder(text);
+        while (TryFindRenamedIdentifier(text, ref finder, ref index, out _, out var identifier, out var csharpName))
         {
             if (!seen.Add(identifier))
             {
@@ -793,7 +807,9 @@ internal static class GSharpNameEncoding
         var builder = new StringBuilder(text.Length);
         var copied = 0;
         var index = 0;
-        while (TryFindRenamedIdentifier(text, ref index, out var start, out var identifier, out var csharpName))
+        var finder = new RenamedIdentifierFinder(text);
+        while (TryFindRenamedIdentifier(text, ref finder, ref index, out var start, out var identifier,
+                   out var csharpName))
         {
             builder.Append(text, copied, start - copied).Append(csharpName);
             copied = start + identifier.Length;
@@ -802,12 +818,12 @@ internal static class GSharpNameEncoding
         return builder.Append(text, copied, text.Length - copied).ToString();
     }
 
-    private static bool TryFindRenamedIdentifier(string text, ref int index, out int start, out string identifier,
-        out string csharpName)
+    private static bool TryFindRenamedIdentifier(string text, ref RenamedIdentifierFinder finder, ref int index,
+        out int start, out string identifier, out string csharpName)
     {
         while (index < text.Length)
         {
-            start = IndexOfRenamedIdentifier(text, index);
+            start = finder.Next(index);
             if (start < 0)
             {
                 break;
@@ -834,18 +850,15 @@ internal static class GSharpNameEncoding
         return false;
     }
 
-    /// <summary>
-    /// Recovers a module name from its escaped form, the part of a module context class name
-    /// (<see cref="ModuleContextPrefix"/>) or a module field name (<see cref="ModuleFieldPrefix"/>) after the prefix.
-    /// </summary>
-    /// <returns><see langword="false"/> if <paramref name="escaped"/> is not exactly one escaped name.</returns>
-    public static bool TryDecodeModuleName(string escaped, out string moduleName) =>
-        TryParseWholeName(escaped, 0, out moduleName);
-
-    // The name escaped in <s> from <start> to its end
+    // The name escaped in <s> from <start> to its end; an empty rest is the empty name
     private static bool TryParseWholeName(string s, int start, out string name)
     {
         name = string.Empty;
+        if (start == s.Length)
+        {
+            return true;
+        }
+
         var index = start;
         var builder = new StringBuilder(s.Length - start);
         if (!TryParseName(s, ref index, builder) || index != s.Length)
@@ -871,21 +884,25 @@ internal static class GSharpNameEncoding
         return true;
     }
 
-    // The first place at or after <index> where a renamed identifier may start: a __gsharp_ name or a module
-    // context class; -1 when there is none
-    private static int IndexOfRenamedIdentifier(string text, int index)
+    // The first place at or after an index where a renamed identifier may start: a __gsharp_ name or a module context
+    // class. Each prefix is searched again only once the index has passed its last hit, and never again once it is
+    // absent, so a scan of a whole log stays linear in its length
+    private struct RenamedIdentifierFinder(string text)
     {
-        var first = -1;
-        foreach (var prefix in s_renamedPrefixes)
+        private int _internal = -2;
+        private int _context = -2;
+
+        // -1 when no renamed identifier starts at or after <index>
+        public int Next(int index)
         {
-            var found = text.IndexOf(prefix, index, StringComparison.Ordinal);
-            if (found >= 0 && (first < 0 || found < first))
-            {
-                first = found;
-            }
+            _internal = Advance(_internal, InternalPrefix, index);
+            _context = Advance(_context, ModuleContextPrefix, index);
+            return _internal < 0 ? _context : _context < 0 || _internal < _context ? _internal : _context;
         }
 
-        return first;
+        // -2: not searched yet; -1: absent from the rest of the text
+        private readonly int Advance(int cached, string prefix, int index) =>
+            cached == -1 || cached >= index ? cached : text.IndexOf(prefix, index, StringComparison.Ordinal);
     }
 
     private static bool TrySetName(string identifier, int start, ref string csharpName)
@@ -1089,12 +1106,22 @@ internal static class GSharpNameEncoding
             }
             else if (MatchesMarkerAt(s, index, 'x'))
             {
-                if (!TryParseCodePoint(s, index + 2, out var codePoint))
+                if (!TryParseCodePoint(s, index + 2, out var codePoint) ||
+                    IsLowSurrogate(codePoint) && name.Length > 0 && char.IsHighSurrogate(name[name.Length - 1]))
                 {
+                    // A high and a low surrogate escaped one by one would be a second spelling of their pair
                     return false;
                 }
 
-                name.Append(char.ConvertFromUtf32(codePoint));
+                if (codePoint > 0xFFFF)
+                {
+                    name.Append(char.ConvertFromUtf32(codePoint));
+                }
+                else
+                {
+                    name.Append((char)codePoint);
+                }
+
                 index += 8;
             }
             else
@@ -1125,10 +1152,13 @@ internal static class GSharpNameEncoding
             codePoint = codePoint * 16 + (c <= '9' ? c - '0' : c - 'a' + 10);
         }
 
-        // Only characters that the encoder escapes: no ASCII letters or digits, no surrogate halves.
-        return codePoint <= 0x10FFFF && codePoint is not (>= 0xD800 and <= 0xDFFF) &&
+        // Only characters that the encoder escapes: no ASCII letters or digits; a surrogate half stands for a lone
+        // surrogate, which TryParseName keeps from following a high surrogate.
+        return codePoint <= 0x10FFFF &&
                (codePoint > 0x7F || !IsAsciiLetterOrDigit((char)codePoint)) && codePoint != '_';
     }
+
+    private static bool IsLowSurrogate(int codePoint) => codePoint is >= 0xDC00 and <= 0xDFFF;
 
     // Leading zeros are rejected so that every number has exactly one spelling.
     private static bool TryParseNumber(string s, ref int index, out int value)

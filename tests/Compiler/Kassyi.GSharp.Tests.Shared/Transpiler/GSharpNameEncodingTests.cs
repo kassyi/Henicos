@@ -117,8 +117,29 @@ public class GSharpNameEncodingTests
     [InlineData("1lib")]
     public void ModuleNames_EncodedThenDecoded_GiveTheModuleNameBack(string moduleName)
     {
-        var contextName = GSharpNameEncoding.GetModuleContextName(moduleName);
+        AssertModuleNamesRoundTrip(moduleName);
+    }
 
+    // The empty name (a [CudaImport] module named "") and lone UTF-16 surrogates, which the encoder escapes as their
+    // code unit, decode as well; a surrogate pair stays one code point
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void ModuleNames_EmptyOrLoneSurrogates_GiveTheModuleNameBack()
+    {
+        Assert.Equal("GSharpModuleContext_", GSharpNameEncoding.GetModuleContextName(""));
+        Assert.Equal("GSharpModuleContext__x00d800", GSharpNameEncoding.GetModuleContextName("\uD800"));
+        Assert.Equal("GSharpModuleContext_a_x00dc00b", GSharpNameEncoding.GetModuleContextName("a\uDC00b"));
+        Assert.Equal("GSharpModuleContext__x01f680", GSharpNameEncoding.GetModuleContextName("🚀"));
+        foreach (var moduleName in (string[])["", "\uD800", "a\uDC00b", "\uDC00\uD800", "\uD800x\uDBFF"])
+        {
+            AssertModuleNamesRoundTrip(moduleName);
+        }
+    }
+
+    private static void AssertModuleNamesRoundTrip(string moduleName)
+    {
+        var contextName = GSharpNameEncoding.GetModuleContextName(moduleName);
         var fieldName = AotModuleNames.GetModuleFieldName(moduleName);
 
         Assert.True(SyntaxFacts.IsValidIdentifier(contextName), contextName);
@@ -143,11 +164,12 @@ public class GSharpNameEncodingTests
         Assert.Equal(Expected, GSharpNameEncoding.DecodeText(Log, new Dictionary<string, string>()));
     }
 
-    // A name in the replacing spelling of earlier versions ('_' for '.') is not an escaped name and stays as it is
+    // A name in the replacing spelling of earlier versions ('_' for '.') is not an escaped name and stays as it is;
+    // neither is a surrogate pair escaped as two code units, which would be a second spelling of the pair
     [Theory]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("GSharpModuleContext_")]
+    [InlineData("GSharpModuleContext__x00d83d_x00de80")]
     [InlineData("GSharpModuleContext_Henicos_Benchmarks")]
     [InlineData("GSharpModuleContext_a_x00002")]
     [InlineData("GSharpModuleContext__x000041")]

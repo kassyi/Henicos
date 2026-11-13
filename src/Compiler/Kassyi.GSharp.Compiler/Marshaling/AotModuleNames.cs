@@ -25,7 +25,7 @@ internal static class AotModuleNames
     /// <c>_</c>.
     /// </summary>
     public static string GetArtifactFileStem(string moduleName) =>
-        ArtifactFilePrefix + ReplaceWithUnderscore(moduleName, static c => c != '.');
+        ArtifactFilePrefix + ReplaceDots(moduleName);
 
     /// <summary>
     /// The name of the module context class of a module: <c>GSharpModuleContext_</c> and the module name escaped as the
@@ -43,27 +43,20 @@ internal static class AotModuleNames
     /// fields of their own. Both generators name the field this way: the methods of one module in one class share one
     /// field, which a YAML binding of the class declares when it binds that module.
     /// </summary>
-    public static string GetModuleFieldName(string moduleName) =>
-        GSharpInternalNames.Launcher.ModuleFieldPrefix + GSharpNameEncoding.EscapeName(moduleName);
+    public static string GetModuleFieldName(string moduleName) => GSharpNameEncoding.GetModuleFieldName(moduleName);
 
-    // <name> with each character that keeps rejects replaced by '_'; the input itself when keeps accepts them all
-    private static string ReplaceWithUnderscore(string name, Func<char, bool> keeps)
+    // <name> with each '.' replaced by '_'; the input itself without a '.'
+    private static string ReplaceDots(string name)
     {
-        var first = 0;
-        while (first < name.Length && keeps(name[first]))
-        {
-            first++;
-        }
-
-        if (first == name.Length)
+        if (name.IndexOf('.') < 0)
         {
             return name;
         }
 
         var chars = name.ToCharArray();
-        for (var i = first; i < chars.Length; i++)
+        for (var i = 0; i < chars.Length; i++)
         {
-            if (!keeps(chars[i]))
+            if (chars[i] == '.')
             {
                 chars[i] = '_';
             }

@@ -132,7 +132,8 @@ public sealed class DeviceErrorExitTests
         }
 
         // The module's pointers to the records, as a failed allocation leaves them
-        var module = Kassyi.GSharp.Generated.GSharpModuleContext_Kassyi_x00002eGSharp_x00002eTests_x00002eCuda.GetOrLoadModule();
+        var module = Kassyi.GSharp.Generated.GSharpModuleContext_Kassyi_x00002eGSharp_x00002eTests_x00002eCuda
+            .GetOrLoadModule();
         using (new GpuKernelLoader.CudaContextScope())
         {
             foreach (var name in (ReadOnlySpan<string>)["__gsharp_error_slot", "__gsharp_launch_errors"])
