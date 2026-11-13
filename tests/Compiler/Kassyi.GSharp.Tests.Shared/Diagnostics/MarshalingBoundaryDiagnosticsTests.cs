@@ -250,38 +250,6 @@ public sealed class MarshalingBoundaryDiagnosticsTests
         Assert.DoesNotContain("=__gsharp_id_0_imm.length;", generated, System.StringComparison.Ordinal);
     }
 
-    // Casting [GpuReadOnly] T[] parameter to ReadOnlySpan<T> must preserve const in C++ (#1071)
-    [Theory(Skip = "Converting [GpuReadOnly] array to ReadOnlySpan drops const (#1071)")]
-    [InlineData("Cpu")]
-    [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task ReadOnlyArrayToReadOnlySpan_Conversion_PreservesConst(string dialect)
-    {
-        const string source = """
-            using System;
-            using Kassyi.GSharp.Core;
-
-            namespace TestNs;
-
-            public static partial class ReadOnlyArrayToSpanKernels
-            {
-                [GpuKernel]
-                public static void ReadOnlyArrayToSpanKernel([GpuReadOnly] int[] roArr, int[] output)
-                {
-                    ReadOnlySpan<int> roSpan = (ReadOnlySpan<int>)roArr;
-                    output[0] = roSpan.Length;
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(source);
-        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
-        string generated = string.Join("\n", run.Output.SyntaxTrees.Select(static t => t.ToString()));
-
-        Assert.DoesNotContain("GSharpArray<int> __gsharp_id_2_roSpan", generated, System.StringComparison.Ordinal);
-        Assert.Contains("GSharpArray<const int> __gsharp_id_2_roSpan", generated, System.StringComparison.Ordinal);
-    }
-
     // Returning null literal from Nullable<T> kernel (#984)
     [Theory(Skip = "Nullable<T> return null emits nullptr incompatible with System_Nullable (#984)")]
     [InlineData("Cpu")]

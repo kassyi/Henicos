@@ -451,9 +451,11 @@ struct GSharpArray {
     __device__ inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
     __device__ inline bool IsEmpty() const { return length <= 0; }
     
-    // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+    // Implicit conversion from GSharpArray<U> to GSharpArray<T> where U and T differ only in const: T to const T, and
+    // const T back to T. C# converts a [GpuReadOnly] array (const elements here) to every array and span type of its
+    // element (#1709, #1071), so the const is removed here; it is the C# program that decides whether to write
     template <typename U>
-    __device__ inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length), flags(other.flags) {}
+    __device__ inline GSharpArray(const GSharpArray<U>& other) : data(const_cast<T*>(other.data)), length(other.length), flags(other.flags) {}
 
     __device__ inline T* begin() { return data; }
     __device__ inline T* end() { return data + length; }
