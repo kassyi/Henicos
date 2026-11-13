@@ -46,7 +46,7 @@ internal static class LiteralTranspiler
         context.Emitter.Writer.Append("{}");
     }
 
-    // An initializer of a declaration with a written type (not var), or the right side of x = value
+    // An initializer of a declaration with a written type (not var), the right side of x = value, or a returned value
     private static bool IsBracedListPosition(ExpressionSyntax node) =>
         node.Parent switch
         {
@@ -56,6 +56,8 @@ internal static class LiteralTranspiler
             } => !declaration.Type.IsVar,
             AssignmentExpressionSyntax assignment => assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) &&
                                                      assignment.Right == node,
+            // return default; and => default are written as return <value>; or <result buffer>[<thread>] = <value>;
+            ReturnStatementSyntax or ArrowExpressionClauseSyntax => true,
             _ => false
         };
 
