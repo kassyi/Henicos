@@ -61,6 +61,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1278121396u, "LaunchShapeD
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2076879853u, "LaunchShapeDifferentialKernels.cs", 229, 13, "CrossAxisWarpShuffleAndActiveMaskKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(812371822u, "LaunchShapeDifferentialKernels.cs", 252, 20, "MultiDimSharedMemoryAndBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1082247694u, "LaunchShapeDifferentialKernels.cs", 257, 32, "MultiDimSharedMemoryAndBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1424639347u, "LaunchShapeDifferentialKernels.cs", 264, 59, "MultiDimSharedMemoryAndBarrierKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(768237279u, "LaunchShapeDifferentialKernels.cs", 286, 13, "MultiDimSharedMemoryAndBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(784813301u, "LaunchShapeDifferentialKernels.cs", 287, 13, "MultiDimSharedMemoryAndBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1481023174u, "LaunchShapeDifferentialKernels.cs", 315, 23, "AutoResultThreeDimensionalKernel", "G#: a null array is read"),
@@ -1753,7 +1754,7 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 __gsharp_ctx->__gsharp_id_16_partnerTid=__gsharp_sub_i32(__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_9_blockThreads,1),__gsharp_ctx->__gsharp_id_8_blockTid);
-__gsharp_ctx->__gsharp_id_17_permuted=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_13_staticBuf[__gsharp_ctx->__gsharp_id_16_partnerTid],__gsharp_ctx->__gsharp_id_14_dynamicBuf[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_blockTid,1))%__gsharp_ctx->__gsharp_id_9_blockThreads]);
+__gsharp_ctx->__gsharp_id_17_permuted=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_13_staticBuf[__gsharp_ctx->__gsharp_id_16_partnerTid],__gsharp_ctx->__gsharp_id_14_dynamicBuf[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_blockTid,1),__gsharp_ctx->__gsharp_id_9_blockThreads,1424639347u)]);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return;

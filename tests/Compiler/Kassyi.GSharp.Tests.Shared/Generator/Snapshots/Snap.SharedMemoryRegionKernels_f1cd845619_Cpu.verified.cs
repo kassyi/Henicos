@@ -43,7 +43,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_4_rotated=(__gsharp_ctx->__gsharp_id_2_tid<__gsharp_ctx->__gsharp_id_1_count?__gsharp_ctx->__gsharp_id_3_shared[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_1_count]:0);
+__gsharp_ctx->__gsharp_id_4_rotated=(__gsharp_ctx->__gsharp_id_2_tid<__gsharp_ctx->__gsharp_id_1_count?__gsharp_ctx->__gsharp_id_3_shared[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1),__gsharp_ctx->__gsharp_id_1_count,""Attempted to divide by zero. at SharedMemoryRegionKernels.cs(53,44)"")]:0);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;

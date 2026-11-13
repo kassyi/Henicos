@@ -110,7 +110,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_4_rotated=__gsharp_ctx->__gsharp_id_3_shared[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%__gsharp_ctx->__gsharp_id_1_length];
+__gsharp_ctx->__gsharp_id_4_rotated=__gsharp_ctx->__gsharp_id_3_shared[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1),__gsharp_ctx->__gsharp_id_1_length,""Attempted to divide by zero. at DeviceFunctionBarrierKernels.cs(33,30)"")];
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;

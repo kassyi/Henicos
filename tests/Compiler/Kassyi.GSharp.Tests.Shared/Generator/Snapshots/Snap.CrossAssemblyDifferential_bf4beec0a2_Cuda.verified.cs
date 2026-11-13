@@ -346,7 +346,7 @@ return __gsharp_id_0_v.x*__gsharp_id_0_v.x+__gsharp_id_0_v.y*__gsharp_id_0_v.y+_
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__DeviceLibrary__LibMath__Exchange(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_tid, int __gsharp_id_2_value){
 __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, ""G#: a null array is read at LibMath.cu.cs(243,9)"")=__gsharp_id_2_value;
 __syncthreads();
-int __gsharp_id_3_next = __gsharp_array_at(__gsharp_id_0_buffer, (__gsharp_add_i32(__gsharp_id_1_tid,1))%(int)blockDim.x, ""G#: a null array is read at LibMath.cu.cs(245,20)"");
+int __gsharp_id_3_next = __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_1_tid,1),(int)blockDim.x,""Attempted to divide by zero. at LibMath.cu.cs(245,27)""), ""G#: a null array is read at LibMath.cu.cs(245,20)"");
 __syncthreads();
 return __gsharp_id_3_next;
 }

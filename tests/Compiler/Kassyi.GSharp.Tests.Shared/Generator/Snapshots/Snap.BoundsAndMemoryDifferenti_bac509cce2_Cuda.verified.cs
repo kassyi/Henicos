@@ -119,7 +119,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNonNullableHolder,__gsharp_mb_Offset)==16,""Kassyi.GSharp.Tests.Shared.Differential.DiffNonNullableHolder.Offset: offset"");
 #endif
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__ReadNonNullableHolder(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNonNullableHolder __gsharp_id_0_holder, int __gsharp_id_1_t){
-return __gsharp_add_i32(__gsharp_id_0_holder.__gsharp_mb_Data[__gsharp_id_1_t%__gsharp_id_0_holder.__gsharp_mb_Data.length],__gsharp_id_0_holder.__gsharp_mb_Offset);
+return __gsharp_add_i32(__gsharp_id_0_holder.__gsharp_mb_Data[__gsharp_rem_i32(__gsharp_id_1_t,__gsharp_id_0_holder.__gsharp_mb_Data.length,""Attempted to divide by zero. at BoundsAndMemoryDifferentialKernels.cs(696,21)"")],__gsharp_id_0_holder.__gsharp_mb_Offset);
 }
 
 ";
@@ -214,6 +214,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1651312234u, "BoundsAndMem
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(674063691u, "BoundsAndMemoryDifferentialKernels.cs", 637, 25, "NonNullableParameterNullArgumentKernel", "G#: a null array is passed where it is not nullable"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(708606482u, "BoundsAndMemoryDifferentialKernels.cs", 657, 9, "NonNullableFieldKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(594988630u, "BoundsAndMemoryDifferentialKernels.cs", 657, 18, "NonNullableFieldKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(690771768u, "BoundsAndMemoryDifferentialKernels.cs", 657, 30, "NonNullableFieldKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(973795946u, "BoundsAndMemoryDifferentialKernels.cs", 657, 34, "NonNullableFieldKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(480353412u, "BoundsAndMemoryDifferentialKernels.cs", 674, 23, "GpuNotNullKernel", "G#: Gpu.NotNull was given a null array"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(593641354u, "BoundsAndMemoryDifferentialKernels.cs", 674, 35, "GpuNotNullKernel", "G#: a null array is read"),
@@ -5654,7 +5655,7 @@ if(__gsharp_id_3_t>=__gsharp_id_2_rows)
 {
 return;
 }
-__gsharp_array_at(__gsharp_id_1_dst, __gsharp_id_3_t, 708606482u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_holder.__gsharp_mb_Data, __gsharp_id_3_t%__gsharp_array_ref(__gsharp_id_0_holder.__gsharp_mb_Data, 973795946u).length, 594988630u),__gsharp_id_0_holder.__gsharp_mb_Offset);
+__gsharp_array_at(__gsharp_id_1_dst, __gsharp_id_3_t, 708606482u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_holder.__gsharp_mb_Data, __gsharp_rem_i32(__gsharp_id_3_t,__gsharp_array_ref(__gsharp_id_0_holder.__gsharp_mb_Data, 973795946u).length,690771768u), 594988630u),__gsharp_id_0_holder.__gsharp_mb_Offset);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NonNullableFieldKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__BoundsAndMemoryDifferentialKernels__NonNullableFieldKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

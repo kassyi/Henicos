@@ -140,12 +140,15 @@ public partial class SharedMemoryLimitKernels
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1579493057u, "SharedMemoryLimitKernels.cs", 27, 13, "FillKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1771782295u, "SharedMemoryLimitKernels.cs", 27, 27, "FillKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2013643245u, "SharedMemoryLimitKernels.cs", 39, 13, "FillWithoutBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(136283176u, "SharedMemoryLimitKernels.cs", 62, 9, "TwoRegionsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1140780048u, "SharedMemoryLimitKernels.cs", 79, 9, "HoistedCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1886881654u, "SharedMemoryLimitKernels.cs", 79, 69, "HoistedCountKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(862661164u, "SharedMemoryLimitKernels.cs", 109, 9, "RegionOrderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1021033428u, "SharedMemoryLimitKernels.cs", 261, 9, "ManyStaticDeclarationsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1045154764u, "SharedMemoryLimitKernels.cs", 276, 9, "PerBlockCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(485104485u, "SharedMemoryLimitKernels.cs", 276, 77, "PerBlockCountKernel", "Attempted to divide by zero."),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -190,7 +193,7 @@ __gsharp_switch_1_state_1:
 {
 for(int __gsharp_id_4_i = (int)threadIdx.x;__gsharp_id_4_i<__gsharp_ctx->__gsharp_id_1_n;__gsharp_id_4_i=__gsharp_add_i32(__gsharp_id_4_i,(int)blockDim.x))
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_id_4_i, 1579493057u)=__gsharp_ctx->__gsharp_id_2_s[(__gsharp_add_i32(__gsharp_id_4_i,1))%__gsharp_ctx->__gsharp_id_1_n];
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_id_4_i, 1579493057u)=__gsharp_ctx->__gsharp_id_2_s[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_4_i,1),__gsharp_ctx->__gsharp_id_1_n,1771782295u)];
 }
 __gsharp_state=-1;
 return;
@@ -1100,7 +1103,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_1_tid), 1140780048u)=(__gsharp_ctx->__gsharp_id_1_tid<__gsharp_ctx->__gsharp_id_2_n?__gsharp_ctx->__gsharp_id_3_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1))%__gsharp_ctx->__gsharp_id_2_n]:0);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_1_tid), 1140780048u)=(__gsharp_ctx->__gsharp_id_1_tid<__gsharp_ctx->__gsharp_id_2_n?__gsharp_ctx->__gsharp_id_3_a[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1),__gsharp_ctx->__gsharp_id_2_n,1886881654u)]:0);
 __gsharp_state=-1;
 return;
 }
@@ -2298,7 +2301,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_4_tid), 1045154764u)=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_first[__gsharp_ctx->__gsharp_id_4_tid],__gsharp_ctx->__gsharp_id_3_second[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_tid,1))%(int)blockDim.x]);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_4_tid), 1045154764u)=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_first[__gsharp_ctx->__gsharp_id_4_tid],__gsharp_ctx->__gsharp_id_3_second[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_tid,1),(int)blockDim.x,485104485u)]);
 __gsharp_state=-1;
 return;
 }

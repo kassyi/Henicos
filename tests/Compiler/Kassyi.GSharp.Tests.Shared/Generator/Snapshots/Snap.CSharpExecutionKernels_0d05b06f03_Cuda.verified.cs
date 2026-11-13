@@ -80,7 +80,7 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__CSharp
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__CSharpExecutionKernels__Exchange(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_t){
 __syncthreads();
-return __gsharp_array_at(__gsharp_id_0_data, (__gsharp_add_i32(__gsharp_id_1_t,1))%(int)blockDim.x, ""G#: a null array is read at CSharpExecutionKernels.cs(101,16)"");
+return __gsharp_array_at(__gsharp_id_0_data, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_1_t,1),(int)blockDim.x,""Attempted to divide by zero. at CSharpExecutionKernels.cs(101,21)""), ""G#: a null array is read at CSharpExecutionKernels.cs(101,16)"");
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__CSharpExecutionKernels__LinearThreadIndex(){
@@ -180,6 +180,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(23195841u, "CSharpExecutio
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(707707086u, "CSharpExecutionKernels.cs", 76, 9, "BarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(644839098u, "CSharpExecutionKernels.cs", 78, 9, "BarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(929926629u, "CSharpExecutionKernels.cs", 78, 20, "BarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(28481916u, "CSharpExecutionKernels.cs", 78, 25, "BarrierKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1177960142u, "CSharpExecutionKernels.cs", 85, 9, "BarrierThroughDeviceFunctionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(597053405u, "CSharpExecutionKernels.cs", 93, 31, "SharedMemoryKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1346481842u, "CSharpExecutionKernels.cs", 94, 9, "SharedMemoryKernel", "G#: a null array is read"),
@@ -1621,7 +1622,7 @@ __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_t = (int)threadIdx.x;
 __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 707707086u)=__gsharp_id_1_t;
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 644839098u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 644839098u),__gsharp_array_at(__gsharp_id_0_data, (__gsharp_add_i32(__gsharp_id_1_t,1))%(int)blockDim.x, 929926629u));
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 644839098u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_t, 644839098u),__gsharp_array_at(__gsharp_id_0_data, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_1_t,1),(int)blockDim.x,28481916u), 929926629u));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BarrierKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__CSharpExecutionKernels__BarrierKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

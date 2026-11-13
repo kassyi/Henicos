@@ -224,16 +224,22 @@ public partial class IntegerSemanticsKernels
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2131434651u, "IntegerSemanticsKernels.cs", 203, 22, "IntTriplesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(170147678u, "IntegerSemanticsKernels.cs", 203, 27, "IntTriplesKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1211890415u, "IntegerSemanticsKernels.cs", 203, 31, "IntTriplesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1210232333u, "IntegerSemanticsKernels.cs", 203, 45, "IntTriplesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(116376717u, "IntegerSemanticsKernels.cs", 203, 50, "IntTriplesKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(703740185u, "IntegerSemanticsKernels.cs", 203, 54, "IntTriplesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(401005938u, "IntegerSemanticsKernels.cs", 203, 68, "IntTriplesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1794255378u, "IntegerSemanticsKernels.cs", 203, 75, "IntTriplesKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1380925636u, "IntegerSemanticsKernels.cs", 203, 79, "IntTriplesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1731408288u, "IntegerSemanticsKernels.cs", 210, 23, "LongTriplesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1313906363u, "IntegerSemanticsKernels.cs", 210, 29, "LongTriplesKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1822852334u, "IntegerSemanticsKernels.cs", 210, 33, "LongTriplesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(328078379u, "IntegerSemanticsKernels.cs", 210, 48, "LongTriplesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1910186855u, "IntegerSemanticsKernels.cs", 210, 54, "LongTriplesKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1188961439u, "IntegerSemanticsKernels.cs", 210, 58, "LongTriplesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(202749389u, "IntegerSemanticsKernels.cs", 210, 73, "LongTriplesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1891902683u, "IntegerSemanticsKernels.cs", 210, 80, "LongTriplesKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(257072862u, "IntegerSemanticsKernels.cs", 210, 84, "LongTriplesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(552329643u, "IntegerSemanticsKernels.cs", 217, 26, "ConversionsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(464934863u, "IntegerSemanticsKernels.cs", 217, 33, "ConversionsKernel", "G#: a null array is read"),
@@ -287,7 +293,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_t = (int)threadIdx.x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__IntOperators(__gsharp_array_at(__gsharp_id_0_ints, __gsharp_id_3_t/__gsharp_array_ref(__gsharp_id_0_ints, 1211890415u).length, 2131434651u),__gsharp_array_at(__gsharp_id_0_ints, __gsharp_id_3_t%__gsharp_array_ref(__gsharp_id_0_ints, 703740185u).length, 1210232333u),__gsharp_array_at(__gsharp_id_1_shifts, __gsharp_id_3_t%__gsharp_array_ref(__gsharp_id_1_shifts, 1380925636u).length, 401005938u),__gsharp_id_2_o,__gsharp_id_3_t);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__IntOperators(__gsharp_array_at(__gsharp_id_0_ints, __gsharp_div_i32(__gsharp_id_3_t,__gsharp_array_ref(__gsharp_id_0_ints, 1211890415u).length,170147678u), 2131434651u),__gsharp_array_at(__gsharp_id_0_ints, __gsharp_rem_i32(__gsharp_id_3_t,__gsharp_array_ref(__gsharp_id_0_ints, 703740185u).length,116376717u), 1210232333u),__gsharp_array_at(__gsharp_id_1_shifts, __gsharp_rem_i32(__gsharp_id_3_t,__gsharp_array_ref(__gsharp_id_1_shifts, 1380925636u).length,1794255378u), 401005938u),__gsharp_id_2_o,__gsharp_id_3_t);
 __gsharp_state=-1;
 return;
 }
@@ -559,7 +565,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_t = (int)threadIdx.x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongOperators(__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_3_t/__gsharp_array_ref(__gsharp_id_0_longs, 1822852334u).length, 1731408288u),__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_3_t%__gsharp_array_ref(__gsharp_id_0_longs, 1188961439u).length, 328078379u),__gsharp_array_at(__gsharp_id_1_shifts, __gsharp_id_3_t%__gsharp_array_ref(__gsharp_id_1_shifts, 257072862u).length, 202749389u),__gsharp_id_2_o,__gsharp_id_3_t);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IntegerSemanticsKernels__LongOperators(__gsharp_array_at(__gsharp_id_0_longs, __gsharp_div_i32(__gsharp_id_3_t,__gsharp_array_ref(__gsharp_id_0_longs, 1822852334u).length,1313906363u), 1731408288u),__gsharp_array_at(__gsharp_id_0_longs, __gsharp_rem_i32(__gsharp_id_3_t,__gsharp_array_ref(__gsharp_id_0_longs, 1188961439u).length,1910186855u), 328078379u),__gsharp_array_at(__gsharp_id_1_shifts, __gsharp_rem_i32(__gsharp_id_3_t,__gsharp_array_ref(__gsharp_id_1_shifts, 257072862u).length,1891902683u), 202749389u),__gsharp_id_2_o,__gsharp_id_3_t);
 __gsharp_state=-1;
 return;
 }

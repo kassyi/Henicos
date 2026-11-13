@@ -36,6 +36,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(522771393u, "BlockBarrierS
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1456223933u, "BlockBarrierStepKernels.cs", 82, 9, "ShuffleBarrierAndGridSyncKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1543178587u, "BlockBarrierStepKernels.cs", 84, 9, "ShuffleBarrierAndGridSyncKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(408860454u, "BlockBarrierStepKernels.cs", 84, 23, "ShuffleBarrierAndGridSyncKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1267106604u, "BlockBarrierStepKernels.cs", 84, 28, "ShuffleBarrierAndGridSyncKernel", "Attempted to divide by zero."),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1013,7 +1014,7 @@ return;
 case 6:
 __gsharp_switch_1_state_6:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_4_gid, 1543178587u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_gid,64))%__gsharp_ctx->__gsharp_id_5_total, 408860454u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_4_gid, 1543178587u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_gid,64),__gsharp_ctx->__gsharp_id_5_total,1267106604u), 408860454u);
 __gsharp_state=-1;
 return;
 }

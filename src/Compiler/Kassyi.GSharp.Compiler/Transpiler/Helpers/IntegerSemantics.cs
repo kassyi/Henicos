@@ -29,6 +29,14 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 /// instruction without the no-overflow assumption, and the masked shift is one funnel shift. Which definition wins:
 /// <c>docs/spec/en/01_language/06_semantics.md</c>.
 /// </para>
+/// <para>
+/// An integer <c>/</c> or <c>%</c> whose divisor may be 0 is a Prelude call (<c>IntegerDivision.hpp</c>) that throws
+/// <see cref="DivideByZeroException"/> as C# does (#718), on the native CPU build and the checked CUDA build; the
+/// release CUDA build divides as it is. <c>MinValue / -1</c> and <c>MinValue % -1</c>, implementation-defined in C#,
+/// give the GPU result (MinValue and 0), which the native build tests for because x86 <c>idiv</c> raises a hardware
+/// exception. A divisor whose constant or type range excludes 0 (and -1, for a dividend that may be MinValue) keeps
+/// the operator.
+/// </para>
 /// </remarks>
 internal static class IntegerSemantics
 {
@@ -85,6 +93,11 @@ internal static class IntegerSemantics
         }
 
         var (helper, _) = Lookup(operation.OperatorKind, type.SpecialType);
+        if (IsDivision(operation.OperatorKind))
+        {
+            return NeedsDivisorCheck(operation.LeftOperand, operation.RightOperand, type.SpecialType) ? helper : null;
+        }
+
         var arithmetic = operation.OperatorKind is BinaryOperatorKind.Add or BinaryOperatorKind.Subtract or
             BinaryOperatorKind.Multiply;
         return arithmetic && FitsWithoutWrap(operation) ? null : helper;
@@ -183,10 +196,29 @@ internal static class IntegerSemantics
     /// form that evaluates the operands into temporaries call; null for an assignment that C++ gives the C# result (see
     /// <see cref="GetCompoundShiftMask"/>).
     /// </summary>
-    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation) =>
-        operation.OperatorMethod == null && !operation.IsLifted
-            ? Lookup(operation.OperatorKind, GetCompoundOperatorType(operation)).Helper
-            : null;
+    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation)
+    {
+        if (operation.OperatorMethod != null || operation.IsLifted)
+        {
+            return null;
+        }
+
+        var type = GetCompoundOperatorType(operation);
+        var helper = Lookup(operation.OperatorKind, type).Helper;
+        return helper != null && IsDivision(operation.OperatorKind) &&
+               !NeedsDivisorCheck(operation.Target, operation.Value, type)
+            ? null
+            : helper;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="helper"/>, from <see cref="GetBinaryHelper"/> or <see cref="GetCompoundHelper"/>, is a
+    /// division or remainder (<c>__gsharp_div_i32</c>), which takes the place of a failing divisor check as its last
+    /// argument (<see cref="DivisorCheck"/>).
+    /// </summary>
+    public static bool TakesErrorSite(string helper) =>
+        helper is Names.DivideInt32 or Names.DivideInt64 or Names.DivideUInt32 or Names.DivideUInt64 or
+            Names.RemainderInt32 or Names.RemainderInt64 or Names.RemainderUInt32 or Names.RemainderUInt64;
 
     /// <summary>
     /// The mask of the count of a compound shift that stays a C++ operator (<c>&gt;&gt;=</c>, and <c>&lt;&lt;=</c> and
@@ -230,6 +262,10 @@ internal static class IntegerSemantics
                 (Pick(width, Names.UnsignedShiftRightInt32, Names.UnsignedShiftRightInt64), 0),
             BinaryOperatorKind.LeftShift or BinaryOperatorKind.RightShift or BinaryOperatorKind.UnsignedRightShift =>
                 (null, Mask(width)),
+            BinaryOperatorKind.Divide when signed => (Pick(width, Names.DivideInt32, Names.DivideInt64), 0),
+            BinaryOperatorKind.Divide => (Pick(width, Names.DivideUInt32, Names.DivideUInt64), 0),
+            BinaryOperatorKind.Remainder when signed => (Pick(width, Names.RemainderInt32, Names.RemainderInt64), 0),
+            BinaryOperatorKind.Remainder => (Pick(width, Names.RemainderUInt32, Names.RemainderUInt64), 0),
             _ => (null, 0)
         };
     }
@@ -367,6 +403,28 @@ internal static class IntegerSemantics
         SpecialType.System_UInt64 => SpecialType.System_UInt64,
         _ => SpecialType.None
     };
+
+    private static bool IsDivision(BinaryOperatorKind kind) =>
+        kind is BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder;
+
+    // Whether a division or remainder of the operator type <type> needs its Prelude function: the divisor may be 0
+    // (DivideByZeroException), or -1 while the dividend may be the minimum of a signed type (the GPU result, MinValue
+    // and 0, which x86 idiv turns into a hardware exception). A divisor whose constant or type range excludes both is
+    // the C++ operator, as RyuJIT drops the check of a constant divisor
+    private static bool NeedsDivisorCheck(IOperation dividend, IOperation divisor, SpecialType type)
+    {
+        if (!TryGetRange(divisor, out var divisorMin, out var divisorMax) || (divisorMin <= 0 && divisorMax >= 0))
+        {
+            return true;
+        }
+
+        if (!IsSigned(type) || divisorMin > -1 || divisorMax < -1)
+        {
+            return false;
+        }
+
+        return !TryGetRange(dividend, out var dividendMin, out _) || dividendMin <= MinValue(GetWidth(type));
+    }
 
     // Whether the operand ranges bound the exact result inside the type of the operation, so that it cannot wrap
     private static bool FitsWithoutWrap(IBinaryOperation operation)

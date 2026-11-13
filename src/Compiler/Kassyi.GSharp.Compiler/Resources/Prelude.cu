@@ -983,6 +983,7 @@ __device__ __forceinline__ T __gsharp_struct_ref(T&& value, S site, Get... get)
 }
 // [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)
 struct __gsharp_sort_compare_scope { };
+#include "Prelude/IntegerDivision.hpp"
 
 // --- AsParallel() aggregates (ParallelAggregatePlanner, Block strategy) ---
 // The linear rank and the number of the threads of the block (all three dimensions)

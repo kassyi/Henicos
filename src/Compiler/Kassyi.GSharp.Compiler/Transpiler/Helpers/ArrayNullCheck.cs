@@ -401,8 +401,8 @@ internal static class ArrayNullCheck
     private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context) =>
         PlanSite(argument, null, ArgumentSiteMessage, ArgumentTrapKind, ref context);
 
-    // <site>u for a registered site, "<message>" otherwise
-    private static void AppendSite(SourceWriter writer, NullCheckSite site)
+    /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
+    internal static void AppendSite(SourceWriter writer, NullCheckSite site)
     {
         if (site.SiteId != 0u)
         {

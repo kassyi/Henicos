@@ -6,7 +6,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// The operator of a compound assignment or of an increment or decrement, as the forms that evaluate its operands into
 /// temporaries write it (<c>__gsharp_seq_1</c> and <c>__gsharp_seq_2</c> below): <c>(a&lt;op&gt;b)</c>, a function
 /// (<c>__gsharp_add_i32(a,b)</c> for int and long arithmetic, #722; <c>fmodf(a,b)</c> for a floating-point remainder,
-/// #727), or a shift whose count is masked (<c>(a&gt;&gt;(b&amp;31))</c>).
+/// #727), or a shift whose count is masked (<c>(a&gt;&gt;(b&amp;31))</c>). A division whose divisor may be 0 passes the
+/// place of its check last (<c>__gsharp_div_i32(a,b,&lt;site&gt;)</c>, #718).
 /// </summary>
 /// <param name="Operator">The C++ binary operator (<c>+=</c> gives <c>+</c>).</param>
 /// <param name="Helper">The function that replaces the operator, or null.</param>
@@ -16,15 +17,16 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// library is a host-only template for operands of two types (<c>fmod(double, int)</c>), so the value temporary is
 /// declared with the target type, as C# converts it.
 /// </param>
+/// <param name="Site">The place of the divisor check of a division helper (<see cref="DivisorCheck"/>), or null.</param>
 internal readonly record struct CompoundOperator(string Operator, string? Helper, int ShiftMask,
-    bool ConvertsValue = false)
+    bool ConvertsValue = false, NullCheckSite? Site = null)
 {
     /// <summary>
     /// The operator of the compound assignment <paramref name="node"/>, bound as <paramref name="operation"/> (null when
     /// it does not bind), or null for an assignment without a binary operator (<c>=</c>, <c>??=</c>).
     /// </summary>
     public static CompoundOperator? ForAssignment(AssignmentExpressionSyntax node,
-        ICompoundAssignmentOperation? operation)
+        ICompoundAssignmentOperation? operation, ref TranspileContext context)
     {
         if (GetBinaryOperator(node) is not { } binaryOperator)
         {
@@ -34,7 +36,8 @@ internal readonly record struct CompoundOperator(string Operator, string? Helper
         var remainder = operation == null ? null : FloatingPointRemainder.GetCompoundHelper(operation);
         var helper = operation == null ? null : IntegerSemantics.GetCompoundHelper(operation) ?? remainder;
         var shiftMask = operation != null && helper == null ? IntegerSemantics.GetCompoundShiftMask(operation) : 0;
-        return new CompoundOperator(binaryOperator, helper, shiftMask, ConvertsValue: remainder != null);
+        return new CompoundOperator(binaryOperator, helper, shiftMask, ConvertsValue: remainder != null,
+            DivisorCheck.PlanSite(helper, node, ref context));
     }
 
     /// <summary>
@@ -71,6 +74,7 @@ internal readonly record struct CompoundOperator(string Operator, string? Helper
             if (ShiftMask == 0)
             {
                 EvaluationOrder.AppendTempName(writer, value);
+                DivisorCheck.AppendSiteArgument(writer, Site);
                 return;
             }
 

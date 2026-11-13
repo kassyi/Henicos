@@ -311,7 +311,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_id_9_neighbor=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_localTid,1))%(int)(int)blockDim.x, ""G#: a null array is read at LanguageConversionsAndMacrosDifferentialKernels.cs(177,24)"");
+__gsharp_ctx->__gsharp_id_9_neighbor=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_localTid,1),(int)(int)blockDim.x,""Attempted to divide by zero. at LanguageConversionsAndMacrosDifferentialKernels.cs(177,32)""), ""G#: a null array is read at LanguageConversionsAndMacrosDifferentialKernels.cs(177,24)"");
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return false;
@@ -509,6 +509,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(248305208u, "LanguageConve
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(376381546u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 341, 51, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is passed where it is not nullable"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(44509624u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 344, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1610070458u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 346, 24, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(346955434u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 346, 32, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1905599566u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 359, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(410388266u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 360, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1540718082u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 361, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
@@ -2325,7 +2326,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_id_9_neighbor=__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_scratch, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_localTid,3))%(int)(int)blockDim.x, 1610070458u);
+__gsharp_ctx->__gsharp_id_9_neighbor=__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_scratch, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_localTid,3),(int)(int)blockDim.x,346955434u), 1610070458u);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=3;
 return;

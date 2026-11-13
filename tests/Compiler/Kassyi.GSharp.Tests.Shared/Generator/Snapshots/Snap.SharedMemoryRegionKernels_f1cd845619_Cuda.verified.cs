@@ -67,7 +67,7 @@ if(__gsharp_id_2_tid<__gsharp_id_1_count)
 __gsharp_id_3_shared[__gsharp_id_2_tid]=__gsharp_id_0_value;
 }
 __syncthreads();
-int __gsharp_id_4_rotated = (__gsharp_id_2_tid<__gsharp_id_1_count?__gsharp_id_3_shared[(__gsharp_add_i32(__gsharp_id_2_tid,1))%__gsharp_id_1_count]:0);
+int __gsharp_id_4_rotated = (__gsharp_id_2_tid<__gsharp_id_1_count?__gsharp_id_3_shared[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_2_tid,1),__gsharp_id_1_count,""Attempted to divide by zero. at SharedMemoryRegionKernels.cs(53,44)"")]:0);
 __syncthreads();
 return __gsharp_id_4_rotated;
 }

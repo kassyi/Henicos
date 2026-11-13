@@ -499,3 +499,13 @@ IntegerSemantics:
     ConvertToUInt32: { Value: __gsharp_to_u32, Prelude: IntegerSemantics.hpp }
     ConvertToInt64: { Value: __gsharp_to_i64, Prelude: IntegerSemantics.hpp }
     ConvertToUInt64: { Value: __gsharp_to_u64, Prelude: IntegerSemantics.hpp }
+    # x / y and x % y where y may be 0 (DivideByZeroException; checked CUDA builds only on the GPU), or -1 for a
+    # dividend that may be MinValue (the GPU result, which x86 idiv would turn into a hardware exception)
+    DivideInt32: { Value: __gsharp_div_i32, Prelude: IntegerDivision.hpp }
+    DivideInt64: { Value: __gsharp_div_i64, Prelude: IntegerDivision.hpp }
+    DivideUInt32: { Value: __gsharp_div_u32, Prelude: IntegerDivision.hpp }
+    DivideUInt64: { Value: __gsharp_div_u64, Prelude: IntegerDivision.hpp }
+    RemainderInt32: { Value: __gsharp_rem_i32, Prelude: IntegerDivision.hpp }
+    RemainderInt64: { Value: __gsharp_rem_i64, Prelude: IntegerDivision.hpp }
+    RemainderUInt32: { Value: __gsharp_rem_u32, Prelude: IntegerDivision.hpp }
+    RemainderUInt64: { Value: __gsharp_rem_u64, Prelude: IntegerDivision.hpp }

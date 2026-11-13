@@ -59,6 +59,11 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
 
 - By default, G# follows C# and emits the check.
 - The compiler removes the check where it can prove the access is in range, as the .NET JIT does for loop indices.
+- An integer `/` or `%` (and `/=`, `%=`) whose divisor may be 0 throws `DivideByZeroException` on the native CPU
+  build, the managed path and the checked CUDA build. A divisor whose constant or type excludes 0 has no check (`x / 7`).
+  `MinValue / -1` and `MinValue % -1`, which C# leaves implementation-defined in an unchecked context, give the GPU
+  result, `MinValue` and `0`, on the native CPU build as well; the managed path runs the C# operator, which .NET makes
+  throw `OverflowException`.
 - The null check of an array read is removed where the array cannot be `null`: a stack array, and a parameter of a
   device function that is declared non-nullable (`T[]` in a `#nullable enable` context, or a struct that holds such an
   array) and never assigned. A call of a device function checks an argument that may be `null` once, at the call, for

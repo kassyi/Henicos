@@ -116,7 +116,7 @@ if(__gsharp_id_2_write)
 __gsharp_id_3_s[(int)threadIdx.x]=__gsharp_id_1_val;
 }
 __syncthreads();
-return __gsharp_id_3_s[(__gsharp_add_i32((int)threadIdx.x,1))%__gsharp_id_0_n];
+return __gsharp_id_3_s[__gsharp_rem_i32(__gsharp_add_i32((int)threadIdx.x,1),__gsharp_id_0_n,""Attempted to divide by zero. at DeviceDynamicSharedMemoryKernels.cs(95,18)"")];
 }
 
 template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write, TDsmem* __gsharp_dsmem){
@@ -125,7 +125,7 @@ if(__gsharp_id_2_write)
 {
 __gsharp_id_3_s[(int)threadIdx.x]=__gsharp_id_1_val;
 }
-return __gsharp_id_3_s[(__gsharp_add_i32((int)threadIdx.x,1))%__gsharp_id_0_n];
+return __gsharp_id_3_s[__gsharp_rem_i32(__gsharp_add_i32((int)threadIdx.x,1),__gsharp_id_0_n,""Attempted to divide by zero. at DeviceDynamicSharedMemoryKernels.cs(117,18)"")];
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistHelper(int __gsharp_id_0_val, bool __gsharp_id_1_write){

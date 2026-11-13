@@ -147,7 +147,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-*__gsharp_result = __gsharp_ctx->__gsharp_id_3_s[(__gsharp_add_i32((int)threadIdx.x,1))%__gsharp_ctx->__gsharp_id_0_n];
+*__gsharp_result = __gsharp_ctx->__gsharp_id_3_s[__gsharp_rem_i32(__gsharp_add_i32((int)threadIdx.x,1),__gsharp_ctx->__gsharp_id_0_n,""Attempted to divide by zero. at DeviceDynamicSharedMemoryKernels.cs(95,18)"")];
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -164,7 +164,7 @@ if(__gsharp_id_2_write)
 {
 __gsharp_id_3_s[(int)threadIdx.x]=__gsharp_id_1_val;
 }
-return __gsharp_id_3_s[(__gsharp_add_i32((int)threadIdx.x,1))%__gsharp_id_0_n];
+return __gsharp_id_3_s[__gsharp_rem_i32(__gsharp_add_i32((int)threadIdx.x,1),__gsharp_id_0_n,""Attempted to divide by zero. at DeviceDynamicSharedMemoryKernels.cs(117,18)"")];
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistHelper(int __gsharp_id_0_val, bool __gsharp_id_1_write){
