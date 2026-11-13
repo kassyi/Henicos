@@ -32,6 +32,9 @@ public class CompileCudaToFatbinTaskArchitectureTests
     [InlineData("sm_90a", "-gencode arch=compute_90a,code=sm_90a -gencode arch=compute_90a,code=compute_90a ")]
     [InlineData("sm_100f", "-gencode arch=compute_100f,code=sm_100f -gencode arch=compute_100f,code=compute_100f ")]
     [InlineData(" compute_80 , sm_86 ", "-gencode arch=compute_80,code=sm_86 ")]
+    // An entry without a comma is trimmed as a whole
+    [InlineData(" compute_75 ; sm_89 ", "-gencode arch=compute_75,code=compute_75 " +
+        "-gencode arch=compute_89,code=sm_89 -gencode arch=compute_89,code=compute_89 ")]
     [InlineData(
         "compute_75,sm_75;sm_89;;compute_90",
         "-gencode arch=compute_75,code=sm_75 " +

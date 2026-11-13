@@ -1,3 +1,9 @@
+---
+trigger: glob
+globs: "**/tests/**"
+description: Test tiers, snapshot rules, test attributes and names, the test analyzers, and the APIs banned in tests.
+---
+
 # G# Test Framework & Tier 1-3 Architecture Guidelines
 
 This rule defines the standardized testing framework architecture for G# (Henicos). It enforces our core architectural principle: **"Ensuring G# behaves as valid C# whenever possible"** while maximizing developer experience (DX) and isolating compiler edge cases.
