@@ -50,17 +50,24 @@ internal sealed class IrClassifier : IrRewriter
     public override IrExpression VisitOpaqueExpression(IrOpaqueExpression expression) =>
         expression.WithSplit(SplitOf(expression.Syntax));
 
-    // Whether an invocation in the syntax (lambda bodies included, as the lowering annotates them) splits
+    // Whether an invocation that runs in the syntax (lambda bodies included, as the lowering annotates them) splits; a
+    // call that C# removes runs nothing, its arguments included, as for the calls of the IR (IrSplitMarks)
     private IrOpaqueSplit SplitOf(SyntaxNode syntax)
     {
         var model = _compilation.GetCachedSemanticModel(syntax.SyntaxTree);
-        var holdsSplit = syntax.DescendantNodesAndSelf()
-            .AsStackEnumerable()
-            .Any((Model: model, Compilation: _compilation), static (node, state) =>
-                node is InvocationExpressionSyntax invocation &&
-                state.Model.GetSymbol(invocation) is IMethodSymbol callee &&
-                IrSplitClassifier.Classify(callee, state.Compilation).IsSplit
-            );
+        var holdsSplit = !RemovedCalls.IsRemovedCall(syntax as ExpressionSyntax, model) &&
+                         (IsSplit(syntax, model) ||
+                          RemovedCalls.DescendantNodesThatRun(syntax, model)
+                              .AsStackEnumerable()
+                              .Any((Model: model, Classifier: this), static (node, state) =>
+                                  state.Classifier.IsSplit(node, state.Model)
+                              ));
         return holdsSplit ? IrOpaqueSplit.HoldsSplit : IrOpaqueSplit.None;
     }
+
+    // Whether node is an invocation that splits
+    private bool IsSplit(SyntaxNode node, SemanticModel model) =>
+        node is InvocationExpressionSyntax invocation &&
+        model.GetSymbol(invocation) is IMethodSymbol callee &&
+        IrSplitClassifier.Classify(callee, _compilation).IsSplit;
 }

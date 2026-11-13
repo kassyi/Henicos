@@ -31,6 +31,7 @@ internal sealed class IrClassificationEquivalence
     private int _splitCallsCompared;
     private int _invocationsInOpaque;
     private int _splitInvocationsInOpaque;
+    private int _removedSplitInvocationsInOpaque;
     private int _expressionsCompared;
     private int _expressionsWithOpaque;
     private int _outerExplainedByOperands;
@@ -50,6 +51,9 @@ internal sealed class IrClassificationEquivalence
     public int InvocationsInOpaque => _invocationsInOpaque;
 
     public int SplitInvocationsInOpaque => _splitInvocationsInOpaque;
+
+    /// <summary>Split invocations in opaque nodes that never run: C# removes them or the call they are in.</summary>
+    public int RemovedSplitInvocationsInOpaque => _removedSplitInvocationsInOpaque;
 
     public int ExpressionsCompared => _expressionsCompared;
 
@@ -89,8 +93,8 @@ internal sealed class IrClassificationEquivalence
     }
 
     // Every invocation outside the opaque nodes is a call of the IR with the split the lowering annotates, every call
-    // of the IR is an invocation, and every split invocation inside an opaque node is under a node marked as holding
-    // one
+    // of the IR is an invocation, every split invocation that runs inside an opaque node is under a node marked as
+    // holding one, and every node marked so holds one
     private void CompareSplits(IrMethod method, SyntaxNode body, Compilation compilation, string where)
     {
         var calls = new Dictionary<TextSpan, IrCall>();
@@ -112,6 +116,7 @@ internal sealed class IrClassificationEquivalence
         }
 
         var model = compilation.GetSemanticModel(body.SyntaxTree);
+        var holdsRunningSplit = new bool[opaque.Count];
         var matched = 0;
         foreach (var invocation in body.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
@@ -128,7 +133,10 @@ internal sealed class IrClassificationEquivalence
             }
             else if (opaque.FindIndex(o => o.Span.Contains(invocation.Span)) is var index and >= 0)
             {
-                CompareInOpaque(opaque[index].Split, invocation, expected, where);
+                if (CompareInOpaque(opaque[index].Split, invocation, expected, model, where))
+                {
+                    holdsRunningSplit[index] = true;
+                }
             }
             else
             {
@@ -139,6 +147,23 @@ internal sealed class IrClassificationEquivalence
         if (matched != calls.Count)
         {
             _splitMismatches.Add($"{where}: {calls.Count - matched} calls of the IR are no invocation");
+        }
+
+        CompareHeldSplits(opaque, holdsRunningSplit, where);
+    }
+
+    // Every opaque node marked as holding a split holds a split invocation that runs
+    private void CompareHeldSplits(List<(TextSpan Span, IrOpaqueSplit Split)> opaque, bool[] holdsRunningSplit,
+        string where)
+    {
+        for (var i = 0; i < opaque.Count; i++)
+        {
+            if (opaque[i].Split == IrOpaqueSplit.HoldsSplit && !holdsRunningSplit[i])
+            {
+                _splitMismatches.Add(
+                    $"{where}: an opaque node at {opaque[i].Span} is marked {IrOpaqueSplit.HoldsSplit} but no split " +
+                    "point that runs is in it");
+            }
         }
     }
 
@@ -158,13 +183,21 @@ internal sealed class IrClassificationEquivalence
         }
     }
 
-    private void CompareInOpaque(IrOpaqueSplit split, InvocationExpressionSyntax invocation, string expected,
-        string where)
+    // Whether the invocation is a split point that runs; one that C# removes, or that is inside a removed call, never
+    // runs and is counted apart
+    private bool CompareInOpaque(IrOpaqueSplit split, InvocationExpressionSyntax invocation, string expected,
+        SemanticModel model, string where)
     {
         Interlocked.Increment(ref _invocationsInOpaque);
         if (expected == "none")
         {
-            return;
+            return false;
+        }
+
+        if (RemovedCalls.IsInRemovedCall(invocation, model))
+        {
+            Interlocked.Increment(ref _removedSplitInvocationsInOpaque);
+            return false;
         }
 
         Interlocked.Increment(ref _splitInvocationsInOpaque);
@@ -172,6 +205,8 @@ internal sealed class IrClassificationEquivalence
         {
             _splitMismatches.Add($"{where}: {invocation}: a split point under an opaque node marked {split}");
         }
+
+        return true;
     }
 
     // The effects of the outermost node of each span that has the span of an expression of the source
