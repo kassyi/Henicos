@@ -29,8 +29,9 @@ This skill is the **procedure**. The binding **rules** live in `.agents/rules/`;
 2. **Branch by AST lane** to allow parallel work without interference: `Statement`, `Expression`, `Declaration`.
 3. **Implement** using `SourceWriter` scopes per transpiler-emission.md, resolving symbols through `SemanticModel`.
    - **Before writing any query, check, or emission code, look for an existing helper; do not read the whole catalog.**
-     Grep `references/helpers/` for a word of your intent (one table row is one line, so a hit is the whole row), or read
-     the index [references/helpers.md](references/helpers.md) and then only the section file it points to. Use the helper
+     Grep `.agents/skills/gsharp-transpiler-guidelines/references/helpers/` (from the repository root) for a word of
+     your intent (one table row is one line, so a hit is the whole row), or read the index
+     [references/helpers.md](references/helpers.md) and then only the section file it points to. Use the helper
      the row lists instead of writing the logic again.
    - When you add, rename, or move a helper, update its row in the section file under `references/helpers/` (where it
      goes: section 7 of `helpers.md`) in the same change and run

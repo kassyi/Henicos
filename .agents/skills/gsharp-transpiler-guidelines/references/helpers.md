@@ -4,8 +4,9 @@ Read this before adding code to `src/Compiler/Kassyi.GSharp.Compiler`. The catal
 already implements it. If a row fits, use the helper; do not write the logic again. Paths are relative to the compiler
 project.
 
-Do not read the whole catalog. Either grep the folder `references/helpers/` for a word of your intent (a table row is one
-line, so a hit is the whole row), or pick the file from the table below and read only that file.
+Do not read the whole catalog. Either grep the folder `.agents/skills/gsharp-transpiler-guidelines/references/helpers/`
+(from the repository root) for a word of your intent (a table row is one line, so a hit is the whole row), or pick the
+file from the table below and read only that file.
 
 | File | Look here for | Example intents |
 | ----- | ----- | ----- |
