@@ -211,24 +211,31 @@ internal static class ModuleKernelParameterTypes
     private static bool TryReadModifiers(string text, ref int position, out RefKind refKind, out bool isScoped,
         out bool isParams)
     {
-        const string ScopedModifier = "scoped";
-        var modifiers = string.Empty;
-        while (TryReadModifier(text, ref position, out var word))
-        {
-            modifiers = modifiers.Length == 0 ? word : $"{modifiers} {word}";
-        }
+        isScoped = TryReadModifier(text, ref position, "scoped");
+        isParams = !isScoped && TryReadModifier(text, ref position, "params");
+        refKind = isParams ? RefKind.None : ReadRefKind(text, ref position);
 
-        isScoped = modifiers == ScopedModifier || modifiers.StartsWith(ScopedModifier + " ", StringComparison.Ordinal);
-        var rest = isScoped ? modifiers[ScopedModifier.Length..].TrimStart() : modifiers;
-        isParams = !isScoped && rest == "params";
-        refKind = rest switch
+        // A modifier after these is one in another order
+        return !IsModifierAt(text, position);
+    }
+
+    // Reads 'ref', 'ref readonly', 'out' or 'in' at <position> when a type follows it
+    private static RefKind ReadRefKind(string text, ref int position)
+    {
+        var refKind = ReadWord(text, position, out var end) switch
         {
             "ref" => RefKind.Ref,
             "out" => RefKind.Out,
-            "in" or "ref readonly" => RefKind.In,
+            "in" => RefKind.In,
             _ => RefKind.None,
         };
-        return rest.Length == 0 || isParams || refKind != RefKind.None;
+        if (refKind == RefKind.None || end == text.Length)
+        {
+            return RefKind.None;
+        }
+
+        position = SkipWhitespace(text, end);
+        return refKind == RefKind.Ref && TryReadModifier(text, ref position, "readonly") ? RefKind.In : refKind;
     }
 
     // A 'ref', 'out' or 'in' parameter: an unmanaged value staged through a one-element device buffer
@@ -248,28 +255,47 @@ internal static class ModuleKernelParameterTypes
             reason, refKind);
     }
 
-    // Reads one modifier word at <position> and moves past it and the whitespace after it
-    private static bool TryReadModifier(string text, ref int position, out string modifier)
+    // Reads <modifier> at <position> when a type follows it, and moves past it and the whitespace after it
+    private static bool TryReadModifier(string text, ref int position, string modifier)
     {
-        var end = position;
+        var word = ReadWord(text, position, out var end);
+        if (end == text.Length || !word.SequenceEqual(modifier.AsSpan()))
+        {
+            return false;
+        }
+
+        position = SkipWhitespace(text, end);
+        return true;
+    }
+
+    // The first position from <position> that is not whitespace
+    private static int SkipWhitespace(string text, int position)
+    {
+        while (position < text.Length && char.IsWhiteSpace(text[position]))
+        {
+            position++;
+        }
+
+        return position;
+    }
+
+    // Whether the word at <position> is a parameter modifier with a type after it
+    private static bool IsModifierAt(string text, int position)
+    {
+        var word = ReadWord(text, position, out var end);
+        return end < text.Length && (word is "ref" or "out" or "in" or "scoped" or "params" or "readonly");
+    }
+
+    // The characters from <position> up to the next whitespace, which <end> points at
+    private static ReadOnlySpan<char> ReadWord(string text, int position, out int end)
+    {
+        end = position;
         while (end < text.Length && !char.IsWhiteSpace(text[end]))
         {
             end++;
         }
 
-        modifier = text[position..end];
-        if (end == text.Length || modifier is not ("ref" or "out" or "in" or "scoped" or "params" or "readonly"))
-        {
-            return false;
-        }
-
-        while (end < text.Length && char.IsWhiteSpace(text[end]))
-        {
-            end++;
-        }
-
-        position = end;
-        return true;
+        return text.AsSpan(position, end - position);
     }
 
     private static ModuleParameterType Classify(TypeSyntax syntax, string typeName)
