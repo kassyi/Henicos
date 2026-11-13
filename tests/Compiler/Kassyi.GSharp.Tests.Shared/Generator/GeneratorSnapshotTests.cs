@@ -15,9 +15,11 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
             foreach (var attr in node.Attributes)
             {
-                var name = attr.Name.ToString();
-                if (name == "GpuKernel" || name == "GpuKernelAttribute" ||
-                    name == "GpuDeviceFunction" || name == "GpuDeviceFunctionAttribute")
+                if (attr.Name is IdentifierNameSyntax
+                    {
+                        Identifier.ValueText: "GpuKernel" or "GpuKernelAttribute" or
+                        "GpuDeviceFunction" or "GpuDeviceFunctionAttribute"
+                    })
                 {
                     changed = true;
                 }
@@ -261,7 +263,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         }
 
         var source = await File.ReadAllTextAsync(sourcePath);
-        var testName = Path.GetFileNameWithoutExtension(sourcePath).Replace(".cu", "");
+        var testName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(sourcePath));
 
         await VerifyGeneratorSnapshotAsync(source, testName, sourceDir, dialect);
     }
@@ -271,11 +273,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
         var src = @"using Kassyi.GSharp.Core; partial class Dummy { [GpuKernel] public static void Kernel() {} }";
-        var syntaxTrees = new List<SyntaxTree> { CSharpSyntaxTree.ParseText(src, options: parseOptions) };
-        var compilation = CSharpCompilation.Create("DummyCompilation")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
-            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(syntaxTrees);
+        var compilation = RoslynTestUtility.CreateCompilation(src).WithAssemblyName("DummyCompilation");
 
         var generator = new GpuKernelGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
@@ -308,7 +306,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
         foreach (var relativePath in GetSnapshotTestCases())
         {
-            var pureName = Path.GetFileNameWithoutExtension(relativePath).Replace(".cu", "");
+            var pureName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(relativePath));
             mandatorySnapshotKernels.Add(pureName);
         }
 
@@ -379,14 +377,10 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
                 }
             }
             """;
-        var syntaxTree = CSharpSyntaxTree.ParseText(src, options: parseOptions, path: "WarningCheckKernels.cu.cs");
-        var compilation = CSharpCompilation.Create("WarningCheckCompilation")
-            .WithOptions(new CSharpCompilationOptions(
-                OutputKind.DynamicallyLinkedLibrary,
-                allowUnsafe: true,
-                nullableContextOptions: NullableContextOptions.Enable))
-            .AddReferences(RoslynTestUtility.BaseCompilation.References)
-            .AddSyntaxTrees(syntaxTree);
+        var compilation = RoslynTestUtility.CreateCompilationAt("WarningCheckKernels.cu.cs", src);
+        compilation = compilation
+            .WithAssemblyName("WarningCheckCompilation")
+            .WithOptions(compilation.Options.WithNullableContextOptions(NullableContextOptions.Enable));
 
         var generator = new GpuKernelGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
@@ -401,7 +395,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         var generatedFileWarnings = outputCompilation.GetDiagnostics()
             .Where(d => d.Severity == DiagnosticSeverity.Warning &&
                         d.Location.SourceTree != null &&
-                        d.Location.SourceTree != syntaxTree)
+                        d.Location.SourceTree.FilePath != "WarningCheckKernels.cu.cs")
             .ToArray();
 
         Assert.Empty(generatedFileWarnings);

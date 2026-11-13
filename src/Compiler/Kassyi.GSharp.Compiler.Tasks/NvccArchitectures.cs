@@ -1,14 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Tasks;
 
-/// <summary>One nvcc <c>-gencode arch=&lt;Arch&gt;,code=&lt;Code&gt;</c> option.</summary>
-internal readonly record struct NvccGencode(string Arch, string Code);
-
-/// <summary>
-/// The <c>-gencode</c> options that the <c>GSharpTargetArchitectures</c> entries stand for, and the entries that are
-/// not a form nvcc accepts.
-/// </summary>
-internal sealed record NvccArchitecturePlan(IReadOnlyList<NvccGencode> Gencodes, IReadOnlyList<string> InvalidEntries);
-
 /// <summary>Reads the <c>GSharpTargetArchitectures</c> entries as nvcc reads its architecture options.</summary>
 internal static class NvccArchitectures
 {

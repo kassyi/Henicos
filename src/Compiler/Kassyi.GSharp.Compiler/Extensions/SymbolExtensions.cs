@@ -358,8 +358,8 @@ internal static class SymbolExtensions
              current = current.ContainingSymbol)
         {
             if (current.HasAttribute(KnownAttributes.SkipLocalsInit) ||
-                current is IMethodSymbol { AssociatedSymbol: { } associated } &&
-                associated.HasAttribute(KnownAttributes.SkipLocalsInit))
+                (current is IMethodSymbol { AssociatedSymbol: { } associated } &&
+                 associated.HasAttribute(KnownAttributes.SkipLocalsInit)))
             {
                 return false;
             }

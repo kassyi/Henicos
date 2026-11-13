@@ -48,7 +48,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
     // A class or a record class, which the generator reopens; not a struct or a record struct
     private static bool IsClassDeclaration(SyntaxNode? node) =>
         node is ClassDeclarationSyntax ||
-        node is RecordDeclarationSyntax record && !record.ClassOrStructKeyword.IsKind(SyntaxKind.StructKeyword);
+        (node is RecordDeclarationSyntax record && !record.ClassOrStructKeyword.IsKind(SyntaxKind.StructKeyword));
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
         ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)

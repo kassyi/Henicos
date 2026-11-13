@@ -1,0 +1,53 @@
+name: Script types
+
+# Type-checks the TypeScript scripts (scripts/**/*.ts) with tsc and runs the job queue's self-test on Ubuntu and
+# Windows. Node runs the scripts as they are by stripping the types, so a type error would otherwise only show when the
+# code runs. It needs no .NET build, only Node.
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/script-types.yml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/script-types.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Types and job queue (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The oldest Node the scripts support runs .ts files as they are from 22.18 on; check with that one
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.18.0"
+
+      - name: Type check
+        if: matrix.os == 'ubuntu-latest'
+        run: node scripts/human/check-types.js
+
+      - name: Job queue self-test
+        run: node scripts/human/job-queue.js --self-test
+
+      - name: Job queue hook self-test
+        run: node scripts/agent/check-queued-command.js --self-test

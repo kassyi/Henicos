@@ -5,55 +5,60 @@ export DiffEngine_Disabled := "true"
 # tests/Directory.Build.props) leaves a mini dump in its TestResults directory
 blame_crash := "--blame-crash --blame-crash-dump-type mini"
 
-# The MSBuild node limit (-m:<n>) of a job that the build queue (scripts/agent/build-queue.js) granted; empty otherwise
-queue_msbuild_args := env_var_or_default("GSHARP_BUILD_QUEUE_MSBUILD_ARGS", "")
+# The recipes that build, test, fuzz or benchmark run their command through the job queue
+# (scripts/human/job-queue.js, test-execution.md "Job queue"): it waits for free slots of the machine and adds the
+# MSBuild node limit (-m:<n>) to each dotnet build / test of the command. --gpu takes the GPU lock first. Inside a job
+# the queue already granted (an agent's job-queue.js run -- "just test") the command runs at once, in that job.
+queue := "node scripts/human/job-queue.js run"
 
 # Run normal tests excluding heavy stress and benchmark tests and the tests that raise a real GPU fault (GpuTrap)
 test *args="":
-    dotnet test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{queue_msbuild_args}} {{args}}
+    {{queue}} --gpu -- dotnet test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" \
+        {{blame_crash}} {{args}}
 
 # Run tests with code coverage collection
 test-coverage *args="":
-    dotnet test -s coverage.runsettings --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{queue_msbuild_args}} {{args}}
+    {{queue}} --gpu -- dotnet test -s coverage.runsettings \
+        --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
 
 # Run the tests with coverage and list the lines changed since base that no test executed
 coverage-diff base="main":
-    node scripts/human/coverage-diff.js --run --base {{base}}
+    {{queue}} --gpu -- node scripts/human/coverage-diff.js --run --base {{base}}
 
 # Differential tests: C# oracle vs managed vs native CPU (no GPU)
 test-differential-cpu *args="":
-    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj \
-        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{queue_msbuild_args}} {{args}}
+    {{queue}} -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj \
+        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
 
 # Build Tests.Cpu with native sanitizers (ASan/UBSan on Linux, ASan on Windows) and run Differential + Execution tests
 test-sanitized *args="":
-    node scripts/human/test-sanitized.js {{args}}
+    {{queue}} -- node scripts/human/test-sanitized.js {{args}}
 
-# Differential tests: C# oracle vs CUDA (agents: node scripts/agent/build-queue.js run --gpu -- "...")
+# Differential tests: C# oracle vs CUDA
 test-differential-cuda *args="":
-    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
-        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{queue_msbuild_args}} {{args}}
+    {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
+        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
 
 # Tests that raise a real GPU fault (a CUDA trap of a cooperative launch or an mbarrier wait), each in a child process,
-# one at a time pause_ms apart, plus the CUDA fault seeds of the differential tests that CUDA does not check (agents:
-# node scripts/agent/build-queue.js run --gpu -- "...")
+# one at a time pause_ms apart, plus the CUDA fault seeds of the differential tests that CUDA does not check
 test-gpu-trap pause_ms="3000" *args="":
-    dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
+    {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         --filter "(Category=GpuTrap|Category=Differential)&Category!=Stress" \
-        -e GSHARP_CUDA_TRAP_TESTS=1 -e GSHARP_CUDA_TRAP_PAUSE_MS={{pause_ms}} {{blame_crash}} {{queue_msbuild_args}} {{args}}
+        -e GSHARP_CUDA_TRAP_TESTS=1 -e GSHARP_CUDA_TRAP_PAUSE_MS={{pause_ms}} {{blame_crash}} {{args}}
 
-# Run differential kernel fuzzer (profile: M|C|G or managed|cpu|all)
+# Run differential kernel fuzzer (profile: M|C|G or managed|cpu|all); it takes the GPU lock itself for its GPU steps
 fuzz-diff profile="cpu" minutes="5" *args="":
-    node scripts/human/fuzz-differential.js --profile {{profile}} --minutes {{minutes}} {{args}}
+    {{queue}} --weight 2 -- node scripts/human/fuzz-differential.js --profile {{profile}} --minutes {{minutes}} {{args}}
 
 # Compare generated C++/CUDA of a base ref and the working tree on fuzzer kernels
 fuzz-compare base="origin/main" batches="20" *args="":
-    node scripts/human/fuzz-differential.js --compare-base {{base}} --batches {{batches}} {{args}}
+    {{queue}} --weight 2 -- node scripts/human/fuzz-differential.js --compare-base {{base}} \
+        --batches {{batches}} {{args}}
 
 # count can take the time: `test-stability 5h15m` for 5 hours 15 minutes, `test-stability 10000` for 10000 times
 # Run tests multiple times to detect flaky tests; see scripts/human/test-stability.js --help
 test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args="":
-    node scripts/human/test-stability.js --count "{{count}}" \
+    {{queue}} --gpu -- node scripts/human/test-stability.js --count "{{count}}" \
         {{ if continue_on_error == "true" { "--continue-on-error" } else { "" } }} \
         {{ if shuffle == "true" { "" } else { "--no-shuffle" } }} \
         {{ if seed == "" { "" } else { "--seed " + seed } }} \
@@ -61,27 +66,29 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
 
 # Run the tests of one TestCategory (values: the TestCategory enum), e.g. `just test-category Stress`
 test-category category *args="":
-    dotnet test --filter "Category={{category}}" {{blame_crash}} {{queue_msbuild_args}} {{args}}
+    {{queue}} --gpu -- dotnet test --filter "Category={{category}}" {{blame_crash}} {{args}}
 
 # e.g. `just test-memory Kassyi.GSharp.Tests.Cpu -c Release --filter "Category!=GpuExecution"`; test-memory.js --help
-# One run of a test project: its memory peak, the tests that raised it, dotnet-counters and a gcdump at the end
+# One run of a test project: its memory peak, the tests that raised it, dotnet-counters and a gcdump at the end; a
+# Cuda project runs under the GPU lock
 test-memory project *args="":
-    node scripts/human/test-memory.js {{project}} {{args}}
+    {{queue}} {{ if project =~ "Cuda" { "--gpu" } else { "" } }} -- \
+        node scripts/human/test-memory.js {{project}} {{args}}
 
 # Run compute benchmarks (sgemm, sha256, bs, reduce, all)
 bench suite="all" *args="":
-    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- compute-bench {{suite}} {{args}}
+    {{queue}} --gpu -- dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- compute-bench {{suite}} {{args}}
 
 update-agents:
     npx --yes "git+ssh://git@github.com/kassyi/antigravity-global-agents.git" --copy
 
 # Run GPU Pi Benchmark (e.g. `just bench-pi 100k`, `just bench-pi 1M`, `just bench-pi 1M --hex`)
 bench-pi digits="100k" *args="":
-    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- gpu-pi {{digits}} {{args}}
+    {{queue}} --gpu -- dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- gpu-pi {{digits}} {{args}}
 
 # Run a C# code snippet as a DocTest with explicitly defined dependencies
 doctest file_path assemblies="":
-    node scripts/human/test-doc-snippet.js --file-path "{{file_path}}" --assemblies "{{assemblies}}"
+    {{queue}} -- node scripts/human/test-doc-snippet.js --file-path "{{file_path}}" --assemblies "{{assemblies}}"
 
 # e.g. `just mutate gpumath`, `just mutate compiler main`, `just mutate compiler "" -m "**/Layout/**/*.cs"`
 # Mutation testing with Stryker.NET. phase: gpumath | compiler | compiler-cuda (the CUDA dialect snapshots only).
@@ -89,7 +96,8 @@ doctest file_path assemblies="":
 # The test host heap is capped at 8 GB (GSharpTestHeapHardLimit in bytes; set it to override), so a mutant that
 # allocates without bound fails instead of exhausting memory.
 mutate phase="gpumath" since="" *args="":
-    node scripts/human/mutate.js --phase "{{phase}}" {{ if since != "" { "--since " + since } else { "" } }} -- {{args}}
+    {{queue}} {{ if phase == "compiler" { "" } else { "--gpu" } }} -- node scripts/human/mutate.js --phase "{{phase}}" \
+        {{ if since != "" { "--since " + since } else { "" } }} -- {{args}}
 
 # Demangle C++ / G# identifiers in a build/runtime log (pass file path, "-" for stdin, or "help" / "-- --help" for usage)
 gsharp-demangle log_path="-" symbols_path="":
@@ -125,9 +133,9 @@ trusted-key-line key:
 
 # Run every long check in one go, about a day (benchmarks, fuzzer, sanitized tests, test-stability, coverage, mutation); see scripts/human/long-checks.js --help
 long-checks *args="":
-    node scripts/human/long-checks.js {{args}}
+    {{queue}} -- node scripts/human/long-checks.js {{args}}
 
 # Compare the BenchmarkDotNet *-report-full.json reports of a base and a head run with a Mann-Whitney U test;
 # exits 1 on a significant slowdown (options: --threshold <percent>, --pvalue <p>, --json-out <file>)
 bench-compare base head *args="":
-    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- bench-compare {{base}} {{head}} {{args}}
+    {{queue}} -- dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- bench-compare {{base}} {{head}} {{args}}

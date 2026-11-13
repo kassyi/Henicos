@@ -19,17 +19,17 @@ public class IrBuilderArgumentTests
     public void Arguments_InParameterOrder_WithDefaultsAndEvaluationOrder()
     {
         var kernel = IrTestCases.Build(IrTestCases.NamedArgumentCases, NamedType, "SampleKernel");
-        var lines = IrPrinter.Print(kernel).Split('\n').Select(static line => line.TrimEnd('\r')).ToArray();
+        var statements = kernel.Body.Statements.Select(static statement => IrPrinter.Print(statement)).ToArray();
 
         Assert.Contains(
             "local int r1 = DefaultAndNamedArgumentsTestCase.ComputeStep(input: data[tid], offset: default 0, " +
-            "scale: default 1)", lines);
+            "scale: default 1)", statements);
         Assert.Contains(
             "local int r2 = DefaultAndNamedArgumentsTestCase.ComputeStep(input: data[tid], offset: 5, scale: 2) " +
-            "eval(input, scale, offset)", lines);
+            "eval(input, scale, offset)", statements);
         Assert.Contains(
             "local int r3 = DefaultAndNamedArgumentsTestCase.ComputeStep(input: data[tid], offset: default 0, " +
-            "scale: 4) eval(input, scale, offset)", lines);
+            "scale: 4) eval(input, scale, offset)", statements);
     }
 
     [Fact]

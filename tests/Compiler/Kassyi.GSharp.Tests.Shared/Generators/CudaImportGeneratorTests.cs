@@ -7,6 +7,9 @@ namespace Kassyi.GSharp.Tests.Shared.Generators;
 [Category(TestCategory.Compiler)]
 public class CudaImportGeneratorTests
 {
+    private const string UnrelatedPath = "Unrelated.cs";
+    private const string UnrelatedSource = "namespace Other { class Unrelated { } }";
+
     private static readonly string s_sourceCode =
         RoslynTestUtility.ReadTestCase("Generators/CudaImport_CachedStep.cu.cs");
 
@@ -14,12 +17,14 @@ public class CudaImportGeneratorTests
     [Scenario(TestScenario.Boundary)]
     public void UnrelatedSourceChange_KeepsCudaImportStepCached()
     {
-        var compilation = CreateCompilation(s_sourceCode);
+        // The second run sees the same kernel tree and one more file that declares an unrelated class
+        var updated = RoslynTestUtility.CreateCompilationAt(("", s_sourceCode), (UnrelatedPath, UnrelatedSource))
+            .WithAssemblyName("TestAssembly");
+        var compilation = updated.RemoveSyntaxTrees(
+            updated.SyntaxTrees.Where(static tree => tree.FilePath == UnrelatedPath));
         var driver = CreateDriver();
 
         driver = driver.RunGenerators(compilation);
-        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
-        var updated = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText("namespace Other { class Unrelated { } }", parseOptions));
         driver = driver.RunGenerators(updated);
 
         var runResult = driver.GetRunResult().Results[0];
@@ -100,7 +105,7 @@ public class CudaImportGeneratorTests
             depth += source[i] switch { '{' => 1, '}' => -1, _ => 0 };
             if (depth == 0)
             {
-                return source[(open + 1)..i].Trim();
+                return source.AsSpan(open + 1, i - open - 1).Trim().ToString();
             }
         }
 
@@ -224,16 +229,8 @@ public class CudaImportGeneratorTests
         Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
     }
 
-    private static CSharpCompilation CreateCompilation(string source)
-    {
-        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
-
-        return CSharpCompilation.Create("TestAssembly")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(syntaxTree);
-    }
+    private static CSharpCompilation CreateCompilation(string source) =>
+        RoslynTestUtility.CreateCompilation(source).WithAssemblyName("TestAssembly");
 
     private static GeneratorDriver CreateDriver()
     {
