@@ -116,7 +116,7 @@ if(__gsharp_id_2_write)
 __gsharp_id_3_s[(int)threadIdx.x]=__gsharp_id_1_val;
 }
 __syncthreads();
-return __gsharp_id_3_s[(__gsharp_add_i32((int)threadIdx.x,1))%__gsharp_id_0_n];
+return __gsharp_id_3_s[__gsharp_rem_i32((int)threadIdx.x+1,__gsharp_id_0_n,""Attempted to divide by zero. at DeviceDynamicSharedMemoryKernels.cs(95,18)"")];
 }
 
 template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write, TDsmem* __gsharp_dsmem){
@@ -125,7 +125,7 @@ if(__gsharp_id_2_write)
 {
 __gsharp_id_3_s[(int)threadIdx.x]=__gsharp_id_1_val;
 }
-return __gsharp_id_3_s[(__gsharp_add_i32((int)threadIdx.x,1))%__gsharp_id_0_n];
+return __gsharp_id_3_s[__gsharp_rem_i32((int)threadIdx.x+1,__gsharp_id_0_n,""Attempted to divide by zero. at DeviceDynamicSharedMemoryKernels.cs(117,18)"")];
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistHelper(int __gsharp_id_0_val, bool __gsharp_id_1_write){
@@ -134,7 +134,7 @@ if(__gsharp_id_1_write)
 {
 __gsharp_id_2_s[(int)threadIdx.x]=__gsharp_id_0_val;
 }
-return __gsharp_id_2_s[(__gsharp_add_i32((int)threadIdx.x,1))%32];
+return __gsharp_id_2_s[((int)threadIdx.x+1)%32];
 }
 
 template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int __gsharp_id_0_count, int __gsharp_id_1_writeStart, int __gsharp_id_2_val, TDsmem* __gsharp_dsmem){
@@ -316,7 +316,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = s[(global::Kassyi.GSharp.Core.ThreadIndex.X + 1) % __gsharp_ctx.n];
+__gsharp_result = s[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((global::Kassyi.GSharp.Core.ThreadIndex.X + 1), __gsharp_ctx.n)];
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
@@ -324,6 +324,18 @@ return true;
 }
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_managed_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(int n, int val, bool write)
+{
+var s = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x0e0c1dfb8c6d9238UL, "DeviceDynamicSharedMemoryKernels.cs(111,17)");
+if (write)
+{
+s[global::Kassyi.GSharp.Core.ThreadIndex.X] = val;
+}
+
+return s[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((global::Kassyi.GSharp.Core.ThreadIndex.X + 1), n)];
 }
 
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
