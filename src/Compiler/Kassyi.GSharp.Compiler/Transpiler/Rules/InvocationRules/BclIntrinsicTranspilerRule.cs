@@ -41,7 +41,8 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
                         sequence.AppendArgument(argument, symbol.Parameters[i],
                             ref context, convertToParameter: i != 0 || mappingInfo.CastFirstArgumentTo == null);
                     }
-                    else
+                    else if (!ArgumentMatchingHelper.TryAppendCallerInfoArgument(symbol.Parameters[i], node,
+                                 ref context))
                     {
                         ArgumentMatchingHelper.AppendDefaultArgument(symbol.Parameters[i], ref context);
                     }

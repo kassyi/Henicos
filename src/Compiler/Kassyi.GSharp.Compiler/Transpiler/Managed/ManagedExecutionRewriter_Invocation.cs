@@ -10,9 +10,10 @@ internal sealed partial class ManagedExecutionRewriter
                 Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall
             })
         {
-            var result = ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel) is { } rewritten
-                ? RouteExtensionCall(node, rewritten)
-                : base.VisitInvocationExpression(node);
+            var result = AddCallerInfoArguments(node,
+                ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel) is { } rewritten
+                    ? RouteExtensionCall(node, rewritten)
+                    : base.VisitInvocationExpression(node));
             return ManagedRewriteClassifier.IsSequentialSum(node, semanticModel) &&
                    result is InvocationExpressionSyntax sumCall
                 ? RewriteSequentialSum(sumCall)
@@ -35,7 +36,8 @@ internal sealed partial class ManagedExecutionRewriter
             if (argumentsByParameter[i] is not { } argument)
             {
                 callArguments = callArguments.Add(
-                    SyntaxFactory.Argument(ArgumentMatchingHelper.CreateDefaultArgument(callee.Parameters[i])));
+                    SyntaxFactory.Argument(
+                        ArgumentMatchingHelper.CreateOmittedArgument(callee.Parameters[i], call, semanticModel)));
                 continue;
             }
 
@@ -74,6 +76,52 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.ParseExpression(ManagedStateMachineEmitter.GetDeviceFunctionMember(callee,
                 GSharpInternalNames.Kernel.StateMachinePrefix)),
             SyntaxFactory.ArgumentList(callArguments));
+    }
+
+    // <call>(<arguments>, <parameter>: <value>): a caller-info parameter that the call of a method of the user's code
+    // omits receives the value that C# computes at the user's call site (#946). Left to C#, the generated file would be
+    // the site, and a managed version does not keep the attribute. Calls of other methods (the runtime's, which the
+    // rewriter may map to other members) and SharedMemory<T>, whose site key replaces its caller information, are left
+    // as they are
+    private SyntaxNode? AddCallerInfoArguments(SyntaxNode node, SyntaxNode? visited)
+    {
+        if (visited is not (InvocationExpressionSyntax or BaseObjectCreationExpressionSyntax) ||
+            semanticModel.GetSymbol(node) is not IMethodSymbol method ||
+            method.OriginalDefinition.DeclaringSyntaxReferences.IsEmpty ||
+            method.ContainingType.IsSharedMemoryType())
+        {
+            return visited;
+        }
+
+        var list = visited switch
+        {
+            InvocationExpressionSyntax call => call.ArgumentList,
+            BaseObjectCreationExpressionSyntax creation => creation.ArgumentList,
+            _ => null
+        };
+        var added = false;
+        foreach (var parameter in method.Parameters)
+        {
+            if (CallerInfoArgument.GetValue(parameter, node, semanticModel) is not { } value)
+            {
+                continue;
+            }
+
+            // <parameter name>: <value>
+            list = (list ?? SyntaxFactory.ArgumentList()).AddArguments(SyntaxFactory.Argument(
+                SyntaxFactory.NameColon(parameter.Name.ToCSharpIdentifier()),
+                default,
+                CallerInfoArgument.CreateLiteral(value)
+            ));
+            added = true;
+        }
+
+        return (added, visited, list) switch
+        {
+            (true, InvocationExpressionSyntax call, { } arguments) => call.WithArgumentList(arguments),
+            (true, BaseObjectCreationExpressionSyntax creation, { } arguments) => creation.WithArgumentList(arguments),
+            _ => visited
+        };
     }
 
     private static InvocationExpressionSyntax RewriteSequentialSum(InvocationExpressionSyntax call) =>

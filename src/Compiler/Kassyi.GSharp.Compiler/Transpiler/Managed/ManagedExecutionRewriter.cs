@@ -84,6 +84,7 @@ internal sealed partial class ManagedExecutionRewriter(
             return shared;
         }
 
+        visited = AddCallerInfoArguments(node, visited);
         if (TryWrapGenericStructConstructor(node, visited) is { } wrapped)
         {
             return wrapped;

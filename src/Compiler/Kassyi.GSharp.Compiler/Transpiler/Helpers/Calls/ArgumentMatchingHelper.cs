@@ -127,6 +127,34 @@ internal static class ArgumentMatchingHelper
         context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));
     }
 
+    /// <summary>
+    /// Appends the C++ value of a caller-info parameter that <paramref name="call"/> omits
+    /// (<see cref="CallerInfoArgument"/>); false when the parameter takes its default value.
+    /// </summary>
+    /// <remarks>A string has no device form; a string caller-info parameter keeps its default value.</remarks>
+    public static bool TryAppendCallerInfoArgument(IParameterSymbol parameter, SyntaxNode call,
+        ref TranspileContext context)
+    {
+        if (CallerInfoArgument.GetValue(parameter, call, context.Query.SemanticModel) is not { } value ||
+            value is string)
+        {
+            return false;
+        }
+
+        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));
+        return true;
+    }
+
+    /// <summary>
+    /// Creates the C# argument for an optional parameter that <paramref name="call"/> omits: the call site's value of a
+    /// caller-info parameter (<see cref="CallerInfoArgument"/>), or <see cref="CreateDefaultArgument"/>.
+    /// </summary>
+    public static ExpressionSyntax CreateOmittedArgument(IParameterSymbol parameter, SyntaxNode call,
+        SemanticModel semanticModel) =>
+        CallerInfoArgument.GetValue(parameter, call, semanticModel) is { } value
+            ? CallerInfoArgument.CreateLiteral(value)
+            : CreateDefaultArgument(parameter);
+
     // (-<max> - 1)
     private static ExpressionSyntax CreateMinValue(SyntaxToken max, SyntaxToken one) =>
         SyntaxFactory.ParenthesizedExpression(

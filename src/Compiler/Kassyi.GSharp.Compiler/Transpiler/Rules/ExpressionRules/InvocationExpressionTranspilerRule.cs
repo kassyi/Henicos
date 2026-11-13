@@ -108,7 +108,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         context.Visitor.Visit(node.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
-            TranspileArguments(symbol, node.ArgumentList.Arguments, in sequence, ref context, convertArguments, checks);
+            TranspileArguments(symbol, node, in sequence, ref context, convertArguments, checks);
             DynamicSharedMemoryEmitter.AppendTableArgument(node, symbol, ref context);
         }
     }
@@ -158,7 +158,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             sequence.AppendReceiver(receiver, byReference, ref context);
 
             context.Emitter.Writer.AppendIf(symbol.Parameters.Length > 0, ",");
-            TranspileArguments(symbol, node.ArgumentList.Arguments, in sequence, ref context);
+            TranspileArguments(symbol, node, in sequence, ref context);
             DynamicSharedMemoryEmitter.AppendTableArgument(node, extension, ref context);
         }
     }
@@ -199,7 +199,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         using (context.Emitter.Writer.Parentheses())
         {
             // Lowering has evaluated the arguments into temporaries already (WarpInstructionRewriter.SpillArguments)
-            TranspileArguments(callee, call.ArgumentList.Arguments, default, ref context, checks: checks);
+            TranspileArguments(callee, call, default, ref context, checks: checks);
             if (callee.Parameters.Length > 0)
             {
                 context.Emitter.Writer.Append(',');
@@ -256,12 +256,13 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     // value
     private static void TranspileArguments(
         IMethodSymbol callee,
-        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        InvocationExpressionSyntax call,
         in EvaluationOrder.CallSequence sequence,
         ref TranspileContext context,
         bool convertArguments = false,
         ImmutableArray<ArgumentCheck> checks = default)
     {
+        var arguments = call.ArgumentList.Arguments;
         var parameters = callee.Parameters;
         for (var i = 0; i < parameters.Length; i++)
         {
@@ -297,7 +298,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
             if (!hasArgument)
             {
-                AppendOmittedArgument(parameter, ref context);
+                AppendOmittedArgument(parameter, call, ref context);
             }
 
             if (i < parameters.Length - 1)
@@ -307,10 +308,16 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
     }
 
-    // An optional parameter the call omits: its default value, or for [Optional] without one default(T), as C# passes.
-    // A params parameter without arguments takes nothing
-    private static void AppendOmittedArgument(IParameterSymbol parameter, ref TranspileContext context)
+    // An optional parameter the call omits: the call site's value of a caller-info parameter, its default value, or for
+    // [Optional] without one default(T), as C# passes. A params parameter without arguments takes nothing
+    private static void AppendOmittedArgument(IParameterSymbol parameter, InvocationExpressionSyntax call,
+        ref TranspileContext context)
     {
+        if (ArgumentMatchingHelper.TryAppendCallerInfoArgument(parameter, call, ref context))
+        {
+            return;
+        }
+
         if (parameter.HasExplicitDefaultValue)
         {
             EmitDefaultValue(parameter, ref context);
