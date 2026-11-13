@@ -98,8 +98,10 @@ internal static class WrapperEmitter
 
     // namespace <namespace> { <outer partial declarations> <accessibility> partial <keyword> <name>, without the
     // namespace for the global namespace. The generated part must declare the accessibility of the user's part, or the
-    // compiler reports CS0262, and its kind (class, record), or CS0261.
-    private static void WriteClassDeclaration(SourceWriter writer, in HostClassHeader header)
+    // compiler reports CS0262, and its kind (class, record), or CS0261. Each outer declaration gets its warmup relays
+    // (CUDA only).
+    private static void WriteClassDeclaration(SourceWriter writer, in HostClassHeader header,
+        EquatableArray<WarmupRelay> relays = default)
     {
         if (!header.IsGlobalNamespace)
         {
@@ -108,10 +110,11 @@ internal static class WrapperEmitter
         }
 
         // A nested class is written inside partial declarations of the types that contain it
-        foreach (var outer in header.OuterDeclarations)
+        for (var i = 0; i < header.OuterDeclarations.Length; i++)
         {
-            writer.AppendLine(outer);
+            writer.AppendLine(header.OuterDeclarations[i]);
             writer.AppendLine("{");
+            CudaHostLaunchEmitter.WriteWarmupRelays(writer, relays, i);
         }
 
         writer.AppendLine($"{header.Accessibility} partial {header.Keyword} {header.Name}");
@@ -210,7 +213,7 @@ internal static class WrapperEmitter
 
         writer.AppendLine();
 
-        WriteClassDeclaration(writer, model.Class);
+        WriteClassDeclaration(writer, model.Class, config.IsCuda ? model.WarmupRelays : default);
         using (writer.Scope())
         {
             WriteErrorSiteTableField(writer, model.ErrorSites);

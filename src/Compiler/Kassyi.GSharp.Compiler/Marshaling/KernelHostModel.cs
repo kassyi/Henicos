@@ -29,6 +29,12 @@ internal readonly record struct KernelHostModel
     /// <summary>The CPU export of the launcher.</summary>
     public string LaunchExportName { get; init; }
 
+    /// <summary>
+    /// The method through which a container warms up the kernel of a class the module context cannot name
+    /// (<see cref="HostClassHeader.WarmupRelayHosts"/>).
+    /// </summary>
+    public string WarmupRelayName { get; init; }
+
     /// <summary>The fully qualified return type, or <see langword="null"/> for <c>void</c>.</summary>
     public string? ReturnTypeName { get; init; }
 
@@ -147,6 +153,8 @@ internal readonly record struct KernelHostModel
             ContextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, kernel),
             StateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, kernel),
             LaunchExportName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.LaunchExportPrefix, kernel),
+            WarmupRelayName =
+                GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Launcher.WarmupRelayPrefix, kernel),
             ReturnTypeName = kernel.ReturnType.SpecialType == SpecialType.System_Void
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
@@ -299,84 +307,6 @@ internal readonly record struct StructLayoutGuard(
 /// <param name="ExpectedOffset">The predicted host offset in bytes.</param>
 internal readonly record struct FieldOffsetGuard(string Name, string FullyQualifiedTypeName, int ExpectedOffset);
 
-/// <summary>The partial class that the generated host members of a kernel or device function go into.</summary>
-/// <param name="HintName">The source hint name of the class's wrapper (<see cref="GlobalCppNames.GetHintName"/>).</param>
-/// <param name="Namespace">
-/// The namespace as C# source spells it (<c>@event.P3</c>), or empty for the global namespace.
-/// </param>
-/// <param name="Name">
-/// The class name and type parameters as C# source spells them (<c>@class</c>, <c>G&lt;T&gt;</c>).
-/// </param>
-/// <param name="Keyword">
-/// The keyword of the user's declaration after <c>partial</c> (<c>class</c>, or <c>record</c> for a record class),
-/// which every part must repeat (CS0261).
-/// </param>
-/// <param name="Accessibility">The declared accessibility keywords, which the generated part must repeat (CS0262).</param>
-/// <param name="IsPublic">Whether the class is public, which decides the CS0649 suppression.</param>
-/// <param name="OuterDeclarations">
-/// The partial declarations of the types that contain the class, outermost first (<c>partial class Outer</c>, names
-/// as <see cref="CSharpTypeNameWriter.GetDeclaredTypeName"/> spells them), so
-/// that a part of a nested class is written inside them.
-/// </param>
-/// <param name="FullyQualifiedName">The <c>global::</c>-qualified C# type name, including any enclosing types.</param>
-/// <param name="DefinedSymbols">
-/// The symbols that the generated files of the class <c>#define</c>, so that C# keeps there the
-/// <c>[Conditional]</c> calls that a <c>#define</c> of the user's file keeps
-/// (<see cref="RemovedCalls.GetSymbolsToDefine"/>).
-/// </param>
-internal readonly record struct HostClassHeader(
-    string HintName,
-    string Namespace,
-    string Name,
-    string Keyword,
-    string Accessibility,
-    bool IsPublic,
-    EquatableArray<string> OuterDeclarations,
-    string FullyQualifiedName,
-    EquatableArray<string> DefinedSymbols = default)
-{
-    public bool IsGlobalNamespace => Namespace.Length == 0;
-
-    public static HostClassHeader Create(INamedTypeSymbol type, Compilation compilation) => new(
-        GlobalCppNames.GetHintName(type),
-        type.ContainingNamespace.GetCsharpNamespaceName(),
-        type.GetDeclaredTypeName(),
-        GetKeyword(type),
-        SyntaxFacts.GetText(type.DeclaredAccessibility),
-        type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
-        CreateOuterDeclarations(type),
-        type.GetFullyQualifiedCsharpName(),
-        RemovedCalls.GetSymbolsToDefine(type, compilation));
-
-    /// <summary>
-    /// The partial declarations of the types that contain <paramref name="type"/>, outermost first
-    /// (<c>partial class Outer&lt;T&gt;</c>), or empty for a type that is not nested.
-    /// </summary>
-    public static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
-    {
-        if (type.ContainingType == null)
-        {
-            return default;
-        }
-
-        var declarations = ImmutableArray.CreateBuilder<string>();
-        for (var outer = type.ContainingType; outer != null; outer = outer.ContainingType)
-        {
-            declarations.Insert(0, $"partial {GetKeyword(outer)} {outer.GetDeclaredTypeName()}");
-        }
-
-        return declarations.ToImmutable().AsEquatableArray();
-    }
-
-    /// <summary>
-    /// The keyword that declares <paramref name="type"/> after <c>partial</c>: <c>class</c>, <c>struct</c>,
-    /// <c>interface</c>, <c>record</c> or <c>record struct</c>.
-    /// </summary>
-    public static string GetKeyword(INamedTypeSymbol type) => type.IsRecord
-        ? type.TypeKind == TypeKind.Struct ? "record struct" : "record"
-        : type.TypeKind == TypeKind.Struct ? "struct" : type.TypeKind == TypeKind.Interface ? "interface" : "class";
-}
-
 /// <summary>The native shadow struct and the marshaling methods of one user struct, as the wrapper declares them.</summary>
 /// <param name="AotStructPath">The <c>AotContexts</c> path, which identifies the struct within a class.</param>
 /// <param name="CudaText">The CUDA declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
@@ -410,6 +340,13 @@ internal readonly record struct KernelEmission(
     EquatableArray<ErrorSiteEntry> ErrorSites = default)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
+
+    /// <summary>
+    /// Whether the kernel has a CUDA warmup method for the module context to call: it has launchers (GSH0059, GSH0106
+    /// and GSH0108 leave them out).
+    /// </summary>
+    public bool HasWarmup => !IsIndistinguishable && !Host.HasReservedLaunchParameterName &&
+                             Host.LauncherUnavailableReason is null;
 }
 
 /// <summary>The kernels of one class, which the generator emits as one wrapper source.</summary>
@@ -417,7 +354,8 @@ internal readonly record struct KernelClassModel(
     HostClassHeader Class,
     EquatableArray<KernelEmission> Kernels,
     EquatableArray<StructHostSource> Structs,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default)
+    EquatableArray<ErrorSiteEntry> ErrorSites = default,
+    EquatableArray<WarmupRelay> WarmupRelays = default)
 {
     /// <summary>
     /// Builds the class model from the kernels of one class, in the order given; the overloads, member keys and the
@@ -477,11 +415,13 @@ internal readonly record struct KernelClassModel(
         }
 
         ErrorSiteTable.TryBuildModuleSites(rawClassSites, out var classErrorSites, out _, out _);
+        var kernelEmissions = emissions.MoveToImmutable();
         return new KernelClassModel(
             header,
-            emissions.MoveToImmutable().AsEquatableArray(),
+            kernelEmissions.AsEquatableArray(),
             structs.ToImmutable().AsEquatableArray(),
-            classErrorSites.AsEquatableArray());
+            classErrorSites.AsEquatableArray(),
+            WarmupRelayPlan.Create(header, kernelEmissions));
     }
 
     /// <summary>Whether another kernel of <paramref name="kernels"/> has the name of <c>kernels[index]</c>.</summary>
@@ -533,62 +473,6 @@ internal readonly record struct KernelClassModel(
         }
 
         return false;
-    }
-}
-
-/// <summary>A kernel whose function pointer the CUDA module context warms up.</summary>
-/// <param name="Class">The class that declares the warmup method.</param>
-/// <param name="MemberKey">The suffix of <c>WarmupFunctionPointer{key}</c>.</param>
-internal readonly record struct KernelWarmup(HostClassHeader Class, string MemberKey);
-
-/// <summary>The kernels of one compilation: the class models, and the warmups in the order of the kernels.</summary>
-internal readonly record struct KernelModuleModel(
-    EquatableArray<KernelClassModel> Classes,
-    EquatableArray<KernelWarmup> Warmups)
-{
-    /// <summary>Groups <paramref name="kernels"/> by class, in the order the classes first appear.</summary>
-    public static KernelModuleModel Create(ImmutableArray<TranspiledKernelResult> kernels)
-    {
-        var kernelsByClass = new Dictionary<string, ImmutableArray<TranspiledKernelResult>.Builder>(StringComparer.Ordinal);
-        var classIndices = new Dictionary<string, int>(StringComparer.Ordinal);
-        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
-        foreach (var kernel in kernels)
-        {
-            if (!kernelsByClass.TryGetValue(kernel.Class.HintName, out var group))
-            {
-                group = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
-                kernelsByClass[kernel.Class.HintName] = group;
-                classIndices[kernel.Class.HintName] = classOrder.Count;
-                classOrder.Add(kernel.Class);
-            }
-
-            group.Add(kernel);
-        }
-
-        var classes = ImmutableArray.CreateBuilder<KernelClassModel>(classOrder.Count);
-        classOrder
-            .AsStackEnumerable()
-            .Select(kernelsByClass, static (header, groups) => KernelClassModel.Create(header, groups[header.HintName]))
-            .AddTo(classes);
-        var classModels = classes.MoveToImmutable();
-
-        // The module context warms the kernels up in their own order, which may interleave the classes
-        var positions = new Dictionary<string, int>(StringComparer.Ordinal);
-        var warmups = ImmutableArray.CreateBuilder<KernelWarmup>(kernels.Length);
-        foreach (var kernel in kernels)
-        {
-            var hintName = kernel.Class.HintName;
-            positions.TryGetValue(hintName, out var position);
-            positions[hintName] = position + 1;
-            var emission = classModels[classIndices[hintName]].Kernels[position];
-            if (!emission.IsIndistinguishable && !emission.Host.HasReservedLaunchParameterName &&
-                emission.Host.LauncherUnavailableReason is null)
-            {
-                warmups.Add(new KernelWarmup(kernel.Class, emission.MemberKey));
-            }
-        }
-
-        return new KernelModuleModel(classModels.AsEquatableArray(), warmups.ToImmutable().AsEquatableArray());
     }
 }
 

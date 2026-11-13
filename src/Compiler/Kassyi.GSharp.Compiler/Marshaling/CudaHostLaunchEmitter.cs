@@ -161,6 +161,25 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine();
     }
 
+    /// <summary>
+    /// Emits the warmup relays (<see cref="WarmupRelayPlan"/>) that go into the outer declaration
+    /// <paramref name="outerIndex"/> of a kernel class.
+    /// </summary>
+    public static void WriteWarmupRelays(SourceWriter writer, EquatableArray<WarmupRelay> relays, int outerIndex)
+    {
+        foreach (var relay in relays)
+        {
+            if (relay.OuterIndex != outerIndex)
+            {
+                continue;
+            }
+
+            // internal static void <relay>() => <target type>.<target method>();
+            writer.AppendGeneratedCodeAttributes();
+            writer.AppendLine($"internal static void {relay.Name}() => {relay.TargetType}.{relay.TargetMethod}();");
+        }
+    }
+
     // The function is resolved per launch: a CUfunction belongs to the context its module was loaded in (#1307). Both
     // names are class-qualified, so a kernel parameter of the same name cannot shadow them.
     // <class>.<field>.Resolve(<class>.s_errorSites)
@@ -248,7 +267,7 @@ internal static class CudaHostLaunchEmitter
 
         foreach (var warmup in warmups)
         {
-            writer.AppendLine($"{warmup.Class.FullyQualifiedName}.{KernelHostNames.GetWarmupMethodName(warmup.MemberKey)}();");
+            writer.AppendLine($"{warmup.Type}.{warmup.Method}();");
         }
 
         writer.AppendLine("}}}");
