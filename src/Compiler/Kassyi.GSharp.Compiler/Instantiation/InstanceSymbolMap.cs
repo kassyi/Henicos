@@ -119,14 +119,19 @@ internal sealed class InstanceSymbolMap
                     $"'{member.Name}' runs the default implementation of '{interfaceType.Name}'");
         }
 
-        if (GetExplicitTarget(implementation) is not { } target)
+        // A public member is bound by its name whether or not it also declares the interface member it implements
+        // (the BCL's int.Max does: it is public and lists INumber<int>.Max); only a private explicit implementation
+        // has no spelling of its own
+        var target = GetExplicitTarget(implementation);
+        if (implementation.DeclaredAccessibility == Accessibility.Public || target is null)
         {
             return ConstrainedMember.Member(closed, implementation);
         }
 
         if (BuiltinNumerics.IsBuiltinNumeric(closed))
         {
-            if (target is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } op)
+            // The interface declares the operator as a static abstract (or virtual) member named op_*
+            if (target is IMethodSymbol op && op.Name.StartsWith("op_", StringComparison.Ordinal))
             {
                 return ConstrainedMember.BuiltinOperator(closed, op.Name);
             }
