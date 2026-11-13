@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Kassyi.GSharp.Core;
 using Xunit;
@@ -13,10 +12,6 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// CPU paths and CUDA. The reference is the C# of each lane with every split replaced by what it returns: a shuffle
 /// that reads the calling lane returns its own value, a barrier that every thread reaches changes nothing.
 /// </summary>
-/// <remarks>
-/// The CPU paths still evaluate some of these operands after the split (#991): those columns are known divergences.
-/// No test states the value they give, only that it is not the C# value yet.
-/// </remarks>
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class SplitOperandOrderDifferentialTests
@@ -188,16 +183,6 @@ public class SplitOperandOrderDifferentialTests
 
     // ---- Where C# checks a location: the exception, and whether the value ran before it ----
 
-    // The paths that still differ from C#, by kernel: an XFAIL entry, removed by the fix of its issue
-    private static readonly Dictionary<(string Kernel, DiffPath Path), int> s_knownCheckDivergences = new()
-    {
-        // #991: the location is checked after the split, so the value runs first
-        [(nameof(K.SpanElementTargetChecksFirstKernel), DiffPath.Managed)] = 991,
-        [(nameof(K.FieldOfElementTargetChecksFirstKernel), DiffPath.Managed)] = 991,
-        [(nameof(K.RefElementArgumentChecksFirstKernel), DiffPath.Managed)] = 991,
-        [(nameof(K.FieldOfElementBeforeDivisionKernel), DiffPath.Managed)] = 991,
-    };
-
     public static TheoryData<string, string, int> CheckCases => new()
     {
         // kernel, the exception C# throws, how many times the value ran before it
@@ -226,15 +211,7 @@ public class SplitOperandOrderDifferentialTests
             path.Preflight?.Invoke();
             var counts = new int[1];
             var thrown = Run(path, kernel, counts);
-            var observed = (thrown?.GetType().Name ?? "none", counts[0]);
-            if (s_knownCheckDivergences.TryGetValue((kernel, path.Path), out var issue))
-            {
-                Assert.True(observed != (exception, valueRuns),
-                    $"{kernel} on {path.Name} no longer differs (#{issue}): remove its known divergence");
-                continue;
-            }
-
-            Assert.Equal((exception, valueRuns), observed);
+            Assert.Equal((exception, valueRuns), (thrown?.GetType().Name ?? "none", counts[0]));
         }
     }
 
