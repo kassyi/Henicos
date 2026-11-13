@@ -78,6 +78,7 @@ public class KernelOverloadTests
         var (_, output, _) = GeneratorTestRunner.RunGenerator(s_inModifierKernels, dialect);
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
     }
+
     // A launcher of one kernel that has the name and the written parameter types of a launcher of another kernel:
     // the test case, the reported kernel's name (line, first and last column) and the duplicated member.
     public static TheoryData<string, string, int, int, int, string> CollidingLaunchers() => new()
@@ -100,7 +101,18 @@ public class KernelOverloadTests
         { "Generator/KernelOverload_RefStructs.cu.cs", "Cuda", 16, 28, 31, "LaunchRunPtr(global::System.IntPtr)" },
         // The first overload of Run is keyed Run__o0, as is the kernel named Run__o0
         { "Generator/KernelOverload_MemberKey.cu.cs", "Cpu", 15, 28, 35, "WarmupFunctionPointerRun__o0()" },
-        { "Generator/KernelOverload_MemberKey.cu.cs", "Cuda", 15, 28, 35, "WarmupFunctionPointerRun__o0()" }
+        { "Generator/KernelOverload_MemberKey.cu.cs", "Cuda", 15, 28, 35, "WarmupFunctionPointerRun__o0()" },
+        // With GSharpEmitSource (on in these tests), the constant LaunchX_Source of LaunchX is the launcher of X_Source
+        { "Generator/KernelOverload_SourceConstant.cu.cs", "Cpu", 12, 28, 36, "LaunchX_Source" },
+        { "Generator/KernelOverload_SourceConstant.cu.cs", "Cuda", 12, 28, 36, "LaunchX_Source" },
+        // The warmup method of Foo is the other kernel's own method
+        { "Generator/KernelOverload_OwnMethod.cu.cs", "Cpu", 9, 28, 31, "WarmupFunctionPointerFoo()" },
+        { "Generator/KernelOverload_OwnMethod.cu.cs", "Cuda", 9, 28, 31, "WarmupFunctionPointerFoo()" },
+        // Members of every kernel class; the class then gets no host members at all
+        { "Generator/KernelOverload_ClassMember.cu.cs", "Cpu", 9, 28, 39, "AotContexts" },
+        { "Generator/KernelOverload_ClassMember.cu.cs", "Cuda", 9, 28, 39, "AotContexts" },
+        { "Generator/KernelOverload_ErrorSiteField.cu.cs", "Cpu", 9, 28, 40, "s_errorSites" },
+        { "Generator/KernelOverload_ErrorSiteField.cu.cs", "Cuda", 9, 28, 40, "s_errorSites" }
     };
 
     [Theory]

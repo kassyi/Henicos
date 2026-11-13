@@ -12,6 +12,9 @@ namespace Kassyi.GSharp.Tests.Shared.Marshaling;
 [Category(TestCategory.Compiler)]
 public class LauncherSignaturesTests
 {
+    private const string Proxy = "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy";
+    private const string Ints = "global::System.Int32[]";
+
     private static readonly string s_source = RoslynTestUtility.ReadTestCase("Marshaling/LauncherSignatureSource.cs");
 
     // The parameter types of each generated launcher, read back from the generated method symbols, are the ones the
@@ -40,7 +43,8 @@ public class LauncherSignaturesTests
             {
                 $"LaunchMixed({host.ManagedParameterTypes})",
                 $"LaunchMixedPtr({host.TypedPointerParameterTypes})",
-                $"{KernelHostNames.GetPointerLaunchName(KernelHostNames.GetMemberKey(host, true))}({host.PointerParameterTypes})"
+                KernelHostNames.GetPointerLaunchName(KernelHostNames.GetMemberKey(host, true)) +
+                $"({host.PointerParameterTypes})"
             })
             .ToHashSet(StringComparer.Ordinal);
 
@@ -99,11 +103,13 @@ public class LauncherSignaturesTests
         var scalePtr = Host("ScalePtr", -1, managed: "global::System.IntPtr", pointer: "global::System.IntPtr");
         KernelHostModel[] kernels = reversed ? [scalePtr, scale] : [scale, scalePtr];
 
-        var conflicts = LauncherSignatures.FindConflicts(kernels);
+        var conflicts = LauncherSignatures.FindConflicts(kernels, emitsSource: false);
 
         var (scaleIndex, scalePtrIndex) = reversed ? (1, 0) : (0, 1);
         Assert.Equal(LauncherConflict.None, conflicts[scaleIndex]);
-        Assert.Equal(new LauncherConflict(scaleIndex, "LaunchScalePtr(global::System.IntPtr)"), conflicts[scalePtrIndex]);
+        Assert.Equal(
+            new LauncherConflict(scaleIndex, "LaunchScalePtr(global::System.IntPtr)"),
+            conflicts[scalePtrIndex]);
     }
 
     // A kernel with a conflict claims nothing: LaunchAPtrPtr of the third kernel only matches the excluded second one
@@ -118,11 +124,62 @@ public class LauncherSignaturesTests
             Host("APtrPtr", -1, managed: "global::System.Int64", pointer: "global::System.Int16")
         ];
 
-        var conflicts = LauncherSignatures.FindConflicts(kernels);
+        var conflicts = LauncherSignatures.FindConflicts(kernels, emitsSource: false);
 
         Assert.Equal(
             [LauncherConflict.None, new LauncherConflict(0, "LaunchAPtr(global::System.Int32)"), LauncherConflict.None],
             conflicts.ToArray());
+    }
+
+    // The constant {key}_Source exists only with GSharpEmitSource, so it collides only then
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FindConflicts_SourceConstant_CollidesOnlyWhenEmitted(bool emitsSource)
+    {
+        KernelHostModel[] kernels =
+        [
+            Host("LaunchX", -1, managed: Ints, pointer: Proxy),
+            Host("X_Source", -1, managed: Ints, pointer: Proxy)
+        ];
+
+        var conflicts = LauncherSignatures.FindConflicts(kernels, emitsSource);
+
+        Assert.Equal(LauncherConflict.None, conflicts[0]);
+        Assert.Equal(emitsSource ? new LauncherConflict(0, "LaunchX_Source") : LauncherConflict.None, conflicts[1]);
+    }
+
+    // A kernel's own method is there from the start: the generated member that meets it is reported, whatever the order
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void FindConflicts_GeneratedMemberMeetsAnOwnMethod_ReportsTheGeneratingKernel()
+    {
+        KernelHostModel[] kernels =
+        [
+            Host("WarmupFunctionPointerFoo", -1, managed: "", pointer: ""),
+            Host("Foo", -1, managed: Ints, pointer: Proxy)
+        ];
+
+        var conflicts = LauncherSignatures.FindConflicts(kernels, emitsSource: false);
+
+        Assert.Equal(
+            [LauncherConflict.None, new LauncherConflict(0, "WarmupFunctionPointerFoo()")],
+            conflicts.ToArray());
+    }
+
+    // A kernel named like a member of every kernel class collides with the class, not with a kernel
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void FindConflicts_KernelNamedAotContexts_ReportsAClassMember()
+    {
+        KernelHostModel[] kernels =
+            [Host("AotContexts", -1, managed: "global::System.Int32", pointer: "global::System.Int32")];
+
+        var conflict = Assert.Single(LauncherSignatures.FindConflicts(kernels, emitsSource: false));
+
+        Assert.Equal(new LauncherConflict(LauncherConflict.ClassMember, "AotContexts"), conflict);
+        Assert.True(conflict.IsClassMember);
     }
 
     private static KernelHostModel Host(string name, int ordinal, string managed, string pointer) =>
@@ -132,7 +189,8 @@ public class LauncherSignaturesTests
             OverloadOrdinal = ordinal,
             ManagedParameterTypes = managed,
             PointerParameterTypes = pointer,
-            TypedPointerParameterTypes = pointer
+            TypedPointerParameterTypes = pointer,
+            OwnParameterTypes = managed
         };
 
     // The kernel's parameters of a generated launcher, without the launch options, as LauncherSignatures compares them

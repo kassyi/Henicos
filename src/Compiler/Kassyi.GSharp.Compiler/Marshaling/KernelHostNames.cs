@@ -102,6 +102,14 @@ internal static class KernelHostNames
     /// <summary>The name of the <c>IntPtr</c> launch wrapper of the kernel keyed <paramref name="memberKey"/>.</summary>
     public static string GetPointerLaunchName(string memberKey) => LaunchPrefix + memberKey + PointerSuffix;
 
+    /// <summary>The error site table that the wrapper class declares when its kernels have error sites.</summary>
+    public const string ErrorSitesFieldName = "s_errorSites";
+
+    /// <summary>
+    /// The constant that holds the generated source of a kernel with <c>GSharpEmitSource</c>, <c>{key}_Source</c>.
+    /// </summary>
+    public static string GetSourceConstantName(string memberKey) => memberKey + "_Source";
+
     /// <summary>
     /// The suffix of the per-kernel host members (<see cref="KernelEmission.MemberKey"/>): the name, or
     /// <c>{name}__o{n}</c> for an overloaded kernel.

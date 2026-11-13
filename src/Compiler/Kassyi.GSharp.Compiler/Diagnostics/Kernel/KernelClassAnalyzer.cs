@@ -48,7 +48,12 @@ public class KernelClassAnalyzer : DiagnosticAnalyzer
             .Select(static kernel => KernelHostModel.Create(kernel, default))
             .AddTo(hosts);
 
-        var conflicts = LauncherSignatures.FindConflicts(hosts);
+        // GSharpEmitSource adds a {key}_Source constant per kernel, as the generator reads it
+        var emitsSource =
+            context.Options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue(
+                "build_property.GSharpEmitSource", out var emitSource) &&
+            string.Equals(emitSource, "true", StringComparison.OrdinalIgnoreCase);
+        var conflicts = LauncherSignatures.FindConflicts(hosts, emitsSource);
         for (var i = 0; i < kernels.Count; i++)
         {
             if (conflicts[i] is { IsConflict: true } conflict)
@@ -57,9 +62,12 @@ public class KernelClassAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(
                     GSharpDiagnostics.IndistinguishableKernelOverloads,
                     kernel.Locations.Length > 0 ? kernel.Locations[0] : Location.None,
-                    hosts[conflict.Earlier].DisplaySignature,
                     hosts[i].DisplaySignature,
-                    conflict.Member);
+                    conflict.Member,
+                    conflict.IsClassMember
+                        ? "G# generates in every class with kernels"
+                        : $"the [GpuKernel] method '{hosts[conflict.Earlier].DisplaySignature}' also declares or " +
+                          "makes G# generate");
             }
         }
 

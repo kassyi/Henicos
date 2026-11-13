@@ -193,7 +193,7 @@
 (5,19)-(5,22) GSH0058 analyzer: The structs 'global::AotNameTest.Box<global::System.Int32>' and 'global::AotNameTest.Box<global::System.Int64>' both map to 'AotContexts.Box' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
 
 ## Generator/KernelOverload_Indistinguishable.cu.cs
-(12,28)-(12,31) GSH0059 analyzer: The [GpuKernel] methods 'Run(global::System.Int32[])' and 'Run(ref global::System.Int32)' both produce the generated method 'LaunchRunPtr(global::Kassyi.GSharp.Runtime.GpuBuffer<global::System.Int32>)'. Rename one of the kernels.
+(12,28)-(12,31) GSH0059 analyzer: The [GpuKernel] method 'Run(ref global::System.Int32)' declares or makes G# generate the member 'LaunchRunPtr(global::Kassyi.GSharp.Runtime.GpuBuffer<global::System.Int32>)', which the [GpuKernel] method 'Run(global::System.Int32[])' also declares or makes G# generate. Rename the kernel.
 
 ## Analyzers/StaticMemberAccess_SadPath.cs
 (20,28)-(20,33) GSH0065 analyzer: The static member 'Cfg.M' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.

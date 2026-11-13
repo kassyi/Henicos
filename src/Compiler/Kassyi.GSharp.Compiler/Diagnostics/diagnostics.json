@@ -527,8 +527,8 @@
   {
     "name": "IndistinguishableKernelOverloads",
     "id": "GSH0059",
-    "title": "Two kernels produce generated methods with the same signature",
-    "messageFormat": "The [GpuKernel] methods '{0}' and '{1}' both produce the generated method '{2}'. Rename one of the kernels.",
+    "title": "A kernel declares or makes G# generate a member that its class already has",
+    "messageFormat": "The [GpuKernel] method '{0}' declares or makes G# generate the member '{1}', which {2}. Rename the kernel.",
     "category": "GSharpCompiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true

@@ -109,6 +109,9 @@ internal readonly record struct KernelHostModel
     /// <summary>The parameter types of the typed <c>Launch{Name}Ptr</c> of an overloaded kernel as C# compares overloads.</summary>
     public string TypedPointerParameterTypes { get; init; }
 
+    /// <summary>The parameter types of the kernel's own method as C# compares overloads.</summary>
+    public string OwnParameterTypes { get; init; }
+
     /// <summary><c>Name(type, type)</c>, for the GSH0059 message.</summary>
     public string DisplaySignature { get; init; }
 
@@ -192,6 +195,7 @@ internal readonly record struct KernelHostModel
             ManagedParameterTypes = LauncherSignatures.FormatParameterTypes(parameters, LauncherKind.Managed),
             PointerParameterTypes = LauncherSignatures.FormatParameterTypes(parameters, LauncherKind.Pointer),
             TypedPointerParameterTypes = LauncherSignatures.FormatParameterTypes(parameters, LauncherKind.TypedPointer),
+            OwnParameterTypes = LauncherSignatures.FormatOwnParameterTypes(parameters),
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
             Parameters = parameters,
             LauncherUnavailableReason = unavailableReason,

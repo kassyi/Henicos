@@ -41,16 +41,32 @@ internal readonly record struct LauncherParameter(
 }
 
 /// <summary>
-/// A generated member of one kernel that another kernel of the class also generates (GSH0059), which C# would reject
-/// as a duplicate (<see cref="LauncherSignatures.FindConflicts"/>).
+/// A member that one kernel declares or makes G# generate and that the class already has (GSH0059), which C# would
+/// reject as a duplicate (<see cref="LauncherSignatures.FindConflicts"/>).
 /// </summary>
-/// <param name="Earlier">The index of the kernel that keeps the member, or -1 when there is no conflict.</param>
-/// <param name="Member">The member as <c>Name(type, type)</c>, or empty.</param>
+/// <param name="Earlier">
+/// The index of the kernel that keeps the member, <see cref="ClassMember"/> for a member that G# generates in every
+/// kernel class, or -1 when there is no conflict.
+/// </param>
+/// <param name="Member">
+/// The member as <c>Name(type, type)</c> for a method, its name otherwise; empty without a conflict.
+/// </param>
 internal readonly record struct LauncherConflict(int Earlier, string Member)
 {
+    /// <summary>
+    /// <see cref="Earlier"/> of a member that G# generates in every kernel class
+    /// (<see cref="LauncherSignatures.ClassMemberNames"/>).
+    /// </summary>
+    public const int ClassMember = -2;
+
     public static readonly LauncherConflict None = new(-1, string.Empty);
 
-    public bool IsConflict => Earlier >= 0;
+    public bool IsConflict => Earlier != None.Earlier;
+
+    /// <summary>
+    /// Whether the member is one that G# generates in every kernel class, which leaving the kernel out does not remove.
+    /// </summary>
+    public bool IsClassMember => Earlier == ClassMember;
 }
 
 /// <summary>
@@ -135,72 +151,181 @@ internal static class LauncherSignatures
     }
 
     /// <summary>
-    /// Finds, for each kernel of one class, a generated method that an earlier kernel already has with the same
-    /// parameter types (GSH0059): one of its launchers, or its warmup method, which shares the member key of every
-    /// per-kernel field. The kernels are taken by name, then by overload ordinal, so the result does not depend on the
-    /// order in which they are given; a kernel with a conflict claims no member.
+    /// The parameter types of the kernel's own method as C# compares overloads: <c>ref </c> for every by-reference
+    /// parameter (<c>ref</c>, <c>out</c>, <c>in</c>, <c>ref readonly</c> alike, CS0663).
+    /// </summary>
+    public static string FormatOwnParameterTypes(EquatableArray<KernelParameterShape> parameters)
+    {
+        using var writer = new SourceWriter();
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            writer.AppendIf(i > 0, ", ");
+            writer.AppendIf(parameters[i].RefKind != RefKind.None, "ref ");
+            writer.Append(parameters[i].TypeName);
+        }
+
+        return writer.ToString();
+    }
+
+    /// <summary>
+    /// Finds, for each kernel of one class, a member that the kernel declares or makes G# generate and that the class
+    /// already has (GSH0059). The table holds the methods by name and C# parameter types (the launchers, the warmup
+    /// method, whose key also names every per-kernel field, and each kernel's own method), and the members that collide
+    /// with anything of their name (<c>{key}_Source</c> with <paramref name="emitsSource"/>, and the members that G#
+    /// generates in every kernel class, <see cref="ClassMemberNames"/>). The kernels' own methods and the class members
+    /// are always there. The generated members of the kernels are taken by name, then by overload ordinal, so the
+    /// result does not depend on the order in which the kernels are given, and a kernel with a conflict claims nothing.
     /// </summary>
     /// <returns>One entry per kernel, in the order given.</returns>
-    public static ImmutableArray<LauncherConflict> FindConflicts(IReadOnlyList<KernelHostModel> kernels)
+    public static ImmutableArray<LauncherConflict> FindConflicts(IReadOnlyList<KernelHostModel> kernels,
+        bool emitsSource)
     {
         var nameCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         var order = new (string Name, int Ordinal, int Index)[kernels.Count];
+        var conflicts = new LauncherConflict[kernels.Count];
+        var table = new MemberTable();
+        foreach (var name in ClassMemberNames)
+        {
+            table.Add(LauncherMember.NameOnly(name), LauncherConflict.ClassMember);
+        }
+
         for (var i = 0; i < kernels.Count; i++)
         {
-            nameCounts.TryGetValue(kernels[i].Name, out var count);
-            nameCounts[kernels[i].Name] = count + 1;
-            order[i] = (kernels[i].Name, kernels[i].OverloadOrdinal, i);
+            var kernel = kernels[i];
+            nameCounts.TryGetValue(kernel.Name, out var count);
+            nameCounts[kernel.Name] = count + 1;
+            order[i] = (kernel.Name, kernel.OverloadOrdinal, i);
+            // A kernel named like a member of every kernel class collides with it, whatever G# leaves out
+            var own = LauncherMember.Method(kernel.Name, kernel.OwnParameterTypes);
+            conflicts[i] = table.TryFind(own, i, out var found) ? found : LauncherConflict.None;
+            table.Add(own, i);
         }
 
         Array.Sort(order, static (x, y) =>
             string.CompareOrdinal(x.Name, y.Name) is var byName and not 0 ? byName : x.Ordinal.CompareTo(y.Ordinal));
 
-        var owners = new Dictionary<string, int>(StringComparer.Ordinal);
-        var conflicts = new LauncherConflict[kernels.Count];
-        var members = new string[MaxMembers];
+        var members = new LauncherMember[MaxMembers];
         foreach (var (name, _, index) in order)
         {
-            var count = GetMembers(kernels[index], nameCounts[name] > 1, members);
-            conflicts[index] = LauncherConflict.None;
-            for (var m = 0; m < count; m++)
-            {
-                if (owners.TryGetValue(members[m], out var earlier))
-                {
-                    conflicts[index] = new LauncherConflict(earlier, members[m]);
-                    break;
-                }
-            }
-
             if (conflicts[index].IsConflict)
             {
                 continue;
             }
 
-            for (var m = 0; m < count; m++)
+            var count = GetMembers(kernels[index], nameCounts[name] > 1, emitsSource, members);
+            for (var m = 0; m < count && !conflicts[index].IsConflict; m++)
             {
-                owners.Add(members[m], index);
+                if (table.TryFind(members[m], index, out var found))
+                {
+                    conflicts[index] = found;
+                }
+            }
+
+            for (var m = 0; m < count && !conflicts[index].IsConflict; m++)
+            {
+                table.Add(members[m], index);
             }
         }
 
         return ImmutableArray.Create(conflicts);
     }
 
-    private const int MaxMembers = 4;
+    /// <summary>
+    /// The members that G# generates in every class with kernels: the class <c>AotContexts</c> and the error site
+    /// table.
+    /// </summary>
+    public static readonly ImmutableArray<string> ClassMemberNames =
+        ImmutableArray.Create(AotHostNames.AotContextsClassName, KernelHostNames.ErrorSitesFieldName);
 
-    // Launch{Name}, the pointer launchers and WarmupFunctionPointer{key}(), each as Name(type, type)
-    private static int GetMembers(in KernelHostModel kernel, bool isOverloaded, string[] members)
+    private const int MaxMembers = 5;
+
+    // Launch{Name}, the pointer launchers and WarmupFunctionPointer{key}(), each as Name(type, type); {key}_Source
+    private static int GetMembers(in KernelHostModel kernel, bool isOverloaded, bool emitsSource,
+        LauncherMember[] members)
     {
         var memberKey = KernelHostNames.GetMemberKey(kernel, isOverloaded);
         var count = 0;
-        members[count++] = $"{KernelHostNames.GetLaunchName(kernel)}({kernel.ManagedParameterTypes})";
+        members[count++] = LauncherMember.Method(KernelHostNames.GetLaunchName(kernel), kernel.ManagedParameterTypes);
         if (isOverloaded)
         {
-            var typedName = KernelHostNames.GetTypedPointerLaunchName(kernel);
-            members[count++] = $"{typedName}({kernel.TypedPointerParameterTypes})";
+            members[count++] = LauncherMember.Method(
+                KernelHostNames.GetTypedPointerLaunchName(kernel),
+                kernel.TypedPointerParameterTypes
+            );
         }
 
-        members[count++] = $"{KernelHostNames.GetPointerLaunchName(memberKey)}({kernel.PointerParameterTypes})";
-        members[count++] = $"{KernelHostNames.GetWarmupMethodName(memberKey)}()";
+        members[count++] = LauncherMember.Method(
+            KernelHostNames.GetPointerLaunchName(memberKey),
+            kernel.PointerParameterTypes
+        );
+        members[count++] = LauncherMember.Method(KernelHostNames.GetWarmupMethodName(memberKey), string.Empty);
+        if (emitsSource)
+        {
+            members[count++] = LauncherMember.NameOnly(KernelHostNames.GetSourceConstantName(memberKey));
+        }
+
         return count;
+    }
+
+    // A member of the table: a method, which collides with a method of the same name and parameter types, or a field,
+    // constant or nested type, which collides with any member of its name
+    private readonly record struct LauncherMember(string Name, string? ParameterTypes)
+    {
+        public static LauncherMember Method(string name, string parameterTypes) => new(name, parameterTypes);
+
+        public static LauncherMember NameOnly(string name) => new(name, null);
+
+        public bool IsMethod => ParameterTypes is not null;
+
+        // Name(type, type) for a method, the name alone otherwise
+        public string Display => IsMethod ? $"{Name}({ParameterTypes})" : Name;
+    }
+
+    // The members of one class with their owners: a kernel index, or LauncherConflict.ClassMember
+    private sealed class MemberTable
+    {
+        private readonly Dictionary<string, int> _methods = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, int> _methodNames = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, int> _nameOnly = new(StringComparer.Ordinal);
+
+        public bool TryFind(LauncherMember member, int self, out LauncherConflict conflict)
+        {
+            // A method that meets a method is shown with its parameter types; anything else collides by name alone
+            if (member.IsMethod && FindOwner(_methods, member.Display, self) is { } methodOwner)
+            {
+                conflict = new LauncherConflict(methodOwner, member.Display);
+                return true;
+            }
+
+            var owner = FindOwner(_nameOnly, member.Name, self) ??
+                        (member.IsMethod ? null : FindOwner(_methodNames, member.Name, self));
+            conflict = owner is { } found ? new LauncherConflict(found, member.Name) : LauncherConflict.None;
+            return owner is not null;
+        }
+
+        public void Add(LauncherMember member, int owner)
+        {
+            if (!member.IsMethod)
+            {
+                AddFirst(_nameOnly, member.Name, owner);
+                return;
+            }
+
+            AddFirst(_methods, member.Display, owner);
+            AddFirst(_methodNames, member.Name, owner);
+        }
+
+        // The first owner of a key stays: overloads of one kernel name share their method name
+        private static void AddFirst(Dictionary<string, int> members, string key, int owner)
+        {
+            if (!members.ContainsKey(key))
+            {
+                members.Add(key, owner);
+            }
+        }
+
+        // A kernel never collides with itself: its own method and its generated members have different names
+        private static int? FindOwner(Dictionary<string, int> members, string key, int self) =>
+            members.TryGetValue(key, out var owner) && owner != self ? owner : null;
     }
 }
