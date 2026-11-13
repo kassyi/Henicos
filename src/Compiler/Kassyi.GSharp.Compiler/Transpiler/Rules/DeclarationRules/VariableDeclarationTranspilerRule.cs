@@ -97,12 +97,12 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 continue;
             }
 
-            // A local that another switch section uses is declared in a block around the switch (SwitchSectionLocals),
-            // a const with its value; a struct with a C++ constructor that a goto jumps past is declared at the start of
-            // its statement list (JumpedOverDeclarations)
+            // A local that another switch section uses or jumps into is declared in a block around the switch
+            // (SwitchSectionLocals), a const with its value; a struct with a C++ constructor that a goto jumps past is
+            // declared at the start of its C++ scope (JumpedOverDeclarations)
             var declaredAhead =
                 SwitchSectionLocals.IsDeclaredBeforeSwitch(v, context.Query.SemanticModel) ||
-                JumpedOverDeclarations.IsDeclaredAtListStart(v, context.Query.SemanticModel);
+                JumpedOverDeclarations.IsDeclaredAtScopeStart(v, context.Query.SemanticModel);
             if (declaredAhead && (v.Initializer == null || IsConst(v)))
             {
                 continue;
