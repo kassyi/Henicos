@@ -200,8 +200,8 @@ function logError(directory, error) {
 /**
  * The chats recorded in `directory` (default: the main checkout's tmp/chat-status), without those not updated for
  * 12 hours, sorted: waiting chats first, the longest wait first, then the others, the longest in their state first.
- * Unreadable files are skipped (a file is replaced by a rename, so a reader sees the old or the new one), and so are the
- * chats of Antigravity subagents (`options.antigravityRoot`: its folder, default ~/.gemini/antigravity).
+ * Unreadable files are skipped (a file is replaced by a rename, so a reader sees the old or the new one), and so are
+ * the chats of Antigravity subagents (`options.antigravityRoot`: its folder, default ~/.gemini/antigravity).
  */
 function listChats(options = {}) {
   const directory = options.directory ?? resolveStatusDirectory();
