@@ -399,6 +399,8 @@ export class QueuedRun {
       cwd: process.cwd(),
       // Resolved once per job (git), kept for the re-registrations after a scheduler restart
       worktree: (this.worktree ??= resolveWorktree(process.cwd())),
+      // The chat that queued it, so that the live view can show its jobs on its row
+      session: process.env.CLAUDE_CODE_SESSION_ID || process.env.ANTIGRAVITY_CONVERSATION_ID || undefined,
       command: options.command,
       queuedAt: this.queuedAt,
       id: this.jobId, // keeps the job id across a scheduler restart

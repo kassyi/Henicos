@@ -5,7 +5,7 @@
 
 import type { StatusJob, StatusReply } from "./protocol.ts";
 import { type Style, ScreenLine, displayWidth, duration, fit } from "./screen-line.ts";
-import { type ChatView, chatCounts, chatLines, waitingChats } from "./view-chats.ts";
+import { type ChatView, type LegendEntry, chatCounts, chatLegend, chatLines, waitingChats } from "./view-chats.ts";
 
 export { type Style, ScreenLine, displayWidth, fit };
 
@@ -337,8 +337,8 @@ const HelpKeys: [string, string][] = [
   ["q", "quit (also Ctrl+C)"],
 ];
 
-/** A sample drawn in its screen style and what it means, for the legend column of the help. */
-const HelpLegend: ({ heading: string } | { sample: string; style: Style; text: string })[] = [
+/** A sample drawn in its screen style and what it means, for the legend column of the help (the chats' part follows). */
+const HelpLegend: LegendEntry[] = [
   { heading: "Timeline" },
   { sample: "█", style: "run", text: "run so far" },
   { sample: "█", style: "late", text: "past its usual run time" },
@@ -352,11 +352,6 @@ const HelpLegend: ({ heading: string } | { sample: string; style: Style; text: s
   { sample: "GPU busy", style: "warn", text: "another job has the GPU" },
   { sample: "in line", style: "warn", text: "an earlier job goes first" },
   { sample: "after #n", style: "warn", text: "until job n has ended" },
-  { heading: "Chats that wait for you" },
-  { sample: "?", style: "warn", text: "a question or permission prompt" },
-  { sample: "…?", style: "warn", text: "a reply that ends in a question" },
-  { sample: "reply", style: "dim", text: "its turn ended (shows the end)" },
-  { sample: "#n", style: "wait", text: "a job of its worktree" },
 ];
 
 /** A screen of this many rows shows a row per waiting chat; a shorter one sums them up in one line. */
@@ -375,7 +370,7 @@ function helpKeyLines(columns: number): ScreenLine[] {
   return lines;
 }
 
-function helpLegendLine(line: ScreenLine, entry: (typeof HelpLegend)[number]): ScreenLine {
+function helpLegendLine(line: ScreenLine, entry: LegendEntry): ScreenLine {
   if ("heading" in entry) {
     return line.add(entry.heading, "bold");
   }
@@ -393,18 +388,19 @@ const HelpLegendWidth = 34;
  * The whole help as lines: the keys and the legend (samples drawn in the colors of the screen) side by side when both
  * fit, else the keys, a blank line and the legend; the screen shows it a page of its job rows at a time.
  */
-export function helpLines(columns: number): ScreenLine[] {
+export function helpLines(columns: number, chats: ChatView | null = null): ScreenLine[] {
   const keys = helpKeyLines(columns);
+  const legendEntries = [...HelpLegend, ...chatLegend(chats)];
   if (columns >= HelpKeysWidth + HelpLegendWidth) {
-    const rows = Math.max(keys.length, HelpLegend.length);
+    const rows = Math.max(keys.length, legendEntries.length);
     return Array.from({ length: rows }, (_, i) => {
       const line = keys[i] ?? new ScreenLine(columns);
-      const entry = HelpLegend[i];
+      const entry = legendEntries[i];
       line.padTo(HelpKeysWidth);
       return entry === undefined ? line : helpLegendLine(line, entry);
     });
   }
-  const legend = HelpLegend.map((entry) => helpLegendLine(new ScreenLine(columns).add(" "), entry));
+  const legend = legendEntries.map((entry) => helpLegendLine(new ScreenLine(columns).add(" "), entry));
   return [...keys, new ScreenLine(columns), ...legend];
 }
 
@@ -546,7 +542,7 @@ export function renderScreen(
   }
   const lines: string[] = [header.render(color), axis.padTo().render(color)];
   // The help takes the job rows, a page at a time; ? turns the page and closes it after the last
-  const help = helpLines(columns);
+  const help = helpLines(columns, chats);
   state.helpPages = Math.max(1, Math.ceil(help.length / listRows));
   const helpPage = Math.min(state.help, state.helpPages);
   if (helpPage > 0) {
