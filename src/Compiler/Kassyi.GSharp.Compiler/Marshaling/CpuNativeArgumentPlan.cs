@@ -39,6 +39,22 @@ internal readonly struct CpuNativeArgumentPlan
         return new CpuNativeArgumentPlan(arguments.MoveToImmutable(), GetResultTypeName(kernel));
     }
 
+    /// <summary>
+    /// The plan with the group of each converted member of a launch whose arguments overlap (the buffer that the native
+    /// kernel takes instead of the member's own shadow); the same plan when no argument is such a member.
+    /// </summary>
+    /// <param name="aliases">The overlapping arguments of the launch.</param>
+    public CpuNativeArgumentPlan WithAliases(in LaunchAliasPlan aliases)
+    {
+        var withGroups = Arguments.ToBuilder();
+        for (var i = 0; i < withGroups.Count; i++)
+        {
+            withGroups[i] = withGroups[i] with { Group = AliasGroupEmitter.CpuBufferPointer(aliases, i) };
+        }
+
+        return new CpuNativeArgumentPlan(withGroups.ToImmutable(), ResultTypeName);
+    }
+
     // [WHY] A user struct by value goes as a pointer to the host value, so that the runtime marshaller never
     // converts it (bool, char, the x64 size rules); the native launcher copies it (#511). A struct whose layouts
     // differ goes as a pointer to its native shadow struct.

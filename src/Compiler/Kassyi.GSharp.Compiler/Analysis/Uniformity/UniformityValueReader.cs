@@ -184,9 +184,19 @@ internal sealed class UniformityValueReader(UniformityState state)
         state.Recorder.TryGetValue(parameter, out var index) ? current[index] :
         parameter.ContainingSymbol.IsEqualTo(state.Method) ? ThreadVariance.Uniform : ThreadVariance.Block;
 
+    /// <summary>
+    /// Whether a call that is neither a device function with a body nor a local function may give each thread a
+    /// different result or <c>ref</c> / <c>out</c> argument whatever its operands: an intrinsic that returns a
+    /// thread-variant value, or a call through a delegate, whose target body is not followed.
+    /// </summary>
+    public static bool IsThreadVariantCall(IMethodSymbol method) =>
+        method.MethodKind == MethodKind.DelegateInvoke ||
+        SyncIntrinsicClassifier.Classify(method).ResultIsThreadVariant;
+
     // A device function returns what its summary says for the variance of its arguments; a local function what its
     // body, spliced at the call, returned (anything for a call whose body is not spliced, a recursive one); an
-    // intrinsic that returns a thread-variant value is thread-variant; any other call is as variant as its operands
+    // intrinsic that returns a thread-variant value and a call through a delegate are thread-variant; any other call is
+    // as variant as its operands
     private ThreadVariance EvaluateCall(IInvocationOperation invocation, ControlFlowGraph graph, ThreadVariance[] current)
     {
         var method = invocation.TargetMethod;
@@ -203,7 +213,7 @@ internal sealed class UniformityValueReader(UniformityState state)
         }
 
         var operands = EvaluateOperands(invocation, graph, current);
-        return !method.ReturnsVoid && SyncIntrinsicClassifier.Classify(method).ResultIsThreadVariant
+        return !method.ReturnsVoid && IsThreadVariantCall(method)
             ? ThreadVariance.Block
             : operands;
     }

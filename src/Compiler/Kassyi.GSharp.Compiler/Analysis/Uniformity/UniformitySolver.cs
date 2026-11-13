@@ -423,8 +423,9 @@ internal sealed class UniformitySolver(UniformityState state)
     }
 
     // M(ref x), M(out y): what the callee writes through them, thread-variant when its summary says so (a device
-    // function), when the intrinsic returns a thread-variant value (an atomic), or when any argument is (any other
-    // method); what a local function body spliced at the call left in its parameters; an out argument is always written
+    // function), when the intrinsic returns a thread-variant value (an atomic) or the call goes through a delegate, or
+    // when any argument is (any other method); what a local function body spliced at the call left in its parameters;
+    // an out argument is always written
     private void WriteArguments(IInvocationOperation invocation, ControlFlowGraph graph, ThreadVariance[] current,
         SyntaxNode? opaque)
     {
@@ -437,7 +438,7 @@ internal sealed class UniformitySolver(UniformityState state)
         var reader = state.Reader;
         var written = reader.TryGetDeviceFunction(invocation.TargetMethod, out var callee, out var declaration)
             ? reader.GetCallVariance(callee, declaration, invocation, graph, current).ByReference
-            : SyncIntrinsicClassifier.Classify(invocation.TargetMethod).ResultIsThreadVariant
+            : UniformityValueReader.IsThreadVariantCall(invocation.TargetMethod)
                 ? ThreadVariance.Block
                 : reader.EvaluateOperands(invocation, graph, current);
         foreach (var argument in invocation.Arguments)

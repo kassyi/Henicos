@@ -79,3 +79,17 @@ extern "C" __global__ void ShiftMatrix(float* x, int rows, int cols)
         x[i] += (float)(r - c);
     }
 }
+
+// *a += 1, then *b += 10: when both point to one variable, it ends 11 higher, as in C#; two copies give 10.
+extern "C" __global__ void AddTwo(int* a, int* b)
+{
+    *a += 1;
+    *b += 10;
+}
+
+// The same on the first element of two arrays, which a caller may pass as one array.
+extern "C" __global__ void AddToFirstOfTwo(float* a, float* b)
+{
+    a[0] += 1.0f;
+    b[0] += 10.0f;
+}

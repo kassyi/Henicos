@@ -204,16 +204,21 @@ export function planReport(
 }
 
 /**
- * The jobs a cancel reaches: the requested ones, and for each GPU holder the --gpu run whose turn started it, so that
- * the run ends as cancelled rather than as failed.
+ * The jobs a cancel reaches: the requested ones; for each GPU holder, the --gpu run whose turn started it, so that the
+ * run ends as cancelled rather than as failed; and for each turn, the GPU holders it started, so that their clients
+ * stop the command themselves. The kill of the process tree under gpu-lock.js alone can miss them on Windows once a
+ * process between them has exited, and an orphaned holder keeps the GPU from every later turn.
  */
 export function cancelTargets<J extends { id: number; turn: number | null }>(requested: J[], all: J[]): J[] {
   const targets = [...requested];
-  for (const job of requested) {
-    const turn = job.turn === null ? undefined : all.find((other) => other.id === job.turn);
-    if (turn !== undefined && !targets.includes(turn)) {
-      targets.push(turn);
+  const add = (job: J | undefined): void => {
+    if (job !== undefined && !targets.includes(job)) {
+      targets.push(job);
     }
+  };
+  for (const job of requested) {
+    add(job.turn === null ? undefined : all.find((other) => other.id === job.turn));
+    all.filter((other) => other.turn === job.id).forEach(add);
   }
   return targets;
 }

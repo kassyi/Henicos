@@ -103,6 +103,16 @@ internal readonly record struct KernelParameterShape
     /// <summary>How the parameter crosses to the CPU (native C++) launcher.</summary>
     public ParameterTransfer Cpu { get; init; }
 
+    /// <summary>
+    /// The CUDA device alignment of the element of an array-like parameter, or of the value of a <c>ref</c> /
+    /// <c>out</c> parameter, which the launcher passes when it compares arguments for overlaps; 0 for any other
+    /// parameter.
+    /// </summary>
+    public int CudaAliasAlignment { get; init; }
+
+    /// <summary>The same alignment in the native CPU layout.</summary>
+    public int CpuAliasAlignment { get; init; }
+
     public bool IsArray => Kind == KernelParameterKind.Array;
 
     public bool IsCustomStruct => Kind == KernelParameterKind.CustomStruct;
@@ -258,6 +268,8 @@ internal readonly record struct KernelParameterShape
             return shape with
             {
                 Kind = KernelParameterKind.CustomStruct,
+                CudaAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cuda) : 0,
+                CpuAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cpu) : 0,
                 AotStructPath = AotHostNames.GetAotStructPath(marshaledType, kernelClass),
                 MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType, kernelClass),
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
@@ -278,6 +290,8 @@ internal readonly record struct KernelParameterShape
             return shape with
             {
                 Kind = KernelParameterKind.Array,
+                CudaAliasAlignment = GetAliasAlignment(elementType, HostDialects.Cuda),
+                CpuAliasAlignment = GetAliasAlignment(elementType, HostDialects.Cpu),
                 Container = GetContainer(marshaledType),
                 ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
                 BufferElementTypeName = GetBufferElementTypeName(elementType, kernelClass),
@@ -294,10 +308,17 @@ internal readonly record struct KernelParameterShape
             ? shape with
             {
                 BufferElementTypeName = GetBufferElementTypeName(parameter.Type, kernelClass),
+                CudaAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cuda),
+                CpuAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cpu),
                 IsShadowStructBuffer = IsShadowStructElement(parameter.Type)
             }
             : shape;
     }
+
+    // The device alignment of an element or referenced value; a reference type, which no device memory holds as it is,
+    // gets 0 (the runtime then derives it from the size)
+    private static int GetAliasAlignment(ITypeSymbol type, ITranspilerDialect dialect) =>
+        type.IsReferenceType ? 0 : TypeLayoutCalculator.GetDeviceLayout(type, dialect).Alignment;
 
     /// <summary>
     /// Whether an array of <paramref name="element"/> cannot be copied as one block on CUDA: a user struct whose host

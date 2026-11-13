@@ -139,12 +139,9 @@ public static unsafe void Unmarshal_NullArrayHolder(ref global::Kassyi.GSharp.Te
 {
 host.X = native.X;
 }
-public static void CopyArrays_NullArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host)
+public static void CopyArrays_NullArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Data != null)
-{
-host.Data = (global::System.Int32[])host.Data.Clone();
-}
+_ = copies.Copy(ref host.Data);
 }
 public static bool HoldsArray_NullArrayHolder(global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, object array)
 {
@@ -198,16 +195,10 @@ native.B.Length = host.B.Length;
 public static unsafe void Unmarshal_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, ref AotContexts.NullArrayPair native, global::System.IntPtr hStream = default)
 {
 }
-public static void CopyArrays_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host)
+public static void CopyArrays_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.A != null)
-{
-host.A = (global::System.Int32[])host.A.Clone();
-}
-if (host.B != null)
-{
-host.B = (global::System.Int32[])host.B.Clone();
-}
+_ = copies.Copy(ref host.A);
+_ = copies.Copy(ref host.B);
 }
 public static bool HoldsArray_NullArrayPair(global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, object array)
 {

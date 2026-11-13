@@ -73,13 +73,37 @@ throw new global::System.ArgumentNullException("output");
 }
 using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new();
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module_other_umodule.Value, "MethodThree");
-using global::Kassyi.GSharp.Runtime.GpuBuffer<float> __gsharp_d_0 = new(input.Length);
-__gsharp_d_0.CopyToDevice(input);
-using global::Kassyi.GSharp.Runtime.GpuBuffer<float> __gsharp_d_1 = new(output.Length);
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
+try
+{
 unsafe
 {
-global::System.IntPtr __gsharp_karg_0 = __gsharp_d_0.DevicePointer;
-global::System.IntPtr __gsharp_karg_1 = __gsharp_d_1.DevicePointer;
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(input), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(output))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[12];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (nint)input.Length * sizeof(float);
+__gsharp_alias_ranges[2] = sizeof(float);
+__gsharp_alias_ranges[3] = sizeof(float);
+__gsharp_alias_ranges[4] = 0;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)output.Length * sizeof(float);
+__gsharp_alias_ranges[8] = sizeof(float);
+__gsharp_alias_ranges[9] = sizeof(float);
+__gsharp_alias_ranges[10] = 0;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), new byte[] {1, 2}, "input,output");
+__gsharp_aliases?.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), global::System.IntPtr.Zero);
+}
+}
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float>? __gsharp_d_0 = __gsharp_aliases?.IsMember(0) == true ? null : new(input.Length);
+__gsharp_d_0?.CopyToDevice(input);
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float>? __gsharp_d_1 = __gsharp_aliases?.IsMember(1) == true ? null : new(output.Length);
+unsafe
+{
+global::System.IntPtr __gsharp_karg_0 = __gsharp_aliases?.IsMember(0) == true ? __gsharp_aliases.GetDevicePointer(0) : __gsharp_d_0?.DevicePointer ?? global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_karg_1 = __gsharp_aliases?.IsMember(1) == true ? __gsharp_aliases.GetDevicePointer(1) : __gsharp_d_1?.DevicePointer ?? global::System.IntPtr.Zero;
 int __gsharp_karg_2 = length;
 void** __gsharp_kernel_params = stackalloc void*[3];
 __gsharp_kernel_params[0] = global::Kassyi.GSharp.Runtime.Aot.ModuleKernelArguments.AddressOf<global::System.IntPtr>(ref __gsharp_karg_0);
@@ -92,7 +116,38 @@ __gsharp_hfunc,
 0, global::System.IntPtr.Zero, __gsharp_kernel_params, global::System.IntPtr.Zero));
 }
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuCtxSynchronize());
-__gsharp_d_1.CopyToHost(output);
+if (__gsharp_aliases != null)
+{
+unsafe
+{
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(input), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(output))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[12];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (nint)input.Length * sizeof(float);
+__gsharp_alias_ranges[2] = sizeof(float);
+__gsharp_alias_ranges[3] = sizeof(float);
+__gsharp_alias_ranges[4] = 0;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)output.Length * sizeof(float);
+__gsharp_alias_ranges[8] = sizeof(float);
+__gsharp_alias_ranges[9] = sizeof(float);
+__gsharp_alias_ranges[10] = 0;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), global::System.IntPtr.Zero);
+}
+}
+}
+if (!(__gsharp_aliases?.IsMember(1) == true))
+{
+__gsharp_d_1?.CopyToHost(output);
+}
+}
+finally
+{
+__gsharp_aliases?.FreeDevice(global::System.IntPtr.Zero);
+}
 }
 public static partial void MethodFour(uint[] output, int n, uint gridDimX, uint blockDimX, uint sharedMemBytes)
 {

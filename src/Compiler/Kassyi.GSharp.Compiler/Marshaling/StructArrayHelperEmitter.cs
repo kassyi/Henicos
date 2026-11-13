@@ -7,6 +7,12 @@ internal static class StructArrayHelperEmitter
     /// <summary>The runtime type that the CUDA launcher passes to <c>Marshal_</c> as <c>deviceArrays</c>.</summary>
     internal const string DeviceArrayRegionsType = "global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions";
 
+    /// <summary>The runtime type that the CPU launcher passes to <c>CopyArrays_</c>: one copy per host array.</summary>
+    internal const string HostArrayCopiesType = "global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies";
+
+    // The CopyArrays_ parameter that holds the copies of the launch
+    internal const string CopiesParameter = "copies";
+
     // The Marshal_ parameter that records the arrays of a launch: one device region per host array on CUDA, the
     // GCHandles that pin them on the CPU
 
@@ -34,6 +40,7 @@ internal static class StructArrayHelperEmitter
             writer.Append("ref ");
             writer.AppendFullyQualifiedCsharpName(s);
             writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}" : " host");
+            writer.Append($", {HostArrayCopiesType} {CopiesParameter}");
         }
 
         writer.AppendLine();
@@ -74,31 +81,35 @@ internal static class StructArrayHelperEmitter
         WriteCopyArraysValue(writer, $"host.{member.Name.ToCSharpIdentifier()}", member.Type);
     }
 
-    // if (<value> != null) { <value> = (<array type>)<value>.Clone(); [for (...) CopyArrays_<E>(ref <value>[i]);] }
-    // or CopyArrays_<S>(ref <value>); for a struct that holds arrays
+    // _ = copies.Copy(ref <value>);
+    // or if (copies.Copy(ref <value>)) { for (...) CopyArrays_<E>(ref <value>[i], copies); }
+    // or CopyArrays_<S>(ref <value>, copies); for a struct that holds arrays
+    // [WHY] The launch's HostArrayCopies gives every holder of one array the same copy, and none to an array that a
+    // writable argument holds (#985); only a new copy has elements still to copy, which also ends the walk of an array
+    // that its own elements hold
     private static void WriteCopyArraysValue(SourceWriter writer, string value, ITypeSymbol type)
     {
         if (!type.TryGetArrayLikeElementType(out var element))
         {
             writer.AppendCopyArraysMethodName(type);
-            writer.AppendLine($"(ref {value});");
+            writer.AppendLine($"(ref {value}, {CopiesParameter});");
             return;
         }
 
-        writer.AppendLine($"if ({value} != null)");
+        if (!HoldsArrays(element))
+        {
+            writer.AppendLine($"_ = {CopiesParameter}.Copy(ref {value});");
+            return;
+        }
+
+        writer.AppendLine($"if ({CopiesParameter}.Copy(ref {value}))");
         using (writer.Scope())
         {
-            writer.Append($"{value} = (");
-            writer.AppendFullyQualifiedCsharpName(type);
-            writer.AppendLine($"){value}.Clone();");
-            if (HoldsArrays(element))
+            writer.AppendLine($"for (int i = 0; i < {value}.Length; i++)");
+            using (writer.Scope())
             {
-                writer.AppendLine($"for (int i = 0; i < {value}.Length; i++)");
-                using (writer.Scope())
-                {
-                    writer.AppendCopyArraysMethodName(element);
-                    writer.AppendLine($"(ref {value}[i]);");
-                }
+                writer.AppendCopyArraysMethodName(element);
+                writer.AppendLine($"(ref {value}[i], {CopiesParameter});");
             }
         }
     }

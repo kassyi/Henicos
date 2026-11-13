@@ -266,15 +266,12 @@ if (!AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror.FieldOffsetsMatc
 ref AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray, AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>(ref hostValue);
 host.P = native.P;
 }
-public static void CopyArrays_DiffFieldKeywordWithArray(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray hostValue)
+public static void CopyArrays_DiffFieldKeywordWithArray(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray hostValue, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray>());
 if (!AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray");
 ref AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray, AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>(ref hostValue);
-if (host.Data != null)
-{
-host.Data = (global::System.Int32[])host.Data.Clone();
-}
+_ = copies.Copy(ref host.Data);
 }
 public static bool HoldsArray_DiffFieldKeywordWithArray(global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray hostValue, object array)
 {

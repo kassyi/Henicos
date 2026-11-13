@@ -49,3 +49,17 @@ methods:
       - { name: rows, type: int }
       - { name: cols, type: int }
       - { name: blockDimX, type: uint }
+  - name: AddTwo
+    parameters:
+      - { name: a, type: ref int }
+      - { name: b, type: ref int }
+  - name: FirstOfTwoVectors
+    entryPoint: AddToFirstOfTwo
+    parameters:
+      - { name: a, type: "float[]" }
+      - { name: b, type: "float[]" }
+  - name: FirstOfTwoMatrices
+    entryPoint: AddToFirstOfTwo
+    parameters:
+      - { name: a, type: "float[,]" }
+      - { name: b, type: "float[,]" }

@@ -127,12 +127,12 @@ public class CSharpExecutionTests
     }
 
     // The writes to a ref or out argument before a thread throws reach the caller, as on the native path, which
-    // passes pointers to the caller's variables
-    // mutant: CSharpExecutionEmitter.WriteBranch writes the copies back after the run instead of in a finally (the
-    // caller keeps total = 10 and last = 0)
+    // passes pointers to the caller's variables: the C# execution passes the pinned caller's variable itself
+    // mutant: CSharpExecutionEmitter.WriteArgument passes a copy of the variable instead of the pinned pointer (the
+    // caller keeps total = 10)
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Launch_CSharpScopeThreadThrowsAfterRefOutWrites_CopiesTheWritesBack()
+    public void Launch_CSharpScopeThreadThrowsAfterRefOutWrites_KeepsTheWritesInTheCallersVariables()
     {
         int total = 10;
         int last = 0;

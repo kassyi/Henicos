@@ -394,6 +394,73 @@ public class ModuleArgumentTests
         throw new TimeoutException("The kernel did not record the address it received.");
     }
 
+    // One variable passed to two 'ref' parameters, and one array passed to two array parameters, is one memory in C#:
+    // the kernel adds 1 through the first and 10 through the second, so the caller sees both (#1061)
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Launch_OneVariableToTwoRefParameters_SeesBothWrites(bool throughYaml)
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var x = 0;
+
+        if (throughYaml)
+        {
+            ModuleArgumentKernels.AddTwo(ref x, ref x);
+        }
+        else
+        {
+            ModuleArgumentImports.AddTwo(ref x, ref x);
+        }
+
+        Assert.Equal(11, x);
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Launch_OneArrayToTwoArrayParameters_SeesBothWrites(bool throughYaml)
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        float[] vector = [1f, 2f];
+        float[,] matrix = { { 1f, 2f }, { 3f, 4f } };
+
+        if (throughYaml)
+        {
+            ModuleArgumentKernels.FirstOfTwoVectors(vector, vector);
+            ModuleArgumentKernels.FirstOfTwoMatrices(matrix, matrix);
+        }
+        else
+        {
+            ModuleArgumentImports.FirstOfTwoVectors(vector, vector);
+            ModuleArgumentImports.FirstOfTwoMatrices(matrix, matrix);
+        }
+
+        Assert.Equal([12f, 2f], vector);
+        Assert.Equal(new[,] { { 12f, 2f }, { 3f, 4f } }, matrix);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Launch_TwoDifferentRefVariables_KeepsThemApart()
+    {
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        var a = 0;
+        var b = 100;
+
+        ModuleArgumentKernels.AddTwo(ref a, ref b);
+
+        Assert.Equal((1, 110), (a, b));
+    }
+
     // cuPointerGetAttribute(CU_POINTER_ATTRIBUTE_MEMORY_TYPE), which Kassyi.GSharp.Runtime does not bind
     private static unsafe int GetMemoryType(ulong address, out uint memoryType)
     {

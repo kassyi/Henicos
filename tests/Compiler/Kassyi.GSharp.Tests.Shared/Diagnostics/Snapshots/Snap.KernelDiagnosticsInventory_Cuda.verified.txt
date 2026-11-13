@@ -180,6 +180,8 @@
 (71,24)-(71,37) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.PaddingKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
 (78,23)-(78,35) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.ResultKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
 (104,63)-(104,67) GSH0013 analyzer: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+(129,63)-(129,74) GSH0013 analyzer: The kernel allocates 2400000000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+(138,63)-(138,74) GSH0013 analyzer: The kernel allocates 4294967296 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
 
 ## Generator/DialectDiagnostics.cu.cs
 

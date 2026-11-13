@@ -37,6 +37,33 @@ internal readonly record struct ModuleKernelArgument(
 
     /// <summary>Whether the parameter is an array, one-dimensional or multidimensional.</summary>
     public bool IsArray => Kind is ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray;
+
+    /// <summary>
+    /// Whether the launcher compares the argument with the others for shared memory (<c>HostAliasGroups</c>): an array,
+    /// or a value passed by <c>ref</c> or <c>in</c>. An <c>out</c> value starts from a local of the launcher.
+    /// </summary>
+    public bool IsAliasCandidate => IsArray || (Kind == ModuleKernelParameterKind.ByReference && CopyIn);
+
+    /// <summary>The <c>HostAliasGroups</c> traits of an alias candidate: copied in, copied back.</summary>
+    public byte AliasTraits =>
+        (byte)((CopyIn ? LaunchAliasPlan.CopiesIn : 0) | (CopyOut ? LaunchAliasPlan.CopiesBack : 0));
+
+    /// <summary>The pin and range of an alias candidate (<see cref="IsAliasCandidate"/>).</summary>
+    public AliasRange ToAliasRange()
+    {
+        var name = Name.ToCSharpIdentifier();
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.AliasPinned, Ordinal);
+        // [WHY] A module launcher knows its types by name only, so the runtime derives the alignment from the size
+        var element = AliasElement.Raw(TypeName, alignment: 0);
+        if (!IsArray)
+        {
+            return AliasRange.ForReference(pinned, $"{HostTypeNames.Unsafe}.AsRef(in {name})", element, AliasTraits,
+                Name);
+        }
+
+        var count = AllowsNull ? $"({name}?.Length ?? 0)" : $"{name}.Length";
+        return AliasRange.ForArray(pinned, name, count, element, AliasTraits, Name);
+    }
 }
 
 /// <summary>
@@ -97,6 +124,31 @@ internal readonly record struct ModuleKernelLaunchPlan(
     EquatableArray<ModuleKernelProblem> Problems)
 {
     public bool CanLaunch => Problems.IsDefaultOrEmpty;
+
+    /// <summary>
+    /// Whether the launcher compares its arguments for shared memory: two arrays, or an array and a <c>ref</c> value,
+    /// may be one memory in C# (two slices are no module argument, but the same array twice is), and then share one
+    /// device region (#1061).
+    /// </summary>
+    public bool ComparesAliases =>
+        Arguments
+            .AsStackEnumerable()
+            .Count(static a => a.IsAliasCandidate) > 1;
+
+    /// <summary>The pins and ranges of the alias candidates, in declaration order.</summary>
+    public ImmutableArray<AliasRange> AliasRanges
+    {
+        get
+        {
+            var ranges = ImmutableArray.CreateBuilder<AliasRange>();
+            Arguments
+                .AsStackEnumerable()
+                .Where(static a => a.IsAliasCandidate)
+                .Select(static a => a.ToAliasRange())
+                .AddTo(ranges);
+            return ranges.ToImmutable();
+        }
+    }
 
     /// <summary>
     /// Whether a kernel argument is a pointer or a function pointer, so the launcher is declared <c>unsafe</c> (CS0214

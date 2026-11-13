@@ -374,7 +374,7 @@ export class JobServer {
   /** Cancels jobs and resolves to the ids it cancelled: a job that ended meanwhile (while the processes of lost
    * clients were read) is left out. */
   async cancel(requested: ServerJob[]): Promise<number[]> {
-    // A GPU holder is cancelled with the --gpu run whose turn started it, so that the run ends as cancelled
+    // A GPU holder and the --gpu run whose turn started it are cancelled together (cancelTargets)
     requested = cancelTargets(requested, this.scheduler.running.concat(this.scheduler.waiting));
     const orphans = requested.filter((job) => job.connection === null && job.phase === "running");
     const live = await commandProcesses(orphans);
