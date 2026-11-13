@@ -148,8 +148,9 @@ public class NativeApiModuleGeneratorTests
                   - { name: h_result, type: int }
                   - { name: gridDimX, type: uint }
             """;
-        var userTypes = CSharpSyntaxTree.ParseText(
-            """
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+                "UserTypes.cs",
+                """
             namespace MyApp.Native;
             public struct GpuKernelLoader;
             public struct GpuBuffer<T>;
@@ -157,10 +158,11 @@ public class NativeApiModuleGeneratorTests
             public struct CudaDriverApi;
             public class Lazy<T>;
             public class AppContext;
-            """,
-            new CSharpParseOptions(LanguageVersion.Latest));
-        var compilation = CreateCompilation().AddSyntaxTrees(userTypes);
-        var driver = CreateDriver(Api("colliding.yml", Yaml));
+            """)
+            .WithAssemblyName(CreateCompilation().AssemblyName);
+        // The generated trees parse as the test sources do
+        var driver = CreateDriver(Api("colliding.yml", Yaml))
+            .WithUpdatedParseOptions((CSharpParseOptions)compilation.SyntaxTrees.First().Options);
 
         driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
 
@@ -225,10 +227,13 @@ public class NativeApiModuleGeneratorTests
                   - { name: data, type: "float[]" }
                   - { name: callback, type: "{{type}}" }
             """;
-        var userClass = CSharpSyntaxTree.ParseText("namespace MyApp.Native; public sealed class UserClass { }",
-            new CSharpParseOptions(LanguageVersion.Latest));
-        var compilation = CreateCompilation().AddSyntaxTrees(userClass);
-        var driver = CreateDriver(Api("class.yml", yaml));
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+                "UserClass.cs",
+                "namespace MyApp.Native; public sealed class UserClass { }")
+            .WithAssemblyName(CreateCompilation().AssemblyName);
+        // The generated trees parse as the test sources do
+        var driver = CreateDriver(Api("class.yml", yaml))
+            .WithUpdatedParseOptions((CSharpParseOptions)compilation.SyntaxTrees.First().Options);
 
         driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
 

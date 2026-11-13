@@ -169,12 +169,13 @@ public class NativeApiGeneratorDiagnosticsTests
     [Scenario(TestScenario.Boundary)]
     public void UnrelatedSourceChange_KeepsNativeApiStepCached()
     {
-        var compilation = CreateCompilation();
+        // The second run sees one more file that declares an unrelated class
+        var updated = RoslynTestUtility.CreateCompilationAt("Unrelated.cs", "namespace Other { class Unrelated { } }")
+            .WithAssemblyName(CreateCompilation().AssemblyName);
+        var compilation = updated.RemoveAllSyntaxTrees();
         var driver = CreateDriver(Api("mylib.yml", LibraryYaml));
 
         driver = driver.RunGenerators(compilation);
-        var updated = compilation.AddSyntaxTrees(
-            CSharpSyntaxTree.ParseText("namespace Other { class Unrelated { } }"));
         driver = driver.RunGenerators(updated);
 
         var steps = driver.GetRunResult().Results[0].TrackedOutputSteps;
