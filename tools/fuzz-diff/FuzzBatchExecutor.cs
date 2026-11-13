@@ -185,7 +185,7 @@ internal sealed class FuzzBatchExecutor(RunCommandOptions options, string? cudaA
         return events;
     }
 
-    // Runs the CUDA batch, under scripts/agent/gpu-lock.js unless the lock is skipped or already held. Returns null
+    // Runs the CUDA batch, under scripts/human/gpu-lock.js unless the lock is skipped or already held. Returns null
     // when the lock wait timed out: the GPU was busy, which is no finding.
     private FuzzProcessResult? RunCuda(FuzzBatchProject project)
     {
@@ -198,7 +198,7 @@ internal sealed class FuzzBatchExecutor(RunCommandOptions options, string? cudaA
             return FuzzRunProcess.Run("dotnet", runArgs, repoRoot, RunTimeoutMs);
         }
 
-        string lockScript = Path.Combine(repoRoot, "scripts", "agent", "gpu-lock.js");
+        string lockScript = Path.Combine(repoRoot, "scripts", "human", "gpu-lock.js");
         string inputSeedArg = options.Generation.InputSeed is int inputSeed
             ? $" --input-seed {inputSeed.ToString(CultureInfo.InvariantCulture)}"
             : string.Empty;

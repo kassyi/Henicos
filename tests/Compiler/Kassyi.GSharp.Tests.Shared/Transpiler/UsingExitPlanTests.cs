@@ -42,8 +42,8 @@ public class UsingExitPlanTests
 
         var exit = Assert.Single(plan.Exits);
         Assert.Equal(UsingExitKind.GotoCase, exit.Kind);
-        Assert.Equal("goto case 2;", exit.Jump.ToString());
-        var inner = Jumps("GotoCase").First(static j => j.ToString() == "goto case 1;");
+        Assert.True(IsGotoCase(exit.Jump, 2));
+        var inner = Jumps("GotoCase").First(static j => IsGotoCase(j, 1));
         Assert.Equal(-1, plan.FindExit(inner));
     }
 
@@ -96,6 +96,14 @@ public class UsingExitPlanTests
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .Single(m => m.Identifier.ValueText == name);
+
+    // goto case <label>; with an integer label
+    private static bool IsGotoCase(SyntaxNode jump, int label) =>
+        jump is GotoStatementSyntax
+        {
+            RawKind: (int)SyntaxKind.GotoCaseStatement,
+            Expression: LiteralExpressionSyntax { Token.Value: int value }
+        } && value == label;
 
     private static StatementSyntax[] Jumps(string method) =>
         Method(method)

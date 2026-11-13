@@ -5,7 +5,7 @@ import * as path from "node:path";
 /** The entry script (scripts/human/job-queue.js): the scheduler and the GPU wrapper start it again. */
 export const EntryScript = path.join(import.meta.dirname, "..", "job-queue.js");
 /** The GPU lock, which the --gpu path takes before it asks for its CPU slot. */
-export const GpuLockScript = path.join(import.meta.dirname, "..", "..", "agent", "gpu-lock.js");
+export const GpuLockScript = path.join(import.meta.dirname, "..", "gpu-lock.js");
 
 /** Version 3 adds placement (move, set-weight), dependencies (--after, await) and the exit code in "done". */
 export const ProtocolVersion = 3;

@@ -49,7 +49,7 @@
 // The justfile recipes that build or test queue their command through `run` themselves.
 //
 // GPU: --gpu first waits in the scheduler for its turn at the GPU (one at a time, in the same order as the slots,
-// taking no slots), then takes the GPU lock (scripts/agent/gpu-lock.js), under which the command asks for its CPU
+// taking no slots), then takes the GPU lock (scripts/human/gpu-lock.js), under which the command asks for its CPU
 // slots and is granted at once, even over the capacity, so that a job that holds the GPU lock never waits for a slot.
 //
 // Shell: the command runs in the caller's shell: Git Bash on Windows when MSYSTEM or SHELL is set (the Claude Code Bash

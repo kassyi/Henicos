@@ -16,8 +16,9 @@ import {
   type Policy,
   type ShellName,
 } from "./constants.ts";
-import { cancel, place, run, status, stop, usageError, wait, type RunOptions } from "./client.ts";
-import { defaultMemoryPoolMb, defaultSlots } from "./machine.ts";
+import { run, usageError, type RunOptions } from "./client.ts";
+import { cancel, place, status, stop, wait } from "./client-commands.ts";
+import { MachineProfile } from "./machine.ts";
 import { serve } from "./server.ts";
 
 const Usage = [
@@ -103,8 +104,8 @@ export function parseArgs(argv: string[]): Options {
     weight: 0,
     gpu: false,
     timeoutMinutes: 0,
-    slots: Number(process.env[SlotsVariable]) || defaultSlots(),
-    memoryMb: Number(process.env[MemoryVariable]) || defaultMemoryPoolMb(),
+    slots: Number(process.env[SlotsVariable]) || new MachineProfile().slots,
+    memoryMb: Number(process.env[MemoryVariable]) || new MachineProfile().memoryPoolMb,
     policy: isPolicy(policy) ? policy : DefaultPolicy,
     port: Number(process.env[PortVariable]) || DefaultPort,
     commandFromEnv: false,
