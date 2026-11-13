@@ -20,6 +20,8 @@ but follow the same language and convention rules (§1, §3).
   the one exception to the no-npm rule, used only for the type check: `node scripts/human/check-types.js` installs
   them at pinned versions under `tmp/typecheck/` (no `package.json` in the repository) and checks `scripts/**/*.ts`
   against `scripts/tsconfig.json`; CI runs it (`script-types.yml`). The job queue is the only TypeScript script so far.
+  Format the `.ts` files with Prettier (`npx prettier@3.3.3 --write <files>`), which reads `scripts/.prettierrc.json`
+  (double quotes, 120 columns, trailing commas, line endings kept), so that every editor formats them the same way.
 - **No `.sh` and no `.ps1`**. The one exception is `scripts/human/Install-DevTools.ps1`, which installs Node itself through
   winget on Windows.
 - **Logic the compiler owns goes in .NET, not in a script.** When a tool needs the compiler's own rules (name encoding,
