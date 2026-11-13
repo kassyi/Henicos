@@ -4482,9 +4482,10 @@ return __gsharp_id_7_v;
 }
 ;
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_2_outs, 0, 694462076u);
-int __gsharp_seq_1 = __gsharp_id_6_pick(__gsharp_id_3_mode);
-return __gsharp_seq_0 = __gsharp_seq_1;
+auto __gsharp_seq_0 = __gsharp_id_2_outs;
+auto __gsharp_seq_1 = 0;
+int __gsharp_seq_2 = __gsharp_id_6_pick(__gsharp_id_3_mode);
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 694462076u) = __gsharp_seq_2;
 }());
 if(__gsharp_id_3_mode==1)
 {

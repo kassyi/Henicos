@@ -341,9 +341,29 @@ temporaries, up to the last one that interferes:
 // Execution Context: Generated C++ (GPU)
 // C#: a[i] = Next(ref i);   C++17 would evaluate Next(&i) before a[i]
 ([&]() {
-auto&& __gsharp_seq_0 = a[i];
-int __gsharp_seq_1 = Next(&i);
-return __gsharp_seq_0 = __gsharp_seq_1;
+auto __gsharp_seq_0 = a;
+auto __gsharp_seq_1 = i;
+int __gsharp_seq_2 = Next(&i);
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, <site>) = __gsharp_seq_2;
+}());
+```
+
+The element of a simple assignment is stored through the array and the index in temporaries: C# checks the element
+(null, bounds) when it stores the value, after the right side (C# spec §12.21.2, and the CLR for an element of every
+type, a struct included), so it is not bound before the right side is evaluated.
+
+A check that may throw (`ExpressionTraps`: the null check of an array read, an integer division, a checked operation,
+the value of a `Nullable<T>`, a call) interferes with a write to memory in another operand
+(`ExpressionEffects.ThrowInterferesWith`): C# decides whether the write is made before the exception. A check never
+interferes with a read, or with a write to a local, which ends with the thread that throws (a kernel has no `try`):
+
+```cpp
+// Execution Context: Generated C++ (CPU)
+// C#: o[0] = Bump(o) + a.Length;   MSVC would check a before it calls Bump
+([&]() {
+auto __gsharp_seq_0 = Bump(o);
+auto __gsharp_seq_1 = __gsharp_array_ref(a, <site>).length;
+return __gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
 }());
 ```
 

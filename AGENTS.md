@@ -18,6 +18,7 @@ G# (GSharp) is a transpilation engine and runtime that compiles C# directly to C
 These rules govern agent behavior and tool execution:
 
 - **No Autonomous Git Commits or Pushes**: Strictly prohibited under any circumstances. When modifications are finished, stop and prompt the user to invoke `/commit.ja.prompt` (WIP/prototype) or `/commit.en.prompt` (PR). Commits must never be performed directly on `main` or `master`.
+- **Builds and Tests Go Through the Job Queue**: The machine and its GPU are shared by every agent and worktree. Run every `dotnet build` / `test`, `msbuild`, `just` test, fuzz, mutate and benchmark recipe and long test script as `node scripts/human/job-queue.js run [--gpu] -- "<command>"` ([job-queue.md](.agents/rules/job-queue.md)); never run one directly.
 - **Communication & Tone**: Keep your tone quiet, highly professional, concise, and dry—like a seasoned senior backend engineer. All explanations, thinking processes, and Q&A must be in Japanese.
 - **Issue & PR Shorthand (`#<number>`)**: When referenced without qualification, autonomously inspect using `gh issue view <number>` or `gh pr view <number>` without asking for clarification.
 - **Issue & PR Numbers Carry Their Title**: Never write an issue or PR number alone; add a short title, as in `#1078 (MSVC /O2 miscompile)`, in chat, handoffs, briefs, memory, PR bodies and commit messages, so a wrong number shows. Copy numbers from tool output, not from memory. Before publishing text with numbers (issue / PR bodies and comments, commits, branch names), run `node scripts/agent/check-issue-refs.js --text "<text>"` (or `--file`); in Claude Code a PreToolUse hook (`.claude/settings.json`) runs it on those commands and denies a number that does not exist, or a closing keyword (`Fixes #n`) that names a PR or a closed issue. A brief or handoff that refers to issues starts with a `number | title` table.
@@ -28,12 +29,13 @@ These rules govern agent behavior and tool execution:
 
 ## 3. Rules Index (`.agents/rules/`)
 
-You **MUST** follow the dedicated rule files for code implementation:
+You **MUST** follow the dedicated rule files for code implementation. Each file starts with frontmatter for Antigravity (`trigger: always_on`, or `glob` with the files it covers), checked by `node scripts/human/check-rule-frontmatter.js`; Claude Code imports every file through `CLAUDE.md`.
 
 - [Coding Style & Memory Guidelines](.agents/rules/coding-style.md): C# naming conventions, zero-allocation patterns, `StackLinq` policy (`RS0030`), null-forgiving (`!`) ban, and empty catch ban.
 - [GPU / C# Boundary Naming Conventions](.agents/rules/gsharp-naming-conventions.md): Kernel and host naming standards.
 - [Test Architecture & TDD Methodology](.agents/rules/test-architecture.md): 2-Tier test hierarchy, snapshot testing (`.verified.cs`), and Test-Driven AI Vibe Coding workflow.
-- [Test Execution (`just`)](.agents/rules/test-execution.md): `just` test categories and DiffEngine hang prevention.
+- [Test Execution (`just`)](.agents/rules/test-execution.md): `just` test categories, DiffEngine hang prevention, memory budgets, CI.
+- [Job Queue](.agents/rules/job-queue.md): every build and test command runs through `scripts/human/job-queue.js` (`run`, `status`, `wait`, dependencies, GPU turns).
 - [Transpiler Emission Rules](.agents/rules/transpiler-emission.md): NO Reflection, `SourceWriter` scoped brackets, dense left-aligned output, decide then write (Plan / Emit).
 - [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): `[Constant]` exclusion, diagnostics, struct guards, ref/out, `var` suffix, design-time I/O guard, MSBuild wildcard, C# order of evaluation (`EvaluationOrder`). The symbol file (`*.gsym.json`) and source hash header are described in the transpiler skill (Symbol File Mapping).
 - [Issue Priority (Milestones)](.agents/rules/issue-milestones.md): the current bugs-first policy, the milestones `M1`–`M5` and `Future`, how to assign an issue, the order to work in, and what agents may change without approval.

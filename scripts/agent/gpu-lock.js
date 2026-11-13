@@ -29,8 +29,8 @@
 // by an older version of this script, or an owner killed between starting the command and recording it), a failed
 // process query. A reused pid therefore only delays a takeover; it never steals a lock.
 //
-// Kernel pools: on Windows the kernel pools grew after GPU faults and were freed only by a reboot (measured with a
-// plain CUDA trap program; NVIDIA bug 7077284). The script reads the pools and the nvlddmkm Event 153 entries
+// Kernel pools: so that a run shows whether the Windows kernel pools grew while the GPU faulted (the counters say how
+// much, not what holds it; see gpu-fault-watch.js), the script reads the pools and the nvlddmkm Event 153 entries
 // (scripts/human/gpu-fault-watch.js, about 0.1 s) twice, without blocking (Ctrl+C still stops it): while the command
 // starts, after it has been recorded in owner.json, so that a hard kill during the reading leaves a lock that can be
 // taken over; and after the command has ended, before the lock is released. It prints one line, appends a row to

@@ -1,72 +1,5 @@
 namespace Kassyi.GSharp.Compiler.NativeApi;
 
-/// <summary>How a module (kernel) launcher passes a parameter to the kernel.</summary>
-internal enum ModuleKernelParameterKind
-{
-    /// <summary>An unmanaged value, passed by the address of a local copy.</summary>
-    Value,
-
-    /// <summary>A pointer or function pointer, passed by the address of a local copy.</summary>
-    Pointer,
-
-    /// <summary>
-    /// A one-dimensional array of unmanaged elements, staged through a device buffer and passed as its device pointer;
-    /// null is passed as a null pointer when the array is declared nullable, and rejected otherwise.
-    /// </summary>
-    Array,
-
-    /// <summary>
-    /// A multidimensional array of unmanaged elements, staged through one device buffer in row-major order (the order
-    /// in which C# stores the elements) and passed as its device pointer; null is handled as for
-    /// <see cref="Array"/>.
-    /// </summary>
-    MultidimensionalArray,
-
-    /// <summary>
-    /// A <c>ref</c>, <c>out</c> or <c>in</c> unmanaged value, staged through a one-element device buffer and passed as
-    /// its device pointer.
-    /// </summary>
-    ByReference,
-}
-
-/// <summary>The launch setting that a parameter of a module launcher supplies instead of a kernel argument.</summary>
-internal enum ModuleLaunchSetting
-{
-    None,
-    GridDimX,
-    GridDimY,
-    GridDimZ,
-    BlockDimX,
-    BlockDimY,
-    BlockDimZ,
-    SharedMemBytes,
-    Stream,
-}
-
-/// <summary>A parameter type of a YAML module binding, read once for validation and for the launcher.</summary>
-/// <param name="Kind">How the launcher passes the parameter; meaningful when <paramref name="Reason"/> is null.</param>
-/// <param name="LaunchSetting">
-/// The launch setting the parameter supplies, or <see cref="ModuleLaunchSetting.None"/>.
-/// </param>
-/// <param name="TypeName">
-/// The type without its modifiers and without whitespace inside it (<c>float[ ]</c> becomes <c>float[]</c>).
-/// </param>
-/// <param name="ElementTypeName">The element type of an array.</param>
-/// <param name="Reason">Why the launcher cannot pass the parameter, or <see langword="null"/> when it can.</param>
-/// <param name="RefKind">
-/// <see cref="RefKind.Ref"/>, <see cref="RefKind.Out"/> or <see cref="RefKind.In"/> (also for <c>ref readonly</c>)
-/// for a parameter passed by reference, otherwise <see cref="RefKind.None"/>.
-/// </param>
-/// <param name="AllowsNull">Whether an array is written nullable (<c>float[]?</c>, <c>float[,]?</c>).</param>
-internal readonly record struct ModuleParameterType(
-    ModuleKernelParameterKind Kind,
-    ModuleLaunchSetting LaunchSetting,
-    string TypeName,
-    string? ElementTypeName,
-    string? Reason,
-    RefKind RefKind = RefKind.None,
-    bool AllowsNull = false);
-
 /// <summary>
 /// Decides which parameters a module (kernel) launcher can pass, for <c>[CudaImport]</c> methods and YAML
 /// <c>moduleName</c> bindings alike.
@@ -211,24 +144,31 @@ internal static class ModuleKernelParameterTypes
     private static bool TryReadModifiers(string text, ref int position, out RefKind refKind, out bool isScoped,
         out bool isParams)
     {
-        const string ScopedModifier = "scoped";
-        var modifiers = string.Empty;
-        while (TryReadModifier(text, ref position, out var word))
-        {
-            modifiers = modifiers.Length == 0 ? word : $"{modifiers} {word}";
-        }
+        isScoped = TryReadModifier(text, ref position, "scoped");
+        isParams = !isScoped && TryReadModifier(text, ref position, "params");
+        refKind = isParams ? RefKind.None : ReadRefKind(text, ref position);
 
-        isScoped = modifiers == ScopedModifier || modifiers.StartsWith(ScopedModifier + " ", StringComparison.Ordinal);
-        var rest = isScoped ? modifiers[ScopedModifier.Length..].TrimStart() : modifiers;
-        isParams = !isScoped && rest == "params";
-        refKind = rest switch
+        // A modifier after these is one in another order
+        return !IsModifierAt(text, position);
+    }
+
+    // Reads 'ref', 'ref readonly', 'out' or 'in' at <position> when a type follows it
+    private static RefKind ReadRefKind(string text, ref int position)
+    {
+        var refKind = ReadWord(text, position, out var end) switch
         {
             "ref" => RefKind.Ref,
             "out" => RefKind.Out,
-            "in" or "ref readonly" => RefKind.In,
+            "in" => RefKind.In,
             _ => RefKind.None,
         };
-        return rest.Length == 0 || isParams || refKind != RefKind.None;
+        if (refKind == RefKind.None || end == text.Length)
+        {
+            return RefKind.None;
+        }
+
+        position = SkipWhitespace(text, end);
+        return refKind == RefKind.Ref && TryReadModifier(text, ref position, "readonly") ? RefKind.In : refKind;
     }
 
     // A 'ref', 'out' or 'in' parameter: an unmanaged value staged through a one-element device buffer
@@ -248,28 +188,47 @@ internal static class ModuleKernelParameterTypes
             reason, refKind);
     }
 
-    // Reads one modifier word at <position> and moves past it and the whitespace after it
-    private static bool TryReadModifier(string text, ref int position, out string modifier)
+    // Reads <modifier> at <position> when a type follows it, and moves past it and the whitespace after it
+    private static bool TryReadModifier(string text, ref int position, string modifier)
     {
-        var end = position;
+        var word = ReadWord(text, position, out var end);
+        if (end == text.Length || !word.SequenceEqual(modifier.AsSpan()))
+        {
+            return false;
+        }
+
+        position = SkipWhitespace(text, end);
+        return true;
+    }
+
+    // The first position from <position> that is not whitespace
+    private static int SkipWhitespace(string text, int position)
+    {
+        while (position < text.Length && char.IsWhiteSpace(text[position]))
+        {
+            position++;
+        }
+
+        return position;
+    }
+
+    // Whether the word at <position> is a parameter modifier with a type after it
+    private static bool IsModifierAt(string text, int position)
+    {
+        var word = ReadWord(text, position, out var end);
+        return end < text.Length && (word is "ref" or "out" or "in" or "scoped" or "params" or "readonly");
+    }
+
+    // The characters from <position> up to the next whitespace, which <end> points at
+    private static ReadOnlySpan<char> ReadWord(string text, int position, out int end)
+    {
+        end = position;
         while (end < text.Length && !char.IsWhiteSpace(text[end]))
         {
             end++;
         }
 
-        modifier = text[position..end];
-        if (end == text.Length || modifier is not ("ref" or "out" or "in" or "scoped" or "params" or "readonly"))
-        {
-            return false;
-        }
-
-        while (end < text.Length && char.IsWhiteSpace(text[end]))
-        {
-            end++;
-        }
-
-        position = end;
-        return true;
+        return text.AsSpan(position, end - position);
     }
 
     private static ModuleParameterType Classify(TypeSyntax syntax, string typeName)
