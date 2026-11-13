@@ -114,6 +114,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0111](GSH0111.md) | Error | [GpuKernel] is only allowed on an ordinary static method of a class |
 | [GSH0112](GSH0112.md) | Error | Kernel parameter type has no device representation |
 | [GSH0113](GSH0113.md) | Error | G# cannot generate the launcher of a [CudaImport] declaration |
+| [GSH0115](GSH0115.md) | Error | The managed CPU path cannot call a device function that waits at a barrier from here |
 | [SLQ0001](SLQ0001.md) | Error | StackLinq method chain is too deep |
 | [RS0030](RS0030.md) | Error | Banned API used (G# repository builds only) |
 

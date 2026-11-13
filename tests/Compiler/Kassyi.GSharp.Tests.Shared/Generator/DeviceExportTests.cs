@@ -515,7 +515,11 @@ public class DeviceExportTests
         Assert.Contains("internal static bool __gsharp_statemachine_StateMachineCase__LibSm__WaitHidden(", machines, StringComparison.Ordinal);
         Assert.Contains("internal class __gsharp_frame_StateMachineCase__LibSm__WaitHidden {", machines, StringComparison.Ordinal);
         Assert.DoesNotContain("unsafe", machines, StringComparison.Ordinal);
-        Assert.DoesNotContain("WaitPrivate", machines, StringComparison.Ordinal);
+        // A frame that holds a private nested type is private to its class (#1835); the records above say that no
+        // other assembly can call it
+        Assert.Contains("private static bool __gsharp_statemachine_StateMachineCase__LibSm__WaitPrivate(", machines, StringComparison.Ordinal);
+        Assert.Contains("private class __gsharp_frame_StateMachineCase__LibSm__WaitPrivate {", machines, StringComparison.Ordinal);
+        Assert.Contains("private class __gsharp_frame_StateMachineCase__LibSm__WaitThrough {", machines, StringComparison.Ordinal);
         Assert.DoesNotContain("WaitClosed", machines, StringComparison.Ordinal);
         var newLine = Environment.NewLine;
         Assert.Contains($"partial class LibSm{newLine}{{{newLine}public partial class Inner", machines, StringComparison.Ordinal);

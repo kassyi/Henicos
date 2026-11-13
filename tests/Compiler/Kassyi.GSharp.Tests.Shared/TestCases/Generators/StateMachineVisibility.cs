@@ -29,7 +29,7 @@ namespace StateMachineCase
             return buffer[(tid + 1) % 4];
         }
 
-        // A local of a private nested struct: no state machine
+        // A local of a private nested struct: a state machine private to LibSm, which another assembly cannot call
         [GpuDeviceFunction]
         public static int WaitPrivate(int[] buffer, int tid)
         {
@@ -40,7 +40,7 @@ namespace StateMachineCase
             return buffer[(tid + 1) % 4] + secret.V;
         }
 
-        // Calls WaitPrivate: no state machine either
+        // Calls WaitPrivate, whose private frame its own frame holds: private as well
         [GpuDeviceFunction]
         public static int WaitThrough(int[] buffer, int tid)
         {

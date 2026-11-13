@@ -904,6 +904,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "SuspendingCallFrameUnreachable",
+    "id": "GSH0115",
+    "title": "The managed CPU path cannot call a device function that waits at a barrier from here",
+    "messageFormat": "The managed CPU path cannot call '{0}' here: {1}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

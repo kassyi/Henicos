@@ -10,11 +10,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 internal readonly record struct KernelFrameAccessibility(Accessibility Context, Accessibility StateMachine)
 {
     /// <summary>
-    /// Decides both for <paramref name="kernel"/>, whose context holds fields of <paramref name="fieldTypes"/>.
+    /// Decides both for <paramref name="kernel"/>, whose context holds fields of <paramref name="fieldTypes"/> and the
+    /// frames of <paramref name="callFrames"/> (<see cref="ManagedStateMachineAvailability.GetCallFrames"/>).
     /// </summary>
-    public static KernelFrameAccessibility Create(IMethodSymbol kernel, ImmutableArray<ITypeSymbol> fieldTypes)
+    public static KernelFrameAccessibility Create(IMethodSymbol kernel, ImmutableArray<ITypeSymbol> fieldTypes,
+        GeneratedMemberAccessibility.NamedTypes callFrames = default)
     {
-        var fields = default(GeneratedMemberAccessibility.NamedTypes);
+        var fields = callFrames;
         foreach (var type in fieldTypes)
         {
             fields = fields.With(type);

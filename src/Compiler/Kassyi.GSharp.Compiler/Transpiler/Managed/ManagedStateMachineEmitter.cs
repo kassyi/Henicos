@@ -82,24 +82,23 @@ internal static class ManagedStateMachineEmitter
     /// <param name="contextName">The class.</param>
     /// <param name="regularFields">The hoisted locals.</param>
     /// <param name="copiedParameters">The parameters that the class keeps.</param>
-    /// <param name="callSites">The calls that may suspend, whose frames the class holds.</param>
-    /// <param name="semanticModel">The model of the calls.</param>
+    /// <param name="callees">The functions of the calls that may suspend, in call order, whose frames the class holds.</param>
     /// <param name="accessibility">The class's accessibility.</param>
     /// <param name="memberAccessibility">The accessibility of the fields other than the call frames.</param>
     /// <param name="isUnsafe">Whether the context is an unsafe struct rather than a class.</param>
     /// <param name="warpSiteCount">The warp collectives of the body (<see cref="LoweredStateMachine.WarpSiteCount"/>).</param>
     /// <remarks>
-    /// A call frame field is internal: the frame of a device function that is not public is an internal class. Every
-    /// context numbers its frames for the warp collectives (<c>__gsharp_number_warp_paths</c>), which is public because a
-    /// frame of a public device function may belong to a caller in another assembly.
+    /// A call frame field is internal: the frame of a device function that is not public is an internal or private
+    /// class (<see cref="ManagedStateMachineAvailability.GetFrameAccessibility"/>). Every context numbers its frames for
+    /// the warp collectives (<c>__gsharp_number_warp_paths</c>), which is public because a frame of a public device
+    /// function may belong to a caller in another assembly.
     /// </remarks>
     public static void EmitContextClass(
         SourceWriter writer,
         string contextName,
         ImmutableArray<ManagedContextField> regularFields,
         ImmutableArray<IParameterSymbol> copiedParameters,
-        IReadOnlyList<InvocationExpressionSyntax> callSites,
-        SemanticModel semanticModel,
+        ImmutableArray<IMethodSymbol> callees,
         Accessibility accessibility,
         Accessibility memberAccessibility,
         bool isUnsafe = false,
@@ -130,20 +129,17 @@ internal static class ManagedStateMachineEmitter
             }
 
             // Each call that may suspend keeps the callee's frame, which is declared in the callee's class
-            for (var i = 0; i < callSites.Count; i++)
+            for (var i = 0; i < callees.Length; i++)
             {
-                var callee = semanticModel.GetSymbol(callSites[i]) as IMethodSymbol
-                             ?? throw new InvalidOperationException(
-                                 "A call that may suspend does not resolve to a device function.");
                 writer.Append("internal ");
-                AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.SuspendingCall.FrameTypePrefix);
+                AppendDeviceFunctionMember(writer, callees[i], GSharpInternalNames.SuspendingCall.FrameTypePrefix);
                 writer.AppendLine(isUnsafe
                     ? $" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i};"
                     : $" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
             }
 
             EmitWarpFrameMembers(writer, members, isUnsafe, warpSiteCount);
-            EmitWarpPathNumbering(writer, callSites.Count);
+            EmitWarpPathNumbering(writer, callees.Length);
         }
 
         writer.AppendLine();
