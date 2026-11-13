@@ -55,13 +55,15 @@ internal static class CpuHostLaunchEmitter
         in CpuNativeArgumentPlan arguments)
     {
         // Generate Delegate
-        writer.AppendLine(
-            "[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]");
+        const string Interop = "global::System.Runtime.InteropServices.";
+        writer.Append($"[{Interop}UnmanagedFunctionPointer({Interop}CallingConvention.Cdecl, ");
+        writer.AppendLine($"CharSet = {Interop}CharSet.Unicode)]");
         writer.Append("private unsafe delegate void ");
         writer.Append(KernelHostNames.GetDelegateTypeName(kernel));
         using (writer.Parentheses())
         {
-            writer.Append("uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, ");
+            writer.Append("uint gridDimX, uint gridDimY, uint gridDimZ, ");
+            writer.Append("uint blockDimX, uint blockDimY, uint blockDimZ, ");
             writer.Append($"uint sharedMemBytes, long {GridBlockCount}");
             var parameters = kernel.Host.Parameters;
             for (var i = 0; i < parameters.Length; i++)
