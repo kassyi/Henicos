@@ -13,15 +13,18 @@
 // `run`, in <main checkout>/tmp/job-queue (so that it never holds a worktree open), and exits after 30 minutes
 // without jobs.
 //
-// Order (--policy, GSHARP_JOB_QUEUE_POLICY): the scheduler records how long each command ran (history.json in the
-// state directory, the last 9 runs per command text). With `hrrn` (the default) the waiting jobs are ordered by
-// response ratio, (waited + typical run time) / typical run time: a short job goes first, and a long one rises the
-// longer it waits, so that none starves. A later job may start in free slots when it does not delay the first job
-// (backfilling): it ends before the first job could start, counting every running job at its longest recorded time,
-// or it fits in the slots the first job leaves free. `backfill` keeps arrival order with backfilling; `fifo` keeps
-// arrival order without it. `move <id> --first` / `--before <id>` put a waiting job ahead of that order (backfilling
-// still reserves the first job's start); `set-weight` changes the slots a waiting job takes; `start <id>` grants a
-// waiting job at once, over the slots and the memory pool, like a GPU holder (not a GPU turn, not before --after).
+// Order (--policy, GSHARP_JOB_QUEUE_POLICY): the scheduler records how long each command ran (history.json in the state
+// directory, the last 9 runs per command text). With `hrrn` (the default) the waiting jobs are ordered by response
+// ratio, (waited + typical run time) / typical run time: a short job goes first, and a long one rises the longer it
+// waits, so that none starves; then a job that has waited longer than max(10 minutes, its typical run time) goes ahead,
+// oldest first, and the others are taken worktree by worktree in turn (the root of each job's directory), one per
+// round, for the CPU slots and the GPU turns alike. A later job may start in free slots when it does not delay the
+// first job (backfilling): it ends before the first job could start, counting every running job at its longest recorded
+// time, or it fits in the slots the first job leaves free. `backfill` keeps arrival order with backfilling; `fifo`
+// keeps arrival order without it (neither has the round-robin or the bound). `move <id> --first` / `--before <id>` put
+// a waiting job ahead of that order (backfilling still reserves the first job's start); `set-weight` changes the slots
+// a waiting job takes; `start <id>` grants a waiting job at once, over the slots and the memory pool, like a GPU holder
+// (not a GPU turn, not before --after).
 //
 // Dependencies: `run --after <id>` starts once that job's recorded outcome lets it (succeeded, or any outcome with
 // --keep-if-failed); when it failed, was cancelled or its client was lost, the job is cancelled too (exit 4). The
@@ -37,10 +40,10 @@
 //     (a tool timeout that kills only the client), the scheduler keeps the slot until no process of the command is
 //     left (on Windows: the shell or a child of it, matched by creation time, since the shell dies with the client).
 //   - A cancelled running job keeps its slot until its client has stopped the command and closed.
-//   - When the scheduler dies, a running client reconnects and re-registers its job, and a waiting client queues
-//     again with its original arrival time, both with their job id, place and predecessor, so that nothing changes
-//     across a restart. For the first seconds after it starts, the scheduler accepts those re-registrations and grants
-//     nothing. Jobs whose client was already gone are restored from jobs-<port>.json.
+//   - When the scheduler dies, the next one restores every job from jobs-<port>.json: running jobs keep their slots
+//     and waiting jobs their place until their clients re-register (a running client with its job id, a waiting one
+//     with its id, place and predecessor), so that nothing changes across a restart. Only without a current state
+//     file does the scheduler grant nothing for the first seconds after it starts.
 //
 // Weight: every job takes 1 slot unless --weight says more; a test run (dotnet test, just test*, the long test
 // scripts) also takes the budget of the assemblies it names, or of all of them when it names none, from the memory

@@ -14,6 +14,8 @@ export interface JobRequest {
   commandPid: number;
   spawnedAt: number;
   cwd: string;
+  /** The root of the worktree of cwd (absent from older clients: the scheduler then takes cwd). */
+  worktree?: string;
   command: string;
   queuedAt: number;
   /** The job id it had, kept across a restart; 0 for a new job. */
@@ -24,6 +26,8 @@ export interface JobRequest {
   keepIfFailed: boolean;
   /** run --gpu: wait for the turn at the GPU (see SchedulerJob.gpuTurn). */
   gpuTurn: boolean;
+  /** A GPU holder: the id of the --gpu run whose turn started it (absent from older clients). */
+  turn?: number | null;
 }
 
 export type ClientMessage =
@@ -42,8 +46,19 @@ export type ClientMessage =
    * Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock).
    */
   | { type: "await"; id: number }
-  /** The end of a job whose command ended while no scheduler listened, for the jobs that wait for it. */
-  | { type: "report"; id: number; completed: boolean; exitCode: number; cancelled?: boolean };
+  /**
+   * The end of a job whose command ended while its client had no connection, for the jobs that wait for it. pid and
+   * queuedAt name the client (absent from older clients), so that a report never ends another client's job.
+   */
+  | {
+      type: "report";
+      id: number;
+      completed: boolean;
+      exitCode: number;
+      cancelled?: boolean;
+      pid?: number;
+      queuedAt?: number;
+    };
 
 /** A job as `status` shows it. */
 export interface JobView {
@@ -54,6 +69,8 @@ export interface JobView {
   commandPid: number | null;
   orphan: boolean;
   cwd: string;
+  /** The worktree it takes its turns for (absent from older schedulers). */
+  worktree?: string;
   command: string;
   queuedAt: number;
   grantedAt: number | null;

@@ -169,6 +169,7 @@ function selfTest() {
   assert.notDeepStrictEqual(check('echo "x\\"; dotnet test', 'cmd'), [], 'cmd: "x\\" ends the quote');
   assert.notDeepStrictEqual(check('just profile=cpu fuzz-diff'), [], 'just variable before the recipe');
   checkGeneratedForms(assert);
+  require('./self-test-rewrite.js').checkRewrites(assert);
   process.stdout.write('check-queued-command self-test passed\n');
 }
 

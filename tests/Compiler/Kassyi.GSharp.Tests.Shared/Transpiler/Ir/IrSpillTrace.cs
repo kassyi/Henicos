@@ -108,6 +108,15 @@ internal static class IrSpillTrace
         var conditionPending = false;
         foreach (var statement in statements)
         {
+            // { var t = <location>; }: the check of a location, which only the split pass of the IR writes
+            if (statement is BlockSyntax { Statements: [var only] } check && !HasOriginalSpan(check) &&
+                TempDeclaration(only) is ({ } checkName, { } location) &&
+                checkName.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix, StringComparison.Ordinal))
+            {
+                tokens.Add(Leaf("check", OriginalSpan(IteratorTypeResolver.UnwrapParentheses(location)), text));
+                continue;
+            }
+
             if (TempDeclaration(statement) is ({ } name, { } initializer))
             {
                 if (name.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix, StringComparison.Ordinal))
@@ -150,6 +159,40 @@ internal static class IrSpillTrace
 
     /// <summary>The tokens as one line.</summary>
     public static string Print(IEnumerable<Token> tokens) => string.Join(" ", tokens.Select(static t => t.Text));
+
+    /// <summary>
+    /// <paramref name="node"/> with the temporaries of the lowering numbered again, per prefix, in the order they first
+    /// appear: two outputs that differ only in where a method started counting compare equal.
+    /// </summary>
+    public static TNode RenumberTemporaries<TNode>(TNode node) where TNode : SyntaxNode =>
+        (TNode)new TemporaryRenumbering().Visit(node);
+
+    // Renames each identifier with a prefix of a temporary to <prefix><n>, n counted per prefix
+    private sealed class TemporaryRenumbering : CSharpSyntaxRewriter
+    {
+        private readonly Dictionary<string, string> _names = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, int> _counts = new(StringComparer.Ordinal);
+
+        public override SyntaxToken VisitToken(SyntaxToken token)
+        {
+            if (!token.IsKind(SyntaxKind.IdentifierToken) ||
+                s_tempPrefixes.FirstOrDefault(prefix => token.ValueText.StartsWith(prefix, StringComparison.Ordinal))
+                    is not { } prefix)
+            {
+                return token;
+            }
+
+            if (!_names.TryGetValue(token.ValueText, out var name))
+            {
+                var count = _counts.TryGetValue(prefix, out var counted) ? counted : 0;
+                _counts[prefix] = count + 1;
+                name = prefix + count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                _names[token.ValueText] = name;
+            }
+
+            return SyntaxFactory.Identifier(token.LeadingTrivia, name, token.TrailingTrivia);
+        }
+    }
 
     private static Token Leaf(string kind, TextSpan span, SourceText text) =>
         new($"{kind}({Squeeze(text.ToString(span))})", span);

@@ -1,5 +1,5 @@
 using System.Globalization;
-using Kassyi.GSharp.Compiler.Transpiler.Helpers;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers.Literals;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 

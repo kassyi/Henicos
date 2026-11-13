@@ -85,12 +85,14 @@ function setWeight(connection: Connection, message: Incoming): void {
   connection.reply(reweigh(connection.server, message));
 }
 
-/** start: grants a waiting job at once, over the pools; refused for a GPU turn and before its predecessor ended. */
+/**
+ * start: grants a waiting job at once, over the pools; refused for a GPU turn, for a job whose client is away (nobody
+ * would receive the grant) and before its predecessor ended.
+ */
 function startNow(server: JobServer, message: Incoming): ServerMessage {
-  const scheduler = server.scheduler;
   const id = idField(message, "id") ?? 0;
-  const job = scheduler.waiting.find((other) => other.id === id);
-  if (job === undefined) {
+  const job = server.find(id);
+  if (job === undefined || job.phase !== "waiting") {
     return { type: "error", code: "not-waiting", message: `no waiting job #${id}` };
   }
   if (job.gpuTurn) {
@@ -100,7 +102,16 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
       message: `#${id} waits for the GPU, which runs one job at a time; move ${id} --first puts it next`,
     };
   }
-  if (scheduler.isBlocked(job)) {
+  if (job.detached) {
+    return {
+      type: "error",
+      code: "not-started",
+      message:
+        `the client of #${id} is away (its connection dropped or the scheduler restarted): nobody would receive ` +
+        "the grant; start it once its client is back",
+    };
+  }
+  if (server.scheduler.awaitsPredecessor(job)) {
     return { type: "error", code: "not-started", message: `#${id} waits for #${String(job.after)} to end` };
   }
   job.startNow = true;
@@ -135,7 +146,7 @@ function stop(connection: Connection): void {
   server.server.close();
   const open = scheduler.running
     .concat(scheduler.waiting)
-    .map((j) => j.socket)
+    .map((j) => j.connection?.socket ?? null)
     .filter((s): s is net.Socket => s !== null);
   for (const sockets of server.awaiters.values()) {
     open.push(...sockets);
