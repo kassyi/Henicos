@@ -1,3 +1,5 @@
+using System;
+using System.Numerics;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Stdlib;
@@ -61,9 +63,18 @@ internal static class BigIntRefOperatorCases
     // int.MaxValue); a negative amount shifts the other way, as for BigInteger (int.MinValue moves every bit out)
     public static TheoryData<int> Shifts => [0, 3, 31, 32, 40, 71, 127, 128, int.MaxValue, -1, -40, -127, int.MinValue];
 
-    public static uint[] ExpectedShiftLeft(int shiftBits) =>
-        BigIntWords.ToWords(BigIntWords.ToBigInteger(InPlaceInput) << shiftBits, InPlaceInput.Length);
+    public static uint[] ExpectedShiftLeft(int shiftBits) => ShiftedInput(shiftBits);
 
-    public static uint[] ExpectedShiftRight(int shiftBits) =>
-        BigIntWords.ToWords(BigIntWords.ToBigInteger(InPlaceInput) >> shiftBits, InPlaceInput.Length);
+    public static uint[] ExpectedShiftRight(int shiftBits) => ShiftedInput(-(long)shiftBits);
+
+    // The input shifted left by shiftBits (right when negative), in its words. BigInteger cannot hold the input shifted
+    // by int.MaxValue bits, and a shift by the width of the words or more leaves none of their bits, so those are zero.
+    private static uint[] ShiftedInput(long shiftBits)
+    {
+        var width = InPlaceInput.Length * 32;
+        var value = BigIntWords.ToBigInteger(InPlaceInput);
+        var shifted = Math.Abs(shiftBits) >= width ? BigInteger.Zero
+            : shiftBits >= 0 ? value << (int)shiftBits : value >> (int)-shiftBits;
+        return BigIntWords.ToWords(shifted, InPlaceInput.Length);
+    }
 }

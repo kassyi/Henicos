@@ -191,8 +191,35 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
         else
         {
+            if (PinsReadOnlyArray(variable, ref context))
+            {
+                context.Emitter.Writer.Append("const ");
+            }
+
             context.Emitter.Dialect.AppendType(ref context, typeSymbol);
         }
+    }
+
+    // fixed (T* p = a) or fixed (T* p = &a[i]) where a is a [GpuReadOnly] parameter or field: the device holds a as a
+    // GSharpArray of const elements, so the pointer points at const T (C# forbids nothing here, and a write through the
+    // pointer is already a write to a read-only array)
+    private static bool PinsReadOnlyArray(VariableDeclaratorSyntax variable, ref TranspileContext context)
+    {
+        if (variable.Parent?.Parent is not FixedStatementSyntax || variable.Initializer is not { } initializer)
+        {
+            return false;
+        }
+
+        var pinned = initializer.Value is PrefixUnaryExpressionSyntax
+        {
+            RawKind: (int)SyntaxKind.AddressOfExpression,
+            Operand: ElementAccessExpressionSyntax element
+        }
+            ? element.Expression
+            : initializer.Value;
+        return context.Query.SemanticModel.GetSymbol(pinned) is (IParameterSymbol or IFieldSymbol or IPropertySymbol)
+                   and var symbol &&
+               symbol.HasAttribute(KnownAttributes.GpuReadOnly);
     }
 
     private static bool IsConst(VariableDeclaratorSyntax declarator) =>
