@@ -26,7 +26,7 @@ public class GeneratorOutputTests
         string valueName)
     {
         var compilation = CreateCompilation(
-            Parse(RoslynTestUtility.ReadTestCase("Generators/" + testCase), "partial.cs"));
+            ("partial.cs", RoslynTestUtility.ReadTestCase("Generators/" + testCase)));
         var driver = CreateDriver("Cuda").RunGenerators(compilation);
 
         var result = driver.GetRunResult().Results.Single();
@@ -50,9 +50,9 @@ public class GeneratorOutputTests
     public void AliasedAttribute_UsingAliasDirective_GeneratesWrapper(string dialect, string className)
     {
         var compilation = CreateCompilation(
-            Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_GlobalAlias_Usings.cs"), "usings.cs"),
-            Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_UsingAlias.cu.cs"), "using.cs"),
-            Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_GlobalAlias.cu.cs"), "global.cs"));
+            ("usings.cs", RoslynTestUtility.ReadTestCase("Generators/GpuKernel_GlobalAlias_Usings.cs")),
+            ("using.cs", RoslynTestUtility.ReadTestCase("Generators/GpuKernel_UsingAlias.cu.cs")),
+            ("global.cs", RoslynTestUtility.ReadTestCase("Generators/GpuKernel_GlobalAlias.cu.cs")));
         var result = CreateDriver(dialect).RunGenerators(compilation).GetRunResult().Results.Single();
         Assert.Null(result.Exception);
 
@@ -66,9 +66,9 @@ public class GeneratorOutputTests
     public void ModuleContext_KernelSequence_WarmsUpInKernelOrder()
     {
         var compilation = CreateCompilation(
-            Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_InterleavedClasses_A1.cu.cs"), "a1.cs"),
-            Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_InterleavedClasses_B.cu.cs"), "b.cs"),
-            Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_InterleavedClasses_A2.cu.cs"), "c.cs"));
+            ("a1.cs", RoslynTestUtility.ReadTestCase("Generators/GpuKernel_InterleavedClasses_A1.cu.cs")),
+            ("b.cs", RoslynTestUtility.ReadTestCase("Generators/GpuKernel_InterleavedClasses_B.cu.cs")),
+            ("c.cs", RoslynTestUtility.ReadTestCase("Generators/GpuKernel_InterleavedClasses_A2.cu.cs")));
         var result = CreateDriver("Cuda").RunGenerators(compilation).GetRunResult().Results.Single();
         Assert.Null(result.Exception);
 
@@ -189,9 +189,17 @@ public class GeneratorOutputTests
         var (result, _, errors) = RunAndCompile(assemblyName, "Cpu");
 
         Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors));
-        var dllLine = GetSource(result, "FirstKernels.g.cs")
-            .Split('\n')
-            .First(static line => line.Contains("Kassyi.GSharp.Kernels_", StringComparison.Ordinal));
+        var dllLine = string.Empty;
+        foreach (var line in GetSource(result, "FirstKernels.g.cs").AsSpan().EnumerateLines())
+        {
+            if (line.Contains("Kassyi.GSharp.Kernels_".AsSpan(), StringComparison.Ordinal))
+            {
+                dllLine = line.ToString();
+                break;
+            }
+        }
+
+        Assert.NotEmpty(dllLine);
         Assert.Contains(
             $"$\"{artifactStem}{{{GSharpInternalNames.Launcher.ArchSuffix}}}.dll\"",
             dllLine,
@@ -207,7 +215,7 @@ public class GeneratorOutputTests
     public void ManagedBody_UsingDirectives_QualifiesNamesFromUsingDirectives()
     {
         var compilation = CreateCompilation(
-            Parse(RoslynTestUtility.ReadTestCase("Generators/ManagedQualification.cs"), "qualification.cs"));
+            ("qualification.cs", RoslynTestUtility.ReadTestCase("Generators/ManagedQualification.cs")));
         var driver = CreateDriver("Cpu").RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
         var result = driver.GetRunResult().Results.Single();
         Assert.Null(result.Exception);
@@ -250,7 +258,7 @@ public class GeneratorOutputTests
     public void ManagedOperatorMacro_VariousOperandForms_PassesEachFormThatCompiles()
     {
         var compilation = CreateCompilation(
-            Parse(RoslynTestUtility.ReadTestCase("Generators/ManagedOperatorMacroForms.cs"), "forms.cs"));
+            ("forms.cs", RoslynTestUtility.ReadTestCase("Generators/ManagedOperatorMacroForms.cs")));
         var driver = CreateDriver("Cpu").RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
         var result = driver.GetRunResult().Results.Single();
         Assert.Null(result.Exception);
@@ -276,15 +284,12 @@ public class GeneratorOutputTests
         var pathMap = ImmutableArray.Create(new KeyValuePair<string, string>(baseDirectory, mappedPrefix));
         var resolver = new SourceFileResolver(ImmutableArray<string>.Empty, baseDirectory, pathMap);
 
-        var syntaxTree = Parse(
-            RoslynTestUtility.ReadTestCase("Generators/TypeKeyedSharedMemory_PathMap.cs"),
-            filePath);
-
-        var compilation = CSharpCompilation.Create("PathMapTest")
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+            filePath,
+            RoslynTestUtility.ReadTestCase("Generators/TypeKeyedSharedMemory_PathMap.cs"))
+            .WithAssemblyName("PathMapTest")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true)
-                .WithSourceReferenceResolver(resolver))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(syntaxTree);
+                .WithSourceReferenceResolver(resolver));
 
         var result = CreateDriver("Cpu").RunGenerators(compilation).GetRunResult().Results.Single();
         Assert.Null(result.Exception);
@@ -309,11 +314,8 @@ public class GeneratorOutputTests
         const string mappedFile = "mapped_file.cs";
         const uint mappedLine = 500u;
 
-        var syntaxTree = Parse(
-            RoslynTestUtility.ReadTestCase("Generators/TypeKeyedSharedMemory_LineDirective.cs"),
-            filePath);
-
-        var compilation = CreateCompilation(syntaxTree);
+        var compilation = CreateCompilation(
+            (filePath, RoslynTestUtility.ReadTestCase("Generators/TypeKeyedSharedMemory_LineDirective.cs")));
         var result = CreateDriver("Cpu").RunGenerators(compilation).GetRunResult().Results.Single();
         Assert.Null(result.Exception);
 
@@ -338,11 +340,10 @@ public class GeneratorOutputTests
     private static (GeneratorRunResult Result, Compilation Output, List<string> Errors) RunAndCompile(
         string? assemblyName, string dialect, params MetadataReference[] references)
     {
-        var compilation = CSharpCompilation.Create(assemblyName)
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddReferences(references)
-            .AddSyntaxTrees(Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_TwoClasses.cu.cs"), "two.cs"));
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+            ("two.cs", RoslynTestUtility.ReadTestCase("Generators/GpuKernel_TwoClasses.cu.cs")))
+            .WithAssemblyName(assemblyName)
+            .AddReferences(references);
         var driver = CreateDriver(dialect).RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
         var result = driver.GetRunResult().Results.Single();
         Assert.Null(result.Exception);
@@ -354,14 +355,8 @@ public class GeneratorOutputTests
         return (result, output, errors);
     }
 
-    private static SyntaxTree Parse(string source, string path) =>
-        CSharpSyntaxTree.ParseText(source, s_parseOptions, path: path);
-
-    private static CSharpCompilation CreateCompilation(params SyntaxTree[] trees) =>
-        CSharpCompilation.Create("OutputTest")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(trees);
+    private static CSharpCompilation CreateCompilation(params (string Path, string Source)[] files) =>
+        RoslynTestUtility.CreateCompilationAt(files).WithAssemblyName("OutputTest");
 
     private static GeneratorDriver CreateDriver(string dialect) =>
         CSharpGeneratorDriver.Create(
