@@ -517,10 +517,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     // The twiddle tables of one transform length, each as many words as the length
     internal sealed class TwiddleCache
     {
-        public GSharpArrayProxy Forward1;
-        public GSharpArrayProxy Forward2;
-        public GSharpArrayProxy Inverse1;
-        public GSharpArrayProxy Inverse2;
+        public GSharpArrayProxy Forward1 { get; init; }
+        public GSharpArrayProxy Forward2 { get; init; }
+        public GSharpArrayProxy Inverse1 { get; init; }
+        public GSharpArrayProxy Inverse2 { get; init; }
     }
 
     private static GpuBigIntSqrtKernels.AotContexts.NewtonRaphson BuildSqrtContext(
