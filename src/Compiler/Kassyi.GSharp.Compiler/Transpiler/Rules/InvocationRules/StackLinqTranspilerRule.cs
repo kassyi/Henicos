@@ -221,7 +221,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         in EvaluationOrder.CallSequence sequence,
         ref TranspileContext context)
     {
-        if (StackArrayLocals.IsStackArrayReference(receiver, context.Query.SemanticModel))
+        if (StackArrayLocals.NeedsView(receiver, context.Query.SemanticModel))
         {
             context.Emitter.Writer.Append("__gsharp_stackalloc_span(");
             sequence.AppendReceiver(receiver, byReference: false, ref context);
@@ -246,7 +246,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         in EvaluationOrder.CallSequence sequence,
         ref TranspileContext context)
     {
-        if (StackArrayLocals.IsStackArrayReference(argument.Expression, context.Query.SemanticModel))
+        if (StackArrayLocals.NeedsView(argument.Expression, context.Query.SemanticModel))
         {
             context.Emitter.Writer.Append("__gsharp_stackalloc_span(");
             sequence.AppendArgument(argument, parameter, ref context);
