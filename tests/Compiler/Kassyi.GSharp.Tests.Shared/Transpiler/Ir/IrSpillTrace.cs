@@ -12,8 +12,10 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// <summary>
 /// What a statement evaluates before its split points, as a list of tokens in the order the lowered code runs them:
 /// <c>spill(&lt;source&gt;)</c> (an operand evaluated into a temporary), <c>split(&lt;source&gt;)</c> (a call that
-/// splits) and <c>cond{&lt;branch&gt;|&lt;branch&gt;}</c> (a conditional expression written as an <c>if</c>). Read
-/// from the output of the syntax-based passes and from the split plan of the IR, so that the two can be compared.
+/// splits), <c>check(&lt;source&gt;)</c> (a location evaluated for its checks only, which the syntax-based passes
+/// never write) and <c>cond{&lt;branch&gt;|&lt;branch&gt;}</c> (a conditional expression written as an <c>if</c>).
+/// Read from the output of the syntax-based passes and from the split plan of the IR, so that the two can be
+/// compared. The store that completes a compound assignment evaluates nothing new and has no token.
 /// </summary>
 internal static class IrSpillTrace
 {
@@ -37,10 +39,16 @@ internal static class IrSpillTrace
         var tokens = new List<Token>();
         foreach (var step in steps)
         {
+            if (step is IrSpillCompoundStore)
+            {
+                continue;
+            }
+
             tokens.Add(step switch
             {
                 IrSpillValue => Leaf("spill", step.Node.Source.Span, text),
                 IrSpillSplit => Leaf("split", step.Node.Source.Span, text),
+                IrSpillCheck => Leaf("check", step.Node.Source.Span, text),
                 IrSpillConditional conditional => Conditional(
                     conditional.Branches.Select(branch => Of(branch, text)).ToList(), step.Node.Source.Span),
                 _ => throw new InvalidOperationException("Unknown step " + step.GetType().Name)
@@ -54,7 +62,7 @@ internal static class IrSpillTrace
     /// The tokens of the plan as the syntax-based passes decide it: without the spills they do not make (an earlier
     /// operand, a target part, a compound read, a spill before a split inside a conditional) and with every
     /// conditional written as an <c>if</c> before the rest of its statement or branch, except <c>??</c>, which they do
-    /// not lower.
+    /// not lower. They make no check either.
     /// </summary>
     public static List<Token> AsSyntaxPassesDo(ImmutableArray<IrSpillStep> steps, SourceText text)
     {
@@ -100,6 +108,15 @@ internal static class IrSpillTrace
         var conditionPending = false;
         foreach (var statement in statements)
         {
+            // { var t = <location>; }: the check of a location, which only the split pass of the IR writes
+            if (statement is BlockSyntax { Statements: [var only] } check && !HasOriginalSpan(check) &&
+                TempDeclaration(only) is ({ } checkName, { } location) &&
+                checkName.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix, StringComparison.Ordinal))
+            {
+                tokens.Add(Leaf("check", OriginalSpan(IteratorTypeResolver.UnwrapParentheses(location)), text));
+                continue;
+            }
+
             if (TempDeclaration(statement) is ({ } name, { } initializer))
             {
                 if (name.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix, StringComparison.Ordinal))
@@ -142,6 +159,40 @@ internal static class IrSpillTrace
 
     /// <summary>The tokens as one line.</summary>
     public static string Print(IEnumerable<Token> tokens) => string.Join(" ", tokens.Select(static t => t.Text));
+
+    /// <summary>
+    /// <paramref name="node"/> with the temporaries of the lowering numbered again, per prefix, in the order they first
+    /// appear: two outputs that differ only in where a method started counting compare equal.
+    /// </summary>
+    public static TNode RenumberTemporaries<TNode>(TNode node) where TNode : SyntaxNode =>
+        (TNode)new TemporaryRenumbering().Visit(node);
+
+    // Renames each identifier with a prefix of a temporary to <prefix><n>, n counted per prefix
+    private sealed class TemporaryRenumbering : CSharpSyntaxRewriter
+    {
+        private readonly Dictionary<string, string> _names = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, int> _counts = new(StringComparer.Ordinal);
+
+        public override SyntaxToken VisitToken(SyntaxToken token)
+        {
+            if (!token.IsKind(SyntaxKind.IdentifierToken) ||
+                s_tempPrefixes.FirstOrDefault(prefix => token.ValueText.StartsWith(prefix, StringComparison.Ordinal))
+                    is not { } prefix)
+            {
+                return token;
+            }
+
+            if (!_names.TryGetValue(token.ValueText, out var name))
+            {
+                var count = _counts.TryGetValue(prefix, out var counted) ? counted : 0;
+                _counts[prefix] = count + 1;
+                name = prefix + count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                _names[token.ValueText] = name;
+            }
+
+            return SyntaxFactory.Identifier(token.LeadingTrivia, name, token.TrailingTrivia);
+        }
+    }
 
     private static Token Leaf(string kind, TextSpan span, SourceText text) =>
         new($"{kind}({Squeeze(text.ToString(span))})", span);

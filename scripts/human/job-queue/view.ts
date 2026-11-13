@@ -484,7 +484,7 @@ function detailLine(job: ScreenJob | undefined, jobs: ScreenJob[], columns: numb
     job.pin != null ? "pinned" : "",
     job.before != null ? `before #${job.before}` : "",
     job.after != null ? `after #${job.after}` : "",
-    job.orphan ? "client-lost" : "",
+    job.orphan ? "client-away" : "",
     job.holderId !== null ? `runs as #${job.holderId}` : "",
   ].filter((f) => f !== "");
   return line

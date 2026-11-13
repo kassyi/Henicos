@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// </remarks>
 public partial class NamingArchitectureTests
 {
-    private static readonly string[] s_emitterDirectories = ["Transpiler", "Dialects", "Lowering"];
+    private static readonly string[] s_emitterDirectories = ["Transpiler", "Dialects", "Lowering", "ErrorSites"];
 
     // Each entry is "{file}:{expression}" and names the issue that owns the remaining verbatim emission.
     private static readonly HashSet<string> s_allowedRawNames = new(StringComparer.Ordinal)

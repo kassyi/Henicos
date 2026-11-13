@@ -1,14 +1,15 @@
-// Parts 9, 11, 12 and 13 of the job queue self-test: the hrrn re-grant, GPU turns, wait and start.
+// Parts 9, 11, 12 and 13 of the job queue self-test: the hrrn re-grant, GPU turns (and a cancel of a GPU holder),
+// wait and start.
 
 import * as assert from "node:assert";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { EntryScript, RegrantMs, StartupGraceMs, StateDirectoryVariable } from "./constants.ts";
 import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
-import { delay, removeDirectory, type Client, type QueueFixture } from "./self-test-support.ts";
+import { delay, removeDirectory, type QueueFixture } from "./self-test-support.ts";
 
 export async function checkRegrant(fixture: QueueFixture, port: number): Promise<void> {
   const { env, client, sleeper, ports, startScheduler, statusOf, usedWithin } = fixture;
@@ -115,30 +116,42 @@ export async function checkGpuTurnsEndToEnd(fixture: QueueFixture, port: number)
     "one run recorded per --gpu run",
   );
   await usedWithin(port, 0, 15000);
+  await checkCancelGpuHolder(fixture, port);
   await request(port, { type: "stop" });
 }
 
+/**
+ * A cancel of the GPU holder that a --gpu run's command registered cancels the run too: both ids are listed, run exits
+ * with 4 and wait tells "cancelled" for the run, not a failure of gpu-lock.js.
+ */
+async function checkCancelGpuHolder(fixture: QueueFixture, port: number): Promise<void> {
+  const { client, sleeper, waitFor, waiter } = fixture;
+  const command = sleeper(60001);
+  const run = client(port, command, ["--gpu"]);
+  const [turn, holder] = await waitFor(port, "the turn and its GPU holder run", (s) => {
+    const jobs = s.running.filter((j) => j.command === command && j.commandPid !== null);
+    const turnJob = jobs.find((j) => j.gpuTurn);
+    const holderJob = jobs.find((j) => j.gpu);
+    return turnJob !== undefined && holderJob !== undefined ? [turnJob, holderJob] : undefined;
+  });
+  const waiting = waiter(port, turn.id);
+  const cancelled = await request(port, { type: "cancel", id: holder.id });
+  assert.deepStrictEqual(
+    (cancelled?.cancelled as number[]).sort(),
+    [turn.id, holder.id].sort(),
+    "the holder and the run whose turn started it",
+  );
+  assert.strictEqual(await run.done, 4, "run --gpu exits with 4");
+  assert.strictEqual(await waiting.done, 4, "wait tells cancelled for the run");
+  assert.deepStrictEqual(JSON.parse(waiting.output()), { id: turn.id, outcome: "cancelled" });
+}
+
 export async function checkWait(fixture: QueueFixture, port: number): Promise<void> {
-  const { env, client, gated, open, exiting, dir, ports, startScheduler, jobWith, runningWith } = fixture;
+  const { client, gated, open, exiting, dir, ports, startScheduler, jobWith, runningWith } = fixture;
   ports.push(port);
   await startScheduler(port, 2);
   await delay(StartupGraceMs);
-  const waiter = (id: number): Client & { output: () => string } => {
-    let output = "";
-    const child = spawn(
-      process.execPath,
-      [EntryScript, "wait", String(id), "--json", "--port", String(port), "--slots", "2"],
-      {
-        stdio: ["ignore", "pipe", "ignore"],
-        windowsHide: true,
-        env,
-      },
-    ) as Client & { output: () => string };
-    child.stdout?.on("data", (data: Buffer) => (output += data.toString()));
-    child.done = new Promise((resolve) => child.on("close", resolve));
-    child.output = () => output;
-    return child;
-  };
+  const waiter = (id: number) => fixture.waiter(port, id);
   // A running job: wait returns when it ends, also when the scheduler restarted in between
   const gate = path.join(dir, "gate-12");
   const running = client(port, gated(0, gate));

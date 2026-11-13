@@ -25,17 +25,21 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | Module | Responsibility |
 | :- | :- |
 | `cli.ts` | Parses the arguments and runs the mode (`run`, `status`, `wait`, `cancel`, `move`, `serve`, ...) |
-| `client.ts` | `run` and its `QueuedRun`: registers a job, waits for the grant, runs the command, reports its end, re-registers after a scheduler restart |
+| `client.ts` | `run`: checks the options, runs a command inside a queued job at once, and otherwise hands it to a `QueuedRun` |
+| `client-queued-run.ts` | `QueuedRun`: registers a job, waits for the grant, runs the command, reports its end, re-registers after a scheduler restart |
+| `client-run-host.ts` | `RunHost`, the effects of a `QueuedRun` (connection, command, exit), and `ProcessRunHost`, the real one; `commandEnd`, how a command's end is reported after a cancel; the GPU turn's run under `gpu-lock.js` |
 | `client-connect.ts` | One-shot requests to the scheduler, and `SchedulerLauncher`: connects, starts the scheduler on demand, reports a job's end to the next scheduler |
 | `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `wait`, `stop` |
 | `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, and `reduceKey`, the keys as a pure function |
 | `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
-| `server.ts` | `JobServer`, the scheduler process: the TCP server, the job records, outcomes, the settle step, the orphan poll and the timers |
+| `server.ts` | `JobServer`, the scheduler process: the TCP server, the job records, outcomes, the settle step and the timers |
+| `server-observe.ts` | `DetachedObserver`: every 2 s, what the processes show of the records whose client is away, applied per epoch (`planObservation`) |
 | `server-connection.ts` | `Connection`: one client connection, the dispatch of its messages to one handler per message type, and what its close means for the job |
 | `server-job-messages.ts` | The handlers of the messages about the client's own job: `request`, `adopt`, `started`, `done`, `report` |
+| `server-job-state.ts` | The decisions about one job record as pure functions: identity (`isSameClient`), `planRegistration`, `planClose`, `planObservation`, `planReport`, `outcomeOfEnd`, `cancelTargets` |
 | `server-control-messages.ts` | The handlers of the messages that act on the queue: `status`, `cancel`, `move`, `set-weight`, `start`, `await`, `stop` |
-| `server-job.ts` | The job record the server keeps (`ServerJob`) and how `status` shows it |
-| `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts |
+| `server-job.ts` | The job record the server keeps (`ServerJob`), how `status` shows it, and the invariant of the records (`checkRecords`, for the self-test) |
+| `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts, restoring every record as held |
 | `scheduler.ts` | The scheduling decisions, with no I/O: order, grants, backfilling, GPU turns, the memory pool, the forecast |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts |
@@ -43,7 +47,7 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
-| `self-test*.ts`, `scheduler-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `self-test-view.ts` draws the live view from a fixed status and drives its keys |
+| `self-test*.ts`, `scheduler-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys |
 
 ## How a job runs
 
@@ -76,6 +80,30 @@ sequenceDiagram
 - **A slot follows the command**: when a client dies while its command runs on, the scheduler keeps the slot and polls
   the processes until the command has exited.
 
+## Job records
+
+The server keeps one `ServerJob` per id, from the first `request` (or its restore) until a final outcome is recorded:
+`JobServer.records` is the one index, and an id is either a record or an outcome, never both (`checkRecords`). A
+record has a phase (`waiting`, `running`, or `ended` with a provisional outcome) and at most one bound connection.
+
+- **Identity**: a client is the same when its pid, the `queuedAt` it sends in every `request` and `adopt`, and (when
+  both sides know it) its command's process match (`isSameClient`). The id alone or the pid alone never proves it.
+- **Registration** (`planRegistration`): the same client's `request` or `adopt` re-binds its record; the old connection
+  is unbound and ended, so that its late close changes nothing. Another client's record is never touched. A final
+  outcome is never overwritten: the client gets a new id, or `cancelled` when its job was cancelled while it was away.
+- **Close** (`planClose`): a closed connection only detaches the record: a waiting one keeps its place (it is not
+  granted while detached, and `start` refuses it), a running one its slots. Nothing ends on a close alone, except a waiting job whose client
+  process is gone, or a job whose client said `done`.
+- **Observation** (`planObservation`, every 2 s): for each detached record the client's liveness and, for a running one,
+  whether a process of its command is left. A command that is gone frees the slots; the outcome is a final `lost` when
+  the client process is gone too, else a provisional `lost` that the client's `report` replaces (`planReport`), final
+  after `ClientGraceMs` (60 s). A step applies only to the epoch of the record it read. Dependents, the cascade in
+  `settle` and `wait` act on final outcomes only; `status` lists no provisional record.
+- **Cancel**: a cancel of a GPU holder also cancels the `--gpu` run whose turn started it (`cancelTargets`; the holder
+  names it in the field `turn` of its request).
+- **Client**: `QueuedRun` takes its effects through `RunHost`; after a cancel, the command's result decides how the job
+  ends (`commandEnd`): a command that ended with 0 by itself succeeded.
+
 ## State on disk
 
 The scheduler runs in `tmp/job-queue` of the main checkout (never a worktree, so that it holds none open):
@@ -84,10 +112,16 @@ The scheduler runs in `tmp/job-queue` of the main checkout (never a worktree, so
 | :- | :- |
 | `server.log` | The scheduler log, rotated at 5 MB |
 | `history.json` | Run times per command text (last 9 runs, last 500 commands) |
-| `jobs-<port>.json` | Next id, running jobs, ids of jobs that had not ended, and the last 500 outcomes; written to a temporary file and renamed, and not written once the scheduler is stopping |
+| `jobs-<port>.json` | `format` 2, the next id, every record (`jobs`: running, `waiting`, `provisional`), the ids of all records (`pending`, for an older scheduler) and the last 500 final outcomes (`ended`); written to a temporary file and renamed, and not written once the scheduler is stopping |
 
-A restarted scheduler restores this file, waits up to 60 s for the jobs that had not ended to come back, and grants
-nothing for the first 1.5 s while running clients re-register.
+A restarted scheduler restores every record as held and detached: running jobs count their slots whether their client
+lives or not, waiting jobs keep their place, provisional ones wait for a report; a client's `adopt`, `request` or
+`report` re-binds or ends its record, and the observation ends the records nobody claims. With a current file nothing
+waits for a grace. Without one (a first start, a deleted file) nothing is known about the running jobs, so nothing is
+granted for the first 1.5 s while their clients re-register. A file of an older scheduler (no `format`) restores its
+running jobs as held and each other pending id as a stub that `--after`, `wait` and the cascade know until the job
+comes back under its id or 60 s pass; the 1.5 s grace is kept for it too. A crash (not a stop) between a grant and its
+save restores the granted job as waiting until its client adopts it.
 
 ## Compatibility
 
@@ -95,6 +129,11 @@ Clients and schedulers of different checkouts work together. `ProtocolVersion` (
 the exit code in `done`; the scheduler still accepts version 2 clients (`BaseProtocolVersion`), and a version 3 client
 falls back where an older scheduler refuses (for example `run --gpu` takes the GPU lock directly). Add a field as
 optional, and send a higher version only on the messages that need it (`wireVersion` in `protocol.ts`).
+
+The optional fields `turn` (in `request` and `adopt`) and `pid` / `queuedAt` (in `report`) need no new version: an
+older scheduler ignores them, and an older client that sends none is matched by its pid and command, and its report is
+accepted as before. An older scheduler that reads a file of format 2 finds `nextId`, `ended`, `pending` and `jobs` with
+their old meaning.
 
 ## Changing it
 
