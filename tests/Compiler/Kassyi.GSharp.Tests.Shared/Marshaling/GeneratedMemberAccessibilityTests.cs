@@ -53,17 +53,40 @@ public class GeneratedMemberAccessibilityTests
             Named(Resolve(type)).ChooseIn(GetType("Host")));
     }
 
-    // Protected domains also reach derived types, which the plan cannot express: a protected type is taken as private
-    // to its container, a protected container as reaching everywhere, so the member always compiles
+    // Protected domains also reach derived types: C# compares the domain of the member (its keyword, the class and the
+    // classes around it) with the domain of each type it names, so what is accepted follows from where the types and the
+    // class are declared. Each row is a shape of the C# oracle (a small project that tried every keyword)
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("Host", "Host+ProtectedS", Accessibility.Private)]
-    [InlineData("Host", "Host+PrivateProtectedS", Accessibility.Private)]
-    [InlineData("Host", "Host+ProtectedInternalS", Accessibility.Internal)]
+    // A protected type of the class itself: protected and private protected reach exactly the class and its derived types
+    [InlineData("Host", "Host+ProtectedS", Accessibility.Protected)]
+    [InlineData("Host", "Host+PrivateProtectedS", Accessibility.ProtectedAndInternal)]
+    [InlineData("Host", "Host+ProtectedInternalS", Accessibility.ProtectedOrInternal)]
+    // A container that is protected in the outer class of the type already has that domain: public is accepted, also
+    // in a static class (which cannot hold a protected member)
+    [InlineData("ProtectedContainer+StaticK", "ProtectedContainer+S", Accessibility.Public)]
+    [InlineData("ProtectedContainer+StaticK", "Inner", Accessibility.Internal)]
     [InlineData("Host+ProtectedNested", "Host+PrivateS", Accessibility.Private)]
     [InlineData("Host+ProtectedNested", "Host+InternalS", Accessibility.Internal)]
     [InlineData("Host+ProtectedNested", "Open", Accessibility.Public)]
-    public void ChooseIn_ProtectedTypeOrContainer_StaysOnTheSafeSide(
+    // A public container of the outer class does not: derived types of the container need not derive from the outer class
+    [InlineData("ProtectedContainer+PublicStaticK", "ProtectedContainer+S", Accessibility.Private)]
+    [InlineData("ProtectedContainer+InstanceK", "ProtectedContainer+S", Accessibility.Private)]
+    // The class that declares the protected type, or derives from it, may name it in a protected member
+    [InlineData("ProtectedContainer+InstanceK", "ProtectedContainer+InstanceK+Own", Accessibility.Protected)]
+    [InlineData("ProtectedDerived", "ProtectedBase+S", Accessibility.Protected)]
+    [InlineData("ProtectedDerived", "ProtectedBase+SPrivateProtected", Accessibility.ProtectedAndInternal)]
+    [InlineData("ProtectedDerived", "ProtectedBase+SInternal", Accessibility.ProtectedOrInternal)]
+    // A static or sealed container takes no protected member, so the next keyword that C# accepts is chosen
+    [InlineData("StaticDerivedHost", "ProtectedBase+S", Accessibility.Private)]
+    [InlineData("SealedDerived", "ProtectedBase+S", Accessibility.Private)]
+    // A protected internal type reaches the assembly and the derived types: from a public container only internal is
+    // accepted, from a derived class protected internal
+    [InlineData("FamilyOrAssemblyHost+InstanceK", "FamilyOrAssemblyHost+S", Accessibility.Internal)]
+    // A private protected type reaches the derived types of its class within the assembly: nothing of a public nested
+    // container reaches no further
+    [InlineData("FamilyAndAssemblyHost+InstanceK", "FamilyAndAssemblyHost+S", Accessibility.Private)]
+    public void ChooseIn_ProtectedTypeOrContainer_FollowsTheDomains(
         string container,
         string type,
         Accessibility expected)
