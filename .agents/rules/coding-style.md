@@ -1,3 +1,9 @@
+---
+trigger: glob
+globs: "**/*.cs"
+description: C# guardrails and style - no empty catch, no null-forgiving operator, naming, zero allocation, the StackLinq policy, GPU kernel files.
+---
+
 # Henicos Agent Context & Coding Guidelines
 
 ## 1. CRITICAL GUARDRAILS & PROHIBITED ACTIONS

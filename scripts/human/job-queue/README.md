@@ -5,7 +5,7 @@ worktrees and people share. One scheduler process grants slots of a CPU pool and
 its command through `run` and waits until it is granted.
 
 How to use it (commands, options, the `just` recipes, what an agent should do) is in
-[test-execution.md, Job queue](../../../.agents/rules/test-execution.md#job-queue). This file is for changing the queue
+[job-queue.md](../../../.agents/rules/job-queue.md). This file is for changing the queue
 itself.
 
 ```sh
@@ -102,8 +102,8 @@ optional, and send a higher version only on the messages that need it (`wireVers
    `node scripts/human/job-queue.js stop` from an updated checkout, then any `run` from that checkout starts the new
    one. Running jobs keep running and re-register.
 6. Update the usage text in `cli.ts`, the header of `job-queue.js`, the catalog row in
-   [agent-scripts.md](../../../.agents/rules/agent-scripts.md) and the Job queue section of
-   [test-execution.md](../../../.agents/rules/test-execution.md) with a change of behavior.
+   [agent-scripts.md](../../../.agents/rules/agent-scripts.md) and
+   [job-queue.md](../../../.agents/rules/job-queue.md) with a change of behavior.
 
 The PreToolUse hook that sends build and test commands through the queue is a separate script,
 `scripts/agent/check-queued-command.js`; the GPU lock is `scripts/agent/gpu-lock.js`.
