@@ -1,0 +1,19 @@
+namespace Kassyi.GSharp.Core;
+
+/// <summary>
+/// Specifies a pattern format string used to map members of a class or struct into CUDA C++ intrinsic names.
+/// </summary>
+/// <remarks>
+/// <para>Use <c>{0}</c> to reference the lowercase name of the invoked member.</para>
+/// <para><b>Example:</b> <c>[CudaIntrinsicPattern("threadIdx.{0}")]</c> on a type translates property <c>X</c> into <c>threadIdx.x</c>.</para>
+/// </remarks>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
+public sealed class CudaIntrinsicPatternAttribute(string pattern) : Attribute
+{
+    /// <summary>
+    /// Gets the composite format pattern string.
+    /// </summary>
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global -- Consumed by GSharp Transpiler
+    // ReSharper disable once UnusedMember.Global -- Consumed by GSharp Transpiler
+    public string Pattern { get; } = pattern;
+}
