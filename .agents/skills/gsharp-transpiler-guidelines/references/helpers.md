@@ -285,7 +285,8 @@ The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressio
 - Where it goes:
   - Roslyn-only queries with no G# meaning: `Extensions/`.
   - Used outside the transpiler (analyzers, generator, marshaling, models): at the project root, a named static class
-    when it is one type (`GpuExecutionSpace`), a folder of its own when several types belong together (`ErrorSites/`).
+    when it is one type (`GpuExecutionSpace`), a folder of its own when several types belong together (`ErrorSites/`,
+    `Dialects/`: the dialect interface the whole compiler uses sits beside its implementation, not under `Transpiler/`).
   - Transpiler-only: the subfolder of its feature under `Transpiler/Helpers/` (`NullChecks/`, `Numeric/`, `Literals/`,
     `StackArrays/`, `Calls/`, `Locals/`, `ResumeLocals/`), with the namespace of that folder added to `GlobalUsings.cs`
     when the folder is new; `Transpiler/Helpers/` itself only for helpers used across features (`EvaluationOrder`). A
