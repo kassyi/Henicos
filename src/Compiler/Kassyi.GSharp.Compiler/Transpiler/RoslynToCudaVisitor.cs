@@ -281,8 +281,33 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitBlock(BlockSyntax node)
     {
         JumpedOverDeclarations.WriteDeclarations(node.Statements, ref Context);
-        foreach (var statement in node.Statements)
+        VisitStatements(node.Statements, 0);
+    }
+
+    /// <summary>
+    /// Transpiles the statements of a block from <paramref name="start"/> on. On the CPU a <c>using</c> declaration
+    /// writes the statements after it itself, as its body (<see cref="UsingCpuEmitter"/>).
+    /// </summary>
+    internal void VisitStatements(SyntaxList<StatementSyntax> statements, int start)
+    {
+        for (var i = start; i < statements.Count; i++)
         {
+            var statement = statements[i];
+            if (!Context.Emitter.Dialect.IsCuda &&
+                UsingCpuEmitter.TryGetUsingDeclaration(statement, out var declaration))
+            {
+                // The labels of a labeled using declaration come first: its body is still the rest of the list
+                for (var labeled = statement as LabeledStatementSyntax; labeled != null;
+                     labeled = labeled.Statement as LabeledStatementSyntax)
+                {
+                    JumpStatementTranspilers.WriteLabel(labeled, ref Context);
+                }
+
+                UsingCpuEmitter.TranspileUsingDeclaration(declaration, statements, i, ref Context);
+                Context.Emitter.Writer.AppendLine();
+                return;
+            }
+
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
             // block with a using declaration or a synthesized iterator scope keeps them.
             if (statement is BlockSyntax nested &&

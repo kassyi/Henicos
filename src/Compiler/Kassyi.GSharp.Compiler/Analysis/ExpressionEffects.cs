@@ -1,8 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
-/// What evaluating an expression reads (<see cref="Reads"/>) and writes (<see cref="Writes"/>), as far as the order of
-/// the operands of an enclosing expression can tell (<see cref="EvaluationOrder"/>).
+/// What evaluating an expression reads (<see cref="Reads"/>) and writes (<see cref="Writes"/>), and whether it may
+/// throw (<see cref="MayThrow"/>), as far as the order of the operands of an enclosing expression can tell
+/// (<see cref="EvaluationOrder"/>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -23,28 +24,45 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// its callee, since C++ does not keep the order even of positional arguments and most calls would otherwise need
 /// temporaries.
 /// </para>
+/// <para>
+/// A check that may throw (<see cref="ExpressionTraps"/>: the null check of an array read, a bounds check, an integer
+/// division, a checked operation, the value of a <c>Nullable&lt;T&gt;</c>, a call) is ordered only against a write to
+/// <see cref="VariableSet.Memory"/> in another operand (<see cref="ThrowInterferesWith"/>), never against a read, which
+/// leaves nothing to see after the exception. A write to a local is left out as well: a kernel has no <c>try</c>
+/// (GSH0038), so a thread that throws ends there, and its locals with it.
+/// </para>
 /// </remarks>
-internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes)
+internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes, bool mayThrow = false)
 {
     public VariableSet Reads { get; } = reads;
 
     public VariableSet Writes { get; } = writes;
 
-    /// <summary>Neither reads nor writes anything (a constant, <c>ThreadIndex.X</c>, a lambda).</summary>
-    public bool IsEmpty => Reads.IsEmpty && Writes.IsEmpty;
+    /// <summary>
+    /// Whether evaluating the expression may raise an exception that C# defines (<see cref="ExpressionTraps"/>), or a
+    /// check that G# places there for one (the null check of an array argument of a device function).
+    /// </summary>
+    public bool MayThrow { get; } = mayThrow;
+
+    /// <summary>
+    /// Neither reads, writes nor may throw (a constant, <c>ThreadIndex.X</c>, a lambda): it may stay in place while
+    /// other operands move into temporaries.
+    /// </summary>
+    public bool IsEmpty => Reads.IsEmpty && Writes.IsEmpty && !MayThrow;
 
     /// <summary>The effects of evaluating <paramref name="expression"/> for its value.</summary>
     public static ExpressionEffects Of(ExpressionSyntax expression, SemanticModel model)
     {
         var walker = new EffectWalker(model);
         walker.AddValue(expression);
-        return new ExpressionEffects(walker.Reads, walker.Writes);
+        return new ExpressionEffects(walker.Reads, walker.Writes, ExpressionTraps.MayTrap(expression, model));
     }
 
     /// <summary>
     /// The effects of evaluating <paramref name="expression"/> to the location it names (the target of an assignment, a
     /// <c>ref</c> / <c>out</c> / <c>in</c> argument): the reads of its index and receiver, without reading the location.
-    /// With <paramref name="readsValue"/> the location is also read (the target of a compound assignment).
+    /// With <paramref name="readsValue"/> the location is also read (the target of a compound assignment). An element
+    /// of an array is checked as it is named (a <c>ref</c> argument, the target of a compound assignment).
     /// </summary>
     public static ExpressionEffects OfLocation(ExpressionSyntax expression, SemanticModel model, bool readsValue = false)
     {
@@ -55,8 +73,24 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             walker.AddRead(root);
         }
 
-        return new ExpressionEffects(walker.Reads, walker.Writes);
+        return new ExpressionEffects(walker.Reads, walker.Writes, ExpressionTraps.MayTrap(expression, model));
     }
+
+    /// <summary>
+    /// The effects of evaluating <paramref name="target"/>, the target of a simple assignment, to its location:
+    /// <see cref="OfLocation"/>, except that the null and bounds check of an array element is not part of it, since C#
+    /// makes it when it stores the value, after the right operand (<see cref="ExpressionTraps.MayTrapBeforeStore"/>).
+    /// </summary>
+    public static ExpressionEffects OfAssignmentTarget(ExpressionSyntax target, SemanticModel model)
+    {
+        var walker = new EffectWalker(model);
+        walker.AddLocation(target);
+        return new ExpressionEffects(walker.Reads, walker.Writes, ExpressionTraps.MayTrapBeforeStore(target, model));
+    }
+
+    /// <summary>These effects, and a check that may throw when <paramref name="mayThrow"/> is set.</summary>
+    public ExpressionEffects WithThrow(bool mayThrow) =>
+        mayThrow && !MayThrow ? new ExpressionEffects(Reads, Writes, mayThrow: true) : this;
 
     /// <summary>
     /// The variable that the location <paramref name="expression"/> belongs to, as a read of it alone (without the reads
@@ -80,14 +114,35 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
     {
         var walker = new EffectWalker(model);
         CallEffects.AddCallOf(ref walker, target, referenceArgument);
-        return new ExpressionEffects(walker.Reads, walker.Writes);
+
+        // A call of user code may throw (ExpressionTraps)
+        return new ExpressionEffects(walker.Reads, walker.Writes, mayThrow: true);
     }
 
-    /// <summary>What evaluating this and <paramref name="other"/> reads and writes.</summary>
+    /// <summary>What evaluating this and <paramref name="other"/> reads and writes, and whether one throws.</summary>
     public ExpressionEffects Union(in ExpressionEffects other) =>
-        new(Reads.Union(other.Reads), Writes.Union(other.Writes));
+        new(Reads.Union(other.Reads), Writes.Union(other.Writes), MayThrow || other.MayThrow);
 
-    /// <summary>Whether this operand, evaluated before <paramref name="later"/>, could see or change what it does.</summary>
-    public bool InterferesWith(in ExpressionEffects later) =>
+    /// <summary>
+    /// Whether this operand, evaluated before <paramref name="later"/>, could see or change what it does
+    /// (<see cref="DataInterferesWith"/>), or the C# order decides whether a write happens before an exception
+    /// (<see cref="ThrowInterferesWith"/>).
+    /// </summary>
+    public bool InterferesWith(in ExpressionEffects later) => DataInterferesWith(later) || ThrowInterferesWith(later);
+
+    /// <summary>
+    /// Whether this operand, evaluated before <paramref name="later"/>, writes what it reads or writes, or reads what
+    /// it writes: evaluated in the other order, one of them would see another value.
+    /// </summary>
+    public bool DataInterferesWith(in ExpressionEffects later) =>
         Writes.Overlaps(later.Reads) || Writes.Overlaps(later.Writes) || Reads.Overlaps(later.Writes);
+
+    /// <summary>
+    /// Whether one of the two operands writes <see cref="VariableSet.Memory"/> and the other may throw
+    /// (<see cref="MayThrow"/>): evaluated in the other order, the write would be lost before the exception or made
+    /// although the exception comes first (#1786 (a throwing check in a later operand runs before an earlier call on
+    /// MSVC)). Two reads, a read and a check, or a check and a write to a local never interfere this way.
+    /// </summary>
+    public bool ThrowInterferesWith(in ExpressionEffects later) =>
+        (Writes.Memory && later.MayThrow) || (MayThrow && later.Writes.Memory);
 }

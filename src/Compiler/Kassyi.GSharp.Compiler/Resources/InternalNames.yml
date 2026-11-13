@@ -162,12 +162,25 @@ Iterator:
 Using:
   Summary: >-
     The disposal of a C# using in device code. A struct that has a Dispose method declares it as a member under its own
-    name; the guard of each using calls it when its scope ends.
+    name. On CUDA the guard of each using calls it when its scope ends. On the CPU the body is written in a try whose
+    catch disposes the resource and rethrows, the end of the body calls Dispose, and each jump out of the body goes
+    through an exit label that calls Dispose before it jumps on (UsingCpuEmitter).
   Names:
     ScopeGuard: { Value: __gsharp_using_scope, Prelude: StandardTypes.hpp }
     Dispose: { Value: __gsharp_dispose, Prelude: StandardTypes.hpp }
+    Enter: { Value: __gsharp_using_enter, Prelude: ErrorChannel.hpp }
+    DisposeFailed: { Value: __gsharp_using_dispose_failed, Prelude: ErrorChannel.hpp }
+    Leave: { Value: __gsharp_using_leave, Prelude: ErrorChannel.hpp }
     GuardPrefix: __gsharp_using_guard_
     ResourcePrefix: __gsharp_using_resource_
+    # The state that __gsharp_using_enter returns, in the catch of a using
+    Outer: __gsharp_using_outer
+    # __gsharp_using_exit_<using>_<exit>: the label of a jump out of the body of a using
+    ExitPrefix: __gsharp_using_exit_
+    # __gsharp_using_done_<using>: the end of a body that has exit labels after it
+    DonePrefix: __gsharp_using_done_
+    # The value of a return that leaves a using, kept while the usings it leaves are disposed
+    ReturnValue: __gsharp_using_return
 
 Launcher:
   Summary: Locals of the CPU C++ launcher and the managed wrappers. Kernel parameters share their scope.
@@ -234,6 +247,10 @@ Launcher:
     AnyBlockAtGridSync: __gsharp_any_block_at_grid_sync
     BlockAtGridSyncFlag: __gsharp_block_at_grid_sync_flag
     AnyBlockActive: __gsharp_any_block_active
+    # The first exception of a thread of a managed launch; the launch throws it at its end (the other threads run on)
+    FirstFailure: __gsharp_first_failure
+    # The exception that ends the step of a thread of a managed launch
+    Failure: __gsharp_failure
     FunctionPointerFieldPrefix: __gsharp_hfunc_
     LayoutCheckedFieldPrefix: __gsharp_layout_checked_
     DelegateTypePrefix: __gsharp_delegate_
@@ -289,8 +306,9 @@ Prelude:
     ActiveErrorSlot: { Value: __gsharp_active_error_slot, Prelude: ErrorChannel.hpp }
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
     Trap: { Value: __gsharp_trap, Prelude: ErrorChannel.hpp }
-    # A failure after which the kernel step cannot go on: reports, then throws __gsharp_step_abort, which the native
-    # launcher catches around each block; the CUDA prelude defines it as well, where the trap stops the kernel
+    # A failed check ends the kernel step of its thread: Trap, TrapSite, TrapAbort and Unsupported report, then throw
+    # __gsharp_step_abort, which the native launcher catches around the step of each thread. TrapAbort is Trap under the
+    # name that the CUDA prelude defines as well, where the trap stops the thread
     TrapAbort: { Value: __gsharp_trap_abort, Prelude: ErrorChannel.hpp }
     StepAbort: { Value: __gsharp_step_abort, Prelude: ErrorChannel.hpp }
     # The array that a C# array read (Length, an element, foreach) goes through: a null array fails with

@@ -20,7 +20,11 @@ enum class GSharpErrorCode : int32_t {
     SwitchExpression = 10,
     ArgumentNull = 11
 };
-inline void __gsharp_trap(GSharpErrorCode code, const char* message);
+// A failed C# check: records the error and ends the thread's kernel step (ErrorChannel.hpp). [[noreturn]] belongs on
+// the first declaration, so that every check below already knows that the call does not return. inline and the cold
+// attributes are on the definition only: GCC warns when a declaration that is not a definition combines inline and
+// noinline
+[[noreturn]] void __gsharp_trap(GSharpErrorCode code, const char* message);
 
 template <GSharpErrorCode ErrorCode>
 inline const char* __gsharp_range_message() {
@@ -76,7 +80,6 @@ struct GSharpArray {
     inline GSharpArray<T> Slice(int start, const char* message = nullptr) const {
         if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
             __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
-            return GSharpArray<T>();
         }
         return GSharpArray<T>(data + start, length - start);
     }
@@ -85,7 +88,6 @@ struct GSharpArray {
         if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
             static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
             __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
-            return GSharpArray<T>();
         }
         return GSharpArray<T>(data + start, count);
     }

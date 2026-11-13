@@ -20,6 +20,12 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             return;
         }
 
+        if (node.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
+        {
+            UsingTranspiler.TranspileUsingDeclaration(node, ref context);
+            return;
+        }
+
         StatementPrelude.Emit(node, ref context);
 
         var lengthBefore = context.Emitter.Writer.Length;
@@ -28,11 +34,6 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
         if (context.Emitter.Writer.Length > lengthBefore)
         {
             context.Emitter.Writer.Append(';');
-        }
-
-        if (node.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
-        {
-            UsingTranspiler.TranspileUsingDeclaration(node, ref context);
         }
     }
 

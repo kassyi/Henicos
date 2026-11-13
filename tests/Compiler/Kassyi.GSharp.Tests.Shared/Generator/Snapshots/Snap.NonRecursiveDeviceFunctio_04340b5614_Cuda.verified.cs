@@ -76,7 +76,11 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierU
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp(GSharpArray<int> __gsharp_id_0_data){
 int __gsharp_id_1_lane = (int)threadIdx.x&31;
-__gsharp_id_0_data[__gsharp_id_1_lane]=__shfl_sync(0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_id_1_lane],__gsharp_sub_i32(31,__gsharp_id_1_lane),32);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_0_data[__gsharp_id_1_lane];
+int __gsharp_seq_1 = __shfl_sync(0xFFFFFFFFu,__gsharp_id_0_data[__gsharp_id_1_lane],__gsharp_sub_i32(31,__gsharp_id_1_lane),32);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 }
 
 ";

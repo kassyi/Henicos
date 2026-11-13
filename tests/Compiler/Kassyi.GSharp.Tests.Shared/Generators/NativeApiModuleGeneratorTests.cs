@@ -160,7 +160,7 @@ public class NativeApiModuleGeneratorTests
             public class Lazy<T>;
             public class AppContext;
             """))
-            .WithAssemblyName(CreateCompilation().AssemblyName);
+            .WithAssemblyName(NativeApiGeneratorTestHelpers.AssemblyName);
         var driver = CreateDriver(Api("colliding.yml", Yaml));
 
         driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
@@ -229,7 +229,7 @@ public class NativeApiModuleGeneratorTests
         var compilation = RoslynTestUtility.CreateCompilationAt(
                 LanguageVersion.Latest,
                 ("UserClass.cs", "namespace MyApp.Native; public sealed class UserClass { }"))
-            .WithAssemblyName(CreateCompilation().AssemblyName);
+            .WithAssemblyName(NativeApiGeneratorTestHelpers.AssemblyName);
         var driver = CreateDriver(Api("class.yml", yaml));
 
         driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);

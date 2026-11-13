@@ -54,6 +54,7 @@ internal readonly ref struct TranspilationSession
         {
             context.Emitter.IsGpuKernelEntry = plan.IsGpuKernelEntry;
             context.Emitter.IsVoidReturn = plan.ReturnsVoid;
+            context.Emitter.MethodSymbol = methodSymbol;
         }
 
         return new TranspilationSession(visitor, methodSymbol, null);
