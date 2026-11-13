@@ -6,7 +6,7 @@ export DiffEngine_Disabled := "true"
 blame_crash := "--blame-crash --blame-crash-dump-type mini"
 
 # The recipes that build, test, fuzz or benchmark run their command through the job queue
-# (scripts/human/job-queue.js, test-execution.md "Job queue"): it waits for free slots of the machine and adds the
+# (scripts/human/job-queue.js, .agents/rules/job-queue.md): it waits for free slots of the machine and adds the
 # MSBuild node limit (-m:<n>) to each dotnet build / test of the command. --gpu takes the GPU lock first. Inside a job
 # the queue already granted (an agent's job-queue.js run -- "just test") the command runs at once, in that job.
 queue := "node scripts/human/job-queue.js run"
