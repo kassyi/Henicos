@@ -22,8 +22,9 @@
 //
 // Events:
 //   Claude Code   UserPromptSubmit                   working
-//                 Stop                               waiting for a reply; the question is taken from the last
-//                                                    assistant text of transcript_path
+//                 Stop                               waiting for a reply; the text is the last paragraph with a
+//                                                    question mark of the last assistant text (else its last
+//                                                    paragraph), with asks: whether it has one
 //                 PreToolUse AskUserQuestion         waiting for an answer, with the questions and their options
 //                 PostToolUse                        working again, when the chat waited for an answer or a permission
 //                 Notification                       waiting for a permission (permission_prompt) or for input
@@ -43,7 +44,7 @@
 
 const { runHook } = require('./chat-status/hook.js');
 const store = require('./chat-status/store.js');
-const { extractQuestion, MaxQuestionLength } = require('./chat-status/questions.js');
+const { extractQuestion, extractReply, MaxQuestionLength } = require('./chat-status/questions.js');
 const { interpret } = require('./chat-status/events.js');
 
 const usage = 'Usage: chat-status.js (--hook | --list [--json] | --self-test | --help)';
@@ -57,8 +58,10 @@ function printList(json) {
   const now = Date.now();
   for (const chat of chats) {
     const minutes = Math.round((now - chat.since) / 60000);
-    const state = chat.state === 'waiting' ? `waiting (${chat.kind})` : chat.state;
-    const question = chat.question ? `  ${chat.question.replace(/\s+/g, ' ').slice(0, 80)}` : '';
+    const kind = chat.kind === 'reply' && chat.asks === true ? 'reply, asks' : chat.kind;
+    const state = chat.state === 'waiting' ? `waiting (${kind})` : chat.state;
+    const text = chat.question ? Array.from(chat.question.replace(/\s+/g, ' ')) : [];
+    const question = text.length === 0 ? '' : `  ${text.length > 80 ? '…' : ''}${text.slice(-80).join('')}`;
     process.stdout.write(`${chat.agent}\t${chat.worktree ?? '?'}\t${state}\t${minutes}m${question}\n`);
   }
 }
@@ -83,6 +86,7 @@ module.exports = {
   StaleMs: store.StaleMs,
   MaxQuestionLength,
   extractQuestion,
+  extractReply,
   interpret,
   applyPayload: store.applyPayload,
   writeAtomically: store.writeAtomically,

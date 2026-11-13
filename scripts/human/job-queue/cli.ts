@@ -52,7 +52,7 @@ const Usage = [
   "            with <id>, only that job (exit 1 when it ended or is unknown); --json prints the same as JSON.",
   "            --watch shows the queue live in the terminal, one line per job with its timeline: arrows select a job,",
   "            c cancels it, s starts, m moves and w re-weights a waiting one, ? lists the keys, q quits",
-  "            (just queue-watch).",
+  "            (just queue-watch). Below the jobs, the agent chats that wait for you (chat-status.js); a hides them.",
   "wait        Waits until job <id> has ended (also across a scheduler restart) and exits with its outcome: 0",
   "            succeeded, 1 failed, 4 cancelled, 5 lost (its client died; the result is unknown), 2 for an unknown",
   "            id. Run it in the background to be told when a job ends; --json prints {id, outcome}.",
