@@ -134,7 +134,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = __gsharp_ctx.data[(__gsharp_ctx.t + 1) % global::Kassyi.GSharp.Core.BlockDimension.X];
+__gsharp_result = __gsharp_ctx.data[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.t + 1), global::Kassyi.GSharp.Core.BlockDimension.X)];
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }

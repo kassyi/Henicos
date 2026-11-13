@@ -977,15 +977,19 @@ inline ~__gsharp_sort_compare_scope() { __gsharp_sort_compare_depth--; }
 
 // x / y and x % y of an integer type throw DivideByZeroException in C# when y is 0 (C# spec §12.10.3, §12.10.4). C++
 // leaves it undefined: x86 div and idiv raise a hardware exception that ends the native process, and PTX gives an
-// unspecified value. The native CPU build tests the divisor every time; the CUDA build tests it in the checked build
-// only (GSHARP_CHECKED), as the semantics charter lets the release CUDA build leave its checks out.
+// unspecified value. Every build tests the divisor, the release CUDA build included (semantics charter §2, §4); the
+// failing thread stops (the native step ends; a CUDA thread records the error and exits on sm_70 and later).
 // MinValue / -1 and MinValue % -1 are implementation-defined in an unchecked C# context (§12.10.3); G# follows the GPU,
 // which gives MinValue and 0 without an error. x86 idiv raises a hardware exception for them, so the native build tests
 // -1 as well; nvcc's division gives that result as it is.
 // The transpiler calls these only where the divisor may be 0 (or -1, for a dividend that may be MinValue). The place is
 // the site of the kernel's error site table (unsigned int) or, in a device function, a message that names it.
-#if defined(__CUDACC__) && !defined(GSHARP_CHECKED)
-#define __GSHARP_DIVISOR_CHECK(divisor, site) ((void)(site))
+// [WHY] On CUDA the failure is written inline (__gsharp_inline_trap, as for a null array read): a call of the noinline
+// __gsharp_trap_site makes ptxas keep the caller's live registers across the call.
+#if defined(__CUDACC__)
+#define __GSHARP_DIVISOR_CHECK(divisor, site) \
+do { if ((divisor) == 0) { __gsharp_inline_trap(GSharpErrorCode::DivideByZero, __gsharp_inline_site(site)); } } \
+while (0)
 #else
 #define __GSHARP_DIVISOR_CHECK(divisor, site) \
 do { if ((divisor) == 0) { __gsharp_trap_abort(GSharpErrorCode::DivideByZero, site); } } while (0)

@@ -31,4 +31,12 @@ public static partial class IntegerDivisionCheckKernels
 
     [GpuDeviceFunction]
     private static long Remainder(long a, long d) => a % d;
+
+    // An int target: int.MinValue /= -1 is the GPU result on every path, also on the managed one
+    [GpuKernel]
+    public static void SignedCompoundKernel(int[] a, int[] d)
+    {
+        int i = (int)ThreadIndex.X;
+        a[i] /= d[i];
+    }
 }

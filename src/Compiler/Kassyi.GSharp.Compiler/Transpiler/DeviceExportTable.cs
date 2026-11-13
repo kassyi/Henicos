@@ -308,7 +308,8 @@ internal sealed class DeviceExportTable
             DivergentExitOnlyParameters: GetInt(named, AttributeNames.Traits.DivergentExitOnlyParameters),
             HasExitOnlyBarrier: GetBool(named, AttributeNames.Traits.HasExitOnlyBarrier),
             ReachesArrivalBarrier: GetBool(named, AttributeNames.Traits.ReachesArrivalBarrier),
-            ReachesSharedMemory: GetBool(named, AttributeNames.Traits.ReachesSharedMemory));
+            ReachesSharedMemory: GetBool(named, AttributeNames.Traits.ReachesSharedMemory),
+            ReachesGeneratedMeaning: GetBool(named, AttributeNames.Traits.ReachesGeneratedMeaning));
 
         var record = new DeviceExportRecord(
             kind,

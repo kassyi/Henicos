@@ -254,7 +254,7 @@ case 2:
 {
 int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1, 32, "WarpCollectiveDifferentialKernels.cs(167,28)");
 int shuffled = __gsharp_warp_temp_1;
-__gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.__gsharp_unroll_0 / __gsharp_ctx.totalThreads] = shuffled;
+__gsharp_ctx.output[(global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)) * 2 + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)] = shuffled;
 goto case 3;
 }
 
@@ -2034,7 +2034,7 @@ return;
 case 2:
 {
 uint __gsharp_warp_temp_1 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(139,65)");
-__gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.__gsharp_unroll_0 / __gsharp_ctx.totalThreads] = __gsharp_warp_temp_1;
+__gsharp_ctx.output[(global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)) * 2 + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)] = __gsharp_warp_temp_1;
 goto case 3;
 }
 
@@ -3448,7 +3448,7 @@ case 2:
 {
 int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1u, 32, "WarpCollectiveDifferentialKernels.cs(189,28)");
 int shuffled = __gsharp_warp_temp_1;
-__gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.round] = shuffled;
+__gsharp_ctx.output[(global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)) * 2 + __gsharp_ctx.round] = shuffled;
 __gsharp_ctx.round++;
 goto case 3;
 }

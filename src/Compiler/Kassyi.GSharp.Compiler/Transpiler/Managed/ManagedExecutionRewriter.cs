@@ -83,6 +83,56 @@ internal sealed partial class ManagedExecutionRewriter(
         return next;
     }
 
+    // An int or long division that may divide the minimum by -1 gives the GPU result (ManagedDivision):
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(<left>, <right>)
+    public override SyntaxNode? VisitBinaryExpression(BinaryExpressionSyntax node)
+    {
+        var visited = base.VisitBinaryExpression(node);
+        if (visited is not BinaryExpressionSyntax rewritten ||
+            ManagedDivision.Plan(node, semanticModel) is not { } plan)
+        {
+            return visited;
+        }
+
+        return CallContext(plan.Helper, SyntaxFactory.Argument(rewritten.Left), SyntaxFactory.Argument(rewritten.Right))
+            .WithTriviaFrom(node);
+    }
+
+    // The compound form of the same division:
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(ref <target>, <value>), which stores and returns the result,
+    // or, for a property, <target> = global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(<target>, <value>)
+    public override SyntaxNode? VisitAssignmentExpression(AssignmentExpressionSyntax node)
+    {
+        var visited = base.VisitAssignmentExpression(node);
+        if (visited is not AssignmentExpressionSyntax rewritten ||
+            ManagedDivision.Plan(node, semanticModel) is not { } plan)
+        {
+            return visited;
+        }
+
+        var target = rewritten.Left.WithoutTrivia();
+        var value = SyntaxFactory.Argument(rewritten.Right.WithoutTrivia());
+        if (plan.Form == ManagedDivisionForm.AssignByReference)
+        {
+            var byReference = SyntaxFactory.Argument(target)
+                .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword));
+            return CallContext(plan.Helper, byReference, value).WithTriviaFrom(node);
+        }
+
+        return SyntaxFactory.AssignmentExpression(
+            SyntaxKind.SimpleAssignmentExpression,
+            target,
+            CallContext(plan.Helper, SyntaxFactory.Argument(target), value)
+        ).WithTriviaFrom(node);
+    }
+
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.<member>(<first>, <second>)
+    private static InvocationExpressionSyntax CallContext(string member, ArgumentSyntax first, ArgumentSyntax second) =>
+        SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(member),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([first, second]))
+        );
+
     public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
         VisitCreation(node, base.VisitObjectCreationExpression(node));
 

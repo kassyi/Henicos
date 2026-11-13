@@ -5131,7 +5131,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int tid = (global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X) + global::Kassyi.GSharp.Core.ThreadIndex.X;
-if (tid < src.Length && (tid % writeStride) == 0)
+if (tid < src.Length && (global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(tid, writeStride)) == 0)
 {
 dstPrim[tid] = (src[tid] * 10) + 1;
 dstConvert[tid] = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded

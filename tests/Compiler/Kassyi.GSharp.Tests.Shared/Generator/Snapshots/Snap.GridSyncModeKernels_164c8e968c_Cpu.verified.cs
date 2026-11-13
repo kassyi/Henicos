@@ -285,7 +285,7 @@ case 0:
 {
 __gsharp_ctx.threads = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.next = (__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X) % __gsharp_ctx.threads;
+__gsharp_ctx.next = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X), __gsharp_ctx.threads);
 __gsharp_ctx.values[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
@@ -706,7 +706,7 @@ case 0:
 {
 __gsharp_ctx.threads = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.next = (__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X) % __gsharp_ctx.threads;
+__gsharp_ctx.next = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X), __gsharp_ctx.threads);
 __gsharp_ctx.sum = 0;
 __gsharp_ctx.values[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -1830,7 +1830,7 @@ case 0:
 {
 __gsharp_ctx.threads = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.neighbor = (__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X) % __gsharp_ctx.threads;
+__gsharp_ctx.neighbor = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X), __gsharp_ctx.threads);
 __gsharp_ctx.round = 0;
 goto case 1;
 }
@@ -2670,7 +2670,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.sum += __gsharp_ctx.blockValues[(global::Kassyi.GSharp.Core.BlockIndex.X + 1) % global::Kassyi.GSharp.Core.GridDimension.X];
+__gsharp_ctx.sum += __gsharp_ctx.blockValues[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((global::Kassyi.GSharp.Core.BlockIndex.X + 1), global::Kassyi.GSharp.Core.GridDimension.X)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
 return;

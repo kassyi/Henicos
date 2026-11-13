@@ -44,4 +44,20 @@ public static class Divisions
     public static long UnsignedDividendByMinusOne(uint x) => x / -1;
 
     public static int CompoundConstantDivision(int x) => x /= 4;
+
+    // --- The managed form (ManagedDivision) only ---
+
+    // A property target is read and written once, as the compound assignment does
+    public static int PropertyCompound(int y) => Holder.Value /= y;
+
+    // The Length of an array is never negative, so it is never -1 (it may be 0)
+    public static int LengthDivisor(int x, int[] a) => x % a.Length;
+
+    // The value writes the target's variable before the division, which the call by reference would read after
+    public static int CompoundWithWritingValue(int x, int y) => x /= (y = -1);
+}
+
+public static class Holder
+{
+    public static int Value { get; set; }
 }

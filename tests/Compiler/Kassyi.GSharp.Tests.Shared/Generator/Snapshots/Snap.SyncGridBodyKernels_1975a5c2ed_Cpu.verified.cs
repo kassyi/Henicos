@@ -296,7 +296,7 @@ return false;
 
 case 3:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)];
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -340,8 +340,8 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.lane = __gsharp_ctx.tid % global::Kassyi.GSharp.Core.BlockDimension.X;
-__gsharp_ctx.next = __gsharp_ctx.tid - __gsharp_ctx.lane + (__gsharp_ctx.lane + 1) % global::Kassyi.GSharp.Core.BlockDimension.X;
+__gsharp_ctx.lane = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_ctx.tid, global::Kassyi.GSharp.Core.BlockDimension.X);
+__gsharp_ctx.next = __gsharp_ctx.tid - __gsharp_ctx.lane + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.lane + 1), global::Kassyi.GSharp.Core.BlockDimension.X);
 __gsharp_ctx.value = __gsharp_ctx.c[__gsharp_ctx.next];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
@@ -395,7 +395,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)];
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -1123,7 +1123,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1884,7 +1884,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -2278,7 +2278,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n] + __gsharp_ctx.mine;
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)] + __gsharp_ctx.mine;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2682,7 +2682,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] += __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] += __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
 return;
@@ -3544,7 +3544,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -3971,7 +3971,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -4403,7 +4403,7 @@ return;
 
 case 4:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -6193,7 +6193,7 @@ return;
 
 case 3:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] += __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] += __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 4;
 return;
@@ -6585,7 +6585,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -7504,7 +7504,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -7938,7 +7938,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -8366,7 +8366,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -8783,7 +8783,7 @@ case 3:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -9260,7 +9260,7 @@ case 5:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0 && !__gsharp_ctx.__gsharp_sg_done_1)
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.size];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.size)];
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;

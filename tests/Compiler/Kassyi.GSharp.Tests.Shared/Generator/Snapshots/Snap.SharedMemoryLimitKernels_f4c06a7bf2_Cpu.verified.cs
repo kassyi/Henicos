@@ -319,7 +319,7 @@ case 1:
 {
 for (int i = global::Kassyi.GSharp.Core.ThreadIndex.X; i < __gsharp_ctx.n; i += global::Kassyi.GSharp.Core.BlockDimension.X)
 {
-__gsharp_ctx.output[i] = s[(i + 1) % __gsharp_ctx.n];
+__gsharp_ctx.output[i] = s[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((i + 1), __gsharp_ctx.n)];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -1227,7 +1227,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.output[global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + __gsharp_ctx.tid] = __gsharp_ctx.tid < __gsharp_ctx.n ? a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n] : 0;
+__gsharp_ctx.output[global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + __gsharp_ctx.tid] = __gsharp_ctx.tid < __gsharp_ctx.n ? a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)] : 0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2424,7 +2424,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.output[global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + __gsharp_ctx.tid] = first[__gsharp_ctx.tid] + second[(__gsharp_ctx.tid + 1) % global::Kassyi.GSharp.Core.BlockDimension.X];
+__gsharp_ctx.output[global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + __gsharp_ctx.tid] = first[__gsharp_ctx.tid] + second[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), global::Kassyi.GSharp.Core.BlockDimension.X)];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

@@ -177,7 +177,7 @@ case 0:
 {
 int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 uint value = input[tid];
-uint next = input[(tid + 1) % n];
+uint next = input[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((tid + 1), n)];
 uint shift = (uint)tid;
 output[tid * 3] = global::Kassyi.GSharp.Core.Gpu.BitReverse(value);
 output[tid * 3 + 1] = global::Kassyi.GSharp.Core.Gpu.FunnelShiftLeft(value, next, shift);

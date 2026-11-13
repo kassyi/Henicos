@@ -276,7 +276,7 @@ goto case 5;
 
 case 5:
 {
-__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.data[(__gsharp_ctx.tid + 1) % __gsharp_ctx.count];
+__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.data[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.count)];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

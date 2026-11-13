@@ -7,17 +7,18 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// <summary>
 /// An integer <c>/</c> or <c>%</c> by 0 throws <see cref="DivideByZeroException"/> as in C# (#718 (Array and span
 /// bounds, integer division by zero, Nullable.Value, Math.Clamp and Math.Abs(MinValue) are not checked as in C#)): on
-/// the native CPU build with the place of the division, on the managed path from the C# operator. <c>MinValue / -1</c>
-/// gives the GPU result, <c>MinValue</c>, where x86 <c>idiv</c> would end the native process.
+/// the native CPU build and on CUDA with the place of the division, on the managed path from the C# operator.
+/// <c>MinValue / -1</c> gives the GPU result, <c>MinValue</c>, on every path: x86 <c>idiv</c> would end the native
+/// process, and .NET would throw <see cref="OverflowException"/> on the managed path.
 /// </summary>
 /// <remarks>
-/// The zero divisors are skipped on CUDA: the release CUDA build does not check them (only the checked build does), so
-/// the result there is unspecified. The differential cases (<c>IntegerDivisionTrapDifferentialTests</c>) list the CUDA
-/// cells as a known divergence.
+/// Every CUDA build checks the divisor; the failing thread records the error and exits (sm_70 and later), so no test
+/// faults the GPU. The process has one device error slot, so the class runs alone
+/// (<see cref="TestCollections.DeviceExclusive"/>).
 /// </remarks>
 [Category(TestCategory.Runtime)]
 [TestTarget(ExecutionTarget.GpuExecution)]
-[Collection(TestCollections.GlobalStateSequential)]
+[Collection(TestCollections.DeviceExclusive)]
 public class IntegerDivisionCheckTests : TranspilerTestBase
 {
     private const string KernelFile = "IntegerDivisionCheckKernels.cu.cs";
@@ -37,38 +38,72 @@ public class IntegerDivisionCheckTests : TranspilerTestBase
         Assert.Equal([3, -3, -33, int.MaxValue / 7], o);
     }
 
-    // mutant: IntegerDivision.hpp without the -1 test (x86 idiv ends the native process)
-    [SkippableFact]
+    // mutant: IntegerDivision.hpp without the -1 test (x86 idiv ends the native process); ManagedDivision.Plan that
+    // answers null (.NET throws OverflowException on the managed path)
+    [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
-    public void Quotient_MinValueByMinusOne_GivesTheGpuResult()
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Quotient_MinValueByMinusOne_GivesTheGpuResult(bool forceManaged)
     {
         int[] a = [int.MinValue, int.MinValue];
         int[] d = [-1, 1];
         var o = new int[2];
 
-        // The managed path runs the C# operator, which .NET makes throw OverflowException (implementation-defined)
-        Run(forceManaged: false, () => IntegerDivisionCheckKernels.LaunchQuotientKernel(a, d, o, blockDimX: 2));
+        Run(forceManaged, () => IntegerDivisionCheckKernels.LaunchQuotientKernel(a, d, o, blockDimX: 2));
 
         Assert.Equal([int.MinValue, int.MinValue], o);
     }
 
-    // mutant: IntegerDivision.hpp without the divisor check (the native launch ends the process)
+    // A device function has the same result as a kernel body: its managed version calls the managed form (#711)
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Remainder_MinValueByMinusOneInDeviceFunction_IsZero(bool forceManaged)
+    {
+        long[] a = [long.MinValue, long.MinValue];
+        long[] d = [-1L, 3L];
+        var o = new long[] { 7L, 7L };
+
+        Run(forceManaged, () => IntegerDivisionCheckKernels.LaunchDeviceFunctionRemainderKernel(a, d, o,
+            blockDimX: 2));
+
+        Assert.Equal([0L, long.MinValue % 3L], o);
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SignedCompound_MinValueByMinusOne_GivesTheGpuResult(bool forceManaged)
+    {
+        int[] a = [int.MinValue, int.MinValue, 9];
+        int[] d = [-1, 2, -1];
+
+        Run(forceManaged, () => IntegerDivisionCheckKernels.LaunchSignedCompoundKernel(a, d, blockDimX: 3));
+
+        Assert.Equal([int.MinValue, int.MinValue / 2, -9], a);
+    }
+
+    // mutant: IntegerDivision.hpp without the divisor check (the native launch ends the process; CUDA throws nothing)
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
     [InlineData(false)]
     [InlineData(true)]
     public void Quotient_ZeroDivisor_ThrowsWithThePlaceOfTheDivision(bool forceManaged)
     {
-        Skip.If(IsCudaDialect, "The release CUDA build does not check a divisor.");
-        int[] a = [7, 8];
-        int[] d = [1, 0];
-        var o = new int[2];
+        int[] a = [10, 99, 30, 40];
+        int[] d = [1, 0, 3, 4];
+        var o = new int[4];
 
         var exception = Assert.Throws<DivideByZeroException>(
-            () => Run(forceManaged, () => IntegerDivisionCheckKernels.LaunchQuotientKernel(a, d, o, blockDimX: 2))
+            () => Run(forceManaged, () => IntegerDivisionCheckKernels.LaunchQuotientKernel(a, d, o, blockDimX: 4))
         );
 
-        Assert.Equal(7, o[0]);
+        // Only the failing thread stops (#1714): the threads before and after it write their quotients
+        // mutant: a native launcher that ends the launch at the first failure leaves o[2] and o[3] at 0
+        Assert.Equal([10, 0, 10, 10], o);
         if (!forceManaged)
         {
             Assert.Equal(KernelFile + "(14,16)", exception.Data["GSharp.SourceLocation"]);
@@ -81,7 +116,6 @@ public class IntegerDivisionCheckTests : TranspilerTestBase
     [InlineData(true)]
     public void Remainder_ZeroDivisorInDeviceFunction_NamesThePlaceInTheMessage(bool forceManaged)
     {
-        Skip.If(IsCudaDialect, "The release CUDA build does not check a divisor.");
         long[] a = [10L, 9L];
         long[] d = [-3L, 0L];
         var o = new long[2];
@@ -91,7 +125,8 @@ public class IntegerDivisionCheckTests : TranspilerTestBase
                 blockDimX: 2))
         );
 
-        if (!forceManaged)
+        // A CUDA device function reports its place through a message ID, not the text
+        if (!forceManaged && !IsCudaDialect)
         {
             Assert.Equal("Attempted to divide by zero. at " + KernelFile + "(33,54)", exception.Message);
         }
@@ -105,7 +140,6 @@ public class IntegerDivisionCheckTests : TranspilerTestBase
     [InlineData(true)]
     public void Compound_ZeroDivisor_ThrowsAndLeavesTheTarget(bool forceManaged)
     {
-        Skip.If(IsCudaDialect, "The release CUDA build does not check a divisor.");
         uint[] a = [9u, 9u];
         uint[] d = [3u, 0u];
 

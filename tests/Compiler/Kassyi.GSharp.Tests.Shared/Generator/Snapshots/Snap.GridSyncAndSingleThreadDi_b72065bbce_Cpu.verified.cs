@@ -155,7 +155,7 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.partner = (__gsharp_ctx.gid + 3) % __gsharp_ctx.total;
+__gsharp_ctx.partner = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.gid + 3), __gsharp_ctx.total);
 __gsharp_ctx.scratch[__gsharp_ctx.gid] = __gsharp_ctx.phaseBuf[__gsharp_ctx.gid] ^ (__gsharp_ctx.phaseBuf[__gsharp_ctx.partner] + 19);
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
@@ -215,7 +215,7 @@ __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
-int prev = (__gsharp_ctx.gid + __gsharp_ctx.total - 1) % __gsharp_ctx.total;
+int prev = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.gid + __gsharp_ctx.total - 1), __gsharp_ctx.total);
 __gsharp_ctx.output[__gsharp_ctx.gid] = __gsharp_ctx.scratch[__gsharp_ctx.gid] + __gsharp_ctx.scratch[prev];
 {
 __gsharp_ctx.__gsharp_state = 0;
@@ -632,7 +632,7 @@ return;
 case 3:
 {
 int ownBlockSum = __gsharp_ctx.blockSums[__gsharp_ctx.blockId];
-int nextBlockSum = __gsharp_ctx.blockSums[(__gsharp_ctx.blockId + 1) % __gsharp_ctx.numBlocks];
+int nextBlockSum = __gsharp_ctx.blockSums[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.blockId + 1), __gsharp_ctx.numBlocks)];
 int gridTotal = __gsharp_ctx.gridStats[0];
 int maxBlockSum = __gsharp_ctx.gridStats[1];
 int o = __gsharp_ctx.gid * 4;
@@ -1068,9 +1068,9 @@ case 1:
 {
 if (!(__gsharp_ctx.step < __gsharp_ctx.steps))
 goto case 5;
-__gsharp_ctx.prev = (__gsharp_ctx.gid + __gsharp_ctx.total - 1) % __gsharp_ctx.total;
-__gsharp_ctx.next = (__gsharp_ctx.gid + 1) % __gsharp_ctx.total;
-__gsharp_ctx.oppositeBlockPeer = (__gsharp_ctx.gid + (__gsharp_ctx.total >> 1)) % __gsharp_ctx.total;
+__gsharp_ctx.prev = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.gid + __gsharp_ctx.total - 1), __gsharp_ctx.total);
+__gsharp_ctx.next = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.gid + 1), __gsharp_ctx.total);
+__gsharp_ctx.oppositeBlockPeer = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.gid + (__gsharp_ctx.total >> 1)), __gsharp_ctx.total);
 __gsharp_ctx.selfVal = __gsharp_ctx.state[__gsharp_ctx.gid];
 __gsharp_ctx.haloDelta = (__gsharp_ctx.state[__gsharp_ctx.prev] - __gsharp_ctx.state[__gsharp_ctx.next]) ^ (__gsharp_ctx.state[__gsharp_ctx.oppositeBlockPeer] & 0xFF);
 __gsharp_ctx.scratch[__gsharp_ctx.gid] = __gsharp_ctx.selfVal + __gsharp_ctx.haloDelta + (__gsharp_ctx.step * 7);
@@ -1701,7 +1701,7 @@ return;
 case 5:
 {
 __gsharp_ctx.__gsharp_sg_done_1 = false;
-__gsharp_ctx.nextNeighbor = __gsharp_ctx.phaseBuf[(__gsharp_ctx.gid + 1) % __gsharp_ctx.total];
+__gsharp_ctx.nextNeighbor = __gsharp_ctx.phaseBuf[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.gid + 1), __gsharp_ctx.total)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 6;
 return;
@@ -1767,7 +1767,7 @@ case 10:
 {
 if (!(__gsharp_ctx.round < 2))
 goto case 14;
-__gsharp_ctx.opposite = __gsharp_ctx.scratch[(__gsharp_ctx.gid + (__gsharp_ctx.total >> 1)) % __gsharp_ctx.total];
+__gsharp_ctx.opposite = __gsharp_ctx.scratch[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.gid + (__gsharp_ctx.total >> 1)), __gsharp_ctx.total)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 11;
 return;

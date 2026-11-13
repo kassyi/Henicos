@@ -277,7 +277,7 @@ return;
 }
 }
 
-dst[t] = nums[t] / denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -562,7 +562,7 @@ return;
 }
 }
 
-dst[t] = nums[t] % denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1417,7 +1417,7 @@ return;
 }
 }
 
-dst[t] = nums[t] / denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i64(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2565,7 +2565,7 @@ return;
 }
 }
 
-dst[t] = nums[t] / denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -2850,7 +2850,7 @@ return;
 }
 }
 
-dst[t] = nums[t] % denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3135,7 +3135,7 @@ return;
 }
 }
 
-dst[t] = nums[t] / denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i64(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3420,7 +3420,7 @@ return;
 }
 }
 
-dst[t] = nums[t] % denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i64(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

@@ -1235,7 +1235,7 @@ return;
 
 case 6:
 {
-__gsharp_ctx.output[__gsharp_ctx.gid] = __gsharp_ctx.data[(__gsharp_ctx.gid + 64) % __gsharp_ctx.total];
+__gsharp_ctx.output[__gsharp_ctx.gid] = __gsharp_ctx.data[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.gid + 64), __gsharp_ctx.total)];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

@@ -468,7 +468,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.rotated = shared[(__gsharp_ctx.tid + 1) % __gsharp_ctx.length];
+__gsharp_ctx.rotated = shared[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.length)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;

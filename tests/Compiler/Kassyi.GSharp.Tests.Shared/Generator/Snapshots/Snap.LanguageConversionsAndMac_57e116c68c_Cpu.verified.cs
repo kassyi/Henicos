@@ -418,7 +418,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.neighbor = __gsharp_ctx.scratch[(__gsharp_ctx.localTid + 1) % (int)global::Kassyi.GSharp.Core.BlockDimension.X];
+__gsharp_ctx.neighbor = __gsharp_ctx.scratch[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.localTid + 1), (int)global::Kassyi.GSharp.Core.BlockDimension.X)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;
@@ -2520,7 +2520,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.neighbor = __gsharp_ctx.scratch[(__gsharp_ctx.localTid + 3) % (int)global::Kassyi.GSharp.Core.BlockDimension.X];
+__gsharp_ctx.neighbor = __gsharp_ctx.scratch[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.localTid + 3), (int)global::Kassyi.GSharp.Core.BlockDimension.X)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 3;
 return;

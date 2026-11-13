@@ -204,7 +204,7 @@ return false;
 
 case 3:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)];
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;
@@ -248,8 +248,8 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.lane = __gsharp_ctx.tid % global::Kassyi.GSharp.Core.BlockDimension.X;
-__gsharp_ctx.next = __gsharp_ctx.tid - __gsharp_ctx.lane + (__gsharp_ctx.lane + 1) % global::Kassyi.GSharp.Core.BlockDimension.X;
+__gsharp_ctx.lane = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_ctx.tid, global::Kassyi.GSharp.Core.BlockDimension.X);
+__gsharp_ctx.next = __gsharp_ctx.tid - __gsharp_ctx.lane + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.lane + 1), global::Kassyi.GSharp.Core.BlockDimension.X);
 __gsharp_ctx.value = __gsharp_ctx.c[__gsharp_ctx.next];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
@@ -303,7 +303,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n];
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)];
 {
 __gsharp_ctx.__gsharp_state = 0;
 return true;

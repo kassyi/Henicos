@@ -349,7 +349,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.next = __gsharp_ctx.buffer[(__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X) % (global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X)];
+__gsharp_ctx.next = __gsharp_ctx.buffer[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X), (global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X))];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -357,7 +357,7 @@ return;
 
 case 2:
 {
-__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.next + staticCopy[(__gsharp_ctx.local + 1) % global::Kassyi.GSharp.Core.BlockDimension.X] + dynamicCopy[(__gsharp_ctx.local + 2) % global::Kassyi.GSharp.Core.BlockDimension.X];
+__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.next + staticCopy[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.local + 1), global::Kassyi.GSharp.Core.BlockDimension.X)] + dynamicCopy[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.local + 2), global::Kassyi.GSharp.Core.BlockDimension.X)];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -786,7 +786,7 @@ return;
 
 case 3:
 {
-__gsharp_ctx.output[__gsharp_ctx.gid] = __gsharp_ctx.data[(__gsharp_ctx.gid + 32) % __gsharp_ctx.total];
+__gsharp_ctx.output[__gsharp_ctx.gid] = __gsharp_ctx.data[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.gid + 32), __gsharp_ctx.total)];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

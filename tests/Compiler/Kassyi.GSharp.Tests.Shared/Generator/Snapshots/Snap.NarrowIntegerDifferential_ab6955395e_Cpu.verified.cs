@@ -1142,9 +1142,9 @@ if (sbDiv == 0 || sbDiv == -1)
 sbDiv = 3;
 }
 
-r[o] = lv % iv;
+r[o] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i64(lv, iv);
 r[o + 1] = iv % lDiv;
-r[o + 2] = lv / iv;
+r[o + 2] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i64(lv, iv);
 r[o + 3] = iv / lDiv;
 r[o + 4] = uv + lv;
 r[o + 5] = uv - lv;
@@ -1466,8 +1466,8 @@ r[o + 4] = global::System.Numerics.BitOperations.PopCount(ulv) < -1 ? 1 : 0;
 r[o + 5] = global::System.Numerics.BitOperations.LeadingZeroCount(ulv) < -1 ? 1 : 0;
 r[o + 6] = global::System.Numerics.BitOperations.TrailingZeroCount(ulv) < -1 ? 1 : 0;
 r[o + 7] = global::System.Numerics.BitOperations.Log2(ulv) < -1 ? 1 : 0;
-r[o + 8] = global::System.Numerics.BitOperations.PopCount(uv) / -1;
-r[o + 9] = global::System.Numerics.BitOperations.LeadingZeroCount(ulv) / -1;
+r[o + 8] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(global::System.Numerics.BitOperations.PopCount(uv), -1);
+r[o + 9] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(global::System.Numerics.BitOperations.LeadingZeroCount(ulv), -1);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

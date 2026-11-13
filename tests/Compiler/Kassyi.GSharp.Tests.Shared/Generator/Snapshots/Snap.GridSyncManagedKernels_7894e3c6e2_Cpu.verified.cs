@@ -246,7 +246,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.nextId = (__gsharp_ctx.tid + 1) % __gsharp_ctx.totalThreads;
+__gsharp_ctx.nextId = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.totalThreads);
 __gsharp_ctx.nextVal = __gsharp_ctx.buffer[__gsharp_ctx.nextId];
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 2;

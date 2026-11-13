@@ -1,4 +1,5 @@
 using System.Numerics;
+using Kassyi.GSharp.Compiler.Analysis.Checks;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Analysis;
@@ -141,15 +142,14 @@ internal static class ExpressionTraps
             !property.IsIndexer && IsStoredOrIntrinsic(property) && !ReadsArrayThatMayBeNull(reference),
         IBinaryOperation binary =>
             binary is { OperatorMethod: null, IsChecked: false } &&
-            !MayDivideByZeroOrOverflow(binary.OperatorKind, binary.Type, binary.RightOperand),
+            !MayFailDivision(binary.OperatorKind, binary.Type, binary.LeftOperand, binary.RightOperand),
         ICompoundAssignmentOperation compound =>
             compound is
             {
                 OperatorMethod: null, IsChecked: false, InConversion.IsUserDefined: false,
                 OutConversion.IsUserDefined: false
             } &&
-            !MayDivideByZeroOrOverflow(compound.OperatorKind, compound.Target.Type, compound.Value) &&
-            !MayDivideByZeroOrOverflow(compound.OperatorKind, compound.Value.Type, compound.Value),
+            !MayFailCompoundDivision(compound),
         IIncrementOrDecrementOperation step => step is { OperatorMethod: null, IsChecked: false },
         IUnaryOperation unary => unary is { OperatorMethod: null, IsChecked: false },
         IConversionOperation conversion =>
@@ -177,19 +177,47 @@ internal static class ExpressionTraps
     private static bool IsNullable(ITypeSymbol? type) =>
         type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
 
-    // x / y and x % y of an integer type: y == 0 raises DivideByZeroException, MinValue / -1 OverflowException
-    private static bool MayDivideByZeroOrOverflow(BinaryOperatorKind kind, ITypeSymbol? type, IOperation divisor)
+    // x / y and x % y of an integer type, as the divisor check decides it (DivisionCheckRule, the definition the
+    // transpiler writes from): y == 0 raises DivideByZeroException; MinValue / -1, whose GPU result G# gives, is counted
+    // with it. A native-sized integer (nint, nuint), which the rule has no range for, may fail unless its divisor is a
+    // constant other than 0 and -1
+    private static bool MayFailDivision(BinaryOperatorKind kind, ITypeSymbol? operatorType, IOperation dividend,
+        IOperation divisor)
     {
-        if (kind is not (BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder) || !IsInteger(type))
+        if (kind is not (BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder) || !IsInteger(operatorType))
         {
             return false;
         }
 
-        return divisor.ConstantValue is not { HasValue: true, Value: { } value } ||
-               !IntegerSemantics.TryGetInteger(value, out var constant) ||
-               constant.IsZero ||
-               constant == BigInteger.MinusOne;
+        var type = operatorType?.SpecialType ?? SpecialType.None;
+        return IntegerRange.OfType(type) is null
+            ? !IsConstantOtherThanZeroOrMinusOne(divisor)
+            : DivisionCheckRule.MayThrow(IntegerSemantics.DecideDivision(dividend, divisor, type));
     }
+
+    // x /= y and x %= y: the division of the operator type of the assignment (the promotion of the target and the value)
+    private static bool MayFailCompoundDivision(ICompoundAssignmentOperation compound)
+    {
+        if (compound.OperatorKind is not (BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder))
+        {
+            return false;
+        }
+
+        var type = IntegerSemantics.GetCompoundOperatorType(compound);
+        if (type != SpecialType.None)
+        {
+            return DivisionCheckRule.MayThrow(IntegerSemantics.DecideDivision(compound.Target, compound.Value, type));
+        }
+
+        return (IsInteger(compound.Target.Type) || IsInteger(compound.Value.Type)) &&
+               !IsConstantOtherThanZeroOrMinusOne(compound.Value);
+    }
+
+    private static bool IsConstantOtherThanZeroOrMinusOne(IOperation divisor) =>
+        divisor.ConstantValue is { HasValue: true, Value: { } value } &&
+        IntegerSemantics.TryGetInteger(value, out var constant) &&
+        !constant.IsZero &&
+        constant != BigInteger.MinusOne;
 
     private static bool IsInteger(ITypeSymbol? type) =>
         type?.SpecialType is SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or

@@ -2214,7 +2214,7 @@ uint __gsharp_gsl_s_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideS
 for (uint __gsharp_gsl_1 = global::Kassyi.GSharp.Core.ManagedGpuContext.GridStrideStart(); __gsharp_gsl_1 < __gsharp_gsl_n_1; __gsharp_gsl_1 += __gsharp_gsl_s_1)
 {
 int __gsharp_unroll_1 = (int)__gsharp_gsl_1;
-__gsharp_ctx.scratch[__gsharp_unroll_1] = __gsharp_ctx.src[(__gsharp_unroll_1 + 1) % __gsharp_ctx.n] + 1;
+__gsharp_ctx.scratch[__gsharp_unroll_1] = __gsharp_ctx.src[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_unroll_1 + 1), __gsharp_ctx.n)] + 1;
 }
 }
 

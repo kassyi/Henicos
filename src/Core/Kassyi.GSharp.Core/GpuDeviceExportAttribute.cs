@@ -147,8 +147,10 @@ public sealed class GpuDeviceExportAttribute : Attribute
     public bool ManagedStateMachine { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the assembly holds the managed version of a function that does not suspend and expands an
-    /// operator macro, directly or through a call, which the managed path of a consumer calls instead of the function.
+    /// Gets or sets whether the assembly holds the managed version of a function that does not suspend and holds a
+    /// managed-only rewrite (an operator macro, a float or double StackLinq Sum, Gpu.InlinePtx, or an int or long division
+    /// that may divide the minimum by -1), directly or through a call, which the managed path of a consumer calls instead
+    /// of the function.
     /// </summary>
     public bool ManagedVersion { get; set; }
 
@@ -182,4 +184,11 @@ public sealed class GpuDeviceExportAttribute : Attribute
     /// dynamic; a kernel that calls it cannot run as C# one GPU thread at a time (<c>KernelExecution.CSharp</c>).
     /// </summary>
     public bool ReachesSharedMemory { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the device function reaches code whose C# meaning only the generated code gives (an operator
+    /// macro, a float or double StackLinq Sum, Gpu.InlinePtx); a kernel that calls it cannot run as C#
+    /// (<c>KernelExecution.CSharp</c>).
+    /// </summary>
+    public bool ReachesGeneratedMeaning { get; set; }
 }

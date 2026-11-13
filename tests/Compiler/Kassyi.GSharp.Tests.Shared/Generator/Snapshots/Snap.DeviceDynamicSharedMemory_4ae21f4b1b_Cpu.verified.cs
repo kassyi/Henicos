@@ -397,7 +397,7 @@ return false;
 case 1:
 {
 {
-__gsharp_result = s[(global::Kassyi.GSharp.Core.ThreadIndex.X + 1) % __gsharp_ctx.n];
+__gsharp_result = s[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((global::Kassyi.GSharp.Core.ThreadIndex.X + 1), __gsharp_ctx.n)];
 __gsharp_ctx.__gsharp_state = 0;
 return true;
 }
@@ -405,6 +405,18 @@ return true;
 }
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
+}
+
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static int __gsharp_managed_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(int n, int val, bool write)
+{
+var s = new global::Kassyi.GSharp.Core.SharedMemory<int>(n, 0x0e0c1dfb8c6d9238UL, "DeviceDynamicSharedMemoryKernels.cs(111,17)");
+if (write)
+{
+s[global::Kassyi.GSharp.Core.ThreadIndex.X] = val;
+}
+
+return s[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((global::Kassyi.GSharp.Core.ThreadIndex.X + 1), n)];
 }
 
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
@@ -2316,7 +2328,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
-global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.PlainPersistHelper(__gsharp_ctx.n, __gsharp_ctx.tid + 1, true);
+global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_managed_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(__gsharp_ctx.n, __gsharp_ctx.tid + 1, true);
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -2324,7 +2336,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.output[__gsharp_ctx.tid] = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.PlainPersistHelper(__gsharp_ctx.n, 0, false);
+__gsharp_ctx.output[__gsharp_ctx.tid] = global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.__gsharp_managed_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(__gsharp_ctx.n, 0, false);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

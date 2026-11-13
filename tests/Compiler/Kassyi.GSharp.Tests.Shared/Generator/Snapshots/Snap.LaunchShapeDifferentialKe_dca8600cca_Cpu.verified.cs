@@ -1937,7 +1937,7 @@ return;
 case 1:
 {
 __gsharp_ctx.partnerTid = __gsharp_ctx.blockThreads - 1 - __gsharp_ctx.blockTid;
-__gsharp_ctx.permuted = staticBuf[__gsharp_ctx.partnerTid] + dynamicBuf[(__gsharp_ctx.blockTid + 1) % __gsharp_ctx.blockThreads];
+__gsharp_ctx.permuted = staticBuf[__gsharp_ctx.partnerTid] + dynamicBuf[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.blockTid + 1), __gsharp_ctx.blockThreads)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
