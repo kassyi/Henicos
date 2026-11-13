@@ -139,10 +139,11 @@ internal static class CpuHostLaunchEmitter
     {
         if (!kernel.ErrorSites.IsDefaultOrEmpty)
         {
-            writer.AppendLine("if (s_errorSites.Length > 0)");
+            writer.AppendLine($"if ({KernelHostNames.ErrorSitesFieldName}.Length > 0)");
             using (writer.Scope())
             {
-                writer.AppendLine($"{HostTypeNames.CpuKernelLoader}.RegisterErrorSites({DllPath}, s_errorSites);");
+                writer.AppendLine($"{HostTypeNames.CpuKernelLoader}.RegisterErrorSites" +
+                                  $"({DllPath}, {KernelHostNames.ErrorSitesFieldName});");
             }
         }
     }
