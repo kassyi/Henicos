@@ -98,7 +98,9 @@ internal sealed class ErrorSiteTable
             }
         }
 
-        var fallbackId = ComputeSiteId(SourcePlace.Unknown, 0, 0, 0, 0, kind);
+        // [WHY] Every place of a tree without a file path is unknown: the member keeps the sites of two kernels apart,
+        // whose one ID would be a collision (GSH0103) and drop the error site table of their class
+        var fallbackId = ComputeSiteId(SourcePlace.Unknown, 0, 0, 0, 0, kind + "@" + memberName);
         return new ErrorSiteEntry(fallbackId, SourcePlace.Unknown, 0, 0, memberName, defaultMessage);
     }
 

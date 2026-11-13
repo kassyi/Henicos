@@ -321,6 +321,83 @@ public partial class EvaluationOrderKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(416904053u, "EvaluationOrderKernels.cs", 162, 9, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(99133200u, "EvaluationOrderKernels.cs", 165, 31, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1415657099u, "EvaluationOrderKernels.cs", 165, 44, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2043845685u, "EvaluationOrderKernels.cs", 166, 9, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1526112861u, "EvaluationOrderKernels.cs", 167, 9, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1897348501u, "EvaluationOrderKernels.cs", 171, 9, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(497487932u, "EvaluationOrderKernels.cs", 174, 9, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1575446357u, "EvaluationOrderKernels.cs", 175, 9, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1380661470u, "EvaluationOrderKernels.cs", 175, 25, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1354752181u, "EvaluationOrderKernels.cs", 179, 9, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(394256265u, "EvaluationOrderKernels.cs", 180, 9, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1265005073u, "EvaluationOrderKernels.cs", 184, 9, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1737527410u, "EvaluationOrderKernels.cs", 184, 31, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1855877749u, "EvaluationOrderKernels.cs", 184, 44, "CallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(408291397u, "EvaluationOrderKernels.cs", 192, 45, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2015327339u, "EvaluationOrderKernels.cs", 192, 58, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1578179072u, "EvaluationOrderKernels.cs", 192, 71, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(595125417u, "EvaluationOrderKernels.cs", 193, 9, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1212105897u, "EvaluationOrderKernels.cs", 194, 9, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(93868561u, "EvaluationOrderKernels.cs", 195, 9, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(751265110u, "EvaluationOrderKernels.cs", 199, 73, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(665937897u, "EvaluationOrderKernels.cs", 199, 86, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(652838266u, "EvaluationOrderKernels.cs", 199, 100, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(200979377u, "EvaluationOrderKernels.cs", 200, 9, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(928084157u, "EvaluationOrderKernels.cs", 201, 9, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(19776829u, "EvaluationOrderKernels.cs", 202, 9, "VectorArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1367001001u, "EvaluationOrderKernels.cs", 210, 17, "NoSpillCallsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(639539401u, "EvaluationOrderKernels.cs", 211, 9, "NoSpillCallsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(705332455u, "EvaluationOrderKernels.cs", 211, 38, "NoSpillCallsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1757940409u, "EvaluationOrderKernels.cs", 212, 9, "NoSpillCallsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1723351336u, "EvaluationOrderKernels.cs", 212, 29, "NoSpillCallsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(988926825u, "EvaluationOrderKernels.cs", 212, 37, "NoSpillCallsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(915070761u, "EvaluationOrderKernels.cs", 214, 9, "NoSpillCallsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1788370601u, "EvaluationOrderKernels.cs", 222, 9, "SuspendingCallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1935727001u, "EvaluationOrderKernels.cs", 223, 9, "SuspendingCallArgumentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2007747241u, "EvaluationOrderKernels.cs", 233, 9, "ReadsAndAliasesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1411550105u, "EvaluationOrderKernels.cs", 239, 9, "ReadsAndAliasesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1945758393u, "EvaluationOrderKernels.cs", 243, 9, "ReadsAndAliasesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(475751665u, "EvaluationOrderKernels.cs", 247, 9, "ReadsAndAliasesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1343475845u, "EvaluationOrderKernels.cs", 264, 9, "RefReturnKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(646663949u, "EvaluationOrderKernels.cs", 272, 9, "ConversionsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(566821018u, "EvaluationOrderKernels.cs", 275, 9, "ConversionsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1485937561u, "EvaluationOrderKernels.cs", 279, 9, "ConversionsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1925832705u, "EvaluationOrderKernels.cs", 287, 9, "ConditionalBranchesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1014311463u, "EvaluationOrderKernels.cs", 287, 21, "ConditionalBranchesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(371550129u, "EvaluationOrderKernels.cs", 288, 9, "ConditionalBranchesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1949151257u, "EvaluationOrderKernels.cs", 291, 9, "ConditionalBranchesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2087771513u, "EvaluationOrderKernels.cs", 291, 21, "ConditionalBranchesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(322606505u, "EvaluationOrderKernels.cs", 292, 9, "ConditionalBranchesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(103755789u, "EvaluationOrderKernels.cs", 303, 9, "OperatorMacroKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1933058396u, "EvaluationOrderKernels.cs", 313, 19, "NoSpillOperatorMacroKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(179451490u, "EvaluationOrderKernels.cs", 314, 19, "NoSpillOperatorMacroKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(820296345u, "EvaluationOrderKernels.cs", 316, 9, "NoSpillOperatorMacroKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(377077394u, "EvaluationOrderKernels.cs", 325, 9, "AssignmentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1741176242u, "EvaluationOrderKernels.cs", 328, 9, "AssignmentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1600976114u, "EvaluationOrderKernels.cs", 331, 9, "AssignmentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(891949770u, "EvaluationOrderKernels.cs", 340, 9, "CompoundAssignmentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(577071061u, "EvaluationOrderKernels.cs", 344, 9, "CompoundAssignmentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1632570601u, "EvaluationOrderKernels.cs", 352, 9, "NoSpillAssignmentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(883803377u, "EvaluationOrderKernels.cs", 359, 9, "NoSpillAssignmentsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(137058677u, "EvaluationOrderKernels.cs", 368, 9, "BinaryOperatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(861895069u, "EvaluationOrderKernels.cs", 371, 9, "BinaryOperatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(69454555u, "EvaluationOrderKernels.cs", 373, 9, "BinaryOperatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1248109481u, "EvaluationOrderKernels.cs", 374, 9, "BinaryOperatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2060774504u, "EvaluationOrderKernels.cs", 374, 21, "BinaryOperatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(232969993u, "EvaluationOrderKernels.cs", 378, 9, "BinaryOperatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1563157145u, "EvaluationOrderKernels.cs", 382, 9, "BinaryOperatorKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1149729414u, "EvaluationOrderKernels.cs", 390, 18, "NoSpillBinaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(507593276u, "EvaluationOrderKernels.cs", 391, 9, "NoSpillBinaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(463284807u, "EvaluationOrderKernels.cs", 392, 9, "NoSpillBinaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(216911353u, "EvaluationOrderKernels.cs", 392, 21, "NoSpillBinaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(94406815u, "EvaluationOrderKernels.cs", 392, 30, "NoSpillBinaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1482206249u, "EvaluationOrderKernels.cs", 411, 9, "HiddenWritesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(716647705u, "EvaluationOrderKernels.cs", 419, 9, "HiddenWritesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1182250845u, "EvaluationOrderKernels.cs", 426, 9, "HiddenWritesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(666119513u, "EvaluationOrderKernels.cs", 428, 9, "HiddenWritesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1413712339u, "EvaluationOrderKernels.cs", 428, 25, "HiddenWritesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(825922400u, "EvaluationOrderKernels.cs", 451, 9, ".ctor", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -364,43 +441,43 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_i = 0;
-__gsharp_id_2_result[0]=([&]() {
+__gsharp_array_at(__gsharp_id_2_result, 0, 416904053u)=([&]() {
 int __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_i);
 int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_i);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_0,__gsharp_seq_1);
 }());
 int __gsharp_id_4_j = 0;
 auto __gsharp_id_5_pair = ([&]() {
-int __gsharp_seq_2 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)];
-int __gsharp_seq_3 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)];
+int __gsharp_seq_2 = __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1), 99133200u);
+int __gsharp_seq_3 = __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1), 1415657099u);
 return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__EoPair(__gsharp_seq_2, __gsharp_seq_3);
 }());
-__gsharp_id_2_result[1]=__gsharp_id_5_pair.__gsharp_mb_X;
-__gsharp_id_2_result[2]=__gsharp_id_5_pair.__gsharp_mb_Y;
+__gsharp_array_at(__gsharp_id_2_result, 1, 2043845685u)=__gsharp_id_5_pair.__gsharp_mb_X;
+__gsharp_array_at(__gsharp_id_2_result, 2, 1526112861u)=__gsharp_id_5_pair.__gsharp_mb_Y;
 int __gsharp_id_6_t = 7;
-__gsharp_id_2_result[3]=([&]() {
+__gsharp_array_at(__gsharp_id_2_result, 3, 1897348501u)=([&]() {
 int __gsharp_seq_4 = __gsharp_id_6_t;
 int __gsharp_seq_5 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_6_t);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_4,__gsharp_seq_5);
 }());
-__gsharp_id_1_scratch[0]=40;
-__gsharp_id_2_result[4]=([&]() {
-int __gsharp_seq_6 = __gsharp_id_1_scratch[0];
+__gsharp_array_at(__gsharp_id_1_scratch, 0, 497487932u)=40;
+__gsharp_array_at(__gsharp_id_2_result, 4, 1575446357u)=([&]() {
+int __gsharp_seq_6 = __gsharp_array_at(__gsharp_id_1_scratch, 0, 1380661470u);
 int __gsharp_seq_7 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Store(__gsharp_id_1_scratch,5);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_6,__gsharp_seq_7);
 }());
 int __gsharp_id_7_k = 0;
 int __gsharp_id_8_product;
-__gsharp_id_2_result[5]=([&]() {
+__gsharp_array_at(__gsharp_id_2_result, 5, 1354752181u)=([&]() {
 int __gsharp_seq_8 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_7_k);
 int __gsharp_seq_9 = __gsharp_id_7_k;
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SplitOut(&__gsharp_id_8_product,__gsharp_seq_8,__gsharp_seq_9);
 }());
-__gsharp_id_2_result[6]=__gsharp_id_8_product;
+__gsharp_array_at(__gsharp_id_2_result, 6, 394256265u)=__gsharp_id_8_product;
 int __gsharp_id_9_m = 0;
-__gsharp_id_2_result[7]=([&]() {
-auto&& __gsharp_seq_10 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_9_m=__gsharp_add_i32(__gsharp_id_9_m,1)),1)];
-int __gsharp_seq_11 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_9_m=__gsharp_add_i32(__gsharp_id_9_m,1)),1)];
+__gsharp_array_at(__gsharp_id_2_result, 7, 1265005073u)=([&]() {
+auto&& __gsharp_seq_10 = __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_9_m=__gsharp_add_i32(__gsharp_id_9_m,1)),1), 1737527410u);
+int __gsharp_seq_11 = __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_9_m=__gsharp_add_i32(__gsharp_id_9_m,1)),1), 1855877749u);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadIn(&__gsharp_seq_10,__gsharp_seq_11);
 }());
 __gsharp_state=-1;
@@ -537,24 +614,6 @@ private unsafe delegate void __gsharp_delegate_CallArgumentsKernel(uint gridDimX
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCallArgumentsKernel(global::System.Int32[] buffer, global::System.Int32[] scratch, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (buffer is null){
-throw new global::System.ArgumentNullException("buffer");
-}
-if (buffer.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "buffer");
-}
-if (scratch is null){
-throw new global::System.ArgumentNullException("scratch");
-}
-if (scratch.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "scratch");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.CallArgumentsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -679,11 +738,15 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_CallArgumentsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_CallArgumentsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CallArgumentsKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = buffer)
-fixed (global::System.Int32* __gsharp_p_1 = scratch)
-fixed (global::System.Int32* __gsharp_p_2 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = buffer.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = scratch.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(buffer))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(scratch))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (buffer?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (scratch?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -705,19 +768,19 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
-auto __gsharp_id_3_v = float3{__gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)], __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)], __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1)]};
-__gsharp_id_1_result[0]=__gsharp_id_3_v.x;
-__gsharp_id_1_result[1]=__gsharp_id_3_v.y;
-__gsharp_id_1_result[2]=__gsharp_id_3_v.z;
+auto __gsharp_id_3_v = float3{__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1), 408291397u), __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1), 2015327339u), __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1), 1578179072u)};
+__gsharp_array_at(__gsharp_id_1_result, 0, 595125417u)=__gsharp_id_3_v.x;
+__gsharp_array_at(__gsharp_id_1_result, 1, 1212105897u)=__gsharp_id_3_v.y;
+__gsharp_array_at(__gsharp_id_1_result, 2, 93868561u)=__gsharp_id_3_v.z;
 int __gsharp_id_4_j = 0;
 auto __gsharp_id_5_w = ([&]() {
-float2 __gsharp_seq_0 = float2{__gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)], __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)]};
-float __gsharp_seq_1 = __gsharp_id_0_buffer[__gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1)];
+float2 __gsharp_seq_0 = float2{__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1), 751265110u), __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1), 665937897u)};
+float __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_sub_i32((__gsharp_id_4_j=__gsharp_add_i32(__gsharp_id_4_j,1)),1), 652838266u);
 return __gsharp_vector3_create(__gsharp_seq_0, __gsharp_seq_1);
 }());
-__gsharp_id_1_result[3]=__gsharp_id_5_w.x;
-__gsharp_id_1_result[4]=__gsharp_id_5_w.y;
-__gsharp_id_1_result[5]=__gsharp_id_5_w.z;
+__gsharp_array_at(__gsharp_id_1_result, 3, 200979377u)=__gsharp_id_5_w.x;
+__gsharp_array_at(__gsharp_id_1_result, 4, 928084157u)=__gsharp_id_5_w.y;
+__gsharp_array_at(__gsharp_id_1_result, 5, 19776829u)=__gsharp_id_5_w.z;
 __gsharp_state=-1;
 return;
 }
@@ -845,18 +908,6 @@ private unsafe delegate void __gsharp_delegate_VectorArgumentsKernel(uint gridDi
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchVectorArgumentsKernel(global::System.Single[] buffer, global::System.Single[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (buffer is null){
-throw new global::System.ArgumentNullException("buffer");
-}
-if (buffer.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "buffer");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.VectorArgumentsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -980,10 +1031,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_VectorArgumentsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_VectorArgumentsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__VectorArgumentsKernel", __gsharp_dll_path);
-fixed (global::System.Single* __gsharp_p_0 = buffer)
-fixed (global::System.Single* __gsharp_p_1 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = buffer.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Single* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(buffer))
+fixed (global::System.Single* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (buffer?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -1005,11 +1060,11 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_tid = (int)threadIdx.x;
-int __gsharp_id_4_x = __gsharp_id_0_a[__gsharp_id_3_tid];
-__gsharp_id_2_result[0]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Combine(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Pure(__gsharp_id_4_x),__gsharp_id_0_a[__gsharp_id_3_tid]);
-__gsharp_id_2_result[1]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Combine(__gsharp_id_0_a[__gsharp_id_3_tid],__gsharp_id_1_b[__gsharp_id_3_tid]);
+int __gsharp_id_4_x = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_3_tid, 1367001001u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 639539401u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Combine(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Pure(__gsharp_id_4_x),__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_3_tid, 705332455u));
+__gsharp_array_at(__gsharp_id_2_result, 1, 1757940409u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Combine(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_3_tid, 1723351336u),__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_3_tid, 988926825u));
 int __gsharp_id_5_i = 0;
-__gsharp_id_2_result[2]=max(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_i),5);
+__gsharp_array_at(__gsharp_id_2_result, 2, 915070761u)=max(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_i),5);
 __gsharp_state=-1;
 return;
 }
@@ -1131,24 +1186,6 @@ private unsafe delegate void __gsharp_delegate_NoSpillCallsKernel(uint gridDimX,
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNoSpillCallsKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (a is null){
-throw new global::System.ArgumentNullException("a");
-}
-if (a.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "a");
-}
-if (b is null){
-throw new global::System.ArgumentNullException("b");
-}
-if (b.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "b");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.NoSpillCallsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1273,11 +1310,15 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_NoSpillCallsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_NoSpillCallsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillCallsKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = a)
-fixed (global::System.Int32* __gsharp_p_1 = b)
-fixed (global::System.Int32* __gsharp_p_2 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = b.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(b))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (b?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -1320,8 +1361,8 @@ if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__C
 __gsharp_state=1;
 return;
 }
-__gsharp_ctx->__gsharp_id_0_result[0]=__gsharp_ctx->__gsharp_call_temp_2;
-__gsharp_ctx->__gsharp_id_0_result[1]=__gsharp_ctx->__gsharp_id_1_a;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, 0, 1788370601u)=__gsharp_ctx->__gsharp_call_temp_2;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, 1, 1935727001u)=__gsharp_ctx->__gsharp_id_1_a;
 __gsharp_state=-1;
 return;
 }
@@ -1463,12 +1504,6 @@ private unsafe delegate void __gsharp_delegate_SuspendingCallArgumentsKernel(uin
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSuspendingCallArgumentsKernel(global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.SuspendingCallArgumentsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1589,9 +1624,13 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_SuspendingCallArgumentsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_SuspendingCallArgumentsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SuspendingCallArgumentsKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -1613,26 +1652,26 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_i = 0;
-__gsharp_id_0_result[0]=([&]() {
+__gsharp_array_at(__gsharp_id_0_result, 0, 2007747241u)=([&]() {
 int __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadRef(&__gsharp_id_1_i);
 int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_1_i);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_0,__gsharp_seq_1);
 }());
 int __gsharp_id_2_y = 5;
 int* __gsharp_id_3_p = &__gsharp_id_2_y;
-__gsharp_id_0_result[1]=([&]() {
+__gsharp_array_at(__gsharp_id_0_result, 1, 1411550105u)=([&]() {
 int __gsharp_seq_2 = __gsharp_id_2_y;
 int __gsharp_seq_3 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__SetThrough(__gsharp_id_3_p,9);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_2,__gsharp_seq_3);
 }());
 short __gsharp_id_4_s = 1;
-__gsharp_id_0_result[2]=(int)([&]() {
+__gsharp_array_at(__gsharp_id_0_result, 2, 1945758393u)=(int)([&]() {
 long long __gsharp_seq_4 = __gsharp_id_4_s;
 int __gsharp_seq_5 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__BumpShort(&__gsharp_id_4_s);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadInLong(&__gsharp_seq_4,__gsharp_seq_5);
 }());
 int __gsharp_id_5_k = 0;
-__gsharp_id_0_result[3]=([&]() {
+__gsharp_array_at(__gsharp_id_0_result, 3, 475751665u)=([&]() {
 int __gsharp_seq_6 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Pure(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_k));
 int __gsharp_seq_7 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_k);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Combine(__gsharp_seq_6,__gsharp_seq_7);
@@ -1768,12 +1807,6 @@ private unsafe delegate void __gsharp_delegate_ReadsAndAliasesKernel(uint gridDi
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchReadsAndAliasesKernel(global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.ReadsAndAliasesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1895,9 +1928,13 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ReadsAndAliasesKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ReadsAndAliasesKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ReadsAndAliasesKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -1938,7 +1975,7 @@ return __gsharp_seq_3 = __gsharp_seq_7;
 }());
 int __gsharp_id_5_x = 5;
 int __gsharp_id_6_y = 0;
-__gsharp_id_2_result[0]=([&]() {
+__gsharp_array_at(__gsharp_id_2_result, 0, 1343475845u)=([&]() {
 int __gsharp_seq_8 = __gsharp_id_5_x;
 int __gsharp_seq_9 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Choose(&__gsharp_id_5_x,&__gsharp_id_6_y,true));
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_8,__gsharp_seq_9);
@@ -2066,24 +2103,6 @@ private unsafe delegate void __gsharp_delegate_RefReturnKernel(uint gridDimX, ui
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRefReturnKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (a is null){
-throw new global::System.ArgumentNullException("a");
-}
-if (a.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "a");
-}
-if (b is null){
-throw new global::System.ArgumentNullException("b");
-}
-if (b.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "b");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.RefReturnKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -2208,11 +2227,15 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_RefReturnKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_RefReturnKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RefReturnKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = a)
-fixed (global::System.Int32* __gsharp_p_1 = b)
-fixed (global::System.Int32* __gsharp_p_2 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = b.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(b))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (b?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -2235,13 +2258,13 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_i = 1;
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_id_0_floats[__gsharp_id_3_i];
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_floats, __gsharp_id_3_i, 646663949u);
 float __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_i);
 return __gsharp_seq_0 = __gsharp_seq_1;
 }());
 int __gsharp_id_4_j = 0;
 ([&]() {
-auto&& __gsharp_seq_2 = __gsharp_id_1_bytes[__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_j)];
+auto&& __gsharp_seq_2 = __gsharp_array_at(__gsharp_id_1_bytes, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_j), 566821018u);
 auto __gsharp_seq_3 = (unsigned char)(__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_j),250));
 return __gsharp_seq_2 = (unsigned char)__gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
 }());
@@ -2252,7 +2275,7 @@ auto __gsharp_seq_5 = __gsharp_seq_4;
 auto __gsharp_seq_6 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Replace(&__gsharp_id_5_flags);
 return __gsharp_seq_4 = (int)(__gsharp_seq_5|__gsharp_seq_6);
 }());
-__gsharp_id_2_result[0]=(int)__gsharp_id_5_flags;
+__gsharp_array_at(__gsharp_id_2_result, 0, 1485937561u)=(int)__gsharp_id_5_flags;
 __gsharp_state=-1;
 return;
 }
@@ -2375,24 +2398,6 @@ private unsafe delegate void __gsharp_delegate_ConversionsKernel(uint gridDimX, 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchConversionsKernel(global::System.Single[] floats, global::System.Byte[] bytes, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (floats is null){
-throw new global::System.ArgumentNullException("floats");
-}
-if (floats.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "floats");
-}
-if (bytes is null){
-throw new global::System.ArgumentNullException("bytes");
-}
-if (bytes.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "bytes");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.ConversionsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -2517,11 +2522,15 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ConversionsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ConversionsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConversionsKernel", __gsharp_dll_path);
-fixed (global::System.Single* __gsharp_p_0 = floats)
-fixed (global::System.Byte* __gsharp_p_1 = bytes)
-fixed (global::System.Int32* __gsharp_p_2 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = floats.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = bytes.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Single* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(floats))
+fixed (global::System.Byte* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(bytes))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (floats?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (bytes?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -2543,19 +2552,19 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
-__gsharp_id_1_result[0]=(__gsharp_id_0_input[0]>0?([&]() {
+__gsharp_array_at(__gsharp_id_1_result, 0, 1925832705u)=(__gsharp_array_at(__gsharp_id_0_input, 0, 1014311463u)>0?([&]() {
 int __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
 int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_0,__gsharp_seq_1);
 }()):100);
-__gsharp_id_1_result[1]=__gsharp_id_2_i;
+__gsharp_array_at(__gsharp_id_1_result, 1, 371550129u)=__gsharp_id_2_i;
 int __gsharp_id_3_j = 0;
-__gsharp_id_1_result[2]=(__gsharp_id_0_input[0]>0&&([&]() {
+__gsharp_array_at(__gsharp_id_1_result, 2, 1949151257u)=(__gsharp_array_at(__gsharp_id_0_input, 0, 2087771513u)>0&&([&]() {
 int __gsharp_seq_2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j);
 int __gsharp_seq_3 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_2,__gsharp_seq_3);
 }())<0?1:0);
-__gsharp_id_1_result[3]=__gsharp_id_3_j;
+__gsharp_array_at(__gsharp_id_1_result, 3, 322606505u)=__gsharp_id_3_j;
 __gsharp_state=-1;
 return;
 }
@@ -2677,18 +2686,6 @@ private unsafe delegate void __gsharp_delegate_ConditionalBranchesKernel(uint gr
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchConditionalBranchesKernel(global::System.Int32[] input, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (input is null){
-throw new global::System.ArgumentNullException("input");
-}
-if (input.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "input");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.ConditionalBranchesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -2812,10 +2809,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ConditionalBranchesKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ConditionalBranchesKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__ConditionalBranchesKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = input)
-fixed (global::System.Int32* __gsharp_p_1 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = input.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(input))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (input?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -2854,7 +2855,7 @@ auto __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Evaluat
 auto __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Take(&__gsharp_id_1_i);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineInto(&__gsharp_id_2_c,__gsharp_seq_0,__gsharp_seq_1);
 }());
-__gsharp_id_0_result[0]=__gsharp_id_2_c.__gsharp_mb_Value;
+__gsharp_array_at(__gsharp_id_0_result, 0, 103755789u)=__gsharp_id_2_c.__gsharp_mb_Value;
 __gsharp_state=-1;
 return;
 }
@@ -2974,12 +2975,6 @@ private unsafe delegate void __gsharp_delegate_OperatorMacroKernel(uint gridDimX
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOperatorMacroKernel(global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.OperatorMacroKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -3100,9 +3095,13 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_OperatorMacroKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_OperatorMacroKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__OperatorMacroKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -3137,10 +3136,10 @@ __gsharp_switch_1_state_0:
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar __gsharp_id_2_a = {};
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar __gsharp_id_3_b = {};
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoScalar __gsharp_id_4_c = {};
-__gsharp_id_2_a.__gsharp_mb_Value=__gsharp_id_0_input[0];
-__gsharp_id_3_b.__gsharp_mb_Value=__gsharp_id_0_input[1];
+__gsharp_id_2_a.__gsharp_mb_Value=__gsharp_array_at(__gsharp_id_0_input, 0, 1933058396u);
+__gsharp_id_3_b.__gsharp_mb_Value=__gsharp_array_at(__gsharp_id_0_input, 1, 179451490u);
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CombineInto(&__gsharp_id_4_c,__gsharp_id_2_a,__gsharp_id_3_b);
-__gsharp_id_1_result[0]=__gsharp_id_4_c.__gsharp_mb_Value;
+__gsharp_array_at(__gsharp_id_1_result, 0, 820296345u)=__gsharp_id_4_c.__gsharp_mb_Value;
 __gsharp_state=-1;
 return;
 }
@@ -3263,18 +3262,6 @@ private unsafe delegate void __gsharp_delegate_NoSpillOperatorMacroKernel(uint g
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNoSpillOperatorMacroKernel(global::System.Int32[] input, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (input is null){
-throw new global::System.ArgumentNullException("input");
-}
-if (input.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "input");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.NoSpillOperatorMacroKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -3395,10 +3382,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_NoSpillOperatorMacroKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_NoSpillOperatorMacroKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillOperatorMacroKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = input)
-fixed (global::System.Int32* __gsharp_p_1 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = input.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(input))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (input?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -3421,19 +3412,19 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_i = 1;
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_id_0_a[__gsharp_id_3_i];
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_3_i, 377077394u);
 int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_i);
 return __gsharp_seq_0 = __gsharp_seq_1;
 }());
 int __gsharp_id_4_c = 0;
 ([&]() {
-auto&& __gsharp_seq_2 = __gsharp_id_1_b[__gsharp_sub_i32((__gsharp_id_4_c=__gsharp_add_i32(__gsharp_id_4_c,1)),1)];
+auto&& __gsharp_seq_2 = __gsharp_array_at(__gsharp_id_1_b, __gsharp_sub_i32((__gsharp_id_4_c=__gsharp_add_i32(__gsharp_id_4_c,1)),1), 1741176242u);
 int __gsharp_seq_3 = __gsharp_id_4_c;
 return __gsharp_seq_2 = __gsharp_seq_3;
 }());
 int __gsharp_id_5_n = 0;
 ([&]() {
-auto&& __gsharp_seq_4 = __gsharp_id_2_e[(__gsharp_id_5_n=__gsharp_add_i32(__gsharp_id_5_n,1))];
+auto&& __gsharp_seq_4 = __gsharp_array_at(__gsharp_id_2_e, (__gsharp_id_5_n=__gsharp_add_i32(__gsharp_id_5_n,1)), 1600976114u);
 int __gsharp_seq_5 = __gsharp_id_5_n;
 return __gsharp_seq_4 = __gsharp_seq_5;
 }());
@@ -3558,24 +3549,6 @@ private unsafe delegate void __gsharp_delegate_AssignmentKernel(uint gridDimX, u
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAssignmentKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] e, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (a is null){
-throw new global::System.ArgumentNullException("a");
-}
-if (a.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "a");
-}
-if (b is null){
-throw new global::System.ArgumentNullException("b");
-}
-if (b.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "b");
-}
-if (e is null){
-throw new global::System.ArgumentNullException("e");
-}
-if (e.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "e");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.AssignmentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -3700,11 +3673,15 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_AssignmentKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_AssignmentKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__AssignmentKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = a)
-fixed (global::System.Int32* __gsharp_p_1 = b)
-fixed (global::System.Int32* __gsharp_p_2 = e)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = b.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = e.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(b))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(e))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (b?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (e?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -3727,7 +3704,7 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_id_0_d[__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i)];
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_d, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i), 891949770u);
 auto __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
 return __gsharp_seq_0 = (int)__gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
 }());
@@ -3738,7 +3715,7 @@ auto __gsharp_seq_3 = __gsharp_seq_2;
 auto __gsharp_seq_4 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Accumulate(&__gsharp_id_3_sum);
 return __gsharp_seq_2 = (int)__gsharp_add_i32(__gsharp_seq_3,__gsharp_seq_4);
 }());
-__gsharp_id_1_result[0]=__gsharp_id_3_sum;
+__gsharp_array_at(__gsharp_id_1_result, 0, 577071061u)=__gsharp_id_3_sum;
 __gsharp_state=-1;
 return;
 }
@@ -3859,18 +3836,6 @@ private unsafe delegate void __gsharp_delegate_CompoundAssignmentKernel(uint gri
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCompoundAssignmentKernel(global::System.Int32[] d, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (d is null){
-throw new global::System.ArgumentNullException("d");
-}
-if (d.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "d");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.CompoundAssignmentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -3994,10 +3959,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_CompoundAssignmentKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_CompoundAssignmentKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__CompoundAssignmentKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = d)
-fixed (global::System.Int32* __gsharp_p_1 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = d.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(d))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (d?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -4019,13 +3988,13 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Record(__gsharp_id_1_log,__gsharp_id_3_tid);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_3_tid, 1632570601u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Record(__gsharp_id_1_log,__gsharp_id_3_tid);
 int __gsharp_id_4_sum = 0;
 for(int __gsharp_id_5_t = 0;__gsharp_id_5_t<4;__gsharp_id_5_t=__gsharp_add_i32(__gsharp_id_5_t,1))
 {
 __gsharp_id_4_sum=__gsharp_add_i32(__gsharp_id_4_sum,__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Record(__gsharp_id_1_log,__gsharp_id_5_t));
 }
-__gsharp_id_2_result[0]=__gsharp_id_4_sum;
+__gsharp_array_at(__gsharp_id_2_result, 0, 883803377u)=__gsharp_id_4_sum;
 __gsharp_state=-1;
 return;
 }
@@ -4150,24 +4119,6 @@ private unsafe delegate void __gsharp_delegate_NoSpillAssignmentsKernel(uint gri
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNoSpillAssignmentsKernel(global::System.Int32[] output, global::System.Int32[] log, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException("output");
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "output");
-}
-if (log is null){
-throw new global::System.ArgumentNullException("log");
-}
-if (log.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "log");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.NoSpillAssignmentsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -4292,11 +4243,15 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_NoSpillAssignmentsKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_NoSpillAssignmentsKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillAssignmentsKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = output)
-fixed (global::System.Int32* __gsharp_p_1 = log)
-fixed (global::System.Int32* __gsharp_p_2 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = output.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = log.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(output))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(log))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (output?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (log?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -4318,31 +4273,31 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
-__gsharp_id_1_result[0]=([&]() {
+__gsharp_array_at(__gsharp_id_1_result, 0, 137058677u)=([&]() {
 auto __gsharp_seq_0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
 auto __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
 return __gsharp_sub_i32(__gsharp_seq_0,__gsharp_seq_1);
 }());
 int __gsharp_id_3_j = 0;
-__gsharp_id_1_result[1]=([&]() {
+__gsharp_array_at(__gsharp_id_1_result, 1, 861895069u)=([&]() {
 auto __gsharp_seq_2 = __gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j),10);
 auto __gsharp_seq_3 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_j);
 return __gsharp_add_i32(__gsharp_seq_2,__gsharp_seq_3);
 }());
-__gsharp_id_0_data[0]=7;
-__gsharp_id_1_result[2]=([&]() {
-auto __gsharp_seq_4 = __gsharp_id_0_data[0];
+__gsharp_array_at(__gsharp_id_0_data, 0, 69454555u)=7;
+__gsharp_array_at(__gsharp_id_1_result, 2, 1248109481u)=([&]() {
+auto __gsharp_seq_4 = __gsharp_array_at(__gsharp_id_0_data, 0, 2060774504u);
 auto __gsharp_seq_5 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Bump(__gsharp_id_0_data);
 return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
 }());
 int __gsharp_id_4_k = 0;
-__gsharp_id_1_result[3]=([&]() {
+__gsharp_array_at(__gsharp_id_1_result, 3, 232969993u)=([&]() {
 auto __gsharp_seq_6 = (__gsharp_shl_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_k),4));
 auto __gsharp_seq_7 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_4_k);
 return __gsharp_seq_6|__gsharp_seq_7;
 }());
 int __gsharp_id_5_m = 0;
-__gsharp_id_1_result[4]=(([&]() {
+__gsharp_array_at(__gsharp_id_1_result, 4, 1563157145u)=(([&]() {
 auto __gsharp_seq_8 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_m);
 auto __gsharp_seq_9 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_5_m);
 return __gsharp_seq_8<__gsharp_seq_9;
@@ -4474,18 +4429,6 @@ private unsafe delegate void __gsharp_delegate_BinaryOperatorKernel(uint gridDim
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBinaryOperatorKernel(global::System.Int32[] data, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (data is null){
-throw new global::System.ArgumentNullException("data");
-}
-if (data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "data");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.BinaryOperatorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -4609,10 +4552,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_BinaryOperatorKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_BinaryOperatorKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__BinaryOperatorKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = data)
-fixed (global::System.Int32* __gsharp_p_1 = result)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = data.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = result.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(data))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (data?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (result?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -4634,9 +4581,9 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_5_tid = (int)threadIdx.x;
-unsigned int __gsharp_id_6_x = __gsharp_id_0_input[__gsharp_id_5_tid];
-__gsharp_id_3_rotated[__gsharp_id_5_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RotR(__gsharp_id_6_x,2)^__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RotR(__gsharp_id_6_x,13);
-__gsharp_id_4_sums[__gsharp_id_5_tid]=__gsharp_add_i32(__gsharp_id_1_a[__gsharp_id_5_tid],__gsharp_id_2_b[__gsharp_id_5_tid]);
+unsigned int __gsharp_id_6_x = __gsharp_array_at(__gsharp_id_0_input, __gsharp_id_5_tid, 1149729414u);
+__gsharp_array_at(__gsharp_id_3_rotated, __gsharp_id_5_tid, 507593276u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RotR(__gsharp_id_6_x,2)^__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__RotR(__gsharp_id_6_x,13);
+__gsharp_array_at(__gsharp_id_4_sums, __gsharp_id_5_tid, 463284807u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_a, __gsharp_id_5_tid, 216911353u),__gsharp_array_at(__gsharp_id_2_b, __gsharp_id_5_tid, 94406815u));
 __gsharp_state=-1;
 return;
 }
@@ -4756,36 +4703,6 @@ private unsafe delegate void __gsharp_delegate_NoSpillBinaryKernel(uint gridDimX
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNoSpillBinaryKernel(global::System.UInt32[] input, global::System.Int32[] a, global::System.Int32[] b, global::System.UInt32[] rotated, global::System.Int32[] sums, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (input is null){
-throw new global::System.ArgumentNullException("input");
-}
-if (input.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "input");
-}
-if (a is null){
-throw new global::System.ArgumentNullException("a");
-}
-if (a.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "a");
-}
-if (b is null){
-throw new global::System.ArgumentNullException("b");
-}
-if (b.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "b");
-}
-if (rotated is null){
-throw new global::System.ArgumentNullException("rotated");
-}
-if (rotated.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "rotated");
-}
-if (sums is null){
-throw new global::System.ArgumentNullException("sums");
-}
-if (sums.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "sums");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.NoSpillBinaryKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -4912,13 +4829,17 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_NoSpillBinaryKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_NoSpillBinaryKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__NoSpillBinaryKernel", __gsharp_dll_path);
-fixed (global::System.UInt32* __gsharp_p_0 = input)
-fixed (global::System.Int32* __gsharp_p_1 = a)
-fixed (global::System.Int32* __gsharp_p_2 = b)
-fixed (global::System.UInt32* __gsharp_p_3 = rotated)
-fixed (global::System.Int32* __gsharp_p_4 = sums)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = input.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = b.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_3, Length = rotated.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_4, Length = sums.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.UInt32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(input))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(b))
+fixed (global::System.UInt32* __gsharp_p_3 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(rotated))
+fixed (global::System.Int32* __gsharp_p_4 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(sums))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (input?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (b?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_3, Length = (rotated?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_4, Length = (sums?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -4972,7 +4893,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__EoCell __gsharp_id_4_cell = {};
-__gsharp_id_1_result[0]=([&]() {
+__gsharp_array_at(__gsharp_id_1_result, 0, 1482206249u)=([&]() {
 int __gsharp_seq_0 = __gsharp_id_4_cell.__gsharp_mb_X;
 int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__BumpThroughExtension(&__gsharp_id_4_cell);
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_0,__gsharp_seq_1);
@@ -4983,7 +4904,7 @@ return 0;
 }
 ;
 ([&]() {
-auto&& __gsharp_seq_2 = __gsharp_id_1_result[1];
+auto&& __gsharp_seq_2 = __gsharp_array_at(__gsharp_id_1_result, 1, 716647705u);
 int __gsharp_seq_3 = ([&]() {
 int __gsharp_seq_4 = __gsharp_id_2_p;
 int __gsharp_seq_5 = __gsharp_id_5_BumpP();
@@ -4997,7 +4918,7 @@ return 0;
 }
 ;
 ([&]() {
-auto&& __gsharp_seq_6 = __gsharp_id_1_result[2];
+auto&& __gsharp_seq_6 = __gsharp_array_at(__gsharp_id_1_result, 2, 1182250845u);
 int __gsharp_seq_7 = ([&]() {
 int __gsharp_seq_8 = __gsharp_id_3_q;
 int __gsharp_seq_9 = __gsharp_id_6_bumpQ();
@@ -5005,8 +4926,8 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels
 }());
 return __gsharp_seq_6 = __gsharp_seq_7;
 }());
-__gsharp_id_1_result[3]=([&]() {
-int __gsharp_seq_10 = __gsharp_id_0_log[0];
+__gsharp_array_at(__gsharp_id_1_result, 3, 666119513u)=([&]() {
+int __gsharp_seq_10 = __gsharp_array_at(__gsharp_id_0_log, 0, 1413712339u);
 int __gsharp_seq_11 = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__EoTick_o1(__gsharp_id_0_log).__gsharp_mb_V;
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Sub(__gsharp_seq_10,__gsharp_seq_11);
 }());
@@ -5141,18 +5062,6 @@ private unsafe delegate void __gsharp_delegate_HiddenWritesKernel(uint gridDimX,
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchHiddenWritesKernel(global::System.Int32[] log, global::System.Int32[] result, global::System.Int32 p, global::System.Int32 q, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (log is null){
-throw new global::System.ArgumentNullException("log");
-}
-if (log.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "log");
-}
-if (result is null){
-throw new global::System.ArgumentNullException("result");
-}
-if (result.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "result");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EvaluationOrderKernels.HiddenWritesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -5282,10 +5191,10 @@ if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-fixed (global::System.Int32* __gsharp_p_0 = log)
-fixed (global::System.Int32* __gsharp_p_1 = result)
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(log))
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = log.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = result.Length }, p, q);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (log?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (result?.Length ?? 0) }, p, q);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }

@@ -65,11 +65,11 @@ public sealed class MarshalingLaunchPtrDifferentialTests
         DifferentialRunner.Run(s_ptrLengthGuardedScale);
 
 #if GSHARP_CUDA
-    // --- Launch{Kernel}Ptr rejects a null array that is not optional before the launch, as the array launcher does;
-    // the kernel leaves out the null check of an array parameter it never writes on that promise (#1409) ---
+    // --- Launch{Kernel}Ptr passes a null array that is not optional, as the array launcher passes one: the kernel's
+    // read of it throws, as in C# ---
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void LaunchPtr_NullNonOptionalArray_ThrowsArgumentNullExceptionBeforeTheLaunch()
+    public void LaunchPtr_NullNonOptionalArray_ThrowsAtTheRead()
     {
         CudaCapability.EnsureGpuAvailable();
         const int rows = 4;
@@ -81,17 +81,15 @@ public sealed class MarshalingLaunchPtrDifferentialTests
         using GpuBuffer<int> dDst = new(rows);
         dSrc.CopyToDevice(src);
 
-        var srcNull = Assert.Throws<ArgumentNullException>(() =>
+        // A pointer launch reports a device error at the next synchronization
+        Assert.Throws<NullReferenceException>(() =>
+        {
             BoundsAndMemoryDifferentialKernels.LaunchNullArrayOptionalValidKernelPtr(
-                default, dDst.ToProxy(), rows, blockDimX: rows));
-        var dstNull = Assert.Throws<ArgumentNullException>(() =>
-            BoundsAndMemoryDifferentialKernels.LaunchNullArrayOptionalValidKernelPtr(
-                dSrc.ToProxy(), default, rows, blockDimX: rows));
-        Assert.Equal("src", srcNull.ParamName);
-        Assert.Equal("dst", dstNull.ParamName);
+                default, dDst.ToProxy(), rows, blockDimX: rows);
+            GpuKernelLoader.SynchronizeDevice();
+        });
 
-        // A null optional array is not rejected and reads as empty; the launch after the rejected ones also shows that
-        // nothing reached the device
+        // A null optional array is null, which the kernel tests before it reads it
         BoundsAndMemoryDifferentialKernels.LaunchNullArrayOptionalValidKernelPtr(
             dSrc.ToProxy(), dDst.ToProxy(), rows, default, blockDimX: rows);
         dDst.CopyToHost(dst);

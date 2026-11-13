@@ -197,6 +197,11 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib
 {
 public partial class BigIntContextOperationKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(710364627u, "BigIntContextOperationKernels.cs", 15, 43, "ShiftLeftKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(319892393u, "BigIntContextOperationKernels.cs", 21, 44, "ShiftRightKernel", "G#: a null array is passed where it is not nullable"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -462,7 +467,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftLeft_o0(__gsharp_id_0_ctx,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
+__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftLeft_o0(__gsharp_struct_ref(__gsharp_id_0_ctx, 710364627u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }),__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
 __gsharp_state=-1;
 return;
 }
@@ -580,12 +585,6 @@ private unsafe delegate void __gsharp_delegate_ShiftLeftKernel(uint gridDimX, ui
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchShiftLeftKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, global::System.Int32 wordShift, global::System.Int32 bitShift, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftLeftKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -710,6 +709,10 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ShiftLeftKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShiftLeftKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntContextOperationKernels__ShiftLeftKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AotContexts.GpuBigInt __gsharp_native_0 = default;
 global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
 try
@@ -777,7 +780,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o0(__gsharp_id_0_ctx,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
+__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o0(__gsharp_struct_ref(__gsharp_id_0_ctx, 319892393u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }),__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
 __gsharp_state=-1;
 return;
 }
@@ -895,12 +898,6 @@ private unsafe delegate void __gsharp_delegate_ShiftRightKernel(uint gridDimX, u
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchShiftRightKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, global::System.Int32 wordShift, global::System.Int32 bitShift, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftRightKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1025,6 +1022,10 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ShiftRightKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ShiftRightKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Stdlib__BigIntContextOperationKernels__ShiftRightKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AotContexts.GpuBigInt __gsharp_native_0 = default;
 global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
 try
@@ -1210,12 +1211,6 @@ private unsafe delegate void __gsharp_delegate_AndKernel(uint gridDimX, uint gri
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAndKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.AndKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1523,12 +1518,6 @@ private unsafe delegate void __gsharp_delegate_OrKernel(uint gridDimX, uint grid
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOrKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.OrKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1836,12 +1825,6 @@ private unsafe delegate void __gsharp_delegate_XorKernel(uint gridDimX, uint gri
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchXorKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.XorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -2149,12 +2132,6 @@ private unsafe delegate void __gsharp_delegate_NotKernel(uint gridDimX, uint gri
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNotKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (ctx.Operands.TargetOperand is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.TargetOperand is null, but the field is not nullable.");
-}
-if (ctx.Operands.ResultBuffer is null){
-throw new global::System.ArgumentNullException("ctx", "ctx.Operands.ResultBuffer is null, but the field is not nullable.");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.NotKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {

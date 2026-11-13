@@ -29,6 +29,79 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
 {
 public partial class NarrowStepDifferentialKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(848202375u, "NarrowStepDifferentialKernels.cs", 34, 18, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(353824675u, "NarrowStepDifferentialKernels.cs", 40, 18, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(908264698u, "NarrowStepDifferentialKernels.cs", 44, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1477675450u, "NarrowStepDifferentialKernels.cs", 48, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1278348760u, "NarrowStepDifferentialKernels.cs", 52, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1480909968u, "NarrowStepDifferentialKernels.cs", 56, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1144332234u, "NarrowStepDifferentialKernels.cs", 60, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1973953330u, "NarrowStepDifferentialKernels.cs", 64, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1235540234u, "NarrowStepDifferentialKernels.cs", 68, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2000942828u, "NarrowStepDifferentialKernels.cs", 72, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(827523340u, "NarrowStepDifferentialKernels.cs", 76, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1134154130u, "NarrowStepDifferentialKernels.cs", 80, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1458442882u, "NarrowStepDifferentialKernels.cs", 84, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(207608418u, "NarrowStepDifferentialKernels.cs", 88, 9, "SByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(190839675u, "NarrowStepDifferentialKernels.cs", 96, 18, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(514174533u, "NarrowStepDifferentialKernels.cs", 102, 18, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1872765934u, "NarrowStepDifferentialKernels.cs", 106, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(817144434u, "NarrowStepDifferentialKernels.cs", 110, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1924989122u, "NarrowStepDifferentialKernels.cs", 114, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(963481746u, "NarrowStepDifferentialKernels.cs", 118, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2096775558u, "NarrowStepDifferentialKernels.cs", 122, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(118993686u, "NarrowStepDifferentialKernels.cs", 126, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(206681994u, "NarrowStepDifferentialKernels.cs", 130, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1330307330u, "NarrowStepDifferentialKernels.cs", 134, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(768848218u, "NarrowStepDifferentialKernels.cs", 138, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2034748558u, "NarrowStepDifferentialKernels.cs", 142, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(22791406u, "NarrowStepDifferentialKernels.cs", 146, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(506541794u, "NarrowStepDifferentialKernels.cs", 150, 9, "ByteStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1794627939u, "NarrowStepDifferentialKernels.cs", 158, 18, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1653265641u, "NarrowStepDifferentialKernels.cs", 164, 18, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1258329882u, "NarrowStepDifferentialKernels.cs", 168, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1362517282u, "NarrowStepDifferentialKernels.cs", 172, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1523365226u, "NarrowStepDifferentialKernels.cs", 176, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(754273922u, "NarrowStepDifferentialKernels.cs", 180, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1102637946u, "NarrowStepDifferentialKernels.cs", 184, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(709589522u, "NarrowStepDifferentialKernels.cs", 188, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2139402026u, "NarrowStepDifferentialKernels.cs", 192, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(272490970u, "NarrowStepDifferentialKernels.cs", 196, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1053617258u, "NarrowStepDifferentialKernels.cs", 200, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2112981362u, "NarrowStepDifferentialKernels.cs", 204, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(372210394u, "NarrowStepDifferentialKernels.cs", 208, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(123214930u, "NarrowStepDifferentialKernels.cs", 212, 9, "Int16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(66101747u, "NarrowStepDifferentialKernels.cs", 220, 18, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(753136247u, "NarrowStepDifferentialKernels.cs", 226, 18, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(99395982u, "NarrowStepDifferentialKernels.cs", 230, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2013179814u, "NarrowStepDifferentialKernels.cs", 234, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(733004574u, "NarrowStepDifferentialKernels.cs", 238, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(165859142u, "NarrowStepDifferentialKernels.cs", 242, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1846250006u, "NarrowStepDifferentialKernels.cs", 246, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(110992442u, "NarrowStepDifferentialKernels.cs", 250, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(243468362u, "NarrowStepDifferentialKernels.cs", 254, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(527870714u, "NarrowStepDifferentialKernels.cs", 258, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1103276370u, "NarrowStepDifferentialKernels.cs", 262, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2127034290u, "NarrowStepDifferentialKernels.cs", 266, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1168310174u, "NarrowStepDifferentialKernels.cs", 270, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1453469606u, "NarrowStepDifferentialKernels.cs", 274, 9, "UInt16StepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1863132579u, "NarrowStepDifferentialKernels.cs", 282, 18, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(29294287u, "NarrowStepDifferentialKernels.cs", 288, 18, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(193918210u, "NarrowStepDifferentialKernels.cs", 292, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1093984866u, "NarrowStepDifferentialKernels.cs", 296, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1973955998u, "NarrowStepDifferentialKernels.cs", 300, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1000910734u, "NarrowStepDifferentialKernels.cs", 304, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(828069998u, "NarrowStepDifferentialKernels.cs", 308, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2031148506u, "NarrowStepDifferentialKernels.cs", 312, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(323977090u, "NarrowStepDifferentialKernels.cs", 316, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(371047694u, "NarrowStepDifferentialKernels.cs", 320, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1902766622u, "NarrowStepDifferentialKernels.cs", 324, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(816380686u, "NarrowStepDifferentialKernels.cs", 328, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(248295082u, "NarrowStepDifferentialKernels.cs", 332, 9, "CharStepKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1091098378u, "NarrowStepDifferentialKernels.cs", 336, 9, "CharStepKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -51,80 +124,80 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_2_t>=__gsharp_id_0_a.length)
+if(__gsharp_id_2_t>=__gsharp_array_ref(__gsharp_id_0_a, 848202375u).length)
 {
 __gsharp_state = -1;return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_t,12);
-int __gsharp_id_4_av = __gsharp_id_0_a[__gsharp_id_2_t];
+int __gsharp_id_4_av = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_t, 353824675u);
 signed char __gsharp_id_5_sb0 = (signed char)__gsharp_id_4_av;
 bool __gsharp_id_6_sbCmpPreInc = ([&]() {
 auto __gsharp_seq_0 = ((signed char)(__gsharp_id_5_sb0-__gsharp_id_5_sb0));
 auto __gsharp_seq_1 = ((__gsharp_id_5_sb0=(signed char)__gsharp_add_i32(__gsharp_id_5_sb0,1)));
 return __gsharp_seq_0>=__gsharp_seq_1;
 }());
-__gsharp_id_1_r[__gsharp_id_3_o]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_sbCmpPreInc?1ll:2ll),100000ll),(unsigned short)__gsharp_id_5_sb0);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o, 908264698u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_sbCmpPreInc?1ll:2ll),100000ll),(unsigned short)__gsharp_id_5_sb0);
 signed char __gsharp_id_7_sb1 = (signed char)__gsharp_id_4_av;
 bool __gsharp_id_8_sbCmpPreDec = ([&]() {
 auto __gsharp_seq_2 = ((signed char)(__gsharp_id_7_sb1-__gsharp_id_7_sb1));
 auto __gsharp_seq_3 = ((__gsharp_id_7_sb1=(signed char)__gsharp_sub_i32(__gsharp_id_7_sb1,1)));
 return __gsharp_seq_2<=__gsharp_seq_3;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_sbCmpPreDec?1ll:2ll),100000ll),(unsigned short)__gsharp_id_7_sb1);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 1477675450u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_sbCmpPreDec?1ll:2ll),100000ll),(unsigned short)__gsharp_id_7_sb1);
 signed char __gsharp_id_9_sb2 = (signed char)__gsharp_id_4_av;
 bool __gsharp_id_10_sbCmpPostInc = ([&]() {
 auto __gsharp_seq_4 = ((signed char)(__gsharp_id_9_sb2-__gsharp_id_9_sb2));
 auto __gsharp_seq_5 = ((signed char)__gsharp_sub_i32((__gsharp_id_9_sb2=(signed char)__gsharp_add_i32(__gsharp_id_9_sb2,1)),1));
 return __gsharp_seq_4>=__gsharp_seq_5;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,2)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_sbCmpPostInc?1ll:2ll),100000ll),(unsigned short)__gsharp_id_9_sb2);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,2), 1278348760u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_sbCmpPostInc?1ll:2ll),100000ll),(unsigned short)__gsharp_id_9_sb2);
 signed char __gsharp_id_11_sb3 = (signed char)__gsharp_id_4_av;
 bool __gsharp_id_12_sbCmpPostDec = ([&]() {
 auto __gsharp_seq_6 = ((signed char)(__gsharp_id_11_sb3-__gsharp_id_11_sb3));
 auto __gsharp_seq_7 = ((signed char)__gsharp_add_i32((__gsharp_id_11_sb3=(signed char)__gsharp_sub_i32(__gsharp_id_11_sb3,1)),1));
 return __gsharp_seq_6<=__gsharp_seq_7;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,3)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_sbCmpPostDec?1ll:2ll),100000ll),(unsigned short)__gsharp_id_11_sb3);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,3), 1480909968u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_sbCmpPostDec?1ll:2ll),100000ll),(unsigned short)__gsharp_id_11_sb3);
 signed char __gsharp_id_13_sb4 = (signed char)__gsharp_id_4_av;
 long long __gsharp_id_14_sbExprPreInc = ([&]() {
 auto __gsharp_seq_8 = ((signed char)(__gsharp_id_13_sb4-__gsharp_id_13_sb4));
 auto __gsharp_seq_9 = ((__gsharp_id_13_sb4=(signed char)__gsharp_add_i32(__gsharp_id_13_sb4,1)));
 return __gsharp_seq_8+__gsharp_seq_9;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,4)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_sbExprPreInc,100000ll),(unsigned short)__gsharp_id_13_sb4);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,4), 1144332234u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_sbExprPreInc,100000ll),(unsigned short)__gsharp_id_13_sb4);
 signed char __gsharp_id_15_sb5 = (signed char)__gsharp_id_4_av;
 long long __gsharp_id_16_sbExprPreDec = ([&]() {
 auto __gsharp_seq_10 = ((signed char)(__gsharp_id_15_sb5-__gsharp_id_15_sb5));
 auto __gsharp_seq_11 = ((__gsharp_id_15_sb5=(signed char)__gsharp_sub_i32(__gsharp_id_15_sb5,1)));
 return __gsharp_seq_10+__gsharp_seq_11;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_sbExprPreDec,100000ll),(unsigned short)__gsharp_id_15_sb5);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,5), 1973953330u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_sbExprPreDec,100000ll),(unsigned short)__gsharp_id_15_sb5);
 signed char __gsharp_id_17_sb6 = (signed char)__gsharp_id_4_av;
 long long __gsharp_id_18_sbExprPostInc = ([&]() {
 auto __gsharp_seq_12 = ((signed char)(__gsharp_id_17_sb6-__gsharp_id_17_sb6));
 auto __gsharp_seq_13 = ((signed char)__gsharp_sub_i32((__gsharp_id_17_sb6=(signed char)__gsharp_add_i32(__gsharp_id_17_sb6,1)),1));
 return __gsharp_seq_12+__gsharp_seq_13;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,6)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_sbExprPostInc,100000ll),(unsigned short)__gsharp_id_17_sb6);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,6), 1235540234u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_sbExprPostInc,100000ll),(unsigned short)__gsharp_id_17_sb6);
 signed char __gsharp_id_19_sb7 = (signed char)__gsharp_id_4_av;
 long long __gsharp_id_20_sbExprPostDec = ([&]() {
 auto __gsharp_seq_14 = ((signed char)(__gsharp_id_19_sb7-__gsharp_id_19_sb7));
 auto __gsharp_seq_15 = ((signed char)__gsharp_add_i32((__gsharp_id_19_sb7=(signed char)__gsharp_sub_i32(__gsharp_id_19_sb7,1)),1));
 return __gsharp_seq_14+__gsharp_seq_15;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,7)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_sbExprPostDec,100000ll),(unsigned short)__gsharp_id_19_sb7);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,7), 2000942828u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_sbExprPostDec,100000ll),(unsigned short)__gsharp_id_19_sb7);
 signed char __gsharp_id_21_sb8 = (signed char)__gsharp_id_4_av;
 __gsharp_id_21_sb8=(signed char)__gsharp_add_i32(__gsharp_id_21_sb8,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,8)]=__gsharp_id_21_sb8;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,8), 827523340u)=__gsharp_id_21_sb8;
 signed char __gsharp_id_22_sb9 = (signed char)__gsharp_id_4_av;
 __gsharp_id_22_sb9=(signed char)__gsharp_sub_i32(__gsharp_id_22_sb9,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,9)]=__gsharp_id_22_sb9;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,9), 1134154130u)=__gsharp_id_22_sb9;
 signed char __gsharp_id_23_sb10 = (signed char)__gsharp_id_4_av;
 __gsharp_id_23_sb10=(signed char)__gsharp_add_i32(__gsharp_id_23_sb10,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,10)]=__gsharp_id_23_sb10;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,10), 1458442882u)=__gsharp_id_23_sb10;
 signed char __gsharp_id_24_sb11 = (signed char)__gsharp_id_4_av;
 __gsharp_id_24_sb11=(signed char)__gsharp_sub_i32(__gsharp_id_24_sb11,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_sb11;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,11), 207608418u)=__gsharp_id_24_sb11;
 __gsharp_state=-1;
 return;
 }
@@ -287,18 +360,6 @@ private unsafe delegate void __gsharp_delegate_SByteStepKernel(uint gridDimX, ui
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSByteStepKernel(global::System.Int32[] a, global::System.Int64[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (a is null){
-throw new global::System.ArgumentNullException("a");
-}
-if (a.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "a");
-}
-if (r is null){
-throw new global::System.ArgumentNullException("r");
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "r");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NarrowStepDifferentialKernels.SByteStepKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -422,10 +483,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_SByteStepKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_SByteStepKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__SByteStepKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = a)
-fixed (global::System.Int64* __gsharp_p_1 = r)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = r.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
+fixed (global::System.Int64* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(r))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (r?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -447,80 +512,80 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_2_t>=__gsharp_id_0_a.length)
+if(__gsharp_id_2_t>=__gsharp_array_ref(__gsharp_id_0_a, 190839675u).length)
 {
 __gsharp_state = -1;return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_t,12);
-int __gsharp_id_4_av = __gsharp_id_0_a[__gsharp_id_2_t];
+int __gsharp_id_4_av = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_t, 514174533u);
 unsigned char __gsharp_id_5_b0 = (unsigned char)__gsharp_id_4_av;
 bool __gsharp_id_6_bCmpPreInc = ([&]() {
 auto __gsharp_seq_0 = ((unsigned char)(__gsharp_id_5_b0-__gsharp_id_5_b0));
 auto __gsharp_seq_1 = ((__gsharp_id_5_b0=(unsigned char)__gsharp_add_i32(__gsharp_id_5_b0,1)));
 return __gsharp_seq_0>=__gsharp_seq_1;
 }());
-__gsharp_id_1_r[__gsharp_id_3_o]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_bCmpPreInc?1ll:2ll),100000ll),__gsharp_id_5_b0);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o, 1872765934u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_bCmpPreInc?1ll:2ll),100000ll),__gsharp_id_5_b0);
 unsigned char __gsharp_id_7_b1 = (unsigned char)__gsharp_id_4_av;
 bool __gsharp_id_8_bCmpPreDec = ([&]() {
 auto __gsharp_seq_2 = ((unsigned char)(__gsharp_id_7_b1-__gsharp_id_7_b1));
 auto __gsharp_seq_3 = ((__gsharp_id_7_b1=(unsigned char)__gsharp_sub_i32(__gsharp_id_7_b1,1)));
 return __gsharp_seq_2<=__gsharp_seq_3;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_bCmpPreDec?1ll:2ll),100000ll),__gsharp_id_7_b1);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 817144434u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_bCmpPreDec?1ll:2ll),100000ll),__gsharp_id_7_b1);
 unsigned char __gsharp_id_9_b2 = (unsigned char)__gsharp_id_4_av;
 bool __gsharp_id_10_bCmpPostInc = ([&]() {
 auto __gsharp_seq_4 = ((unsigned char)(__gsharp_id_9_b2-__gsharp_id_9_b2));
 auto __gsharp_seq_5 = ((unsigned char)__gsharp_sub_i32((__gsharp_id_9_b2=(unsigned char)__gsharp_add_i32(__gsharp_id_9_b2,1)),1));
 return __gsharp_seq_4>=__gsharp_seq_5;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,2)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_bCmpPostInc?1ll:2ll),100000ll),__gsharp_id_9_b2);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,2), 1924989122u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_bCmpPostInc?1ll:2ll),100000ll),__gsharp_id_9_b2);
 unsigned char __gsharp_id_11_b3 = (unsigned char)__gsharp_id_4_av;
 bool __gsharp_id_12_bCmpPostDec = ([&]() {
 auto __gsharp_seq_6 = ((unsigned char)(__gsharp_id_11_b3-__gsharp_id_11_b3));
 auto __gsharp_seq_7 = ((unsigned char)__gsharp_add_i32((__gsharp_id_11_b3=(unsigned char)__gsharp_sub_i32(__gsharp_id_11_b3,1)),1));
 return __gsharp_seq_6<=__gsharp_seq_7;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,3)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_bCmpPostDec?1ll:2ll),100000ll),__gsharp_id_11_b3);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,3), 963481746u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_bCmpPostDec?1ll:2ll),100000ll),__gsharp_id_11_b3);
 unsigned char __gsharp_id_13_b4 = (unsigned char)__gsharp_id_4_av;
 long long __gsharp_id_14_bExprPreInc = ([&]() {
 auto __gsharp_seq_8 = ((unsigned char)(__gsharp_id_13_b4-__gsharp_id_13_b4));
 auto __gsharp_seq_9 = ((__gsharp_id_13_b4=(unsigned char)__gsharp_add_i32(__gsharp_id_13_b4,1)));
 return __gsharp_seq_8+__gsharp_seq_9;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,4)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_bExprPreInc,100000ll),__gsharp_id_13_b4);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,4), 2096775558u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_bExprPreInc,100000ll),__gsharp_id_13_b4);
 unsigned char __gsharp_id_15_b5 = (unsigned char)__gsharp_id_4_av;
 long long __gsharp_id_16_bExprPreDec = ([&]() {
 auto __gsharp_seq_10 = ((unsigned char)(__gsharp_id_15_b5-__gsharp_id_15_b5));
 auto __gsharp_seq_11 = ((__gsharp_id_15_b5=(unsigned char)__gsharp_sub_i32(__gsharp_id_15_b5,1)));
 return __gsharp_seq_10+__gsharp_seq_11;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_bExprPreDec,100000ll),__gsharp_id_15_b5);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,5), 118993686u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_bExprPreDec,100000ll),__gsharp_id_15_b5);
 unsigned char __gsharp_id_17_b6 = (unsigned char)__gsharp_id_4_av;
 long long __gsharp_id_18_bExprPostInc = ([&]() {
 auto __gsharp_seq_12 = ((unsigned char)(__gsharp_id_17_b6-__gsharp_id_17_b6));
 auto __gsharp_seq_13 = ((unsigned char)__gsharp_sub_i32((__gsharp_id_17_b6=(unsigned char)__gsharp_add_i32(__gsharp_id_17_b6,1)),1));
 return __gsharp_seq_12+__gsharp_seq_13;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,6)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_bExprPostInc,100000ll),__gsharp_id_17_b6);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,6), 206681994u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_bExprPostInc,100000ll),__gsharp_id_17_b6);
 unsigned char __gsharp_id_19_b7 = (unsigned char)__gsharp_id_4_av;
 long long __gsharp_id_20_bExprPostDec = ([&]() {
 auto __gsharp_seq_14 = ((unsigned char)(__gsharp_id_19_b7-__gsharp_id_19_b7));
 auto __gsharp_seq_15 = ((unsigned char)__gsharp_add_i32((__gsharp_id_19_b7=(unsigned char)__gsharp_sub_i32(__gsharp_id_19_b7,1)),1));
 return __gsharp_seq_14+__gsharp_seq_15;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,7)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_bExprPostDec,100000ll),__gsharp_id_19_b7);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,7), 1330307330u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_bExprPostDec,100000ll),__gsharp_id_19_b7);
 unsigned char __gsharp_id_21_b8 = (unsigned char)__gsharp_id_4_av;
 __gsharp_id_21_b8=(unsigned char)__gsharp_add_i32(__gsharp_id_21_b8,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,8)]=__gsharp_id_21_b8;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,8), 768848218u)=__gsharp_id_21_b8;
 unsigned char __gsharp_id_22_b9 = (unsigned char)__gsharp_id_4_av;
 __gsharp_id_22_b9=(unsigned char)__gsharp_sub_i32(__gsharp_id_22_b9,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,9)]=__gsharp_id_22_b9;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,9), 2034748558u)=__gsharp_id_22_b9;
 unsigned char __gsharp_id_23_b10 = (unsigned char)__gsharp_id_4_av;
 __gsharp_id_23_b10=(unsigned char)__gsharp_add_i32(__gsharp_id_23_b10,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,10)]=__gsharp_id_23_b10;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,10), 22791406u)=__gsharp_id_23_b10;
 unsigned char __gsharp_id_24_b11 = (unsigned char)__gsharp_id_4_av;
 __gsharp_id_24_b11=(unsigned char)__gsharp_sub_i32(__gsharp_id_24_b11,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_b11;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,11), 506541794u)=__gsharp_id_24_b11;
 __gsharp_state=-1;
 return;
 }
@@ -683,18 +748,6 @@ private unsafe delegate void __gsharp_delegate_ByteStepKernel(uint gridDimX, uin
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchByteStepKernel(global::System.Int32[] a, global::System.Int64[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (a is null){
-throw new global::System.ArgumentNullException("a");
-}
-if (a.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "a");
-}
-if (r is null){
-throw new global::System.ArgumentNullException("r");
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "r");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NarrowStepDifferentialKernels.ByteStepKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -818,10 +871,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ByteStepKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ByteStepKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__ByteStepKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = a)
-fixed (global::System.Int64* __gsharp_p_1 = r)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = r.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
+fixed (global::System.Int64* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(r))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (r?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -843,80 +900,80 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_2_t>=__gsharp_id_0_a.length)
+if(__gsharp_id_2_t>=__gsharp_array_ref(__gsharp_id_0_a, 1794627939u).length)
 {
 __gsharp_state = -1;return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_t,12);
-int __gsharp_id_4_av = __gsharp_id_0_a[__gsharp_id_2_t];
+int __gsharp_id_4_av = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_t, 1653265641u);
 short __gsharp_id_5_s0 = (short)__gsharp_id_4_av;
 bool __gsharp_id_6_sCmpPreInc = ([&]() {
 auto __gsharp_seq_0 = ((short)(__gsharp_id_5_s0-__gsharp_id_5_s0));
 auto __gsharp_seq_1 = ((__gsharp_id_5_s0=(short)__gsharp_add_i32(__gsharp_id_5_s0,1)));
 return __gsharp_seq_0>=__gsharp_seq_1;
 }());
-__gsharp_id_1_r[__gsharp_id_3_o]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_sCmpPreInc?1ll:2ll),100000ll),(unsigned short)__gsharp_id_5_s0);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o, 1258329882u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_sCmpPreInc?1ll:2ll),100000ll),(unsigned short)__gsharp_id_5_s0);
 short __gsharp_id_7_s1 = (short)__gsharp_id_4_av;
 bool __gsharp_id_8_sCmpPreDec = ([&]() {
 auto __gsharp_seq_2 = ((short)(__gsharp_id_7_s1-__gsharp_id_7_s1));
 auto __gsharp_seq_3 = ((__gsharp_id_7_s1=(short)__gsharp_sub_i32(__gsharp_id_7_s1,1)));
 return __gsharp_seq_2<=__gsharp_seq_3;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_sCmpPreDec?1ll:2ll),100000ll),(unsigned short)__gsharp_id_7_s1);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 1362517282u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_sCmpPreDec?1ll:2ll),100000ll),(unsigned short)__gsharp_id_7_s1);
 short __gsharp_id_9_s2 = (short)__gsharp_id_4_av;
 bool __gsharp_id_10_sCmpPostInc = ([&]() {
 auto __gsharp_seq_4 = ((short)(__gsharp_id_9_s2-__gsharp_id_9_s2));
 auto __gsharp_seq_5 = ((short)__gsharp_sub_i32((__gsharp_id_9_s2=(short)__gsharp_add_i32(__gsharp_id_9_s2,1)),1));
 return __gsharp_seq_4>=__gsharp_seq_5;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,2)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_sCmpPostInc?1ll:2ll),100000ll),(unsigned short)__gsharp_id_9_s2);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,2), 1523365226u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_sCmpPostInc?1ll:2ll),100000ll),(unsigned short)__gsharp_id_9_s2);
 short __gsharp_id_11_s3 = (short)__gsharp_id_4_av;
 bool __gsharp_id_12_sCmpPostDec = ([&]() {
 auto __gsharp_seq_6 = ((short)(__gsharp_id_11_s3-__gsharp_id_11_s3));
 auto __gsharp_seq_7 = ((short)__gsharp_add_i32((__gsharp_id_11_s3=(short)__gsharp_sub_i32(__gsharp_id_11_s3,1)),1));
 return __gsharp_seq_6<=__gsharp_seq_7;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,3)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_sCmpPostDec?1ll:2ll),100000ll),(unsigned short)__gsharp_id_11_s3);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,3), 754273922u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_sCmpPostDec?1ll:2ll),100000ll),(unsigned short)__gsharp_id_11_s3);
 short __gsharp_id_13_s4 = (short)__gsharp_id_4_av;
 long long __gsharp_id_14_sExprPreInc = ([&]() {
 auto __gsharp_seq_8 = ((short)(__gsharp_id_13_s4-__gsharp_id_13_s4));
 auto __gsharp_seq_9 = ((__gsharp_id_13_s4=(short)__gsharp_add_i32(__gsharp_id_13_s4,1)));
 return __gsharp_seq_8+__gsharp_seq_9;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,4)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_sExprPreInc,100000ll),(unsigned short)__gsharp_id_13_s4);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,4), 1102637946u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_sExprPreInc,100000ll),(unsigned short)__gsharp_id_13_s4);
 short __gsharp_id_15_s5 = (short)__gsharp_id_4_av;
 long long __gsharp_id_16_sExprPreDec = ([&]() {
 auto __gsharp_seq_10 = ((short)(__gsharp_id_15_s5-__gsharp_id_15_s5));
 auto __gsharp_seq_11 = ((__gsharp_id_15_s5=(short)__gsharp_sub_i32(__gsharp_id_15_s5,1)));
 return __gsharp_seq_10+__gsharp_seq_11;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_sExprPreDec,100000ll),(unsigned short)__gsharp_id_15_s5);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,5), 709589522u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_sExprPreDec,100000ll),(unsigned short)__gsharp_id_15_s5);
 short __gsharp_id_17_s6 = (short)__gsharp_id_4_av;
 long long __gsharp_id_18_sExprPostInc = ([&]() {
 auto __gsharp_seq_12 = ((short)(__gsharp_id_17_s6-__gsharp_id_17_s6));
 auto __gsharp_seq_13 = ((short)__gsharp_sub_i32((__gsharp_id_17_s6=(short)__gsharp_add_i32(__gsharp_id_17_s6,1)),1));
 return __gsharp_seq_12+__gsharp_seq_13;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,6)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_sExprPostInc,100000ll),(unsigned short)__gsharp_id_17_s6);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,6), 2139402026u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_sExprPostInc,100000ll),(unsigned short)__gsharp_id_17_s6);
 short __gsharp_id_19_s7 = (short)__gsharp_id_4_av;
 long long __gsharp_id_20_sExprPostDec = ([&]() {
 auto __gsharp_seq_14 = ((short)(__gsharp_id_19_s7-__gsharp_id_19_s7));
 auto __gsharp_seq_15 = ((short)__gsharp_add_i32((__gsharp_id_19_s7=(short)__gsharp_sub_i32(__gsharp_id_19_s7,1)),1));
 return __gsharp_seq_14+__gsharp_seq_15;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,7)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_sExprPostDec,100000ll),(unsigned short)__gsharp_id_19_s7);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,7), 272490970u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_sExprPostDec,100000ll),(unsigned short)__gsharp_id_19_s7);
 short __gsharp_id_21_s8 = (short)__gsharp_id_4_av;
 __gsharp_id_21_s8=(short)__gsharp_add_i32(__gsharp_id_21_s8,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,8)]=__gsharp_id_21_s8;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,8), 1053617258u)=__gsharp_id_21_s8;
 short __gsharp_id_22_s9 = (short)__gsharp_id_4_av;
 __gsharp_id_22_s9=(short)__gsharp_sub_i32(__gsharp_id_22_s9,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,9)]=__gsharp_id_22_s9;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,9), 2112981362u)=__gsharp_id_22_s9;
 short __gsharp_id_23_s10 = (short)__gsharp_id_4_av;
 __gsharp_id_23_s10=(short)__gsharp_add_i32(__gsharp_id_23_s10,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,10)]=__gsharp_id_23_s10;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,10), 372210394u)=__gsharp_id_23_s10;
 short __gsharp_id_24_s11 = (short)__gsharp_id_4_av;
 __gsharp_id_24_s11=(short)__gsharp_sub_i32(__gsharp_id_24_s11,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_s11;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,11), 123214930u)=__gsharp_id_24_s11;
 __gsharp_state=-1;
 return;
 }
@@ -1079,18 +1136,6 @@ private unsafe delegate void __gsharp_delegate_Int16StepKernel(uint gridDimX, ui
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInt16StepKernel(global::System.Int32[] a, global::System.Int64[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (a is null){
-throw new global::System.ArgumentNullException("a");
-}
-if (a.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "a");
-}
-if (r is null){
-throw new global::System.ArgumentNullException("r");
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "r");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NarrowStepDifferentialKernels.Int16StepKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1214,10 +1259,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_Int16StepKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_Int16StepKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__Int16StepKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = a)
-fixed (global::System.Int64* __gsharp_p_1 = r)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = r.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
+fixed (global::System.Int64* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(r))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (r?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -1239,80 +1288,80 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_2_t>=__gsharp_id_0_a.length)
+if(__gsharp_id_2_t>=__gsharp_array_ref(__gsharp_id_0_a, 66101747u).length)
 {
 __gsharp_state = -1;return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_t,12);
-int __gsharp_id_4_av = __gsharp_id_0_a[__gsharp_id_2_t];
+int __gsharp_id_4_av = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_t, 753136247u);
 unsigned short __gsharp_id_5_us0 = (unsigned short)__gsharp_id_4_av;
 bool __gsharp_id_6_usCmpPreInc = ([&]() {
 auto __gsharp_seq_0 = ((unsigned short)(__gsharp_id_5_us0-__gsharp_id_5_us0));
 auto __gsharp_seq_1 = ((__gsharp_id_5_us0=(unsigned short)__gsharp_add_i32(__gsharp_id_5_us0,1)));
 return __gsharp_seq_0>=__gsharp_seq_1;
 }());
-__gsharp_id_1_r[__gsharp_id_3_o]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_usCmpPreInc?1ll:2ll),100000ll),__gsharp_id_5_us0);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o, 99395982u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_usCmpPreInc?1ll:2ll),100000ll),__gsharp_id_5_us0);
 unsigned short __gsharp_id_7_us1 = (unsigned short)__gsharp_id_4_av;
 bool __gsharp_id_8_usCmpPreDec = ([&]() {
 auto __gsharp_seq_2 = ((unsigned short)(__gsharp_id_7_us1-__gsharp_id_7_us1));
 auto __gsharp_seq_3 = ((__gsharp_id_7_us1=(unsigned short)__gsharp_sub_i32(__gsharp_id_7_us1,1)));
 return __gsharp_seq_2<=__gsharp_seq_3;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_usCmpPreDec?1ll:2ll),100000ll),__gsharp_id_7_us1);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 2013179814u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_usCmpPreDec?1ll:2ll),100000ll),__gsharp_id_7_us1);
 unsigned short __gsharp_id_9_us2 = (unsigned short)__gsharp_id_4_av;
 bool __gsharp_id_10_usCmpPostInc = ([&]() {
 auto __gsharp_seq_4 = ((unsigned short)(__gsharp_id_9_us2-__gsharp_id_9_us2));
 auto __gsharp_seq_5 = ((unsigned short)__gsharp_sub_i32((__gsharp_id_9_us2=(unsigned short)__gsharp_add_i32(__gsharp_id_9_us2,1)),1));
 return __gsharp_seq_4>=__gsharp_seq_5;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,2)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_usCmpPostInc?1ll:2ll),100000ll),__gsharp_id_9_us2);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,2), 733004574u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_usCmpPostInc?1ll:2ll),100000ll),__gsharp_id_9_us2);
 unsigned short __gsharp_id_11_us3 = (unsigned short)__gsharp_id_4_av;
 bool __gsharp_id_12_usCmpPostDec = ([&]() {
 auto __gsharp_seq_6 = ((unsigned short)(__gsharp_id_11_us3-__gsharp_id_11_us3));
 auto __gsharp_seq_7 = ((unsigned short)__gsharp_add_i32((__gsharp_id_11_us3=(unsigned short)__gsharp_sub_i32(__gsharp_id_11_us3,1)),1));
 return __gsharp_seq_6<=__gsharp_seq_7;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,3)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_usCmpPostDec?1ll:2ll),100000ll),__gsharp_id_11_us3);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,3), 165859142u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_usCmpPostDec?1ll:2ll),100000ll),__gsharp_id_11_us3);
 unsigned short __gsharp_id_13_us4 = (unsigned short)__gsharp_id_4_av;
 long long __gsharp_id_14_usExprPreInc = ([&]() {
 auto __gsharp_seq_8 = ((unsigned short)(__gsharp_id_13_us4-__gsharp_id_13_us4));
 auto __gsharp_seq_9 = ((__gsharp_id_13_us4=(unsigned short)__gsharp_add_i32(__gsharp_id_13_us4,1)));
 return __gsharp_seq_8+__gsharp_seq_9;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,4)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_usExprPreInc,100000ll),__gsharp_id_13_us4);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,4), 1846250006u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_usExprPreInc,100000ll),__gsharp_id_13_us4);
 unsigned short __gsharp_id_15_us5 = (unsigned short)__gsharp_id_4_av;
 long long __gsharp_id_16_usExprPreDec = ([&]() {
 auto __gsharp_seq_10 = ((unsigned short)(__gsharp_id_15_us5-__gsharp_id_15_us5));
 auto __gsharp_seq_11 = ((__gsharp_id_15_us5=(unsigned short)__gsharp_sub_i32(__gsharp_id_15_us5,1)));
 return __gsharp_seq_10+__gsharp_seq_11;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_usExprPreDec,100000ll),__gsharp_id_15_us5);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,5), 110992442u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_usExprPreDec,100000ll),__gsharp_id_15_us5);
 unsigned short __gsharp_id_17_us6 = (unsigned short)__gsharp_id_4_av;
 long long __gsharp_id_18_usExprPostInc = ([&]() {
 auto __gsharp_seq_12 = ((unsigned short)(__gsharp_id_17_us6-__gsharp_id_17_us6));
 auto __gsharp_seq_13 = ((unsigned short)__gsharp_sub_i32((__gsharp_id_17_us6=(unsigned short)__gsharp_add_i32(__gsharp_id_17_us6,1)),1));
 return __gsharp_seq_12+__gsharp_seq_13;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,6)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_usExprPostInc,100000ll),__gsharp_id_17_us6);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,6), 243468362u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_usExprPostInc,100000ll),__gsharp_id_17_us6);
 unsigned short __gsharp_id_19_us7 = (unsigned short)__gsharp_id_4_av;
 long long __gsharp_id_20_usExprPostDec = ([&]() {
 auto __gsharp_seq_14 = ((unsigned short)(__gsharp_id_19_us7-__gsharp_id_19_us7));
 auto __gsharp_seq_15 = ((unsigned short)__gsharp_add_i32((__gsharp_id_19_us7=(unsigned short)__gsharp_sub_i32(__gsharp_id_19_us7,1)),1));
 return __gsharp_seq_14+__gsharp_seq_15;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,7)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_usExprPostDec,100000ll),__gsharp_id_19_us7);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,7), 527870714u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_usExprPostDec,100000ll),__gsharp_id_19_us7);
 unsigned short __gsharp_id_21_us8 = (unsigned short)__gsharp_id_4_av;
 __gsharp_id_21_us8=(unsigned short)__gsharp_add_i32(__gsharp_id_21_us8,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,8)]=__gsharp_id_21_us8;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,8), 1103276370u)=__gsharp_id_21_us8;
 unsigned short __gsharp_id_22_us9 = (unsigned short)__gsharp_id_4_av;
 __gsharp_id_22_us9=(unsigned short)__gsharp_sub_i32(__gsharp_id_22_us9,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,9)]=__gsharp_id_22_us9;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,9), 2127034290u)=__gsharp_id_22_us9;
 unsigned short __gsharp_id_23_us10 = (unsigned short)__gsharp_id_4_av;
 __gsharp_id_23_us10=(unsigned short)__gsharp_add_i32(__gsharp_id_23_us10,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,10)]=__gsharp_id_23_us10;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,10), 1168310174u)=__gsharp_id_23_us10;
 unsigned short __gsharp_id_24_us11 = (unsigned short)__gsharp_id_4_av;
 __gsharp_id_24_us11=(unsigned short)__gsharp_sub_i32(__gsharp_id_24_us11,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_us11;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,11), 1453469606u)=__gsharp_id_24_us11;
 __gsharp_state=-1;
 return;
 }
@@ -1475,18 +1524,6 @@ private unsafe delegate void __gsharp_delegate_UInt16StepKernel(uint gridDimX, u
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchUInt16StepKernel(global::System.Int32[] a, global::System.Int64[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (a is null){
-throw new global::System.ArgumentNullException("a");
-}
-if (a.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "a");
-}
-if (r is null){
-throw new global::System.ArgumentNullException("r");
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "r");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NarrowStepDifferentialKernels.UInt16StepKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1610,10 +1647,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_UInt16StepKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_UInt16StepKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__UInt16StepKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = a)
-fixed (global::System.Int64* __gsharp_p_1 = r)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = r.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
+fixed (global::System.Int64* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(r))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (r?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -1635,80 +1676,80 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_t = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_2_t>=__gsharp_id_0_a.length)
+if(__gsharp_id_2_t>=__gsharp_array_ref(__gsharp_id_0_a, 1863132579u).length)
 {
 __gsharp_state = -1;return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_t,12);
-int __gsharp_id_4_av = __gsharp_id_0_a[__gsharp_id_2_t];
+int __gsharp_id_4_av = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_2_t, 29294287u);
 char16_t __gsharp_id_5_c0 = (char16_t)__gsharp_id_4_av;
 bool __gsharp_id_6_cCmpPreInc = ([&]() {
 auto __gsharp_seq_0 = ((char16_t)(__gsharp_id_5_c0-__gsharp_id_5_c0));
 auto __gsharp_seq_1 = ((__gsharp_id_5_c0=(char16_t)__gsharp_add_i32(__gsharp_id_5_c0,1)));
 return __gsharp_seq_0>=__gsharp_seq_1;
 }());
-__gsharp_id_1_r[__gsharp_id_3_o]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_cCmpPreInc?1ll:2ll),100000ll),__gsharp_id_5_c0);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o, 193918210u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_6_cCmpPreInc?1ll:2ll),100000ll),__gsharp_id_5_c0);
 char16_t __gsharp_id_7_c1 = (char16_t)__gsharp_id_4_av;
 bool __gsharp_id_8_cCmpPreDec = ([&]() {
 auto __gsharp_seq_2 = ((char16_t)(__gsharp_id_7_c1-__gsharp_id_7_c1));
 auto __gsharp_seq_3 = ((__gsharp_id_7_c1=(char16_t)__gsharp_sub_i32(__gsharp_id_7_c1,1)));
 return __gsharp_seq_2<=__gsharp_seq_3;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,1)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_cCmpPreDec?1ll:2ll),100000ll),__gsharp_id_7_c1);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 1093984866u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_8_cCmpPreDec?1ll:2ll),100000ll),__gsharp_id_7_c1);
 char16_t __gsharp_id_9_c2 = (char16_t)__gsharp_id_4_av;
 bool __gsharp_id_10_cCmpPostInc = ([&]() {
 auto __gsharp_seq_4 = ((char16_t)(__gsharp_id_9_c2-__gsharp_id_9_c2));
 auto __gsharp_seq_5 = ((char16_t)__gsharp_sub_i32((__gsharp_id_9_c2=(char16_t)__gsharp_add_i32(__gsharp_id_9_c2,1)),1));
 return __gsharp_seq_4>=__gsharp_seq_5;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,2)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_cCmpPostInc?1ll:2ll),100000ll),__gsharp_id_9_c2);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,2), 1973955998u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_10_cCmpPostInc?1ll:2ll),100000ll),__gsharp_id_9_c2);
 char16_t __gsharp_id_11_c3 = (char16_t)__gsharp_id_4_av;
 bool __gsharp_id_12_cCmpPostDec = ([&]() {
 auto __gsharp_seq_6 = ((char16_t)(__gsharp_id_11_c3-__gsharp_id_11_c3));
 auto __gsharp_seq_7 = ((char16_t)__gsharp_add_i32((__gsharp_id_11_c3=(char16_t)__gsharp_sub_i32(__gsharp_id_11_c3,1)),1));
 return __gsharp_seq_6<=__gsharp_seq_7;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,3)]=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_cCmpPostDec?1ll:2ll),100000ll),__gsharp_id_11_c3);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,3), 1000910734u)=__gsharp_add_i64(__gsharp_mul_i64((__gsharp_id_12_cCmpPostDec?1ll:2ll),100000ll),__gsharp_id_11_c3);
 char16_t __gsharp_id_13_c4 = (char16_t)__gsharp_id_4_av;
 long long __gsharp_id_14_cExprPreInc = ([&]() {
 auto __gsharp_seq_8 = ((char16_t)(__gsharp_id_13_c4-__gsharp_id_13_c4));
 auto __gsharp_seq_9 = ((__gsharp_id_13_c4=(char16_t)__gsharp_add_i32(__gsharp_id_13_c4,1)));
 return __gsharp_seq_8+__gsharp_seq_9;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,4)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_cExprPreInc,100000ll),__gsharp_id_13_c4);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,4), 828069998u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_14_cExprPreInc,100000ll),__gsharp_id_13_c4);
 char16_t __gsharp_id_15_c5 = (char16_t)__gsharp_id_4_av;
 long long __gsharp_id_16_cExprPreDec = ([&]() {
 auto __gsharp_seq_10 = ((char16_t)(__gsharp_id_15_c5-__gsharp_id_15_c5));
 auto __gsharp_seq_11 = ((__gsharp_id_15_c5=(char16_t)__gsharp_sub_i32(__gsharp_id_15_c5,1)));
 return __gsharp_seq_10+__gsharp_seq_11;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,5)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_cExprPreDec,100000ll),__gsharp_id_15_c5);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,5), 2031148506u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_16_cExprPreDec,100000ll),__gsharp_id_15_c5);
 char16_t __gsharp_id_17_c6 = (char16_t)__gsharp_id_4_av;
 long long __gsharp_id_18_cExprPostInc = ([&]() {
 auto __gsharp_seq_12 = ((char16_t)(__gsharp_id_17_c6-__gsharp_id_17_c6));
 auto __gsharp_seq_13 = ((char16_t)__gsharp_sub_i32((__gsharp_id_17_c6=(char16_t)__gsharp_add_i32(__gsharp_id_17_c6,1)),1));
 return __gsharp_seq_12+__gsharp_seq_13;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,6)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_cExprPostInc,100000ll),__gsharp_id_17_c6);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,6), 323977090u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_18_cExprPostInc,100000ll),__gsharp_id_17_c6);
 char16_t __gsharp_id_19_c7 = (char16_t)__gsharp_id_4_av;
 long long __gsharp_id_20_cExprPostDec = ([&]() {
 auto __gsharp_seq_14 = ((char16_t)(__gsharp_id_19_c7-__gsharp_id_19_c7));
 auto __gsharp_seq_15 = ((char16_t)__gsharp_add_i32((__gsharp_id_19_c7=(char16_t)__gsharp_sub_i32(__gsharp_id_19_c7,1)),1));
 return __gsharp_seq_14+__gsharp_seq_15;
 }());
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,7)]=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_cExprPostDec,100000ll),__gsharp_id_19_c7);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,7), 371047694u)=__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_20_cExprPostDec,100000ll),__gsharp_id_19_c7);
 char16_t __gsharp_id_21_c8 = (char16_t)__gsharp_id_4_av;
 __gsharp_id_21_c8=(char16_t)__gsharp_add_i32(__gsharp_id_21_c8,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,8)]=__gsharp_id_21_c8;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,8), 1902766622u)=__gsharp_id_21_c8;
 char16_t __gsharp_id_22_c9 = (char16_t)__gsharp_id_4_av;
 __gsharp_id_22_c9=(char16_t)__gsharp_sub_i32(__gsharp_id_22_c9,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,9)]=__gsharp_id_22_c9;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,9), 816380686u)=__gsharp_id_22_c9;
 char16_t __gsharp_id_23_c10 = (char16_t)__gsharp_id_4_av;
 __gsharp_id_23_c10=(char16_t)__gsharp_add_i32(__gsharp_id_23_c10,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,10)]=__gsharp_id_23_c10;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,10), 248295082u)=__gsharp_id_23_c10;
 char16_t __gsharp_id_24_c11 = (char16_t)__gsharp_id_4_av;
 __gsharp_id_24_c11=(char16_t)__gsharp_sub_i32(__gsharp_id_24_c11,1);
-__gsharp_id_1_r[__gsharp_add_i32(__gsharp_id_3_o,11)]=__gsharp_id_24_c11;
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,11), 1091098378u)=__gsharp_id_24_c11;
 __gsharp_state=-1;
 return;
 }
@@ -1871,18 +1912,6 @@ private unsafe delegate void __gsharp_delegate_CharStepKernel(uint gridDimX, uin
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchCharStepKernel(global::System.Int32[] a, global::System.Int64[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (a is null){
-throw new global::System.ArgumentNullException("a");
-}
-if (a.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "a");
-}
-if (r is null){
-throw new global::System.ArgumentNullException("r");
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "r");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NarrowStepDifferentialKernels.CharStepKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -2006,10 +2035,14 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_CharStepKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_CharStepKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__NarrowStepDifferentialKernels__CharStepKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_0 = a)
-fixed (global::System.Int64* __gsharp_p_1 = r)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = r.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
+fixed (global::System.Int64* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(r))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (r?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }

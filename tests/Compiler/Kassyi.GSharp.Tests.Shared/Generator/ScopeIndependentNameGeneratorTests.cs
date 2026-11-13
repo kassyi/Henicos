@@ -43,7 +43,8 @@ public class ScopeIndependentNameGeneratorTests
         AssertNoScopeDependentNames(output, driver.GetRunResult().GeneratedTrees);
     }
 
-    // The generated argument checks name the parameter with a string literal, which no user name can shadow
+    // The generated argument checks name the parameter with a string literal, which no user name can shadow: the
+    // pointer launcher (CUDA) checks the proxy of the array; the array launcher passes the array as a C# call does
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("Cpu")]
@@ -53,7 +54,14 @@ public class ScopeIndependentNameGeneratorTests
         var (driver, _, _) = RunKernelGenerator(dialect, isCheckedBuild: false, ShadowingSource);
         var text = GetText(driver.GetRunResult().GeneratedTrees);
 
-        Assert.Contains("throw new global::System.ArgumentNullException(\"nameof\");", text, StringComparison.Ordinal);
+        if (dialect == "Cuda")
+        {
+            Assert.Contains(
+                "throw new global::System.ArgumentOutOfRangeException(\"nameof\", nameof.Length, ",
+                text,
+                StringComparison.Ordinal);
+        }
+
         Assert.DoesNotContain("nameof(", text, StringComparison.Ordinal);
     }
 

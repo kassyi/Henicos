@@ -69,6 +69,9 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1174903371u, "PrivateField
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(70353666u, "PrivateFieldStructKernels.cs", 132, 46, "StepPrivateFieldsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(354348742u, "PrivateFieldStructKernels.cs", 133, 9, "StepPrivateFieldsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(779976392u, "PrivateFieldStructKernels.cs", 133, 25, "StepPrivateFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(992636981u, "PrivateFieldStructKernels.cs", 145, 9, "ReadExplicitSwappedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(94935301u, "PrivateFieldStructKernels.cs", 146, 9, "ReadExplicitSwappedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(810203097u, "PrivateFieldStructKernels.cs", 147, 9, "ReadExplicitSwappedKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(460929897u, "PrivateFieldStructKernels.cs", 159, 9, "StepLibraryInternalFieldsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1531506222u, "PrivateFieldStructKernels.cs", 159, 26, "StepLibraryInternalFieldsKernel", "G#: a null array is read"),
 };
@@ -865,9 +868,9 @@ if((int)threadIdx.x!=0)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_id_1_output[0]=__gsharp_id_0_value.__gsharp_mb_A();
-__gsharp_id_1_output[1]=__gsharp_id_0_value.__gsharp_mb_B();
-__gsharp_id_1_output[2]=__gsharp_id_0_value.__gsharp_mb_C();
+__gsharp_array_at(__gsharp_id_1_output, 0, 992636981u)=__gsharp_id_0_value.__gsharp_mb_A();
+__gsharp_array_at(__gsharp_id_1_output, 1, 94935301u)=__gsharp_id_0_value.__gsharp_mb_B();
+__gsharp_array_at(__gsharp_id_1_output, 2, 810203097u)=__gsharp_id_0_value.__gsharp_mb_C();
 __gsharp_state=-1;
 return;
 }
@@ -996,12 +999,6 @@ private unsafe delegate void __gsharp_delegate_ReadExplicitSwappedKernel(uint gr
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchReadExplicitSwappedKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.PfExplicitSwapped value, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (output is null){
-throw new global::System.ArgumentNullException("output");
-}
-if (output.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "output");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -1130,9 +1127,13 @@ if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.
 __gsharp_layout_checked_ReadExplicitSwappedKernel = true;
 }
 __gsharp_delegate_ReadExplicitSwappedKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ReadExplicitSwappedKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__ReadExplicitSwappedKernel", __gsharp_dll_path);
-fixed (global::System.Int32* __gsharp_p_1 = output)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &value, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = output.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(output))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &value, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (output?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }

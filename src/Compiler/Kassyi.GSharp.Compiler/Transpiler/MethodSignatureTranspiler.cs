@@ -200,13 +200,6 @@ internal static class MethodSignatureTranspiler
             context.Emitter.Writer.Append("const ");
         }
 
-        if (isKernel && typeSymbol.IsNullableArrayLike())
-        {
-            var unwrapped = typeSymbol.UnwrapNullableArrayLike() ?? typeSymbol;
-            context.Emitter.Dialect.AppendParameter(ref context, p, unwrapped, parameterSymbol);
-            return;
-        }
-
         context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol, parameterSymbol);
     }
 
@@ -260,24 +253,13 @@ internal static class MethodSignatureTranspiler
         WriteParameterDeclaration(p, typeSymbol, paramSymbol, ref context);
 
         context.Emitter.Writer.Append(' ');
-        var isKernel = !isDevice && paramSymbol?.ContainingSymbol is IMethodSymbol method &&
-                       method.HasAttribute(KnownAttributes.GpuKernel);
-        if (isKernel && typeSymbol.IsNullableArrayLike())
+        if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
         {
-            context.Emitter.Writer.Append(GSharpInternalNames.Kernel.RawArgumentPrefix);
-            context.Emitter.Writer.AppendCppName(
-                CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
+            context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.CopiedParameterPrefix);
         }
-        else
-        {
-            if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
-            {
-                context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.CopiedParameterPrefix);
-            }
 
-            context.Emitter.Writer.AppendCppName(
-                CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
-        }
+        context.Emitter.Writer.AppendCppName(
+            CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
     }
 
     private static bool Contains(IReadOnlyCollection<string> names, string name)

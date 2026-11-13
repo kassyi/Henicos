@@ -24,13 +24,32 @@ public static partial class PointerLaunchDifferentialKernels
         }
     }
 
-    // A null optional array, an empty one and a filled one: the launchers pass the first two as null
+    // A null optional array, an empty one and a filled one, each passed as C# passes it
     [GpuKernel]
     public static void OptionalLengthKernel(int[]? optional, [Out] int[] result)
     {
         if ((BlockIndex.X * BlockDimension.X) + ThreadIndex.X == 0)
         {
             result[0] = optional is null ? -1 : optional.Length;
+        }
+    }
+
+    // An overloaded kernel gets a typed pointer launcher, whose buffer of a nullable array may be null
+    [GpuKernel]
+    public static void OverloadedOptionalKernel(int[]? optional, [Out] int[] result)
+    {
+        if ((BlockIndex.X * BlockDimension.X) + ThreadIndex.X == 0)
+        {
+            result[0] = optional is null ? -1 : optional.Length;
+        }
+    }
+
+    [GpuKernel]
+    public static void OverloadedOptionalKernel(float[]? optional, [Out] int[] result)
+    {
+        if ((BlockIndex.X * BlockDimension.X) + ThreadIndex.X == 0)
+        {
+            result[0] = optional is null ? -2 : optional.Length;
         }
     }
 }

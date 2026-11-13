@@ -43,10 +43,8 @@ public static partial class SharedArrayArgumentKernels
     {
         if (ThreadIndex.X == 0)
         {
-#pragma warning disable CS8602 // The device reads a null optional array argument as one of length 0
-            lengths[0] = a.Length;
-            lengths[1] = b.Length;
-#pragma warning restore CS8602
+            lengths[0] = a is null ? -2 : a.Length;
+            lengths[1] = b is null ? -2 : b.Length;
         }
     }
 

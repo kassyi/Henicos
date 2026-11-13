@@ -15,8 +15,8 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_tid = (int)threadIdx.x;
-int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
-__gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
+int __gsharp_id_3_val = __gsharp_array_at(__gsharp_id_0_input, __gsharp_id_2_tid, "G#: a null array is read at ControlFlowKernels.cu.cs(36,19)");
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_2_tid, "G#: a null array is read at ControlFlowKernels.cu.cs(37,9)")=([&]() {
 switch(__gsharp_id_3_val)
 {
 case 1: return 10;
