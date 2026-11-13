@@ -1517,27 +1517,54 @@ void** __gsharp_kernel_params = stackalloc void*[3];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref x), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter);
 __gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Single);
-__gsharp_alias_ranges[5] = sizeof(global::System.Single);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), new byte[] {7, 11}, "x,o");
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Single);
+__gsharp_alias_ranges[8] = sizeof(global::System.Single);
+__gsharp_alias_ranges[9] = sizeof(global::System.Single);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "x,o");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesIn)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproInlineOuter(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], null, hStream);
+}
+global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.CopyToDevice(__gsharp_aliases, __gsharp_alias_group, hStream);
+}
+}
 }
 }
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter __gsharp_native_0 = default;
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproInlineOuter(ref x, ref __gsharp_native_0, null, hStream);
 // Marshal ref/out struct: x
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter);
+if (__gsharp_aliases?.IsMember(0) == true)
+{
+__gsharp_d_0 = __gsharp_aliases.GetDevicePointer(0);
+}
+else
+{
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 // Fast zero-allocation copy to device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)(&__gsharp_native_0), (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
 __gsharp_kernel_params[0] = &__gsharp_d_0;
 // Marshal array: o
 int __gsharp_size_1 = checked((o?.Length ?? 0) * sizeof(global::System.Single));
@@ -1577,20 +1604,43 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref x), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter);
 __gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Single);
-__gsharp_alias_ranges[5] = sizeof(global::System.Single);
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Single);
+__gsharp_alias_ranges[8] = sizeof(global::System.Single);
+__gsharp_alias_ranges[9] = sizeof(global::System.Single);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproInlineOuter>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesBack)
+{
+global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.CopyToHost(__gsharp_aliases, __gsharp_alias_group, hStream);
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproInlineOuter(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], hStream);
 }
 }
+}
+}
+}
+if (!(__gsharp_aliases?.IsMember(0) == true))
+{
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproInlineOuter(ref x, ref __gsharp_native_0, hStream);
+}
 // Copy back array: o
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(1) == true))
 {
@@ -1605,7 +1655,7 @@ global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp
 finally
 {
 global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
-if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_0 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(0) == true)) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 if (__gsharp_d_1 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(1) == true)) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
 __gsharp_aliases?.FreeDevice(hStream);
 }
@@ -1868,28 +1918,55 @@ void** __gsharp_kernel_params = stackalloc void*[3];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref b), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
 __gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), new byte[] {7, 11}, "b,o");
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "b,o");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
 if (__gsharp_aliases.IsMember(1)) __gsharp_device_arrays.AddShared(o, __gsharp_aliases.GetDevicePointer(1));
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesIn)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], __gsharp_device_arrays, hStream);
+}
+global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.CopyToDevice(__gsharp_aliases, __gsharp_alias_group, hStream);
+}
+}
 }
 }
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag __gsharp_native_0 = default;
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal ref/out struct: b
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag);
+if (__gsharp_aliases?.IsMember(0) == true)
+{
+__gsharp_d_0 = __gsharp_aliases.GetDevicePointer(0);
+}
+else
+{
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 // Fast zero-allocation copy to device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)(&__gsharp_native_0), (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
 __gsharp_kernel_params[0] = &__gsharp_d_0;
 // Marshal array: o
 int __gsharp_size_1 = checked((o?.Length ?? 0) * sizeof(global::System.Int32));
@@ -1933,20 +2010,43 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref b), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
 __gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesBack)
+{
+global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.CopyToHost(__gsharp_aliases, __gsharp_alias_group, hStream);
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], hStream);
 }
 }
+}
+}
+}
+if (!(__gsharp_aliases?.IsMember(0) == true))
+{
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, hStream);
+}
 // Copy back array: o
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(1) == true) && __gsharp_device_arrays.TryClaimCopyBack(o))
 {
@@ -1961,7 +2061,7 @@ global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp
 finally
 {
 global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
-if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_0 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(0) == true)) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 __gsharp_device_arrays.Free(hStream);
 __gsharp_aliases?.FreeDevice(hStream);
 }
@@ -5138,28 +5238,55 @@ void** __gsharp_kernel_params = stackalloc void*[3];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref x), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
 __gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), new byte[] {7, 11}, "x,o");
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "x,o");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
 if (__gsharp_aliases.IsMember(1)) __gsharp_device_arrays.AddShared(o, __gsharp_aliases.GetDevicePointer(1));
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesIn)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproArrOuter(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], __gsharp_device_arrays, hStream);
+}
+global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.CopyToDevice(__gsharp_aliases, __gsharp_alias_group, hStream);
+}
+}
 }
 }
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter __gsharp_native_0 = default;
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproArrOuter(ref x, ref __gsharp_native_0, __gsharp_device_arrays, hStream);
 // Marshal ref/out struct: x
 int __gsharp_size_0 = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter);
+if (__gsharp_aliases?.IsMember(0) == true)
+{
+__gsharp_d_0 = __gsharp_aliases.GetDevicePointer(0);
+}
+else
+{
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 // Fast zero-allocation copy to device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)(&__gsharp_native_0), (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
 __gsharp_kernel_params[0] = &__gsharp_d_0;
 // Marshal array: o
 int __gsharp_size_1 = checked((o?.Length ?? 0) * sizeof(global::System.Int32));
@@ -5203,20 +5330,43 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref x), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
 __gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesBack)
+{
+global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.CopyToHost(__gsharp_aliases, __gsharp_alias_group, hStream);
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproArrOuter(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], hStream);
 }
 }
+}
+}
+}
+if (!(__gsharp_aliases?.IsMember(0) == true))
+{
 // Fast zero-allocation copy from device
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_0), __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproArrOuter(ref x, ref __gsharp_native_0, hStream);
+}
 // Copy back array: o
 if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(1) == true) && __gsharp_device_arrays.TryClaimCopyBack(o))
 {
@@ -5231,7 +5381,7 @@ global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp
 finally
 {
 global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
-if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_0 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(0) == true)) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
 __gsharp_device_arrays.Free(hStream);
 __gsharp_aliases?.FreeDevice(hStream);
 }

@@ -583,7 +583,13 @@ internal static class KernelLaunchEmitter
         WriteSizeTest(writer, plan, paramIndex);
         using (writer.Scope())
         {
-            WriteRegion(writer, plan, paramIndex, rentOnReuse: plan.CopiesBack(paramIndex));
+            // A member of a group of converted elements takes its address in the group's region, which the launcher
+            // filled with the converted group (AliasGroupEmitter); it rents no shadow, so it copies nothing back
+            using (WriteGroupMemberBranch(writer, plan, paramIndex))
+            {
+                WriteRegion(writer, plan, paramIndex, rentOnReuse: plan.CopiesBack(paramIndex));
+            }
+
             writer.AppendLine($"{proxy}[0] = {device};");
         }
 

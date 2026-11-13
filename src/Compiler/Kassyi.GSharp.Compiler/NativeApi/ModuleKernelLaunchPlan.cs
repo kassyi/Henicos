@@ -53,14 +53,16 @@ internal readonly record struct ModuleKernelArgument(
     {
         var name = Name.ToCSharpIdentifier();
         var pinned = KernelHostNames.GetLocal(LauncherLocal.AliasPinned, Ordinal);
+        // [WHY] A module launcher knows its types by name only, so the runtime derives the alignment from the size
+        var element = AliasElement.Raw(TypeName, alignment: 0);
         if (!IsArray)
         {
-            return AliasRange.ForReference(pinned, $"{HostTypeNames.Unsafe}.AsRef(in {name})", TypeName, AliasTraits,
+            return AliasRange.ForReference(pinned, $"{HostTypeNames.Unsafe}.AsRef(in {name})", element, AliasTraits,
                 Name);
         }
 
         var count = AllowsNull ? $"({name}?.Length ?? 0)" : $"{name}.Length";
-        return AliasRange.ForArray(pinned, name, count, TypeName, AliasTraits, Name);
+        return AliasRange.ForArray(pinned, name, count, element, AliasTraits, Name);
     }
 }
 

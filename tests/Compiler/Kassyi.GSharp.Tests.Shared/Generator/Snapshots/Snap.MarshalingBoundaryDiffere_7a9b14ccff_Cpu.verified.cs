@@ -3653,23 +3653,38 @@ return __gsharp_auto_result;
 global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
 fixed (byte* __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref refVal), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref outVal), __gsharp_alias_pin_4 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(arr), __gsharp_alias_pin_5 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref nested), __gsharp_alias_pin_6 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(probe))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[15];
+nint* __gsharp_alias_ranges = stackalloc nint[30];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_2;
 __gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
 __gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_3;
-__gsharp_alias_ranges[4] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
-__gsharp_alias_ranges[5] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_4;
-__gsharp_alias_ranges[7] = (nint)(arr?.Length ?? 0) * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_3;
+__gsharp_alias_ranges[7] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
 __gsharp_alias_ranges[8] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
-__gsharp_alias_ranges[9] = (nint)__gsharp_alias_pin_5;
-__gsharp_alias_ranges[10] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested);
-__gsharp_alias_ranges[11] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested);
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_6;
-__gsharp_alias_ranges[13] = (nint)(probe?.Length ?? 0) * sizeof(global::System.Int64);
-__gsharp_alias_ranges[14] = sizeof(global::System.Int64);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 15), new byte[] {7, 7, 15, 7, 11}, "refVal,outVal,arr,nested,probe");
+__gsharp_alias_ranges[9] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed);
+__gsharp_alias_ranges[10] = 8;
+__gsharp_alias_ranges[11] = 1;
+__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_4;
+__gsharp_alias_ranges[13] = (nint)(arr?.Length ?? 0) * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[14] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[15] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed);
+__gsharp_alias_ranges[16] = 8;
+__gsharp_alias_ranges[17] = 1;
+__gsharp_alias_ranges[18] = (nint)__gsharp_alias_pin_5;
+__gsharp_alias_ranges[19] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested);
+__gsharp_alias_ranges[20] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested);
+__gsharp_alias_ranges[21] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoNested);
+__gsharp_alias_ranges[22] = 8;
+__gsharp_alias_ranges[23] = 2;
+__gsharp_alias_ranges[24] = (nint)__gsharp_alias_pin_6;
+__gsharp_alias_ranges[25] = (nint)(probe?.Length ?? 0) * sizeof(global::System.Int64);
+__gsharp_alias_ranges[26] = sizeof(global::System.Int64);
+__gsharp_alias_ranges[27] = sizeof(global::System.Int64);
+__gsharp_alias_ranges[28] = 8;
+__gsharp_alias_ranges[29] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 30), new byte[] {3, 3, 11, 3, 11}, "refVal,outVal,arr,nested,probe");
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -3805,8 +3820,72 @@ global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKe
 global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_5 = new();
 byte[]? __gsharp_auto_result_shadow = null;
 int __gsharp_auto_result_size = checked(__gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed));
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_alias_handles = new();
 try
 {
+if (__gsharp_aliases != null)
+{
+fixed (byte* __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref refVal), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref outVal), __gsharp_alias_pin_4 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(arr), __gsharp_alias_pin_5 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref nested), __gsharp_alias_pin_6 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(probe))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[30];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_3;
+__gsharp_alias_ranges[7] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[8] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[9] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed);
+__gsharp_alias_ranges[10] = 8;
+__gsharp_alias_ranges[11] = 1;
+__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_4;
+__gsharp_alias_ranges[13] = (nint)(arr?.Length ?? 0) * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[14] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[15] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed);
+__gsharp_alias_ranges[16] = 8;
+__gsharp_alias_ranges[17] = 1;
+__gsharp_alias_ranges[18] = (nint)__gsharp_alias_pin_5;
+__gsharp_alias_ranges[19] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested);
+__gsharp_alias_ranges[20] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested);
+__gsharp_alias_ranges[21] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoNested);
+__gsharp_alias_ranges[22] = 8;
+__gsharp_alias_ranges[23] = 2;
+__gsharp_alias_ranges[24] = (nint)__gsharp_alias_pin_6;
+__gsharp_alias_ranges[25] = (nint)(probe?.Length ?? 0) * sizeof(global::System.Int64);
+__gsharp_alias_ranges[26] = sizeof(global::System.Int64);
+__gsharp_alias_ranges[27] = sizeof(global::System.Int64);
+__gsharp_alias_ranges[28] = 8;
+__gsharp_alias_ranges[29] = 0;
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 30));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesIn)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], __gsharp_alias_handles, hStream);
+}
+}
+}
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 2) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 30));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoNested> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoNested>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesIn)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoNested(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], __gsharp_alias_handles, hStream);
+}
+}
+}
+}
+}
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref val, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref inVal, ref __gsharp_native_1, __gsharp_allocated_ptrs_1, hStream);
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref refVal, ref __gsharp_native_2, __gsharp_allocated_ptrs_2, hStream);
@@ -3826,18 +3905,93 @@ fixed (byte* __gsharp_p_4 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.
 fixed (global::System.Int64* __gsharp_p_6 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(probe))
 fixed (global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed* p___gsharp_auto_result = __gsharp_auto_result_native)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &__gsharp_native_0, &__gsharp_native_1, &__gsharp_native_2, &__gsharp_native_3, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(arr) ? global::System.IntPtr.Zero : (global::System.IntPtr)__gsharp_p_4, Length = (arr?.Length ?? 0) }, &__gsharp_native_5, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_6, Length = (probe?.Length ?? 0) }, p___gsharp_auto_result);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &__gsharp_native_0, &__gsharp_native_1, __gsharp_aliases?.IsMember(0) == true ? (global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed*)global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBufferPointer(__gsharp_aliases, 0) : &__gsharp_native_2, __gsharp_aliases?.IsMember(1) == true ? (global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed*)global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBufferPointer(__gsharp_aliases, 1) : &__gsharp_native_3, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(arr) ? global::System.IntPtr.Zero : __gsharp_aliases?.IsMember(2) == true ? global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBufferPointer(__gsharp_aliases, 2) : (global::System.IntPtr)__gsharp_p_4, Length = (arr?.Length ?? 0) }, __gsharp_aliases?.IsMember(3) == true ? (global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoNested*)global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBufferPointer(__gsharp_aliases, 3) : &__gsharp_native_5, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_6, Length = (probe?.Length ?? 0) }, p___gsharp_auto_result);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref val, ref __gsharp_native_0, hStream);
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref inVal, ref __gsharp_native_1, hStream);
+if (!(__gsharp_aliases?.IsMember(0) == true))
+{
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref refVal, ref __gsharp_native_2, hStream);
+}
+if (!(__gsharp_aliases?.IsMember(1) == true))
+{
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref outVal, ref __gsharp_native_3, hStream);
+}
+if (!(__gsharp_aliases?.IsMember(2) == true))
+{
 for (int __gsharp_index_4 = 0; __gsharp_index_4 < __gsharp_native_4.Length; __gsharp_index_4++)
 {
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref __gsharp_host_4[__gsharp_index_4], ref __gsharp_native_4[__gsharp_index_4], hStream);
 }
+}
+if (!(__gsharp_aliases?.IsMember(3) == true))
+{
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoNested(ref nested, ref __gsharp_native_5, hStream);
+}
+if (__gsharp_aliases != null)
+{
+fixed (byte* __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref refVal), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref outVal), __gsharp_alias_pin_4 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(arr), __gsharp_alias_pin_5 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref nested), __gsharp_alias_pin_6 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(probe))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[30];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_3;
+__gsharp_alias_ranges[7] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[8] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[9] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed);
+__gsharp_alias_ranges[10] = 8;
+__gsharp_alias_ranges[11] = 1;
+__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_4;
+__gsharp_alias_ranges[13] = (nint)(arr?.Length ?? 0) * sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[14] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed);
+__gsharp_alias_ranges[15] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed);
+__gsharp_alias_ranges[16] = 8;
+__gsharp_alias_ranges[17] = 1;
+__gsharp_alias_ranges[18] = (nint)__gsharp_alias_pin_5;
+__gsharp_alias_ranges[19] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested);
+__gsharp_alias_ranges[20] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested);
+__gsharp_alias_ranges[21] = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoNested);
+__gsharp_alias_ranges[22] = 8;
+__gsharp_alias_ranges[23] = 2;
+__gsharp_alias_ranges[24] = (nint)__gsharp_alias_pin_6;
+__gsharp_alias_ranges[25] = (nint)(probe?.Length ?? 0) * sizeof(global::System.Int64);
+__gsharp_alias_ranges[26] = sizeof(global::System.Int64);
+__gsharp_alias_ranges[27] = sizeof(global::System.Int64);
+__gsharp_alias_ranges[28] = 8;
+__gsharp_alias_ranges[29] = 0;
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 30));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesBack)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], hStream);
+}
+}
+}
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 2) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 30));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoNested> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoNested>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesBack)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoNested(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], hStream);
+}
+}
+}
+}
+}
 for (int __gsharp_auto_result_index = 0; __gsharp_auto_result_index < __gsharp_auto_result_native.Length; __gsharp_auto_result_index++)
 {
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal_DiffAutoMixed(ref __gsharp_auto_result[__gsharp_auto_result_index], ref __gsharp_auto_result_native[__gsharp_auto_result_index], hStream);
@@ -3852,6 +4006,7 @@ foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_3) glo
 foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_4) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 if (__gsharp_shadow_4 != null) global::System.Buffers.ArrayPool<byte>.Shared.Return(__gsharp_shadow_4);
 foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_5) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_alias_handles) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 if (__gsharp_auto_result_shadow != null) global::System.Buffers.ArrayPool<byte>.Shared.Return(__gsharp_auto_result_shadow);
 }
 return __gsharp_auto_result;

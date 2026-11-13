@@ -15,11 +15,12 @@ internal static class AliasRangeEmitter
 
     private const string PinsType = "global::Kassyi.GSharp.Runtime.Interop.HostAliasPins";
     private const string Ranges = GSharpInternalNames.Launcher.AliasRanges;
-    private const int RangeFields = 3;
+    private const int RangeFields = 6;
 
     // fixed (byte* <pin a> = &HostAliasPins.<pin call a>, <pin b> = &HostAliasPins.<pin call b>, ...)
-    // { nint* __gsharp_alias_ranges = stackalloc nint[<3n>];
-    //   __gsharp_alias_ranges[<3k>] = (nint)<pin>; [<3k + 1>] = <byte length>; [<3k + 2>] = sizeof(<T>); ...
+    // { nint* __gsharp_alias_ranges = stackalloc nint[<6n>];
+    //   __gsharp_alias_ranges[<6k>] = (nint)<pin>; [<6k + 1>] = <byte length>; [<6k + 2>] = sizeof(<T>);
+    //   [<6k + 3>] = sizeof(<device T>); [<6k + 4>] = <device alignment>; [<6k + 5>] = <conversion>; ...
     // [WHY] Pinned, every address is read at one time, so two arguments overlap exactly when their ranges do; a group
     // lies in one object, so the offsets stay valid after the arguments are unpinned
     /// <summary>Pins the candidates and fills the range list; returns the <c>fixed</c> statement's scope.</summary>
@@ -41,6 +42,9 @@ internal static class AliasRangeEmitter
             writer.AppendLine($"{Ranges}[{at}] = (nint){ranges[k].Pinned};");
             writer.AppendLine($"{Ranges}[{at + 1}] = {ranges[k].ByteLength};");
             writer.AppendLine($"{Ranges}[{at + 2}] = sizeof({ranges[k].ElementType});");
+            writer.AppendLine($"{Ranges}[{at + 3}] = sizeof({ranges[k].DeviceElementType});");
+            writer.AppendLine($"{Ranges}[{at + 4}] = {ranges[k].Alignment};");
+            writer.AppendLine($"{Ranges}[{at + 5}] = {ranges[k].ConversionKey};");
         }
 
         return scope;

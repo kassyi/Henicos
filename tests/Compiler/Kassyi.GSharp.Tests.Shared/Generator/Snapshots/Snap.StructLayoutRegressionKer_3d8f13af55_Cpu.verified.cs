@@ -2227,14 +2227,20 @@ return;
 global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref b), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
 __gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), new byte[] {7, 11}, "b,o");
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "b,o");
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -2357,19 +2363,88 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dl
 }
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag __gsharp_native_0 = default;
 global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_alias_handles = new();
 try
 {
+if (__gsharp_aliases != null)
+{
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref b), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[12];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
+__gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesIn)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], __gsharp_alias_handles, hStream);
+}
+}
+}
+}
+}
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproBag(ref b, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(o))
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (o?.Length ?? 0) });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, __gsharp_aliases?.IsMember(0) == true ? (global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag*)global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBufferPointer(__gsharp_aliases, 0) : &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (o?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
+if (!(__gsharp_aliases?.IsMember(0) == true))
+{
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref b, ref __gsharp_native_0, hStream);
+}
+if (__gsharp_aliases != null)
+{
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref b), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[12];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
+__gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproBag>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesBack)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproBag(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], hStream);
+}
+}
+}
+}
+}
 }
 finally
 {
 foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_alias_handles) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
 }
 #pragma warning restore CS8500
@@ -8290,14 +8365,20 @@ return;
 global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref x), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
 __gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), new byte[] {7, 11}, "x,o");
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), new byte[] {3, 11}, "x,o");
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
@@ -8420,19 +8501,88 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dl
 }
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter __gsharp_native_0 = default;
 global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_alias_handles = new();
 try
 {
+if (__gsharp_aliases != null)
+{
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref x), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[12];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
+__gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesIn)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproArrOuter(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], __gsharp_alias_handles, hStream);
+}
+}
+}
+}
+}
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Marshal_LayoutReproArrOuter(ref x, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
 fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(o))
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (o?.Length ?? 0) });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, __gsharp_aliases?.IsMember(0) == true ? (global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter*)global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBufferPointer(__gsharp_aliases, 0) : &__gsharp_native_0, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (o?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
+if (!(__gsharp_aliases?.IsMember(0) == true))
+{
 global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproArrOuter(ref x, ref __gsharp_native_0, hStream);
+}
+if (__gsharp_aliases != null)
+{
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref x), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(o))
+{
+nint* __gsharp_alias_ranges = stackalloc nint[12];
+__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
+__gsharp_alias_ranges[2] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter);
+__gsharp_alias_ranges[3] = sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter);
+__gsharp_alias_ranges[4] = 8;
+__gsharp_alias_ranges[5] = 1;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)(o?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+for (int __gsharp_alias_group = 0; __gsharp_alias_group < __gsharp_aliases.GroupCount; __gsharp_alias_group++)
+{
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).ConversionKey != 1) continue;
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter> __gsharp_alias_host = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetHostElements<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter>(__gsharp_aliases, __gsharp_alias_group, new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12));
+global::System.Span<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter> __gsharp_alias_native = global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.GetBuffer<global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.LayoutReproArrOuter>(__gsharp_aliases, __gsharp_alias_group);
+if (__gsharp_aliases.GetGroupLayout(__gsharp_alias_group).CopiesBack)
+{
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < __gsharp_alias_host.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutRegressionKernels.AotContexts.Unmarshal_LayoutReproArrOuter(ref __gsharp_alias_host[__gsharp_alias_index], ref __gsharp_alias_native[__gsharp_alias_index], hStream);
+}
+}
+}
+}
+}
 }
 finally
 {
 foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_alias_handles) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
 }
 #pragma warning restore CS8500

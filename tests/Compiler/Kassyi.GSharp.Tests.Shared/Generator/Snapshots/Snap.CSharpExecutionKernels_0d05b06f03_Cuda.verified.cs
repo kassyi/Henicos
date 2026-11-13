@@ -877,17 +877,23 @@ void** __gsharp_kernel_params = stackalloc void*[3];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref total), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref last))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), new byte[] {3, 2}, "total,last");
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), new byte[] {3, 2}, "total,last");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
 }
 }
 // Marshal ref/out scalar: total
@@ -932,14 +938,20 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref total), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref last))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
 }
 }
 if (!(__gsharp_aliases?.IsMember(0) == true))
@@ -1054,17 +1066,23 @@ void** __gsharp_kernel_params = stackalloc void*[3];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(data), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(source))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = (nint)data.Length * sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)source.Length * sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), new byte[] {3, 1}, "data,source");
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)source.Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), new byte[] {3, 1}, "data,source");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
 }
 }
 // Marshal array: data
@@ -1129,14 +1147,20 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(data), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(source))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[6];
+nint* __gsharp_alias_ranges = stackalloc nint[12];
 __gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = (nint)data.Length * sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
-__gsharp_alias_ranges[3] = (nint)__gsharp_alias_pin_1;
-__gsharp_alias_ranges[4] = (nint)source.Length * sizeof(global::System.Int32);
-__gsharp_alias_ranges[5] = sizeof(global::System.Int32);
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 6), hStream);
+__gsharp_alias_ranges[3] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = (nint)source.Length * sizeof(global::System.Int32);
+__gsharp_alias_ranges[8] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[9] = sizeof(global::System.Int32);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
 }
 }
 // Copy back array: data

@@ -210,6 +210,13 @@ Launcher:
     AliasPinPrefix: __gsharp_alias_pin_
     AliasCopyPrefix: __gsharp_alias_copy_
     AliasStartPrefix: __gsharp_alias_start_
+    # A group of converted elements (HostAliasStaging): the loop over the groups, the host elements and their device
+    # layout of one group, the loop over its elements, and the handles that the CPU Marshal_ calls pin
+    AliasGroup: __gsharp_alias_group
+    AliasHost: __gsharp_alias_host
+    AliasNative: __gsharp_alias_native
+    AliasIndex: __gsharp_alias_index
+    AliasHandles: __gsharp_alias_handles
     # The CPU launcher's HostArrayCopies: one copy per host array that the kernel gets instead of the caller's (#985)
     ArrayCopies: __gsharp_array_copies
     GridDimX: __gsharp_grid_dim_x

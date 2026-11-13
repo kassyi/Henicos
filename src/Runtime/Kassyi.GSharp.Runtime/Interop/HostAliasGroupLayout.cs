@@ -13,10 +13,15 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// <param name="Alignment">The widest element alignment among the members.</param>
 /// <param name="CopiesIn">Whether the group is copied in (any member is).</param>
 /// <param name="CopiesBack">Whether the group is copied back (any member is).</param>
+/// <param name="ConversionKey">
+/// 0 when the device reads the bytes of the group as they are, otherwise the launcher's number of the converted element
+/// type of every member, which the launcher converts through <see cref="HostAliasStaging"/>.
+/// </param>
 [EditorBrowsable(EditorBrowsableState.Never)]
 public readonly record struct HostAliasGroupLayout(
     nint Length,
     nint Shift,
     int Alignment,
     bool CopiesIn,
-    bool CopiesBack);
+    bool CopiesBack,
+    int ConversionKey);

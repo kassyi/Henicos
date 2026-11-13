@@ -152,10 +152,11 @@ internal static class CpuHostLaunchEmitter
         }
 
         hasConverted |= AutoResultEmitter.TryWriteCpuConvertedDeclaration(writer, kernel);
+        AliasGroupEmitter.WriteCpuHandlesDeclaration(writer, sharing.Aliases);
 
         if (!hasConverted)
         {
-            WriteFixedBlocksAndInvoke(writer, kernel);
+            WriteFixedBlocksAndInvoke(writer, kernel, sharing);
             AutoResultEmitter.WriteReturn(writer, kernel);
             return;
         }
@@ -163,6 +164,8 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine("try");
         using (writer.Scope())
         {
+            AliasGroupEmitter.WriteCpuConversions(writer, sharing.Aliases, toDevice: true);
+
             // [WHY] The same order as the CUDA launcher: an [Out] array that shares a shadow comes after the holders
             // that convert their elements into it (#721)
             for (var i = 0; i < parameters.Length; i++)
@@ -182,12 +185,13 @@ internal static class CpuHostLaunchEmitter
             }
 
             AutoResultEmitter.WriteCpuConvertedMarshal(writer, kernel);
-            WriteFixedBlocksAndInvoke(writer, kernel);
-            foreach (var shape in kernel.Parameters)
+            WriteFixedBlocksAndInvoke(writer, kernel, sharing);
+            for (var i = 0; i < parameters.Length; i++)
             {
-                WriteConvertedUnmarshal(writer, shape);
+                WriteConvertedUnmarshal(writer, sharing, i);
             }
 
+            AliasGroupEmitter.WriteCpuConversions(writer, sharing.Aliases, toDevice: false);
             AutoResultEmitter.WriteCpuConvertedUnmarshal(writer, kernel);
         }
 
@@ -198,6 +202,8 @@ internal static class CpuHostLaunchEmitter
             {
                 WriteConvertedRelease(writer, sharing, i);
             }
+
+            AliasGroupEmitter.WriteCpuHandlesRelease(writer, sharing.Aliases);
 
             AutoResultEmitter.WriteCpuConvertedRelease(writer, kernel);
         }
@@ -312,8 +318,15 @@ internal static class CpuHostLaunchEmitter
     // The array goes through the spans that the marshaling declared in the same try block.
     // [WHY] A struct by value is unmarshaled as well: its own fields go back only to Launch's copy, but an array field
     // whose elements are converted shares the caller's array, whose elements must get the kernel's writes
-    private static void WriteConvertedUnmarshal(SourceWriter writer, in KernelParameterShape shape)
+    // A member of a group of converted elements is unmarshaled with its group (AliasGroupEmitter.WriteCpuConversions)
+    private static void WriteConvertedUnmarshal(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
+        var shape = sharing.Parameters[index];
+        var member = AliasGroupEmitter.CpuBufferPointer(sharing.Aliases, index);
+        var unmarshals = shape.IsCpuConvertedStruct ||
+            shape is { IsCpuConvertedArray: true, IsCopiedOut: true, IsReadOnlyContainer: false };
+        writer.AppendLineIf(member is not null && unmarshals, $"if (!({member?.Member}))");
+        using var notMember = member is not null && unmarshals ? writer.Scope() : default;
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal }:
@@ -359,7 +372,8 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine($"{HostTypeNames.GCHandle}.FromIntPtr({PinnedHandle}).Free();");
     }
 
-    private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan sharing)
     {
         var hasFixed = false;
 
@@ -392,13 +406,13 @@ internal static class CpuHostLaunchEmitter
         {
             using (writer.Scope())
             {
-                WriteNullableProxies(writer, kernel);
-                WriteDelegateInvocation(writer, kernel);
+                WriteNullableProxies(writer, kernel, sharing);
+                WriteDelegateInvocation(writer, kernel, sharing);
             }
         }
         else
         {
-            WriteDelegateInvocation(writer, kernel);
+            WriteDelegateInvocation(writer, kernel, sharing);
         }
     }
 
@@ -406,10 +420,12 @@ internal static class CpuHostLaunchEmitter
     // like)
     // [WHY] The native launcher takes System_Nullable<GSharpArray<T>> by address; HasValue is the C# value's own, so a
     // default Memory<T> passes as a null array that has a value
-    private static void WriteNullableProxies(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteNullableProxies(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan sharing)
     {
-        foreach (var shape in kernel.Parameters)
+        for (var i = 0; i < kernel.Parameters.Length; i++)
         {
+            var shape = kernel.Parameters[i];
             if (shape is not { IsArray: true, IsNullableValue: true })
             {
                 continue;
@@ -418,12 +434,13 @@ internal static class CpuHostLaunchEmitter
             var local = KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape);
             writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}> {local} = ");
             writer.Append($"{shape.Identifier}.HasValue ? ");
-            WriteArrayProxy(writer, shape);
+            WriteArrayProxy(writer, shape, AliasGroupEmitter.CpuBufferPointer(sharing.Aliases, i));
             writer.AppendLine(" : null;");
         }
     }
 
-    private static void WriteDelegateInvocation(SourceWriter writer, in KernelHostModel kernel)
+    private static void WriteDelegateInvocation(SourceWriter writer, in KernelHostModel kernel,
+        in ArraySharingPlan sharing)
     {
         writer.Append(FunctionHandle);
         using (writer.Parentheses())
@@ -433,10 +450,11 @@ internal static class CpuHostLaunchEmitter
             writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ");
             writer.Append($"sharedMemBytes, {GridBlockCount}");
 
-            foreach (var shape in kernel.Parameters)
+            for (var i = 0; i < kernel.Parameters.Length; i++)
             {
                 writer.Append(", ");
-                WriteDelegateArgument(writer, shape);
+                var group = AliasGroupEmitter.CpuBufferPointer(sharing.Aliases, i);
+                WriteDelegateArgument(writer, kernel.Parameters[i], group);
             }
 
             if (kernel.ReturnsValue)
@@ -452,7 +470,10 @@ internal static class CpuHostLaunchEmitter
 
     // [WHY] A switch statement, not a switch expression: each form is written straight into the writer, so no argument
     // string is built (transpiler-emission.md section 1)
-    private static void WriteDelegateArgument(SourceWriter writer, in KernelParameterShape shape)
+    // <group> is the member test and buffer address of a converted member of a group of overlapping arguments, which
+    // the native kernel takes instead of the member's own shadow
+    private static void WriteDelegateArgument(SourceWriter writer, in KernelParameterShape shape,
+        (string Member, string Pointer)? group)
     {
         var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         switch (shape)
@@ -461,9 +482,10 @@ internal static class CpuHostLaunchEmitter
                 writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape)}");
                 break;
             case { IsArray: true }:
-                WriteArrayProxy(writer, shape);
+                WriteArrayProxy(writer, shape, group);
                 break;
             case { IsCpuConvertedStruct: true }:
+                writer.AppendIf(group is not null, $"{group?.Member} ? ({shape.AotStructPath}*){group?.Pointer} : ");
                 writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.Native, shape)}");
                 break;
             case { IsByRef: true }:
@@ -484,11 +506,14 @@ internal static class CpuHostLaunchEmitter
     // A converted array:
     // new GSharpArrayProxy { Data = <null test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }
     // [WHY] The shadow of a null array is an empty rented array, whose pinned address is not null
-    private static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape)
+    // A converted member of a group: ... : <member> ? <buffer address> : (IntPtr)__gsharp_p_<ord> ...
+    private static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape,
+        (string Member, string Pointer)? group)
     {
         var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         writer.Append($"new {HostTypeNames.ArrayProxy} {{ Data = ");
         writer.AppendIf(shape.IsCpuConvertedArray, $"{shape.NullTestExpression} ? {HostTypeNames.IntPtr}.Zero : ");
+        writer.AppendIf(group is not null, $"{group?.Member} ? {group?.Pointer} : ");
         writer.Append($"({HostTypeNames.IntPtr}){pinned}, Length = {shape.LengthExpression} }}");
     }
 }

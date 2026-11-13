@@ -5,11 +5,20 @@ internal struct HostAliasGroup
 {
     // The member with the lowest address, whose address is the start of the group
     public int Leader;
+
+    // The bytes of the group on the host, and in its device region (more for a converted group)
     public nint Length;
+    public nint DeviceLength;
     public nint Shift;
     public int Alignment;
     public bool CopiesIn;
     public bool CopiesBack;
+
+    // 0 when the device reads the bytes as they are; otherwise the converted element type of every member, whose host
+    // and device sizes these are
+    public int ConversionKey;
+    public nint HostElementSize;
+    public nint DeviceElementSize;
 
     // Every member is copied in and none is copied back ([In] on the CPU)
     public bool KernelGetsCopy;
@@ -22,4 +31,9 @@ internal struct HostAliasGroup
     // byte at which the copy of the group starts in it
     public bool ViewsOnly;
     public int CopyStart;
+
+    // A converted group: the pinned buffer of its elements in the device layout, which the CPU kernel reads in place
+    // and the CUDA launcher copies to and from the region, and the byte at which the group starts in it
+    public byte[]? Staging;
+    public int StagingStart;
 }

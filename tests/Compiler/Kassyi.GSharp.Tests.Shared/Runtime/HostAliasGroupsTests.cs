@@ -15,15 +15,32 @@ public class HostAliasGroupsTests
     private const byte Whole = HostAliasGroups.WholeArray;
     private const byte InView = HostAliasGroups.CopiesIn | HostAliasGroups.SpanView;
 
-    // (address, byte length, element size) per argument
+    // (address, byte length, element size) per argument, read by the device as it is, alignment from the size
     private static nint[] Ranges(params (nint Address, nint Length, nint Size)[] ranges)
     {
-        var values = new nint[ranges.Length * HostAliasGroups.RangeFields];
+        var full = new (nint, nint, nint, nint, nint, nint)[ranges.Length];
         for (var i = 0; i < ranges.Length; i++)
         {
-            values[i * 3] = ranges[i].Address;
-            values[(i * 3) + 1] = ranges[i].Length;
-            values[(i * 3) + 2] = ranges[i].Size;
+            full[i] = (ranges[i].Address, ranges[i].Length, ranges[i].Size, ranges[i].Size, 0, 0);
+        }
+
+        return FullRanges(full);
+    }
+
+    // (address, byte length, host size, device size, device alignment, conversion) per argument
+    private static nint[] FullRanges(params (nint Address, nint Length, nint Host, nint Device, nint Alignment,
+        nint Conversion)[] ranges)
+    {
+        const int F = HostAliasGroups.RangeFields;
+        var values = new nint[ranges.Length * F];
+        for (var i = 0; i < ranges.Length; i++)
+        {
+            values[i * F] = ranges[i].Address;
+            values[(i * F) + 1] = ranges[i].Length;
+            values[(i * F) + 2] = ranges[i].Host;
+            values[(i * F) + 3] = ranges[i].Device;
+            values[(i * F) + 4] = ranges[i].Alignment;
+            values[(i * F) + 5] = ranges[i].Conversion;
         }
 
         return values;
@@ -94,7 +111,7 @@ public class HostAliasGroupsTests
         Assert.Equal(1, groups.GroupCount);
         Assert.False(groups.IsMember(3));
         Assert.Equal([(nint)16, 8, 0], [groups.GetOffset(0), groups.GetOffset(1), groups.GetOffset(2)]);
-        Assert.Equal(new HostAliasGroupLayout(28, 0, 4, CopiesIn: true, CopiesBack: true), groups.GetGroupLayout(0));
+        Assert.Equal(new HostAliasGroupLayout(28, 0, 4, CopiesIn: true, CopiesBack: true, 0), groups.GetGroupLayout(0));
     }
 
     [Fact]
@@ -165,15 +182,60 @@ public class HostAliasGroupsTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.SadPath)]
-    public void Find_ConvertedMemberInAGroup_ThrowsNamingTheArguments()
+    public void Find_ConvertedAndRawMembersInAGroup_ThrowsNamingTheArguments()
     {
-        var ranges = Ranges((1000, 16, 8), (3000, 4, 4), (1008, 8, 8));
+        var ranges = FullRanges((1000, 24, 12, 16, 8, 1), (3000, 4, 4, 4, 4, 0), (1012, 12, 4, 4, 4, 0));
 
-        var exception = Assert.Throws<NotSupportedException>(() => HostAliasGroups.Find(
-            ranges, [InOut, InOut, InOut | HostAliasGroups.Unsupported], "bags,other,slice"));
+        var exception = Assert.Throws<NotSupportedException>(
+            () => HostAliasGroups.Find(ranges, [InOut, InOut, InOut], "bags,other,slice"));
 
         Assert.Contains("'bags', 'slice'", exception.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("other", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Find_ConvertedSlices_ScaleTheirOffsetsToDeviceElements()
+    {
+        // 12-byte host elements, 16 on the device: elements 0 to 2 and 1 to 3
+        var ranges = FullRanges((1000, 36, 12, 16, 8, 1), (1012, 36, 12, 16, 8, 1));
+
+        var groups = HostAliasGroups.Find(ranges, [InOut, In], "a,b");
+
+        Assert.NotNull(groups);
+        Assert.Equal(new HostAliasGroupLayout(48, 0, 8, true, true, 1), groups.GetGroupLayout(0));
+        Assert.Equal((nint)12, groups.GetOffset(1));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Find_ConvertedSlicesBetweenElementBoundaries_Throws()
+    {
+        var ranges = FullRanges((1000, 36, 12, 16, 8, 1), (1004, 36, 12, 16, 8, 1));
+
+        var exception = Assert.Throws<NotSupportedException>(
+            () => HostAliasGroups.Find(ranges, [InOut, InOut], "a,b"));
+
+        Assert.Contains("element boundaries", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Find_EightByteStructsOfFourByteAlignment_FourBytesApart_FormAGroup()
+    {
+        // A struct of two ints is 8 bytes but aligned to 4 on the device, so 4 bytes apart is addressable
+        var ranges = FullRanges((1000, 8, 8, 8, 4, 0), (1004, 8, 8, 8, 4, 0));
+
+        var groups = HostAliasGroups.Find(ranges, [InOut, InOut], "first,second");
+
+        Assert.NotNull(groups);
+        Assert.Equal(4, groups.GetGroupLayout(0).Alignment);
     }
 
     [Fact]

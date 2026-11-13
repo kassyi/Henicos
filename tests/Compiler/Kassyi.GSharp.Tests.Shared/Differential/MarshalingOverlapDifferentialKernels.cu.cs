@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
@@ -210,6 +211,77 @@ public static partial class MarshalingOverlapDifferentialKernels
             first[2] += 10;
             observed[0] = second[1] + bag.Tag;
             observed[1] = slice[1] + bag.Data[0];
+        }
+    }
+
+    // --- Elements whose host and device layouts differ: the group is converted as a whole ---
+    [GpuKernel]
+    public static void ConvertedSlicesKernel(
+        Span<DiffVec2Padded> a,
+        Span<DiffVec2Padded> b,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[1].A += 10f;
+            observed[0] = b[0].A;
+            b[1].V = new Vector2(b[1].V.X + 1f, 2f);
+            observed[1] = a[2].V.X;
+        }
+    }
+
+    [GpuKernel]
+    public static void InConvertedSlicesKernel(
+        [In] Span<DiffVec2Padded> a,
+        [In] Span<DiffVec2Padded> b,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[1].A = 7f;
+            observed[0] = b[0].A;
+        }
+    }
+
+    [GpuKernel]
+    public static void TwoConvertedRefsKernel(
+        ref DiffVec2Padded first,
+        ref DiffVec2Padded second,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            first.A += 1f;
+            second.A += 10f;
+            observed[0] = first.A;
+        }
+    }
+
+    [GpuKernel]
+    public static void DeepBagSlicesKernel(Span<DiffDeepBag> a, Span<DiffDeepBag> b, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[1].Tag += 5;
+            observed[0] = b[0].Tag;
+            b[0].Data[0] += 100;
+            observed[1] = a[1].Data[0];
+        }
+    }
+
+    // --- Two structs of two ints 4 bytes apart: the device aligns them to 4, so one region holds both ---
+    [GpuKernel]
+    public static void ShiftedPointsKernel(
+        ref DiffOverlapPoint first,
+        ref DiffOverlapPoint second,
+        [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            first.Y += 10;
+            observed[0] = second.X;
+            second.Y += 100;
+            observed[1] = first.Y;
         }
     }
 }

@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 using Xunit;
@@ -345,6 +347,141 @@ public sealed class MarshalingOverlapDifferentialTests
                 blockDimX: s.BlockX);
         },
     };
+
+    private static DiffVec2Padded[] Padded(int length)
+    {
+        var values = new DiffVec2Padded[length];
+        for (var i = 0; i < length; i++)
+        {
+            values[i] = new DiffVec2Padded { A = i + 1, V = new Vector2(10 * (i + 1), 0.5f) };
+        }
+
+        return values;
+    }
+
+    internal static readonly DifferentialCase s_convertedSlices = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.ConvertedSlicesKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Padded(4))
+            .Out<float>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            DiffVec2Padded[] backing = b.Get<DiffVec2Padded>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchConvertedSlicesKernel(
+                backing.AsSpan(0, 3), backing.AsSpan(1, 3), b.Get<float>("observed"), gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_inConvertedSlices = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InConvertedSlicesKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Padded(3), policy: null, comparer: null, readOnly: true)
+            .Out<float>("observed", 1, OutputPolicy.Exact),
+        Reference = static (b, _) => b.Get<float>("observed")[0] = 7f,
+        Launch = static (b, s) =>
+        {
+            DiffVec2Padded[] backing = b.Get<DiffVec2Padded>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchInConvertedSlicesKernel(
+                backing.AsSpan(0, 2), backing.AsSpan(1, 2), b.Get<float>("observed"), gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_twoConvertedRefs = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.TwoConvertedRefsKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("value", Padded(1))
+            .Out<float>("observed", 1, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            DiffVec2Padded[] value = b.Get<DiffVec2Padded>("value");
+            MarshalingOverlapDifferentialKernels.LaunchTwoConvertedRefsKernel(
+                ref value[0], ref value[0], b.Get<float>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_deepBagSlices = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.DeepBagSlicesKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .InDeep(
+                "bags",
+                [
+                    new DiffDeepBag { Data = [1], Tag = 10 },
+                    new DiffDeepBag { Data = [2], Tag = 20 },
+                    new DiffDeepBag { Data = [3], Tag = 30 }
+                ],
+                CloneDeepBag,
+                CompareDeepBag)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            DiffDeepBag[] bags = b.Get<DiffDeepBag>("bags");
+            MarshalingOverlapDifferentialKernels.LaunchDeepBagSlicesKernel(
+                bags.AsSpan(0, 2), bags.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_shiftedPoints = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.ShiftedPointsKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(3), OutputPolicy.Exact)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchShiftedPointsKernel(
+                ref Unsafe.As<int, DiffOverlapPoint>(ref backing[0]),
+                ref Unsafe.As<int, DiffOverlapPoint>(ref backing[1]),
+                b.Get<int>("observed"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ConvertedOverlap_SlicesOfStructsOfAnotherDeviceLayout_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_convertedSlices);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ConvertedOverlap_InSlicesOfStructsOfAnotherDeviceLayout_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inConvertedSlices);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ConvertedOverlap_OneConvertedStructToTwoRefParameters_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_twoConvertedRefs);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ConvertedOverlap_SlicesOfStructsThatHoldArrays_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_deepBagSlices);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void RefOverlap_TwoStructsOfFourByteAlignmentFourBytesApart_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_shiftedPoints);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]

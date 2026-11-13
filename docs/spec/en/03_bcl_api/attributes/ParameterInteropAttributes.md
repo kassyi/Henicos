@@ -40,10 +40,14 @@ public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, in
   bytes overlap form a group, which gets one device region that each member addresses at its offset. The group is one
   holder: it is copied in when any member copies in and copied back when any member copies back, so an `[In]` member
   keeps the kernel's writes from the caller only when every member of its group is `[In]`. Views with different element
-  types share the bytes as on the host. A launch without overlapping arguments allocates and copies as before. Two
-  forms cannot share one region and throw `NotSupportedException` naming the arguments: a member whose elements the
-  launcher converts between the host and the device layout, and members that overlap at offsets no device address can
-  align for all of their element types. The CPU paths pass the caller's memory, and give the `[In]` members of a group
+  types share the bytes as on the host. A group of elements whose host and device layouts differ (a struct that the
+  launcher converts) is converted as a whole, element by element, into one buffer in the device layout, which every
+  member addresses at its element offset; a struct passed to two `ref` parameters is the same. A launch without
+  overlapping arguments allocates and copies as before. Three forms cannot share one region and throw
+  `NotSupportedException` naming the arguments: converted members of different element types, or a converted member
+  beside one whose bytes the device reads as they are (their layouts differ in different ways); converted members that
+  do not start at element boundaries of each other; and members that overlap at offsets no device address can align
+  for all of their element types (the device alignment of each element type counts, not its size). The CPU paths pass the caller's memory, and give the `[In]` members of a group
   of `[In]` arguments one shared copy. When every member of such a group is a `Span<T>` or `ReadOnlySpan<T>`, the copy
   is one buffer of bytes that each member views, so views of different element types work as on the device. A group of
   `[In]` arguments that also holds a `T[]`, `Memory<T>`, `ArraySegment<T>` or `ImmutableArray<T>` needs one typed
