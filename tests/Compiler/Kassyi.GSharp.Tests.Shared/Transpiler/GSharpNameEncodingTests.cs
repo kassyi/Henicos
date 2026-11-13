@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Naming;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -118,7 +119,7 @@ public class GSharpNameEncodingTests
     {
         var contextName = GSharpNameEncoding.GetModuleContextName(moduleName);
 
-        var fieldName = GSharpNameEncoding.ModuleFieldPrefix + GSharpNameEncoding.EscapeName(moduleName);
+        var fieldName = AotModuleNames.GetModuleFieldName(moduleName);
 
         Assert.True(SyntaxFacts.IsValidIdentifier(contextName), contextName);
         Assert.True(GSharpNameEncoding.TryDecode(contextName, out var decodedContext));
