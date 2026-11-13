@@ -61,6 +61,8 @@ export interface JobView {
   after: number | null;
   keepIfFailed: boolean;
   gpuTurn: boolean;
+  /** The memory budget it takes from the pool, in MB (absent from older schedulers). */
+  memoryMb?: number;
 }
 
 /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
@@ -83,6 +85,9 @@ export interface StatusReply {
   policy: string;
   capacity: number;
   used: number;
+  /** The memory pool for test runs and what the running jobs take of it, in MB (absent from older schedulers). */
+  memoryCapacity?: number;
+  memoryUsed?: number;
   running: StatusJob[];
   waiting: StatusJob[];
 }

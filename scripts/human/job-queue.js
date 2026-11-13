@@ -1,13 +1,15 @@
 #!/usr/bin/env node
-'use strict';
+"use strict";
 
 // Queues builds and test runs on this machine, so that agents and worktrees running side by side do not oversubscribe
 // the CPU and memory. This entry checks the Node version and loads the TypeScript modules of job-queue/, which Node
 // runs as they are (type stripping, Node 22.18 / 23.6 and later); `node scripts/human/check-types.js` type-checks them.
 //
-// A scheduler listens on 127.0.0.1 (port 47117, GSHARP_JOB_QUEUE_PORT) and grants slots of a CPU pool (6 by default,
-// GSHARP_JOB_QUEUE_SLOTS). `run` asks for a slot, waits, runs the command itself in the caller's directory
-// (incremental builds keep working), and gives the slot back when the command ends. The scheduler starts on the first
+// A scheduler listens on 127.0.0.1 (port 47117, GSHARP_JOB_QUEUE_PORT) and grants slots of a CPU pool (one per 3
+// cores, at least 2; GSHARP_JOB_QUEUE_SLOTS) and, to test runs, their budget of a memory pool (half the physical
+// memory, GSHARP_JOB_QUEUE_MEMORY_MB; budgets from tests/memory-budgets.yml). `run` asks for a slot, waits, runs
+// the command itself in the caller's directory (incremental builds keep working), and gives the slot back when the
+// command ends. The scheduler starts on the first
 // `run`, in <main checkout>/tmp/job-queue (so that it never holds a worktree open), and exits after 30 minutes
 // without jobs.
 //
@@ -39,10 +41,12 @@
 //     across a restart. For the first seconds after it starts, the scheduler accepts those re-registrations and grants
 //     nothing. Jobs whose client was already gone are restored from jobs-<port>.json.
 //
-// Weight: a test run (dotnet test, just test*, the long test scripts) weighs 2 slots, anything else 1; --weight
-// overrides it. A granted job gets cores / slots * weight MSBuild nodes: `-m:<n>` is added to each `dotnet build`,
-// `test`, `msbuild`, `publish` and `pack` of the command that has no -m of its own, and GSHARP_JOB_QUEUE_MSBUILD_ARGS
-// carries it to other callers. The justfile recipes that build or test queue their command through `run` themselves.
+// Weight: every job takes 1 slot unless --weight says more; a test run (dotnet test, just test*, the long test
+// scripts) also takes the budget of the assemblies it names, or of all of them when it names none, from the memory
+// pool, and waits while that does not fit (a run larger than the pool runs alone). A granted job gets
+// cores / slots * weight MSBuild nodes: `-m:<n>` is added to each `dotnet build`, `test`, `msbuild`, `publish` and
+// `pack` of the command that has no -m of its own, and GSHARP_JOB_QUEUE_MSBUILD_ARGS carries it to other callers.
+// The justfile recipes that build or test queue their command through `run` themselves.
 //
 // GPU: --gpu first waits in the scheduler for its turn at the GPU (one at a time, in the same order as the slots,
 // taking no slots), then takes the GPU lock (scripts/agent/gpu-lock.js), under which the command asks for its CPU
@@ -58,15 +62,15 @@
 // Exit codes (run): the exit code of the command; 2 on a usage error or an unknown --after job; 3 when the wait timed
 // out; 4 when the job was cancelled (also when its predecessor failed); 130 / 143 on SIGINT / SIGTERM.
 
-const [major, minor] = process.versions.node.split('.').map(Number);
+const [major, minor] = process.versions.node.split(".").map(Number);
 const stripsTypes = major > 23 || (major === 23 && minor >= 6) || (major === 22 && minor >= 18);
 if (!stripsTypes || (process.features && process.features.typescript === false)) {
   process.stderr.write(
     `[job-queue] Node ${process.versions.node} cannot run TypeScript files as they are; ` +
-      'install Node 22.18, 23.6 or later (scripts/human/Install-DevTools.ps1 on Windows), ' +
-      'without --no-experimental-strip-types.\n',
+      "install Node 22.18, 23.6 or later (scripts/human/Install-DevTools.ps1 on Windows), " +
+      "without --no-experimental-strip-types.\n",
   );
   process.exit(1);
 }
 
-import('./job-queue/cli.ts').then((cli) => cli.main(process.argv.slice(2)));
+import("./job-queue/cli.ts").then((cli) => cli.main(process.argv.slice(2)));

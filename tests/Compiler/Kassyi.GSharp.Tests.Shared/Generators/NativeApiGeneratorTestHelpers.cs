@@ -109,11 +109,14 @@ internal static class NativeApiGeneratorTestHelpers
                 trackIncrementalGeneratorSteps: true));
     }
 
+    /// <summary>The assembly name of <see cref="CreateCompilation"/>, for a compilation built another way.</summary>
+    internal const string AssemblyName = "NativeApiGeneratorTestAssembly";
+
     // The shared references hold the trusted platform assemblies (Kassyi.GSharp.Runtime with GpuKernelLoader among
     // them) once per process; creating them per test read every image into memory again.
     internal static CSharpCompilation CreateCompilation() =>
         CSharpCompilation.Create(
-            "NativeApiGeneratorTestAssembly",
+            AssemblyName,
             [],
             RoslynTestUtility.BaseReferences,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));

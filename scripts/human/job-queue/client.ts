@@ -39,13 +39,15 @@ import {
   type StatusJob,
   type StatusReply,
 } from "./protocol.ts";
-import { defaultWeight, joinWords, limitMsbuildNodes, resolveShell, runShell, type ShellResult } from "./shell.ts";
+import { joinWords, limitMsbuildNodes, resolveShell, runShell, type ShellResult } from "./shell.ts";
 import { killChild, killProcessTree, prefix, queryWindowsProcesses, resolveStateDirectory } from "./system.ts";
 
 /** Where the scheduler listens, and how a client starts it when none does. */
 export interface Endpoint {
   port: number;
   slots: number;
+  /** The memory pool for test runs, in MB. */
+  memoryMb: number;
   policy: Policy;
 }
 
@@ -90,6 +92,8 @@ function startScheduler(endpoint: Endpoint): void {
     String(endpoint.port),
     "--slots",
     String(endpoint.slots),
+    "--memory-mb",
+    String(endpoint.memoryMb),
     "--policy",
     endpoint.policy,
   ];
@@ -315,7 +319,7 @@ export async function run(options: RunOptions): Promise<void> {
     options.shell = shell; // the --gpu path re-runs this script with the command as one string
   }
   const placement: Placement = {
-    weight: options.weight > 0 ? options.weight : defaultWeight(options.command),
+    weight: options.weight > 0 ? options.weight : 1,
     pin: null,
     before: null,
   };
@@ -674,6 +678,10 @@ async function runQueued(
   await attach();
 }
 
+function gigabytes(mb: number): string {
+  return (mb / 1024).toFixed(1);
+}
+
 function formatJob(job: StatusJob, now: number): string {
   const since = job.grantedAt || job.queuedAt;
   const minutes = Math.round((now - since) / 60000);
@@ -681,6 +689,7 @@ function formatJob(job: StatusJob, now: number): string {
   const flags = [
     job.gpu ? " gpu" : "",
     job.gpuTurn ? " gpu-turn" : "",
+    job.memoryMb ? ` ${gigabytes(job.memoryMb)}GB` : "",
     job.orphan ? " client-lost" : "",
     job.pin != null ? " pinned" : "",
     job.before != null ? ` before #${job.before}` : "",
@@ -749,7 +758,12 @@ export async function status(port: number, id: number, json: boolean): Promise<v
     return;
   }
   const now = reply.now || Date.now();
-  const lines = [`scheduler pid ${reply.pid}: ${reply.used}/${reply.capacity} slots in use, policy ${reply.policy}`];
+  // != null: a scheduler of an older checkout has no memory pool
+  const memory =
+    reply.memoryCapacity != null && reply.memoryUsed != null
+      ? `, ${gigabytes(reply.memoryUsed)}/${gigabytes(reply.memoryCapacity)} GB of test memory in use`
+      : "";
+  const lines = [`scheduler pid ${reply.pid}: ${reply.used}/${reply.capacity} slots${memory}, policy ${reply.policy}`];
   lines.push(`running (${reply.running.length}):`);
   reply.running.forEach((job) => lines.push(formatJob(job, now)));
   lines.push(`waiting (${reply.waiting.length}):`);

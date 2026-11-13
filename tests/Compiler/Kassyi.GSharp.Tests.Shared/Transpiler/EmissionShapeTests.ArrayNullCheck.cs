@@ -92,7 +92,7 @@ public partial class EmissionShapeTests
         var generated = Generate("ArrayNullCheckShapeKernels", "Cuda");
         var start = generated.IndexOf("public static unsafe void LaunchElidedKernel(global::", StringComparison.Ordinal);
         Assert.True(start >= 0, "The array launcher of ElidedKernel is not generated.");
-        var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
+        var launcher = LauncherFrom(generated, start);
 
         foreach (var ordinal in (int[])[0, 1, 2])
         {
@@ -155,7 +155,7 @@ public partial class EmissionShapeTests
         var generated = Generate("ArrayNullCheckShapeKernels", "Cuda");
         var start = generated.IndexOf("public static unsafe void LaunchElidedKernelPtr(", StringComparison.Ordinal);
         Assert.True(start >= 0, "The Ptr launcher of ElidedKernel is not generated.");
-        var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
+        var launcher = LauncherFrom(generated, start);
 
         Assert.Contains(
             "if (values.Data == global::System.IntPtr.Zero && values.Length != 0)",
@@ -189,8 +189,8 @@ public partial class EmissionShapeTests
         Assert.Equal(2, Regex.Matches(kernel, structRef).Count);
 #pragma warning restore RS0030
 
-        var readFirst = generated[generated.LastIndexOf("ReadFirst(GSharpArray", StringComparison.Ordinal)..];
-        readFirst = readFirst[..readFirst.IndexOf('}', StringComparison.Ordinal)];
+        var readFirst = generated.AsSpan(generated.LastIndexOf("ReadFirst(GSharpArray", StringComparison.Ordinal));
+        readFirst = readFirst[..readFirst.IndexOf('}')];
         Assert.DoesNotContain(ArrayAt, readFirst, StringComparison.Ordinal);
     }
 
@@ -204,7 +204,7 @@ public partial class EmissionShapeTests
         var generated = Generate("ArrayNullCheckShapeKernels", "Cuda");
         var start = generated.IndexOf("public static unsafe void " + launcherStart, StringComparison.Ordinal);
         Assert.True(start >= 0, $"The launcher {launcherStart} is not generated.");
-        var launcher = generated[start..generated.IndexOf("#pragma warning restore CS8500", start, StringComparison.Ordinal)];
+        var launcher = LauncherFrom(generated, start);
 
         Assert.DoesNotContain("ArgumentNullException", launcher, StringComparison.Ordinal);
         Assert.DoesNotContain("p.Data is null", launcher, StringComparison.Ordinal);
