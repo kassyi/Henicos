@@ -1560,8 +1560,8 @@ bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_output;
 int __gsharp_id_1_tid;
-int __gsharp_arg_temp_1;
-int __gsharp_call_temp_0;
+int __gsharp_arg_temp_0;
+int __gsharp_call_temp_1;
 int __gsharp_call_temp_2;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration __gsharp_call_frame_0;
 __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration __gsharp_call_frame_1;
@@ -1580,13 +1580,13 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_1_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_1=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1);
+__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration(__gsharp_ctx->__gsharp_arg_temp_1,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_0)))
+if(!__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration(__gsharp_ctx->__gsharp_arg_temp_0,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_1)))
 {
 __gsharp_state=1;
 return;
@@ -1693,8 +1693,8 @@ public int __gsharp_state;
 public uint __gsharp_warp_path;
 public int[] output;
 public int tid;
-public int __gsharp_arg_temp_1;
-public int __gsharp_call_temp_0;
+public int __gsharp_arg_temp_0;
+public int __gsharp_call_temp_1;
 public int __gsharp_call_temp_2;
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration __gsharp_call_frame_0 = new();
 internal global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration __gsharp_call_frame_1 = new();
@@ -1716,13 +1716,13 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.__gsharp_arg_temp_1 = __gsharp_ctx.tid + 1;
+__gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.tid + 1;
 goto case 1;
 }
 
 case 1:
 {
-if (!global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration(__gsharp_ctx.__gsharp_arg_temp_1, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_0))
+if (!global::Kassyi.GSharp.Tests.Shared.Syntax.DeviceFunctionBarrierEdgeCaseKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__SwapThroughDeclaration(__gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_1))
 {
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -5532,6 +5532,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_3_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_4_cursor=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_3_tid,2);
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_sub_i32((__gsharp_ctx->__gsharp_id_4_cursor=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_cursor,1)),1);
+auto __gsharp_arg_temp_1 = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_arg_temp_0, 1979836087u);
 goto __gsharp_switch_1_state_1;
 }
 case 1:
@@ -5660,6 +5661,10 @@ case 0:
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.cursor = __gsharp_ctx.tid * 2;
 __gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.cursor++;
+{
+int __gsharp_arg_temp_1 = __gsharp_ctx.data[__gsharp_ctx.__gsharp_arg_temp_0];
+}
+
 goto case 1;
 }
 

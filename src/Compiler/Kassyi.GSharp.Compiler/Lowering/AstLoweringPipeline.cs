@@ -3,9 +3,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <summary>Connects all AST lowering passes into a pipeline that transforms standard C# kernel bodies into a flat state machine.</summary>
 public static class AstLoweringPipeline
 {
-    // [WHY] The split pass of the IR does not replace the syntax passes yet; tests run it in the whole pipeline, in the
-    // generator too, to compare what it writes with what the syntax passes write
-    private static readonly AsyncLocal<bool> s_withIrSplitLowering = new();
+    // [WHY] Tests turn the split pass of the IR off, in the generator too, to compare what it writes with what the
+    // syntax passes alone write
+    private static readonly AsyncLocal<bool> s_withoutIrSplitLowering = new();
 
     /// <summary>Lowers the body of a kernel or device function, block or expression body, into a flat state machine.</summary>
     /// <param name="method">A method that has a body (see <see cref="MethodDeclarationSyntaxExtensions.HasBody"/>).</param>
@@ -55,7 +55,7 @@ public static class AstLoweringPipeline
 
         var reconvergence = ReconvergenceInserter.TryCreate(bodyModel, owner, isDeviceFunction);
         var names = new LoweringTempNames();
-        var irPass = s_withIrSplitLowering.Value && bodyModel != null && owner != null
+        var irPass = !s_withoutIrSplitLowering.Value && bodyModel != null && owner != null
             ? new IrSplitLoweringPass(bodyModel, owner, body, names)
             : null;
         var hoistedBody = annotatedBody;
@@ -95,7 +95,8 @@ public static class AstLoweringPipeline
     // keeps one instance across both rounds so that temporaries and labels stay unique, and the passes that declare
     // temporaries share their names. A method that reaches Warp.ActiveMask() makes its lanes wait for each other where
     // a thread-dependent branch or loop ends (#844, reconvergence), on the structure of the source, before the branches
-    // and loops are flattened. The split pass of the IR, when it runs, writes out the statements it plans first.
+    // and loops are flattened. The split pass of the IR writes out the statements it plans first; the syntax passes leave
+    // those alone and hoist the split points of the rest.
     private static ImmutableArray<IBlockLoweringPass> CreatePasses(SemanticModel? bodyModel,
         ReconvergenceInserter? reconvergence, LoweringTempNames names, IrSplitLoweringPass? irPass)
     {
@@ -181,19 +182,20 @@ public static class AstLoweringPipeline
         PrepareBody(body, returnsValue, ResolveBodyModel(body, semanticModel));
 
     /// <summary>
-    /// Runs the split pass of the IR in front of the syntax passes in every lowering of this flow of execution until
-    /// the result is disposed (a test that compares the generator output with and without it).
+    /// Leaves the split pass of the IR out of every lowering of this flow of execution until the result is disposed,
+    /// so that the syntax passes alone hoist the split points (a test that compares the generator output with and
+    /// without it).
     /// </summary>
-    internal static IDisposable WithIrSplitLowering()
+    internal static IDisposable WithoutIrSplitLowering()
     {
-        var previous = s_withIrSplitLowering.Value;
-        s_withIrSplitLowering.Value = true;
+        var previous = s_withoutIrSplitLowering.Value;
+        s_withoutIrSplitLowering.Value = true;
         return new IrSplitLoweringScope(previous);
     }
 
     private sealed class IrSplitLoweringScope(bool previous) : IDisposable
     {
-        public void Dispose() => s_withIrSplitLowering.Value = previous;
+        public void Dispose() => s_withoutIrSplitLowering.Value = previous;
     }
 
     // The body as one block that the passes can rewrite: annotated with its original spans and split points, without
