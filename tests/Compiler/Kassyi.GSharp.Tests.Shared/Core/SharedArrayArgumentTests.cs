@@ -63,13 +63,13 @@ public class SharedArrayArgumentTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void OptionalArguments_BothNull_ReadAsEmpty(bool forceManaged)
+    public void OptionalArguments_BothNull_ReadAsNull(bool forceManaged)
     {
         int[] lengths = [-1, -1];
 
         Run(forceManaged, () => SharedArrayArgumentKernels.LaunchOptionalArgumentsKernel(null, null, lengths));
 
-        Assert.Equal([0, 0], lengths);
+        Assert.Equal([-2, -2], lengths);
     }
 
     [SkippableTheory]

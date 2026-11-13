@@ -213,19 +213,22 @@ public class WrapperAllocationTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    public void Launch_EmptyArrayArgument_ThrowsArgumentException()
+    public void Launch_EmptyArrayArgumentThatIsNotRead_RunsTheKernel()
     {
         using var _ctx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 
-        int ioVal = 42;
+        // ioVal is not above constantVal, so the kernel never reads the empty array (its first element is out of
+        // range, which #718 is about)
+        int ioVal = 5;
         float outVal = 99.0f;
         int[] emptyArray = [];
         uint constantVal = 10;
 
-        // Launch with empty array - should throw ArgumentException
-        var ex = Assert.Throws<ArgumentException>(() =>
-            WrapperAllocationKernels.LaunchAllocationTestKernel(ref ioVal, out outVal, emptyArray, constantVal));
-        Assert.Equal("arrayVal", ex.ParamName);
+        // An empty array argument is passed as one, as a C# call passes it
+        WrapperAllocationKernels.LaunchAllocationTestKernel(ref ioVal, out outVal, emptyArray, constantVal);
+
+        Assert.Equal(5, ioVal);
+        Assert.Equal(0f, outVal);
     }
 
     [SkippableFact]

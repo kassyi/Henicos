@@ -69,16 +69,16 @@ public class StructConvertTransferTests
         Assert.Equal(0, o[0]);
     }
 
-    // An empty array is accepted by a nullable parameter and arrives with length 0
+    // A null array of converted elements is passed as null
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void NullArray_IsPassedWithLengthZero()
+    public void NullArray_IsPassedAsNull()
     {
         var o = new[] { -1 };
 
         StructConvertTransferKernels.LaunchEmptyArrayKernel(null, o);
 
-        Assert.Equal(0, o[0]);
+        Assert.Equal(-2, o[0]);
     }
 
     [Fact]

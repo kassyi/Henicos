@@ -160,7 +160,8 @@ internal static class HostLauncherTranspiler
     /// <summary>
     /// The struct type of each parameter that the CPU launcher takes as a pointer to the host value
     /// (<see cref="KernelParameterShape.IsCpuValueStruct"/>, the classification of the delegate that calls the
-    /// launcher), by parameter index; <see langword="null"/> for the other parameters.
+    /// launcher, and a <c>Nullable</c> of an array-like value such as <c>Memory&lt;T&gt;?</c>), by parameter index;
+    /// <see langword="null"/> for the other parameters.
     /// </summary>
     internal static ITypeSymbol?[] GetStructArguments(IMethodSymbol kernel)
     {
@@ -168,9 +169,14 @@ internal static class HostLauncherTranspiler
         for (var i = 0; i < structArguments.Length; i++)
         {
             var parameter = kernel.Parameters[i];
-            if (KernelParameterShape.Classify(parameter).IsCpuValueStruct)
+            // A Nullable<array-like> (Memory<T>?) is a generic struct, which the runtime marshaller cannot pass by
+            // value
+            var shape = KernelParameterShape.Classify(parameter);
+            if (shape.IsCpuValueStruct || shape is { IsArray: true, IsNullableValue: true })
             {
-                structArguments[i] = parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type;
+                structArguments[i] = shape.IsCpuValueStruct
+                    ? parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type
+                    : parameter.Type;
             }
         }
 
@@ -499,13 +505,7 @@ internal static class HostLauncherTranspiler
 
             foreach (var parameter in step.Method.ParameterList.Parameters)
             {
-                var typeSymbol = parameter.Type != null ? context.Query.SemanticModel.GetTypeSymbol(parameter.Type) : null;
                 AppendArgumentSeparator(ref isFirst, ref context);
-                if (typeSymbol != null && typeSymbol.IsNullableArrayLike())
-                {
-                    context.Emitter.Writer.Append(GSharpInternalNames.Kernel.RawArgumentPrefix);
-                }
-
                 CppNameResolver.AppendDeclaredName(parameter, parameter.Identifier, ref context);
             }
 

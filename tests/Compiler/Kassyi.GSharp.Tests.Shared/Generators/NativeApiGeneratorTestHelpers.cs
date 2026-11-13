@@ -74,15 +74,35 @@ internal static class NativeApiGeneratorTestHelpers
         return driver.GetRunResult();
     }
 
-    internal static GeneratorDriver CreateDriver(params TestFile[] files)
+    internal static GeneratorDriver CreateDriver(params TestFile[] files) =>
+        CreateDriver([new NativeApiGenerator().AsSourceGenerator()], new CSharpParseOptions(LanguageVersion.Latest),
+            files);
+
+    /// <summary>
+    /// A driver that runs the YAML bindings and the <c>[CudaImport]</c> launchers together on
+    /// <paramref name="compilation"/>, parsing their output as its sources are parsed.
+    /// </summary>
+    internal static GeneratorDriver CreateDriverWithCudaImport(Compilation compilation, params TestFile[] files) =>
+        CreateDriver([new NativeApiGenerator().AsSourceGenerator(), new CudaImportGenerator().AsSourceGenerator()],
+            (CSharpParseOptions)compilation.SyntaxTrees.First().Options, files);
+
+    /// <summary>The errors of <paramref name="compilation"/>, one per line, for an assertion message.</summary>
+    internal static string[] GetErrors(Compilation compilation) =>
+        compilation.GetDiagnostics()
+            .Where(d => d.Severity == DiagnosticSeverity.Error)
+            .Select(d => d.ToString())
+            .ToArray();
+
+    private static GeneratorDriver CreateDriver(ISourceGenerator[] generators, CSharpParseOptions parseOptions,
+        TestFile[] files)
     {
         var additionalTexts = files.Select(f => (AdditionalText)new InMemoryAdditionalText(f.Path, f.Text)).ToArray();
         var apiPaths = files.Where(f => f.IsGSharpApi).Select(f => f.Path).ToHashSet();
 
         return CSharpGeneratorDriver.Create(
-            generators: [new NativeApiGenerator().AsSourceGenerator()],
+            generators: generators,
             additionalTexts: additionalTexts,
-            parseOptions: new CSharpParseOptions(LanguageVersion.Latest),
+            parseOptions: parseOptions,
             optionsProvider: new PerFileOptionsProvider(apiPaths),
             driverOptions: new GeneratorDriverOptions(
                 IncrementalGeneratorOutputKind.None,

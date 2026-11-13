@@ -251,10 +251,11 @@ internal static class GlobalCppNames
 
     /// <summary>
     /// Returns the source hint name of the wrapper that the generator adds for a kernel class: the encoded path of the
-    /// class, so that classes with the same name in different namespaces never share a hint name.
+    /// class, so that classes with the same name in different namespaces or types never share a hint name, followed by
+    /// <paramref name="extension"/>.
     /// </summary>
-    public static string GetHintName(INamedTypeSymbol kernelClass) =>
-        Shorten(string.Empty, GSharpNameEncoding.Encode(GetTypePath(kernelClass))) + ".g.cs";
+    public static string GetHintName(INamedTypeSymbol kernelClass, string extension = ".g.cs") =>
+        Shorten(string.Empty, GSharpNameEncoding.Encode(GetTypePath(kernelClass))) + extension;
 
     /// <summary>Returns <c>__gsharp_tp_{name}</c>.</summary>
     public static string GetTypeParameterName(ITypeParameterSymbol parameter) =>

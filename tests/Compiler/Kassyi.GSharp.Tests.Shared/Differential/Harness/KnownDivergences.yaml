@@ -79,6 +79,19 @@
     - case: BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel
       paths: [Cuda]
       columns: [$exception]
+    # The first element of an empty array argument: native reads past it, CUDA reads EmptyArrayData
+    - case: ArrayArgumentNullEmptyDifferentialKernels.NullableArrayKernel.Empty.Element
+      paths: [Native, Cuda]
+      columns: [$exception]
+    - case: ArrayArgumentNullEmptyDifferentialKernels.NonNullableArrayKernel.Empty.Element
+      paths: [Native, Cuda]
+      columns: [$exception]
+    - case: ArrayArgumentNullEmptyDifferentialKernels.ObliviousArrayKernel.Empty.Element
+      paths: [Native, Cuda]
+      columns: [$exception]
+    - case: ArrayArgumentNullEmptyDifferentialKernels.ImmutableKernel.Empty.Element
+      paths: [Native, Cuda]
+      columns: [$exception]
     - case: BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel
       paths: [Cuda]
       columns: [$exception]

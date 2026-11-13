@@ -13,6 +13,7 @@ internal static class CpuHostLaunchEmitter
     private const string FunctionHandle = GSharpInternalNames.Launcher.FunctionHandle;
     private const string PinnedHandle = GSharpInternalNames.Launcher.PinnedHandle;
     private const string GridBlockCount = GSharpInternalNames.Launcher.GridBlockCount;
+    private const string ArrayPinningType = HostTypeNames.ArrayPinning;
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string moduleName)
@@ -30,7 +31,6 @@ internal static class CpuHostLaunchEmitter
         using (writer.Scope())
         {
             WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
-            WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));
@@ -61,7 +61,11 @@ internal static class CpuHostLaunchEmitter
             {
                 writer.Append(", ");
 
-                if (p.IsArray)
+                if (p is { IsArray: true, IsNullableValue: true })
+                {
+                    writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}>* {p.Identifier}");
+                }
+                else if (p.IsArray)
                 {
                     writer.Append($"global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {p.Identifier}");
                 }
@@ -358,14 +362,17 @@ internal static class CpuHostLaunchEmitter
         foreach (var shape in kernel.Parameters)
         {
             var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
+            // [WHY] fixed (T* p = <array or span>) gives a null pointer for an empty array, which the device would read
+            // as null; the pinnable reference is null only when there is no array (ArrayPinning)
             if (shape.IsCpuConvertedArray)
             {
-                writer.AppendLine($"fixed (byte* {pinned} = {KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)})");
+                var shadow = KernelHostNames.GetLocal(LauncherLocal.Shadow, shape);
+                writer.AppendLine($"fixed (byte* {pinned} = &{ArrayPinningType}.GetPinnableReference({shadow}))");
                 hasFixed = true;
             }
             else if (shape is { IsArray: true, ElementTypeName: { } elementType })
             {
-                writer.AppendLine($"fixed ({elementType}* {pinned} = {shape.SpanExpression})");
+                writer.AppendLine($"fixed ({elementType}* {pinned} = &{shape.PinnableReferenceExpression})");
                 hasFixed = true;
             }
             else if (shape is { IsByRef: true, IsCpuConvertedStruct: false })
@@ -381,12 +388,34 @@ internal static class CpuHostLaunchEmitter
         {
             using (writer.Scope())
             {
+                WriteNullableProxies(writer, kernel);
                 WriteDelegateInvocation(writer, kernel);
             }
         }
         else
         {
             WriteDelegateInvocation(writer, kernel);
+        }
+    }
+
+    // Nullable<GSharpArrayProxy> __gsharp_nullable_<ord> = <name>.HasValue ? <proxy> : null;   (Memory<T>? and the
+    // like)
+    // [WHY] The native launcher takes System_Nullable<GSharpArray<T>> by address; HasValue is the C# value's own, so a
+    // default Memory<T> passes as a null array that has a value
+    private static void WriteNullableProxies(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var shape in kernel.Parameters)
+        {
+            if (shape is not { IsArray: true, IsNullableValue: true })
+            {
+                continue;
+            }
+
+            var local = KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape);
+            writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}> {local} = ");
+            writer.Append($"{shape.Identifier}.HasValue ? ");
+            WriteArrayProxy(writer, shape);
+            writer.AppendLine(" : null;");
         }
     }
 
@@ -424,16 +453,11 @@ internal static class CpuHostLaunchEmitter
         var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
         switch (shape)
         {
-            case { IsArray: true, IsNullableReference: true }:
-                // A null optional array reads as an empty one on the device (GSharpArray::flags, #706)
-                writer.Append(
-                    $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (global::System.IntPtr){pinned}, Length = {shape.LengthExpression}, ");
-                writer.Append(
-                    $"Flags = {shape.Identifier} is null ? global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.NullReadsAsEmpty : 0 }}");
+            case { IsArray: true, IsNullableValue: true }:
+                writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape)}");
                 break;
             case { IsArray: true }:
-                writer.Append(
-                    $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (global::System.IntPtr){pinned}, Length = {shape.LengthExpression} }}");
+                WriteArrayProxy(writer, shape);
                 break;
             case { IsCpuConvertedStruct: true }:
                 writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.Native, shape)}");
@@ -449,5 +473,18 @@ internal static class CpuHostLaunchEmitter
                 writer.Append(shape.Identifier);
                 break;
         }
+    }
+
+    // An argument passed as it is:
+    // new GSharpArrayProxy { Data = (IntPtr)__gsharp_p_<ord>, Length = <length> }
+    // A converted array:
+    // new GSharpArrayProxy { Data = <null test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }
+    // [WHY] The shadow of a null array is an empty rented array, whose pinned address is not null
+    private static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape)
+    {
+        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
+        writer.Append($"new {HostTypeNames.ArrayProxy} {{ Data = ");
+        writer.AppendIf(shape.IsCpuConvertedArray, $"{shape.NullTestExpression} ? {HostTypeNames.IntPtr}.Zero : ");
+        writer.Append($"({HostTypeNames.IntPtr}){pinned}, Length = {shape.LengthExpression} }}");
     }
 }

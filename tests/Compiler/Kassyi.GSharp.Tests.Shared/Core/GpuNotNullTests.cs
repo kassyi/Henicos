@@ -7,9 +7,8 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 
 /// <summary>
 /// <c>Gpu.NotNull</c> returns its array, and throws <see cref="NullReferenceException"/> at the call when the array is
-/// null: on the native CPU build with the place of the call, on the managed path from the C# method. A null optional
-/// kernel argument, which reads as an empty array, is null there too, and so is an empty one, which the launchers pass
-/// as null.
+/// null: on the native CPU build with the place of the call, on the managed path from the C# method. A null kernel
+/// argument is null there too, as in a C# call, while an empty one is not.
 /// </summary>
 /// <remarks>
 /// The null cases are skipped on CUDA, as in <see cref="NullArrayFieldTests"/>; the differential case
@@ -66,17 +65,18 @@ public class GpuNotNullTests : TranspilerTestBase
         Assert.Equal([0], o);
     }
 
-    // The launchers pass an empty optional kernel argument as null on every path (#838), so Gpu.NotNull throws for it
+    // An empty kernel argument is passed as one on every path, so Gpu.NotNull returns it
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(false)]
     [InlineData(true)]
-    public void Optional_EmptyArgument_IsPassedAsNullAndThrows(bool forceManaged)
+    public void Optional_EmptyArgument_IsNotNullAndReadsLengthZero(bool forceManaged)
     {
         var o = new[] { -1 };
 
-        AssertNullAtCall(forceManaged, "(42,16)", () => GpuNotNullKernels.LaunchOptionalKernel(o, []));
-        Assert.Equal([-1], o);
+        Run(forceManaged, () => GpuNotNullKernels.LaunchOptionalKernel(o, []));
+
+        Assert.Equal([0], o);
     }
 
     [SkippableTheory]

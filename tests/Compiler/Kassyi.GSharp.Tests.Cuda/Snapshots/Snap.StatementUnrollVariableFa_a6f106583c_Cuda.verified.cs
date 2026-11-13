@@ -6,5 +6,5 @@ for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<4;__gsharp_id_3_i++)
 {
 __gsharp_id_1_sum=__gsharp_add_i32(__gsharp_id_1_sum,__gsharp_id_3_i);
 }
-__gsharp_id_0_data[0]=__gsharp_id_1_sum;
+__gsharp_array_at(__gsharp_id_0_data, 0, "G#: a null array is read at LoopUnrollStatements.cs(119,9)")=__gsharp_id_1_sum;
 }

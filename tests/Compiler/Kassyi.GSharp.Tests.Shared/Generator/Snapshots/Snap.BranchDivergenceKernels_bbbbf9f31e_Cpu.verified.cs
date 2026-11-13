@@ -29,6 +29,11 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public partial class BranchDivergenceKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(645548382u, "BranchDivergenceKernels.cs", 11, 23, "BranchDivergenceKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1869271550u, "BranchDivergenceKernels.cs", 27, 13, "BranchDivergenceKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -53,7 +58,7 @@ __gsharp_switch_1_state_0:
 auto __gsharp_id_2_idx = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_2_idx<__gsharp_id_1_n)
 {
-auto __gsharp_id_3_val = __gsharp_id_0_data[__gsharp_id_2_idx];
+auto __gsharp_id_3_val = __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_idx, 645548382u);
 if(__gsharp_id_2_idx%2==0)
 {
 for(int __gsharp_id_4_i = 0;__gsharp_id_4_i<100;__gsharp_id_4_i=__gsharp_add_i32(__gsharp_id_4_i,1))
@@ -68,7 +73,7 @@ for(int __gsharp_id_5_i = 0;__gsharp_id_5_i<100;__gsharp_id_5_i=__gsharp_add_i32
 __gsharp_id_3_val=__gsharp_id_3_val*0.99f-0.01f;
 }
 }
-__gsharp_id_0_data[__gsharp_id_2_idx]=__gsharp_id_3_val;
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_idx, 1869271550u)=__gsharp_id_3_val;
 }
 __gsharp_state=-1;
 return;
@@ -200,12 +205,6 @@ private unsafe delegate void __gsharp_delegate_BranchDivergenceKernel(uint gridD
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBranchDivergenceKernel(global::System.Single[] data, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (data is null){
-throw new global::System.ArgumentNullException("data");
-}
-if (data.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "data");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BranchDivergenceKernels.BranchDivergenceKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -313,9 +312,13 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 return;
 }
 __gsharp_delegate_BranchDivergenceKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_BranchDivergenceKernel>("__gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__BranchDivergenceKernels__BranchDivergenceKernel", __gsharp_dll_path);
-fixed (global::System.Single* __gsharp_p_0 = data)
+if (s_errorSites.Length > 0)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = data.Length }, n);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Single* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(data))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (data?.Length ?? 0) }, n);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }

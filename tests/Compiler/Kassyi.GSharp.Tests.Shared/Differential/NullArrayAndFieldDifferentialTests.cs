@@ -271,24 +271,23 @@ public class NullArrayAndFieldDifferentialTests
                 s.Rows),
         });
 
-    // The launchers reject a null in a non-nullable array field of a struct argument before the launch (#1409); a
-    // non-null one runs as the oracle
+    // A null in a non-nullable array field of a struct argument reaches the kernel, as in a C# call, and throws where
+    // the kernel reads it (holder.Data.Length in the index, evaluated before the element); a non-null one runs as the
+    // oracle
     [SkippableFact]
-    public void NullValidation_NonNullableField_NullIsRejectedAtTheLaunch() =>
+    public void NullValidation_NonNullableField_NullThrowsAtTheRead() =>
         DifferentialRunner.Run(new DifferentialCase(
             KernelName(nameof(BoundsAndMemoryDifferentialKernels.NonNullableFieldKernel)))
         {
             Shape = LaunchShapes.Linear(DefaultRows, 32),
             Seeds = [0, 1],
-            ExpectedException = static (rng, _) => rng.Seed == 1
-                ? new ExceptionPolicy(typeof(ArgumentNullException), DiffPaths.CheckedPaths()) { ParamName = "holder" }
-                : null,
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayRead(657, 34) : null,
             Inputs = static (rng, shape) => new DiffBuffers()
                 .InDeepScalar(
                     "holder",
                     new DiffNonNullableHolder
                     {
-                        // Deliberately null in a non-nullable field for seed 1: the launch rejects it
+                        // Deliberately null in a non-nullable field for seed 1: the kernel's read throws
                         Data = rng.Seed == 1 ? null! : DiffValues.Int32(rng, 8),
                         Offset = 3,
                     },
@@ -306,6 +305,45 @@ public class NullArrayAndFieldDifferentialTests
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX),
             Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NonNullableFieldKernel(
+                b.GetScalar<DiffNonNullableHolder>("holder"),
+                b.Get<int>("dst"),
+                s.Rows),
+        });
+
+    // A struct argument of the kernel passed by value to a device function: the call checks the non-nullable field, so
+    // CUDA and the native build throw at the call (the place of the argument on CUDA), the managed path at the read in
+    // the callee, as C# does; the type is the same. The callee never reads the null field on CUDA
+    [SkippableFact]
+    public void NullValidation_NonNullableFieldPassedToAFunction_ThrowsAtTheCall() =>
+        DifferentialRunner.Run(new DifferentialCase(
+            KernelName(nameof(BoundsAndMemoryDifferentialKernels.NonNullableFieldToFunctionKernel)))
+        {
+            Shape = LaunchShapes.Linear(DefaultRows, 32),
+            Seeds = [0, 1],
+            ExpectedException = static (rng, _) => rng.Seed == 1 ? NullArrayArgument(691, 40) : null,
+            Inputs = static (rng, shape) => new DiffBuffers()
+                .InDeepScalar(
+                    "holder",
+                    new DiffNonNullableHolder
+                    {
+                        // Deliberately null in a non-nullable field for seed 1: the call checks it
+                        Data = rng.Seed == 1 ? null! : DiffValues.Int32(rng, 8),
+                        Offset = 3,
+                    },
+                    // The clone keeps the deliberate null of seed 1 in the non-nullable field
+                    static (src, scope) => new DiffNonNullableHolder
+                    {
+                        Data = scope.CloneArray(src.Data)!,
+                        Offset = src.Offset,
+                    })
+                .Out<int>("dst", shape.Rows, ["value"], OutputPolicy.Exact),
+            Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchNonNullableFieldToFunctionKernel(
+                b.GetScalar<DiffNonNullableHolder>("holder"),
+                b.Get<int>("dst"),
+                s.Rows,
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX),
+            Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.NonNullableFieldToFunctionKernel(
                 b.GetScalar<DiffNonNullableHolder>("holder"),
                 b.Get<int>("dst"),
                 s.Rows),

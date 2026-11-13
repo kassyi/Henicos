@@ -29,6 +29,10 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
 public partial class WrapperOptimizationKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2017522795u, "WrapperOptimization.cs", 24, 25, "ComplexSignatureKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -86,7 +90,7 @@ __gsharp_switch_1_state_0:
 (*__gsharp_id_1_scalarOut)=0;
 if((long long)(*__gsharp_id_0_scalarRef)>(long long)__gsharp_id_4_constantVal)
 {
-(*__gsharp_id_1_scalarOut)=__gsharp_add_i32(__gsharp_id_2_arrayVal[0],(*__gsharp_id_3_structRef).__gsharp_mb_A);
+(*__gsharp_id_1_scalarOut)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_arrayVal, 0, 2017522795u),(*__gsharp_id_3_structRef).__gsharp_mb_A);
 (*__gsharp_id_3_structRef).__gsharp_mb_B=(*__gsharp_id_1_scalarOut);
 }
 __gsharp_state=-1;
@@ -206,12 +210,6 @@ private unsafe delegate void __gsharp_delegate_ComplexSignatureKernel(uint gridD
 public static unsafe void LaunchComplexSignatureKernel(ref global::System.Int32 scalarRef, out global::System.Single scalarOut, global::System.Int32[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 scalarOut = default;
-if (arrayVal is null){
-throw new global::System.ArgumentNullException("arrayVal");
-}
-if (arrayVal.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "arrayVal");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperOptimizationKernels.ComplexSignatureKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -335,12 +333,16 @@ if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System
 __gsharp_layout_checked_ComplexSignatureKernel = true;
 }
 __gsharp_delegate_ComplexSignatureKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ComplexSignatureKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = &scalarRef)
 fixed (global::System.Single* __gsharp_p_1 = &scalarOut)
-fixed (global::System.Int32* __gsharp_p_2 = arrayVal)
+fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(arrayVal))
 fixed (global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* __gsharp_p_3 = &structRef)
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, __gsharp_p_0, __gsharp_p_1, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = arrayVal.Length }, __gsharp_p_3, constantVal);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, __gsharp_p_0, __gsharp_p_1, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (arrayVal?.Length ?? 0) }, __gsharp_p_3, constantVal);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }

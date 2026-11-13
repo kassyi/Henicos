@@ -79,6 +79,15 @@ namespace Kassyi.GSharp.Tests.Runtime
 {
 public partial class NestedVectorAlignmentKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(622973977u, "NestedVectorAlignmentKernels.cs", 33, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1710502285u, "NestedVectorAlignmentKernels.cs", 34, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1370584833u, "NestedVectorAlignmentKernels.cs", 35, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(70306197u, "NestedVectorAlignmentKernels.cs", 36, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1164300369u, "NestedVectorAlignmentKernels.cs", 37, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(131768577u, "NestedVectorAlignmentKernels.cs", 40, 13, "WriteExpectedOffsetsKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -207,29 +216,23 @@ __gsharp_launch_epoch = __gsharp_epoch;
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct __gsharp_id_1_s = {};
 unsigned char* __gsharp_id_2_basePtr = (unsigned char*)&__gsharp_id_1_s;
-__gsharp_id_0_offsets[0]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field1_Byte-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[1]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field2_Float2-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[2]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field3_Float4-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[3]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field4_Short-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[4]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field5_Double2-__gsharp_id_2_basePtr);
-__gsharp_id_0_offsets[5]=64;
+__gsharp_array_at(__gsharp_id_0_offsets, 0, 622973977u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field1_Byte-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 1, 1710502285u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field2_Float2-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 2, 1370584833u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field3_Float4-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 3, 70306197u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field4_Short-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 4, 1164300369u)=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field5_Double2-__gsharp_id_2_basePtr);
+__gsharp_array_at(__gsharp_id_0_offsets, 5, 131768577u)=64;
 }
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WriteExpectedOffsetsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerWriteExpectedOffsetsKernel() => global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.__gsharp_hfunc_WriteExpectedOffsetsKernel.Resolve();
+public static void WarmupFunctionPointerWriteExpectedOffsetsKernel() => global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.__gsharp_hfunc_WriteExpectedOffsetsKernel.Resolve(global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchWriteExpectedOffsetsKernel(global::System.Int32[] offsets, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (offsets is null){
-throw new global::System.ArgumentNullException("offsets");
-}
-if (offsets.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "offsets");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -239,7 +242,7 @@ return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.__gsharp_hfunc_WriteExpectedOffsetsKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.__gsharp_hfunc_WriteExpectedOffsetsKernel.Resolve(global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -247,10 +250,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: offsets
-int __gsharp_size_0 = checked(offsets.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((offsets?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = offsets.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(offsets) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (offsets?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -301,11 +304,8 @@ public static unsafe void LaunchWriteExpectedOffsetsKernelPtr(global::Kassyi.GSh
 if (offsets.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("offsets", offsets.Length, "The array length must not be negative.");
 }
-if (offsets.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException("offsets");
-}
-if (offsets.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "offsets");
+if (offsets.Data == global::System.IntPtr.Zero && offsets.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "offsets");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
@@ -314,7 +314,7 @@ throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("NestedVect
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.__gsharp_hfunc_WriteExpectedOffsetsKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.__gsharp_hfunc_WriteExpectedOffsetsKernel.Resolve(global::Kassyi.GSharp.Tests.Runtime.NestedVectorAlignmentKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "NestedVectorAlignmentKernels.WriteExpectedOffsetsKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try

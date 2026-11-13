@@ -44,12 +44,12 @@ public partial class EmissionShapeTests
         var structGenerated = Generate("StructShapeKernels", "Cuda");
 
         Assert.Contains(
-            "= checked(input.Length * sizeof(global::System.Int32));",
+            "= checked((input?.Length ?? 0) * sizeof(global::System.Int32));",
             sigGenerated,
             StringComparison.Ordinal
         );
         Assert.Contains(
-            "= checked(pairs.Length * sizeof(",
+            "= checked((pairs?.Length ?? 0) * sizeof(",
             structGenerated,
             StringComparison.Ordinal
         );

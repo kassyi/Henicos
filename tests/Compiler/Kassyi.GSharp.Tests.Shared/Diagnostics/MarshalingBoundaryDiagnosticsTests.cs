@@ -245,7 +245,9 @@ public sealed class MarshalingBoundaryDiagnosticsTests
         string generated = string.Join("\n", run.Output.SyntaxTrees.Select(static t => t.ToString()));
 
         Assert.DoesNotContain("__gsharp_mb_Length()", generated, System.StringComparison.Ordinal);
-        Assert.Contains("__gsharp_id_1_output[0]=__gsharp_id_0_imm.length;", generated, System.StringComparison.Ordinal);
+        // A default ImmutableArray<T> has no array, so its Length throws as in C#: the read goes through the null check
+        Assert.Contains("=__gsharp_array_ref(__gsharp_id_0_imm, ", generated, System.StringComparison.Ordinal);
+        Assert.DoesNotContain("=__gsharp_id_0_imm.length;", generated, System.StringComparison.Ordinal);
     }
 
     // Casting [GpuReadOnly] T[] parameter to ReadOnlySpan<T> must preserve const in C++ (#1071)

@@ -348,7 +348,11 @@ internal readonly record struct HostClassHeader(
         type.GetFullyQualifiedCsharpName(),
         RemovedCalls.GetSymbolsToDefine(type, compilation));
 
-    private static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
+    /// <summary>
+    /// The partial declarations of the types that contain <paramref name="type"/>, outermost first
+    /// (<c>partial class Outer&lt;T&gt;</c>), or empty for a type that is not nested.
+    /// </summary>
+    public static EquatableArray<string> CreateOuterDeclarations(INamedTypeSymbol type)
     {
         if (type.ContainingType == null)
         {
@@ -364,7 +368,11 @@ internal readonly record struct HostClassHeader(
         return declarations.ToImmutable().AsEquatableArray();
     }
 
-    private static string GetKeyword(INamedTypeSymbol type) => type.IsRecord
+    /// <summary>
+    /// The keyword that declares <paramref name="type"/> after <c>partial</c>: <c>class</c>, <c>struct</c>,
+    /// <c>interface</c>, <c>record</c> or <c>record struct</c>.
+    /// </summary>
+    public static string GetKeyword(INamedTypeSymbol type) => type.IsRecord
         ? type.TypeKind == TypeKind.Struct ? "record struct" : "record"
         : type.TypeKind == TypeKind.Struct ? "struct" : type.TypeKind == TypeKind.Interface ? "interface" : "class";
 }

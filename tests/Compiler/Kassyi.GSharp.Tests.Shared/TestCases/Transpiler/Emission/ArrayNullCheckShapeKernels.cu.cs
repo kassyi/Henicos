@@ -9,14 +9,14 @@ public struct NullCheckHolder
     public int[]? Data;
 }
 
-// A non-nullable array field, which the launchers check, so the kernel reads it without a check (#1409)
+// A non-nullable array field, which a call of a device function checks (#1409)
 public struct ProvenHolder
 {
     public int[] Data;
 }
 
-// Which array reads get the null check (__gsharp_array_ref, #706): a receiver that may be null does; a kernel array
-// parameter that the kernel never writes, a stack array local and a span do not
+// Which array reads get the null check (__gsharp_array_ref, #706): a receiver that may be null does, a kernel array
+// parameter included; a stack array local and a span do not
 [SkipSnapshotConsistency("Array null checks checked by EmissionShapeTests")]
 public static partial class ArrayNullCheckShapeKernels
 {
@@ -59,8 +59,8 @@ public static partial class ArrayNullCheckShapeKernels
         void Reset() => fnWritten = h.Data;
     }
 
-    // A non-nullable field of a struct argument is read unchecked; a call checks what it passes to a non-nullable
-    // parameter (h.Data may be null; p.Data and the struct p are proven) and the callee reads its parameter unchecked
+    // A field of a struct argument of the kernel may be null and is checked; a call checks what it passes to a
+    // non-nullable parameter and the callee reads its parameter unchecked
     [GpuKernel]
     public static void BoundaryKernel(ProvenHolder p, NullCheckHolder h, int[] o)
     {

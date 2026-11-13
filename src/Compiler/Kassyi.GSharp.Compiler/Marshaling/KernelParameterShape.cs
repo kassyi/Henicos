@@ -11,6 +11,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal readonly record struct KernelParameterShape
 {
     private const string GpuBufferType = "global::Kassyi.GSharp.Runtime.GpuBuffer";
+    private const string ArrayPinningType = HostTypeNames.ArrayPinning;
 
     /// <summary>The zero-based position of the parameter in the kernel's parameter list, which the launcher's locals (<c>__gsharp_d_0</c>, ...) build on.</summary>
     public int Ordinal { get; init; }
@@ -52,13 +53,6 @@ internal readonly record struct KernelParameterShape
 
     /// <summary>A nullable reference type such as <c>float[]?</c>.</summary>
     public bool IsNullableReference { get; init; }
-
-    /// <summary>
-    /// The non-nullable array fields that a by-value struct argument reaches through struct fields, each as the chain of
-    /// C# field names (<c>Operands.ResultBuffer</c>): the launchers reject a null in any of them, since the kernel reads
-    /// them without a check (#1409). Empty for any other parameter.
-    /// </summary>
-    public EquatableArray<string> NonNullableArrayFields { get; init; }
 
     /// <summary>A nullable value type such as <c>Memory&lt;float&gt;?</c>.</summary>
     public bool IsNullableValue { get; init; }
@@ -179,14 +173,27 @@ internal readonly record struct KernelParameterShape
     public string ValueExpression => IsNullableValue ? $"{Identifier}.GetValueOrDefault()" : Identifier;
 
     /// <summary>
-    /// The element count, 0 for a <c>null</c> array. An <c>ImmutableArray&lt;T&gt;?</c> counts the span of its value,
-    /// which is empty for <c>null</c>: <c>GetValueOrDefault()</c> gives the default immutable array, whose
-    /// <c>Length</c> throws (#1715).
+    /// The element count, 0 for a <c>null</c> array and for a default <c>ImmutableArray</c>, whose <c>Length</c>
+    /// throws.
     /// </summary>
-    public string LengthExpression =>
-        IsNullableReference ? $"({Identifier}?.Length ?? 0)"
-        : IsNullableValue && Container == ArrayContainerKind.ImmutableArray ? $"{SpanExpression}.Length"
-        : $"{ValueExpression}.{LengthMember}";
+    public string LengthExpression => Container switch
+    {
+        ArrayContainerKind.Array => $"({Identifier}?.Length ?? 0)",
+        ArrayContainerKind.ImmutableArray => $"{ValueExpression}.AsSpan().Length",
+        _ => $"{ValueExpression}.{LengthMember}"
+    };
+
+    /// <summary>
+    /// Whether the argument holds no array: a null array, or a span-like value over none (<c>default</c>, and a
+    /// <see langword="null"/> nullable value). An empty array, or a span-like value over one, holds an array.
+    /// </summary>
+    public string NullTestExpression => $"{ArrayPinningType}.IsNull({SpanExpression})";
+
+    /// <summary>
+    /// The reference that a <c>fixed</c> statement pins as <c>&amp;&lt;reference&gt;</c>: null when the argument holds
+    /// no array (<see cref="NullTestExpression"/>), the address of the array's data otherwise, also for an empty array.
+    /// </summary>
+    public string PinnableReferenceExpression => $"{ArrayPinningType}.GetPinnableReference({SpanExpression})";
 
     /// <summary>An expression that a <c>fixed</c> statement can pin.</summary>
     public string SpanExpression => Container switch
@@ -251,9 +258,6 @@ internal readonly record struct KernelParameterShape
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
                 BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type, kernelClass) : null,
                 HasArrayFields = hasArrayFields,
-                NonNullableArrayFields = parameter.RefKind == RefKind.None
-                    ? GetNonNullableArrayFieldNames(marshaledType)
-                    : default,
                 CpuHoldsArrayMethodName = hasArrayFields
                     ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
                     : null,
@@ -282,30 +286,6 @@ internal readonly record struct KernelParameterShape
         return shape.IsByRef
             ? shape with { BufferElementTypeName = GetBufferElementTypeName(parameter.Type, kernelClass) }
             : shape;
-    }
-
-    // Operands.ResultBuffer, ... (NonNullProof.GetNonNullableArrayFields as C# field names)
-    private static EquatableArray<string> GetNonNullableArrayFieldNames(ITypeSymbol type)
-    {
-        var paths = NonNullProof.GetNonNullableArrayFields(type);
-        if (paths.IsEmpty)
-        {
-            return default;
-        }
-
-        var names = ImmutableArray.CreateBuilder<string>(paths.Length);
-        foreach (var path in paths)
-        {
-            var name = "";
-            foreach (var field in path)
-            {
-                name = name.Length == 0 ? field.Name.ToCSharpIdentifier() : name + "." + field.Name.ToCSharpIdentifier();
-            }
-
-            names.Add(name);
-        }
-
-        return names.MoveToImmutable().AsEquatableArray();
     }
 
     /// <summary>

@@ -85,6 +85,11 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class RefReadOnlyConstantKernels
 {
+private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
+{
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(842636013u, "RefReadOnlyConstantKernels.cs", 24, 9, "ConstantLocalToRefReadOnlyKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1548664241u, "RefReadOnlyConstantKernels.cs", 33, 9, "ConstantFieldToRefReadOnlyKernel", "G#: a null array is read"),
+};
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
@@ -94,23 +99,17 @@ public const string ConstantLocalToRefReadOnlyKernel_Source = @"extern ""C"" __g
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_localConstant = 3;
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__gsharp_id_0_r[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ReadOnlyId(&__gsharp_id_1_localConstant);
+__gsharp_array_at(__gsharp_id_0_r, __gsharp_id_2_tid, 842636013u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ReadOnlyId(&__gsharp_id_1_localConstant);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ConstantLocalToRefReadOnlyKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ConstantLocalToRefReadOnlyKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerConstantLocalToRefReadOnlyKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantLocalToRefReadOnlyKernel.Resolve();
+public static void WarmupFunctionPointerConstantLocalToRefReadOnlyKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantLocalToRefReadOnlyKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchConstantLocalToRefReadOnlyKernel(global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (r is null){
-throw new global::System.ArgumentNullException("r");
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "r");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefReadOnlyConstantKernels.ConstantLocalToRefReadOnlyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -120,7 +119,7 @@ return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantLocalToRefReadOnlyKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantLocalToRefReadOnlyKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "RefReadOnlyConstantKernels.ConstantLocalToRefReadOnlyKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -128,10 +127,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: r
-int __gsharp_size_0 = checked(r.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((r?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = r.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(r) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (r?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -182,11 +181,8 @@ public static unsafe void LaunchConstantLocalToRefReadOnlyKernelPtr(global::Kass
 if (r.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("r", r.Length, "The array length must not be negative.");
 }
-if (r.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException("r");
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "r");
+if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefReadOnlyConstantKernels.ConstantLocalToRefReadOnlyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
@@ -195,7 +191,7 @@ throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefReadOnl
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantLocalToRefReadOnlyKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantLocalToRefReadOnlyKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "RefReadOnlyConstantKernels.ConstantLocalToRefReadOnlyKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
@@ -227,23 +223,17 @@ finally
 public const string ConstantFieldToRefReadOnlyKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ConstantFieldToRefReadOnlyKernel(GSharpArray<int> __gsharp_id_0_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_tid = (int)threadIdx.x;
-__gsharp_id_0_r[__gsharp_id_1_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ReadOnlyId(__gsharp_temp_address<int>(4));
+__gsharp_array_at(__gsharp_id_0_r, __gsharp_id_1_tid, 1548664241u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ReadOnlyId(__gsharp_temp_address<int>(4));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ConstantFieldToRefReadOnlyKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ConstantFieldToRefReadOnlyKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
-public static void WarmupFunctionPointerConstantFieldToRefReadOnlyKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantFieldToRefReadOnlyKernel.Resolve();
+public static void WarmupFunctionPointerConstantFieldToRefReadOnlyKernel() => global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantFieldToRefReadOnlyKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchConstantFieldToRefReadOnlyKernel(global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (r is null){
-throw new global::System.ArgumentNullException("r");
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "r");
-}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefReadOnlyConstantKernels.ConstantFieldToRefReadOnlyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -253,7 +243,7 @@ return;
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantFieldToRefReadOnlyKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantFieldToRefReadOnlyKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "RefReadOnlyConstantKernels.ConstantFieldToRefReadOnlyKernel");
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
@@ -261,10 +251,10 @@ try
 {
 void** __gsharp_kernel_params = stackalloc void*[2];
 // Marshal array: r
-int __gsharp_size_0 = checked(r.Length * sizeof(global::System.Int32));
+int __gsharp_size_0 = checked((r?.Length ?? 0) * sizeof(global::System.Int32));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
-__gsharp_proxy_0[0] = global::System.IntPtr.Zero;
-((int*)(__gsharp_proxy_0 + 1))[0] = r.Length;
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(r) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (r?.Length ?? 0);
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
@@ -315,11 +305,8 @@ public static unsafe void LaunchConstantFieldToRefReadOnlyKernelPtr(global::Kass
 if (r.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("r", r.Length, "The array length must not be negative.");
 }
-if (r.Data == global::System.IntPtr.Zero){
-throw new global::System.ArgumentNullException("r");
-}
-if (r.Length == 0){
-throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", "r");
+if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefReadOnlyConstantKernels.ConstantFieldToRefReadOnlyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
@@ -328,7 +315,7 @@ throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefReadOnl
 }
 using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
 {
-global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantFieldToRefReadOnlyKernel.Resolve();
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.__gsharp_hfunc_ConstantFieldToRefReadOnlyKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefReadOnlyConstantKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "RefReadOnlyConstantKernels.ConstantFieldToRefReadOnlyKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try

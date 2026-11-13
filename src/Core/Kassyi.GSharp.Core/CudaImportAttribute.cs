@@ -4,7 +4,9 @@ namespace Kassyi.GSharp.Core;
 /// Indicates that a method imports an external CUDA kernel or device function defined in a separate CUDA module.
 /// </summary>
 /// <remarks>
-/// <para><b>Usage:</b> Applied to C# partial or extern method declarations that are implemented in external CUDA source files.</para>
+/// <para><b>Usage:</b> Applied to a <c>partial void</c> method declaration without a body, in <c>partial</c> types that
+/// are not file-local; G# generates the body, which launches the kernel of the external CUDA module. Any other
+/// declaration (an <c>extern</c> or generic method, a method that returns a value) is reported as GSH0113.</para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
 public sealed class CudaImportAttribute : Attribute

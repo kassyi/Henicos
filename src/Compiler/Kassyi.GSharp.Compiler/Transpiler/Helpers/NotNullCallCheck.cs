@@ -20,11 +20,6 @@ internal static class NotNullCallCheck
     /// The check of the call <c>Gpu.NotNull(&lt;array&gt;)</c> (<paramref name="call"/>): none when
     /// <paramref name="array"/> is proven, otherwise the place of the call to report.
     /// </summary>
-    /// <remarks>
-    /// [WHY] Not <see cref="ArrayNullCheck.NeedsCheck"/>, which skips an unwritten nullable kernel parameter: a null
-    /// optional kernel argument reads as an empty array, but it is null, and <c>Gpu.NotNull</c> throws for it as C#
-    /// does.
-    /// </remarks>
     public static NotNullCheck Plan(InvocationExpressionSyntax call, ExpressionSyntax array,
         ref TranspileContext context) =>
         Plan(call, array, context.Query.SemanticModel, context.Emitter.ErrorSites, context.Emitter.CurrentMemberName);
