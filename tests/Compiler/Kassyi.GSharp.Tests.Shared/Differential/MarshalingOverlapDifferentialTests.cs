@@ -678,7 +678,7 @@ public sealed class MarshalingOverlapDifferentialTests
         {
             var variable = 5;
             MarshalingOverlapDifferentialKernels.LaunchInAndRefOneVariableKernel(
-                in variable, ref variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                variable, ref variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
             b.Get<int>("final")[0] = variable;
         },
     };
@@ -702,7 +702,7 @@ public sealed class MarshalingOverlapDifferentialTests
             var first = 5;
             var second = 5;
             MarshalingOverlapDifferentialKernels.LaunchInAndRefOneVariableKernel(
-                in first, ref second, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                first, ref second, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
             b.Get<int>("final")[0] = second;
         },
     };
@@ -725,7 +725,7 @@ public sealed class MarshalingOverlapDifferentialTests
         {
             var variable = 5;
             MarshalingOverlapDifferentialKernels.LaunchInAndOutOneVariableKernel(
-                in variable, out variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                variable, out variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
             b.Get<int>("final")[0] = variable;
         },
     };
@@ -748,7 +748,7 @@ public sealed class MarshalingOverlapDifferentialTests
         {
             var variable = new DiffVec2Padded { A = 1f };
             MarshalingOverlapDifferentialKernels.LaunchInAndRefConvertedKernel(
-                in variable, ref variable, b.Get<float>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                variable, ref variable, b.Get<float>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
             b.Get<float>("final")[0] = variable.A;
         },
     };
@@ -792,7 +792,7 @@ public sealed class MarshalingOverlapDifferentialTests
         {
             var point = new DiffOverlapPoint { X = 1, Y = 2 };
             MarshalingOverlapDifferentialKernels.LaunchInFieldAndRefStructKernel(
-                in point.Y, ref point, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                point.Y, ref point, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
             b.Get<int>("final")[0] = point.X;
             b.Get<int>("final")[1] = point.Y;
         },
@@ -816,7 +816,7 @@ public sealed class MarshalingOverlapDifferentialTests
         {
             var point = new DiffOverlapPoint { X = 1, Y = 2 };
             MarshalingOverlapDifferentialKernels.LaunchInStructAndRefFieldKernel(
-                in point, ref point.Y, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                point, ref point.Y, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
             b.Get<int>("final")[0] = point.X;
             b.Get<int>("final")[1] = point.Y;
         },
@@ -850,7 +850,7 @@ public sealed class MarshalingOverlapDifferentialTests
             var nest = default(DiffNest10);
             nest.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Value = 5;
             MarshalingOverlapDifferentialKernels.LaunchInDeepFieldAndRefStructKernel(
-                in nest.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Value,
+                nest.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Value,
                 ref nest,
                 b.Get<int>("observed"),
                 gridDimX: s.GridX,
