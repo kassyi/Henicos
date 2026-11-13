@@ -43,7 +43,7 @@ internal static class ModuleKernelLaunchEmitter
     {
         writer.Append($"private static readonly {HostTypeNames.Lazy}<byte[]> {fieldName} = new(() => ");
         writer.Append($"{HostTypeNames.File}.ReadAllBytes({HostTypeNames.Path}.Combine({HostTypeNames.AppContext}");
-        writer.AppendLine($".BaseDirectory, {SymbolDisplay.FormatLiteral(moduleName, quote: true)})));");
+        writer.AppendLine($".BaseDirectory, {Literal(moduleName)})));");
         writer.AppendLine();
     }
 
@@ -97,7 +97,7 @@ internal static class ModuleKernelLaunchEmitter
         // [WHY] Every launcher local has an explicit type: in a class named 'var', 'var' names that class
         writer.AppendLine(
             $"using {HostTypeNames.CudaContextScope} {CudaContextScope} = new();");
-        var entryPointLiteral = SymbolDisplay.FormatLiteral(entryPoint, quote: true);
+        var entryPointLiteral = Literal(entryPoint);
         writer.AppendLine($"{HostTypeNames.IntPtr} {FunctionHandle} = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(" +
             $"{moduleField}.Value, {entryPointLiteral});");
 
@@ -106,7 +106,7 @@ internal static class ModuleKernelLaunchEmitter
         // CudaHostLaunchEmitter (#545, #820). Without the parameter the launch requests no dynamic shared memory.
         if (launch.SharedMemBytes is { } sharedMemBytes)
         {
-            var launcherLiteral = SymbolDisplay.FormatLiteral(launcherName, quote: true);
+            var launcherLiteral = Literal(launcherName);
             writer.AppendLine("global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare" +
                 $"({FunctionHandle}, {sharedMemBytes}, {launcherLiteral});");
         }
@@ -130,7 +130,7 @@ internal static class ModuleKernelLaunchEmitter
     // throw new global::System.NotSupportedException("<message>");
     public static void EmitUnavailableBody(SourceWriter writer, string message) =>
         writer.AppendLine(
-            $"throw new global::System.NotSupportedException({SymbolDisplay.FormatLiteral(message, quote: true)});");
+            $"throw new global::System.NotSupportedException({Literal(message)});");
 
     // if (<name> is null) { throw new global::System.ArgumentNullException("<name>"); }
     // [WHY] The name is a string literal: 'nameof' would bind to a parameter named 'nameof' (CS0149)
@@ -153,7 +153,7 @@ internal static class ModuleKernelLaunchEmitter
 
             using (writer.Scope())
             {
-                var name = SymbolDisplay.FormatLiteral(argument.Name, quote: true);
+                var name = Literal(argument.Name);
                 writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}({name});");
             }
         }
@@ -176,48 +176,17 @@ internal static class ModuleKernelLaunchEmitter
         {
             writer.Append($"{launch.GridDimX ?? "1"}, {launch.GridDimY ?? "1"}, {launch.GridDimZ ?? "1"}, ");
             writer.Append($"{launch.BlockDimX ?? "1"}, {launch.BlockDimY ?? "1"}, {launch.BlockDimZ ?? "1"}, ");
-            writer.Append(SymbolDisplay.FormatLiteral(launcherName, quote: true));
+            writer.Append(Literal(launcherName));
         }
 
         writer.AppendLine(";");
     }
 
     /// <summary>
-    /// Appends <paramref name="value"/> as an escaped C# regular string literal, including the quotes.
+    /// Returns <paramref name="value"/> as a C# string literal, every character a regular literal cannot hold escaped.
+    /// Shared with <see cref="NativeBindingEmitter"/>.
     /// </summary>
-    public static void AppendStringLiteral(SourceWriter writer, string value)
-    {
-        writer.Append('"');
-        foreach (var c in value)
-        {
-            switch (c)
-            {
-                case '"':
-                    writer.Append("\\\"");
-                    break;
-                case '\\':
-                    writer.Append("\\\\");
-                    break;
-                case '\n':
-                    writer.Append("\\n");
-                    break;
-                case '\r':
-                    writer.Append("\\r");
-                    break;
-                case '\t':
-                    writer.Append("\\t");
-                    break;
-                case '\0':
-                    writer.Append("\\0");
-                    break;
-                default:
-                    writer.Append(c);
-                    break;
-            }
-        }
-
-        writer.Append('"');
-    }
+    internal static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
 
     // Array: using var <d> = new GpuBuffer<<element>>(<name>.Length); <d>.CopyToDevice(<elements of name>);
     // Nullable array: using var <d> = <name> is null ? null : new GpuBuffer<<element>>(<name>.Length);

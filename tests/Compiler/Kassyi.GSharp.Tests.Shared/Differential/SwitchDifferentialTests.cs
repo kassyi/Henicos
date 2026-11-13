@@ -39,8 +39,7 @@ public sealed class SwitchDifferentialTests
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchIntStatementKernel(
             b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SwitchDifferentialKernels.SwitchIntStatementKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_switchWideInt64Statement = new(
@@ -73,8 +72,7 @@ public sealed class SwitchDifferentialTests
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchWideInt64StatementKernel(
             b.Get<long>("a"), b.Get<ulong>("ua"), b.Get<long>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SwitchDifferentialKernels.SwitchWideInt64StatementKernel(
-            b.Get<long>("a"), b.Get<ulong>("ua"), b.Get<long>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_switchNarrowCharEnumStatement = new(
@@ -90,8 +88,7 @@ public sealed class SwitchDifferentialTests
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchNarrowCharEnumStatementKernel(
             b.Get<byte>("ba"), b.Get<sbyte>("sba"), b.Get<short>("sa"), b.Get<ushort>("usa"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SwitchDifferentialKernels.SwitchNarrowCharEnumStatementKernel(
-            b.Get<byte>("ba"), b.Get<sbyte>("sba"), b.Get<short>("sa"), b.Get<ushort>("usa"), b.Get<int>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_switchGotoAndSharedLocals = new(
@@ -105,8 +102,7 @@ public sealed class SwitchDifferentialTests
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchGotoAndSharedLocalsKernel(
             b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SwitchDifferentialKernels.SwitchGotoAndSharedLocalsKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_switchExpressionIntAndLong = new(
@@ -130,8 +126,7 @@ public sealed class SwitchDifferentialTests
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchExpressionIntAndLongKernel(
             b.Get<int>("a"), b.Get<int>("b"), b.Get<long>("la"), b.Get<long>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SwitchDifferentialKernels.SwitchExpressionIntAndLongKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<long>("la"), b.Get<long>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_switchExpressionFloatSpecial = new(
@@ -145,8 +140,7 @@ public sealed class SwitchDifferentialTests
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchExpressionFloatSpecialKernel(
             b.Get<int>("sel"), b.Get<float>("fa"), b.Get<float>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SwitchDifferentialKernels.SwitchExpressionFloatSpecialKernel(
-            b.Get<int>("sel"), b.Get<float>("fa"), b.Get<float>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_ternaryNestedAndRef = new(
@@ -161,8 +155,7 @@ public sealed class SwitchDifferentialTests
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchTernaryNestedAndRefKernel(
             b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("c"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SwitchDifferentialKernels.TernaryNestedAndRefKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("c"), b.Get<int>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_ternaryTargetTypedAndNarrow = new(
@@ -184,10 +177,7 @@ public sealed class SwitchDifferentialTests
             b.Get<short>("sa"), b.Get<ushort>("usa"), b.Get<byte>("ba"), b.Get<sbyte>("sba"),
             b.Get<long>("ldst"), b.Get<double>("ddst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SwitchDifferentialKernels.TernaryTargetTypedAndNarrowKernel(
-            b.Get<int>("conds"), b.Get<uint>("ua"), b.Get<int>("ia"),
-            b.Get<short>("sa"), b.Get<ushort>("usa"), b.Get<byte>("ba"), b.Get<sbyte>("sba"),
-            b.Get<long>("ldst"), b.Get<double>("ddst"), Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_nullCoalesceAndNullCheckMatching = new(
@@ -201,8 +191,7 @@ public sealed class SwitchDifferentialTests
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchNullCoalesceAndNullCheckMatchingKernel(
             b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
-        Oracle = static (b, _) => SwitchDifferentialKernels.NullCoalesceAndNullCheckMatchingKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), Rows),
+        OracleIsLaunch = true,
     };
 
     // The kernel calls Gpu.SyncThreads() inside a switch section, which the sequential oracle cannot run; the reference

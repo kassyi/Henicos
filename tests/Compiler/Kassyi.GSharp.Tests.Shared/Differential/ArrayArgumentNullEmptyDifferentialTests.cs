@@ -64,17 +64,14 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
             {
                 yield return Create(nameof(K.NullableArrayKernel), valueName, read,
                     (o, s) => K.LaunchNullableArrayKernel(
-                        create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.NullableArrayKernel(create(), read, o));
+                        create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
                 // C# does not check the annotation of a parameter: a null reaches the body
                 yield return Create(nameof(K.NonNullableArrayKernel), valueName, read,
                     (o, s) => K.LaunchNonNullableArrayKernel(
-                        create()!, read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.NonNullableArrayKernel(create()!, read, o));
+                        create()!, read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
                 yield return Create(nameof(K.ObliviousArrayKernel), valueName, read,
                     (o, s) => K.LaunchObliviousArrayKernel(
-                        create()!, read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.ObliviousArrayKernel(create()!, read, o));
+                        create()!, read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
             foreach (int read in (int[])[R.IsNull, R.Length, R.InNullableFunction])
@@ -82,7 +79,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                 yield return Create(nameof(K.NullableArrayAfterBarrierKernel), valueName, read,
                     (o, s) => K.LaunchNullableArrayAfterBarrierKernel(
                         create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.NullableArrayAfterBarrierKernel(create(), read, o));
+                    o => AfterBarrierModel(create(), read, o));
             }
         }
 
@@ -97,14 +94,22 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
             {
                 yield return Create(nameof(K.ConvertedArrayKernel), valueName, read,
                     (o, s) => K.LaunchConvertedArrayKernel(
-                        create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
-                    o => K.ConvertedArrayKernel(create(), read, o));
+                        create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
         }
     }
 
+    // The read of NullableArrayAfterBarrierKernel for its one thread: the C# execution does not run a barrier, so this
+    // model is its oracle, and it throws where the kernel's C# throws
+    private static void AfterBarrierModel(int[]? a, int read, int[] o) => o[0] = read switch
+    {
+        R.IsNull => a is null ? 1 : 0,
+        _ => a!.Length, // Deliberately unchecked: Length and InNullableFunction read a.Length, null throws as in C#
+    };
+
+    // The launch is the oracle unless the case gives a model of the kernel's C#
     private static DifferentialCase Create(string kernel, string value, int read, Action<int[], LaunchShape> launch,
-        Action<int[]> oracle) =>
+        Action<int[]>? model = null) =>
         new(DiffKernelNames.Of(typeof(ArrayArgumentNullEmptyDifferentialKernels), kernel, $"{value}.{ReadName(read)}"))
         {
             Shape = LaunchShapes.SingleThread(),
@@ -112,7 +117,8 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
             OracleExceptions = OracleExceptionMode.MatchOracle,
             Inputs = static (_, _) => new DiffBuffers().Out<int>("o", 1, OutputPolicy.Exact),
             Launch = (b, s) => launch(b.Get<int>("o"), s),
-            Oracle = (b, _) => oracle(b.Get<int>("o")),
+            OracleIsLaunch = model is null,
+            Oracle = model is null ? null : (b, _) => model(b.Get<int>("o")),
         };
 
     private static string ReadName(int read) => read switch

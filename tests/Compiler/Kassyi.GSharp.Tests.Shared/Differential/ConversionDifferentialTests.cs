@@ -41,11 +41,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel(
-            b.Get<float>("f"),
-            b.Get<double>("d"),
-            b.Get<long>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_enumCast = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.EnumCastMatrixKernel)}")
@@ -64,12 +60,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => ConversionDifferentialKernels.EnumCastMatrixKernel(
-            b.Get<float>("f"),
-            b.Get<double>("d"),
-            b.Get<int>("i"),
-            b.Get<long>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_intToFloat = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntToFloatConversionMatrixKernel)}")
@@ -95,13 +86,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => ConversionDifferentialKernels.IntToFloatConversionMatrixKernel(
-            b.Get<int>("i"),
-            b.Get<uint>("u"),
-            b.Get<long>("l"),
-            b.Get<ulong>("ul"),
-            b.Get<float>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_intToDouble = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel)}")
@@ -127,13 +112,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel(
-            b.Get<int>("i"),
-            b.Get<uint>("u"),
-            b.Get<long>("l"),
-            b.Get<ulong>("ul"),
-            b.Get<double>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_charScalarArg = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.CharScalarArgKernel)}")
@@ -149,11 +128,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => ConversionDifferentialKernels.CharScalarArgKernel(
-            '\u1234',
-            b.Get<char>("cArr"),
-            b.Get<int>("r")
-        ),
+        OracleIsLaunch = true,
     };
 
     // Direct casts between float/double and all 9 integer types (#724, #890)
@@ -181,16 +156,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => ConversionDifferentialKernels.DirectFloatDoubleCastMatrixKernel(
-            b.Get<float>("f"),
-            b.Get<double>("d"),
-            b.Get<long>("i64"),
-            b.Get<ulong>("u64"),
-            b.Get<long>("rSigned"),
-            b.Get<ulong>("rUnsigned"),
-            b.Get<float>("rFloat"),
-            b.Get<double>("rDouble")
-        ),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_integerCastAndShiftMask = new($"{nameof(ConversionDifferentialKernels)}.{nameof(ConversionDifferentialKernels.IntegerCastAndShiftMaskMatrixKernel)}")
@@ -221,15 +187,7 @@ public class ConversionDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
-        Oracle = static (b, _) => ConversionDifferentialKernels.IntegerCastAndShiftMaskMatrixKernel(
-            b.Get<int>("i32"),
-            b.Get<uint>("u32"),
-            b.Get<long>("i64"),
-            b.Get<ulong>("u64"),
-            b.Get<int>("sh"),
-            b.Get<long>("rSigned"),
-            b.Get<ulong>("rUnsigned")
-        ),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

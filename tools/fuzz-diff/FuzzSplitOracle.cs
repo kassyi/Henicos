@@ -150,8 +150,14 @@ public static class FuzzSplitOracle
         writer.AppendLine("// Oracle twins of the split kernels (FuzzSplitOracle).");
         using (writer.Scope($"public static partial class {className}"))
         {
-            writer.Append(twins);
-            writer.AppendLine();
+            // A twin is a host method that reads the thread index; SequentialOracle.RunEachThread runs it once per
+            // thread with that thread's context set. The directives stay inside the class, so that RemoveTwins removes
+            // them with it.
+            using (writer.WarningSuppressed("GSH0018", "run once per thread by SequentialOracle.RunEachThread"))
+            {
+                writer.Append(twins);
+                writer.AppendLine();
+            }
         }
 
         return writer.ToString();
