@@ -24,9 +24,12 @@ internal static class SharedMemorySiteKey
     {
         var original = semanticModel.GetOriginalNode(creation) as BaseObjectCreationExpressionSyntax
                        ?? throw new InvalidOperationException("A shared memory creation is not mapped to its source declaration.");
+        var model = semanticModel.SyntaxTree == original.SyntaxTree
+            ? semanticModel
+            : semanticModel.Compilation.GetCachedSemanticModel(original.SyntaxTree);
         var method = original.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>()
                      ?? throw new InvalidOperationException("A shared memory creation is not inside a method.");
-        var methodId = semanticModel.GetDeclaredSymbol(method)?.GetDocumentationCommentId()
+        var methodId = model.GetDeclaredSymbol(method)?.GetDocumentationCommentId()
                        ?? throw new InvalidOperationException("The method that creates shared memory has no symbol.");
 
         var ordinal = 0;
@@ -40,7 +43,7 @@ internal static class SharedMemorySiteKey
                     : HashHelper.ComputeFnv1A64($"{methodId}#{ordinal}");
             }
 
-            if (node is BaseObjectCreationExpressionSyntax other && semanticModel.GetTypeInfo(other).Type.IsSharedMemoryType())
+            if (node is BaseObjectCreationExpressionSyntax other && model.GetTypeInfo(other).Type.IsSharedMemoryType())
             {
                 ordinal++;
             }
