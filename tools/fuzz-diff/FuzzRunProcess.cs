@@ -24,7 +24,7 @@ internal static class FuzzRunProcess
     /// </summary>
     internal const string LauncherPidsVariable = "FUZZ_DIFF_LAUNCHER_PIDS";
 
-    /// <summary>The exit code of <c>scripts/agent/gpu-lock.js</c> when it gave up waiting for the lock.</summary>
+    /// <summary>The exit code of <c>scripts/human/gpu-lock.js</c> when it gave up waiting for the lock.</summary>
     internal const int GpuLockWaitTimeoutStatus = 3;
 
     /// <summary>Runs <paramref name="fileName"/> in <paramref name="workingDirectory"/>; captures its output.</summary>
@@ -96,7 +96,7 @@ internal static class FuzzRunProcess
     }
 
     /// <summary>
-    /// Whether a run through <c>scripts/agent/gpu-lock.js</c> ended because the lock wait timed out: the script exits
+    /// Whether a run through <c>scripts/human/gpu-lock.js</c> ended because the lock wait timed out: the script exits
     /// with <see cref="GpuLockWaitTimeoutStatus"/> and says it gave up, so a command that exits with the same code is
     /// not mistaken for it.
     /// </summary>
@@ -176,7 +176,7 @@ internal static class FuzzRunProcess
     }
 
     /// <summary>
-    /// Whether this process runs under <c>scripts/agent/gpu-lock.js</c>: the owner of the shared lock of the main
+    /// Whether this process runs under <c>scripts/human/gpu-lock.js</c>: the owner of the shared lock of the main
     /// checkout of <paramref name="repoRoot"/> is this process or a launcher listed in
     /// <see cref="LauncherPidsVariable"/>.
     /// </summary>
