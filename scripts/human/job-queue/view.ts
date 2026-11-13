@@ -356,7 +356,7 @@ const HelpLegend: LegendEntry[] = [
 
 /** A screen of this many rows shows a row per waiting chat; a shorter one sums them up in one line. */
 const TallRows = 16;
-/** The job rows the chats leave on a tall screen (fewer when there are fewer jobs). */
+/** The job rows the chats leave on a tall screen, at least, and at least half of the list (fewer with fewer jobs). */
 const MinJobRows = 4;
 
 /** The keys column fits in this many cells; the legend column starts after it. */
@@ -526,9 +526,10 @@ export function renderScreen(
   if (rows < 5) {
     return [header, bottom].slice(0, rows).map((line) => line.render(color));
   }
-  // The chats take their rows from the job list, which keeps at least MinJobRows (or all of its jobs)
+  // The chats take their rows from the job list, which keeps at least half of them or MinJobRows (or all its jobs)
   const waiting = waitingChats(chats);
-  const room = rows >= TallRows ? rows - 4 - Math.min(MinJobRows, Math.max(1, jobs.length)) : 1;
+  const jobRows = Math.max(MinJobRows, Math.floor((rows - 4) / 2));
+  const room = rows >= TallRows ? rows - 4 - Math.min(jobRows, Math.max(1, jobs.length)) : 1;
   const chatRows = chats === null || state.chatsHidden ? [] : chatLines(waiting, chats, jobs, columns, room, now);
   const panel = chatRows.length < rows - 4 ? chatRows : []; // the job list keeps at least one row
   const listRows = rows - 4 - panel.length;

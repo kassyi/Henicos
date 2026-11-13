@@ -169,10 +169,18 @@ function checkShortAndOverflow(): void {
   };
   const tall = renderScreen(sixJobs, initialViewState(), { columns: 100, rows: 20, now: Now }, false, many);
   assert.strictEqual(tall.length, 20);
-  assert.match(tall[5] ?? "", /^ 904 /, "four job rows are kept");
-  assert.match(tall[6] ?? "", /^── \+2 more ── chats: 30 wait/);
-  assert.match(tall[7] ?? "", /^…\? claude w0 /, "the most recent wait first");
-  assert.match(tall[18] ?? "", /^ \+19 more chats wait/);
+  assert.match(tall[7] ?? "", /^ 906 /, "the job list keeps half of the rows: all six jobs show");
+  assert.match(tall[8] ?? "", /^── chats: 30 wait/);
+  assert.match(tall[9] ?? "", /^…\? claude w0 /, "the most recent wait first");
+  assert.match(tall[18] ?? "", /^ \+21 more chats wait/);
+  // A taller screen with many jobs: the chats still get no more than half of the list
+  const manyJobs: StatusReply = {
+    ...linkedReply(),
+    waiting: Array.from({ length: 20 }, (_, i) => job(903 + i, { startAt: Now + Minute, endAt: Now + 2 * Minute })),
+  };
+  const taller = renderScreen(manyJobs, initialViewState(), { columns: 100, rows: 30, now: Now }, false, many);
+  assert.match(taller[14] ?? "", /^ 9\d\d /, "13 job rows, half of the 26 rows below the header");
+  assert.match(taller[15] ?? "", /^── \+\d+ more ── chats: 30 wait/);
 }
 
 function checkJobLinks(): void {
