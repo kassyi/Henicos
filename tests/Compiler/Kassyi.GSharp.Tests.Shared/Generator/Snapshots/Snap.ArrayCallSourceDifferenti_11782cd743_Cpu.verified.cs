@@ -172,12 +172,9 @@ public static unsafe void Unmarshal_ArrayCallHolder(ref global::Kassyi.GSharp.Te
 {
 host.Tag = native.Tag;
 }
-public static void CopyArrays_ArrayCallHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayCallHolder host)
+public static void CopyArrays_ArrayCallHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayCallHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Data != null)
-{
-host.Data = (global::System.Int32[])host.Data.Clone();
-}
+_ = copies.Copy(ref host.Data);
 }
 public static bool HoldsArray_ArrayCallHolder(global::Kassyi.GSharp.Tests.Shared.Differential.ArrayCallHolder host, object array)
 {
