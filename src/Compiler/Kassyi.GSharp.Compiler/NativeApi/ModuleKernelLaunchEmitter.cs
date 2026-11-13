@@ -96,7 +96,7 @@ internal static class ModuleKernelLaunchEmitter
         WriteLaunchLimitCheck(writer, launcherName, launch);
         // [WHY] Every launcher local has an explicit type: in a class named 'var', 'var' names that class
         writer.AppendLine(
-            $"using {HostTypeNames.GpuKernelLoader}.CudaContextScope {CudaContextScope} = new();");
+            $"using {HostTypeNames.CudaContextScope} {CudaContextScope} = new();");
         var entryPointLiteral = SymbolDisplay.FormatLiteral(entryPoint, quote: true);
         writer.AppendLine($"{HostTypeNames.IntPtr} {FunctionHandle} = {HostTypeNames.GpuKernelLoader}.LoadAotKernel(" +
             $"{moduleField}.Value, {entryPointLiteral});");
@@ -154,7 +154,7 @@ internal static class ModuleKernelLaunchEmitter
             using (writer.Scope())
             {
                 var name = SymbolDisplay.FormatLiteral(argument.Name, quote: true);
-                writer.AppendLine($"throw new global::System.ArgumentNullException({name});");
+                writer.AppendLine($"throw new {HostTypeNames.ArgumentNullException}({name});");
             }
         }
     }
@@ -240,8 +240,8 @@ internal static class ModuleKernelLaunchEmitter
             {
                 case ModuleKernelParameterKind.Array or ModuleKernelParameterKind.MultidimensionalArray:
                     writer.AppendLine(argument.AllowsNull
-                        ? $"using {buffer}? {device} = {name} is null ? null : new {buffer}({name}.Length);"
-                        : $"using {buffer} {device} = new {buffer}({name}.Length);");
+                        ? $"using {buffer}? {device} = {name} is null ? null : new({name}.Length);"
+                        : $"using {buffer} {device} = new({name}.Length);");
                     if (argument.CopyIn)
                     {
                         writer.Append($"{device}{GetAccess(argument)}CopyToDevice(");
@@ -253,8 +253,8 @@ internal static class ModuleKernelLaunchEmitter
                 case ModuleKernelParameterKind.ByReference:
                     var host = GetHostValue(argument);
                     var type = argument.TypeName;
-                    writer.AppendLineIf(!argument.CopyIn, $"{type} {host} = default({type});");
-                    writer.AppendLine($"using {buffer} {device} = new {buffer}(1);");
+                    writer.AppendLineIf(!argument.CopyIn, $"{type} {host} = default;");
+                    writer.AppendLine($"using {buffer} {device} = new(1);");
                     writer.AppendLine(
                         $"{device}.CopyToDevice(new {HostTypeNames.ReadOnlySpan}<{argument.TypeName}>(in {host}));");
                     break;
@@ -293,7 +293,7 @@ internal static class ModuleKernelLaunchEmitter
     private static void EmitContextInitialization(SourceWriter writer, string contextTypeName,
         EquatableArray<ModuleKernelArgument> arguments)
     {
-        writer.AppendLine($"{contextTypeName} {NativeContext} = new {contextTypeName}");
+        writer.AppendLine($"{contextTypeName} {NativeContext} = new()");
         using (writer.Scope())
         {
             for (var i = 0; i < arguments.Length; i++)

@@ -106,10 +106,10 @@ public class NativeApiModuleGeneratorTests
         Assert.True(problems.Length == 0, string.Join(Environment.NewLine, problems));
         var source = Assert.Single(output.SyntaxTrees, t => t.FilePath.EndsWith("StagedKernels.NativeApi.g.cs"))
             .ToString();
-        Assert.Contains("double __gsharp_out_1 = default(double);", source);
+        Assert.Contains("double __gsharp_out_1 = default;", source);
         Assert.Contains("__gsharp_d_1.CopyToHost(new global::System.Span<double>(ref __gsharp_out_1));", source);
         Assert.Contains("result = __gsharp_out_1;", source);
-        Assert.DoesNotContain("result = default;", source);
+        Assert.DoesNotContain("\nresult = default;", source);
         Assert.Contains("__gsharp_d_0.CopyToHost(new global::System.Span<int>(ref total));", source);
         Assert.DoesNotContain("__gsharp_d_2.CopyToHost", source);
         Assert.DoesNotContain("__gsharp_d_3.CopyToHost", source);
@@ -337,7 +337,7 @@ public class NativeApiModuleGeneratorTests
         var loadIndex = source.IndexOf(
             $"global::System.IntPtr __gsharp_hfunc = {KernelLoader}.LoadAotKernel(", StringComparison.Ordinal);
         var prepareIndex = source.IndexOf(Prepare, StringComparison.Ordinal);
-        var allocationIndex = source.IndexOf($"new {GpuBuffer}<float>(", StringComparison.Ordinal);
+        var allocationIndex = source.IndexOf($"using {GpuBuffer}<float> __gsharp_d_0 = new(", StringComparison.Ordinal);
 
         Assert.NotEqual(-1, loadIndex);
         Assert.True(loadIndex < prepareIndex, "Prepare must follow the function lookup");

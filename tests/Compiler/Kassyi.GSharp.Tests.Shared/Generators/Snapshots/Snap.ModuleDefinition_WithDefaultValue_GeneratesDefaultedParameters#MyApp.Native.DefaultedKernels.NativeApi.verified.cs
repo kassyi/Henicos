@@ -17,7 +17,7 @@ throw new global::System.ArgumentNullException("data");
 }
 using global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new();
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(__gsharp_module__x00002e_x00002fnative_x00002fdefaulted_x00002efatbin.Value, "Scale");
-using global::Kassyi.GSharp.Runtime.GpuBuffer<float> __gsharp_d_0 = new global::Kassyi.GSharp.Runtime.GpuBuffer<float>(data.Length);
+using global::Kassyi.GSharp.Runtime.GpuBuffer<float> __gsharp_d_0 = new(data.Length);
 __gsharp_d_0.CopyToDevice(data);
 unsafe
 {
