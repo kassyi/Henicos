@@ -459,4 +459,34 @@ public static partial class NullableDifferentialKernels
         dst[col + 0] = i == null ? 1 : 0;
         dst[col + 1] = i.HasValue ? i.Value : -999;
     }
+
+    // -------------------------------------------------------------------------
+    // default(T) and the default literal in expression positions: var, conditional arm, comparison, argument, struct,
+    // nullable, array
+    // -------------------------------------------------------------------------
+    [GpuKernel]
+    public static void DefaultInExpressionKernel(int[] a, int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        var z = default(int);
+        int y = a[t] > 0 ? a[t] : default;
+        bool e = a[t] == default(int);
+        DiffNullablePairHolder holder = a[t] > 0 ? default : new DiffNullablePairHolder { Tag = 7 };
+        int? maybe = a[t] > 0 ? default(int?) : a[t];
+        int[] none = a[t] > 0 ? default! : a;
+        long wide = default(long) + (long)a[t];
+
+        int col = t * 6;
+        dst[col + 0] = y + z + (e ? 1 : 0);
+        dst[col + 1] = holder.Tag;
+        dst[col + 2] = maybe.HasValue ? 1 : 0;
+        dst[col + 3] = none == null ? 1 : 0;
+        dst[col + 4] = (int)wide;
+        dst[col + 5] = holder.First.HasValue ? 1 : 0;
+    }
 }

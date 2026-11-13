@@ -421,14 +421,18 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitLiteralExpression(LiteralExpressionSyntax node)
     {
-        if (!LiteralTranspiler.TryAppendArrayNull(node, ref Context))
+        if (node.IsKind(SyntaxKind.DefaultLiteralExpression))
+        {
+            LiteralTranspiler.AppendDefault(node, ref Context);
+        }
+        else if (!LiteralTranspiler.TryAppendArrayNull(node, ref Context))
         {
             LiteralTranspiler.Transpile(node, Context.Emitter.Writer);
         }
     }
 
     public override void VisitDefaultExpression(DefaultExpressionSyntax node) =>
-        Context.Emitter.Writer.Append("{}");
+        LiteralTranspiler.AppendDefault(node, ref Context);
 
     public override void VisitDeclarationExpression(DeclarationExpressionSyntax node)
         => Visit(node.Designation);

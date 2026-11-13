@@ -38,7 +38,23 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(796983403u, "UserMarkerDef
 public static partial class AotContexts
 {
 }
-public const string UserMarkerDefaultKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel {
+public const string UserMarkerDefaultKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag__
+struct __gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag
+{
+int __gsharp_mb_X;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag)==4,""Kassyi.GSharp.Tests.TestCases.Analyzers.WmmaUserMarker.DefaultShapeTag: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag)==4,""Kassyi.GSharp.Tests.TestCases.Analyzers.WmmaUserMarker.DefaultShapeTag: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.TestCases.Analyzers.WmmaUserMarker.DefaultShapeTag.X: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag __gsharp_ctor_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag(int __gsharp_id_0_x) {
+__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag __gsharp_self{};
+__gsharp_self.__gsharp_mb_X=__gsharp_id_0_x;
+return __gsharp_self;
+}
+#endif
+struct __gsharp_context_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel* __gsharp_all_contexts = nullptr;
 bool __gsharp_yielded_for_grid_sync = false;
@@ -54,7 +70,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_output, 0, 796983403u)=__gsharp_add_i32({}.__gsharp_mb_X,1);
+__gsharp_array_at(__gsharp_id_0_output, 0, 796983403u)=__gsharp_add_i32(__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag{}.__gsharp_mb_X,1);
 __gsharp_state=-1;
 return;
 }
