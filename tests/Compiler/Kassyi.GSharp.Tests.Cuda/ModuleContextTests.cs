@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Generated;
+using ModuleContext = Kassyi.GSharp.Generated.GSharpModuleContext_Kassyi_x00002eGSharp_x00002eTests_x00002eCuda;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
 
@@ -149,17 +150,17 @@ public class ModuleContextTests
             return;
         }
 
-        var global = GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule();
-        Assert.Equal(global, GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule());
+        var global = ModuleContext.GetOrLoadModule();
+        Assert.Equal(global, ModuleContext.GetOrLoadModule());
 
         var isolated = CreateContext();
         try
         {
             using (new GpuKernelLoader.CudaContextScope(isolated))
             {
-                var inIsolated = GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule();
+                var inIsolated = ModuleContext.GetOrLoadModule();
                 Assert.NotEqual(global, inIsolated);
-                Assert.Equal(inIsolated, GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule());
+                Assert.Equal(inIsolated, ModuleContext.GetOrLoadModule());
             }
         }
         finally
@@ -167,7 +168,7 @@ public class ModuleContextTests
             GpuKernelLoader.DestroyContext(isolated);
         }
 
-        Assert.Equal(global, GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.GetOrLoadModule());
+        Assert.Equal(global, ModuleContext.GetOrLoadModule());
     }
 
     // Launches AddKernel in the context current on this thread and checks every element; the inputs depend on seed, so
