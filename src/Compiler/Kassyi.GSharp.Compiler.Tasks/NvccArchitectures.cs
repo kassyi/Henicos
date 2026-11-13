@@ -7,8 +7,8 @@ internal static class NvccArchitectures
     public const string InvalidEntryErrorCode = "GS0004";
 
     /// <summary>
-    /// Turns each entry into its <c>-gencode</c> options, as <see cref="CudaArchitectureList"/> reads them, and collects
-    /// the entries that are not a GPU architecture nvcc accepts.
+    /// Turns each entry into its <c>-gencode</c> options, as <see cref="CudaArchitectureList"/> reads them, and
+    /// collects the entries that are not a GPU architecture nvcc accepts.
     /// </summary>
     /// <param name="targetArchitectures">The entries separated by <c>;</c>; empty entries are skipped.</param>
     public static NvccArchitecturePlan Parse(string targetArchitectures)

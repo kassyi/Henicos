@@ -12,7 +12,8 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// Whether <c>GSharpCheckedBuild</c> enables checked device assertions and post-launch stream synchronization (#729).
 /// </param>
 /// <param name="TargetLimits">
-/// The launch limits of the GPUs that <c>GSharpTargetArchitectures</c> builds for (<see cref="GpuArchitectureLimits"/>).
+/// The launch limits of the GPUs that <c>GSharpTargetArchitectures</c> builds for
+/// (<see cref="GpuArchitectureLimits"/>).
 /// </param>
 internal record struct GeneratorConfig(
     string TargetDialect,

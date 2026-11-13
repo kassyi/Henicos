@@ -53,6 +53,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
     public const string HeldRefLocalsTrackingName = "GpuHeldRefLocalsInput";
 
     /// <summary>
+    /// The tracking name of the input of the output that reports the target architectures without launch limits in
+    /// the table of the compiler (GSH0114). It reads only the build options and whether there are kernels.
+    /// </summary>
+    public const string TargetArchitecturesTrackingName = "GpuTargetArchitecturesInput";
+
+    /// <summary>
     /// The tracking name of the step that reads the device code export records of the referenced assemblies, which the
     /// native module imports from.
     /// </summary>
@@ -273,7 +279,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 .WithTrackingName(AotArtifactTrackingName),
             static (spc, input) => WriteAot(spc, input.Left.Left.Left.Left, input.Left.Left.Left.Right,
                 input.Left.Left.Right, input.Left.Right, input.Right));
-        context.RegisterSourceOutput(configProvider.Combine(hasKernels),
+        context.RegisterSourceOutput(
+            configProvider.Combine(hasKernels).WithTrackingName(TargetArchitecturesTrackingName),
             static (spc, input) => ReportUnknownArchitectures(spc, input.Left.TargetLimits, input.Right));
         context.RegisterSourceOutput(
             warmups.Combine(hostOptions).Combine(hasKernels).WithTrackingName(ModuleContextTrackingName),
@@ -331,7 +338,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
     }
 
     // GSH0114 once per project with kernels, without a location: the setting is an MSBuild property
-    private static void ReportUnknownArchitectures(SourceProductionContext context, TargetLimits limits, bool hasKernels)
+    private static void ReportUnknownArchitectures(
+        SourceProductionContext context,
+        TargetLimits limits,
+        bool hasKernels)
     {
         if (hasKernels && !limits.UnknownArchitectures.IsDefaultOrEmpty)
         {
