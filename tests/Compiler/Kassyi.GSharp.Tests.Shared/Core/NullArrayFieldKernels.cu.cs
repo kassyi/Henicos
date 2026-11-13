@@ -176,8 +176,8 @@ public static partial class NullArrayFieldKernels
     public static void OptionalWithBarrierKernel(int[] o, int[]? bias)
     {
         Gpu.SyncThreads();
-        // C#: NullReferenceException in Len for a null bias, which the test checks (the call is the only read, so
-        // the place of the exception does not depend on the order of evaluation)
+        // C#: NullReferenceException in Len for a null bias. The call is the only read: a second operand would put its
+        // check before the call on the native path (#1786 (later check runs before an earlier call on MSVC))
         o[0] = Len(bias);
     }
 #nullable restore
