@@ -471,14 +471,14 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     // One overload's body changes; the other kernels and the device function do not
     private static Compilation EditOneKernel(Compilation compilation)
     {
+        // data[i] = data[i] * factor;  ->  data[i] = data[i] * factor + 1;
         var tree = compilation.SyntaxTrees.Single();
-        var text = tree.GetText().ToString();
-        var editedText = text.Replace(
-            "data[i] = data[i] * factor;",
-            "data[i] = data[i] * factor + 1;",
-            StringComparison.Ordinal);
-        Assert.NotEqual(text, editedText);
-        return WithChangedText(compilation, tree, editedText);
+        var product = Assert.Single(
+            tree.GetRoot().DescendantNodes().OfType<AssignmentExpressionSyntax>(),
+            static assignment => assignment.Right.IsKind(SyntaxKind.MultiplyExpression)
+        ).Right;
+        var edited = tree.GetText().WithChanges(new TextChange(new TextSpan(product.Span.End, 0), " + 1"));
+        return compilation.ReplaceSyntaxTree(tree, tree.WithChangedText(edited));
     }
 
     // Writes the run reasons of each tracked step; the elapsed times vary by machine, so they go to the test output only
@@ -530,7 +530,7 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
     private static CSharpCompilation CreateCompilation(params (string Path, string Source)[] files) =>
         RoslynTestUtility.CreateCompilationAt(files).WithAssemblyName("CachingTest");
 
-    // The compilation after an edit of one file, as an editor changes it: the tree keeps its path and parse options
+    // The compilation with the text of one file replaced; the new tree keeps the path and parse options of the old one
     private static Compilation WithChangedText(Compilation compilation, SyntaxTree tree, string text) =>
         compilation.ReplaceSyntaxTree(tree, tree.WithChangedText(SourceText.From(text)));
 
