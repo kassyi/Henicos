@@ -17,30 +17,40 @@ internal static class GSharpGeneratedTrees
     private const string AssemblyName = "Kassyi.GSharp.Compiler";
 
     // The full names of the generator types of this assembly, as Roslyn writes them into the path
-    private static readonly string[] s_generatorDirectories =
-    [
-        AssemblyName + "/" + AssemblyName + "." + nameof(GpuKernelGenerator) + "/",
-        AssemblyName + "/" + AssemblyName + "." + nameof(TrustedKeysGenerator) + "/",
-        AssemblyName + "/" + AssemblyName + ".NativeApi." + nameof(CudaImportGenerator) + "/",
-        AssemblyName + "/" + AssemblyName + ".NativeApi." + nameof(NativeApiGenerator) + "/"
-    ];
+    private const string GpuKernelGeneratorName = AssemblyName + "." + nameof(GpuKernelGenerator);
+    private const string TrustedKeysGeneratorName = AssemblyName + "." + nameof(TrustedKeysGenerator);
+    private const string CudaImportGeneratorName = AssemblyName + ".NativeApi." + nameof(CudaImportGenerator);
+    private const string NativeApiGeneratorName = AssemblyName + ".NativeApi." + nameof(NativeApiGenerator);
 
     /// <summary>Whether a generator of <c>Kassyi.GSharp.Compiler</c> added <paramref name="tree"/>.</summary>
     public static bool IsOwnOutput(SyntaxTree? tree)
     {
-        if (tree is null || tree.FilePath.Length == 0)
+        if (tree is null)
         {
             return false;
         }
 
-        // The directories end the path right before the hint name, which has no directory of its own
-        var path = tree.FilePath.Replace('\\', '/');
-        var directory = path.Substring(0, path.LastIndexOf('/') + 1);
-        return s_generatorDirectories
-            .AsStackEnumerable()
-            .Any(directory, static (generator, dir) =>
-                dir.EndsWith(generator, StringComparison.Ordinal) &&
-                (dir.Length == generator.Length || dir[dir.Length - generator.Length - 1] == '/')
-            );
+        // <assembly>/<generator type>/<hint name>, at the end of the path; the hint name has no directory of its own
+        var path = tree.FilePath.AsSpan();
+        if (!TrySplitLast(path, out var directory, out _) ||
+            !TrySplitLast(directory, out var parent, out var generatorType))
+        {
+            return false;
+        }
+
+        var assembly = TrySplitLast(parent, out _, out var last) ? last : parent;
+        return assembly is AssemblyName &&
+               (generatorType is GpuKernelGeneratorName or TrustedKeysGeneratorName or CudaImportGeneratorName
+                   or NativeApiGeneratorName);
+    }
+
+    // The path before its last separator ('/' or '\') and the segment after it, or false when it has none
+    private static bool TrySplitLast(ReadOnlySpan<char> path, out ReadOnlySpan<char> before,
+        out ReadOnlySpan<char> segment)
+    {
+        var separator = path.LastIndexOfAny('/', '\\');
+        before = separator < 0 ? ReadOnlySpan<char>.Empty : path.Slice(0, separator);
+        segment = separator < 0 ? ReadOnlySpan<char>.Empty : path.Slice(separator + 1);
+        return separator >= 0;
     }
 }
