@@ -210,12 +210,14 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         IsAssignableAfterDeclaration(typeSymbol) &&
         IsJumpedOver(declarator);
 
-    // Whether the declarator is in a plain local declaration (not ref, not using) that a goto may jump past
+    // Whether the declarator is in a plain local declaration or the pointer of a fixed statement (not ref, not using)
+    // that a goto may jump past
     private static bool IsJumpedOver(VariableDeclaratorSyntax declarator) =>
         declarator.Parent is VariableDeclarationSyntax
         {
             Type: not RefTypeSyntax,
-            Parent: LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.None } statement
+            Parent: (LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.None } or
+                FixedStatementSyntax) and StatementSyntax statement
         } &&
         GotoJumpAnalysis.MayBeJumpedOver(statement);
 

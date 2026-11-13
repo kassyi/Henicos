@@ -134,4 +134,44 @@ public class GotoScopeTests : TranspilerTestBase
             flag,
             expectedFirst
         );
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 1)]
+    [InlineData(1, 2)]
+    [InlineData(5, 1)]
+    public void Goto_NativeIntoSectionBeforeStruct_DeclaresTheStructBeforeTheSwitch(int flag, int expectedFirst) =>
+        GotoScopeScenarios.Run(
+            s_runNative,
+            static (data, f) => GotoScopeKernels.LaunchGotoIntoSectionBeforeStructKernel(data, f, blockDimX: 1),
+            flag,
+            expectedFirst
+        );
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 10)]
+    [InlineData(1, 2)]
+    public void Goto_NativeOverFixed_SplitsThePointerDeclaration(int flag, int expectedFirst) =>
+        GotoScopeScenarios.Run(
+            s_runNative,
+            static (data, f) => GotoScopeKernels.LaunchGotoOverFixedKernel(data, f, blockDimX: 1),
+            flag,
+            expectedFirst
+        );
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 10)]
+    [InlineData(1, 4)]
+    public void Goto_NativeOverSharedMemory_SplitsTheAllocation(int flag, int expectedFirst)
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        GotoScopeScenarios.Run(
+            s_runNative,
+            static (data, f) => GotoScopeKernels.LaunchGotoOverSharedMemoryKernel(data, f, blockDimX: 1),
+            flag,
+            expectedFirst
+        );
+    }
 }

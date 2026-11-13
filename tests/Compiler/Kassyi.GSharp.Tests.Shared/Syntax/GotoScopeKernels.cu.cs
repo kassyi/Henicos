@@ -191,4 +191,72 @@ public static partial class GotoScopeKernels
     done:
         data[1] = 7;
     }
+
+    // A goto from another section targets a label before the struct that its section declares: the jump enters the
+    // braces of the section, so the struct is declared before the switch
+    [GpuKernel]
+    public static void GotoIntoSectionBeforeStructKernel(int[] data, int flag)
+    {
+        switch (flag)
+        {
+            case 0:
+                goto mid;
+            case 1:
+            case 5:
+                data[0] = 1;
+            mid:
+                if (flag == 5)
+                {
+                    goto after;
+                }
+
+                {
+                    SwitchHolder holder = new SwitchHolder { Values = data, Count = flag + 1 };
+                    data[0] = holder.Count;
+                }
+
+            after:
+                data[1] = 7;
+                break;
+        }
+    }
+
+    // The pointer of a fixed statement is declared in front of its braces
+    [GpuKernel]
+    public static unsafe void GotoOverFixedKernel(int[] data, int flag)
+    {
+        if (flag == 0)
+        {
+            goto skip;
+        }
+
+        {
+            fixed (int* p = data)
+            {
+                p[0] = flag + 1;
+            }
+        }
+
+    skip:
+        data[1] = 7;
+    }
+
+    // A shared memory declaration of the CPU dialects allocates where it is written
+    [GpuKernel]
+    public static void GotoOverSharedMemoryKernel(int[] data, int flag)
+    {
+        if (flag == 0)
+        {
+            goto skip;
+        }
+
+        {
+            var shared = new SharedMemory<int>(4);
+            shared[0] = flag + 3;
+            data[0] = shared[0];
+        }
+
+    skip:
+        data[1] = 7;
+    }
 }

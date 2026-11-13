@@ -20,15 +20,51 @@ internal static class GotoJumpAnalysis
     /// itself is before the declaration or outside that scope. C# labels cannot shadow each other (CS0158), so the
     /// name decides.
     /// </summary>
-    public static bool MayBeJumpedOver(LocalDeclarationStatementSyntax declaration) =>
+    public static bool MayBeJumpedOver(StatementSyntax declaration) =>
         FindJump(declaration) != Jump.None;
 
     /// <summary>
     /// Whether a <c>goto</c> in another section of the switch jumps past <paramref name="declaration"/>, into the
     /// braces of its section: a declaration at the start of the section would be jumped past too.
     /// </summary>
-    public static bool IsEnteredFromOtherSection(LocalDeclarationStatementSyntax declaration) =>
+    public static bool IsEnteredFromOtherSection(StatementSyntax declaration) =>
         FindJump(declaration) == Jump.FromOutsideScope;
+
+    /// <summary>
+    /// Whether a <c>goto</c> outside <paramref name="section"/> targets any label inside it. The jump enters the braces
+    /// of the section, so a local that is declared at the start of the section is jumped past.
+    /// </summary>
+    public static bool IsSectionEnteredFromOutside(SwitchSectionSyntax section)
+    {
+        if (section.Parent is not SwitchStatementSyntax switchStatement)
+        {
+            return false;
+        }
+
+        foreach (var node in section.DescendantNodes(IsOutsideNestedFunction))
+        {
+            if (node is not LabeledStatementSyntax label)
+            {
+                continue;
+            }
+
+            foreach (var candidate in switchStatement.DescendantNodes(IsOutsideNestedFunction))
+            {
+                if (candidate is GotoStatementSyntax
+                    {
+                        RawKind: (int)SyntaxKind.GotoStatement,
+                        Expression: IdentifierNameSyntax target
+                    } jumpStatement &&
+                    target.Identifier.ValueText == label.Identifier.ValueText &&
+                    !section.Span.Contains(jumpStatement.Span))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     private enum Jump
     {
@@ -37,7 +73,7 @@ internal static class GotoJumpAnalysis
         FromOutsideScope
     }
 
-    private static Jump FindJump(LocalDeclarationStatementSyntax declaration)
+    private static Jump FindJump(StatementSyntax declaration)
     {
         if (CppBlockScopes.ScopeOf(declaration) is not { } scope)
         {

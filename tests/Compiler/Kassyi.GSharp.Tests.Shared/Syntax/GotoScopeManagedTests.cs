@@ -135,6 +135,45 @@ public class GotoScopeManagedTests : TranspilerTestBase
             expectedFirst
         );
 
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 1)]
+    [InlineData(1, 2)]
+    [InlineData(5, 1)]
+    public void Goto_ManagedIntoSectionBeforeStruct_DeclaresTheStructBeforeTheSwitch(int flag, int expectedFirst) =>
+        GotoScopeScenarios.Run(
+            s_runManaged,
+            static (data, f) => GotoScopeKernels.LaunchGotoIntoSectionBeforeStructKernel(data, f, blockDimX: 1),
+            flag,
+            expectedFirst
+        );
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 10)]
+    [InlineData(1, 2)]
+    public void Goto_ManagedOverFixed_SplitsThePointerDeclaration(int flag, int expectedFirst) =>
+        GotoScopeScenarios.Run(
+            s_runManaged,
+            static (data, f) => GotoScopeKernels.LaunchGotoOverFixedKernel(data, f, blockDimX: 1),
+            flag,
+            expectedFirst
+        );
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 10)]
+    [InlineData(1, 4)]
+    public void Goto_ManagedOverSharedMemory_SplitsTheAllocation(int flag, int expectedFirst)
+    {
+        GotoScopeScenarios.Run(
+            s_runManaged,
+            static (data, f) => GotoScopeKernels.LaunchGotoOverSharedMemoryKernel(data, f, blockDimX: 1),
+            flag,
+            expectedFirst
+        );
+    }
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))

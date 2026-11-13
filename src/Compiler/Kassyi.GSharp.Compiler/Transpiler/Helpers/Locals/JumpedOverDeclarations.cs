@@ -32,7 +32,7 @@ internal static class JumpedOverDeclarations
 
     // An array alias (int[] a = input, a Span<T> over an array) is a GSharpArray<T>, which has a default constructor; a
     // stack array (new T[N], stackalloc) is a C++ array that keeps its own form (zero fill, VariableDeclarationTranspilerRule)
-    private static bool IsArrayOrHasCppDefaultConstructor(VariableDeclaratorSyntax declarator,
+    internal static bool IsArrayOrHasCppDefaultConstructor(VariableDeclaratorSyntax declarator,
         LocalDeclarationStatementSyntax statement, SemanticModel semanticModel)
     {
         var type = semanticModel.GetTypeSymbol(statement.Declaration.Type);

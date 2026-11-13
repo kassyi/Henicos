@@ -97,7 +97,8 @@ internal static class SwitchSectionLocals
         if (!declaration.IsConst)
         {
             return (IsNamedInOtherSection(declarator, section, model) ||
-                    GotoJumpAnalysis.IsEnteredFromOtherSection(declaration)) &&
+                    GotoJumpAnalysis.IsEnteredFromOtherSection(declaration) ||
+                    IsHoistedInEnteredSection(declaration, declarator, section, model)) &&
                    CanDeclareBeforeSwitch(declaration, declarator, model);
         }
 
@@ -140,6 +141,14 @@ internal static class SwitchSectionLocals
 
         return false;
     }
+
+    // A local that is declared at the start of its C++ scope (JumpedOverDeclarations) is in front of every label of
+    // the section, so a goto from another section to any label of the section jumps past it
+    private static bool IsHoistedInEnteredSection(LocalDeclarationStatementSyntax declaration,
+        VariableDeclaratorSyntax declarator, SwitchSectionSyntax section, SemanticModel model) =>
+        GotoJumpAnalysis.MayBeJumpedOver(declaration) &&
+        JumpedOverDeclarations.IsArrayOrHasCppDefaultConstructor(declarator, declaration, model) &&
+        GotoJumpAnalysis.IsSectionEnteredFromOutside(section);
 
     // A ref local, a span (a ref struct) and a stack array (a C++ array, which cannot be assigned) need their
     // initializer at the declaration; shared memory, WMMA types and iterator locals have forms of their own
