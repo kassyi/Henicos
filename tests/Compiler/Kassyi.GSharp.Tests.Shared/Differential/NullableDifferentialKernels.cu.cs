@@ -459,4 +459,88 @@ public static partial class NullableDifferentialKernels
         dst[col + 0] = i == null ? 1 : 0;
         dst[col + 1] = i.HasValue ? i.Value : -999;
     }
+
+    // -------------------------------------------------------------------------
+    // The value of ??= inside an expression: the underlying type when the right side converts to it, the nullable type
+    // otherwise
+    // -------------------------------------------------------------------------
+    [GpuKernel]
+    public static void CoalesceAssignmentValueKernel(int[] conds, int[] vals, long[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        int c = conds[t];
+        int v = vals[t];
+
+        // Col 0: int? ??= int on a struct field, its int value an operand of ^
+        DiffNullablePairHolder holder = default;
+        if ((c & 1) != 0)
+        {
+            holder.First = v - 3;
+        }
+
+        int mixed = (holder.First ??= v + 11) ^ v;
+
+        // Col 1: int? ??= int? keeps the nullable type
+        int? a = default;
+        if ((c & 2) != 0)
+        {
+            a = v * 3;
+        }
+
+        int? b = default;
+        if ((c & 4) != 0)
+        {
+            b = v + 7;
+        }
+
+        int? kept = a ??= b;
+
+        // Col 2: nested ??=, both values int
+        int? nestedOuter = default;
+        if ((c & 8) != 0)
+        {
+            nestedOuter = v >> 2;
+        }
+
+        int nested = (nestedOuter ??= (b ??= v - 5)) * 2;
+
+        // Col 3: long? ??= int converts the right side to long
+        long? wide = default;
+        if ((c & 16) != 0)
+        {
+            wide = (long)v << 33;
+        }
+
+        long widened = (wide ??= v) + 1L;
+
+        // Col 4: byte? ??= byte, the byte value promoted to int by +
+        byte? small = default;
+        if ((c & 32) != 0)
+        {
+            small = (byte)v;
+        }
+
+        int promoted = (small ??= (byte)(v >> 8)) + 1000;
+
+        // Col 5: the value is read before a later operand writes the target
+        if ((c & 64) != 0)
+        {
+            holder.Second = v ^ 0x55;
+        }
+
+        int before = (holder.Second ??= v) + (holder.Second = v + 1).Value;
+
+        int col = t * 6;
+        dst[col + 0] = mixed;
+        dst[col + 1] = kept.HasValue ? kept.Value : -999;
+        dst[col + 2] = nested;
+        dst[col + 3] = widened;
+        dst[col + 4] = promoted;
+        dst[col + 5] = before;
+    }
 }
