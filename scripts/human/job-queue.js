@@ -58,6 +58,9 @@
 // overrides it. A command run by a queued job (GSHARP_JOB_QUEUE_JOB is set) that calls `run` again runs at once,
 // without a second slot, with the same MSBuild node limit.
 //
+// Screenshots: `--screenshots <dir>` draws the live view (status --watch) from a fixed sample status as SVG files,
+// the images of job-queue/README.md, with no scheduler.
+//
 // Usage: node scripts/human/job-queue.js --help
 //
 // Exit codes (run): the exit code of the command; 2 on a usage error or an unknown --after job; 3 when the wait timed
