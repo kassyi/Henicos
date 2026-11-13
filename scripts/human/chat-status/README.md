@@ -8,12 +8,12 @@ the person and what they asked. It only writes the files; drawing them is the jo
 
 | File | Responsibility |
 | :- | :- |
-|  | The entry: arguments, , , , ; re-exports  and the helpers the self-test uses |
-|  | : reads the payload on stdin, always exits 0, picks the output the agent expects |
-|  | What each Claude Code and Antigravity event means (the state to record), with no file access but the transcript read |
-|  | The question of a text, the last text of a transcript read from its end, the questions and options of a choice question |
-|  | The chat files: the main checkout lookup, the atomic write, removing stale files, the error log,  |
-|  |  |
+| `scripts/human/chat-status.js` | The entry: arguments, `--help`, `--hook`, `--list`, `--self-test`; re-exports `listChats` and the helpers the self-test uses |
+| `chat-status/hook.js` | `--hook`: reads the payload on stdin, always exits 0, picks the output the agent expects |
+| `chat-status/events.js` | What each Claude Code and Antigravity event means (the state to record), with no file access but the transcript read |
+| `chat-status/questions.js` | The question of a text, the last text of a transcript read from its end, the questions and options of a choice question |
+| `chat-status/store.js` | The chat files: the main checkout lookup, the atomic write, removing stale files, the error log, `listChats()` |
+| `chat-status/self-test.js` | `--self-test` |
 
 ## Where
 
