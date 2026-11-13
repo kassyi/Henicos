@@ -98,10 +98,10 @@ internal static class WrapperEmitter
 
     // namespace <namespace> { <outer partial declarations> <accessibility> partial <keyword> <name>, without the
     // namespace for the global namespace. The generated part must declare the accessibility of the user's part, or the
-    // compiler reports CS0262, and its kind (class, record), or CS0261. The relay hosts among the outer declarations
-    // get the warmup relays of warmedUpKernels (CUDA only).
+    // compiler reports CS0262, and its kind (class, record), or CS0261. Each outer declaration gets its warmup relays
+    // (CUDA only).
     private static void WriteClassDeclaration(SourceWriter writer, in HostClassHeader header,
-        EquatableArray<KernelEmission> warmedUpKernels = default)
+        EquatableArray<WarmupRelay> relays = default)
     {
         if (!header.IsGlobalNamespace)
         {
@@ -110,22 +110,11 @@ internal static class WrapperEmitter
         }
 
         // A nested class is written inside partial declarations of the types that contain it
-        var relays = header.WarmupRelayHosts;
-        var firstRelayHost = header.OuterDeclarations.Length - relays.Length;
         for (var i = 0; i < header.OuterDeclarations.Length; i++)
         {
             writer.AppendLine(header.OuterDeclarations[i]);
             writer.AppendLine("{");
-            if (i >= firstRelayHost && !warmedUpKernels.IsDefaultOrEmpty)
-            {
-                var next = i - firstRelayHost + 1;
-                CudaHostLaunchEmitter.WriteWarmupRelays(
-                    writer,
-                    next < relays.Length ? relays[next] : null,
-                    header.FullyQualifiedName,
-                    warmedUpKernels
-                );
-            }
+            CudaHostLaunchEmitter.WriteWarmupRelays(writer, relays, i);
         }
 
         writer.AppendLine($"{header.Accessibility} partial {header.Keyword} {header.Name}");
@@ -224,7 +213,7 @@ internal static class WrapperEmitter
 
         writer.AppendLine();
 
-        WriteClassDeclaration(writer, model.Class, config.IsCuda ? model.Kernels : default);
+        WriteClassDeclaration(writer, model.Class, config.IsCuda ? model.WarmupRelays : default);
         using (writer.Scope())
         {
             WriteErrorSiteTableField(writer, model.ErrorSites);
