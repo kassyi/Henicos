@@ -29,6 +29,24 @@ public class PrivateFrameTypeManagedTests
     [Scenario(TestScenario.HappyPath)]
     public void PrivateStruct_FunctionOfNestedGenericClass_ComputesValues() => Run(PrivateFrameTypeCases.GenericClass);
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_KernelOfAnotherClass_ComputesValues() => Run(PrivateFrameTypeCases.OtherClass);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_DeviceFunctionOfAnotherClass_ComputesValues() =>
+        Run(PrivateFrameTypeCases.OtherClassChain);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_TwoFramesWithWarpShuffle_EachMeetsItsOwnShuffle() =>
+        Run(PrivateFrameTypeCases.OtherClassWarp);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_UnsafeFunctionFromSafeKernel_ComputesValues() => Run(PrivateFrameTypeCases.PointerFrame);
+
     private static void Run(PrivateFrameTypeCase run)
     {
         int[] data = [1, 2, 3, 4];

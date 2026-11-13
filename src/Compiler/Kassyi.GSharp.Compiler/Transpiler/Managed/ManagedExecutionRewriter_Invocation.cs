@@ -2,7 +2,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal sealed partial class ManagedExecutionRewriter
 {
-    // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args, __gsharp_ctx.__gsharp_call_frame_n[, ref target])
+    // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args, __gsharp_ctx.__gsharp_call_frame_n[, ref target]),
+    // or Class.__gsharp_enter_Foo(args, ref __gsharp_ctx.__gsharp_call_frame_n[, ref target]) for a frame held as an object
     public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
     {
         if (node.Expression is not IdentifierNameSyntax
@@ -46,34 +47,44 @@ internal sealed partial class ManagedExecutionRewriter
                 : visited);
         }
 
-        // __gsharp_ctx.__gsharp_call_frame_<frame index> or &__gsharp_ctx->__gsharp_call_frame_<frame index>
-        var frameName = GSharpInternalNames.SuspendingCall.CallFramePrefix + frameIndex.Token.ValueText;
+        var throughEntry = frameIndex.Token.Value is int index && index < _callFrames.Length
+            ? _callFrames[index].ThroughEntry
+            : throw new InvalidOperationException(
+                $"A resume call names frame {frameIndex.Token.ValueText}, which the context does not hold.");
+        callArguments = callArguments.Add(CreateFrameArgument(frameIndex.Token.ValueText, throughEntry));
+
+        if (arguments.Count > 2)
+        {
+            var target = Visit(arguments[2].Expression) as ExpressionSyntax ?? arguments[2].Expression;
+            callArguments = callArguments.Add(SyntaxFactory.Argument(target)
+                .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword)));
+        }
+
+        var prefix = throughEntry
+            ? GSharpInternalNames.SuspendingCall.EnterPrefix
+            : GSharpInternalNames.Kernel.StateMachinePrefix;
+        return SyntaxFactory.InvocationExpression(
+            SyntaxFactory.ParseExpression(ManagedStateMachineEmitter.GetDeviceFunctionMember(callee, prefix)),
+            SyntaxFactory.ArgumentList(callArguments));
+    }
+
+    // The frame passed to the callee: __gsharp_ctx.__gsharp_call_frame_<i> (&__gsharp_ctx->... in an unsafe context), or
+    // ref __gsharp_ctx.__gsharp_call_frame_<i> (ref __gsharp_ctx->...) to the entry of a frame held as an object
+    private ArgumentSyntax CreateFrameArgument(string frameIndex, bool throughEntry)
+    {
         var frameAccess = SyntaxFactory.MemberAccessExpression(
             _isUnsafe ? SyntaxKind.PointerMemberAccessExpression : SyntaxKind.SimpleMemberAccessExpression,
             SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
-            SyntaxFactory.IdentifierName(frameName)
+            SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.CallFramePrefix + frameIndex)
         );
-        var frameArg = _isUnsafe
-            ? (ExpressionSyntax)SyntaxFactory.PrefixUnaryExpression(SyntaxKind.AddressOfExpression, frameAccess)
-            : frameAccess;
-        callArguments = callArguments.Add(SyntaxFactory.Argument(frameArg));
-
-        if (arguments.Count <= 2)
+        if (throughEntry)
         {
-            return SyntaxFactory.InvocationExpression(
-                SyntaxFactory.ParseExpression(ManagedStateMachineEmitter.GetDeviceFunctionMember(callee,
-                    GSharpInternalNames.Kernel.StateMachinePrefix)),
-                SyntaxFactory.ArgumentList(callArguments));
+            return SyntaxFactory.Argument(frameAccess).WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword));
         }
 
-        var target = Visit(arguments[2].Expression) as ExpressionSyntax ?? arguments[2].Expression;
-        callArguments = callArguments.Add(SyntaxFactory.Argument(target)
-            .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword)));
-
-        return SyntaxFactory.InvocationExpression(
-            SyntaxFactory.ParseExpression(ManagedStateMachineEmitter.GetDeviceFunctionMember(callee,
-                GSharpInternalNames.Kernel.StateMachinePrefix)),
-            SyntaxFactory.ArgumentList(callArguments));
+        return SyntaxFactory.Argument(_isUnsafe
+            ? SyntaxFactory.PrefixUnaryExpression(SyntaxKind.AddressOfExpression, frameAccess)
+            : frameAccess);
     }
 
     private static InvocationExpressionSyntax RewriteSequentialSum(InvocationExpressionSyntax call) =>

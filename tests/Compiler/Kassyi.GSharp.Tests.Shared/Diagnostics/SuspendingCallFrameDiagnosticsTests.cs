@@ -4,16 +4,17 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
 /// On the C++ dialect the context of a kernel holds the frame of every call that waits at a barrier. A frame that holds a
-/// private nested type is private to the function's class, and a frame that would hold a file-local type is not emitted:
-/// a kernel that cannot hold the frame gets GSH0115 at the call, and the generated C# still compiles (#1835).
+/// private nested type is private to the function's class, and kernels of other classes hold it through the entries
+/// generated beside it; a frame that would hold a file-local type is not emitted, and a kernel that reaches one gets
+/// GSH0115 at the call. The generated C# compiles either way (#1835).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class SuspendingCallFrameDiagnosticsTests
 {
     private const string TestCase = "Analyzers/SuspendingCallFrameSadPath.cs";
 
-    // The call from a kernel of another class, the call through a device function of another class and a frame with a
-    // file-local type; not the kernels of the class that declares the private type and of a class nested in it
+    // The direct call and the call through a device function of a function whose frame would hold a file-local type;
+    // none of the calls of functions whose frames hold a private type, from whichever class
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task KernelCall_FrameItCannotHold_ReportsGsh0115AtTheCalledName()
@@ -22,17 +23,16 @@ public class SuspendingCallFrameDiagnosticsTests
 
         Assert.Equal(
             [
-                (Analyzer, 40, 85, 40, 97),
-                (Analyzer, 43, 86, 43, 92),
-                (Analyzer, 46, 93, 46, 107)
+                (Analyzer, 47, 93, 47, 107),
+                (Analyzer, 50, 99, 50, 105)
             ],
             diagnostics.Ranges(GSharpDiagnostics.SuspendingCallFrameUnreachable.Id));
     }
 
     [Theory]
-    [InlineData("'FrameOwner.HoldsPrivate' here: its frame holds a type that only 'FrameOwner' can name")]
-    [InlineData("'FrameRelay.Relays' here: it calls 'FrameOwner.HoldsPrivate', which 'FrameRelay' cannot call")]
-    [InlineData("'FileLocalHolder.HoldsFileLocal' here: its frame would hold the file-local type 'FileLocalValue'")]
+    [InlineData("'FileLocalHolder.HoldsFileLocal': its frame would hold the file-local type 'FileLocalValue'")]
+    [InlineData("'FileLocalRelay.Relays': it calls 'FileLocalHolder.HoldsFileLocal', whose frame cannot be " +
+                "generated: its frame would hold the file-local type 'FileLocalValue'")]
     [Scenario(TestScenario.SadPath)]
     public async Task KernelCall_FrameItCannotHold_MessageNamesTheReason(string message)
     {
@@ -51,7 +51,8 @@ public class SuspendingCallFrameDiagnosticsTests
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.SuspendingCallFrameUnreachable.Id));
     }
 
-    // Without the frames it cannot hold, the generated C# names no frame that is missing or private elsewhere
+    // The private frames are held as objects and driven through their entries; the frames that cannot be emitted are
+    // named nowhere
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]

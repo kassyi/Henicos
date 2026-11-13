@@ -49,6 +49,25 @@ public static partial class PrivateFrameTypeKernels
     public static void GenericClassKernel(int[] data, int[] result) =>
         result[ThreadIndex.X] = Generic<int>.Step(data, 3);
 
+    // 4v + 7, callable from other classes: its frame holds State, so it is private to this class and the callers
+    // elsewhere reach it through the entries generated beside it
+    [GpuDeviceFunction]
+    internal static int Shared(int[] data)
+    {
+        var state = new State { X = data[ThreadIndex.X] * 4 };
+        Gpu.SyncThreads();
+        return state.X + 7;
+    }
+
+    // The value * factor of the neighbouring lane (lane ^ 1), read at a warp shuffle after the barrier
+    [GpuDeviceFunction]
+    internal static int Exchange(int[] data, int factor)
+    {
+        var state = new State { X = data[ThreadIndex.X] * factor };
+        Gpu.SyncThreads();
+        return Warp.ShuffleXorSync(0xFu, state.X, 1);
+    }
+
     private static partial class Nested
     {
         // 3v - 1
@@ -71,5 +90,69 @@ public static partial class PrivateFrameTypeKernels
             Gpu.SyncThreads();
             return state.X * factor + 100;
         }
+    }
+}
+
+// Device functions and kernels of other classes that call PrivateFrameTypeKernels.Shared, whose frame they cannot name
+public static partial class PrivateFrameTypeRelay
+{
+    // Shared(v) * 2 + v, with its own value across a second barrier: its frame holds Shared's frame as an object
+    [GpuDeviceFunction]
+    internal static int Relay(int[] data)
+    {
+        var before = data[ThreadIndex.X];
+        var shared = PrivateFrameTypeKernels.Shared(data);
+        Gpu.SyncThreads();
+        return shared * 2 + before;
+    }
+}
+
+public static partial class PrivateFrameTypeCallers
+{
+    // The private frame held by the kernel's context
+    [GpuKernel]
+    public static void OtherClassKernel(int[] data, int[] result) =>
+        result[ThreadIndex.X] = PrivateFrameTypeKernels.Shared(data);
+
+    // The private frame held by the frame of a device function of a third class
+    [GpuKernel]
+    public static void OtherClassChainKernel(int[] data, int[] result) =>
+        result[ThreadIndex.X] = PrivateFrameTypeRelay.Relay(data);
+
+    // Two private frames of the same function, each with its own warp path: a frame that is not numbered would meet the
+    // other one's shuffle
+    [GpuKernel]
+    public static void OtherClassWarpKernel(int[] data, int[] result)
+    {
+        var first = PrivateFrameTypeKernels.Exchange(data, 1);
+        var second = PrivateFrameTypeKernels.Exchange(data, 10);
+        result[ThreadIndex.X] = first + second;
+    }
+
+    // An unsafe function's private frame, a struct, held by the context of a kernel that is not unsafe
+    [GpuKernel]
+    public static void PointerFrameKernel(int[] data, int[] result) =>
+        result[ThreadIndex.X] = PrivateFramePointerOwner.Step(data);
+}
+
+// An unsafe class: the frames of its device functions are structs taken by pointer
+public static unsafe partial class PrivateFramePointerOwner
+{
+    private struct Pair
+    {
+        public int A;
+        public int B;
+    }
+
+    // 5v + 3, through a pointer to a private struct; the pointer into the frame is kept across the barrier, so the frame
+    // must not move between two calls of the state machine
+    [GpuDeviceFunction]
+    internal static int Step(int[] data)
+    {
+        var pair = new Pair { A = data[ThreadIndex.X] * 5, B = 2 };
+        Pair* p = &pair;
+        p->A += 1;
+        Gpu.SyncThreads();
+        return p->A + pair.B;
     }
 }

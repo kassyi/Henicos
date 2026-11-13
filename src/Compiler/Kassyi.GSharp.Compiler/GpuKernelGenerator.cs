@@ -522,8 +522,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
             var compilation = context.SemanticModel.Compilation;
-            // A private frame (one that holds a private type of the class) is the class's own: another assembly cannot
-            // call the state machine
+            // A private frame (one that holds a private type of the class) is run from other classes through its entries,
+            // which a consumer assembly does not know to call: the record names the frame type, which it cannot name
             var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
                                          managedCSharpSource.Length > 0 &&
                                          ManagedStateMachineAvailability.GetFrameAccessibility(methodSymbol,

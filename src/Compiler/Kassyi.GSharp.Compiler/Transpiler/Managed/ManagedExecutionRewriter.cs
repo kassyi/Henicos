@@ -15,13 +15,24 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// Whether the context is an unsafe struct reached through a pointer rather than a class, so its members are read
 /// with <c>-&gt;</c>.
 /// </param>
+/// <param name="callFrames">
+/// The frames the context holds for the calls that may suspend, by frame index
+/// (<see cref="ManagedStateMachineAvailability.PlanCallFrames"/>); empty for a body without such calls.
+/// </param>
 internal sealed partial class ManagedExecutionRewriter(
     SemanticModel semanticModel,
     ManagedBodyKind bodyKind,
     ManagedAccessorSet accessors,
-    bool isUnsafe = false) : CSharpSyntaxRewriter
+    bool isUnsafe = false,
+    ImmutableArray<ManagedCallFrame> callFrames = default) : CSharpSyntaxRewriter
 {
     private readonly bool _isUnsafe = isUnsafe;
+
+    /// <summary>What the body is emitted as.</summary>
+    public ManagedBodyKind BodyKind => bodyKind;
+
+    private readonly ImmutableArray<ManagedCallFrame> _callFrames =
+        callFrames.IsDefault ? ImmutableArray<ManagedCallFrame>.Empty : callFrames;
 
     private int _inLambdaOrLocalFuncCount;
 

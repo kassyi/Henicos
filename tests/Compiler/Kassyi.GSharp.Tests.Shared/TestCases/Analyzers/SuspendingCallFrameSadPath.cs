@@ -2,7 +2,8 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 
-// Device functions that wait at a barrier and whose frames a kernel of another class cannot hold
+// Device functions that wait at a barrier: frames that hold a private type, which kernels of other classes reach through
+// the generated entries, and frames that would hold a file-local type, which no generated file can name
 public static partial class FrameOwner
 {
     private struct Hidden
@@ -10,7 +11,7 @@ public static partial class FrameOwner
         public int X;
     }
 
-    // The frame holds Hidden, so it is private to FrameOwner
+    // The frame holds Hidden, so it is private to FrameOwner; other classes call it through its entries
     [GpuDeviceFunction]
     internal static int HoldsPrivate(int[] data)
     {
@@ -29,7 +30,7 @@ public static partial class FrameOwner
 
 public static partial class FrameRelay
 {
-    // Its frame would hold the private frame of HoldsPrivate, which FrameRelay cannot name
+    // Its frame holds the private frame of HoldsPrivate as an object
     [GpuDeviceFunction]
     internal static int Relays(int[] data) => FrameOwner.HoldsPrivate(data) * 2;
 }
@@ -44,6 +45,9 @@ public static partial class FrameCaller
 
     [GpuKernel]
     public static void FileLocalKernel(int[] data) => data[ThreadIndex.X] = FileLocalHolder.HoldsFileLocal(data);
+
+    [GpuKernel]
+    public static void RelayedFileLocalKernel(int[] data) => data[ThreadIndex.X] = FileLocalRelay.Relays(data);
 }
 
 file struct FileLocalValue
@@ -60,6 +64,13 @@ public static partial class FileLocalHolder
         Gpu.SyncThreads();
         return value.X;
     }
+}
+
+public static partial class FileLocalRelay
+{
+    // Has no frame either: it would hold the frame of HoldsFileLocal, which is not emitted
+    [GpuDeviceFunction]
+    internal static int Relays(int[] data) => FileLocalHolder.HoldsFileLocal(data) + 1;
 }
 
 public static partial class FrameOwner

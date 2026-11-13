@@ -16,10 +16,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <para>
 /// The frame is as visible as the function (public or internal), narrowed to what the types it holds allow
 /// (<see cref="GeneratedMemberAccessibility"/>): a frame that holds a private nested type of the function's class is a
-/// private class nested in that class, which only that class and the types nested in it can name. The context of a
-/// kernel and the frame of a device function ask <see cref="CanCall"/> before they hold a callee's frame; a kernel that
-/// cannot is GSH0115 (<see cref="GetCallFailure(IMethodSymbol, INamedTypeSymbol, Compilation)"/>), and a device function
-/// that cannot has no state machine.
+/// private class nested in that class, which only that class and the types nested in it can name. Such a function also
+/// gets entries as visible as the function (<c>__gsharp_number_frame_</c>, <c>__gsharp_enter_</c>), which create, number
+/// and run the frame held as an <see cref="object"/>, so a caller of any class can run it. The context of a kernel and
+/// the frame of a device function ask <see cref="GetCallForm"/> how they hold a callee's frame; a kernel whose callee has
+/// no frame at all (a file-local type) is GSH0115
+/// (<see cref="GetCallFailure(IMethodSymbol, INamedTypeSymbol, Compilation)"/>), and a device function whose callee has
+/// none has no state machine.
 /// </para>
 /// </remarks>
 internal static class ManagedStateMachineAvailability
@@ -39,18 +42,55 @@ internal static class ManagedStateMachineAvailability
             new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
 
     /// <summary>
-    /// Whether a managed state machine declared in <paramref name="within"/> can hold the frame of
-    /// <paramref name="callee"/>: the frame is emitted, and is not private to a class that does not contain
-    /// <paramref name="within"/>.
+    /// How a managed state machine declared in <paramref name="within"/> holds and runs the frame of
+    /// <paramref name="callee"/>: by its type when <paramref name="within"/> can name it, through the entries when the
+    /// frame is private to a class that does not contain <paramref name="within"/>, not at all when the frame is not
+    /// emitted.
     /// </summary>
-    public static bool CanCall(IMethodSymbol callee, INamedTypeSymbol within, Compilation compilation) =>
-        IsReachable(GetFrameAccessibility(callee, compilation), callee, within);
+    public static SuspendingCallForm GetCallForm(IMethodSymbol callee, INamedTypeSymbol within,
+        Compilation compilation) =>
+        ChooseCallForm(GetFrameAccessibility(callee, compilation), callee, within);
+
+    /// <summary>
+    /// The frames that a managed state machine declared in <paramref name="within"/> holds for the calls to
+    /// <paramref name="callees"/>, in call order; <see langword="null"/> when one of the callees has no frame, which it
+    /// returns in <paramref name="unavailable"/>.
+    /// </summary>
+    public static ImmutableArray<ManagedCallFrame>? PlanCallFrames(ImmutableArray<IMethodSymbol> callees,
+        INamedTypeSymbol within, Compilation compilation, out IMethodSymbol? unavailable)
+    {
+        unavailable = null;
+        var frames = ImmutableArray.CreateBuilder<ManagedCallFrame>(callees.Length);
+        foreach (var callee in callees)
+        {
+            var form = GetCallForm(callee, within, compilation);
+            if (form == SuspendingCallForm.Unavailable)
+            {
+                unavailable = callee;
+                return null;
+            }
+
+            frames.Add(new ManagedCallFrame(callee, form == SuspendingCallForm.Entry));
+        }
+
+        return frames.MoveToImmutable();
+    }
+
+    /// <summary>
+    /// Whether the state machine of <paramref name="method"/>, whose frame has <paramref name="frame"/> accessibility, has
+    /// the entries through which the callers outside its class run it: the frame is private, and the function is public or
+    /// internal. The entries take the function's parameters, so they are no more visible than it is; a private function
+    /// has no callers outside its class.
+    /// </summary>
+    public static bool HasEntries(IMethodSymbol method, Accessibility frame) =>
+        frame == Accessibility.Private &&
+        method.DeclaredAccessibility is Accessibility.Public or Accessibility.Internal;
 
     /// <summary>
     /// Why a managed state machine declared in <paramref name="within"/> cannot hold the frame of
-    /// <paramref name="callee"/>, as the message argument of GSH0115; <see langword="null"/> when it can, or when the
-    /// frame is left out for a reason that another diagnostic reports (a type that is not partial, a function of another
-    /// assembly whose state machine was not emitted).
+    /// <paramref name="callee"/>, as the message argument of GSH0115; <see langword="null"/> when it can (by the frame's
+    /// type or through the entries), or when the frame is left out for a reason that another diagnostic reports (a type
+    /// that is not partial, a function of another assembly whose state machine was not emitted).
     /// </summary>
     public static string? GetCallFailure(IMethodSymbol callee, INamedTypeSymbol within, Compilation compilation) =>
         GetCallFailure(callee.OriginalDefinition, within, compilation,
@@ -59,19 +99,17 @@ internal static class ManagedStateMachineAvailability
     private static string? GetCallFailure(IMethodSymbol callee, INamedTypeSymbol within, Compilation compilation,
         HashSet<IMethodSymbol> visited)
     {
-        var frame = GetFrameAccessibility(callee, compilation);
-        if (IsReachable(frame, callee, within) || DeviceExportTable.IsOutside(callee, compilation) ||
-            !visited.Add(callee))
+        if (GetCallForm(callee, within, compilation) != SuspendingCallForm.Unavailable ||
+            DeviceExportTable.IsOutside(callee, compilation) || !visited.Add(callee))
         {
             return null;
         }
 
         var container = callee.ContainingType;
-        if (frame == Accessibility.Private)
+        if (GetFrameAccessibility(callee, compilation) == Accessibility.Private)
         {
-            return $"its frame holds a type that only '{container.Name}' can name, so only code inside " +
-                   $"'{container.Name}' can call it; call it from '{container.Name}' or a type nested in it, or make " +
-                   "the private types of its locals, parameters and return value internal";
+            return $"its frame holds a type that only '{container.Name}' can name, and it is neither public nor " +
+                   $"internal, so it has no entries for callers outside '{container.Name}'; make it internal";
         }
 
         if (!AreContainingTypesPartial(callee) ||
@@ -91,10 +129,10 @@ internal static class ManagedStateMachineAvailability
 
         foreach (var inner in SuspensionAnalysis.GetSuspendingCallees(body, compilation))
         {
-            if (!CanCall(inner, container, compilation))
+            if (GetCallForm(inner, container, compilation) == SuspendingCallForm.Unavailable)
             {
                 return GetCallFailure(inner.OriginalDefinition, container, compilation, visited) is { } reason
-                    ? $"it calls '{inner.ContainingType.Name}.{inner.Name}', which '{container.Name}' cannot call: " +
+                    ? $"it calls '{inner.ContainingType.Name}.{inner.Name}', whose frame cannot be generated: " +
                       reason
                     : null;
             }
@@ -104,19 +142,23 @@ internal static class ManagedStateMachineAvailability
     }
 
     /// <summary>
-    /// The frames of <paramref name="callees"/>, whose frames a context or frame holds, as types it names; each callee
-    /// is one that the holder <see cref="CanCall"/>.
+    /// The frame types that a context or frame names for <paramref name="frames"/> (<see cref="PlanCallFrames"/>): those
+    /// it holds by their type; a frame held through the entries is an <see cref="object"/>.
     /// </summary>
-    public static GeneratedMemberAccessibility.NamedTypes GetCallFrames(ImmutableArray<IMethodSymbol> callees,
+    public static GeneratedMemberAccessibility.NamedTypes GetCallFrames(ImmutableArray<ManagedCallFrame> frames,
         Compilation compilation)
     {
-        var frames = default(GeneratedMemberAccessibility.NamedTypes);
-        foreach (var callee in callees)
+        var named = default(GeneratedMemberAccessibility.NamedTypes);
+        foreach (var frame in frames)
         {
-            frames = frames.WithGenerated(callee.ContainingType, GetFrameAccessibility(callee, compilation));
+            if (!frame.ThroughEntry)
+            {
+                named = named.WithGenerated(frame.Callee.ContainingType,
+                    GetFrameAccessibility(frame.Callee, compilation));
+            }
         }
 
-        return frames;
+        return named;
     }
 
     /// <summary>Whether <paramref name="method"/> and every type that contains it are public.</summary>
@@ -219,16 +261,18 @@ internal static class ManagedStateMachineAvailability
             named = named.WithInternalMember(type);
         }
 
-        // The frame holds the frames of the calls that may suspend
+        // The frame holds the frames of the calls that may suspend: by their types, or as objects run through the entries
         foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body, compilation))
         {
             var calleeFrame = Get(callee.OriginalDefinition, compilation, results, visiting);
-            if (!IsReachable(calleeFrame, callee, method.ContainingType))
+            switch (ChooseCallForm(calleeFrame, callee, method.ContainingType))
             {
-                return Accessibility.NotApplicable;
+                case SuspendingCallForm.Unavailable:
+                    return Accessibility.NotApplicable;
+                case SuspendingCallForm.Direct:
+                    named = named.WithGenerated(callee.ContainingType, calleeFrame);
+                    break;
             }
-
-            named = named.WithGenerated(callee.ContainingType, calleeFrame);
         }
 
         return GeneratedMemberAccessibility.Narrowest(widest, named.ChooseIn(method.ContainingType));
@@ -267,10 +311,18 @@ internal static class ManagedStateMachineAvailability
         return true;
     }
 
-    // Whether code in <within> can name the frame of <callee>, whose accessibility is <frame>
-    private static bool IsReachable(Accessibility frame, IMethodSymbol callee, INamedTypeSymbol within) =>
-        frame != Accessibility.NotApplicable &&
-        (frame != Accessibility.Private || IsWithin(within, callee.ContainingType));
+    // How code in <within> holds the frame of <callee>, whose accessibility is <frame>: by its type when it can name it,
+    // else through the entries of a callee that has them
+    private static SuspendingCallForm ChooseCallForm(Accessibility frame, IMethodSymbol callee,
+        INamedTypeSymbol within) =>
+        frame switch
+        {
+            Accessibility.NotApplicable => SuspendingCallForm.Unavailable,
+            Accessibility.Private when !IsWithin(within, callee.ContainingType) => HasEntries(callee, frame)
+                ? SuspendingCallForm.Entry
+                : SuspendingCallForm.Unavailable,
+            _ => SuspendingCallForm.Direct
+        };
 
     private static bool IsWithin(INamedTypeSymbol type, INamedTypeSymbol container)
     {

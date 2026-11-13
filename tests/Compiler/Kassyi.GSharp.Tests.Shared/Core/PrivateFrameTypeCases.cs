@@ -32,4 +32,24 @@ internal static class PrivateFrameTypeCases
     public static readonly PrivateFrameTypeCase GenericClass = new(
         static (data, result) => PrivateFrameTypeKernels.LaunchGenericClassKernel(data, result, blockDimX: 4),
         [103, 106, 109, 112]);
+
+    // 4v + 7, from a kernel of another class
+    public static readonly PrivateFrameTypeCase OtherClass = new(
+        static (data, result) => PrivateFrameTypeCallers.LaunchOtherClassKernel(data, result, blockDimX: 4),
+        [11, 15, 19, 23]);
+
+    // (4v + 7) * 2 + v, through a device function of a third class
+    public static readonly PrivateFrameTypeCase OtherClassChain = new(
+        static (data, result) => PrivateFrameTypeCallers.LaunchOtherClassChainKernel(data, result, blockDimX: 4),
+        [23, 32, 41, 50]);
+
+    // 11 * (the neighbour's v), from two frames of the same function, each meeting its own shuffle
+    public static readonly PrivateFrameTypeCase OtherClassWarp = new(
+        static (data, result) => PrivateFrameTypeCallers.LaunchOtherClassWarpKernel(data, result, blockDimX: 4),
+        [22, 11, 44, 33]);
+
+    // 5v + 3, an unsafe function's struct frame from a kernel that is not unsafe
+    public static readonly PrivateFrameTypeCase PointerFrame = new(
+        static (data, result) => PrivateFrameTypeCallers.LaunchPointerFrameKernel(data, result, blockDimX: 4),
+        [8, 13, 18, 23]);
 }
