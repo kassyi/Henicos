@@ -166,16 +166,12 @@ public class IrSplitLoweringTests
         var check = Assert.Single(Assert.Single(outcomes).Printed.OfType<BlockSyntax>());
         var checkName = Assert.Single(check.DescendantNodes().OfType<VariableDeclaratorSyntax>()).Identifier.ValueText;
 
-        LoweredStateMachine lowered;
-        using (AstLoweringPipeline.WithIrSplitLowering())
-        {
-            lowered = AstLoweringPipeline.Lower(
-                body.Parent as MethodDeclarationSyntax ?? throw new InvalidOperationException("No method."),
-                model,
-                symbol,
-                isDeviceFunction: false
-            );
-        }
+        var lowered = AstLoweringPipeline.Lower(
+            body.Parent as MethodDeclarationSyntax ?? throw new InvalidOperationException("No method."),
+            model,
+            symbol,
+            isDeviceFunction: false
+        );
 
         var fields = lowered.ContextFields.Select(static field => field.Identifier.ValueText).ToArray();
         var (localInits, regularFields, _, _) =
