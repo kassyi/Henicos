@@ -196,6 +196,34 @@ public static partial class MarshalingOverlapDifferentialKernels
         }
     }
 
+    // --- [In] holders of different element types beside an [In] array: the CPU views the array's copy ---
+    [GpuKernel]
+    public static void InArrayAndLongMemoryKernel([In] int[] ints, [In] Memory<long> longs, [Out] long[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            ints[2] += 8;
+            longs.Span[1] += 1L << 32;
+            observed[0] = longs.Span[0];
+            observed[1] = ints[5];
+        }
+    }
+
+    [GpuKernel]
+    public static void InArrayAndUintSegmentKernel(
+        [In] int[] ints,
+        [In] ArraySegment<uint> uints,
+        [Out] long[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            ints[2] += 8;
+            observed[0] = uints[1];
+            uints[2] += 5u;
+            observed[1] = ints[3];
+        }
+    }
+
     // --- Two T[] arguments that are one array, a slice of it, and a struct that puts the launch in table mode ---
     [GpuKernel]
     public static void TwoArraysSliceAndStructKernel(
@@ -266,6 +294,18 @@ public static partial class MarshalingOverlapDifferentialKernels
             observed[0] = b[0].Tag;
             b[0].Data[0] += 100;
             observed[1] = a[1].Data[0];
+        }
+    }
+
+    [GpuKernel]
+    public static void RefAndSpanOfDeepBagsKernel(ref DiffDeepBag bag, Span<DiffDeepBag> bags, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            bag.Tag += 5;
+            observed[0] = bags[1].Tag;
+            bags[1].Data[0] += 100;
+            observed[1] = bag.Data[0];
         }
     }
 

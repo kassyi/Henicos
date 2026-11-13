@@ -156,7 +156,61 @@ internal static class HostAliasGrouping
         return lowest is <= 0 or > MaxAlignment ? MaxAlignment : lowest;
     }
 
-    internal static int Root(int[] parent, int i)
+    // Union-find over the arguments: parent[i] leads to the root of the arguments that overlap argument i, directly or
+    // through others
+    internal static int[] Unite(ReadOnlySpan<nint> ranges, ReadOnlySpan<byte> traits)
+    {
+        var count = traits.Length;
+        var parent = new int[count];
+        for (var i = 0; i < count; i++)
+        {
+            parent[i] = i;
+        }
+
+        for (var i = 0; i < count; i++)
+        {
+            for (var j = i + 1; j < count; j++)
+            {
+                if (HostAliasGroups.Joins(ranges, traits, i, j))
+                {
+                    parent[Root(parent, j)] = Root(parent, i);
+                }
+            }
+        }
+
+        return parent;
+    }
+
+    // The group of each argument, numbered in the order of their first members, or -1 for an argument that overlaps
+    // none
+    internal static int[] NumberGroups(int[] parent, out int groupCount)
+    {
+        var count = parent.Length;
+        var groupOf = new int[count];
+        var groupOfRoot = new int[count];
+        groupOfRoot.AsSpan().Fill(-1);
+        groupCount = 0;
+        for (var i = 0; i < count; i++)
+        {
+            groupOf[i] = -1;
+            var root = Root(parent, i);
+            if (root == i && !HasOtherMember(parent, i))
+            {
+                continue;
+            }
+
+            if (groupOfRoot[root] < 0)
+            {
+                groupOfRoot[root] = groupCount++;
+            }
+
+            groupOf[i] = groupOfRoot[root];
+        }
+
+        return groupOf;
+    }
+
+    private static int Root(int[] parent, int i)
     {
         while (parent[i] != i)
         {
@@ -167,7 +221,7 @@ internal static class HostAliasGrouping
         return i;
     }
 
-    internal static bool HasOtherMember(int[] parent, int root)
+    private static bool HasOtherMember(int[] parent, int root)
     {
         for (var k = 0; k < parent.Length; k++)
         {

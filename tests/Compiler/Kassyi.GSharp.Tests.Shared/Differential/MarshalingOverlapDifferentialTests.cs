@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime.Interop;
 using Xunit;
 using static Kassyi.GSharp.Tests.Shared.Differential.MarshalingDifferentialTestHelpers;
 
@@ -329,6 +330,87 @@ public sealed class MarshalingOverlapDifferentialTests
         },
     };
 
+    // A Memory<long> over ints 2 to 5 of an [In] int[]: the CPU copy is typed by the array, and the memory views its
+    // bytes through a MemoryManager
+    internal static readonly DifferentialCase s_inArrayAndLongMemory = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InArrayAndLongMemoryKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(8), OutputPolicy.Exact, readOnly: true)
+            .Out<long>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, s) =>
+        {
+            int[] shadow = (int[])b.Get<int>("backing").Clone();
+            SequentialOracle.Run(s, ThreadOrder.Forward, () =>
+                MarshalingOverlapDifferentialKernels.LaunchInArrayAndLongMemoryKernel(
+                    shadow, LongsOverInts(shadow), b.Get<long>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX));
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchInArrayAndLongMemoryKernel(
+                backing, LongsOverInts(backing), b.Get<long>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    // A uint segment over the same int[] (the CLR lets an int[] be a uint[]): one copy, reinterpreted
+    internal static readonly DifferentialCase s_inArrayAndUintSegment = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InArrayAndUintSegmentKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(5), OutputPolicy.Exact, readOnly: true)
+            .Out<long>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, s) =>
+        {
+            int[] shadow = (int[])b.Get<int>("backing").Clone();
+            SequentialOracle.Run(s, ThreadOrder.Forward, () =>
+                MarshalingOverlapDifferentialKernels.LaunchInArrayAndUintSegmentKernel(
+                    shadow, new ArraySegment<uint>((uint[])(object)shadow, 1, 3), b.Get<long>("observed"),
+                    gridDimX: s.GridX, blockDimX: s.BlockX));
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchInArrayAndUintSegmentKernel(
+                backing, new ArraySegment<uint>((uint[])(object)backing, 1, 3), b.Get<long>("observed"),
+                gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    // A ref to a struct that holds an array, and a span of the array of such structs that holds it
+    internal static readonly DifferentialCase s_refAndSpanOfDeepBags = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.RefAndSpanOfDeepBagsKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .InDeep(
+                "bags",
+                [
+                    new DiffDeepBag { Data = [1], Tag = 10 },
+                    new DiffDeepBag { Data = [2], Tag = 20 },
+                    new DiffDeepBag { Data = [3], Tag = 30 }
+                ],
+                CloneDeepBag,
+                CompareDeepBag)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            DiffDeepBag[] bags = b.Get<DiffDeepBag>("bags");
+            MarshalingOverlapDifferentialKernels.LaunchRefAndSpanOfDeepBagsKernel(
+                ref bags[1], bags.AsSpan(0, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    // ints 2 to 5 of the array as two longs
+    private static Memory<long> LongsOverInts(int[] ints) =>
+        new HostAliasMemoryManager<long>(ints, 2 * sizeof(int), 2).Memory;
+
     internal static readonly DifferentialCase s_twoArraysSliceAndStruct = new(
         KernelName(nameof(MarshalingOverlapDifferentialKernels.TwoArraysSliceAndStructKernel)))
     {
@@ -495,6 +577,21 @@ public sealed class MarshalingOverlapDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void InHolders_InArrayAndALongMemoryOverIt_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inArrayAndLongMemory);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InHolders_InArrayAndAUintSegmentOfTheSameArray_SeeEachOthersWritesOnEveryPath() =>
+        DifferentialRunner.Run(s_inArrayAndUintSegment);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ConvertedOverlap_RefAndSpanOfStructsThatHoldArrays_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_refAndSpanOfDeepBags);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void SpanOverlap_TwoArraysOfOneArraySliceAndStruct_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_twoArraysSliceAndStruct);
 
@@ -552,6 +649,7 @@ public sealed class MarshalingOverlapDifferentialTests
     [Scenario(TestScenario.HappyPath)]
     public void SpanOverlap_AdjacentSlices_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_adjacentSlices);
+
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void InHolders_InArrayAndAnInElementFieldShareOneArray_MatchesTheReferenceOnEveryPath() =>

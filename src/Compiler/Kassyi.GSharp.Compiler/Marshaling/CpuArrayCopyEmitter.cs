@@ -23,6 +23,7 @@ internal static class CpuArrayCopyEmitter
     public static void WriteKernelCopies(SourceWriter writer, in ArraySharingPlan plan)
     {
         WriteCopyTable(writer, plan);
+        AliasGroupEmitter.WriteCpuTypedCopiesFirst(writer, plan);
         for (var i = 0; i < plan.Parameters.Length; i++)
         {
             var shape = plan.Parameters[i];
@@ -215,20 +216,35 @@ internal static class CpuArrayCopyEmitter
         var throughTable = plan.UsesCopyTable && shape.Container == ArrayContainerKind.Array;
 
         // A read-only container (ImmutableArray among them) is copied only for elements that hold arrays
-        if (shape.Cpu.ConvertedElementCopyArraysMethodName is not { } copyArrays)
+        if (shape.Cpu.ConvertedElementCopyArraysMethodName is { } copyArrays)
         {
-            if (throughTable)
-            {
-                writer.AppendLine($"_ = {ArrayCopies}.Copy(ref {shape.Identifier});");
-                return;
-            }
+            WriteCopyOfElementsWithArrays(writer, shape, copyArrays, throughTable);
+        }
+        else
+        {
+            WriteCopyOfElements(writer, shape, throughTable);
+        }
+    }
 
-            writer.Append($"{shape.Identifier} = ");
-            WriteElementsCopy(writer, shape);
-            writer.AppendLine(";");
+    // _ = __gsharp_array_copies.Copy(ref <name>);   or   <name> = <copy of the elements>;
+    private static void WriteCopyOfElements(SourceWriter writer, in KernelParameterShape shape, bool throughTable)
+    {
+        if (throughTable)
+        {
+            writer.AppendLine($"_ = {ArrayCopies}.Copy(ref {shape.Identifier});");
             return;
         }
 
+        writer.Append($"{shape.Identifier} = ");
+        WriteElementsCopy(writer, shape);
+        writer.AppendLine(";");
+    }
+
+    // <E>[] __gsharp_copy_<ord> = <copy of the elements>;   or   <E>[] ... = <name>; if (copies.Copy(ref ...))
+    // { for (...) CopyArrays_<E>(ref __gsharp_copy_<ord>[i], __gsharp_array_copies); }  <name> = <the copy>;
+    private static void WriteCopyOfElementsWithArrays(SourceWriter writer, in KernelParameterShape shape,
+        string copyArrays, bool throughTable)
+    {
         var copy = KernelHostNames.GetLocal(LauncherLocal.CopyBuffer, shape);
         var copyIndex = KernelHostNames.GetLocal(LauncherLocal.CopyIndex, shape);
         writer.Append($"{ConvertedArrayEmitter.GetElementTypeName(shape)}[] {copy} = ");

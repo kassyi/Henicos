@@ -60,7 +60,7 @@ internal static class AliasRangeEmitter
             for (var k = 0; k < ranges.Length; k++)
             {
                 writer.AppendIf(k > 0, ", ");
-                writer.Append(ranges[k].Traits.ToString(CultureInfo.InvariantCulture));
+                writer.Append($"{(int)ranges[k].Traits}");
             }
         }
 

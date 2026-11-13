@@ -249,9 +249,15 @@ internal static class CpuHostLaunchEmitter
     // an earlier use, so an [Out] shadow is cleared rather than left to the kernel.
     // A converted T[] that holds the array of a holder marshaled before it takes that shadow and fills nothing
     // (WriteSharedShadowLookup).
+    // A member of a group of converted elements takes its group's buffer (AliasGroupEmitter.WriteCpuConversions), so it
+    // rents and converts nothing of its own: if (!(<member>)) { <marshaling> }
     private static void WriteConvertedMarshal(SourceWriter writer, in ArraySharingPlan sharing, int index)
     {
         var shape = sharing.Parameters[index];
+        var member = AliasGroupEmitter.CpuBufferPointer(sharing.Aliases, index);
+        var marshals = shape.IsCpuConvertedStruct || shape.IsCpuConvertedArray;
+        writer.AppendLineIf(member is not null && marshals, $"if (!({member?.Member}))");
+        using var notMember = member is not null && marshals ? writer.Scope() : default;
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal }:
@@ -336,6 +342,12 @@ internal static class CpuHostLaunchEmitter
                 writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {native}, hStream);");
                 break;
             case { IsCpuConvertedArray: true, IsCopiedOut: true, IsReadOnlyContainer: false }:
+                // The spans of the marshaling are in its own scope for a member of a group
+                if (member is not null)
+                {
+                    ConvertedArrayEmitter.WriteShadowAndHostSpans(writer, shape, shape.Cpu);
+                }
+
                 ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cpu);
                 break;
         }

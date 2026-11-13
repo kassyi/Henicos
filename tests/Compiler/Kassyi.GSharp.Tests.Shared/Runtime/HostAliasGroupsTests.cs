@@ -251,13 +251,56 @@ public class HostAliasGroupsTests
             var groups = HostAliasGroups.Find(ranges, [In, In], "a,b");
             Assert.NotNull(groups);
 
-            Assert.True(groups.TryGetHostCopy<int>(0, ranges, out var first, out var firstStart));
-            Assert.True(groups.TryGetHostCopy<int>(1, ranges, out var second, out var secondStart));
+            Assert.True(HostAliasCopies.TryGetHostCopy<int>(groups, 0, ranges, out var first, out var firstStart));
+            Assert.True(HostAliasCopies.TryGetHostCopy<int>(groups, 1, ranges, out var second, out var secondStart));
 
             Assert.Same(first, second);
             Assert.NotSame(backing, first);
             Assert.Equal([1, 2, 3, 4], first);
             Assert.Equal((0, 1), (firstStart, secondStart));
+        }
+    }
+
+    // mutant: HostAliasCopies.TryGetHostCopy drops the arm that reinterprets a copy of the same size (throws instead)
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public unsafe void TryGetHostCopy_IntCopyAskedForAsUint_ReinterpretsTheSameCopy()
+    {
+        int[] backing = [1, -2, 3];
+        fixed (int* data = backing)
+        {
+            var ranges = Ranges(((nint)data, 12, 4), ((nint)(data + 1), 8, 4));
+            var groups = HostAliasGroups.Find(ranges, [In, In], "ints,uints");
+            Assert.NotNull(groups);
+
+            Assert.True(HostAliasCopies.TryGetHostCopy<int>(groups, 0, ranges, out var ints, out _));
+            Assert.True(HostAliasCopies.TryGetHostCopy<uint>(groups, 1, ranges, out var uints, out var start));
+
+            Assert.Same(ints, uints);
+            Assert.Equal(1, start);
+            Assert.Equal(0xFFFFFFFEu, uints[start]);
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public unsafe void TryGetHostCopy_LongCopyAskedForAsInt_Throws()
+    {
+        long[] storage = [1, 2];
+        fixed (long* data = storage)
+        {
+            var ranges = Ranges(((nint)data, 16, 8), ((nint)data, 8, 4));
+            var groups = HostAliasGroups.Find(ranges, [In, In], "longs,ints");
+            Assert.NotNull(groups);
+
+            Assert.True(HostAliasCopies.TryGetHostCopy<long>(groups, 0, ranges, out _, out _));
+            var error = Assert.Throws<NotSupportedException>(
+                () => HostAliasCopies.TryGetHostCopy<int>(groups, 1, ranges, out _, out _));
+            Assert.Contains("longs,ints", error.Message);
         }
     }
 
@@ -276,8 +319,8 @@ public class HostAliasGroupsTests
             var groups = HostAliasGroups.Find(ranges, [InView, InView], "ints,longs");
             Assert.NotNull(groups);
 
-            Assert.True(groups.TryGetHostView<int>(0, ranges, out var intView));
-            Assert.True(groups.TryGetHostView<long>(1, ranges, out var longView));
+            Assert.True(HostAliasCopies.TryGetHostView<int>(groups, 0, ranges, out var intView));
+            Assert.True(HostAliasCopies.TryGetHostView<long>(groups, 1, ranges, out var longView));
             intView[1] = 30;
 
             Assert.Equal([2, 30, 4, 5, 6], intView.ToArray());
@@ -290,21 +333,103 @@ public class HostAliasGroupsTests
         }
     }
 
+    // mutant: HostAliasCopies.TryGetHostView types a copy of its own instead of viewing the group's copy (the write
+    // through the view does not reach the array)
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public unsafe void TryGetHostView_ViewBesideAnArrayOfAnotherType_Throws()
+    [Scenario(TestScenario.HappyPath)]
+    public unsafe void TryGetHostView_IntViewBesideALongArray_ViewsTheArraysCopy()
     {
-        long[] storage = [1, 2];
+        long[] storage = [0x0000000200000001, 3];
         fixed (long* data = storage)
         {
             var ranges = Ranges(((nint)data, 16, 8), ((nint)data, 8, 4));
             var groups = HostAliasGroups.Find(ranges, [In, InView], "array,ints");
             Assert.NotNull(groups);
 
-            Assert.True(groups.TryGetHostCopy<long>(0, ranges, out _, out _));
-            Assert.Throws<NotSupportedException>(() => groups.TryGetHostView<int>(1, ranges, out _));
+            Assert.True(HostAliasCopies.TryGetHostCopy<long>(groups, 0, ranges, out var array, out _));
+            Assert.True(HostAliasCopies.TryGetHostView<int>(groups, 1, ranges, out var ints));
+            ints[1] = 7;
+
+            Assert.Equal(0x0000000700000001, array[0]);
+            Assert.Equal(0x0000000200000001, storage[0]);
+        }
+    }
+
+    // mutant: HostAliasCopies.TryGetHostMemory skips the MemoryManager and asks for a typed copy (throws, the copy
+    // holds ints)
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public unsafe void TryGetHostMemory_LongMemoryBesideAnIntArray_ViewsTheArraysCopy()
+    {
+        int[] backing = [1, 2, 3, 4];
+        fixed (int* data = backing)
+        {
+            var ranges = Ranges(((nint)data, 16, 4), ((nint)data, 16, 8));
+            var groups = HostAliasGroups.Find(ranges, [In, In], "ints,longs");
+            Assert.NotNull(groups);
+
+            Assert.True(HostAliasCopies.TryGetHostCopy<int>(groups, 0, ranges, out var ints, out _));
+            Assert.True(HostAliasCopies.TryGetHostMemory<long>(groups, 1, ranges, out var longs));
+            longs.Span[1] = 0x0000000900000008;
+
+            Assert.Equal(2, longs.Length);
+            Assert.Equal([1, 2, 8, 9], ints);
+            Assert.Equal([1, 2, 3, 4], backing);
+            using (var handle = longs.Pin())
+            {
+                Assert.Equal(0x0000000200000001, *(long*)handle.Pointer);
+            }
+        }
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public unsafe void TryGetHostMemory_SameElementType_IsOverTheCopyItself()
+    {
+        int[] backing = [1, 2, 3];
+        fixed (int* data = backing)
+        {
+            var ranges = Ranges(((nint)data, 12, 4), ((nint)(data + 1), 8, 4));
+            var groups = HostAliasGroups.Find(ranges, [In, In], "a,b");
+            Assert.NotNull(groups);
+
+            Assert.True(HostAliasCopies.TryGetHostCopy<int>(groups, 0, ranges, out var array, out _));
+            Assert.True(HostAliasCopies.TryGetHostMemory<int>(groups, 1, ranges, out var memory));
+
+            Assert.True(System.Runtime.InteropServices.MemoryMarshal.TryGetArray<int>(memory, out var segment));
+            Assert.Same(array, segment.Array);
+            Assert.Equal((1, 2), (segment.Offset, segment.Count));
+        }
+    }
+
+    // mutant: HostAliasCopies.TryGetHostMemory leaves the IsAtBoundaries test out (a copy of longs cannot cover the
+    // 12 bytes, and TryGetHostCopy throws)
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public unsafe void TryGetHostMemory_FirstMemberLongerThanTheGroupsElements_ViewsABufferOfBytes()
+    {
+        int[] backing = [1, 2, 3];
+        fixed (int* data = backing)
+        {
+            var ranges = Ranges(((nint)data, 8, 8), ((nint)data, 12, 4));
+            var groups = HostAliasGroups.Find(ranges, [In, InView], "longs,ints");
+            Assert.NotNull(groups);
+
+            Assert.True(HostAliasCopies.TryGetHostMemory<long>(groups, 0, ranges, out var longs));
+            Assert.True(HostAliasCopies.TryGetHostView<int>(groups, 1, ranges, out var ints));
+            ints[2] = 30;
+            longs.Span[0] = 0x0000000500000004;
+
+            Assert.Equal([4, 5, 30], ints.ToArray());
+            Assert.Equal([1, 2, 3], backing);
         }
     }
 
@@ -318,7 +443,7 @@ public class HostAliasGroupsTests
         var groups = HostAliasGroups.Find(ranges, [In, InOut], "a,b");
         Assert.NotNull(groups);
 
-        Assert.False(groups.TryGetHostCopy<int>(0, ranges, out var copy, out _));
+        Assert.False(HostAliasCopies.TryGetHostCopy<int>(groups, 0, ranges, out var copy, out _));
         Assert.Null(copy);
     }
 }

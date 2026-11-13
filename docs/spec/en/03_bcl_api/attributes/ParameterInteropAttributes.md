@@ -47,11 +47,14 @@ public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, in
   `NotSupportedException` naming the arguments: converted members of different element types, or a converted member
   beside one whose bytes the device reads as they are (their layouts differ in different ways); converted members that
   do not start at element boundaries of each other; and members that overlap at offsets no device address can align
-  for all of their element types (the device alignment of each element type counts, not its size). The CPU paths pass the caller's memory, and give the `[In]` members of a group
-  of `[In]` arguments one shared copy. When every member of such a group is a `Span<T>` or `ReadOnlySpan<T>`, the copy
-  is one buffer of bytes that each member views, so views of different element types work as on the device. A group of
-  `[In]` arguments that also holds a `T[]`, `Memory<T>`, `ArraySegment<T>` or `ImmutableArray<T>` needs one typed
-  copy; with members of different element types it throws `NotSupportedException` on the CPU paths only.
+  for all of their element types (the device alignment of each element type counts, not its size). The CPU paths pass
+  the caller's memory, and give the `[In]` members of a group of `[In]` arguments one shared copy, which members of
+  different element types view as on the device: a `Span<T>` or `ReadOnlySpan<T>` reinterprets its bytes, a
+  `Memory<T>` or `ReadOnlyMemory<T>` views them through a `MemoryManager<T>`, and a `T[]` of another element type
+  of the same size (an `int[]` passed as a `uint[]`) is the same copy. The copy is typed by the members that need an
+  array (`T[]`, `ArraySegment<T>`, `ImmutableArray<T>`); those members must agree on the size of their elements, and
+  elements that hold references are never reinterpreted. A group that breaks this throws `NotSupportedException` on
+  the CPU paths only.
 
 Using these attributes appropriately is highly recommended for performance-critical kernels, as redundant PCIe transfers can drastically degrade performance compared to native C++ CUDA.
 

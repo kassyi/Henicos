@@ -27,6 +27,11 @@ internal struct HostAliasGroup
     public IntPtr Base;
     public Array? HostCopy;
 
+    // The element size of a typed HostCopy, and whether its elements hold references, so that a member of another
+    // element type of the same size can take it reinterpreted
+    public int HostCopyElementSize;
+    public bool HostCopyHasReferences;
+
     // Every member is a span (HostAliasGroups.SpanView), so the CPU copy is one byte buffer that each views, and the
     // byte at which the copy of the group starts in it
     public bool ViewsOnly;

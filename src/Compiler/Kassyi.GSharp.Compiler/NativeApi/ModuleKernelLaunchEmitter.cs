@@ -91,9 +91,18 @@ internal static class ModuleKernelLaunchEmitter
             throw new InvalidOperationException($"The launcher of '{launcherName}' has parameters it cannot pass.");
         }
 
-        var launch = plan.Launch;
         WriteNullChecks(writer, plan.Arguments);
-        WriteLaunchLimitCheck(writer, launcherName, launch);
+        WriteLaunchLimitCheck(writer, launcherName, plan.Launch);
+        EmitFunctionLoad(writer, moduleField, entryPoint, launcherName, plan.Launch);
+        EmitArgumentsAndLaunch(writer, contextTypeName, plan);
+    }
+
+    // using CudaContextScope __gsharp_cuda_context_scope = new();
+    // IntPtr __gsharp_hfunc = GpuKernelLoader.LoadAotKernel(<module>.Value, "<entry point>");
+    // [DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, <sharedMemBytes>, "<launcher>");]
+    private static void EmitFunctionLoad(SourceWriter writer, string moduleField, string entryPoint,
+        string launcherName, ModuleLaunchConfiguration launch)
+    {
         // [WHY] Every launcher local has an explicit type: in a class named 'var', 'var' names that class
         writer.AppendLine(
             $"using {HostTypeNames.CudaContextScope} {CudaContextScope} = new();");
@@ -112,7 +121,13 @@ internal static class ModuleKernelLaunchEmitter
         }
 
         writer.AppendLine();
+    }
 
+    // <buffers> <launch> <outputs>, or, when the launcher compares its arguments for shared memory:
+    // HostAliasGroups? __gsharp_aliases = null; try { <groups> <buffers> <launch> <outputs> } finally { <free> }
+    private static void EmitArgumentsAndLaunch(SourceWriter writer, string? contextTypeName,
+        ModuleKernelLaunchPlan plan)
+    {
         if (!plan.ComparesAliases)
         {
             EmitBufferAllocations(writer, plan);

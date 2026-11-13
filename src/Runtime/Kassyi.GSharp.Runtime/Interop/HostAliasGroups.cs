@@ -1,7 +1,4 @@
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
@@ -21,7 +18,7 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// <para>
 /// A group is one holder: it is copied in when any member is copied in and copied back when any member is copied back,
 /// so an <c>[In]</c> member keeps its own copy only when every member is <c>[In]</c>
-/// (<see cref="TryGetHostCopy{T}"/>, CPU). A group whose elements the launcher converts between the host and the
+/// (<see cref="HostAliasCopies"/>, CPU). A group whose elements the launcher converts between the host and the
 /// device layout holds them converted (<see cref="HostAliasStaging"/>). Members whose layouts differ in different ways
 /// cannot share one region, and members whose offsets no region can align for all of them would be read misaligned on
 /// the device; both throw <see cref="NotSupportedException"/> instead of running with wrong values.
@@ -44,12 +41,9 @@ public sealed class HostAliasGroups
 
     /// <summary>
     /// Trait (CPU): a <c>Span&lt;T&gt;</c> or <c>ReadOnlySpan&lt;T&gt;</c> argument, which can view a copy of any
-    /// element type (<see cref="TryGetHostView{T}"/>).
+    /// element type (<see cref="HostAliasCopies.TryGetHostView{T}"/>).
     /// </summary>
     public const byte SpanView = 16;
-
-    // The alignment that a CPU copy keeps from the caller's memory: the widest element alignment
-    private const int CopyAlignment = 16;
 
     /// <summary>
     /// The number of values per argument in a range list: the pinned address, the length in bytes, the host element
@@ -199,141 +193,9 @@ public sealed class HostAliasGroups
         }
     }
 
-    /// <summary>
-    /// CPU: gets the copy that member <paramref name="index"/> passes to the kernel instead of the caller's memory,
-    /// when every member of its group is copied in and none is copied back (all <c>[In]</c>): one copy of the whole
-    /// group, made on the first call, that every member addresses at its offset. Returns <see langword="false"/> when
-    /// the group passes the caller's memory (a member writes it back).
-    /// </summary>
-    /// <param name="index">The member.</param>
-    /// <param name="ranges">The range list of <see cref="Find"/>, with the arguments still pinned.</param>
-    /// <param name="copy">The copy of the group.</param>
-    /// <param name="start">The element index of the member in <paramref name="copy"/>.</param>
-    /// <param name="copies">
-    /// The launch's copies of the arrays that elements hold, for elements with array fields; otherwise null.
-    /// </param>
-    /// <param name="copyArrays">
-    /// The generated <c>CopyArrays_</c> of the element, which gives the copy's elements copies of their arrays, so that
-    /// the kernel's writes through them do not reach the caller either; null for elements without array fields.
-    /// </param>
-    /// <typeparam name="T">The element type of the member.</typeparam>
-    /// <exception cref="NotSupportedException">
-    /// The members of the group have different element types, or do not start at element boundaries.
-    /// </exception>
-    public bool TryGetHostCopy<T>(int index, ReadOnlySpan<nint> ranges, [NotNullWhen(true)] out T[]? copy,
-        out int start, HostArrayCopies? copies = null, HostArrayElementCopy<T>? copyArrays = null)
-    {
-        ref var group = ref _groups[_groupOf[index]];
-        if (!group.KernelGetsCopy)
-        {
-            copy = null;
-            start = 0;
-            return false;
-        }
-
-        var size = Unsafe.SizeOf<T>();
-        if (group.Length % size != 0 || _offsets[index] % size != 0)
-        {
-            throw new NotSupportedException(
-                $"The [In] arguments that overlap one memory with '{group.Names}' do not start at element boundaries " +
-                $"of {typeof(T).Name}, so the kernel cannot get one copy of them.");
-        }
-
-        switch (group.HostCopy)
-        {
-            case null:
-                copy = CopyGroup<T>(ref group, ranges, copies, copyArrays);
-                break;
-            case T[] existing:
-                copy = existing;
-                break;
-            default:
-                throw new NotSupportedException(
-                    $"The [In] arguments that overlap one memory with '{group.Names}' have different element types, " +
-                    "so the kernel cannot get one copy of them.");
-        }
-
-        start = (int)(_offsets[index] / size);
-        return true;
-    }
-
-    // One typed copy of the whole group, element by element (with write barriers for elements that hold references),
-    // whose elements get copies of the arrays they hold when copyArrays is given
-    private static unsafe T[] CopyGroup<T>(ref HostAliasGroup group, ReadOnlySpan<nint> ranges, HostArrayCopies? copies,
-        HostArrayElementCopy<T>? copyArrays)
-    {
-        var created = new T[group.Length / Unsafe.SizeOf<T>()];
-        var source = (void*)ranges[group.Leader * RangeFields];
-        MemoryMarshal.CreateSpan(ref Unsafe.AsRef<T>(source), created.Length).CopyTo(created);
-        if (copyArrays is not null && copies is not null)
-        {
-            for (var i = 0; i < created.Length; i++)
-            {
-                copyArrays(ref created[i], copies);
-            }
-        }
-
-        group.HostCopy = created;
-        return created;
-    }
-
-    /// <summary>
-    /// CPU: gets the view that a <c>Span&lt;T&gt;</c> or <c>ReadOnlySpan&lt;T&gt;</c> member passes to the kernel
-    /// instead of the caller's memory, under the same rule as <see cref="TryGetHostCopy{T}"/>. When every member of the
-    /// group is such a span, the copy is one buffer of bytes placed at the caller's alignment, so members of different
-    /// element types (an <c>int</c> and a <c>long</c> view of one array) view the same bytes, as on the device.
-    /// </summary>
-    /// <param name="index">The member.</param>
-    /// <param name="ranges">The range list of <see cref="Find"/>, with the arguments still pinned.</param>
-    /// <param name="view">The member's elements in the copy.</param>
-    /// <typeparam name="T">The element type of the member.</typeparam>
-    /// <exception cref="NotSupportedException">
-    /// The group also holds an array, <c>Memory&lt;T&gt;</c> or segment of another element type, which needs a typed
-    /// copy.
-    /// </exception>
-    public bool TryGetHostView<T>(int index, ReadOnlySpan<nint> ranges, out Span<T> view)
-    {
-        ref var group = ref _groups[_groupOf[index]];
-        var size = Unsafe.SizeOf<T>();
-        var count = checked((int)(ranges[(index * RangeFields) + 1] / size));
-        if (!group.ViewsOnly || RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            var found = TryGetHostCopy<T>(index, ranges, out var copy, out var start);
-            view = found ? copy.AsSpan(start, count) : default;
-            return found;
-        }
-
-        if (!group.KernelGetsCopy)
-        {
-            view = default;
-            return false;
-        }
-
-        var bytes = group.HostCopy as byte[] ?? CopyBytes(ref group, ranges);
-        ref var data = ref MemoryMarshal.GetArrayDataReference(bytes);
-        ref var first = ref Unsafe.Add(ref data, group.CopyStart + _offsets[index]);
-        view = MemoryMarshal.CreateSpan(ref Unsafe.As<byte, T>(ref first), count);
-        return true;
-    }
-
-    // One pinned byte buffer for a group of span views, whose copy of the group starts at the address that the caller's
-    // memory has modulo CopyAlignment, so that every view keeps the alignment of its elements
-    private static unsafe byte[] CopyBytes(ref HostAliasGroup group, ReadOnlySpan<nint> ranges)
-    {
-        var length = checked((int)group.Length);
-        var bytes = GC.AllocateUninitializedArray<byte>(length + CopyAlignment, pinned: true);
-        var source = ranges[group.Leader * RangeFields];
-        var buffer = (nint)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(bytes));
-        var start = (int)((source - buffer) & (CopyAlignment - 1));
-        new ReadOnlySpan<byte>((void*)source, length).CopyTo(bytes.AsSpan(start, length));
-        group.HostCopy = bytes;
-        group.CopyStart = start;
-        return bytes;
-    }
-
     // Whether arguments i and j belong to one group: both hold bytes, and their bytes overlap. Two T[] arguments that
     // are one array (the same range) are left to the launcher's identity sharing, unless a third argument joins them
-    private static bool Joins(ReadOnlySpan<nint> ranges, ReadOnlySpan<byte> traits, int i, int j)
+    internal static bool Joins(ReadOnlySpan<nint> ranges, ReadOnlySpan<byte> traits, int i, int j)
     {
         var a = ranges[i * RangeFields];
         var aLength = ranges[(i * RangeFields) + 1];
@@ -347,47 +209,13 @@ public sealed class HostAliasGroups
         return (traits[i] & traits[j] & WholeArray) == 0 || a != b || aLength != bLength;
     }
 
+    // The groups: the overlapping arguments joined (HostAliasGrouping.Unite), the groups numbered, then each group laid
+    // out on the host and the device
     private static HostAliasGroups Build(ReadOnlySpan<nint> ranges, ReadOnlySpan<byte> traits, string names)
     {
         var count = traits.Length;
-        var parent = new int[count];
-        for (var i = 0; i < count; i++)
-        {
-            parent[i] = i;
-        }
-
-        for (var i = 0; i < count; i++)
-        {
-            for (var j = i + 1; j < count; j++)
-            {
-                if (Joins(ranges, traits, i, j))
-                {
-                    parent[HostAliasGrouping.Root(parent, j)] = HostAliasGrouping.Root(parent, i);
-                }
-            }
-        }
-
-        var groupOf = new int[count];
-        var groupOfRoot = new int[count];
-        groupOfRoot.AsSpan().Fill(-1);
-        var groupCount = 0;
-        for (var i = 0; i < count; i++)
-        {
-            groupOf[i] = -1;
-            var root = HostAliasGrouping.Root(parent, i);
-            if (root == i && !HostAliasGrouping.HasOtherMember(parent, i))
-            {
-                continue;
-            }
-
-            if (groupOfRoot[root] < 0)
-            {
-                groupOfRoot[root] = groupCount++;
-            }
-
-            groupOf[i] = groupOfRoot[root];
-        }
-
+        var parent = HostAliasGrouping.Unite(ranges, traits);
+        var groupOf = HostAliasGrouping.NumberGroups(parent, out var groupCount);
         var groups = new HostAliasGroup[groupCount];
         var offsets = new nint[count];
         var deviceOffsets = new nint[count];
