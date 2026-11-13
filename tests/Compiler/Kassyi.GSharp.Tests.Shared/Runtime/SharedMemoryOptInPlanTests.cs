@@ -93,9 +93,9 @@ public class SharedMemoryOptInPlanTests
         Assert.Equal(new SharedMemoryOptInPlan(SharedMemoryOptInAction.Reject, OptInBytes, OversizedBytes), plan);
         var message = DynamicSharedMemoryOptIn.FormatRejection(OptInBytes + 1, 0, plan, 10, 7, "Kernels.Big");
         Assert.Equal(
-            "G#: sharedMemBytes 232449 plus 0 bytes of static shared memory exceeds the 232448 bytes of shared memory " +
-            "per block of this GPU (sm_107); this GPU holds up to 334848 bytes for a kernel with " +
-            "[GpuKernel(AllowOversizedSharedMemory = true)] (Kernels.Big).", message);
+            "G#: sharedMemBytes 232449 plus 0 bytes of static shared memory exceeds the 232448 " +
+            "bytes of shared memory per block of this GPU (sm_107); this GPU holds up to 334848 bytes " +
+            "for a kernel with [GpuKernel(AllowOversizedSharedMemory = true)] (Kernels.Big).", message);
     }
 
     // Above the oversized limit the property would not help either
@@ -108,8 +108,8 @@ public class SharedMemoryOptInPlanTests
         Assert.Equal(new SharedMemoryOptInPlan(SharedMemoryOptInAction.Reject, OptInBytes, 0), plan);
         var message = DynamicSharedMemoryOptIn.FormatRejection(OversizedBytes + 1, 0, plan, 10, 7, "Kernels.Big");
         Assert.Equal(
-            "G#: sharedMemBytes 334849 plus 0 bytes of static shared memory exceeds the 232448 bytes of shared memory " +
-            "per block of this GPU (sm_107) (Kernels.Big).", message);
+            "G#: sharedMemBytes 334849 plus 0 bytes of static shared memory exceeds the 232448 " +
+            "bytes of shared memory per block of this GPU (sm_107) (Kernels.Big).", message);
     }
 
     [Theory]
@@ -140,7 +140,8 @@ public class SharedMemoryOptInPlanTests
     [InlineData(DefaultDynamicBytes)]
     public void Decide_MarkedWithoutAnOversizedLimitAboveTheOptInLimit_BehavesAsUnmarked(int oversizedBytes)
     {
-        foreach (var requested in new uint[] { 1000, DefaultDynamicBytes + 1, OptInBytes, OptInBytes + 1, OversizedBytes })
+        uint[] requests = [1000, DefaultDynamicBytes + 1, OptInBytes, OptInBytes + 1, OversizedBytes];
+        foreach (var requested in requests)
         {
             var marked = Decide(requested, allowsOversized: true, oversizedBytes: oversizedBytes);
             var unmarked = Decide(requested, allowsOversized: false, oversizedBytes: 0);
@@ -198,8 +199,8 @@ public class SharedMemoryOptInPlanTests
         var plan = new SharedMemoryOptInPlan(SharedMemoryOptInAction.Reject, 101376, 0);
 
         Assert.Equal(
-            "G#: sharedMemBytes 101377 plus 16 bytes of static shared memory exceeds the 101376 bytes of shared memory " +
-            "per block of this GPU (sm_86) (Kernels.Small).",
+            "G#: sharedMemBytes 101377 plus 16 bytes of static shared memory exceeds the 101376 " +
+            "bytes of shared memory per block of this GPU (sm_86) (Kernels.Small).",
             DynamicSharedMemoryOptIn.FormatRejection(101377, 16, plan, 8, 6, "Kernels.Small"));
     }
 }
