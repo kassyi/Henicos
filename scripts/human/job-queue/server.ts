@@ -1,10 +1,10 @@
 // The scheduler process: listens on 127.0.0.1, keeps the jobs, grants slots through Scheduler, records run times and
 // outcomes, and keeps the slot of a lost client until its command has exited.
 
-import * as fs from 'node:fs';
-import * as net from 'node:net';
-import * as os from 'node:os';
-import * as path from 'node:path';
+import * as fs from "node:fs";
+import * as net from "node:net";
+import * as os from "node:os";
+import * as path from "node:path";
 import {
   AcceptedProtocolVersions,
   ExpectedJobsMs,
@@ -16,8 +16,8 @@ import {
   RegrantMs,
   StartupGraceMs,
   type Policy,
-} from './constants.ts';
-import { RunHistory, errorCode, errorMessage, isObject, replaceFile } from './history.ts';
+} from "./constants.ts";
+import { RunHistory, errorCode, errorMessage, isObject, replaceFile } from "./history.ts";
 import {
   idField,
   numberField,
@@ -29,8 +29,8 @@ import {
   type Outcome,
   type Outlook,
   type ServerMessage,
-} from './protocol.ts';
-import { Scheduler, type Expected, type SchedulerJob } from './scheduler.ts';
+} from "./protocol.ts";
+import { Scheduler, type Expected, type SchedulerJob } from "./scheduler.ts";
 import {
   isProcessAlive,
   isProcessGroupAlive,
@@ -38,7 +38,7 @@ import {
   queryWindowsProcesses,
   resolveStateDirectory,
   windowsCommandProcesses,
-} from './system.ts';
+} from "./system.ts";
 
 export interface ServeOptions {
   slots: number;
@@ -67,7 +67,7 @@ interface ServerJob extends SchedulerJob {
   cancelPending: boolean;
 }
 
-const Outcomes: readonly string[] = ['succeeded', 'failed', 'cancelled', 'lost'];
+const Outcomes: readonly string[] = ["succeeded", "failed", "cancelled", "lost"];
 
 function describeJob(job: ServerJob): JobView {
   return {
@@ -98,7 +98,7 @@ export function serve(options: ServeOptions): void {
     process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`);
   };
   const stateDirectory = options.stateDir || resolveStateDirectory();
-  const history = new RunHistory(path.join(stateDirectory, 'history.json'), log);
+  const history = new RunHistory(path.join(stateDirectory, "history.json"), log);
   let nextId = history.nextId;
   let idleSince = Date.now();
   /** How the jobs that ended went, oldest first, for --after (also across a restart, through jobs-<port>.json). */
@@ -125,7 +125,7 @@ export function serve(options: ServeOptions): void {
     const expected = forecast.get(job);
     const index = scheduler.waiting.indexOf(job);
     return {
-      state: index >= 0 ? 'waiting' : 'running',
+      state: index >= 0 ? "waiting" : "running",
       ahead: Math.max(0, index),
       position: index + 1,
       startAt: expected ? expected.startAt : null,
@@ -145,16 +145,23 @@ export function serve(options: ServeOptions): void {
       if (job.lastPosition !== index || moved) {
         job.lastPosition = index;
         job.lastStartAt = view.startAt;
-        send(job.socket, { type: 'waiting', id: job.id, ...view, used: scheduler.used, capacity: scheduler.capacity });
+        send(job.socket, { type: "waiting", id: job.id, ...view, used: scheduler.used, capacity: scheduler.capacity });
       }
     });
   };
-  const cpus = (job: ServerJob): number => Math.max(1, Math.floor((os.cpus().length / scheduler.capacity) * job.weight));
+  const cpus = (job: ServerJob): number =>
+    Math.max(1, Math.floor((os.cpus().length / scheduler.capacity) * job.weight));
   const announce = (granted: ServerJob[]): void => {
     for (const job of granted) {
-      const flags = `${job.gpu ? ' gpu' : ''}${job.gpuTurn ? ' gpu-turn' : ''}${job.backfilled ? ' backfilled' : ''}`;
+      const flags = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${job.backfilled ? " backfilled" : ""}`;
       log(`grant #${job.id} weight ${job.weight}${flags} pid ${job.pid}: ${job.command}`);
-      send(job.socket, { type: 'granted', id: job.id, cpus: cpus(job), capacity: scheduler.capacity, protocol: ProtocolVersion });
+      send(job.socket, {
+        type: "granted",
+        id: job.id,
+        cpus: cpus(job),
+        capacity: scheduler.capacity,
+        protocol: ProtocolVersion,
+      });
     }
     notifyWaiting();
     if (!scheduler.isIdle()) {
@@ -171,23 +178,23 @@ export function serve(options: ServeOptions): void {
     return nextId++;
   };
   const createJob = (socket: net.Socket | null, message: Incoming, id: number): ServerJob => {
-    const command = String(message.command ?? '');
+    const command = String(message.command ?? "");
     return {
       id,
       socket,
-      weight: numberField(message, 'weight', 1) || 1,
+      weight: numberField(message, "weight", 1) || 1,
       gpu: message.gpu === true,
-      pid: numberField(message, 'pid'),
-      commandPid: numberField(message, 'commandPid'),
-      spawnedAt: numberField(message, 'spawnedAt'),
-      cwd: String(message.cwd ?? ''),
+      pid: numberField(message, "pid"),
+      commandPid: numberField(message, "commandPid"),
+      spawnedAt: numberField(message, "spawnedAt"),
+      cwd: String(message.cwd ?? ""),
       command,
-      queuedAt: numberField(message, 'queuedAt') || Date.now(),
-      grantedAt: numberField(message, 'grantedAt'),
+      queuedAt: numberField(message, "queuedAt") || Date.now(),
+      grantedAt: numberField(message, "grantedAt"),
       estimate: history.estimate(command),
-      pin: optionalNumberField(message, 'pin'),
-      before: idField(message, 'before'),
-      after: idField(message, 'after'),
+      pin: optionalNumberField(message, "pin"),
+      before: idField(message, "before"),
+      after: idField(message, "after"),
       keepIfFailed: message.keepIfFailed === true,
       gpuTurn: message.gpuTurn === true,
       lastPosition: -1,
@@ -215,7 +222,9 @@ export function serve(options: ServeOptions): void {
       fs.mkdirSync(path.dirname(jobsPath), { recursive: true });
       // The jobs that have not ended, so that a restarted scheduler waits for them as predecessors (--after) until they
       // come back: the waiting ones, the running ones, and those still expected from an earlier restart
-      const pending = [...new Set([...scheduler.waiting, ...scheduler.running].map((job) => job.id).concat([...expectedUntil.keys()]))];
+      const pending = [
+        ...new Set([...scheduler.waiting, ...scheduler.running].map((job) => job.id).concat([...expectedUntil.keys()])),
+      ];
       // Written aside and renamed over, so that a reader or a crash never sees half a file
       fs.writeFileSync(temporary, JSON.stringify({ nextId, jobs: records, ended: [...outcomes], pending }));
       replaceFile(temporary, jobsPath);
@@ -227,9 +236,9 @@ export function serve(options: ServeOptions): void {
   const restore = (): void => {
     let saved: unknown = null;
     try {
-      saved = JSON.parse(fs.readFileSync(jobsPath, 'utf8'));
+      saved = JSON.parse(fs.readFileSync(jobsPath, "utf8"));
     } catch (error) {
-      if (errorCode(error) !== 'ENOENT') {
+      if (errorCode(error) !== "ENOENT") {
         log(`could not read ${jobsPath}: ${errorMessage(error)}`);
       }
       return;
@@ -237,7 +246,7 @@ export function serve(options: ServeOptions): void {
     if (!isObject(saved)) {
       return;
     }
-    if (typeof saved.nextId === 'number' && Number.isInteger(saved.nextId)) {
+    if (typeof saved.nextId === "number" && Number.isInteger(saved.nextId)) {
       nextId = Math.max(nextId, saved.nextId);
     }
     if (Array.isArray(saved.ended)) {
@@ -249,17 +258,17 @@ export function serve(options: ServeOptions): void {
     }
     if (Array.isArray(saved.pending)) {
       for (const id of saved.pending as unknown[]) {
-        if (typeof id === 'number' && Number.isInteger(id) && id > 0 && !outcomes.has(id)) {
+        if (typeof id === "number" && Number.isInteger(id) && id > 0 && !outcomes.has(id)) {
           expect(id, Date.now() + ExpectedJobsMs);
         }
       }
     }
     const records = Array.isArray(saved.jobs) ? (saved.jobs as unknown[]) : [];
     for (const record of records) {
-      if (!isObject(record) || isProcessAlive(numberField(record, 'pid'))) {
+      if (!isObject(record) || isProcessAlive(numberField(record, "pid"))) {
         continue; // its client re-registers it
       }
-      const job = createJob(null, record, chooseId(idField(record, 'id')));
+      const job = createJob(null, record, chooseId(idField(record, "id")));
       scheduler.adopt(job);
       forget(job.id);
       log(`restored #${job.id} weight ${job.weight} (client gone, command ${job.commandPid}): ${job.command}`);
@@ -279,7 +288,7 @@ export function serve(options: ServeOptions): void {
       outcomes.delete(outcomes.keys().next().value as number);
     }
     for (const socket of awaiters.get(id) ?? []) {
-      send(socket, { type: 'ended', id, outcome });
+      send(socket, { type: "ended", id, outcome });
       socket.end();
     }
     awaiters.delete(id);
@@ -293,9 +302,17 @@ export function serve(options: ServeOptions): void {
   const release = (job: ServerJob, why: string, outcome: Outcome | null): void => {
     log(`end #${job.id} (${why})`);
     // Only a run seen from its grant to its end: the command ended by itself (not stopped by a signal or a cancel), and
-    // the job was not lost or adopted after a restart. Not a GPU turn: its time includes the wait for the GPU lock, and the
+    // the job was not lost or adopted after a restart. Not a GPU turn: its time includes the wait for the GPU lock, and
+    // the
     // command under the lock records its own run under the same command text.
-    if ((why === 'done' || why === 'client closed') && !job.gpuTurn && job.completed && !job.cancelled && !job.adopted && job.grantedAt > 0) {
+    if (
+      (why === "done" || why === "client closed") &&
+      !job.gpuTurn &&
+      job.completed &&
+      !job.cancelled &&
+      !job.adopted &&
+      job.grantedAt > 0
+    ) {
       history.record(job.command, Date.now() - job.grantedAt, nextId);
     }
     if (outcome !== null) {
@@ -308,8 +325,10 @@ export function serve(options: ServeOptions): void {
   };
 
   /**
-   * The end of every event (a message, a closed connection, a timer): cancels the waiting jobs whose predecessor did not
-   * succeed (along chains), records an unknown predecessor as lost, then grants once and saves the state. Nothing grants
+   * The end of every event (a message, a closed connection, a timer): cancels the waiting jobs whose predecessor did
+   * not
+   * succeed (along chains), records an unknown predecessor as lost, then grants once and saves the state. Nothing
+   * grants
    * while an event changes the jobs, so that no job starts on a state that is half updated.
    */
   const settle = (): void => {
@@ -323,13 +342,18 @@ export function serve(options: ServeOptions): void {
           continue;
         }
         const after = job.after;
-        if (!outcomes.has(after) && Date.now() >= scheduler.holdUntil && scheduler.find(after) === undefined && !expectedUntil.has(after)) {
+        if (
+          !outcomes.has(after) &&
+          Date.now() >= scheduler.holdUntil &&
+          scheduler.find(after) === undefined &&
+          !expectedUntil.has(after)
+        ) {
           // Not here, not ended, not expected back (a state file that was lost, an outcome dropped as too old)
           log(`#${after} is unknown; counting it as lost for #${job.id}`);
-          recordOutcome(after, 'lost');
+          recordOutcome(after, "lost");
         }
         const outcome = outcomes.get(after);
-        if (outcome !== undefined && outcome !== 'succeeded' && !job.keepIfFailed) {
+        if (outcome !== undefined && outcome !== "succeeded" && !job.keepIfFailed) {
           cancelJob(job, `#${after} ${outcome}`);
           changed = true;
         }
@@ -342,18 +366,18 @@ export function serve(options: ServeOptions): void {
   /** How a job whose client closed went: by its exit code when it ran, cancelled when it never started. */
   const closedOutcome = (job: ServerJob): Outcome => {
     if (scheduler.waiting.includes(job)) {
-      return 'cancelled';
+      return "cancelled";
     }
     if (!job.done || job.exitCode === null) {
-      return 'lost';
+      return "lost";
     }
-    return job.completed && job.exitCode === 0 ? 'succeeded' : 'failed';
+    return job.completed && job.exitCode === 0 ? "succeeded" : "failed";
   };
 
   /** Cancels one job: a waiting job leaves at once; a running one keeps its slot until its client has stopped it. */
   const cancelJob = (job: ServerJob, reason: string): void => {
     log(`cancel #${job.id} (${reason}): ${job.command}`);
-    send(job.socket, { type: 'cancelled', id: job.id, reason });
+    send(job.socket, { type: "cancelled", id: job.id, reason });
     if (scheduler.running.includes(job) && job.socket !== null && !job.socket.destroyed) {
       // The client stops its command and then closes: keep the slot until then, so that the next job does not start
       // beside a command that is still being stopped
@@ -362,7 +386,7 @@ export function serve(options: ServeOptions): void {
     }
     job.cancelled = true;
     if (scheduler.running.includes(job) || scheduler.waiting.includes(job)) {
-      release(job, 'cancelled', 'cancelled');
+      release(job, "cancelled", "cancelled");
     }
   };
 
@@ -371,12 +395,12 @@ export function serve(options: ServeOptions): void {
     if (orphans.length === 0) {
       return [];
     }
-    const processes = process.platform === 'win32' ? await queryWindowsProcesses() : null;
+    const processes = process.platform === "win32" ? await queryWindowsProcesses() : null;
     return orphans.map((job) => {
       if (job.commandPid <= 0) {
         return [];
       }
-      if (process.platform !== 'win32') {
+      if (process.platform !== "win32") {
         return isProcessGroupAlive(job.commandPid) ? [job.commandPid] : [];
       }
       return windowsCommandProcesses(processes, job.commandPid, job.spawnedAt);
@@ -397,8 +421,13 @@ export function serve(options: ServeOptions): void {
       const live = await orphanProcesses(orphans);
       orphans.forEach((job, index) => {
         const processes = live[index];
-        if (processes !== null && processes !== undefined && processes.length === 0 && scheduler.running.includes(job)) {
-          release(job, 'the command of a lost client exited', 'lost');
+        if (
+          processes !== null &&
+          processes !== undefined &&
+          processes.length === 0 &&
+          scheduler.running.includes(job)
+        ) {
+          release(job, "the command of a lost client exited", "lost");
         }
       });
       settle();
@@ -413,8 +442,10 @@ export function serve(options: ServeOptions): void {
     const orphans = requested.filter((job) => job.socket === null && scheduler.running.includes(job));
     const live = await orphanProcesses(orphans);
     orphans.forEach((_, index) => (live[index] ?? []).forEach(killProcessTree));
-    const jobs = requested.filter((job) => !job.cancelled && (scheduler.running.includes(job) || scheduler.waiting.includes(job)));
-    jobs.forEach((job) => cancelJob(job, 'cancel requested'));
+    const jobs = requested.filter(
+      (job) => !job.cancelled && (scheduler.running.includes(job) || scheduler.waiting.includes(job)),
+    );
+    jobs.forEach((job) => cancelJob(job, "cancel requested"));
     settle();
     return jobs.map((job) => job.id);
   };
@@ -427,12 +458,16 @@ export function serve(options: ServeOptions): void {
     if (scheduler.find(id) !== undefined || expectedUntil.has(id)) {
       awaiters.set(id, [...(awaiters.get(id) ?? []), socket]);
     } else if (outcome !== undefined) {
-      send(socket, { type: 'ended', id, outcome });
+      send(socket, { type: "ended", id, outcome });
       socket.end();
     } else if (Date.now() < scheduler.holdUntil) {
       pendingAwaits.push({ socket, id });
     } else {
-      reply(socket, { type: 'error', code: 'unknown-job', message: `no job #${id} (never queued, or ended too long ago)` });
+      reply(socket, {
+        type: "error",
+        code: "unknown-job",
+        message: `no job #${id} (never queued, or ended too long ago)`,
+      });
     }
   };
 
@@ -443,51 +478,55 @@ export function serve(options: ServeOptions): void {
 
   /** move: a manual place for a waiting job; tells its client, so that it brings the place when it re-registers. */
   const move = (message: Incoming): ServerMessage => {
-    const id = idField(message, 'id') ?? 0;
+    const id = idField(message, "id") ?? 0;
     const job = scheduler.waiting.find((other) => other.id === id);
     if (job === undefined) {
-      return { type: 'error', code: 'not-waiting', message: `no waiting job #${id}` };
+      return { type: "error", code: "not-waiting", message: `no waiting job #${id}` };
     }
     if (message.first === true) {
       scheduler.pinFirst(job);
     } else if (message.reset === true) {
       scheduler.resetPlace(job);
     } else {
-      const targetId = idField(message, 'before') ?? 0;
+      const targetId = idField(message, "before") ?? 0;
       const target = scheduler.waiting.find((other) => other.id === targetId);
       const refusal = target === undefined ? `no waiting job #${targetId}` : scheduler.placeBefore(job, target);
       if (refusal !== null) {
-        return { type: 'error', code: 'not-placed', message: refusal };
+        return { type: "error", code: "not-placed", message: refusal };
       }
     }
     log(`move #${job.id}: pin ${job.pin}, before ${job.before}`);
     return placed(job);
   };
   const setWeight = (message: Incoming): ServerMessage => {
-    const id = idField(message, 'id') ?? 0;
+    const id = idField(message, "id") ?? 0;
     const job = scheduler.waiting.find((other) => other.id === id);
     if (job === undefined) {
-      return { type: 'error', code: 'not-waiting', message: `no waiting job #${id} (a running job keeps its weight)` };
+      return { type: "error", code: "not-waiting", message: `no waiting job #${id} (a running job keeps its weight)` };
     }
     if (job.gpuTurn) {
-      return { type: 'error', code: 'not-placed', message: `#${id} waits for the GPU and takes no slots (its command registers its own)` };
+      return {
+        type: "error",
+        code: "not-placed",
+        message: `#${id} waits for the GPU and takes no slots (its command registers its own)`,
+      };
     }
-    job.weight = scheduler.clampWeight(numberField(message, 'weight', 1));
+    job.weight = scheduler.clampWeight(numberField(message, "weight", 1));
     log(`weight #${job.id}: ${job.weight}`);
     return placed(job);
   };
   /** Tells the client its job's new placement, grants by the new order and answers with the job's place. */
   const placed = (job: ServerJob): ServerMessage => {
-    send(job.socket, { type: 'updated', id: job.id, weight: job.weight, pin: job.pin, before: job.before });
+    send(job.socket, { type: "updated", id: job.id, weight: job.weight, pin: job.pin, before: job.before });
     settle();
-    return { type: 'move-result', id: job.id, position: scheduler.waiting.indexOf(job) + 1 };
+    return { type: "move-result", id: job.id, position: scheduler.waiting.indexOf(job) + 1 };
   };
 
   const server = net.createServer((socket) => {
     let job: ServerJob | null = null;
-    socket.on('error', () => socket.destroy());
+    socket.on("error", () => socket.destroy());
     // Every event ends with settle: the grants and the cascades follow the state the event left
-    socket.on('close', () => {
+    socket.on("close", () => {
       // A connection without a job (status, cancel, wait) changed nothing when it closed
       const hadJob = job !== null;
       closed();
@@ -510,7 +549,7 @@ export function serve(options: ServeOptions): void {
         job = null;
         const succeeded = cancelled.done && cancelled.completed && cancelled.exitCode === 0;
         cancelled.cancelled = !succeeded;
-        release(cancelled, 'cancelled', succeeded ? 'succeeded' : 'cancelled');
+        release(cancelled, "cancelled", succeeded ? "succeeded" : "cancelled");
         return;
       }
       if (scheduler.waiting.includes(job) && !job.done && isProcessAlive(job.pid)) {
@@ -520,7 +559,7 @@ export function serve(options: ServeOptions): void {
         job = null;
         reconnecting.socket = null;
         expect(reconnecting.id, Date.now() + ExpectedJobsMs);
-        release(reconnecting, 'its client reconnects', null);
+        release(reconnecting, "its client reconnects", null);
         return;
       }
       const lost = job;
@@ -531,39 +570,45 @@ export function serve(options: ServeOptions): void {
         log(`client of #${lost.id} is gone; holding its slot while command ${lost.commandPid} runs`);
         return;
       }
-      release(lost, 'client closed', closedOutcome(lost));
+      release(lost, "client closed", closedOutcome(lost));
     };
     onMessages(socket, (message) => {
       handle(message);
-      if (message.type !== 'status') {
+      if (message.type !== "status") {
         settle();
       }
     });
     const handle = (message: Incoming): void => {
       if (!AcceptedProtocolVersions.includes(Number(message.version))) {
         reply(socket, {
-          type: 'error',
-          code: 'version',
-          message: `protocol ${String(message.version)} does not match the scheduler's ${ProtocolVersion}; run "job-queue.js stop" when no job runs`,
+          type: "error",
+          code: "version",
+          message:
+            `protocol ${String(message.version)} does not match the scheduler's ${ProtocolVersion}; ` +
+            'run "job-queue.js stop" when no job runs',
         });
         return;
       }
       switch (message.type) {
-        case 'request':
-        case 'adopt': {
+        case "request":
+        case "adopt": {
           if (job !== null) {
             return;
           }
-          if (message.type === 'adopt') {
+          if (message.type === "adopt") {
             // The same client lost only its connection: the slot the scheduler kept for it is this job, under the same
             // id. Adopt first, so that removing the kept job hands no slot to a waiting job. The old connection may not
             // have closed yet (its close can arrive after this adopt): match by client pid whatever the socket state,
             // and mark the old job so that its later close does nothing.
-            const pid = numberField(message, 'pid');
+            const pid = numberField(message, "pid");
             const kept = scheduler.running.filter((other) => other.pid === pid);
             const keptId = kept.length > 0 ? (kept[0] as ServerJob).id : null;
             // A re-registering job started its command before this scheduler: its run time counts from that start
-            job = createJob(socket, { ...message, grantedAt: numberField(message, 'spawnedAt') }, keptId ?? chooseId(idField(message, 'id')));
+            job = createJob(
+              socket,
+              { ...message, grantedAt: numberField(message, "spawnedAt") },
+              keptId ?? chooseId(idField(message, "id")),
+            );
             scheduler.adopt(job);
             outcomes.delete(job.id); // the job runs: an older record of its id no longer holds
             forget(job.id);
@@ -572,69 +617,83 @@ export function serve(options: ServeOptions): void {
               release(other, `re-registered as #${(job as ServerJob).id}`, null);
             });
             log(`adopt #${job.id} weight ${job.weight} pid ${job.pid} command ${job.commandPid}: ${job.command}`);
-            send(socket, { type: 'adopted', id: job.id, protocol: ProtocolVersion });
+            send(socket, { type: "adopted", id: job.id, protocol: ProtocolVersion });
             idleSince = Date.now();
             break;
           }
-          const created = createJob(socket, { ...message, grantedAt: 0 }, chooseId(idField(message, 'id')));
+          const created = createJob(socket, { ...message, grantedAt: 0 }, chooseId(idField(message, "id")));
           const after = created.after;
           // A predecessor was queued before this job, so its id is lower: a later or the same id would wait for ever
           // (on itself, or in a cycle of two), also during the startup grace, when the predecessor is not checked yet
           if (after !== null && after >= created.id) {
-            reply(socket, { type: 'error', code: 'unknown-job', message: `--after: #${after} was not queued before #${created.id}` });
+            reply(socket, {
+              type: "error",
+              code: "unknown-job",
+              message: `--after: #${after} was not queued before #${created.id}`,
+            });
             return;
           }
           const unknown = after !== null && scheduler.find(after) === undefined && !expectedUntil.has(after);
-          // An id it never knew is a usage error; a predecessor that already ended is handled like any other: the job is
+          // An id it never knew is a usage error; a predecessor that already ended is handled like any other: the job
+          // is
           // queued, and settle grants or cancels it on the recorded outcome
           if (after !== null && unknown && Date.now() >= scheduler.holdUntil && !outcomes.has(after)) {
-            reply(socket, { type: 'error', code: 'unknown-job', message: `--after: no job #${after} (never queued, or ended too long ago)` });
+            reply(socket, {
+              type: "error",
+              code: "unknown-job",
+              message: `--after: no job #${after} (never queued, or ended too long ago)`,
+            });
             return;
           }
           forget(created.id);
           outcomes.delete(created.id); // the job is here again: an older record of its id no longer holds
           job = created;
-          log(`queue #${job.id} weight ${job.weight}${job.gpu ? ' gpu' : ''}${after !== null ? ` after #${after}` : ''} pid ${job.pid}: ${job.command}`);
+          log(
+            `queue #${job.id} weight ${job.weight}${job.gpu ? " gpu" : ""}` +
+              `${after !== null ? ` after #${after}` : ""} pid ${job.pid}: ${job.command}`,
+          );
           scheduler.add(job);
           // The id first, so that the caller can ask about its job (status <id>) whatever happens next; settle grants
-          send(socket, { type: 'queued', id: job.id, ...outlook(job, scheduler.forecast()) });
+          send(socket, { type: "queued", id: job.id, ...outlook(job, scheduler.forecast()) });
           break;
         }
-        case 'started':
+        case "started":
           if (job !== null) {
-            job.commandPid = numberField(message, 'commandPid');
-            job.spawnedAt = numberField(message, 'spawnedAt') || Date.now();
+            job.commandPid = numberField(message, "commandPid");
+            job.spawnedAt = numberField(message, "spawnedAt") || Date.now();
           }
           break;
-        case 'done':
+        case "done":
           if (job !== null) {
             job.done = true;
             job.completed = message.completed === true;
             // Protocol 2 clients send no exit code: their outcome is unknown ('lost')
-            job.exitCode = typeof message.exitCode === 'number' ? message.exitCode : null;
+            job.exitCode = typeof message.exitCode === "number" ? message.exitCode : null;
             if (!stopping && scheduler.running.includes(job)) {
               // The command has ended: free the slot and record the outcome now (settle saves it at the end of this
               // message), then give the receipt. A stopping scheduler saves nothing and gives none: the client then
               // reports the outcome to the next one.
               const ended = job;
               job = null;
-              // Cancelled: the client says so (also to a scheduler that restarted meanwhile and has no cancelPending), or
-              // this scheduler cancelled it and the command did not succeed first (a success that crosses the cancel wins)
+              // Cancelled: the client says so (also to a scheduler that restarted meanwhile and has no cancelPending),
+              // or
+              // this scheduler cancelled it and the command did not succeed first (a success that crosses the cancel
+              // wins)
               const succeeded = ended.completed && ended.exitCode === 0;
               const cancelled = message.cancelled === true || (ended.cancelPending && !succeeded);
-              const outcome: Outcome = cancelled ? 'cancelled' : closedOutcome(ended);
-              ended.cancelled = outcome === 'cancelled'; // a cancel the client carried out: no run time
-              release(ended, 'done', outcome);
-              send(socket, { type: 'done-ok', id: ended.id });
+              const outcome: Outcome = cancelled ? "cancelled" : closedOutcome(ended);
+              ended.cancelled = outcome === "cancelled"; // a cancel the client carried out: no run time
+              release(ended, "done", outcome);
+              send(socket, { type: "done-ok", id: ended.id });
             }
           }
           break;
-        case 'status': {
+        case "status": {
           scheduler.order();
           const forecast = scheduler.forecast();
           const view = (j: ServerJob) => ({ ...describeJob(j), ...outlook(j, forecast) });
           reply(socket, {
-            type: 'status',
+            type: "status",
             pid: process.pid,
             now: Date.now(),
             policy: scheduler.policy,
@@ -645,36 +704,40 @@ export function serve(options: ServeOptions): void {
           });
           break;
         }
-        case 'cancel': {
+        case "cancel": {
           const all = scheduler.running.concat(scheduler.waiting);
-          const id = idField(message, 'id');
+          const id = idField(message, "id");
           const targets = message.all === true ? all : all.filter((j) => j.id === id);
-          void cancel(targets).then((cancelled) => reply(socket, { type: 'cancel-result', cancelled }));
+          void cancel(targets).then((cancelled) => reply(socket, { type: "cancel-result", cancelled }));
           break;
         }
-        case 'move':
+        case "move":
           reply(socket, move(message));
           break;
-        case 'set-weight':
+        case "set-weight":
           reply(socket, setWeight(message));
           break;
-        case 'await': {
-          const id = idField(message, 'id');
+        case "await": {
+          const id = idField(message, "id");
           if (id === null) {
-            reply(socket, { type: 'error', code: 'unknown-job', message: 'await needs a job id' });
+            reply(socket, { type: "error", code: "unknown-job", message: "await needs a job id" });
           } else {
             awaitJob(socket, id);
           }
           break;
         }
-        case 'report': {
+        case "report": {
           // The end of a job whose command ended while no scheduler listened (its client could not send "done"): its
           // outcome, for the jobs that wait for it. Only for a job that is neither held nor already ended.
           // A job held for a lost client (its connection dropped, the scheduler stayed) ends with the report too.
-          const id = idField(message, 'id');
+          const id = idField(message, "id");
           const held = id === null ? undefined : scheduler.find(id);
           const outcome: Outcome =
-            message.cancelled === true ? 'cancelled' : message.completed === true && message.exitCode === 0 ? 'succeeded' : 'failed';
+            message.cancelled === true
+              ? "cancelled"
+              : message.completed === true && message.exitCode === 0
+                ? "succeeded"
+                : "failed";
           if (id !== null && held === undefined && !outcomes.has(id)) {
             log(`report #${id}: ${outcome}`);
             recordOutcome(id, outcome);
@@ -685,16 +748,16 @@ export function serve(options: ServeOptions): void {
             // outcome when it does
             held.done = true;
             held.completed = message.completed === true;
-            held.exitCode = typeof message.exitCode === 'number' ? message.exitCode : null;
+            held.exitCode = typeof message.exitCode === "number" ? message.exitCode : null;
             held.cancelPending = held.cancelPending || message.cancelled === true;
           }
-          reply(socket, { type: 'reported', id: id ?? 0 });
+          reply(socket, { type: "reported", id: id ?? 0 });
           break;
         }
-        case 'stop': {
-          log('stop requested');
+        case "stop": {
+          log("stop requested");
           stopping = true;
-          send(socket, { type: 'stopping', running: scheduler.running.length, waiting: scheduler.waiting.length });
+          send(socket, { type: "stopping", running: scheduler.running.length, waiting: scheduler.waiting.length });
           // Deliver what was sent to the clients (a cancel just before the stop) before leaving: end every connection
           // and exit when the clients have closed their side too, or after a second. Exiting once our data is only
           // flushed is not enough: on Windows a process that exits with unread data from a client (a "started" sent
@@ -720,27 +783,30 @@ export function serve(options: ServeOptions): void {
               closed();
               continue;
             }
-            s.once('close', closed);
+            s.once("close", closed);
             s.end();
           }
           break;
         }
         default:
-          reply(socket, { type: 'error', message: `unknown message type ${String(message.type)}` });
+          reply(socket, { type: "error", message: `unknown message type ${String(message.type)}` });
       }
     };
   });
 
-  server.on('error', (error: NodeJS.ErrnoException) => {
-    if (error.code === 'EADDRINUSE') {
+  server.on("error", (error: NodeJS.ErrnoException) => {
+    if (error.code === "EADDRINUSE") {
       log(`port ${options.port} is in use; another scheduler runs`);
       process.exit(0);
     }
     log(`server error: ${error.message}`);
     process.exit(1);
   });
-  server.listen(options.port, '127.0.0.1', () => {
-    log(`scheduler pid ${process.pid} on 127.0.0.1:${options.port}, ${scheduler.capacity} slots, ${os.cpus().length} cores, policy ${scheduler.policy}`);
+  server.listen(options.port, "127.0.0.1", () => {
+    log(
+      `scheduler pid ${process.pid} on 127.0.0.1:${options.port}, ${scheduler.capacity} slots, ` +
+        `${os.cpus().length} cores, policy ${scheduler.policy}`,
+    );
     // The grace for re-registration starts once clients can connect; only the scheduler that owns the port restores.
     // It ends in the timer, not at a time: nothing is granted (holdUntil stays Infinity) before settle has run with the
     // re-registered jobs.
@@ -759,14 +825,14 @@ export function serve(options: ServeOptions): void {
     for (const [id, until] of [...expectedUntil]) {
       if (until <= now && scheduler.find(id) === undefined) {
         log(`#${id} did not come back`);
-        recordOutcome(id, 'lost');
+        recordOutcome(id, "lost");
       }
     }
     settle();
   }, RegrantMs).unref();
   setInterval(() => {
     if (scheduler.isIdle() && Date.now() - idleSince >= IdleExitMs) {
-      log('idle; exiting');
+      log("idle; exiting");
       process.exit(0);
     }
   }, 60 * 1000).unref();

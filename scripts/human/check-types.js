@@ -27,7 +27,8 @@ const tsc = path.join(toolDirectory, 'node_modules', 'typescript', 'bin', 'tsc')
 /** The version of an installed package, or '' when it is missing. */
 function installedVersion(name) {
   try {
-    return JSON.parse(fs.readFileSync(path.join(toolDirectory, 'node_modules', name, 'package.json'), 'utf8')).version || '';
+    const manifest = path.join(toolDirectory, 'node_modules', name, 'package.json');
+    return JSON.parse(fs.readFileSync(manifest, 'utf8')).version || '';
   } catch (error) {
     if (error.code !== 'ENOENT') {
       process.stderr.write(`check-types: could not read the version of ${name}: ${error.message}\n`);
@@ -49,7 +50,8 @@ function main(argv) {
   if (installedVersion('typescript') !== TypeScriptVersion || installedVersion('@types/node') !== NodeTypesVersion) {
     fs.mkdirSync(toolDirectory, { recursive: true });
     const packages = [`typescript@${TypeScriptVersion}`, `@types/node@${NodeTypesVersion}`];
-    const args = ['install', '--no-save', '--no-package-lock', '--no-audit', '--no-fund', '--prefix', toolDirectory, ...packages];
+    const args = ['install', '--no-save', '--no-package-lock', '--no-audit', '--no-fund'];
+    args.push('--prefix', toolDirectory, ...packages);
     // Windows: npm is a batch file, which spawn runs only through a shell; the npm next to node.exe runs without one
     const npmCli = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
     const install = fs.existsSync(npmCli)
@@ -64,7 +66,8 @@ function main(argv) {
     return 0;
   }
   // The type root comes from scripts/tsconfig.json (../tmp/typecheck/node_modules/@types), as for an editor
-  const result = spawnSync(process.execPath, [tsc, '-p', path.join(root, 'scripts', 'tsconfig.json')], { stdio: 'inherit' });
+  const tsconfig = path.join(root, 'scripts', 'tsconfig.json');
+  const result = spawnSync(process.execPath, [tsc, '-p', tsconfig], { stdio: 'inherit' });
   if (result.status === 0) {
     process.stdout.write('check-types: no type errors\n');
   }

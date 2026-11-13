@@ -63,7 +63,8 @@ const stripsTypes = major > 23 || (major === 23 && minor >= 6) || (major === 22 
 if (!stripsTypes || (process.features && process.features.typescript === false)) {
   process.stderr.write(
     `[job-queue] Node ${process.versions.node} cannot run TypeScript files as they are; ` +
-      'install Node 22.18, 23.6 or later (scripts/human/Install-DevTools.ps1 on Windows), without --no-experimental-strip-types.\n',
+      'install Node 22.18, 23.6 or later (scripts/human/Install-DevTools.ps1 on Windows), ' +
+      'without --no-experimental-strip-types.\n',
   );
   process.exit(1);
 }

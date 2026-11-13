@@ -1,7 +1,14 @@
 // The scheduling decisions of the job queue, with no I/O: the order of the waiting jobs, the grants, backfilling and
 // the forecast of each job's start and end. The server feeds it events; the self-test drives it directly.
 
-import { ForecastSteps, OverrunGuessMs, LongestRunMs, UnknownTypicalMs, DefaultPolicy, type Policy } from './constants.ts';
+import {
+  ForecastSteps,
+  OverrunGuessMs,
+  LongestRunMs,
+  UnknownTypicalMs,
+  DefaultPolicy,
+  type Policy,
+} from "./constants.ts";
 
 /** The run times of a command's earlier runs: the median and the longest. */
 export interface Estimate {
@@ -44,7 +51,8 @@ export interface Expected {
 
 /**
  * The scheduler state. A job that holds the GPU lock is granted at once. The other waiting jobs are put in order (the
- * manual places first, then the policy), the jobs whose predecessor (--after) has not ended are set aside, and the first
+ * manual places first, then the policy), the jobs whose predecessor (--after) has not ended are set aside, and the
+ * first
  * of the rest is granted while it fits:
  *   - fifo: arrival order; a later job never overtakes the first one.
  *   - backfill: arrival order, and a later job may start in the free slots when it does not delay the first one
@@ -130,7 +138,8 @@ export class Scheduler<J extends SchedulerJob> {
   outcomes: ReadonlyMap<number, string> = new Map();
 
   /**
-   * True until the job's predecessor (--after) has a recorded outcome that lets it run: "succeeded", or any outcome with
+   * True until the job's predecessor (--after) has a recorded outcome that lets it run: "succeeded", or any outcome
+   * with
    * --keep-if-failed. A predecessor that runs, waits, is not back yet after a restart, or failed (without
    * --keep-if-failed) blocks it; the server cancels the jobs whose predecessor failed.
    */
@@ -139,12 +148,14 @@ export class Scheduler<J extends SchedulerJob> {
       return false;
     }
     const outcome = this.outcomes.get(job.after);
-    return outcome === undefined || (outcome !== 'succeeded' && job.keepIfFailed !== true);
+    return outcome === undefined || (outcome !== "succeeded" && job.keepIfFailed !== true);
   }
 
   /** move --first: ahead of every waiting job, the pinned ones included. */
   pinFirst(job: J): void {
-    const pins = this.waiting.filter((other) => other !== job && other.pin !== null).map((other) => other.pin as number);
+    const pins = this.waiting
+      .filter((other) => other !== job && other.pin !== null)
+      .map((other) => other.pin as number);
     job.pin = pins.length === 0 ? 0 : Math.min(...pins) - 1;
     job.before = null;
   }
@@ -155,10 +166,10 @@ export class Scheduler<J extends SchedulerJob> {
    */
   placeBefore(job: J, target: J): string | null {
     if (!this.waiting.includes(job) || !this.waiting.includes(target)) {
-      return 'both jobs must be waiting';
+      return "both jobs must be waiting";
     }
     if (job === target) {
-      return 'a job cannot go before itself';
+      return "a job cannot go before itself";
     }
     // The walk stops at a cycle among other jobs, which a restart can bring back (order() sets such jobs aside)
     const seen = new Set<J>();
@@ -186,7 +197,7 @@ export class Scheduler<J extends SchedulerJob> {
    */
   order(now = Date.now()): void {
     const arrival = (a: J, b: J): number => a.queuedAt - b.queuedAt || a.id - b.id;
-    if (this.policy === 'hrrn') {
+    if (this.policy === "hrrn") {
       const ratio = (job: J): number => {
         const typical = job.estimate ? Math.max(job.estimate.typicalMs, 1000) : UnknownTypicalMs;
         return (Math.max(0, now - job.queuedAt) + typical) / typical;
@@ -265,7 +276,7 @@ export class Scheduler<J extends SchedulerJob> {
       }
       take(first);
     }
-    if (this.policy !== 'fifo') {
+    if (this.policy !== "fifo") {
       this.backfill(now).forEach((job) => {
         job.backfilled = true;
         take(job);
@@ -368,12 +379,12 @@ export class Scheduler<J extends SchedulerJob> {
       }
       // The next end, or with free slots under hrrn the next re-grant (RegrantMs; a minute here, a coarser step that
       // keeps the replay short), when a waiting job may have overtaken the first one
-      const regrant = this.policy === 'hrrn' && simulation.used < this.capacity ? time + 60 * 1000 : Infinity;
+      const regrant = this.policy === "hrrn" && simulation.used < this.capacity ? time + 60 * 1000 : Infinity;
       time = Math.max(time, Math.min(regrant, ...simulation.running.map((copy) => ends.get(copy) as number)));
       for (const copy of simulation.running.filter((other) => (ends.get(other) as number) <= time)) {
         simulation.running.splice(simulation.running.indexOf(copy), 1);
         simulation.used -= copy.weight;
-        replayed.set(copy.id, 'succeeded');
+        replayed.set(copy.id, "succeeded");
       }
     }
     return result;

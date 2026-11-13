@@ -170,8 +170,8 @@ function readOwner(lockPath) {
 }
 
 const options = parseArgs(process.argv.slice(2));
-// GSHARP_GPU_LOCK_PATH: the same as --lock-path, for a test whose command reaches this script indirectly (the job queue's
-// self-test); real runs share the default
+// GSHARP_GPU_LOCK_PATH: the same as --lock-path, for a test whose command reaches this script indirectly (the job
+// queue's self-test); real runs share the default
 const lockOverride = options.lockPath || process.env.GSHARP_GPU_LOCK_PATH || '';
 const lockPath = lockOverride === '' ? resolveLockPath() : path.resolve(lockOverride);
 const commandText = options.command.join(' ');

@@ -1,9 +1,9 @@
 // The run times of earlier commands, kept on disk, so that the scheduler can order, backfill and forecast by them.
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { HistoryCommands, HistoryRunsPerCommand, LongestRunMs } from './constants.ts';
-import type { Estimate } from './scheduler.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { HistoryCommands, HistoryRunsPerCommand, LongestRunMs } from "./constants.ts";
+import type { Estimate } from "./scheduler.ts";
 
 interface HistoryEntry {
   runs: number[];
@@ -17,7 +17,9 @@ interface HistoryEntry {
 export class RunHistory {
   readonly file: string;
   readonly log: (text: string) => void;
-  /** Keyed by command text: a plain object without a prototype, so that "constructor" or "__proto__" stay plain keys. */
+  /**
+   * Keyed by command text: a plain object without a prototype, so that "constructor" or "__proto__" stay plain keys.
+   */
   commands: Record<string, HistoryEntry> = Object.create(null) as Record<string, HistoryEntry>;
   nextId = 1;
 
@@ -26,7 +28,7 @@ export class RunHistory {
     this.log = log;
     try {
       // Keep only well-formed entries, so that a damaged file costs its records, never the scheduler
-      const saved: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const saved: unknown = JSON.parse(fs.readFileSync(file, "utf8"));
       const record = isObject(saved) ? saved : null;
       const commands = record !== null && isObject(record.commands) ? record.commands : null;
       if (commands !== null) {
@@ -40,18 +42,18 @@ export class RunHistory {
         }
       }
       const nextId = record !== null ? record.nextId : undefined;
-      if (typeof nextId === 'number' && Number.isInteger(nextId) && nextId > 0) {
+      if (typeof nextId === "number" && Number.isInteger(nextId) && nextId > 0) {
         this.nextId = nextId;
       }
     } catch (error) {
-      if (errorCode(error) !== 'ENOENT') {
+      if (errorCode(error) !== "ENOENT") {
         log(`could not read ${file}: ${errorMessage(error)}`);
       }
     }
   }
 
   static key(command: string): string {
-    return command.trim().replace(/\s+/g, ' ');
+    return command.trim().replace(/\s+/g, " ");
   }
 
   /** The median and the longest of the command's recorded runs, or null when it has none. */
@@ -62,7 +64,8 @@ export class RunHistory {
     }
     const runs = [...entry.runs].sort((a, b) => a - b);
     const middle = runs.length >> 1;
-    const typicalMs = runs.length % 2 === 1 ? (runs[middle] as number) : ((runs[middle - 1] as number) + (runs[middle] as number)) / 2;
+    const typicalMs =
+      runs.length % 2 === 1 ? (runs[middle] as number) : ((runs[middle - 1] as number) + (runs[middle] as number)) / 2;
     return { typicalMs, longestMs: runs[runs.length - 1] as number };
   }
 
@@ -104,7 +107,7 @@ export function replaceFile(from: string, to: string): void {
       return;
     } catch (error) {
       const code = errorCode(error);
-      if (attempt >= 10 || (code !== 'EPERM' && code !== 'EACCES' && code !== 'EBUSY')) {
+      if (attempt >= 10 || (code !== "EPERM" && code !== "EACCES" && code !== "EBUSY")) {
         throw error;
       }
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * attempt);
@@ -113,15 +116,15 @@ export function replaceFile(from: string, to: string): void {
 }
 
 function isRunTime(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= LongestRunMs;
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= LongestRunMs;
 }
 
 export function isObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 export function errorCode(error: unknown): string | undefined {
-  return isObject(error) && typeof error.code === 'string' ? error.code : undefined;
+  return isObject(error) && typeof error.code === "string" ? error.code : undefined;
 }
 
 export function errorMessage(error: unknown): string {

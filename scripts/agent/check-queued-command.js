@@ -631,12 +631,15 @@ function check(command, kind = dialect) {
 
 function denialText(reasons) {
   return (
-    `${reasons.join(', ')} must run through the job queue, so that parallel agents do not oversubscribe the machine:\n` +
+    `${reasons.join(', ')} must run through the job queue, ` +
+    'so that parallel agents do not oversubscribe the machine:\n' +
     '  node scripts/human/job-queue.js run -- "<command>"\n' +
     '  node scripts/human/job-queue.js run --gpu -- "<command>"   (uses the GPU; replaces gpu-lock.js)\n' +
-    'The queue waits for a free slot and then runs the command here. It prints `queued #<id>` at once: keep the id and ' +
+    'The queue waits for a free slot and then runs the command here. ' +
+    'It prints `queued #<id>` at once: keep the id and ' +
     'read the expected start and end with `node scripts/human/job-queue.js status <id> --json` (`status` lists every ' +
-    'job); `node scripts/human/job-queue.js wait <id>` run in the background calls you when it ends (exit 0 succeeded). Steps that belong together go into one job as one quoted string, ' +
+    'job); `node scripts/human/job-queue.js wait <id>` run in the background calls you when it ends ' +
+    '(exit 0 succeeded). Steps that belong together go into one job as one quoted string, ' +
     '`run -- "dotnet build X && dotnet test X --no-build"`: it waits once, and nothing runs between the steps. ' +
     'Long waits: run it in the background. Text that only names such a command (a message, a search ' +
     'pattern) passes when it is quoted. The queued command runs in the shell you call `run` from (Git Bash, PowerShell; ' +

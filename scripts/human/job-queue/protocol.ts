@@ -1,10 +1,10 @@
 // The messages between the clients and the scheduler: one JSON object per line over a TCP connection to 127.0.0.1.
 
-import type { Socket } from 'node:net';
-import { BaseProtocolVersion, ProtocolVersion } from './constants.ts';
+import type { Socket } from "node:net";
+import { BaseProtocolVersion, ProtocolVersion } from "./constants.ts";
 
 /** How a job ended, as --after reads it. `lost`: its client died and its command exited with an unknown code. */
-export type Outcome = 'succeeded' | 'failed' | 'cancelled' | 'lost';
+export type Outcome = "succeeded" | "failed" | "cancelled" | "lost";
 
 /** What a client asks to be queued with, and brings again when it re-registers after a scheduler restart. */
 export interface JobRequest {
@@ -27,19 +27,21 @@ export interface JobRequest {
 }
 
 export type ClientMessage =
-  | ({ type: 'request' | 'adopt' } & JobRequest)
-  | { type: 'started'; commandPid: number; spawnedAt: number }
+  | ({ type: "request" | "adopt" } & JobRequest)
+  | { type: "started"; commandPid: number; spawnedAt: number }
   /** completed: the command ran to its own end (not stopped by a signal or a cancel). */
-  | { type: 'done'; completed: boolean; exitCode: number; cancelled?: boolean }
-  | { type: 'status' }
-  | { type: 'cancel'; id?: number; all?: boolean }
-  | { type: 'stop' }
-  | { type: 'move'; id: number; first?: boolean; before?: number; reset?: boolean }
-  | { type: 'set-weight'; id: number; weight: number }
-  /** Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock). */
-  | { type: 'await'; id: number }
+  | { type: "done"; completed: boolean; exitCode: number; cancelled?: boolean }
+  | { type: "status" }
+  | { type: "cancel"; id?: number; all?: boolean }
+  | { type: "stop" }
+  | { type: "move"; id: number; first?: boolean; before?: number; reset?: boolean }
+  | { type: "set-weight"; id: number; weight: number }
+  /**
+   * Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock).
+   */
+  | { type: "await"; id: number }
   /** The end of a job whose command ended while no scheduler listened, for the jobs that wait for it. */
-  | { type: 'report'; id: number; completed: boolean; exitCode: number; cancelled?: boolean };
+  | { type: "report"; id: number; completed: boolean; exitCode: number; cancelled?: boolean };
 
 /** A job as `status` shows it. */
 export interface JobView {
@@ -63,7 +65,7 @@ export interface JobView {
 
 /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
 export interface Outlook {
-  state: 'waiting' | 'running';
+  state: "waiting" | "running";
   ahead: number;
   position: number;
   startAt: number | null;
@@ -75,7 +77,7 @@ export interface Outlook {
 export type StatusJob = JobView & Outlook;
 
 export interface StatusReply {
-  type: 'status';
+  type: "status";
   pid: number;
   now: number;
   policy: string;
@@ -93,22 +95,22 @@ export interface Placement {
 }
 
 export type ServerMessage =
-  | ({ type: 'queued'; id: number } & Outlook)
-  | ({ type: 'waiting'; id: number; used: number; capacity: number } & Outlook)
+  | ({ type: "queued"; id: number } & Outlook)
+  | ({ type: "waiting"; id: number; used: number; capacity: number } & Outlook)
   /** protocol: the scheduler's version (from 3 on; an older one sends none and gives no receipt for "done"). */
-  | { type: 'granted'; id: number; cpus: number; capacity: number; protocol?: number }
-  | { type: 'adopted'; id: number; protocol?: number }
-  | { type: 'cancelled'; id: number; reason?: string }
-  | ({ type: 'updated'; id: number } & Placement)
-  | { type: 'error'; code?: string; message: string }
+  | { type: "granted"; id: number; cpus: number; capacity: number; protocol?: number }
+  | { type: "adopted"; id: number; protocol?: number }
+  | { type: "cancelled"; id: number; reason?: string }
+  | ({ type: "updated"; id: number } & Placement)
+  | { type: "error"; code?: string; message: string }
   | StatusReply
-  | { type: 'cancel-result'; cancelled: number[] }
-  | { type: 'stopping'; running: number; waiting: number }
-  | { type: 'move-result'; id: number; position: number }
-  | { type: 'ended'; id: number; outcome: Outcome }
-  | { type: 'reported'; id: number }
+  | { type: "cancel-result"; cancelled: number[] }
+  | { type: "stopping"; running: number; waiting: number }
+  | { type: "move-result"; id: number; position: number }
+  | { type: "ended"; id: number; outcome: Outcome }
+  | { type: "reported"; id: number }
   /** The scheduler has recorded and saved the outcome of a "done". */
-  | { type: 'done-ok'; id: number };
+  | { type: "done-ok"; id: number };
 
 /**
  * The protocol version a message is sent with: 3 only for what version 3 added (move, set-weight, await, a job with a
@@ -119,12 +121,12 @@ export type ServerMessage =
  */
 export function wireVersion(message: ClientMessage): number {
   switch (message.type) {
-    case 'move':
-    case 'set-weight':
-    case 'await':
-    case 'report':
+    case "move":
+    case "set-weight":
+    case "await":
+    case "report":
       return ProtocolVersion;
-    case 'request':
+    case "request":
       return message.after !== null || message.pin !== null || message.before !== null || message.gpuTurn
         ? ProtocolVersion
         : BaseProtocolVersion;
@@ -138,16 +140,16 @@ export type Incoming = Record<string, unknown> & { type?: unknown; version?: unk
 
 /** Splits a socket stream into JSON messages, one per line. */
 export function onMessages(socket: Socket, handler: (message: Incoming) => void): void {
-  let buffer = '';
-  socket.setEncoding('utf8');
-  socket.on('data', (chunk: string) => {
+  let buffer = "";
+  socket.setEncoding("utf8");
+  socket.on("data", (chunk: string) => {
     buffer += chunk;
-    let newline = buffer.indexOf('\n');
+    let newline = buffer.indexOf("\n");
     while (newline >= 0) {
       const line = buffer.slice(0, newline);
       buffer = buffer.slice(newline + 1);
-      newline = buffer.indexOf('\n');
-      if (line.trim() === '') {
+      newline = buffer.indexOf("\n");
+      if (line.trim() === "") {
         continue;
       }
       let message: unknown;
@@ -157,8 +159,8 @@ export function onMessages(socket: Socket, handler: (message: Incoming) => void)
         socket.destroy(new Error(`invalid message: ${error instanceof Error ? error.message : String(error)}`));
         return;
       }
-      if (message === null || typeof message !== 'object' || Array.isArray(message)) {
-        socket.destroy(new Error('invalid message: not an object'));
+      if (message === null || typeof message !== "object" || Array.isArray(message)) {
+        socket.destroy(new Error("invalid message: not an object"));
         return;
       }
       handler(message as Incoming);
@@ -187,5 +189,5 @@ export function idField(message: Incoming, name: string): number | null {
 /** A finite number field that may be null (a pin), or null. */
 export function optionalNumberField(message: Incoming, name: string): number | null {
   const value = message[name];
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

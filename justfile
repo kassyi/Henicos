@@ -13,11 +13,13 @@ queue := "node scripts/human/job-queue.js run"
 
 # Run normal tests excluding heavy stress and benchmark tests and the tests that raise a real GPU fault (GpuTrap)
 test *args="":
-    {{queue}} --gpu -- dotnet test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
+    {{queue}} --gpu -- dotnet test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" \
+        {{blame_crash}} {{args}}
 
 # Run tests with code coverage collection
 test-coverage *args="":
-    {{queue}} --gpu -- dotnet test -s coverage.runsettings --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
+    {{queue}} --gpu -- dotnet test -s coverage.runsettings \
+        --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
 
 # Run the tests with coverage and list the lines changed since base that no test executed
 coverage-diff base="main":
@@ -50,7 +52,8 @@ fuzz-diff profile="cpu" minutes="5" *args="":
 
 # Compare generated C++/CUDA of a base ref and the working tree on fuzzer kernels
 fuzz-compare base="origin/main" batches="20" *args="":
-    {{queue}} --weight 2 -- node scripts/human/fuzz-differential.js --compare-base {{base}} --batches {{batches}} {{args}}
+    {{queue}} --weight 2 -- node scripts/human/fuzz-differential.js --compare-base {{base}} \
+        --batches {{batches}} {{args}}
 
 # count can take the time: `test-stability 5h15m` for 5 hours 15 minutes, `test-stability 10000` for 10000 times
 # Run tests multiple times to detect flaky tests; see scripts/human/test-stability.js --help
@@ -69,7 +72,8 @@ test-category category *args="":
 # One run of a test project: its memory peak, the tests that raised it, dotnet-counters and a gcdump at the end; a
 # Cuda project runs under the GPU lock
 test-memory project *args="":
-    {{queue}} {{ if project =~ "Cuda" { "--gpu" } else { "" } }} -- node scripts/human/test-memory.js {{project}} {{args}}
+    {{queue}} {{ if project =~ "Cuda" { "--gpu" } else { "" } }} -- \
+        node scripts/human/test-memory.js {{project}} {{args}}
 
 # Run compute benchmarks (sgemm, sha256, bs, reduce, all)
 bench suite="all" *args="":
@@ -92,7 +96,8 @@ doctest file_path assemblies="":
 # The test host heap is capped at 8 GB (GSharpTestHeapHardLimit in bytes; set it to override), so a mutant that
 # allocates without bound fails instead of exhausting memory.
 mutate phase="gpumath" since="" *args="":
-    {{queue}} {{ if phase == "compiler" { "" } else { "--gpu" } }} -- node scripts/human/mutate.js --phase "{{phase}}" {{ if since != "" { "--since " + since } else { "" } }} -- {{args}}
+    {{queue}} {{ if phase == "compiler" { "" } else { "--gpu" } }} -- node scripts/human/mutate.js --phase "{{phase}}" \
+        {{ if since != "" { "--since " + since } else { "" } }} -- {{args}}
 
 # Demangle C++ / G# identifiers in a build/runtime log (pass file path, "-" for stdin, or "help" / "-- --help" for usage)
 gsharp-demangle log_path="-" symbols_path="":

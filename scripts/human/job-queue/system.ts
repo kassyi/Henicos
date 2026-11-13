@@ -1,9 +1,9 @@
 // What the job queue reads and changes outside itself: the state directory, the processes of the machine.
 
-import * as path from 'node:path';
-import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
-import { StateDirectoryVariable } from './constants.ts';
-import { errorCode, errorMessage } from './history.ts';
+import * as path from "node:path";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { StateDirectoryVariable } from "./constants.ts";
+import { errorCode, errorMessage } from "./history.ts";
 
 /** Writes a line to stderr, marked as the queue's own output among the command's. */
 export function prefix(text: string): void {
@@ -19,19 +19,19 @@ export function resolveStateDirectory(): string {
   if (configured) {
     return path.resolve(configured);
   }
-  let base = path.resolve(import.meta.dirname, '..', '..', '..');
-  const git = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
+  let base = path.resolve(import.meta.dirname, "..", "..", "..");
+  const git = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
     cwd: import.meta.dirname,
-    encoding: 'utf8',
+    encoding: "utf8",
     windowsHide: true,
   });
   if (!git.error && git.status === 0) {
     const commonDir = git.stdout.trim();
-    if (commonDir !== '' && path.isAbsolute(commonDir)) {
+    if (commonDir !== "" && path.isAbsolute(commonDir)) {
       base = path.dirname(path.resolve(commonDir));
     }
   }
-  return path.join(base, 'tmp', 'job-queue');
+  return path.join(base, "tmp", "job-queue");
 }
 
 /** Slack for comparing a process creation time with the recorded spawn time (as in gpu-lock.js). */
@@ -49,17 +49,17 @@ export interface ProcessInfo {
  */
 export function queryWindowsProcesses(): Promise<Map<number, ProcessInfo> | null> {
   const script =
-    'Get-CimInstance Win32_Process | ForEach-Object { $c = -1; ' +
-    'if ($_.CreationDate) { $c = ([DateTimeOffset]$_.CreationDate).ToUnixTimeMilliseconds() }; ' +
+    "Get-CimInstance Win32_Process | ForEach-Object { $c = -1; " +
+    "if ($_.CreationDate) { $c = ([DateTimeOffset]$_.CreationDate).ToUnixTimeMilliseconds() }; " +
     '"$($_.ProcessId) $($_.ParentProcessId) $c" }';
   return new Promise((resolve) => {
-    let output = '';
-    const query = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true });
+    let output = "";
+    const query = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], { windowsHide: true });
     const timer = setTimeout(() => query.kill(), 60000);
-    query.stdout.setEncoding('utf8');
-    query.stdout.on('data', (chunk: string) => (output += chunk));
-    query.on('error', () => resolve(null));
-    query.on('close', (code) => {
+    query.stdout.setEncoding("utf8");
+    query.stdout.on("data", (chunk: string) => (output += chunk));
+    query.on("error", () => resolve(null));
+    query.on("close", (code) => {
       clearTimeout(timer);
       if (code !== 0) {
         resolve(null);
@@ -67,7 +67,7 @@ export function queryWindowsProcesses(): Promise<Map<number, ProcessInfo> | null
       }
       const processes = new Map<number, ProcessInfo>();
       for (const line of output.split(/\r?\n/)) {
-        const [pid, ppid, created] = line.trim().split(' ').map(Number);
+        const [pid, ppid, created] = line.trim().split(" ").map(Number);
         if (Number.isInteger(pid) && Number.isInteger(ppid) && Number.isFinite(created)) {
           processes.set(pid as number, { ppid: ppid as number, created: created as number });
         }
@@ -82,7 +82,11 @@ export function queryWindowsProcesses(): Promise<Map<number, ProcessInfo> | null
  * children (Win32_Process keeps a dead parent's pid in ParentProcessId; when the client dies, Windows ends the shell
  * but not what it started). Creation times exclude processes that only reuse the pid. Null when unsure.
  */
-export function windowsCommandProcesses(processes: Map<number, ProcessInfo> | null, pid: number, spawnedAt: number): number[] | null {
+export function windowsCommandProcesses(
+  processes: Map<number, ProcessInfo> | null,
+  pid: number,
+  spawnedAt: number,
+): number[] | null {
   if (processes === null) {
     return null;
   }
@@ -99,7 +103,11 @@ export function windowsCommandProcesses(processes: Map<number, ProcessInfo> | nu
     }
   }
   for (const [child, info] of processes) {
-    if (child !== pid && info.ppid === pid && (info.created < 0 || (info.created >= earliest && info.created < reusedFrom))) {
+    if (
+      child !== pid &&
+      info.ppid === pid &&
+      (info.created < 0 || (info.created >= earliest && info.created < reusedFrom))
+    ) {
       found.push(child);
     }
   }
@@ -124,7 +132,7 @@ function signalZero(target: number): boolean {
     process.kill(target, 0);
     return true;
   } catch (error) {
-    return errorCode(error) === 'EPERM';
+    return errorCode(error) === "EPERM";
   }
 }
 
@@ -133,14 +141,14 @@ export function killProcessTree(pid: number | undefined): void {
   if (pid === undefined || !Number.isInteger(pid) || pid <= 0) {
     return;
   }
-  if (process.platform === 'win32') {
-    spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+  if (process.platform === "win32") {
+    spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
     return;
   }
   try {
-    process.kill(-pid, 'SIGTERM');
+    process.kill(-pid, "SIGTERM");
   } catch (error) {
-    if (errorCode(error) !== 'ESRCH') {
+    if (errorCode(error) !== "ESRCH") {
       prefix(`could not stop the command's process group ${pid}: ${errorMessage(error)}`);
     }
   }
