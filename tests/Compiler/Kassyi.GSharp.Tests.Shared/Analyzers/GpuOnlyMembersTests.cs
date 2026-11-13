@@ -32,11 +32,13 @@ public class GpuOnlyMembersTests
         var compilation = s_coreSources.Value;
         var throwing = new GpuOnlyThrowFinder(compilation);
 
+#pragma warning disable RS0030 // Category 4: the failure message names each mismatched member for a person to read
         var mismatches = GetPublicMembers(compilation)
             .Where(member => GpuOnlyMembers.IsGpuOnly(member) != throwing.Throws(member))
             .Select(member => $"{member.ToDisplayString()}: GPU-only {GpuOnlyMembers.IsGpuOnly(member)}, " +
                               $"throws {throwing.Throws(member)}")
             .ToArray();
+#pragma warning restore RS0030
 
         Assert.Empty(mismatches);
     }
@@ -95,38 +97,33 @@ public class GpuOnlyMembersTests
 
     private static CSharpCompilation CreateCoreSourceCompilation()
     {
-        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
         var coreDirectory = RepositoryPaths.Combine("src", "Core", "Kassyi.GSharp.Core");
         var sources = Directory.EnumerateFiles(coreDirectory, "*.cs", SearchOption.AllDirectories)
             .Where(path => !IsBuildOutput(Path.GetRelativePath(coreDirectory, path)))
             .Append(RepositoryPaths.Combine("src", "Shared", "Hashing", "Fnv1A64.cs"))
             .Order(StringComparer.Ordinal)
-            .Select(path => CSharpSyntaxTree.ParseText(File.ReadAllText(path), parseOptions, path));
+            .Select(path => (Path: path, Source: File.ReadAllText(path)));
 
         // The stubs that the build of Core generates from the native API YAML (YamlApiGenerator), and the global usings
         // of ImplicitUsings
         var stubs = NativeIntrinsicEmitter.MergeByClass([.. ReadNativeApiDefinitions()])
-            .Select(definition => CSharpSyntaxTree.ParseText(
-                NativeIntrinsicEmitter.EmitIntrinsics(definition),
-                parseOptions,
-                definition.ClassName + "Intrinsics.g.cs"
+            .Select(definition => (
+                Path: definition.ClassName + "Intrinsics.g.cs",
+                Source: NativeIntrinsicEmitter.EmitIntrinsics(definition)
             ));
-        var implicitUsings = CSharpSyntaxTree.ParseText(
-            "global using System; global using System.Collections.Generic; global using System.IO; " +
+        var implicitUsings = (
+            Path: "ImplicitUsings.g.cs",
+            Source: "global using System; global using System.Collections.Generic; global using System.IO; " +
             "global using System.Linq; global using System.Net.Http; global using System.Threading; " +
-            "global using System.Threading.Tasks;",
-            parseOptions,
-            "ImplicitUsings.g.cs"
+            "global using System.Threading.Tasks;"
         );
 
         // The Core assembly stays referenced for the types its build generates otherwise (the vector types); the
         // source declarations take precedence over it
-        return CSharpCompilation.Create("Kassyi.GSharp.Core.Sources")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-                .WithAllowUnsafe(true)
-                .WithNullableContextOptions(NullableContextOptions.Enable))
-            .AddReferences(RoslynTestUtility.BaseReferences)
-            .AddSyntaxTrees(sources.Concat(stubs).Append(implicitUsings));
+        var compilation = RoslynTestUtility.CreateCompilationAt(sources.Concat(stubs).Append(implicitUsings).ToArray());
+        return compilation
+            .WithAssemblyName("Kassyi.GSharp.Core.Sources")
+            .WithOptions(compilation.Options.WithNullableContextOptions(NullableContextOptions.Enable));
     }
 
     private static bool IsBuildOutput(string relativePath) =>

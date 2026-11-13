@@ -1,4 +1,5 @@
 #nullable enable
+using Kassyi.GSharp.Compiler.Extensions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -22,7 +23,7 @@ public class GSharpGeneratedTreesTests
     [InlineData("", false)]
     public void IsOwnOutput_TreePath_IsTrueOnlyForTheGeneratorsOfTheCompiler(string path, bool expected)
     {
-        var tree = CSharpSyntaxTree.ParseText("class C { }", path: path);
+        var tree = CSharpSyntaxTree.Create(SyntaxFactory.CompilationUnit(), path: path);
 
         Assert.Equal(expected, GSharpGeneratedTrees.IsOwnOutput(tree));
     }
@@ -32,28 +33,26 @@ public class GSharpGeneratedTreesTests
     [Scenario(TestScenario.HappyPath)]
     public void IsOwnOutput_EveryGeneratorOfTheCompiler_IsOwnOutput()
     {
-        var compilerDirectory = RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler");
-        var generators = Directory.EnumerateFiles(compilerDirectory, "*.cs", SearchOption.AllDirectories)
-            .Where(static path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
-            .Select(static path => CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot())
-            .SelectMany(static root => root.DescendantNodes().OfType<ClassDeclarationSyntax>())
-            .Where(static type => type.AttributeLists
-                .SelectMany(static list => list.Attributes)
-                .Any(static attribute => attribute.Name.ToString() == "Generator"))
-            .Select(static type => GetNamespace(type) + "." + type.Identifier.Text)
+        var compilation = RoslynTestUtility.CompilerSourceCompilation;
+        var generatorAttribute = compilation.GetTypeByMetadataName("Microsoft.CodeAnalysis.GeneratorAttribute");
+        Assert.NotNull(generatorAttribute);
+        // The full name of the generator type, as Roslyn writes it into the path of a generated tree
+        var generators = compilation.SyntaxTrees
+            .SelectMany(static tree => tree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>())
+            .Select(syntax => compilation.GetSemanticModel(syntax.SyntaxTree).GetDeclaredSymbol(syntax))
+            .OfType<INamedTypeSymbol>()
+            .Where(type => type.GetAttributes()
+                .Any(attribute => SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, generatorAttribute)))
+            .Select(static type => type.ContainingNamespace.GetMetadataNamespaceName() + "." + type.Name)
             .ToArray();
 
         Assert.NotEmpty(generators);
         Assert.All(generators, static name =>
         {
-            var tree = CSharpSyntaxTree.ParseText("class C { }", path: $"obj/Kassyi.GSharp.Compiler/{name}/C.g.cs");
+            var tree = CSharpSyntaxTree.Create(
+                SyntaxFactory.CompilationUnit(),
+                path: $"obj/Kassyi.GSharp.Compiler/{name}/C.g.cs");
             Assert.True(GSharpGeneratedTrees.IsOwnOutput(tree), name);
         });
     }
-
-    private static string GetNamespace(SyntaxNode type) =>
-        type.Ancestors()
-            .OfType<BaseNamespaceDeclarationSyntax>()
-            .Select(static ns => ns.Name.ToString())
-            .FirstOrDefault() ?? string.Empty;
 }

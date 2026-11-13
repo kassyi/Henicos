@@ -134,7 +134,11 @@ public class HostIntrinsicAnalyzerTests
         var span = diagnostic.Location.GetLineSpan();
         var start = span.StartLinePosition;
         var end = span.EndLinePosition;
-        var member = diagnostic.GetMessage().Split('\'')[1];
+        // The message quotes the member: '<member>' ...
+        var message = diagnostic.GetMessage();
+        var parts = message.AsSpan().Split('\'');
+        Assert.True(parts.MoveNext() && parts.MoveNext(), message);
+        var member = message.AsSpan(parts.Current).ToString();
         return $"({start.Line + 1},{start.Character + 1})-({end.Line + 1},{end.Character + 1}) {member}";
     }
 }
