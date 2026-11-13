@@ -29,6 +29,12 @@ internal readonly record struct KernelHostModel
     /// <summary>The CPU export of the launcher.</summary>
     public string LaunchExportName { get; init; }
 
+    /// <summary>
+    /// The method through which a container warms up the kernel of a class the module context cannot name
+    /// (<see cref="HostClassHeader.WarmupRelayHosts"/>).
+    /// </summary>
+    public string WarmupRelayName { get; init; }
+
     /// <summary>The fully qualified return type, or <see langword="null"/> for <c>void</c>.</summary>
     public string? ReturnTypeName { get; init; }
 
@@ -147,6 +153,8 @@ internal readonly record struct KernelHostModel
             ContextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, kernel),
             StateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, kernel),
             LaunchExportName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.LaunchExportPrefix, kernel),
+            WarmupRelayName =
+                GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Launcher.WarmupRelayPrefix, kernel),
             ReturnTypeName = kernel.ReturnType.SpecialType == SpecialType.System_Void
                 ? null
                 : kernel.ReturnType.GetFullyQualifiedCsharpName(),
@@ -319,6 +327,10 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 /// that a part of a nested class is written inside them.
 /// </param>
 /// <param name="FullyQualifiedName">The <c>global::</c>-qualified C# type name, including any enclosing types.</param>
+/// <param name="WarmupRelayHosts">
+/// The <c>global::</c>-qualified names of the containing types that relay the warmups of the class's kernels, outermost
+/// first, or empty when the module context can name the class (<see cref="CreateWarmupRelayHosts"/>, #1282).
+/// </param>
 /// <param name="DefinedSymbols">
 /// The symbols that the generated files of the class <c>#define</c>, so that C# keeps there the
 /// <c>[Conditional]</c> calls that a <c>#define</c> of the user's file keeps
@@ -333,6 +345,7 @@ internal readonly record struct HostClassHeader(
     bool IsPublic,
     EquatableArray<string> OuterDeclarations,
     string FullyQualifiedName,
+    EquatableArray<string> WarmupRelayHosts,
     EquatableArray<string> DefinedSymbols = default)
 {
     public bool IsGlobalNamespace => Namespace.Length == 0;
@@ -346,7 +359,39 @@ internal readonly record struct HostClassHeader(
         type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
         CreateOuterDeclarations(type),
         type.GetFullyQualifiedCsharpName(),
+        CreateWarmupRelayHosts(type, compilation),
         RemovedCalls.GetSymbolsToDefine(type, compilation));
+
+    /// <summary>
+    /// The containing types of <paramref name="type"/> that relay its warmups, outermost first: the innermost container
+    /// that code anywhere in the assembly can name, and each container inside it. Empty when the assembly can name
+    /// <paramref name="type"/> itself.
+    /// </summary>
+    /// <remarks>
+    /// The module context, a class of its own namespace, cannot name a private or protected nested class. Each relay
+    /// host declares an internal method that calls the same method of the next host, and the last one calls the
+    /// warmup method of the class; a nested type is accessible within its container whatever its accessibility.
+    /// </remarks>
+    public static EquatableArray<string> CreateWarmupRelayHosts(INamedTypeSymbol type, Compilation compilation)
+    {
+        if (compilation.IsSymbolAccessibleWithin(type, compilation.Assembly))
+        {
+            return default;
+        }
+
+        var hosts = ImmutableArray.CreateBuilder<string>();
+        for (var outer = type.ContainingType; outer != null; outer = outer.ContainingType)
+        {
+            hosts.Insert(0, outer.GetFullyQualifiedCsharpName());
+            if (compilation.IsSymbolAccessibleWithin(outer, compilation.Assembly))
+            {
+                return hosts.ToImmutable().AsEquatableArray();
+            }
+        }
+
+        // No container is accessible (a file-local type): the module context names the class as before
+        return default;
+    }
 
     /// <summary>
     /// The partial declarations of the types that contain <paramref name="type"/>, outermost first
@@ -410,6 +455,13 @@ internal readonly record struct KernelEmission(
     EquatableArray<ErrorSiteEntry> ErrorSites = default)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
+
+    /// <summary>
+    /// Whether the kernel has a CUDA warmup method for the module context to call: it has launchers (GSH0059, GSH0106
+    /// and GSH0108 leave them out).
+    /// </summary>
+    public bool HasWarmup => !IsIndistinguishable && !Host.HasReservedLaunchParameterName &&
+                             Host.LauncherUnavailableReason is null;
 }
 
 /// <summary>The kernels of one class, which the generator emits as one wrapper source.</summary>
@@ -536,10 +588,23 @@ internal readonly record struct KernelClassModel(
     }
 }
 
-/// <summary>A kernel whose function pointer the CUDA module context warms up.</summary>
-/// <param name="Class">The class that declares the warmup method.</param>
-/// <param name="MemberKey">The suffix of <c>WarmupFunctionPointer{key}</c>.</param>
-internal readonly record struct KernelWarmup(HostClassHeader Class, string MemberKey);
+/// <summary>
+/// A kernel whose function pointer the CUDA module context warms up, as the call the module context writes.
+/// </summary>
+/// <param name="Type">
+/// The <c>global::</c>-qualified type that declares the method: the kernel's class, or the outermost relay host of a
+/// class the module context cannot name (<see cref="HostClassHeader.WarmupRelayHosts"/>).
+/// </param>
+/// <param name="Method">
+/// <c>WarmupFunctionPointer{key}</c>, or the relay (<see cref="KernelHostModel.WarmupRelayName"/>).
+/// </param>
+internal readonly record struct KernelWarmup(string Type, string Method)
+{
+    public static KernelWarmup Create(in HostClassHeader header, in KernelEmission kernel) =>
+        header.WarmupRelayHosts.IsDefaultOrEmpty
+            ? new KernelWarmup(header.FullyQualifiedName, KernelHostNames.GetWarmupMethodName(kernel.MemberKey))
+            : new KernelWarmup(header.WarmupRelayHosts[0], kernel.Host.WarmupRelayName);
+}
 
 /// <summary>The kernels of one compilation: the class models, and the warmups in the order of the kernels.</summary>
 internal readonly record struct KernelModuleModel(
@@ -581,10 +646,9 @@ internal readonly record struct KernelModuleModel(
             positions.TryGetValue(hintName, out var position);
             positions[hintName] = position + 1;
             var emission = classModels[classIndices[hintName]].Kernels[position];
-            if (!emission.IsIndistinguishable && !emission.Host.HasReservedLaunchParameterName &&
-                emission.Host.LauncherUnavailableReason is null)
+            if (emission.HasWarmup)
             {
-                warmups.Add(new KernelWarmup(kernel.Class, emission.MemberKey));
+                warmups.Add(KernelWarmup.Create(kernel.Class, emission));
             }
         }
 

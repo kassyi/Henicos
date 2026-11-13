@@ -161,6 +161,40 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine();
     }
 
+    /// <summary>
+    /// Emits, into a relay host of a class the module context cannot name
+    /// (<see cref="HostClassHeader.WarmupRelayHosts"/>), one relay per kernel that has a warmup: a call of the same
+    /// relay of the next host, or of the kernel's warmup method when the next type is the class itself.
+    /// </summary>
+    /// <param name="writer">The writer, inside the relay host's declaration.</param>
+    /// <param name="nextHost">The next relay host, or <see langword="null"/> when the next type is the class.</param>
+    /// <param name="kernelClass">The <c>global::</c>-qualified name of the class.</param>
+    /// <param name="kernels">The kernels of the class.</param>
+    public static void WriteWarmupRelays(SourceWriter writer, string? nextHost, string kernelClass,
+        EquatableArray<KernelEmission> kernels)
+    {
+        foreach (var kernel in kernels)
+        {
+            if (!kernel.HasWarmup)
+            {
+                continue;
+            }
+
+            // internal static void <relay>() => <next host>.<relay>();  or  => <class>.WarmupFunctionPointer<key>();
+            var relay = kernel.Host.WarmupRelayName;
+            writer.AppendGeneratedCodeAttributes();
+            writer.Append($"internal static void {relay}() => ");
+            if (nextHost is null)
+            {
+                writer.AppendLine($"{kernelClass}.{KernelHostNames.GetWarmupMethodName(kernel.MemberKey)}();");
+            }
+            else
+            {
+                writer.AppendLine($"{nextHost}.{relay}();");
+            }
+        }
+    }
+
     // The function is resolved per launch: a CUfunction belongs to the context its module was loaded in (#1307). Both
     // names are class-qualified, so a kernel parameter of the same name cannot shadow them.
     // <class>.<field>.Resolve(<class>.s_errorSites)
@@ -248,7 +282,7 @@ internal static class CudaHostLaunchEmitter
 
         foreach (var warmup in warmups)
         {
-            writer.AppendLine($"{warmup.Class.FullyQualifiedName}.{KernelHostNames.GetWarmupMethodName(warmup.MemberKey)}();");
+            writer.AppendLine($"{warmup.Type}.{warmup.Method}();");
         }
 
         writer.AppendLine("}}}");
