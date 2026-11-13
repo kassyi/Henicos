@@ -16,10 +16,12 @@
 // Order (--policy, GSHARP_JOB_QUEUE_POLICY): the scheduler records how long each command ran (history.json in the
 // state directory, the last 9 runs per command text). With `hrrn` (the default) the waiting jobs are ordered by
 // response ratio, (waited + typical run time) / typical run time: a short job goes first, and a long one rises the
-// longer it waits, so that none starves. A later job may start in free slots when it does not delay the first job
+// longer it waits, so that none starves; then a job that has waited longer than max(10 minutes, its typical run
+// time) goes ahead, oldest first, and the others are taken worktree by worktree in turn (the root of each job's
+// directory), one per round, for the CPU slots and the GPU turns alike. A later job may start in free slots when it does not delay the first job
 // (backfilling): it ends before the first job could start, counting every running job at its longest recorded time,
 // or it fits in the slots the first job leaves free. `backfill` keeps arrival order with backfilling; `fifo` keeps
-// arrival order without it. `move <id> --first` / `--before <id>` put a waiting job ahead of that order (backfilling
+// arrival order without it (neither has the round-robin or the bound). `move <id> --first` / `--before <id>` put a waiting job ahead of that order (backfilling
 // still reserves the first job's start); `set-weight` changes the slots a waiting job takes; `start <id>` grants a
 // waiting job at once, over the slots and the memory pool, like a GPU holder (not a GPU turn, not before --after).
 //

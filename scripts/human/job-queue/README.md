@@ -72,8 +72,12 @@ sequenceDiagram
   lost, grants once and saves the state. Nothing is granted while an event is still changing the jobs.
 - **Dependencies grant on evidence**: a job `--after` another is granted only when that job has a recorded outcome
   that lets it run (`succeeded`, or any outcome with `--keep-if-failed`), never because the other job is gone.
-- **Order**: response ratio (`hrrn`, the default), with EASY backfilling that reserves the first job's start;
-  `move` and `--before` place jobs ahead of that order. The forecast replays the same grants on copies of the jobs.
+- **Order**: response ratio (`hrrn`, the default), then two fairness rules (`fairOrder`): a job that has waited longer
+  than max(`OverdueMs`, its typical run time) goes ahead, oldest first, and the others are taken round-robin across
+  worktrees (one job per worktree per round, the worktree served longest ago first; the slots and the GPU turns keep
+  separate rotations, in memory only). EASY backfilling reserves the start of the first job of that order; `move`
+  and `--before` place jobs ahead of all of it. `backfill` and `fifo` keep arrival order without the fairness rules.
+  The forecast replays the same grants on copies of the jobs and of the rotation.
 - **Resources**: CPU slots (one per 3 cores by default), a memory pool that test runs take their budget of
   `tests/memory-budgets.yml` from, and one GPU turn at a time. A GPU holder (the command under `gpu-lock.js`) is
   granted at once, over the pools, so it never deadlocks with a job that holds a slot and waits for the GPU.
