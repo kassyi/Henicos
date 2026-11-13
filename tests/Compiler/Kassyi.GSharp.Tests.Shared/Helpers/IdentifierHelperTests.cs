@@ -5,16 +5,18 @@ namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 public class IdentifierHelperTests
 {
-    // The artifact files keep the name that the native build and the launchers already use: only '.' is replaced
+    // The artifact files escape the module name as the module context class does, so names that differ only in
+    // punctuation (My.Lib, My_Lib) never share a native library or fatbin
     [Theory]
-    [InlineData("MyNamespace.MyClass", "Kassyi.GSharp.Kernels_MyNamespace_MyClass")]
-    [InlineData("System.Collections.Generic", "Kassyi.GSharp.Kernels_System_Collections_Generic")]
+    [InlineData("MyNamespace.MyClass", "Kassyi.GSharp.Kernels_MyNamespace_x00002eMyClass")]
+    [InlineData("My.Lib", "Kassyi.GSharp.Kernels_My_x00002eLib")]
+    [InlineData("My_Lib", "Kassyi.GSharp.Kernels_My_uLib")]
     [InlineData("NoDotsHere", "Kassyi.GSharp.Kernels_NoDotsHere")]
-    [InlineData("my-lib", "Kassyi.GSharp.Kernels_my-lib")]
+    [InlineData("my-lib", "Kassyi.GSharp.Kernels_my_x00002dlib")]
     [InlineData("", "Kassyi.GSharp.Kernels_")]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void GetArtifactFileStem_ModuleName_ReplacesOnlyDots(string input, string expected) =>
+    public void GetArtifactFileStem_ModuleName_EscapesInjectively(string input, string expected) =>
         Assert.Equal(expected, AotModuleNames.GetArtifactFileStem(input));
 
     // The module context name is a C# identifier for any assembly name, and two names give two identifiers: ASCII

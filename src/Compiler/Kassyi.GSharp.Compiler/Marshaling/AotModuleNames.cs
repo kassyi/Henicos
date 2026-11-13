@@ -21,11 +21,13 @@ internal static class AotModuleNames
 
     /// <summary>
     /// The file name, without extension, of the native artifacts of a module (<c>.g.cu</c>, <c>.g.cpp</c>, the fatbin
-    /// and the native library): <c>Kassyi.GSharp.Kernels_</c> and the module name with each <c>.</c> replaced by
-    /// <c>_</c>.
+    /// and the native library): <c>Kassyi.GSharp.Kernels_</c> and the module name escaped as in
+    /// <see cref="GetModuleContextName"/> (<c>Henicos.Benchmarks</c> gives
+    /// <c>Kassyi.GSharp.Kernels_Henicos_x00002eBenchmarks</c>), so that two assemblies in one output directory never
+    /// share a native library or fatbin. The native build names its outputs after these source files.
     /// </summary>
     public static string GetArtifactFileStem(string moduleName) =>
-        ArtifactFilePrefix + ReplaceDots(moduleName);
+        ArtifactFilePrefix + GSharpNameEncoding.EscapeName(moduleName);
 
     /// <summary>
     /// The name of the module context class of a module: <c>GSharpModuleContext_</c> and the module name escaped as the
@@ -44,24 +46,4 @@ internal static class AotModuleNames
     /// field, which a YAML binding of the class declares when it binds that module.
     /// </summary>
     public static string GetModuleFieldName(string moduleName) => GSharpNameEncoding.GetModuleFieldName(moduleName);
-
-    // <name> with each '.' replaced by '_'; the input itself without a '.'
-    private static string ReplaceDots(string name)
-    {
-        if (name.IndexOf('.') < 0)
-        {
-            return name;
-        }
-
-        var chars = name.ToCharArray();
-        for (var i = 0; i < chars.Length; i++)
-        {
-            if (chars[i] == '.')
-            {
-                chars[i] = '_';
-            }
-        }
-
-        return new string(chars);
-    }
 }

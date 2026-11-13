@@ -15,15 +15,32 @@ namespace Kassyi.GSharp.Compiler.Marshaling
 {
     internal static class AotModuleNames
     {
-        public static string GetArtifactFileStem(string name) =>
-            "Kassyi.GSharp.Kernels_" + string.Create(name.Length, name, static (span, src) =>
+        // The escaping of the compiler's AotModuleNames.GetArtifactFileStem (GSharpNameEncoding.EscapeName)
+        public static string GetArtifactFileStem(string name)
+        {
+            var stem = "Kassyi.GSharp.Kernels_";
+            for (int i = 0; i < name.Length; i++)
             {
-                for (int i = 0; i < src.Length; i++)
+                char c = name[i];
+                if (c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9')
                 {
-                    char c = src[i];
-                    span[i] = c == '.' ? '_' : c;
+                    stem += c;
                 }
-            });
+                else if (c == '_')
+                {
+                    stem += "_u";
+                }
+                else
+                {
+                    int codePoint = char.IsHighSurrogate(c) && i + 1 < name.Length && char.IsLowSurrogate(name[i + 1])
+                        ? char.ConvertToUtf32(c, name[++i])
+                        : c;
+                    stem += "_x" + codePoint.ToString("x6", System.Globalization.CultureInfo.InvariantCulture);
+                }
+            }
+
+            return stem;
+        }
     }
 }
 
