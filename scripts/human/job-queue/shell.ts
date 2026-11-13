@@ -169,7 +169,7 @@ export class CommandShell {
     }
   }
 
-  /** Runs the command in this shell with the given environment; `onChild` receives the shell process once it started. */
+  /** Runs the command in this shell with the given environment; `onChild` gets the shell process once it started. */
   run(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
     const shell = this.name;
     return new Promise((resolve) => {
