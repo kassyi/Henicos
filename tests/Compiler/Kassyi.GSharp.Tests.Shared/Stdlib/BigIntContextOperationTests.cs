@@ -31,7 +31,8 @@ public class BigIntContextOperationTests : TranspilerTestBase
         BigIntContextOperationKernels.LaunchShiftLeftKernel(Context(s_left, null, result), wordShift, bitShift,
             blockDimX: 2);
 
-        Assert.Equal(ToWords(ToBigInteger(s_left) << (wordShift * 32 + bitShift)), result);
+        var expected = BigIntWords.ToWords(BigIntWords.ToBigInteger(s_left) << (wordShift * 32 + bitShift), Words);
+        Assert.Equal(expected, result);
     }
 
     [SkippableTheory]
@@ -46,7 +47,8 @@ public class BigIntContextOperationTests : TranspilerTestBase
         BigIntContextOperationKernels.LaunchShiftRightKernel(Context(s_left, null, result), wordShift, bitShift,
             blockDimX: 2);
 
-        Assert.Equal(ToWords(ToBigInteger(s_left) >> (wordShift * 32 + bitShift)), result);
+        var expected = BigIntWords.ToWords(BigIntWords.ToBigInteger(s_left) >> (wordShift * 32 + bitShift), Words);
+        Assert.Equal(expected, result);
     }
 
     [SkippableFact]
@@ -96,28 +98,4 @@ public class BigIntContextOperationTests : TranspilerTestBase
         },
         NumberOfWords = Words
     };
-
-    private static BigInteger ToBigInteger(uint[] words)
-    {
-        var value = BigInteger.Zero;
-        for (var i = words.Length - 1; i >= 0; i--)
-        {
-            value = (value << 32) | words[i];
-        }
-
-        return value;
-    }
-
-    // The low Words words of value
-    private static uint[] ToWords(BigInteger value)
-    {
-        var words = new uint[Words];
-        for (var i = 0; i < Words; i++)
-        {
-            words[i] = (uint)(value & uint.MaxValue);
-            value >>= 32;
-        }
-
-        return words;
-    }
 }

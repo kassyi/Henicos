@@ -106,7 +106,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algo
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftLeft_o1(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, int __gsharp_id_3_shiftBits){
 auto __gsharp_id_4_wordShift = __gsharp_id_3_shiftBits/32;
 auto __gsharp_id_5_bitShift = __gsharp_id_3_shiftBits%32;
-for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords;__gsharp_id_6_i++)
+for(int __gsharp_id_6_i = __gsharp_sub_i32((*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords,1);__gsharp_id_6_i>=0;__gsharp_id_6_i--)
 {
 __gsharp_id_1_result[__gsharp_id_6_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedLeftWord(__gsharp_id_2_left,__gsharp_id_6_i,__gsharp_id_4_wordShift,__gsharp_id_5_bitShift,(*__gsharp_id_0_ctx).__gsharp_mb_NumberOfWords);
 }

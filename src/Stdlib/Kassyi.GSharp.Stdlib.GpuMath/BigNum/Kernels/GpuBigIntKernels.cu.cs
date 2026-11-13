@@ -460,7 +460,9 @@ public static partial class GpuBigIntKernels
     {
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
-        for (int i = 0; i < ctx.NumberOfWords; i++)
+        // Downward: word i reads words i - wordShift and the one below, so when result is left (x = x << s) every word
+        // read is one not yet written
+        for (int i = ctx.NumberOfWords - 1; i >= 0; i--)
         {
             result[i] = ShiftedLeftWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
         }
@@ -471,6 +473,8 @@ public static partial class GpuBigIntKernels
     {
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
+        // Upward: word i reads words i + wordShift and the one above, so when result is left every word read is one
+        // not yet written
         for (int i = 0; i < ctx.NumberOfWords; i++)
         {
             result[i] = ShiftedRightWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
