@@ -286,7 +286,10 @@ public static partial class ManagedGpuContext
     /// <param name="siteKey">The key that identifies the declaration. The G# compiler computes it for generated code.</param>
     /// <param name="count">The number of elements to allocate.</param>
     /// <returns>A contiguous <see cref="Span{T}"/> pointing to the shared memory region of the declaration.</returns>
-    /// <exception cref="InvalidOperationException">The grid was not initialized.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The grid was not initialized, or the declaration needs more bytes than a managed array holds, which the native CPU
+    /// path reports with the same exception when it cannot allocate the buffer.
+    /// </exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is negative.</exception>
     /// <remarks>
     /// [WHY] On the GPU a <c>__shared__</c> variable has static storage: one buffer per declaration per block, shared by
@@ -316,7 +319,14 @@ public static partial class ManagedGpuContext
             throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
         }
 
-        var byteCount = count * Unsafe.SizeOf<T>();
+        // long: an int count times the element size can pass int.MaxValue and wrap to a small buffer
+        var bytes = (long)count * Unsafe.SizeOf<T>();
+        if (bytes > Array.MaxLength)
+        {
+            throw new InvalidOperationException("G#: the static shared memory of a declaration could not be allocated");
+        }
+
+        var byteCount = (int)bytes;
         var typeId = SharedMemoryTypeId<T>.Value;
         var blockId = LinearBlockId;
         var regions = s_perBlockRegions[blockId] ??= new SharedRegion?[16];

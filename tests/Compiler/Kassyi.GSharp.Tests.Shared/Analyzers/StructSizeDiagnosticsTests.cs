@@ -24,6 +24,9 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
     [InlineData("ResultKernel", "GSH0064", "4104 bytes")]
     // SharedMemory<double>(5000) = 40000 bytes.
     [InlineData("DoubleSharedKernel", "GSH0013", "40000 bytes")]
+    // The byte count is computed in long: 2,400,000,000 and 2^32 bytes would wrap in int to a negative number and to 0
+    [InlineData("HugeSharedKernel", "GSH0013", "2400000000 bytes")]
+    [InlineData("WrapToZeroSharedKernel", "GSH0013", "4294967296 bytes")]
     public async Task StructSizeDiagnostics_StructOverLimit_ReportsOverLimitCase(string methodName, string diagnosticId,
         string expectedSize)
     {

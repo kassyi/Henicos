@@ -42,7 +42,8 @@ internal sealed class SharedMemorySizeRule :
                 continue;
             }
 
-            var bytes = Convert.ToInt32(count.Value ?? 0) * elementSize;
+            // long: an int count times the element size can pass int.MaxValue and wrap below the limit
+            var bytes = Convert.ToInt64(count.Value ?? 0) * elementSize;
             if (bytes > MaxSharedMemoryWarningBytes)
             {
                 context.ReportDiagnostic(GSharpDiagnostics.ExcessiveSharedMemoryWarning, size, bytes,

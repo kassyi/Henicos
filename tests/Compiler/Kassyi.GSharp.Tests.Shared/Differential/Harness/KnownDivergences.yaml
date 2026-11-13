@@ -187,13 +187,6 @@
       paths: [Cuda]
       columns: [$exception]
 
-- issue: 857
-  title: "Overlapping slices of one array passed as two kernel parameters are copied to separate device regions"
-  entries:
-    - case: MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel
-      paths: [Cuda]
-      columns: [backing, observed]
-
 - issue: 904
   title: "[Bug]: GSH0063 warns about SharedMemory<T> declarations on one line instead of giving them distinct keys on the managed path"
   entries:
@@ -228,13 +221,6 @@
       paths: [Cuda]
       columns: [item0_x, item0_y, item1_has, item1_x, item1_y, h]
 
-- issue: 985
-  title: "[Bug]: CPU copies an array shared by two [In] holders separately"
-  entries:
-    # An [In] DeepStruct[] element array field is cloned on the CPU even when it aliases a writable int[]
-    - case: MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel
-      paths: [Managed, Native]
-      columns: [observed]
 
 - issue: 1060
   title: "[Bug]: StackLinq ElementAtOrDefault with a negative index enumerates the source and runs upstream side effects"
@@ -243,10 +229,4 @@
       paths: [Managed, Native, Cuda]
       columns: [select_neg_eval_count, where_neg_eval_count]
 
-- issue: 1061
-  title: "[Bug]: One variable passed to two ref parameters gets two device copies on CUDA"
-  entries:
-    - case: MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel
-      paths: [Cuda]
-      columns: [sharedRef, observed]
 
