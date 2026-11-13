@@ -135,7 +135,7 @@ public class CSharpExecutionTests
     {
         var data = new[] { 7, 7 };
 
-        var ex = Assert.Throws<InvalidOperationException>(() =>
+        var ex = Assert.Throws<CSharpExecutionUnsupportedException>(() =>
         {
             using (GpuExecution.Use(KernelExecution.CSharp))
             {
@@ -157,7 +157,7 @@ public class CSharpExecutionTests
     {
         var data = new[] { 7, 7, 7, 7 };
 
-        var ex = Assert.Throws<InvalidOperationException>(() =>
+        var ex = Assert.Throws<CSharpExecutionUnsupportedException>(() =>
         {
             using (GpuExecution.Use(KernelExecution.CSharp))
             {
@@ -195,7 +195,7 @@ public class CSharpExecutionTests
         using (GpuExecution.Use(KernelExecution.CSharp))
         {
             await Task.Yield();
-            var ex = await Assert.ThrowsAsync<InvalidOperationException>(static () => Task.Run(static () =>
+            var ex = await Assert.ThrowsAsync<CSharpExecutionUnsupportedException>(static () => Task.Run(static () =>
                 CSharpExecutionKernels.LaunchBarrierKernel(new int[2], blockDimX: 2)));
             Assert.Contains("cannot run under KernelExecution.CSharp", ex.Message);
         }
@@ -207,7 +207,7 @@ public class CSharpExecutionTests
     public void Launch_CustomThreadOrder_RunsTheThreadsInThatOrder()
     {
         var order = new int[4];
-        using (CSharpKernelRunner.UseThreadOrder(static n => Enumerable.Range(0, n).Reverse().ToArray()))
+        using (CSharpKernelRunner.UseThreadOrder(static d => Enumerable.Range(0, d.ThreadCount).Reverse().ToArray()))
         using (GpuExecution.Use(KernelExecution.CSharp))
         {
             CSharpExecutionKernels.LaunchRecordOrderKernel(order, new int[1], new int[4], blockDimX: 4);
@@ -220,7 +220,7 @@ public class CSharpExecutionTests
     [Scenario(TestScenario.SadPath)]
     public void Launch_ThreadOrderNotAPermutation_Throws()
     {
-        using (CSharpKernelRunner.UseThreadOrder(static n => new int[n]))
+        using (CSharpKernelRunner.UseThreadOrder(static d => new int[d.ThreadCount]))
         using (GpuExecution.Use(KernelExecution.CSharp))
         {
             var ex = Assert.Throws<InvalidOperationException>(static () =>

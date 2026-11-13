@@ -1,6 +1,9 @@
 namespace Kassyi.GSharp.Compiler.NativeApi;
 
 /// <summary>A kernel argument of a module launcher, in the order the kernel declares it.</summary>
+/// <param name="Ordinal">
+/// The position of the parameter in the declaration, which names the launcher's locals of the argument.
+/// </param>
 /// <param name="Name">The C# parameter name.</param>
 /// <param name="Kind">How the launcher passes the argument.</param>
 /// <param name="TypeName">
@@ -20,6 +23,7 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// Null for another array throws <see cref="ArgumentNullException"/> before the launch.
 /// </param>
 internal readonly record struct ModuleKernelArgument(
+    int Ordinal,
     string Name,
     ModuleKernelParameterKind Kind,
     string TypeName,
@@ -93,6 +97,15 @@ internal readonly record struct ModuleKernelLaunchPlan(
     EquatableArray<ModuleKernelProblem> Problems)
 {
     public bool CanLaunch => Problems.IsDefaultOrEmpty;
+
+    /// <summary>
+    /// Whether a kernel argument is a pointer or a function pointer, so the launcher is declared <c>unsafe</c> (CS0214
+    /// otherwise).
+    /// </summary>
+    public bool TakesPointer =>
+        Arguments
+            .AsStackEnumerable()
+            .Any(static a => a.Kind == ModuleKernelParameterKind.Pointer);
 }
 
 /// <summary>Builds a <see cref="ModuleKernelLaunchPlan"/> one parameter at a time, in declaration order.</summary>

@@ -33,10 +33,7 @@ public class NamedThenPositionalDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => NamedThenPositionalDifferentialKernels.NamedThenPositionalKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("ys"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     // The oracle cannot run barriers; the reference is SubAcrossBarrier(x, y)

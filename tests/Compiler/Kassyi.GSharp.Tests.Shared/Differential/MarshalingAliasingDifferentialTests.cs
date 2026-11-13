@@ -48,12 +48,7 @@ public sealed class MarshalingAliasingDifferentialTests
                 .In("shared", shared, OutputPolicy.Exact)
                 .Out<int>("observed", n, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            int[] shared = b.Get<int>("shared");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.AliasTwoRwArraysKernel(shared, shared, observed);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             int[] shared = b.Get<int>("shared");
@@ -81,12 +76,7 @@ public sealed class MarshalingAliasingDifferentialTests
                 .In("shared", shared, OutputPolicy.Exact)
                 .Out<int>("observed", n, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            int[] shared = b.Get<int>("shared");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.AliasInAndRwArrayKernel(shared, shared, observed);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             int[] shared = b.Get<int>("shared");
@@ -114,12 +104,7 @@ public sealed class MarshalingAliasingDifferentialTests
                 .In("shared", shared, OutputPolicy.Exact)
                 .Out<int>("observed", n, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            int[] shared = b.Get<int>("shared");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.AliasOutAndInArrayKernel(shared, shared, observed);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             int[] shared = b.Get<int>("shared");
@@ -152,7 +137,8 @@ public sealed class MarshalingAliasingDifferentialTests
             int[] sharedShadow = (int[])b.Get<int>("shared").Clone();
             int[] observed = b.Get<int>("observed");
             SequentialOracle.Run(s, ThreadOrder.Forward, () =>
-                MarshalingAliasingDifferentialKernels.AliasTwoInArraysKernel(sharedShadow, sharedShadow, observed));
+                MarshalingAliasingDifferentialKernels.LaunchAliasTwoInArraysKernel(
+                    sharedShadow, sharedShadow, observed, gridDimX: s.GridX, blockDimX: s.BlockX));
         },
         Launch = static (b, s) =>
         {
@@ -171,14 +157,7 @@ public sealed class MarshalingAliasingDifferentialTests
         Inputs = static (_, _) => new DiffBuffers()
             .In("backing", [1, 2, 3, 4, 5, 6, 7, 8], OutputPolicy.Exact)
             .Out<int>("observed", 4, OutputPolicy.Exact),
-        Oracle = static (b, _) =>
-        {
-            int[] backing = b.Get<int>("backing");
-            Span<int> sliceA = backing.AsSpan(0, 4);
-            Span<int> sliceB = backing.AsSpan(2, 4);
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel(sliceA, sliceB, observed);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             int[] backing = b.Get<int>("backing");
@@ -198,11 +177,17 @@ public sealed class MarshalingAliasingDifferentialTests
         Inputs = static (_, _) => new DiffBuffers()
             .RefScalar("sharedRef", 100)
             .Out<int>("observed", 2, OutputPolicy.Exact),
-        Oracle = static (b, _) =>
+        // C# passes the one variable to both ref parameters, so b sees the write through a (a += 10; b += 20). The C#
+        // run of the launcher copies each ref argument into a local of its own and loses the alias, so the reference
+        // states the C# result
+        Reference = static (b, _) =>
         {
             ref int sharedRef = ref b.GetScalarRef<int>("sharedRef");
             int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.AliasedRefScalarsKernel(ref sharedRef, ref sharedRef, observed);
+            sharedRef += 10;
+            sharedRef += 20;
+            observed[0] = sharedRef;
+            observed[1] = sharedRef;
         },
         Launch = static (b, s) =>
         {
@@ -222,12 +207,13 @@ public sealed class MarshalingAliasingDifferentialTests
             Seeds = [0],
             Inputs = static (_, _) => new DiffBuffers()
                 .In("backing", new int[OverlappingPointerShiftCount + 1], OutputPolicy.Exact),
-            Oracle = static (b, _) =>
+            // The launch with host pointers: Launch passes device pointers on CUDA
+            Oracle = static (b, s) =>
             {
                 fixed (int* backing = b.Get<int>("backing"))
                 {
-                    MarshalingAliasingDifferentialKernels.OverlappingPointerShiftKernel(
-                        backing, backing + 1, OverlappingPointerShiftCount);
+                    MarshalingAliasingDifferentialKernels.LaunchOverlappingPointerShiftKernel(
+                        backing, backing + 1, OverlappingPointerShiftCount, gridDimX: s.GridX, blockDimX: s.BlockX);
                 }
             },
             Launch = static (b, s) =>
@@ -281,16 +267,7 @@ public sealed class MarshalingAliasingDifferentialTests
                     CompareDeepBag)
                 .Out<int>("observed", 4, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            ref DiffArrayPair pair = ref b.GetScalarRef<DiffArrayPair>("pair");
-            DiffDeepBag bagA = b.GetScalar<DiffDeepBag>("bagA");
-            DiffDeepBag bagB = b.GetScalar<DiffDeepBag>("bagB");
-            DiffDeepBag[] bagArray = b.Get<DiffDeepBag>("bagArray");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.DeepStructInternalAliasKernel(
-                ref pair, bagA, bagB, bagArray, observed);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             ref DiffArrayPair pair = ref b.GetScalarRef<DiffArrayPair>("pair");
@@ -329,16 +306,7 @@ public sealed class MarshalingAliasingDifferentialTests
                     CompareDeepBag)
                 .Out<int>("observed", 4, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            int[] topReadOnly = b.Get<int>("topReadOnly");
-            int[] topWritable = b.Get<int>("topWritable");
-            DiffDeepBag bagByVal = b.GetScalar<DiffDeepBag>("bagByVal");
-            ref DiffDeepBag bagByRef = ref b.GetScalarRef<DiffDeepBag>("bagByRef");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.CrossLevelTopAndDeepStructKernel(
-                topReadOnly, topWritable, bagByVal, ref bagByRef, observed);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             int[] topReadOnly = b.Get<int>("topReadOnly");
@@ -366,13 +334,7 @@ public sealed class MarshalingAliasingDifferentialTests
                 .In("rwArr", shared, OutputPolicy.Exact)
                 .Out<int>("observed", 2, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            DiffDeepBag[] inBags = b.Get<DiffDeepBag>("inBags");
-            int[] rwArr = b.Get<int>("rwArr");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel(inBags, rwArr, observed);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             DiffDeepBag[] inBags = b.Get<DiffDeepBag>("inBags");

@@ -121,7 +121,8 @@ time: the reference that the GPU, native CPU and managed results are compared wi
 ### Kernels That Cannot Run One Thread at a Time
 
 A kernel that reaches an operation that waits for or reads other threads has no C# value of its own, so the launcher
-throws `InvalidOperationException` instead of running it, before any thread runs. The message names the kernel and the
+throws [`CSharpExecutionUnsupportedException`](../01_diagnostics_and_exceptions.md#csharpexecutionunsupportedexception)
+(an `InvalidOperationException`) instead of running it, before any thread runs. The message names the kernel and the
 construct:
 
 - a block or grid barrier (`Gpu.SyncThreads()`, `Gpu.SyncGrid()`), an mbarrier,
@@ -131,11 +132,11 @@ construct:
   StackLinq `Sum` (summed in order by the generated code), `Gpu.InlinePtx`.
 
 The compiler finds these in the kernel and in every device function it calls. What it cannot see, such as an operation
-reached through a delegate, throws `InvalidOperationException` when a thread reaches it. Launch
+reached through a delegate, throws `CSharpExecutionUnsupportedException` when a thread reaches it. Launch
 such a kernel under `Default` or `Managed`. A device function of another assembly is judged by what its assembly
 recorded when it was built; one built before the record said whether it reaches static shared memory is caught when a
 thread reaches the declaration. The `Launch{Kernel}Ptr` launchers take the arguments in the form the device uses; they
-throw `InvalidOperationException` inside the scope.
+throw `CSharpExecutionUnsupportedException` inside the scope.
 
 ### Reflection and Dynamic Calls
 

@@ -34,10 +34,7 @@ public class LanguageConversionsAndMacrosDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => LanguageConversionsAndMacrosDifferentialKernels.UserDefinedImplicitConversionsKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("ys"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     private static int MacroAdd(int left, int right, int bias) => (left * 3) + right + bias;

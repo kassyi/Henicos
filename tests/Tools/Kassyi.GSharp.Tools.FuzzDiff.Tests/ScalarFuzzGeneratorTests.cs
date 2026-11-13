@@ -218,11 +218,26 @@ public class ScalarFuzzGeneratorTests
                 ulong[] permutedOut = new ulong[shape.Rows];
 
                 var forwardException = Record.Exception(() =>
-                    SequentialOracle.Run(shape, ThreadOrder.Forward, () => action(inA, inB, inC, forwardOut)));
+                    SequentialOracle.RunEachThread(
+                        shape,
+                        ThreadOrder.Forward,
+                        () => action(inA, inB, inC, forwardOut)
+                    )
+                );
                 var reverseException = Record.Exception(() =>
-                    SequentialOracle.Run(shape, ThreadOrder.Reverse, () => action(inA, inB, inC, reverseOut)));
+                    SequentialOracle.RunEachThread(
+                        shape,
+                        ThreadOrder.Reverse,
+                        () => action(inA, inB, inC, reverseOut)
+                    )
+                );
                 var permutedException = Record.Exception(() =>
-                    SequentialOracle.Run(shape, ThreadOrder.Permutation(seed), () => action(inA, inB, inC, permutedOut)));
+                    SequentialOracle.RunEachThread(
+                        shape,
+                        ThreadOrder.Permutation(seed),
+                        () => action(inA, inB, inC, permutedOut)
+                    )
+                );
 
                 // Every generated kernel (including stackalloc Span<T>, nested control flow, and narrow sbyte/short /= and %= compound assignments) must complete without DivideByZeroException / OverflowException / IndexOutOfRangeException and produce identical outputs across all thread orders.
                 // mutant: FuzzScalarExpressionEmitter.WrapDivisorForCompoundAssignment() line 264: change `(({rawDivisor}) == (sbyte)0) ? (sbyte)3 : ({rawDivisor})` to `({rawDivisor})`
