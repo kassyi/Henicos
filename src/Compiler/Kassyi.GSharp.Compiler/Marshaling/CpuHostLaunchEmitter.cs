@@ -332,7 +332,8 @@ internal static class CpuHostLaunchEmitter
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal }:
-                writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, hStream);");
+                var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
+                writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {native}, hStream);");
                 break;
             case { IsCpuConvertedArray: true, IsCopiedOut: true, IsReadOnlyContainer: false }:
                 ConvertedArrayEmitter.WriteElementUnmarshalLoop(writer, shape, shape.Cpu);
