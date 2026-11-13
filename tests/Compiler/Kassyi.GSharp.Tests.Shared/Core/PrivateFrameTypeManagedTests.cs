@@ -45,6 +45,11 @@ public class PrivateFrameTypeManagedTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_ProtectedFunctionFromDerivedClass_ComputesValues() =>
+        Run(PrivateFrameTypeCases.DerivedClass);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void PrivateStruct_UnsafeFunctionFromSafeKernel_ComputesValues() => Run(PrivateFrameTypeCases.PointerFrame);
 
     private static void Run(PrivateFrameTypeCase run)

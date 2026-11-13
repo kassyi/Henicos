@@ -270,7 +270,10 @@ internal static class ManagedStateMachineEmitter
     /// <param name="stateMachineName">The state machine.</param>
     /// <param name="methodSymbol">The device function.</param>
     /// <param name="copiedParameters">The parameters that the frame keeps.</param>
-    /// <param name="accessibility">The entries' accessibility: the function's (public or internal).</param>
+    /// <param name="accessibility">
+    /// The entries' accessibility: the function's declared one (public, internal, protected, protected internal or private
+    /// protected).
+    /// </param>
     /// <param name="isUnsafe">
     /// Whether the frame is an unsafe struct, which the entries keep in a one-element array on the pinned object heap
     /// and take by pointer.
@@ -293,7 +296,7 @@ internal static class ManagedStateMachineEmitter
         bool isUnsafe)
     {
         var context = GSharpInternalNames.StateMachine.Context;
-        var keyword = GeneratedMemberAccessibility.ToKeyword(accessibility);
+        var keyword = ToEntryKeyword(accessibility);
         // ((<frame>)(__gsharp_ctx ??= new <frame>()))  or  ((<frame>[])(__gsharp_ctx ??= GC.AllocateArray<<frame>>(1, pinned: true)))[0]
         var frame = isUnsafe
             ? $"(({frameName}[])({context} ??= {PinnedArray}<{frameName}>(1, pinned: true)))[0]"
@@ -343,6 +346,18 @@ internal static class ManagedStateMachineEmitter
             }
         }
     }
+
+    // The keyword of a declared accessibility that the entries copy from their function
+    private static string ToEntryKeyword(Accessibility accessibility) => accessibility switch
+    {
+        Accessibility.Public => "public",
+        Accessibility.Internal => "internal",
+        Accessibility.Protected => "protected",
+        Accessibility.ProtectedOrInternal => "protected internal",
+        Accessibility.ProtectedAndInternal => "private protected",
+        _ => throw new ArgumentOutOfRangeException(nameof(accessibility), accessibility,
+            "The entries of a frame belong to a function that is not private.")
+    };
 
     private const string PinnedArray = "global::System.GC.AllocateArray";
 

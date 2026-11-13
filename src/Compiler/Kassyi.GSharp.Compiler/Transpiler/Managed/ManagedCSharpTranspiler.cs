@@ -178,12 +178,9 @@ internal static class ManagedCSharpTranspiler
             isUnsafe: isUnsafe);
         if (ManagedStateMachineAvailability.HasEntries(methodSymbol, accessibility))
         {
-            // As visible as the function: the callers of other classes run the private frame through them
+            // With the function's declared accessibility: the callers of other classes run the private frame through them
             ManagedStateMachineEmitter.EmitFrameEntries(writer, frameName, stateMachineName, methodSymbol,
-                copiedParameters, ManagedStateMachineAvailability.IsEffectivelyPublic(methodSymbol)
-                    ? Accessibility.Public
-                    : Accessibility.Internal,
-                isUnsafe);
+                copiedParameters, methodSymbol.DeclaredAccessibility, isUnsafe);
         }
         accessors.WriteTo(writer);
         return writer.ToString();

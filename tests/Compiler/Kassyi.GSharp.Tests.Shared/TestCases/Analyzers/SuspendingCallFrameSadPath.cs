@@ -82,3 +82,33 @@ public static partial class FrameOwner
         public static void NestedKernel(int[] data) => data[ThreadIndex.X] = HoldsPrivate(data);
     }
 }
+
+public static partial class FrameOwner
+{
+    // A private function: only FrameOwner calls it, so it needs no entries
+    [GpuDeviceFunction]
+    private static int PrivateHoldsPrivate(int[] data) => HoldsPrivate(data) - 1;
+}
+
+// A protected function of a base class that is not static, whose frame holds a private type of the base
+public partial class FrameBase
+{
+    private struct Hidden
+    {
+        public int X;
+    }
+
+    [GpuDeviceFunction]
+    protected static int HoldsProtected(int[] data)
+    {
+        var hidden = new Hidden { X = data[0] };
+        Gpu.SyncThreads();
+        return hidden.X;
+    }
+}
+
+public partial class FrameDerived : FrameBase
+{
+    [GpuKernel]
+    public static void DerivedKernel(int[] data) => data[ThreadIndex.X] = HoldsProtected(data);
+}

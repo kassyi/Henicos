@@ -156,3 +156,28 @@ public static unsafe partial class PrivateFramePointerOwner
         return p->A + pair.B;
     }
 }
+
+// A base class that is not static, with a protected function whose frame holds a private type of the base: only the
+// derived classes call it, and they reach the private frame through entries that are protected as well
+public partial class PrivateFrameTypeBase
+{
+    private struct Scaled
+    {
+        public int X;
+    }
+
+    // 6v + 1
+    [GpuDeviceFunction]
+    protected static int Scale(int[] data)
+    {
+        var scaled = new Scaled { X = data[ThreadIndex.X] * 6 };
+        Gpu.SyncThreads();
+        return scaled.X + 1;
+    }
+}
+
+public partial class PrivateFrameTypeDerived : PrivateFrameTypeBase
+{
+    [GpuKernel]
+    public static void DerivedClassKernel(int[] data, int[] result) => result[ThreadIndex.X] = Scale(data);
+}

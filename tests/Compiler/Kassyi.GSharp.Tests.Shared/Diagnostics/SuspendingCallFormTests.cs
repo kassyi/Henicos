@@ -24,6 +24,8 @@ public class SuspendingCallFormTests
     [InlineData("FrameCaller", "FrameOwner", "HoldsPrivate", "Entry")]
     [InlineData("FrameRelay", "FrameOwner", "HoldsPrivate", "Entry")]
     [InlineData("FrameCaller", "FrameRelay", "Relays", "Direct")]
+    [InlineData("FrameDerived", "FrameBase", "HoldsProtected", "Entry")]
+    [InlineData("FrameBase", "FrameBase", "HoldsProtected", "Direct")]
     [InlineData("FrameCaller", "FileLocalHolder", "HoldsFileLocal", "Unavailable")]
     [InlineData("FrameCaller", "FileLocalRelay", "Relays", "Unavailable")]
     public void GetCallForm_CallerAndCallee_HoldsTheFrameThatWay(string caller, string calleeClass, string callee,
@@ -36,13 +38,15 @@ public class SuspendingCallFormTests
         Assert.Equal(expected, form.ToString());
     }
 
-    // The frame of a function that holds a private frame as an object names no private type, so it stays internal; the
-    // private frame itself has the entries
+    // The frame of a function that holds a private frame as an object names no private type, so it stays internal; a
+    // private frame has the entries unless its function is private (a protected function's are protected)
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("FrameOwner", "HoldsPrivate", Accessibility.Private, true)]
     [InlineData("FrameRelay", "Relays", Accessibility.Internal, false)]
     [InlineData("FrameOwner", "CallsHoldsPrivate", Accessibility.Private, true)]
+    [InlineData("FrameOwner", "PrivateHoldsPrivate", Accessibility.Private, false)]
+    [InlineData("FrameBase", "HoldsProtected", Accessibility.Private, true)]
     public void GetFrameAccessibility_FrameHoldsPrivateFrame_EntriesOnlyForPrivateFrames(string calleeClass,
         string callee, Accessibility expected, bool hasEntries)
     {

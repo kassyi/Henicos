@@ -48,6 +48,11 @@ internal static class PrivateFrameTypeCases
         static (data, result) => PrivateFrameTypeCallers.LaunchOtherClassWarpKernel(data, result, blockDimX: 4),
         [22, 11, 44, 33]);
 
+    // 6v + 1, a protected function of a base class from a kernel of a derived class
+    public static readonly PrivateFrameTypeCase DerivedClass = new(
+        static (data, result) => PrivateFrameTypeDerived.LaunchDerivedClassKernel(data, result, blockDimX: 4),
+        [7, 13, 19, 25]);
+
     // 5v + 3, an unsafe function's struct frame from a kernel that is not unsafe
     public static readonly PrivateFrameTypeCase PointerFrame = new(
         static (data, result) => PrivateFrameTypeCallers.LaunchPointerFrameKernel(data, result, blockDimX: 4),
