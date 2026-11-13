@@ -64,6 +64,9 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
         string label, int[]? optPrimInit, DiffDeepBag[]? optDeepInit)
     {
         var bagComparer = new StructElementComparer<DiffDeepBag>(CompareDeepBag);
+        // A null optPrim throws at output[2] (optPrim.Length), so the kernel never writes output[2..5]. output is
+        // [Out], not copied to the device, so those cells hold whatever the device memory held on CUDA: not compared
+        var afterThrow = optPrimInit is null ? OutputPolicy.Ignore : OutputPolicy.Exact;
         return new DifferentialCase(
             KernelName(nameof(MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel), label))
         {
@@ -78,7 +81,18 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
                     OutputPolicy.ForStruct(bagComparer),
                     bagComparer,
                     readOnly: true)
-                .Out<int>("output", 6, OutputPolicy.Exact),
+                .Out<int>(
+                    "output",
+                    rows: 1,
+                    columns:
+                    [
+                        ("primIsNull", OutputPolicy.Exact),
+                        ("primEqualsNull", OutputPolicy.Exact),
+                        ("primLength", afterThrow),
+                        ("deepIsNull", afterThrow),
+                        ("deepLength", afterThrow),
+                        ("deepFirst", afterThrow),
+                    ]),
             OracleIsLaunch = true,
             Launch = static (b, s) =>
             {

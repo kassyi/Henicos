@@ -72,7 +72,10 @@ public class CSharpExecutionTests
     [InlineData(false, typeof(DivideByZeroException))]
     [InlineData(true, typeof(IndexOutOfRangeException))]
     [Scenario(TestScenario.SadPath)]
-    public void Launch_CSharpScopeTwoThreadsFail_OtherThreadsRunAndTheFirstExceptionIsThrown(bool reverse, Type expected)
+    public void Launch_CSharpScopeTwoThreadsFail_OtherThreadsRunAndTheFirstExceptionIsThrown(
+        bool reverse,
+        Type expected
+    )
     {
         int[] at = [0, 1, 9, 3];
         int[] divisors = [1, 0, 1, 1];

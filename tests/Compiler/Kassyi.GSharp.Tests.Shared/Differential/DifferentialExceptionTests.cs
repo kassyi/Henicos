@@ -152,7 +152,11 @@ public class DifferentialExceptionTests
                 OracleExceptions = OracleExceptionMode.MatchOracle,
                 ExceptionPaths = DiffPath.Managed | DiffPath.Native,
             };
-        DiffPathRunner[] paths = [new(DiffPath.Managed, DiffPaths.RunDirect), new(DiffPath.Native, DiffPaths.RunDirect)];
+        DiffPathRunner[] paths =
+        [
+            new(DiffPath.Managed, DiffPaths.RunDirect),
+            new(DiffPath.Native, DiffPaths.RunDirect),
+        ];
 
         var report = DifferentialRunner.Evaluate(testCase, [1], paths, NoEntries);
 
