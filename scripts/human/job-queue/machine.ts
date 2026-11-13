@@ -65,13 +65,15 @@ export function readBudgets(file = BudgetsFile): Map<string, Budget> {
 /**
  * The memory a test run needs in MB: the largest budget among the assemblies the command names (a project path or
  * name), or, when it names none (a run of the whole solution, whose test hosts run side by side), the sum of every
- * budget. A command that names Stress or Benchmark counts the stress budgets. 0 for a command that runs no tests.
+ * budget. A command that selects Stress or Benchmark tests (names them, not as `!=`) counts the stress budgets. 0 for
+ * a command that runs no tests.
  */
 export function testMemoryMb(command: string, isTest: boolean, budgets: ReadonlyMap<string, Budget>): number {
   if (!isTest || budgets.size === 0) {
     return 0;
   }
-  const stress = /\b(Stress|Benchmark)\b/.test(command);
+  // A filter that leaves them out (Category!=Stress, as just test passes) does not select them
+  const stress = /\b(Stress|Benchmark)\b/.test(command.replace(/!(=|~)\s*\w+/g, ""));
   const of = (budget: Budget): number => (stress ? budget.stress : budget.normal);
   const lower = command.toLowerCase();
   const named = [...budgets].filter(([name]) => lower.includes(name.toLowerCase())).map(([, budget]) => of(budget));

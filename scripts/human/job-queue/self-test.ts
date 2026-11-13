@@ -92,6 +92,11 @@ function checkMachineDefaults(): void {
   assert.strictEqual(memory("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu"), 2880);
   assert.strictEqual(memory('just test-category Stress "--project" kassyi.gsharp.tests.cpu'), 6720);
   assert.strictEqual(memory("just test"), 2880 + 128, "a whole-solution run counts every test host");
+  assert.strictEqual(
+    memory('dotnet test --filter "Category!=Stress&Category!=Benchmark"'),
+    2880 + 128,
+    "a filter that leaves the stress tests out counts the normal budgets",
+  );
   assert.strictEqual(memory("dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu"), 0, "a build takes no memory");
   assert.strictEqual(testMemoryMb("just test", true, new Map()), 0, "without budgets nothing is held back");
 }
