@@ -7,6 +7,7 @@ using GSharpCompiler::Kassyi.GSharp.Compiler;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Building;
 using GSharpCompiler::Kassyi.GSharp.Compiler.Ir.Classifying;
+using GSharpCompiler::Kassyi.GSharp.Compiler.Marshaling;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -294,7 +295,8 @@ public class GeneratorBenchmark
         RequireSource(sources, $"GSharpShared{dialect}DeviceCode.g.cs", dialect);
         if (dialect == "Cuda")
         {
-            RequireSource(sources, $"GSharpModuleContext_{compilation.AssemblyName}.g.cs", dialect);
+            var contextName = AotModuleNames.GetModuleContextName(AotModuleNames.GetModuleName(compilation));
+            RequireSource(sources, $"{contextName}.g.cs", dialect);
         }
 
         RequireKernelSources(compilation, sources, dialect);
