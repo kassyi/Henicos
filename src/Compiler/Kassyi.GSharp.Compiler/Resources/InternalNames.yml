@@ -162,14 +162,25 @@ Iterator:
 Using:
   Summary: >-
     The disposal of a C# using in device code. A struct that has a Dispose method declares it as a member under its own
-    name; the guard of each using calls it when its scope ends. On the CPU a catch around the body disposes the
-    resources when a failure leaves the using.
+    name. On CUDA the guard of each using calls it when its scope ends. On the CPU the body is written in a try whose
+    catch disposes the resource and rethrows, the end of the body calls Dispose, and each jump out of the body goes
+    through an exit label that calls Dispose before it jumps on (UsingTranspiler).
   Names:
     ScopeGuard: { Value: __gsharp_using_scope, Prelude: StandardTypes.hpp }
-    Failed: { Value: __gsharp_using_failed, Prelude: ErrorChannel.hpp }
     Dispose: { Value: __gsharp_dispose, Prelude: StandardTypes.hpp }
+    Enter: { Value: __gsharp_using_enter, Prelude: ErrorChannel.hpp }
+    DisposeFailed: { Value: __gsharp_using_dispose_failed, Prelude: ErrorChannel.hpp }
+    Leave: { Value: __gsharp_using_leave, Prelude: ErrorChannel.hpp }
     GuardPrefix: __gsharp_using_guard_
     ResourcePrefix: __gsharp_using_resource_
+    # The state that __gsharp_using_enter returns, in the catch of a using
+    Outer: __gsharp_using_outer
+    # __gsharp_using_exit_<using>_<exit>: the label of a jump out of the body of a using
+    ExitPrefix: __gsharp_using_exit_
+    # __gsharp_using_done_<using>: the end of a body that has exit labels after it
+    DonePrefix: __gsharp_using_done_
+    # The value of a return that leaves a using, kept while the usings it leaves are disposed
+    ReturnValue: __gsharp_using_return
 
 Launcher:
   Summary: Locals of the CPU C++ launcher and the managed wrappers. Kernel parameters share their scope.

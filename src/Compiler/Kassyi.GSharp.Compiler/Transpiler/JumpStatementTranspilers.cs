@@ -6,20 +6,35 @@ internal static class JumpStatementTranspilers
     /// <summary>
     /// Transpiles a break statement.
     /// </summary>
-    public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context) =>
-        context.Emitter.Writer.Append("break;");
+    public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context)
+    {
+        if (!UsingCpuEmitter.TryJumpToExit(node, ref context))
+        {
+            context.Emitter.Writer.Append("break;");
+        }
+    }
 
     /// <summary>
     /// Transpiles a continue statement.
     /// </summary>
-    public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context) =>
-        context.Emitter.Writer.Append("continue;");
+    public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context)
+    {
+        if (!UsingCpuEmitter.TryJumpToExit(node, ref context))
+        {
+            context.Emitter.Writer.Append("continue;");
+        }
+    }
 
     /// <summary>
     /// Transpiles a goto statement: <c>goto case</c>, <c>goto default</c> or a goto to a label.
     /// </summary>
     public static void TranspileGotoStatement(GotoStatementSyntax node, ref TranspileContext context)
     {
+        if (UsingCpuEmitter.TryJumpToExit(node, ref context))
+        {
+            return;
+        }
+
         context.Emitter.Writer.Append("goto ");
         switch (node.Kind())
         {

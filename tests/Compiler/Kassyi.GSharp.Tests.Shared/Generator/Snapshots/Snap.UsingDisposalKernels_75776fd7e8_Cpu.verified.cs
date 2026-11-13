@@ -44,18 +44,36 @@ __gsharp_array_at(__gsharp_mb_Log, __gsharp_array_at(__gsharp_mb_Log, 0, ""G#: a
 }
 #endif
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__DisposeAfterReturnValue(GSharpArray<int> __gsharp_id_0_log){
+{
+int __gsharp_using_return{};
 auto __gsharp_id_1_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_1_resource};
 try
 {
-return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__NoteAndGet(__gsharp_id_0_log,10);
+__gsharp_using_return = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__NoteAndGet(__gsharp_id_0_log,10);
+goto __gsharp_using_exit_0_0;
+goto __gsharp_using_done_0;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_1_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
+}
+__gsharp_using_exit_0_0:
+__gsharp_id_1_resource.__gsharp_dispose();
+return __gsharp_using_return;
+__gsharp_using_done_0:
+__gsharp_id_1_resource.__gsharp_dispose();
 }
 }
 
@@ -137,16 +155,25 @@ __gsharp_switch_1_state_0:
 auto __gsharp_id_1_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_1_resource};
 try
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,10);
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_1_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_1_resource.__gsharp_dispose();
 }
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,20);
 __gsharp_state=-1;
@@ -450,21 +477,35 @@ __gsharp_switch_1_state_0:
 auto __gsharp_id_2_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 try
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,10);
 if(__gsharp_id_1_stop==1)
 {
-__gsharp_state = -1;return;
+goto __gsharp_using_exit_0_0;
 }
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,11);
+goto __gsharp_using_done_0;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_2_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_using_exit_0_0:
+__gsharp_id_2_resource.__gsharp_dispose();
+__gsharp_state = -1;return;
+__gsharp_using_done_0:
+__gsharp_id_2_resource.__gsharp_dispose();
 }
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,20);
 __gsharp_state=-1;
@@ -780,24 +821,41 @@ for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<4;__gsharp_id_1_i=__gsharp_add_i32(_
 auto __gsharp_id_2_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = __gsharp_add_i32(100,__gsharp_id_1_i); return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 try
 {
 if(__gsharp_id_1_i==1)
 {
-continue;
+goto __gsharp_using_exit_0_0;
 }
 if(__gsharp_id_1_i==2)
 {
-break;
+goto __gsharp_using_exit_0_1;
 }
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,__gsharp_id_1_i);
+goto __gsharp_using_done_0;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_2_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_using_exit_0_0:
+__gsharp_id_2_resource.__gsharp_dispose();
+continue;
+__gsharp_using_exit_0_1:
+__gsharp_id_2_resource.__gsharp_dispose();
+break;
+__gsharp_using_done_0:
+__gsharp_id_2_resource.__gsharp_dispose();
 }
 }
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,20);
@@ -1115,48 +1173,93 @@ __gsharp_switch_1_state_0:
 auto __gsharp_id_1_outer = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_1_outer};
 try
 {
 {
 auto __gsharp_id_2_inner = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 2; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_1{__gsharp_id_2_inner};
 try
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,10);
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_1);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_2_inner.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_2_inner.__gsharp_dispose();
 }
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_1_outer.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_1_outer.__gsharp_dispose();
 }
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_id_3_first = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 3; return __gsharp_tmp; }
-()),__gsharp_id_4_second = ([&]() {
+());
+try
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_id_4_second = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 4; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_2{__gsharp_id_3_first};
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_3{__gsharp_id_4_second};
 try
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,11);
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_3, __gsharp_using_guard_2);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_4_second.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_4_second.__gsharp_dispose();
+}
+catch (...)
+{
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_3_first.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
+throw;
+}
+__gsharp_id_3_first.__gsharp_dispose();
 }
 __gsharp_state=-1;
 return;
@@ -1477,35 +1580,67 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 {
+{
 auto __gsharp_id_2_first = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_first};
 try
+{
 {
 auto __gsharp_id_3_second = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 2; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_1{__gsharp_id_3_second};
 try
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,10);
 if(__gsharp_id_1_stop==1)
 {
-__gsharp_state = -1;return;
+goto __gsharp_using_exit_1_0;
 }
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,11);
+goto __gsharp_using_done_1;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_1);
-throw;
-}
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_3_second.__gsharp_dispose();
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
+}
+__gsharp_using_exit_1_0:
+__gsharp_id_3_second.__gsharp_dispose();
+goto __gsharp_using_exit_0_0;
+__gsharp_using_done_1:
+__gsharp_id_3_second.__gsharp_dispose();
+}
+goto __gsharp_using_done_0;
+}
+catch (...)
+{
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_2_first.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
+throw;
+}
+__gsharp_using_exit_0_0:
+__gsharp_id_2_first.__gsharp_dispose();
+__gsharp_state = -1;return;
+__gsharp_using_done_0:
+__gsharp_id_2_first.__gsharp_dispose();
 }
 }
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,20);
@@ -1821,22 +1956,38 @@ __gsharp_switch_1_state_0:
 {
 for(int __gsharp_id_1_i = 0;__gsharp_id_1_i<3;__gsharp_id_1_i=__gsharp_add_i32(__gsharp_id_1_i,1))
 {
+{
 auto __gsharp_id_2_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = __gsharp_add_i32(100,__gsharp_id_1_i); return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 try
 {
 if(__gsharp_id_1_i==1)
 {
-continue;
+goto __gsharp_using_exit_0_0;
 }
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,__gsharp_id_1_i);
+goto __gsharp_using_done_0;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_2_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
+}
+__gsharp_using_exit_0_0:
+__gsharp_id_2_resource.__gsharp_dispose();
+continue;
+__gsharp_using_done_0:
+__gsharp_id_2_resource.__gsharp_dispose();
 }
 }
 __gsharp_state=-1;
@@ -2150,31 +2301,56 @@ __gsharp_switch_1_state_0:
 auto __gsharp_id_1_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 7; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder> __gsharp_using_guard_0{__gsharp_id_1_resource};
 try
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,10);
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_1_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_1_resource.__gsharp_dispose();
 }
+{
 auto __gsharp_id_2_declared = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 8; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder> __gsharp_using_guard_1{__gsharp_id_2_declared};
 try
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,11);
 __gsharp_state=-1;
-return;
+goto __gsharp_using_exit_1_0;
+goto __gsharp_using_done_1;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_1);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_2_declared.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
+}
+__gsharp_using_exit_1_0:
+__gsharp_id_2_declared.__gsharp_dispose();
+return;
+__gsharp_using_done_1:
+__gsharp_id_2_declared.__gsharp_dispose();
 }
 }
 }
@@ -2481,16 +2657,25 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{};
 ());
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_using_resource_0 = __gsharp_id_1_resource;
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_using_resource_0};
 try
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_id_0_log,10);
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_using_resource_0.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_using_resource_0.__gsharp_dispose();
 }
 __gsharp_state=-1;
 return;
@@ -3059,16 +3244,25 @@ __gsharp_switch_1_state_0:
 auto __gsharp_id_1_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_ctx->__gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder> __gsharp_using_guard_0{__gsharp_id_1_resource};
 try
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__Note(__gsharp_ctx->__gsharp_id_0_log,10);
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_1_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_1_resource.__gsharp_dispose();
 }
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;

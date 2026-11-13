@@ -284,15 +284,25 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         VisitStatements(node.Statements, 0);
     }
 
-    // The statements of a block from start on. On the CPU the statements after a using declaration are the body of the
-    // try whose catch disposes the resources on a failure (UsingTranspiler.WriteFailureCatch); C# forbids a goto into
-    // that part (CS8648), so the try has no jump into it.
-    private void VisitStatements(SyntaxList<StatementSyntax> statements, int start)
+    /// <summary>
+    /// Transpiles the statements of a block from <paramref name="start"/> on. On the CPU a <c>using</c> declaration
+    /// writes the statements after it itself, as its body (<see cref="UsingCpuEmitter"/>).
+    /// </summary>
+    internal void VisitStatements(SyntaxList<StatementSyntax> statements, int start)
     {
         for (var i = start; i < statements.Count; i++)
         {
             var statement = statements[i];
-            var firstGuard = Context.Emitter.UsingCounter;
+            if (!Context.Emitter.Dialect.IsCuda && statement is LocalDeclarationStatementSyntax
+                {
+                    UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword,
+                    AwaitKeyword.RawKind: (int)SyntaxKind.None
+                })
+            {
+                UsingCpuEmitter.TranspileUsingDeclaration(statements, i, ref Context);
+                Context.Emitter.Writer.AppendLine();
+                return;
+            }
 
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
             // block with a using declaration or a synthesized iterator scope keeps them.
@@ -308,21 +318,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             }
 
             Context.Emitter.Writer.AppendLine();
-            if (!UsingTranspiler.IsUsingDeclaration(statement) ||
-                !UsingTranspiler.CatchesFailures(firstGuard, ref Context))
-            {
-                continue;
-            }
-
-            var endGuard = Context.Emitter.UsingCounter;
-            Context.Emitter.Writer.AppendLine("try");
-            using (Context.Emitter.Writer.Scope())
-            {
-                VisitStatements(statements, i + 1);
-            }
-
-            UsingTranspiler.WriteFailureCatch(firstGuard, endGuard, ref Context);
-            return;
         }
     }
 

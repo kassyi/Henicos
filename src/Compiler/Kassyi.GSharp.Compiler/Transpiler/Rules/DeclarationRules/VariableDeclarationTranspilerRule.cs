@@ -41,6 +41,26 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
     }
 
+    /// <summary>
+    /// Writes <c>&lt;type&gt; &lt;name&gt; = &lt;initializer&gt;</c> for one declarator of a <c>using</c> on the CPU,
+    /// which declares its resources one at a time so that a failure of a later initializer disposes the earlier ones
+    /// (<see cref="UsingCpuEmitter"/>).
+    /// </summary>
+    internal static void WriteUsingResource(VariableDeclarationSyntax declaration, VariableDeclaratorSyntax variable,
+        ref TranspileContext context)
+    {
+        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(declaration.Type);
+        if (variable == declaration.Variables[0])
+        {
+            ValidateAndTrackVariableType(typeSymbol, declaration.Type, ref context);
+        }
+
+        WriteDeclaredType(variable, typeSymbol, declaration.Type.IsVar, ref context);
+        context.Emitter.Writer.Append(' ');
+        CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+        DeclarationTranspilerHelper.WriteDeclaratorInitializer(variable, ref context);
+    }
+
     private static VariableMapping AnalyzeVariableMapping(VariableDeclarationSyntax node, ITypeSymbol? typeSymbol)
     {
         var isVar = node.Type.IsVar;

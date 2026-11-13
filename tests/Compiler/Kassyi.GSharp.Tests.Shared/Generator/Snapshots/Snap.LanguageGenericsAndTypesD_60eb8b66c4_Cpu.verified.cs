@@ -367,7 +367,6 @@ int __gsharp_id_5_y = __gsharp_array_at(__gsharp_id_1_ys, __gsharp_id_3_tid, 196
 int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_3_tid,3);
 {
 auto __gsharp_id_7_intBox = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Differential__DiffGenScope_g1_bSystem__Int32_e(__gsharp_id_4_x, __gsharp_id_5_y&0xFF, __gsharp_id_2_r, __gsharp_add_i32(__gsharp_id_6_o,2));
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffGenScope_g1_bSystem__Int32_e> __gsharp_using_guard_0{__gsharp_id_7_intBox};
 try
 {
 __gsharp_array_at(__gsharp_id_2_r, __gsharp_id_6_o+0, 1649220584u)=__gsharp_add_i32(__gsharp_id_7_intBox.__gsharp_mb_Value,(__gsharp_id_7_intBox.__gsharp_mb_IsPositiveTag()?1:0));
@@ -375,9 +374,19 @@ __gsharp_array_at(__gsharp_id_2_r, __gsharp_add_i32(__gsharp_id_6_o,1), 14519382
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_7_intBox.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_7_intBox.__gsharp_dispose();
 }
 __gsharp_state=-1;
 return;

@@ -2747,15 +2747,24 @@ int __gsharp_id_5_y = __gsharp_array_at(__gsharp_id_1_ys, __gsharp_id_3_tid, 149
 auto __gsharp_id_6_guard = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibDisposableGuard __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_2_r; __gsharp_tmp.__gsharp_mb_Slot = __gsharp_id_3_tid; __gsharp_tmp.__gsharp_mb_Marker = __gsharp_add_i32(__gsharp_id_4_x,__gsharp_id_5_y); return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibDisposableGuard> __gsharp_using_guard_0{__gsharp_id_6_guard};
 try
 {
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_6_guard.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_6_guard.__gsharp_dispose();
 }
 __gsharp_state=-1;
 return;

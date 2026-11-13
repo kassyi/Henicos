@@ -3415,7 +3415,6 @@ GSharpArray<int> __gsharp_il_1_1_disposeLog = __gsharp_id_3_disposeLog;
 auto __gsharp_il_1_2_guard = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_il_1_1_disposeLog; __gsharp_tmp.__gsharp_mb_Slot = 0; __gsharp_tmp.__gsharp_mb_Marker = 100; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable> __gsharp_using_guard_0{__gsharp_il_1_2_guard};
 try
 {
 GSharpArray<int> __gsharp_il_1_3_firstView = __gsharp_il_1_0_data;
@@ -3426,7 +3425,7 @@ __gsharp_id_5_sum=__gsharp_add_i32(__gsharp_id_5_sum,__gsharp_il_2_6_v);
 __gsharp_id_4_count=__gsharp_add_i32(__gsharp_id_4_count,1);
 if(__gsharp_id_4_count>=__gsharp_id_1_maxItems)
 {
-goto __gsharp_iter_end_1;
+goto __gsharp_using_exit_0_0;
 }
 }
 __gsharp_iter_next_1_0:;
@@ -3439,17 +3438,32 @@ __gsharp_id_5_sum=__gsharp_add_i32(__gsharp_id_5_sum,__gsharp_il_3_6_v);
 __gsharp_id_4_count=__gsharp_add_i32(__gsharp_id_4_count,1);
 if(__gsharp_id_4_count>=__gsharp_id_1_maxItems)
 {
-goto __gsharp_iter_end_1;
+goto __gsharp_using_exit_0_0;
 }
 }
 __gsharp_iter_next_1_1:;
 }
+goto __gsharp_using_done_0;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_il_1_2_guard.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_using_exit_0_0:
+__gsharp_il_1_2_guard.__gsharp_dispose();
+goto __gsharp_iter_end_1;
+__gsharp_using_done_0:
+__gsharp_il_1_2_guard.__gsharp_dispose();
 }
 }
 __gsharp_iter_end_1:;

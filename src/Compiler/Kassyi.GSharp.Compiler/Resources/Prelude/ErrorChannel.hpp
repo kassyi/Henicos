@@ -72,7 +72,7 @@ struct GSharpErrorSlot {
     }
 
     // Replaces the error that the calling thread reported before: the failure of a Dispose that runs while an earlier
-    // failure of the same thread leaves the using, as C# replaces the exception (__gsharp_dispose_unwinding)
+    // failure of the same thread leaves the using, as C# replaces the exception (__gsharp_using_enter)
     inline void Replace(GSharpErrorCode errCode, const char* msg, uint32_t siteId) noexcept {
         site_id = siteId;
         CaptureCoordinates();
@@ -150,7 +150,7 @@ struct __gsharp_step_abort {};
 // The depth of the comparisons of MemoryExtensions.Sort that the thread is running (Sort.hpp).
 inline thread_local int __gsharp_sort_compare_depth = 0;
 // Whether the last failure the calling OpenMP thread recorded is the one its launch reports: a using that disposes its
-// resource while a failure unwinds the step (__gsharp_dispose_unwinding) reads it
+// resource while a failure leaves the using (__gsharp_using_enter) reads it
 inline thread_local bool __gsharp_failure_reported = false;
 // Set while such a Dispose runs after a failure of this thread that its launch reports: a failure of the Dispose then
 // replaces it, as C# replaces the exception
@@ -228,33 +228,18 @@ inline void __gsharp_translate_sort_failure(GSharpErrorCode& code, const char*& 
     __gsharp_trap_site(code, site_id);
 }
 
-// Disposes the resource of a using while a failure of the thread leaves the using (StandardTypes.hpp), as C# runs
-// Dispose in a finally. A failure of the Dispose ends here: when the failure in flight is a failed check of this
-// thread (recorded) that its launch reports, the new failure replaces it, as the exception of a finally replaces the
-// one in flight in C#. The failure in flight then goes on.
-template <typename T>
-__GSHARP_COLD inline void __gsharp_dispose_unwinding(T& resource, bool recorded) noexcept
-{
-    bool outer = __gsharp_failure_replaces;
-    __gsharp_failure_replaces = recorded && __gsharp_failure_reported;
-    try {
-        resource.__gsharp_dispose();
-    } catch (const __gsharp_step_abort&) {
-        // Recorded (or replaced) before the throw
-    } catch (const std::bad_alloc&) {
-        __gsharp_record_failure(GSharpErrorCode::InvalidOperation,
-                                "G#: the native CPU path could not allocate memory for a kernel step", 0u);
-    }
-    __gsharp_failure_replaces = outer;
-}
+// The failure path of a using on the CPU. The transpiler writes the body of a using in a try, and its catch disposes
+// the resource as C# runs Dispose in a finally, then rethrows (UsingTranspiler):
+//   catch (...) { int o = __gsharp_using_enter(); try { r.__gsharp_dispose(); } catch (...) {
+//   __gsharp_using_dispose_failed(); } __gsharp_using_leave(o); throw; }
+// A failure of that Dispose ends there: when the failure in flight is a failed check of this thread (recorded) that
+// its launch reports, the new failure replaces it, as the exception of a finally replaces the one in flight in C#.
+// [WHY] The helpers are cold and take no address of the resource, so that the normal path of the using keeps the
+// resource in registers (GCC keeps a local in memory once its address escapes) and is the body followed by the call of
+// Dispose.
 
-// Called by the catch that the CPU dialect writes around the body of a using (UsingTranspiler) before it rethrows,
-// with the guards of the using in the order C# disposes them (the last declared first): disposes each resource
-// (__gsharp_dispose_unwinding) and clears its guard, which then has nothing to dispose. [WHY] The failure path does
-// all the work, so the guard of a using that ends normally only tests its pointer before the call of Dispose; asking
-// std::uncaught_exceptions() or keeping a flag in the guard made every using pay for the failure path.
-template <typename... G>
-__GSHARP_COLD inline void __gsharp_using_failed(G&... guards) noexcept
+// Starts the Dispose of a failure: returns the state to restore (__gsharp_using_leave)
+__GSHARP_COLD inline int __gsharp_using_enter() noexcept
 {
     bool recorded = false;
     try {
@@ -264,7 +249,29 @@ __GSHARP_COLD inline void __gsharp_using_failed(G&... guards) noexcept
     } catch (...) {
         // Any other exception (std::bad_alloc) was not recorded as a failed check; the launcher records it
     }
-    ((__gsharp_dispose_unwinding(*guards.resource, recorded), guards.resource = nullptr), ...);
+    int outer = __gsharp_failure_replaces ? 1 : 0;
+    __gsharp_failure_replaces = recorded && __gsharp_failure_reported;
+    return outer;
+}
+
+// A failure of that Dispose: a failed check was recorded (or replaced) before the throw
+__GSHARP_COLD inline void __gsharp_using_dispose_failed() noexcept
+{
+    try {
+        throw;
+    } catch (const __gsharp_step_abort&) {
+        // Recorded before the throw
+    } catch (const std::bad_alloc&) {
+        __gsharp_record_failure(GSharpErrorCode::InvalidOperation,
+                                "G#: the native CPU path could not allocate memory for a kernel step", 0u);
+    } catch (...) {
+        // No other exception reaches a kernel step
+    }
+}
+
+__GSHARP_COLD inline void __gsharp_using_leave(int outer) noexcept
+{
+    __gsharp_failure_replaces = outer != 0;
 }
 
 // The array that an array-typed C# expression reads (Length, an element, foreach): a null array ends the step with

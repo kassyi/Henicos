@@ -35,6 +35,11 @@ internal static class ReturnStatementTranspilers
     /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
+        if (UsingCpuEmitter.TryJumpToExit(node, ref context))
+        {
+            return;
+        }
+
         var isStateMachineReturn = node.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind);
         var plan = Classify(node, isStateMachineReturn, ref context);
 
@@ -106,11 +111,7 @@ internal static class ReturnStatementTranspilers
         ref TranspileContext context
     )
     {
-        if (node.Expression is { } expression)
-        {
-            StatementPrelude.Emit(expression, ref context);
-        }
-
+        WritePrelude(node, ref context);
         context.Emitter.Writer.Append(GSharpInternalNames.ReturnValue.Buffer);
         using (context.Emitter.Writer.Brackets())
         {
@@ -118,7 +119,7 @@ internal static class ReturnStatementTranspilers
         }
 
         context.Emitter.Writer.Append(" = ");
-        context.Visitor.Visit(node.Expression);
+        WriteReturnedValue(node, ref context);
         context.Emitter.Writer.AppendLine(";");
 
         WriteStateTermination(plan, ref context);
@@ -128,15 +129,32 @@ internal static class ReturnStatementTranspilers
     // <termination> return <value>;
     private static void WriteValue(ReturnStatementSyntax node, ReturnPlan plan, ref TranspileContext context)
     {
-        if (node.Expression is { } expression)
+        WritePrelude(node, ref context);
+        WriteStateTermination(plan, ref context);
+        context.Emitter.Writer.Append("return ");
+        WriteReturnedValue(node, ref context);
+        context.Emitter.Writer.Append(';');
+    }
+
+    // The statement prelude of the value, unless an exit label of a using reads the value the return kept
+    private static void WritePrelude(ReturnStatementSyntax node, ref TranspileContext context)
+    {
+        if (node.Expression is { } expression && context.Emitter.UsingReturnValue == null)
         {
             StatementPrelude.Emit(expression, ref context);
         }
+    }
 
-        WriteStateTermination(plan, ref context);
-        context.Emitter.Writer.Append("return ");
+    // The value, or what reads the value kept while the usings the return leaves were disposed (UsingCpuEmitter)
+    private static void WriteReturnedValue(ReturnStatementSyntax node, ref TranspileContext context)
+    {
+        if (context.Emitter.UsingReturnValue is { } kept)
+        {
+            context.Emitter.Writer.Append(kept);
+            return;
+        }
+
         context.Visitor.Visit(node.Expression);
-        context.Emitter.Writer.Append(';');
     }
 
     // <termination> return <constructed object>;
@@ -177,9 +195,9 @@ internal static class ReturnStatementTranspilers
 
         if (node.Expression != null)
         {
-            StatementPrelude.Emit(node.Expression, ref context);
+            WritePrelude(node, ref context);
             context.Emitter.Writer.Append($"*{GSharpInternalNames.SuspendingCall.Result} = ");
-            context.Visitor.Visit(node.Expression);
+            WriteReturnedValue(node, ref context);
             context.Emitter.Writer.AppendLine(";");
         }
 

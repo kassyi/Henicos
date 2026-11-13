@@ -41,6 +41,9 @@ public struct Emitter(
     /// <summary>The body is the state machine of a device function that may suspend (CPU dialects).</summary>
     public bool IsSuspendingDeviceFunction;
     public bool IsVoidReturn;
+
+    /// <summary>The method being transpiled, whose lowered body may be outside any declaration of the tree.</summary>
+    internal IMethodSymbol? MethodSymbol;
     public int CallableDepth;
 
     /// <summary>
@@ -126,6 +129,18 @@ public struct Emitter(
 
     /// <summary>Numbers the guards and the resource temporaries of the <c>using</c>s of the method (UsingTranspiler).</summary>
     public int UsingCounter;
+
+    /// <summary>
+    /// The <c>using</c>s whose body is being written on the CPU, the innermost last: a jump out of the body goes to an
+    /// exit label of the innermost one (<see cref="UsingCpuEmitter"/>).
+    /// </summary>
+    internal ImmutableArray<UsingCpuScope>.Builder UsingScopes { get; } = ImmutableArray.CreateBuilder<UsingCpuScope>();
+
+    /// <summary>
+    /// While the exit label of a <c>using</c> writes its <c>return</c> again: the text that reads the value the
+    /// <c>return</c> kept (<c>__gsharp_using_return</c>), which takes the place of its expression.
+    /// </summary>
+    public string? UsingReturnValue;
 
     /// <summary>
     /// Numbers the storages <c>__gsharp_stackalloc_&lt;n&gt;</c> that the statement prelude declares for the stack arrays

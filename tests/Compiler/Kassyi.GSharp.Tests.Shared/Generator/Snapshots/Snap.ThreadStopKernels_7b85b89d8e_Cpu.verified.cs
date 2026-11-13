@@ -3263,7 +3263,6 @@ __gsharp_switch_1_state_0:
 auto __gsharp_id_3_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ThreadStopRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_1_log; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ThreadStopRecorder> __gsharp_using_guard_0{__gsharp_id_3_resource};
 try
 {
 __gsharp_array_at(__gsharp_id_1_log, 0, 756760307u)=1;
@@ -3272,9 +3271,19 @@ __gsharp_array_at(__gsharp_id_1_log, 3, 2143105403u)=3;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_3_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_3_resource.__gsharp_dispose();
 }
 __gsharp_array_at(__gsharp_id_1_log, 4, 529697924u)=4;
 __gsharp_state=-1;
@@ -3584,7 +3593,6 @@ __gsharp_switch_1_state_0:
 auto __gsharp_id_3_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ThreadStopFailingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_1_log; __gsharp_tmp.__gsharp_mb_Source = __gsharp_id_0_source; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ThreadStopFailingRecorder> __gsharp_using_guard_0{__gsharp_id_3_resource};
 try
 {
 __gsharp_array_at(__gsharp_id_1_log, 0, 1708190769u)=1;
@@ -3592,9 +3600,19 @@ __gsharp_array_at(__gsharp_id_1_log, 1, 1669791831u)=__gsharp_fn_Kassyi__GSharp_
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_3_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_3_resource.__gsharp_dispose();
 }
 __gsharp_array_at(__gsharp_id_1_log, 4, 1487392712u)=4;
 __gsharp_state=-1;
@@ -3903,16 +3921,25 @@ __gsharp_switch_1_state_0:
 auto __gsharp_id_2_resource = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ThreadStopFailingRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_1_log; __gsharp_tmp.__gsharp_mb_Source = __gsharp_id_0_source; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ThreadStopFailingRecorder> __gsharp_using_guard_0{__gsharp_id_2_resource};
 try
 {
 __gsharp_array_at(__gsharp_id_1_log, 0, 202597043u)=1;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_2_resource.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_2_resource.__gsharp_dispose();
 }
 __gsharp_array_at(__gsharp_id_1_log, 4, 1437334568u)=4;
 __gsharp_state=-1;

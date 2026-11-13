@@ -57,34 +57,69 @@ __gsharp_array_at(__gsharp_mb_Log, __gsharp_mb_Slot, ""G#: a null array is read 
 }
 #endif
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LanguageControlAndResourceDifferentialKernels__RunUsingEarlyReturnHelper(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_slot, int __gsharp_id_2_x, bool __gsharp_id_3_takeEarlyReturn){
+{
+int __gsharp_using_return{};
 auto __gsharp_id_4_outer = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Slot = __gsharp_id_1_slot; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder> __gsharp_using_guard_0{__gsharp_id_4_outer};
 try
+{
 {
 auto __gsharp_id_5_inner = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Slot = __gsharp_id_1_slot; __gsharp_tmp.__gsharp_mb_Id = 2; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder> __gsharp_using_guard_1{__gsharp_id_5_inner};
 try
 {
 if(__gsharp_id_3_takeEarlyReturn)
 {
-return __gsharp_add_i32(__gsharp_id_2_x,10);
+__gsharp_using_return = __gsharp_add_i32(__gsharp_id_2_x,10);
+goto __gsharp_using_exit_1_0;
 }
-return __gsharp_add_i32(__gsharp_id_2_x,20);
-}
-catch (...)
-{
-__gsharp_using_failed(__gsharp_using_guard_1);
-throw;
-}
+__gsharp_using_return = __gsharp_add_i32(__gsharp_id_2_x,20);
+goto __gsharp_using_exit_1_0;
+goto __gsharp_using_done_1;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_5_inner.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
+}
+__gsharp_using_exit_1_0:
+__gsharp_id_5_inner.__gsharp_dispose();
+goto __gsharp_using_exit_0_0;
+__gsharp_using_done_1:
+__gsharp_id_5_inner.__gsharp_dispose();
+}
+goto __gsharp_using_done_0;
+}
+catch (...)
+{
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_4_outer.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
+throw;
+}
+__gsharp_using_exit_0_0:
+__gsharp_id_4_outer.__gsharp_dispose();
+return __gsharp_using_return;
+__gsharp_using_done_0:
+__gsharp_id_4_outer.__gsharp_dispose();
 }
 }
 
@@ -5387,21 +5422,18 @@ __gsharp_array_at(__gsharp_id_2_r, __gsharp_id_3_tid, 1743557653u)=0;
 auto __gsharp_id_4_u1 = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_2_r; __gsharp_tmp.__gsharp_mb_Slot = __gsharp_id_3_tid; __gsharp_tmp.__gsharp_mb_Id = 1; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder> __gsharp_using_guard_0{__gsharp_id_4_u1};
 try
 {
 {
 auto __gsharp_id_5_u2 = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_2_r; __gsharp_tmp.__gsharp_mb_Slot = __gsharp_id_3_tid; __gsharp_tmp.__gsharp_mb_Id = 2; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder> __gsharp_using_guard_1{__gsharp_id_5_u2};
 try
 {
 {
 auto __gsharp_id_6_u3 = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_2_r; __gsharp_tmp.__gsharp_mb_Slot = __gsharp_id_3_tid; __gsharp_tmp.__gsharp_mb_Id = 3; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder> __gsharp_using_guard_2{__gsharp_id_6_u3};
 try
 {
 int __gsharp_id_7_sumIds = __gsharp_add_i32(__gsharp_add_i32(__gsharp_id_4_u1.__gsharp_mb_Id,__gsharp_id_5_u2.__gsharp_mb_Id),__gsharp_id_6_u3.__gsharp_mb_Id);
@@ -5412,23 +5444,53 @@ __gsharp_array_at(__gsharp_id_2_r, __gsharp_id_3_tid, 1217422880u)=(-1);
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_2);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_6_u3.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_6_u3.__gsharp_dispose();
 }
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_1);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_5_u2.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_5_u2.__gsharp_dispose();
 }
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_4_u1.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_4_u1.__gsharp_dispose();
 }
 __gsharp_state=-1;
 return;
@@ -6064,23 +6126,40 @@ for(int __gsharp_id_4_i = 1;__gsharp_id_4_i<=4;__gsharp_id_4_i=__gsharp_add_i32(
 auto __gsharp_id_5_loopGuard = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_2_r; __gsharp_tmp.__gsharp_mb_Slot = __gsharp_id_3_tid; __gsharp_tmp.__gsharp_mb_Id = __gsharp_id_4_i; return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffLifoOrderRecorder> __gsharp_using_guard_0{__gsharp_id_5_loopGuard};
 try
 {
 if(__gsharp_id_4_i==2)
 {
-continue;
+goto __gsharp_using_exit_0_0;
 }
 if(__gsharp_id_4_i==3)
 {
-break;
+goto __gsharp_using_exit_0_1;
 }
+goto __gsharp_using_done_0;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_5_loopGuard.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_using_exit_0_0:
+__gsharp_id_5_loopGuard.__gsharp_dispose();
+continue;
+__gsharp_using_exit_0_1:
+__gsharp_id_5_loopGuard.__gsharp_dispose();
+break;
+__gsharp_using_done_0:
+__gsharp_id_5_loopGuard.__gsharp_dispose();
 }
 }
 __gsharp_state=-1;
@@ -6415,16 +6494,25 @@ __gsharp_array_at(__gsharp_id_2_r, __gsharp_id_3_tid, 1452885201u)=100;
 auto __gsharp_id_5_patGuard = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffPatternRefRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_2_r; __gsharp_tmp.__gsharp_mb_Slot = __gsharp_id_3_tid; __gsharp_tmp.__gsharp_mb_Marker = __gsharp_add_i32(__gsharp_id_4_x,5); return __gsharp_tmp; }
 ());
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffPatternRefRecorder> __gsharp_using_guard_0{__gsharp_id_5_patGuard};
 try
 {
 __gsharp_array_at(__gsharp_id_2_r, __gsharp_id_3_tid, 158081712u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_2_r, __gsharp_id_3_tid, 158081712u),10);
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_id_5_patGuard.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_id_5_patGuard.__gsharp_dispose();
 }
 __gsharp_state=-1;
 return;
@@ -6749,7 +6837,6 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMutatingDisposeGuar
 int __gsharp_id_6_mutGetterRead;
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMutatingDisposeGuard __gsharp_using_resource_0 = __gsharp_id_5_exprGuard;
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMutatingDisposeGuard> __gsharp_using_guard_0{__gsharp_using_resource_0};
 try
 {
 __gsharp_id_5_exprGuard.__gsharp_mb_State=__gsharp_add_i32(__gsharp_id_4_x,100);
@@ -6757,9 +6844,19 @@ __gsharp_id_6_mutGetterRead=__gsharp_id_5_exprGuard.__gsharp_mb_State;
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_using_resource_0.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_using_resource_0.__gsharp_dispose();
 }
 __gsharp_array_at(__gsharp_id_2_r, __gsharp_id_3_tid, 97987021u)=__gsharp_id_6_mutGetterRead;
 __gsharp_state=-1;
@@ -7086,16 +7183,25 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMutatingDisposeGuar
 ());
 {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMutatingDisposeGuard __gsharp_using_resource_0 = __gsharp_id_5_exprGuard;
-__gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffMutatingDisposeGuard> __gsharp_using_guard_0{__gsharp_using_resource_0};
 try
 {
 __gsharp_id_5_exprGuard.__gsharp_mb_State=__gsharp_add_i32(__gsharp_id_4_x,100);
 }
 catch (...)
 {
-__gsharp_using_failed(__gsharp_using_guard_0);
+int __gsharp_using_outer = __gsharp_using_enter();
+try
+{
+__gsharp_using_resource_0.__gsharp_dispose();
+}
+catch (...)
+{
+__gsharp_using_dispose_failed();
+}
+__gsharp_using_leave(__gsharp_using_outer);
 throw;
 }
+__gsharp_using_resource_0.__gsharp_dispose();
 }
 __gsharp_state=-1;
 return;
