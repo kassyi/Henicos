@@ -259,26 +259,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .Out<int>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.BoolProbeColumns, OutputPolicy.Exact)
                 .OutAutoResult<bool>(s.Rows, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            bool iv = b.GetScalar<bool>("iv");
-            bool ret = MarshalingBoundaryDifferentialKernels.BoolAllPositionsKernel(
-                b.GetScalar<bool>("v"),
-                in iv,
-                ref b.GetScalarRef<bool>("rv"),
-                out bool ov,
-                b.Get<bool>("arr"),
-                ref b.GetScalarRef<DiffBoolPack>("pack"),
-                b.Get<int>("probe")
-            );
-            b.SetScalar("ov", ov);
-            int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-            var autoRes = b.GetAutoResult<bool>();
-            if ((uint)tid < (uint)autoRes.Length)
-            {
-                autoRes[tid] = ret;
-            }
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             bool iv = b.GetScalar<bool>("iv");
@@ -346,26 +327,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .Out<int>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.CharProbeColumns, OutputPolicy.Exact)
                 .OutAutoResult<char>(s.Rows, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            char iv = b.GetScalar<char>("iv");
-            char ret = MarshalingBoundaryDifferentialKernels.CharAllPositionsKernel(
-                b.GetScalar<char>("v"),
-                in iv,
-                ref b.GetScalarRef<char>("rv"),
-                out char ov,
-                b.Get<char>("arr"),
-                ref b.GetScalarRef<DiffCharPack>("pack"),
-                b.Get<int>("probe")
-            );
-            b.SetScalar("ov", ov);
-            int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-            var autoRes = b.GetAutoResult<char>();
-            if ((uint)tid < (uint)autoRes.Length)
-            {
-                autoRes[tid] = ret;
-            }
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             char iv = b.GetScalar<char>("iv");
@@ -417,20 +379,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .Out<int>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.NullableBlitProbeColumns, OutputPolicy.Exact)
                 .OutAutoResult<int?>(s.Rows, OutputPolicy.ForStruct(nullableIntComparer), nullableIntComparer);
         },
-        Oracle = static (b, _) =>
-        {
-            int? ret = MarshalingBoundaryDifferentialKernels.NullableBlitPositionsKernel(
-                b.Get<int?>("arr"),
-                ref b.GetScalarRef<DiffNullableBlitHolder>("h"),
-                b.Get<int>("probe")
-            );
-            int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-            var autoRes = b.GetAutoResult<int?>();
-            if ((uint)tid < (uint)autoRes.Length)
-            {
-                autoRes[tid] = ret;
-            }
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             var res = MarshalingBoundaryDifferentialKernels.LaunchNullableBlitPositionsKernel(
@@ -459,13 +408,15 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .OutScalar<char?>("oc", OutputPolicy.ForStruct(nullableCharComparer), nullableCharComparer)
                 .Out<int>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.NullableBlitScalarProbeColumns, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
+        Oracle = static (b, s) =>
         {
-            MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel(
+            MarshalingBoundaryDifferentialKernels.LaunchNullableBlitScalarArgKernel(
                 b.GetScalar<int?>("v"),
                 ref b.GetScalarRef<byte?>("rb"),
                 out char? oc,
-                b.Get<int>("probe")
+                b.Get<int>("probe"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX
             );
             b.SetScalar("oc", oc);
         },
@@ -522,11 +473,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .RefScalar("h", holder, OutputPolicy.ForStruct(NullableVec2HolderComparer), NullableVec2HolderComparer)
                 .Out<float>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.NullableConvertProbeColumns, OutputPolicy.Bitwise);
         },
-        Oracle = static (b, _) =>
-            MarshalingBoundaryDifferentialKernels.NullableConvertPositionsKernel(
-                ref b.GetScalarRef<DiffNullableVec2Holder>("h"),
-                b.Get<float>("probe")
-            ),
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
             MarshalingBoundaryDifferentialKernels.LaunchNullableConvertPositionsKernel(
                 ref b.GetScalarRef<DiffNullableVec2Holder>("h"),
@@ -589,22 +536,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .Out<int>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.ExplicitUnionProbeColumns, OutputPolicy.Exact)
                 .OutAutoResult<DiffFloatUintUnion>(s.Rows, OutputPolicy.ForStruct(FloatUintUnionComparer), FloatUintUnionComparer);
         },
-        Oracle = static (b, _) =>
-        {
-            var ret = MarshalingBoundaryDifferentialKernels.ExplicitLayoutAndUnionPositionsKernel(
-                b.GetScalar<DiffExplicitGapped>("gVal"),
-                ref b.GetScalarRef<DiffFloatUintUnion>("uRef"),
-                b.Get<DiffExplicitGapped>("gArr"),
-                b.Get<DiffFloatUintUnion>("uArr"),
-                b.Get<int>("probe")
-            );
-            int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-            var autoRes = b.GetAutoResult<DiffFloatUintUnion>();
-            if ((uint)tid < (uint)autoRes.Length)
-            {
-                autoRes[tid] = ret;
-            }
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             var res = MarshalingBoundaryDifferentialKernels.LaunchExplicitLayoutAndUnionPositionsKernel(
@@ -640,11 +572,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .RefScalar("u", u, OutputPolicy.ForStruct(ConvertExplicitUnionComparer), ConvertExplicitUnionComparer)
                 .Out<float>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.ConvertUnionProbeColumns, OutputPolicy.Bitwise);
         },
-        Oracle = static (b, _) =>
-            MarshalingBoundaryDifferentialKernels.ExplicitUnionWithConvertArmKernel(
-                ref b.GetScalarRef<DiffConvertExplicitUnion>("u"),
-                b.Get<float>("probe")
-            ),
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
             MarshalingBoundaryDifferentialKernels.LaunchExplicitUnionWithConvertArmKernel(
                 ref b.GetScalarRef<DiffConvertExplicitUnion>("u"),
@@ -692,26 +620,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .Out<long>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.AutoLayoutProbeColumns, OutputPolicy.Exact)
                 .OutAutoResult<DiffAutoMixed>(s.Rows, OutputPolicy.ForStruct(AutoMixedComparer), AutoMixedComparer);
         },
-        Oracle = static (b, _) =>
-        {
-            var inVal = b.GetScalar<DiffAutoMixed>("inVal");
-            var ret = MarshalingBoundaryDifferentialKernels.AutoLayoutAllPositionsKernel(
-                b.GetScalar<DiffAutoMixed>("val"),
-                in inVal,
-                ref b.GetScalarRef<DiffAutoMixed>("refVal"),
-                out DiffAutoMixed outVal,
-                b.Get<DiffAutoMixed>("arr"),
-                ref b.GetScalarRef<DiffAutoNested>("nested"),
-                b.Get<long>("probe")
-            );
-            b.SetScalar("outVal", outVal);
-            int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-            var autoRes = b.GetAutoResult<DiffAutoMixed>();
-            if ((uint)tid < (uint)autoRes.Length)
-            {
-                autoRes[tid] = ret;
-            }
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             var inVal = b.GetScalar<DiffAutoMixed>("inVal");
@@ -795,23 +704,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                     .Out<int>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.InlineAndFixedProbeColumns, OutputPolicy.Exact)
                     .OutAutoResult<DiffInlineVec2Padded3>(s.Rows, OutputPolicy.ForStruct(InlineVec2Padded3Comparer), InlineVec2Padded3Comparer);
             },
-            Oracle = static (b, _) =>
-            {
-                var ret = MarshalingBoundaryDifferentialKernels.InlineArrayAndFixedBufferPositionsKernel(
-                    b.GetScalar<DiffInlineVec2Padded3>("valVecs"),
-                    ref b.GetScalarRef<DiffInlineOuterPacket>("outer"),
-                    b.Get<DiffInlineVec2Padded3>("vecArr"),
-                    ref b.GetScalarRef<FixedBufferPacket>("fixedPkt"),
-                    b.Get<FixedBufferPacket>("fixedArr"),
-                    b.Get<int>("probe")
-                );
-                int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-                var autoRes = b.GetAutoResult<DiffInlineVec2Padded3>();
-                if ((uint)tid < (uint)autoRes.Length)
-                {
-                    autoRes[tid] = ret;
-                }
-            },
+            OracleIsLaunch = true,
             Launch = static (b, s) =>
             {
                 var res = MarshalingBoundaryDifferentialKernels.LaunchInlineArrayAndFixedBufferPositionsKernel(
@@ -845,11 +738,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .RefScalar("h", h, OutputPolicy.ForStruct(InlineNullableVec2HolderComparer), InlineNullableVec2HolderComparer)
                 .Out<float>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.InlineNullableVec2ProbeColumns, OutputPolicy.Bitwise);
         },
-        Oracle = static (b, _) =>
-            MarshalingBoundaryDifferentialKernels.InlineArrayNullableVec2Kernel(
-                ref b.GetScalarRef<DiffInlineNullableVec2Holder>("h"),
-                b.Get<float>("probe")
-            ),
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
             MarshalingBoundaryDifferentialKernels.LaunchInlineArrayNullableVec2Kernel(
                 ref b.GetScalarRef<DiffInlineNullableVec2Holder>("h"),
@@ -928,24 +817,7 @@ public sealed class MarshalingBoundaryDifferentialTests
                 .Out<float>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.VecAlignAndExternalProbeColumns, OutputPolicy.Bitwise)
                 .OutAutoResult<OuterPacket>(s.Rows, OutputPolicy.ForStruct(OuterPacketComparer), OuterPacketComparer);
         },
-        Oracle = static (b, _) =>
-        {
-            var ret = MarshalingBoundaryDifferentialKernels.VectorAlignmentAndExternalStructsKernel(
-                b.GetScalar<DiffVecAlignTorture>("tortVal"),
-                ref b.GetScalarRef<OuterPacket>("outerRef"),
-                b.Get<DiffVecAlignTorture>("tortArr"),
-                b.Get<PackedPair>("extPackedArr"),
-                b.Get<SwapPair>("extSwapArr"),
-                ref b.GetScalarRef<DiffExternalNestedHolder>("extHolder"),
-                b.Get<float>("probe")
-            );
-            int tid = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;
-            var autoRes = b.GetAutoResult<OuterPacket>();
-            if ((uint)tid < (uint)autoRes.Length)
-            {
-                autoRes[tid] = ret;
-            }
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             var res = MarshalingBoundaryDifferentialKernels.LaunchVectorAlignmentAndExternalStructsKernel(
@@ -989,14 +861,15 @@ public sealed class MarshalingBoundaryDifferentialTests
                     .In("roTable", roTable, OutputPolicy.Exact, readOnly: true)
                     .Out<int>("probe", s.Rows, MarshalingBoundaryDifferentialKernels.MultiRefAndPointerProbeColumns, OutputPolicy.Exact);
             },
-            Oracle = static (b, _) =>
+            // The launch passes a device pointer on CUDA; the C# run reads the host array
+            Oracle = static (b, s) =>
             {
                 int inScalar = b.GetScalar<int>("inScalar");
                 var rawBuf = b.Get<int>("rawBuf");
                 fixed (int* pValid = rawBuf)
                 {
-                    MarshalingBoundaryDifferentialKernels.MultiRefScalarAndRawPointerKernel(
-                        in inScalar,
+                    MarshalingBoundaryDifferentialKernels.LaunchMultiRefScalarAndRawPointerKernel(
+                        inScalar,
                         ref b.GetScalarRef<int>("refA"),
                         ref b.GetScalarRef<int>("refB"),
                         ref b.GetScalarRef<float>("refF"),
@@ -1005,7 +878,9 @@ public sealed class MarshalingBoundaryDifferentialTests
                         null,
                         b.GetScalar<int>("constFactor"),
                         b.Get<int>("roTable"),
-                        b.Get<int>("probe")
+                        b.Get<int>("probe"),
+                        gridDimX: s.GridX,
+                        blockDimX: s.BlockX
                     );
                     b.SetScalar("outSum", outSum);
                 }

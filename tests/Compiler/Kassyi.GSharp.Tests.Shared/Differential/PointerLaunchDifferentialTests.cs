@@ -47,11 +47,7 @@ public sealed class PointerLaunchDifferentialTests
                 .In("b", b, OutputPolicy.Exact)
                 .Out<int>("lengths", 2, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) => PointerLaunchDifferentialKernels.TwoLengthsKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<int>("lengths")
-        ),
+        OracleIsLaunch = true,
         Launch = static (b, s) => PointerLaunchDifferentialKernels.LaunchTwoLengthsKernel(
             b.Get<int>("a"),
             b.Get<int>("b"),
@@ -91,10 +87,7 @@ public sealed class PointerLaunchDifferentialTests
                 _ => new[] { 4, 5, 6 }
             })
             .Out<int>("result", 1, OutputPolicy.Exact),
-        Oracle = static (b, _) => PointerLaunchDifferentialKernels.OptionalLengthKernel(
-            b.GetNullable<int>("optional"),
-            b.Get<int>("result")
-        ),
+        OracleIsLaunch = true,
         Launch = static (b, s) => PointerLaunchDifferentialKernels.LaunchOptionalLengthKernel(
             b.GetNullable<int>("optional"),
             b.Get<int>("result"),

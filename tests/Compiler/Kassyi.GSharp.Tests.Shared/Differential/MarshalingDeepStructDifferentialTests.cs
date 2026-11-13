@@ -49,14 +49,7 @@ public sealed class MarshalingDeepStructDifferentialTests
                 .RefDeepScalar("byRef", refBag, CloneNestedDeep, CompareNestedDeep)
                 .Out<float>("outSums", 3, OutputPolicy.Bitwise);
         },
-        Oracle = static (b, _) =>
-        {
-            DiffNestedDeep byVal = b.GetScalar<DiffNestedDeep>("byVal");
-            DiffNestedDeep byIn = b.GetScalar<DiffNestedDeep>("byIn");
-            ref DiffNestedDeep byRef = ref b.GetScalarRef<DiffNestedDeep>("byRef");
-            float[] outSums = b.Get<float>("outSums");
-            MarshalingAliasingDifferentialKernels.DeepStructAllArgModesKernel(byVal, in byIn, ref byRef, outSums);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             DiffNestedDeep byVal = b.GetScalar<DiffNestedDeep>("byVal");
@@ -102,19 +95,7 @@ public sealed class MarshalingDeepStructDifferentialTests
                 .InDeep("immBacking", immBacking, CloneDeepBag, CompareDeepBag, readOnly: true)
                 .Out<int>("outTotals", 6, OutputPolicy.Exact);
         },
-        Oracle = static (b, _) =>
-        {
-            DiffDeepBag[] arrBags = b.Get<DiffDeepBag>("arrBags");
-            Span<DiffDeepBag> spanBags = b.Get<DiffDeepBag>("spanBacking").AsSpan();
-            ReadOnlySpan<DiffDeepBag> roSpanBags = b.Get<DiffDeepBag>("roSpanBacking");
-            ArraySegment<DiffDeepBag> segBags = new(b.Get<DiffDeepBag>("segBacking"), offset: 1, count: 2);
-            Memory<DiffDeepBag> memBags = b.Get<DiffDeepBag>("memBacking").AsMemory();
-            ImmutableArray<DiffDeepBag> immBags =
-                ImmutableCollectionsMarshal.AsImmutableArray(b.Get<DiffDeepBag>("immBacking"));
-            int[] outTotals = b.Get<int>("outTotals");
-            MarshalingAliasingDifferentialKernels.DeepStructSixContainersKernel(
-                arrBags, spanBags, roSpanBags, segBags, memBags, immBags, outTotals);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             DiffDeepBag[] arrBags = b.Get<DiffDeepBag>("arrBags");
@@ -153,14 +134,7 @@ public sealed class MarshalingDeepStructDifferentialTests
                 ClonePrimary,
                 ComparePrimary)
             .Out<float>("outEval", 3, OutputPolicy.Bitwise),
-        Oracle = static (b, _) =>
-        {
-            DiffPrimaryCtorBag byVal = b.GetScalar<DiffPrimaryCtorBag>("byVal");
-            ref DiffPrimaryCtorBag byRef = ref b.GetScalarRef<DiffPrimaryCtorBag>("byRef");
-            DiffPrimaryCtorBag[] arr = b.Get<DiffPrimaryCtorBag>("arr");
-            float[] outEval = b.Get<float>("outEval");
-            MarshalingAliasingDifferentialKernels.PrimaryCtorDeepStructKernel(byVal, ref byRef, arr, outEval);
-        },
+        OracleIsLaunch = true,
         Launch = static (b, s) =>
         {
             DiffPrimaryCtorBag byVal = b.GetScalar<DiffPrimaryCtorBag>("byVal");

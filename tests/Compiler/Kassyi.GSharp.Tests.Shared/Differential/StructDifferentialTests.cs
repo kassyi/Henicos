@@ -29,10 +29,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructDifferentialKernels.StructMutationAndCopySemantics(
-            b.Get<int>("inputs"),
-            b.Get<int>("deltas"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_defaultVsNew = new(
@@ -53,10 +50,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructDifferentialKernels.StructDefaultVsNewAndFieldInitializers(
-            b.Get<int>("inputs"),
-            b.Get<int>("flags"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_recordWith = new(
@@ -80,11 +74,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructDifferentialKernels.RecordStructWithExpressions(
-            b.Get<int>("xs"),
-            b.Get<int>("ys"),
-            b.Get<int>("zs"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_autoPropInDefensiveCopy = new(
@@ -113,10 +103,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy(
-            b.Get<int>("initialValues"),
-            b.Get<int>("mutatedValues"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_userDefinedImplicitConv = new(
@@ -135,9 +122,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructDifferentialKernels.StructUserDefinedImplicitConversion(
-            b.Get<int>("inputs"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_userDefinedExplicitConv = new(
@@ -156,9 +141,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructDifferentialKernels.StructUserDefinedExplicitConversion(
-            b.Get<int>("inputs"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_liftedUserDefinedConv = new(
@@ -185,10 +168,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructDifferentialKernels.StructLiftedUserDefinedConversion(
-            b.Get<int>("inputs"),
-            b.Get<int>("flags"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_repro1103Default = new(
@@ -207,9 +187,7 @@ public class StructDifferentialTests
             b.Get<int>("dst"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructDifferentialKernels.DefaultOfConvertingStructReproKernel(
-            b.Get<int>("a"),
-            b.Get<int>("dst")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_constantSizedFixedBuffer = new(
@@ -228,9 +206,7 @@ public class StructDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => StructDifferentialKernels.ConstantSizedFixedBufferKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

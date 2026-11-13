@@ -288,11 +288,7 @@ public class IntegerMinValueOverflowDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.ShortMinValueDivideKernel(
-            b.Get<short>("nums"),
-            b.Get<short>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_sbyteMinValueDivide = new(
@@ -322,11 +318,7 @@ public class IntegerMinValueOverflowDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.SByteMinValueDivideKernel(
-            b.Get<sbyte>("nums"),
-            b.Get<sbyte>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]

@@ -31,8 +31,7 @@ public class NarrowStepDifferentialTests
 
     private static DifferentialCase CreateStepCase(
         string kernelName,
-        Action<DiffBuffers, LaunchShape> launch,
-        Action<DiffBuffers> oracle) =>
+        Action<DiffBuffers, LaunchShape> launch) =>
         new($"{nameof(NarrowStepDifferentialKernels)}.{kernelName}")
         {
             Shape = LaunchShape.ForRows(32, blockX: 32),
@@ -40,7 +39,7 @@ public class NarrowStepDifferentialTests
                 .In("a", DiffValues.Mixed(rng, rows, s_narrowStepBoundaries, static r => unchecked((int)r.NextUInt64())))
                 .Out<long>("r", rows, NarrowStepDifferentialKernels.NarrowStepColumns, OutputPolicy.Exact),
             Launch = launch,
-            Oracle = (b, _) => oracle(b),
+            OracleIsLaunch = true,
         };
 
     internal static readonly DifferentialCase s_sbyteStep = CreateStepCase(
@@ -49,10 +48,7 @@ public class NarrowStepDifferentialTests
             b.Get<int>("a"),
             b.Get<long>("r"),
             gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        static b => NarrowStepDifferentialKernels.SByteStepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r")));
+            blockDimX: s.BlockX));
 
     internal static readonly DifferentialCase s_byteStep = CreateStepCase(
         nameof(NarrowStepDifferentialKernels.ByteStepKernel),
@@ -60,10 +56,7 @@ public class NarrowStepDifferentialTests
             b.Get<int>("a"),
             b.Get<long>("r"),
             gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        static b => NarrowStepDifferentialKernels.ByteStepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r")));
+            blockDimX: s.BlockX));
 
     internal static readonly DifferentialCase s_int16Step = CreateStepCase(
         nameof(NarrowStepDifferentialKernels.Int16StepKernel),
@@ -71,10 +64,7 @@ public class NarrowStepDifferentialTests
             b.Get<int>("a"),
             b.Get<long>("r"),
             gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        static b => NarrowStepDifferentialKernels.Int16StepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r")));
+            blockDimX: s.BlockX));
 
     internal static readonly DifferentialCase s_uint16Step = CreateStepCase(
         nameof(NarrowStepDifferentialKernels.UInt16StepKernel),
@@ -82,10 +72,7 @@ public class NarrowStepDifferentialTests
             b.Get<int>("a"),
             b.Get<long>("r"),
             gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        static b => NarrowStepDifferentialKernels.UInt16StepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r")));
+            blockDimX: s.BlockX));
 
     internal static readonly DifferentialCase s_charStep = CreateStepCase(
         nameof(NarrowStepDifferentialKernels.CharStepKernel),
@@ -93,10 +80,7 @@ public class NarrowStepDifferentialTests
             b.Get<int>("a"),
             b.Get<long>("r"),
             gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        static b => NarrowStepDifferentialKernels.CharStepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r")));
+            blockDimX: s.BlockX));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

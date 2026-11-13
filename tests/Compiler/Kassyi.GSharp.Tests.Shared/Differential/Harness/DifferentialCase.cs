@@ -6,8 +6,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// One kernel under differential test: its launch shapes, its inputs per seed, and the definition of the right result, either
-/// the kernel's own C# run by <see cref="SequentialOracle"/> (<see cref="Oracle"/>) or a reference model written in the
-/// test (<see cref="Reference"/>).
+/// the kernel's own C# run by <see cref="SequentialOracle"/> (<see cref="Oracle"/> or <see cref="OracleIsLaunch"/>)
+/// or a reference model written in the test (<see cref="Reference"/>).
 /// </summary>
 /// <param name="name">The name the report and <see cref="KnownDivergence.Case"/> use: <c>Class.KernelMethod</c>.</param>
 public sealed record DifferentialCase(string name)
@@ -70,9 +70,24 @@ public sealed record DifferentialCase(string name)
     public Action<DiffBuffers, LaunchShape>? LaunchPtr { get; init; }
 
     /// <summary>
-    /// Gets the call of the kernel's C# body, which <see cref="SequentialOracle"/> runs once per thread in three orders.
+    /// Gets the oracle: a launch of the kernel whose C# defines the result, which <see cref="SequentialOracle"/> runs
+    /// under <c>KernelExecution.CSharp</c> (the kernel's own method, one GPU thread at a time) in three thread orders.
+    /// Set it when the launch differs from <see cref="Launch"/>; otherwise set <see cref="OracleIsLaunch"/>.
     /// </summary>
     public Action<DiffBuffers, LaunchShape>? Oracle { get; init; }
+
+    /// <summary>
+    /// Gets or initializes whether <see cref="Launch"/> is also the oracle: <see cref="SequentialOracle"/> runs it
+    /// under <c>KernelExecution.CSharp</c>, so the launcher runs the kernel's own C# method instead of the path under
+    /// test.
+    /// </summary>
+    public bool OracleIsLaunch { get; init; }
+
+    /// <summary>
+    /// Gets the oracle that the runner runs: <see cref="Oracle"/>, or <see cref="Launch"/> when
+    /// <see cref="OracleIsLaunch"/>.
+    /// </summary>
+    public Action<DiffBuffers, LaunchShape>? EffectiveOracle => Oracle ?? (OracleIsLaunch ? Launch : null);
 
     /// <summary>
     /// Gets the reference model, run once without a thread context: the GPU definition written in C# for a kernel the

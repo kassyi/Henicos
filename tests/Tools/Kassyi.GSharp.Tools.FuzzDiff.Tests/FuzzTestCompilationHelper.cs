@@ -180,11 +180,19 @@ namespace Kassyi.GSharp.Tools.FuzzDiff.Tests
                         .In("inC", inC)
                         .Out<ulong>("checksum", rows, ["hash"], OutputPolicy.Exact);
                 },
-                Launch = (b, s) => SequentialOracle.Run(
+                Launch = (b, s) => SequentialOracle.RunEachThread(
                     s,
                     ThreadOrder.Forward,
                     () => mutantKernel(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum"))),
-                Oracle = (b, _) => oracleKernel(b.Get<int>("inA"), b.Get<int>("inB"), b.Get<int>("inC"), b.Get<ulong>("checksum")),
+                Oracle = (b, s) => SequentialOracle.RunEachThread(
+                    s,
+                    () => oracleKernel(
+                        b.Get<int>("inA"),
+                        b.Get<int>("inB"),
+                        b.Get<int>("inC"),
+                        b.Get<ulong>("checksum")
+                    )
+                ),
             };
 
             var report = DifferentialRunner.Evaluate(

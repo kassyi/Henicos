@@ -20,7 +20,8 @@ public enum KernelExecution
     /// The kernel's own C# method, once per GPU thread of the launch, one thread after another in the order of their
     /// linear index, on a host thread of its own: the value that C# gives for each thread. A kernel that reaches a
     /// barrier, a warp intrinsic, shared memory or code that only the managed path rewrites throws
-    /// <see cref="InvalidOperationException"/> instead of running, since no other thread runs beside the one being run.
+    /// <see cref="Kassyi.GSharp.Core.CSharpExecutionUnsupportedException"/> instead of running, since no other thread
+    /// runs beside the one being run.
     /// </summary>
     CSharp
 }

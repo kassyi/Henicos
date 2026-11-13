@@ -22,9 +22,7 @@ public class ReceiverGetterOrderDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel(
-            b.Get<int>("data"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_implicitThisGetter = new(
@@ -38,9 +36,7 @@ public class ReceiverGetterOrderDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel(
-            b.Get<int>("data"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_accessorCall = new(
@@ -53,9 +49,7 @@ public class ReceiverGetterOrderDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, _) => ReceiverGetterOrderDifferentialKernels.AccessorCallKernel(
-            b.Get<int>("data"),
-            b.Get<int>("r")),
+        OracleIsLaunch = true,
     };
 
     private static string KernelName(string kernel) => $"{nameof(ReceiverGetterOrderDifferentialKernels)}.{kernel}";

@@ -51,8 +51,7 @@ public class NativeOptimizerDifferentialTests
     private static DifferentialCase CreateCase<T>(
         string kernelName,
         string[] columns,
-        Action<int[], T[], int, LaunchShape> launch,
-        Action<int[], T[], int> oracle)
+        Action<int[], T[], int, LaunchShape> launch)
         where T : unmanaged =>
         new(DiffKernelNames.Of(typeof(NativeOptimizerDifferentialKernels), kernelName))
         {
@@ -61,7 +60,7 @@ public class NativeOptimizerDifferentialTests
                 .In("src", Values(rng, shape.Rows), readOnly: true)
                 .Out<T>("dst", shape.Rows, columns, OutputPolicy.Exact),
             Launch = (b, s) => launch(b.Get<int>("src"), b.Get<T>("dst"), s.Rows, s),
-            Oracle = (b, s) => oracle(b.Get<int>("src"), b.Get<T>("dst"), s.Rows),
+            OracleIsLaunch = true,
         };
 
     internal static readonly DifferentialCase s_negateThenDivide = CreateCase<ulong>(
@@ -72,8 +71,7 @@ public class NativeOptimizerDifferentialTests
             dst,
             rows,
             gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        NativeOptimizerDifferentialKernels.NegateThenDivideKernel);
+            blockDimX: s.BlockX));
 
     internal static readonly DifferentialCase s_shortWidenedTwice = CreateCase<ulong>(
         nameof(NativeOptimizerDifferentialKernels.ShortWidenedTwiceKernel),
@@ -83,8 +81,7 @@ public class NativeOptimizerDifferentialTests
             dst,
             rows,
             gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        NativeOptimizerDifferentialKernels.ShortWidenedTwiceKernel);
+            blockDimX: s.BlockX));
 
     internal static readonly DifferentialCase s_shortIncrementPicksRefTarget = CreateCase<int>(
         nameof(NativeOptimizerDifferentialKernels.ShortIncrementPicksRefTargetKernel),
@@ -94,8 +91,7 @@ public class NativeOptimizerDifferentialTests
             dst,
             rows,
             gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        NativeOptimizerDifferentialKernels.ShortIncrementPicksRefTargetKernel);
+            blockDimX: s.BlockX));
 
     internal static readonly DifferentialCase s_sbyteSubtractPicksRefTarget = CreateCase<int>(
         nameof(NativeOptimizerDifferentialKernels.SByteSubtractPicksRefTargetKernel),
@@ -105,8 +101,7 @@ public class NativeOptimizerDifferentialTests
             dst,
             rows,
             gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        NativeOptimizerDifferentialKernels.SByteSubtractPicksRefTargetKernel);
+            blockDimX: s.BlockX));
 
     [SkippableFact]
     public void NegateThenDivide_MinValueDividend_MatchesTheOracleOnEveryPath() =>

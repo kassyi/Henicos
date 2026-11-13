@@ -60,15 +60,7 @@ public class MemoryAndSegmentBoundsDifferentialTests
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX);
         },
-        Oracle = static (b, s) =>
-        {
-            var backing = b.Get<int>("backing");
-            BoundsAndMemoryDifferentialKernels.ArraySegmentBoundsKernel(
-                new ArraySegment<int>(backing, CanaryStart, CanaryLen),
-                b.Get<int>("indices"),
-                b.Get<int>("dst"),
-                s.Rows);
-        },
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_memoryBounds = new(
@@ -114,16 +106,7 @@ public class MemoryAndSegmentBoundsDifferentialTests
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX);
         },
-        Oracle = static (b, s) =>
-        {
-            var backing = b.Get<int>("backing");
-            BoundsAndMemoryDifferentialKernels.MemoryBoundsKernel(
-                new Memory<int>(backing, CanaryStart, CanaryLen),
-                new ReadOnlyMemory<int>(backing, CanaryStart, CanaryLen),
-                b.Get<int>("indices"),
-                b.Get<int>("dst"),
-                s.Rows);
-        },
+        OracleIsLaunch = true,
     };
 
     internal static readonly DifferentialCase s_sharedMemoryBounds = new(
@@ -225,10 +208,7 @@ public class MemoryAndSegmentBoundsDifferentialTests
             s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Oracle = static (b, s) => BoundsAndMemoryDifferentialKernels.InlineArrayBoundsKernel(
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            s.Rows),
+        OracleIsLaunch = true,
     };
 
     [SkippableFact]
