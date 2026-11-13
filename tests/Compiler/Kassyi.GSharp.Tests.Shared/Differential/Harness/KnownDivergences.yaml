@@ -92,6 +92,43 @@
     - case: ArrayArgumentNullEmptyDifferentialKernels.ImmutableKernel.Empty.Element
       paths: [Native, Cuda]
       columns: [$exception]
+    # Array.Fill, Clear and Copy past the end of an empty array (length 0) from each source: CUDA does not check
+    - case: ArrayCallSourceDifferentialKernels.FieldArrayCallKernel.FillPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.FieldArrayCallKernel.ClearPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.FieldArrayCallKernel.CopyFromPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.ElementArrayCallKernel.FillPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.ElementArrayCallKernel.ClearPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.ElementArrayCallKernel.CopyFromPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.LocalArrayCallKernel.FillPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.LocalArrayCallKernel.ClearPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.LocalArrayCallKernel.CopyFromPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.ParameterArrayCallKernel.FillPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.ParameterArrayCallKernel.ClearPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
+    - case: ArrayCallSourceDifferentialKernels.ParameterArrayCallKernel.CopyFromPastEnd.Empty
+      paths: [Cuda]
+      columns: [$exception]
     - case: BoundsAndMemoryDifferentialKernels.SpanCanaryIndexBoundsKernel
       paths: [Cuda]
       columns: [$exception]
