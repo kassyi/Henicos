@@ -12,5 +12,33 @@
         ]
       }
     ]
+  },
+  "chat-status": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "node ../scripts/human/chat-status.js --hook",
+        "timeout": 5
+      }
+    ],
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "node ../scripts/human/chat-status.js --hook",
+        "timeout": 5
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "ask_question",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ../scripts/human/chat-status.js --hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }

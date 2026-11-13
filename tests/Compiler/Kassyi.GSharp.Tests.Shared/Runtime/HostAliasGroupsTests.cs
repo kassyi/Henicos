@@ -1,4 +1,5 @@
 #nullable enable
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
@@ -14,6 +15,13 @@ public class HostAliasGroupsTests
     private const byte In = HostAliasGroups.CopiesIn;
     private const byte Whole = HostAliasGroups.WholeArray;
     private const byte InView = HostAliasGroups.CopiesIn | HostAliasGroups.SpanView;
+
+    // An element that holds a reference, 16 bytes
+    private struct ReferenceHolder
+    {
+        public object? Value;
+        public long Tag;
+    }
 
     // (address, byte length, element size) per argument, read by the device as it is, alignment from the size
     private static nint[] Ranges(params (nint Address, nint Length, nint Size)[] ranges)
@@ -430,6 +438,68 @@ public class HostAliasGroupsTests
 
             Assert.Equal([4, 5, 30], ints.ToArray());
             Assert.Equal([1, 2, 3], backing);
+        }
+    }
+
+    // The elements of a copy that holds references are never viewed as another element type
+    // mutant: HostAliasCopies.TryGetHostView and TryGetHostMemory drop the HostCopyHasReferences check (the views over
+    // the bits of the references are returned instead of the exception)
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public unsafe void TryGetHostView_CopyOfElementsThatHoldReferences_Throws()
+    {
+        // Zeroed memory is a valid array of structs that hold null references; a pinned array of them cannot exist
+        var memory = (byte*)NativeMemory.AllocZeroed(32);
+        try
+        {
+            var ranges = Ranges(((nint)memory, 32, 16), ((nint)memory, 16, 4));
+            var groups = HostAliasGroups.Find(ranges, [In, InView], "holders,ints");
+            Assert.NotNull(groups);
+
+            Assert.True(HostAliasCopies.TryGetHostCopy<ReferenceHolder>(groups, 0, ranges, out _, out _));
+            Assert.Throws<NotSupportedException>(() => HostAliasCopies.TryGetHostView<int>(groups, 1, ranges, out _));
+            Assert.Throws<NotSupportedException>(() => HostAliasCopies.TryGetHostMemory<int>(groups, 1, ranges, out _));
+        }
+        finally
+        {
+            NativeMemory.Free(memory);
+        }
+    }
+
+    // A buffer of bytes starts at the address that the caller's memory has modulo 16, so a typed request for the bytes
+    // starts after that many bytes (CopyStart); the source starts at every offset of 16, so nearly all of them place it
+    // away from the buffer's first byte
+    // mutant: HostAliasCopies.TryGetHostCopy computes start as offset / size, without group.CopyStart (the elements
+    // come from the wrong bytes for every source offset but one)
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public unsafe void TryGetHostCopy_BufferOfBytesPlacedAtTheCallersAlignment_StartsAfterTheCopyStart()
+    {
+        var raw = new byte[64];
+        for (var i = 0; i < raw.Length; i++)
+        {
+            raw[i] = (byte)i;
+        }
+
+        fixed (byte* data = raw)
+        {
+            for (var skew = 0; skew < 16; skew++)
+            {
+                // A long at the first byte and ints 4 bytes into the group: 12 bytes, which no long copy can cover
+                var source = data + skew;
+                var ranges = Ranges(((nint)source, 8, 8), ((nint)(source + 4), 8, 4));
+                var groups = HostAliasGroups.Find(ranges, [In, InView], "longs,ints");
+                Assert.NotNull(groups);
+
+                Assert.True(HostAliasCopies.TryGetHostMemory<long>(groups, 0, ranges, out _));
+                Assert.True(HostAliasCopies.TryGetHostCopy<byte>(groups, 1, ranges, out var bytes, out var start));
+
+                Assert.Equal(raw.AsSpan(skew + 4, 8).ToArray(), bytes.AsSpan(start, 8).ToArray());
+            }
         }
     }
 

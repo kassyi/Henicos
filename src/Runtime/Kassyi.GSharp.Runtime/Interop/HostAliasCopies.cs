@@ -110,6 +110,12 @@ public static class HostAliasCopies
             return false;
         }
 
+        if (group.HostCopyHasReferences)
+        {
+            // The copy's elements hold references, whose bits no view of another element type may read or write
+            throw DifferentElementTypes(group.Names);
+        }
+
         var offset = groups.GetOffset(index);
         var data = group.HostCopy ?? (group.ViewsOnly || !IsAtBoundaries<T>(ref group, offset)
             ? (Array)CopyBytes(ref group, ranges)
@@ -142,7 +148,7 @@ public static class HostAliasCopies
         var offset = groups.GetOffset(index);
         if (group.KernelGetsCopy && !RuntimeHelpers.IsReferenceOrContainsReferences<T>() &&
             (group.HostCopy is { } other
-                ? other is not T[] && !IsSameSizeWithoutReferences<T>(ref group)
+                ? other is not T[] && !group.HostCopyHasReferences && !IsSameSizeWithoutReferences<T>(ref group)
                 : !IsAtBoundaries<T>(ref group, offset)))
         {
             // A copy of another element type, or none yet that T could type: the member views the copy's bytes

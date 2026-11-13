@@ -35,6 +35,29 @@ export function resolveStateDirectory(): string {
   return path.join(base, "tmp", "job-queue");
 }
 
+/**
+ * A directory as the key of the scheduler's round-robin: absolute, and on Windows in one letter case (git prints
+ * `P:/x`, a shell may be in `p:\x`). An empty directory stays empty.
+ */
+export function worktreeKey(directory: string): string {
+  if (directory === "") {
+    return "";
+  }
+  const resolved = path.resolve(directory);
+  return process.platform === "win32" ? resolved.toLowerCase() : resolved;
+}
+
+/** The root of the worktree that holds `directory` (git rev-parse --show-toplevel), or the directory itself. */
+export function resolveWorktree(directory: string): string {
+  const git = spawnSync("git", ["rev-parse", "--show-toplevel"], {
+    cwd: directory,
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  const top = !git.error && git.status === 0 ? git.stdout.trim() : "";
+  return worktreeKey(top !== "" ? top : directory);
+}
+
 /** Slack for comparing a process creation time with the recorded spawn time (as in gpu-lock.js). */
 const SpawnToleranceMs = 5000;
 
