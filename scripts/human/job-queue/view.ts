@@ -450,25 +450,32 @@ function promptText(prompt: Prompt, jobs: ScreenJob[]): string {
   }
 }
 
-/** The queue in one line when no job is selected: "4 running, 2 waiting; next end ~00:45 #965". */
-function summaryLine(jobs: ScreenJob[], columns: number): ScreenLine {
+const LateLegend = "  red = longer than usual";
+const SelectHint = "  ↑↓ select a job";
+
+/**
+ * The queue in one line when no job is selected: "4 running, 2 waiting; next end ~00:45 #965", then what a red bar
+ * means while one is drawn (the legend is otherwise only in the help), else how to select a job.
+ */
+function summaryLine(jobs: ScreenJob[], columns: number, now: number): ScreenLine {
   const line = new ScreenLine(columns);
   if (jobs.length === 0) {
     return line.add(" no jobs; they show up here when one is queued", "dim").padTo();
   }
   const running = jobs.filter((job) => job.state === "running");
+  const late = running.some((job) => isLate(job, now));
   const next = running.filter((job) => finite(job.endAt)).sort((a, b) => (a.endAt ?? 0) - (b.endAt ?? 0))[0];
   return line
     .add(` ${running.length} running, ${jobs.length - running.length} waiting`)
     .add(next !== undefined && finite(next.endAt) ? `; next end ~${clock(next.endAt)} #${next.id}` : "")
-    .add("  ↑↓ select a job", "dim")
+    .add(late ? LateLegend : SelectHint, late ? "late" : "dim")
     .padTo();
 }
 
 function detailLine(job: ScreenJob | undefined, jobs: ScreenJob[], columns: number, now: number): ScreenLine {
   const line = new ScreenLine(columns);
   if (job === undefined) {
-    return summaryLine(jobs, columns);
+    return summaryLine(jobs, columns, now);
   }
   const flags = [
     `w${job.weight}`,

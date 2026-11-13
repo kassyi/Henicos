@@ -135,7 +135,14 @@ function checkLayout(): void {
   const none = renderScreen(reply, initialViewState(), full, false);
   assert.ok(!none.join("").includes("▸"), "no job is marked");
   assert.ok(!renderScreen(reply, initialViewState(), full, true).join("").includes("\x1b[7"), "no reverse video");
-  assert.match(none[12] ?? "", /^ 3 running, 3 waiting; next end ~\d\d:\d\d #817 {2}↑↓ select a job/);
+  assert.match(none[12] ?? "", /^ 3 running, 3 waiting; next end ~\d\d:\d\d #817 {2}red = longer than usual/);
+  assert.ok(
+    (renderScreen(reply, initialViewState(), full, true)[12] ?? "").includes("\x1b[31m  red = longer than usual"),
+    "the legend of the red bar is red itself",
+  );
+  // Without a late job the bottom line says how to select one instead
+  const onTime = { ...reply, running: reply.running.map((j) => ({ ...j, grantedAt: Now - Minute })) };
+  assert.match(plain(renderScreen(onTime, initialViewState(), full, false))[12] ?? "", / {2}↑↓ select a job/);
   // A selected job that ended selects nothing, instead of moving the selection to another job
   assert.deepStrictEqual(renderScreen(reply, { ...initialViewState(), selectedId: 700 }, full, false), none);
 
