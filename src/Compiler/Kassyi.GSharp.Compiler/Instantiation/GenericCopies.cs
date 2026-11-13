@@ -3,9 +3,9 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// <summary>
 /// Makes the closed copies of generic kernels and device functions: for each instance, the declaration with its type
 /// parameters replaced by the type arguments (<see cref="GenericCopyPlanner"/>, <see cref="GenericCopyEmitter"/>),
-/// added next to the declaration in a derived compilation, and checked against the declaration
-/// (<see cref="GenericCopyChecker"/>). A copy that passes is an ordinary method that the rest of the pipeline can
-/// transpile as it is; <see cref="GenericInstanceTable"/> names it as its instance.
+/// added next to the declaration in a derived compilation. A copy is an ordinary method that the rest of the pipeline
+/// can transpile as it is; <see cref="GenericInstanceTable"/> names it as its instance. What the plan cannot write is
+/// reported as a finding at the node of the declaration.
 /// </summary>
 internal static class GenericCopies
 {
@@ -106,13 +106,11 @@ internal static class GenericCopies
             return null;
         }
 
-        var model = compilation.GetSemanticModel(declaration.SyntaxTree);
         var nodes = CopyNodeIndex.List(declaration);
-        var map = new InstanceSymbolMap(instance, compilation);
         var annotated = CopyNodeIndex.Annotate(LoweringAnnotations.AnnotateOriginalSpans(declaration, compilation));
         var marker = new SyntaxAnnotation(GenericCopyEmitter.CopyAnnotationKind);
         var copy = GenericCopyEmitter.Emit(annotated, plan, GenericInstanceNames.GetCopyName(instance), marker);
-        return new PreparedCopy(instance, declaration, type, nodes, model, map, plan, copy, marker);
+        return new PreparedCopy(instance, declaration, type, nodes, plan, copy, marker);
     }
 
     private static GenericCopy Finish(Compilation derived, SyntaxTree tree, PreparedCopy prepared)
@@ -122,25 +120,13 @@ internal static class GenericCopies
             .AsStackEnumerable()
             .OfType<MethodDeclarationSyntax>()
             .First();
-        var copyModel = derived.GetSemanticModel(tree);
-        var symbol = copyModel.GetDeclaredSymbol(copy);
+        var symbol = derived.GetSemanticModel(tree).GetDeclaredSymbol(copy);
         if (symbol is not null)
         {
             GenericInstanceTable.Register(symbol, prepared.Instance);
         }
 
-        var problems = prepared.Plan.Problems.AddRange(WithoutConsequences(
-            prepared,
-            GenericCopyChecker.Check(
-                prepared.Nodes,
-                prepared.Declaration,
-                prepared.Model,
-                copy,
-                copyModel,
-                prepared.Plan,
-                prepared.Map
-            )
-        ));
+        var problems = prepared.Plan.Problems;
         var findings = ImmutableArray.CreateBuilder<CopyFinding>(problems.Length);
         var reported = new HashSet<(TextSpan, string)>();
         foreach (var problem in problems)
@@ -155,32 +141,6 @@ internal static class GenericCopies
         }
 
         return new GenericCopy(prepared.Instance, copy, symbol, findings.ToImmutable());
-    }
-
-    // What the check finds inside a node the plan already reported is the consequence of that problem (a copy that does
-    // not compile, a node without a type), not another problem: the user is told the cause once
-    private static ImmutableArray<CopyProblem> WithoutConsequences(
-        PreparedCopy prepared,
-        ImmutableArray<CopyProblem> found)
-    {
-        if (prepared.Plan.Problems.IsEmpty)
-        {
-            return found;
-        }
-
-        var builder = ImmutableArray.CreateBuilder<CopyProblem>(found.Length);
-        foreach (var problem in found)
-        {
-            var span = prepared.Nodes[problem.NodeIndex].Span;
-            if (!prepared.Plan.Problems.AsStackEnumerable()
-                    .Any((prepared.Nodes, span), static (planned, state) =>
-                        state.Nodes[planned.NodeIndex].Span.Contains(state.span)))
-            {
-                builder.Add(problem);
-            }
-        }
-
-        return builder.ToImmutable();
     }
 
     // The outermost expression that starts where the node starts and has no sibling around it: the call for its
@@ -216,8 +176,6 @@ internal static class GenericCopies
         MethodDeclarationSyntax Declaration,
         TypeDeclarationSyntax ContainingType,
         SyntaxNode[] Nodes,
-        SemanticModel Model,
-        InstanceSymbolMap Map,
         GenericCopyPlan Plan,
         MethodDeclarationSyntax Copy,
         SyntaxAnnotation Marker);

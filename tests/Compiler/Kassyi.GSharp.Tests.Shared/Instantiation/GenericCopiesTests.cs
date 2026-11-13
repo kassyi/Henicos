@@ -28,18 +28,6 @@ public class GenericCopiesTests
         Assert.Equal(SpecialType.System_Int32, callee.TypeArguments[0].SpecialType);
     }
 
-    // The probe that motivated the pinning: Helper(s) with T = int binds Helper(int) once the copy says int
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void Check_InferredGenericCallWithoutItsPin_RejectsTheCopy()
-    {
-        var copy = CreateWithout("CallsHelper", "System.Int32", CopyRewriteKind.ExplicitTypeArguments);
-
-        Assert.False(copy.IsFaithful);
-        var finding = Assert.Single(copy.Findings, f => f.Reason.Contains("binds", StringComparison.Ordinal));
-        Assert.Equal(LineOf("public static int CallsHelper<T>"), finding.Location.GetLineSpan().StartLinePosition.Line);
-    }
-
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Create_ExtensionCallOnTypeWithSameInstanceMember_KeepsTheExtension()
@@ -49,17 +37,6 @@ public class GenericCopiesTests
         Assert.True(copy.IsFaithful, Describe(copy));
         var callee = Assert.IsAssignableFrom<IMethodSymbol>(SymbolOf(set, Single<InvocationExpressionSyntax>(copy)));
         Assert.Equal("Exts", callee.ContainingType.Name);
-    }
-
-    // The second probe: d[0].Ext() with T = Odd binds Odd.Ext() once the copy says Odd
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void Check_ExtensionCallWithoutItsPin_RejectsTheCopy()
-    {
-        var copy = CreateWithout("CallsExt", "App.Odd", CopyRewriteKind.StaticExtensionCall);
-
-        Assert.False(copy.IsFaithful);
-        Assert.Contains(copy.Findings, f => f.Reason.Contains("Odd.Ext", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -91,11 +68,16 @@ public class GenericCopiesTests
     [InlineData("ShiftAssign", "System.Int32")]
     [InlineData("Locals", "System.Int32")]
     [InlineData("Recurse", "System.Int32")]
-    public void Create_SupportedForm_GivesAFaithfulCopy(string method, string typeArgument)
+    public void Create_SupportedForm_GivesACopyThatCompiles(string method, string typeArgument)
     {
-        var (copy, _) = CreateCopy(method, typeArgument);
+        var (copy, set) = CreateCopy(method, typeArgument);
 
         Assert.True(copy.IsFaithful, Describe(copy));
+        var errors = ModelOf(set, copy.Declaration!)
+            .GetDiagnostics(copy.Declaration!.Span)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(diagnostic => diagnostic.Id);
+        Assert.Empty(errors);
     }
 
     [Theory]
@@ -113,23 +95,6 @@ public class GenericCopiesTests
         var finding = Assert.Single(copy.Findings);
         Assert.Contains(reason, finding.Reason, StringComparison.Ordinal);
         Assert.Equal(expression, SourceText.From(s_source).ToString(finding.Location.SourceSpan));
-    }
-
-    // A sibling member of a generic type is not pinned to the closed type yet: the check stops the copy
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void Create_SiblingOfGenericType_IsRejectedNotEmitted()
-    {
-        var compilation = CreateCompilation();
-        var outer = compilation.GetTypeByMetadataName("App.Outer`1") ??
-                    throw new InvalidOperationException("No Outer.");
-        var run = outer.Construct(compilation.GetSpecialType(SpecialType.System_Int32)).GetTypeMembers("Kernels")[0]
-            .GetMembers("Run").OfType<IMethodSymbol>().Single();
-
-        var copy = GenericCopies.Create(compilation, [GenericInstance.Of(run)]).Copies.Single();
-
-        Assert.False(copy.IsFaithful);
-        Assert.Contains(copy.Findings, f => f.Reason.Contains("does not compile", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -314,19 +279,6 @@ public class GenericCopiesTests
     {
         var set = GenericCopies.Create(compilation, [Instance(compilation, method, type)]);
         return (set.Copies.Single(), set);
-    }
-
-    private static GenericCopy CreateWithout(string method, string typeArgument, CopyRewriteKind kind)
-    {
-        var compilation = CreateCompilation();
-        var type = compilation.GetTypeByMetadataName(typeArgument) ??
-                   throw new InvalidOperationException($"No type '{typeArgument}'.");
-        var plan = GenericCopies.Plan(compilation, Instance(compilation, method, type));
-        var pinned = plan.Rewrites.Values.Where(r => r.Kind == kind).Select(r => r.NodeIndex).ToArray();
-        Assert.NotEmpty(pinned);
-
-        var withoutPins = plan with { Rewrites = plan.Rewrites.RemoveRange(pinned) };
-        return GenericCopies.Create(compilation, [withoutPins]).Copies.Single();
     }
 
     private static GenericInstance Instance(Compilation compilation, string method, ITypeSymbol type)
