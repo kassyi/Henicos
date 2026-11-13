@@ -48,6 +48,11 @@ export interface SchedulerJob {
   backfilled?: boolean;
   /** Its run started before this scheduler (re-registered after a restart): no run time is recorded for it. */
   adopted?: boolean;
+  /**
+   * Its client is away (the connection dropped, or the job was restored after a restart): a waiting job keeps its place
+   * but is not granted, since nobody would receive the grant.
+   */
+  detached?: boolean;
 }
 
 /** When a job is expected to start and end. */
@@ -169,12 +174,19 @@ export class Scheduler<J extends SchedulerJob> {
   outcomes: ReadonlyMap<number, string> = new Map();
 
   /**
-   * True until the job's predecessor (--after) has a recorded outcome that lets it run: "succeeded", or any outcome
-   * with
-   * --keep-if-failed. A predecessor that runs, waits, is not back yet after a restart, or failed (without
-   * --keep-if-failed) blocks it; the server cancels the jobs whose predecessor failed.
+   * True while the job may not be granted: its client is away (detached), or its predecessor blocks it
+   * (awaitsPredecessor). Like any blocked job, it does not hold up the jobs behind it.
    */
   isBlocked(job: SchedulerJob): boolean {
+    return job.detached === true || this.awaitsPredecessor(job);
+  }
+
+  /**
+   * True until the job's predecessor (--after) has a recorded outcome that lets it run: "succeeded", or any outcome
+   * with --keep-if-failed. A predecessor that runs, waits, is not back yet after a restart, or failed (without
+   * --keep-if-failed) blocks it; the server cancels the jobs whose predecessor failed.
+   */
+  awaitsPredecessor(job: SchedulerJob): boolean {
     if (job.after === null) {
       return false;
     }

@@ -36,13 +36,6 @@ public enum FuzzSplitForms
 /// </summary>
 public static class FuzzSplitKernelEmitter
 {
-    /// <summary>
-    /// Issue #991: the CPU paths misorder the operands around a split point in an arm of <c>?:</c>, <c>||</c> or
-    /// <c>&amp;&amp;</c>, in an argument that writes what an earlier argument read, and on the right of a compound
-    /// assignment that writes its target.
-    /// </summary>
-    public const int SplitArgumentOrderIssue = 991;
-
     /// <summary>Issue #1554: a stack array live across a barrier fails the native CPU build with no C#
     /// diagnostic.</summary>
     public const int StackArrayAcrossSplitIssue = 1554;

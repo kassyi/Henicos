@@ -41,11 +41,19 @@ export const OverrunGuessMs = 30 * 1000;
 export const LongestRunMs = 7 * 24 * 60 * 60 * 1000; // run times and starts beyond this are taken as damaged input
 export const ForecastSteps = 2000; // the forecast replays at most this many steps; jobs it does not reach get no times
 export const KeptOutcomes = 500; // the outcomes of ended jobs kept for --after (also across a restart)
-/** How long a restarted scheduler waits for a job of the earlier one to come back before it counts as lost. */
-export const ExpectedJobsMs = 60 * 1000;
+/**
+ * How long a job whose client is away is waited for (to come back, or to report its end) before it counts as lost: a
+ * job of the earlier scheduler, or one whose connection dropped.
+ */
+export const ClientGraceMs = 60 * 1000;
 
 export const JobVariable = "GSHARP_JOB_QUEUE_JOB";
 export const InGpuLockVariable = "GSHARP_JOB_QUEUE_IN_GPU_LOCK";
+/**
+ * The id of the --gpu run whose turn started gpu-lock.js: the GPU holder that its command registers names it, so that a
+ * cancel of the holder cancels the run.
+ */
+export const TurnVariable = "GSHARP_JOB_QUEUE_GPU_TURN";
 /** Set by gpu-lock.js for the command it runs (the lock directory): that command already holds the GPU lock. */
 export const GpuLockHeldVariable = "GSHARP_GPU_LOCK_HELD";
 export const CommandVariable = "GSHARP_JOB_QUEUE_COMMAND";
