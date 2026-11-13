@@ -262,6 +262,23 @@ public class NullableDifferentialTests
         OracleIsLaunch = true,
     };
 
+    internal static readonly DifferentialCase s_nullLiteralCastToArray = new(
+        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullLiteralCastToArrayKernel)}")
+    {
+        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
+        Inputs = static (rng, rows) => new DiffBuffers()
+            .In("a", DiffValues.Int32(rng, rows))
+            .Out<int>(
+                "dst",
+                rows,
+                ["cast_is_null", "picked_is_null", "parenthesized_is_null", "coalesce_keeps_array"],
+                OutputPolicy.Exact),
+        Launch = static (b, s) => NullableDifferentialKernels.LaunchNullLiteralCastToArrayKernel(
+            b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
+            gridDimX: s.GridX, blockDimX: s.BlockX),
+        OracleIsLaunch = true,
+    };
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -338,4 +355,11 @@ public class NullableDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void NullableOperations_LiftedDoubleToNullableIntCast_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_liftedDoubleToNullableIntCast);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void NullableOperations_NullLiteralCastToArray_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_nullLiteralCastToArray);
 }

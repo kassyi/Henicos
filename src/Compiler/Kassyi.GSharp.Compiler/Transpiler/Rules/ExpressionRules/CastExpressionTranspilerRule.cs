@@ -177,6 +177,17 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             return;
         }
 
+        // (int[])null and (int[])null!: the empty view of the target type, whose data is nullptr; the view has no
+        // constructor from nullptr, so (GSharpArray<int>)nullptr would not compile
+        if (targetType is { } arrayType && arrayType.IsArrayLikeType() &&
+            NullRepresentation.SkipNullPreservingConversions(node.Expression, model)
+                .IsKind(SyntaxKind.NullLiteralExpression))
+        {
+            context.Emitter.Dialect.AppendType(ref context, arrayType);
+            context.Emitter.Writer.Append("()");
+            return;
+        }
+
         using (context.Emitter.Writer.Parentheses())
         {
             context.Emitter.Dialect.AppendType(ref context, targetType);

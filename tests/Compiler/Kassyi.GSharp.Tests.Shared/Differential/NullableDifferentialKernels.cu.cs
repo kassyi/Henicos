@@ -459,4 +459,28 @@ public static partial class NullableDifferentialKernels
         dst[col + 0] = i == null ? 1 : 0;
         dst[col + 1] = i.HasValue ? i.Value : -999;
     }
+
+    // -------------------------------------------------------------------------
+    // A null literal cast to an array type: the empty view, whose data is null
+    // -------------------------------------------------------------------------
+    [GpuKernel]
+    public static void NullLiteralCastToArrayKernel(int[] a, int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        int[] cast = (int[])null!;
+        int[] picked = a[t] > 0 ? (int[])null! : a;
+        int[] parenthesized = ((int[])(null))!;
+        int[] viaCoalesce = (int[]?)null ?? a;
+
+        int col = t * 4;
+        dst[col + 0] = cast == null ? 1 : 0;
+        dst[col + 1] = picked == null ? 1 : 0;
+        dst[col + 2] = parenthesized == null ? 1 : 0;
+        dst[col + 3] = viaCoalesce.Length == a.Length ? 1 : 0;
+    }
 }

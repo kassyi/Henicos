@@ -91,7 +91,7 @@ internal static class NullRepresentation
 
     // Parentheses, the null-forgiving operator (a!) and casts from one array-like type to another ((int[])a) do not
     // change whether a value is null
-    private static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)
+    internal static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)
     {
         while (true)
         {
