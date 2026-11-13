@@ -77,8 +77,10 @@ export function outcomeOfEnd(end: CommandEnd, cancelPending: boolean): Outcome {
 export type Registration =
   /** A new record: under the id asked for when it is free (or held by a stub), else the next id. */
   | { kind: "create" }
-  /** A new record under a new id: the id belongs to another client or has a final outcome. `finalize`: the old
-   * record of the same client ends as lost. */
+  /**
+   * A new record under a new id: the id belongs to another client or has a final outcome. `finalize`: the old record
+   * of the same client ends as lost.
+   */
   | { kind: "create-as-new-id"; finalize: boolean }
   /** The job was cancelled while its client was away. */
   | { kind: "refuse-cancelled" }
@@ -145,8 +147,10 @@ export function planClose(job: JobFacts, stopping: boolean, clientAlive: boolean
 /** What an observation of a detached record's processes leads to. */
 export type ObservationStep =
   | "keep"
-  /** The command is gone: free its slots; `final` when no report can come any more, else the record waits as
-   * provisionally lost. */
+  /**
+   * The command is gone: free its slots; `final` when no report can come any more, else the record waits as
+   * provisionally lost.
+   */
   | { freeSlots: true; final: boolean }
   | { finalize: "lost" };
 

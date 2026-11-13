@@ -30,7 +30,7 @@ import { MachineProfile } from "./machine.ts";
 import { Scheduler, type Expected } from "./scheduler.ts";
 import { Connection } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
-import { planObservation, type Phase } from "./server-job-state.ts";
+import { cancelTargets, planObservation, type Phase } from "./server-job-state.ts";
 
 /** What one observation saw of a detached record, and the epoch of the record it read. */
 export interface Observation {
@@ -512,6 +512,8 @@ export class JobServer {
   /** Cancels jobs and resolves to the ids it cancelled: a job that ended meanwhile (while the processes of lost
    * clients were read) is left out. */
   async cancel(requested: ServerJob[]): Promise<number[]> {
+    // A GPU holder is cancelled with the --gpu run whose turn started it, so that the run ends as cancelled
+    requested = cancelTargets(requested, this.scheduler.running.concat(this.scheduler.waiting));
     const orphans = requested.filter((job) => job.connection === null && job.phase === "running");
     const live = await this.orphanProcesses(orphans);
     orphans.forEach((_, index) => (live[index] ?? []).forEach(ProcessTable.killTree));

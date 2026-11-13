@@ -19,6 +19,7 @@ import {
   BaseProtocolVersion,
   ShellVariable,
   TimedOutExitCode,
+  TurnVariable,
   UsageExitCode,
   type ShellName,
 } from "./constants.ts";
@@ -79,6 +80,7 @@ async function stopUnder(parent: ChildProcess): Promise<void> {
 function runGpuLocked(
   options: RunOptions,
   weight: number,
+  turn: number,
   onChild: (child: ChildProcess) => void,
 ): Promise<ShellResult> {
   const innerArgs = [`"${process.execPath}"`, `"${EntryScript}"`, "run", "--weight", String(weight)];
@@ -90,6 +92,7 @@ function runGpuLocked(
   const env = {
     ...process.env,
     [InGpuLockVariable]: "1",
+    [TurnVariable]: turn > 0 ? String(turn) : "",
     [CommandVariable]: options.command,
     [ShellVariable]: CommandShell.resolve(options.shell).name, // gpu-lock.js runs the inner client through cmd.exe
   };
@@ -320,7 +323,7 @@ class QueuedRun {
       prefix(
         `the GPU turn of #${jobId} came after ${Math.round((Date.now() - this.queuedAt) / 1000)}s; taking the GPU lock`,
       );
-      const { code, signaled } = await runGpuLocked(options, placement.weight, (c) => this.started(c));
+      const { code, signaled } = await runGpuLocked(options, placement.weight, jobId, (c) => this.started(c));
       this.finish(code, !signaled);
       return;
     }
@@ -457,7 +460,7 @@ class QueuedRun {
       prefix("the scheduler of an older checkout has no GPU turns; waiting for the GPU lock directly");
       this.registered = false;
       this.state = "running";
-      void runGpuLocked(this.options, this.placement.weight, (c) => (this.child = c)).then(({ code }) =>
+      void runGpuLocked(this.options, this.placement.weight, 0, (c) => (this.child = c)).then(({ code }) =>
         process.exit(code),
       );
       return;
@@ -531,6 +534,8 @@ class QueuedRun {
       after: options.after > 0 ? options.after : null,
       keepIfFailed: options.keepIfFailed,
       gpuTurn: this.gpuTurn,
+      // A GPU holder names the --gpu run that started it: a cancel of the holder cancels that run
+      turn: this.inGpuLock ? Number(process.env[TurnVariable]) || null : null,
     };
     send(current, { version: wireVersion(registration), ...registration });
   }

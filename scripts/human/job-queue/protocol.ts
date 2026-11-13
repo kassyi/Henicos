@@ -24,6 +24,8 @@ export interface JobRequest {
   keepIfFailed: boolean;
   /** run --gpu: wait for the turn at the GPU (see SchedulerJob.gpuTurn). */
   gpuTurn: boolean;
+  /** A GPU holder: the id of the --gpu run whose turn started it (absent from older clients). */
+  turn?: number | null;
 }
 
 export type ClientMessage =

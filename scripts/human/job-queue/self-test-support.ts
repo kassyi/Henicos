@@ -17,6 +17,7 @@ import {
   ProtocolVersion,
   ShellVariable,
   StateDirectoryVariable,
+  TurnVariable,
 } from "./constants.ts";
 import { connect, request } from "./client-connect.ts";
 import { onMessages, type Incoming, type StatusJob, type StatusReply } from "./protocol.ts";
@@ -159,6 +160,7 @@ export class QueueFixture {
     delete env[JobVariable];
     delete env[InGpuLockVariable];
     delete env[CpusVariable];
+    delete env[TurnVariable];
     delete env[GpuLockHeldVariable]; // a self-test run under gpu-lock.js must still queue its GPU-less clients
     env[StateDirectoryVariable] = this.dir; // a scheduler that a client starts logs here, not into the main checkout
     // The test commands below are written for cmd / sh; the shells themselves are checked in part 6.
@@ -204,6 +206,25 @@ export class QueueFixture {
     const child = spawn(process.execPath, args, { stdio: "ignore", windowsHide: true, env: this.env }) as Client;
     this.children.push(child);
     child.done = new Promise((resolve) => child.on("close", resolve));
+    return child;
+  };
+
+  /** Runs `wait <id> --json` against the scheduler on `port`; output() is what it printed. */
+  readonly waiter = (port: number, id: number): Client & { output: () => string } => {
+    let output = "";
+    const child = spawn(
+      process.execPath,
+      [EntryScript, "wait", String(id), "--json", "--port", String(port), "--slots", "2"],
+      {
+        stdio: ["ignore", "pipe", "ignore"],
+        windowsHide: true,
+        env: this.env,
+      },
+    ) as Client & { output: () => string };
+    this.children.push(child);
+    child.stdout?.on("data", (data: Buffer) => (output += data.toString()));
+    child.done = new Promise((resolve) => child.on("close", resolve));
+    child.output = () => output;
     return child;
   };
 
