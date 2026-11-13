@@ -7,7 +7,7 @@ const fs = require('fs');
 const {
   MaxQuestionLength,
   clip,
-  extractQuestion,
+  extractReply,
   lastTextOf,
   claudeAssistantText,
   antigravityPlannerText,
@@ -33,11 +33,17 @@ function interpret(payload, now) {
 }
 
 function waiting(kind, now, question, options) {
-  return { state: 'waiting', kind, since: now, question: question ?? null, options: options ?? null };
+  return { state: 'waiting', kind, since: now, question: question ?? null, options: options ?? null, asks: null };
+}
+
+/** A turn that ended: the paragraph that asks (or the last one), and whether it asks. */
+function replied(now, text) {
+  const reply = extractReply(text);
+  return { ...waiting('reply', now, reply?.question), asks: reply?.asks ?? false };
 }
 
 function working(now) {
-  return { state: 'working', kind: null, since: now, question: null, options: null };
+  return { state: 'working', kind: null, since: now, question: null, options: null, asks: null };
 }
 
 function interpretClaude(payload, now) {
@@ -54,7 +60,7 @@ function interpretClaude(payload, now) {
           if (!text && payload.transcript_path && fs.existsSync(payload.transcript_path)) {
             text = lastTextOf(payload.transcript_path, claudeAssistantText);
           }
-          return waiting('reply', now, extractQuestion(text));
+          return replied(now, text);
         },
       };
     case 'PreToolUse':
@@ -109,14 +115,14 @@ function interpretAntigravity(payload, now) {
         output: '{}',
         update: () => {
           if (payload.fullyIdle !== true) {
-            return { state: 'background', kind: null, since: now, question: null, options: null };
+            return { state: 'background', kind: null, since: now, question: null, options: null, asks: null };
           }
           let text = null;
           if (typeof payload.transcriptPath === 'string' && payload.transcriptPath !== '') {
             const file = firstExisting(antigravityTranscripts(payload.transcriptPath));
             text = file ? lastTextOf(file, antigravityPlannerText) : null;
           }
-          return waiting('reply', now, extractQuestion(text));
+          return replied(now, text);
         },
       };
     case 'PreInvocation':
