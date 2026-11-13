@@ -153,17 +153,16 @@ internal static class SymbolExtensions
     // The same type, or one that holds the other as a field, directly or through the fields of its fields
     private static bool MayShareMemory(ITypeSymbol first, ITypeSymbol second) =>
         SymbolEqualityComparer.Default.Equals(first, second) ||
-        HoldsAsField(first, second, MaxFieldDepth) ||
-        HoldsAsField(second, first, MaxFieldDepth);
+        HoldsAsField(first, second, []) ||
+        HoldsAsField(second, first, []);
 
-    // A struct is a value that holds its instance fields, so a field of a field type is memory inside it. The depth
-    // bound stops a type that no struct can nest (a primitive type declares a field of its own type)
-    private const int MaxFieldDepth = 8;
-
-    private static bool HoldsAsField(ITypeSymbol holder, ITypeSymbol field, int depth)
+    // A struct is a value that holds its instance fields, so a field of a field type is memory inside it, at any depth.
+    // No struct holds itself, but a primitive type declares a field of its own type (and a type with an error may be
+    // cyclic), so each struct is entered once
+    private static bool HoldsAsField(ITypeSymbol holder, ITypeSymbol field, HashSet<ITypeSymbol> entered)
     {
-        if (depth == 0 ||
-            holder is not INamedTypeSymbol { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None } named)
+        if (holder is not INamedTypeSymbol { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None } named ||
+            !entered.Add(holder))
         {
             return false;
         }
@@ -171,10 +170,10 @@ internal static class SymbolExtensions
         return named.GetMembers()
             .AsStackEnumerable()
             .OfType<IFieldSymbol>()
-            .Any((field, depth), static (member, state) =>
+            .Any((field, entered), static (member, state) =>
                 !member.IsStatic && !member.IsConst &&
                 (SymbolEqualityComparer.Default.Equals(member.Type, state.field) ||
-                    HoldsAsField(member.Type, state.field, state.depth - 1))
+                    HoldsAsField(member.Type, state.field, state.entered))
             );
 
     /// <summary>T of <see cref="Nullable{T}"/>, or <paramref name="type"/> itself.</summary>

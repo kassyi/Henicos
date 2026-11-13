@@ -831,4 +831,36 @@ public sealed class MarshalingOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void InOverlap_InStructBesideARefToOneOfItsFields_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_inStructAndRefField);
+
+    internal static readonly DifferentialCase s_inDeepFieldAndRefStruct = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InDeepFieldAndRefStructKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 1, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 15;
+            b.Get<int>("final")[0] = 15;
+        },
+        Launch = static (b, s) =>
+        {
+            var nest = default(DiffNest10);
+            nest.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Value = 5;
+            MarshalingOverlapDifferentialKernels.LaunchInDeepFieldAndRefStructKernel(
+                in nest.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Value,
+                ref nest,
+                b.Get<int>("observed"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = nest.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Value;
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InOverlap_InFieldTenStructsDeepBesideARefToTheVariable_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_inDeepFieldAndRefStruct);
 }

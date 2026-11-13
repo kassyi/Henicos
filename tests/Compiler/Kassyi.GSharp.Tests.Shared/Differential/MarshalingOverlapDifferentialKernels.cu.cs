@@ -13,6 +13,57 @@ public struct DiffOverlapPoint
     public int Y;
 }
 
+/// <summary>Ten structs nested in one another, the innermost holding one int.</summary>
+public struct DiffNest1
+{
+    public int Value;
+}
+
+public struct DiffNest2
+{
+    public DiffNest1 Inner;
+}
+
+public struct DiffNest3
+{
+    public DiffNest2 Inner;
+}
+
+public struct DiffNest4
+{
+    public DiffNest3 Inner;
+}
+
+public struct DiffNest5
+{
+    public DiffNest4 Inner;
+}
+
+public struct DiffNest6
+{
+    public DiffNest5 Inner;
+}
+
+public struct DiffNest7
+{
+    public DiffNest6 Inner;
+}
+
+public struct DiffNest8
+{
+    public DiffNest7 Inner;
+}
+
+public struct DiffNest9
+{
+    public DiffNest8 Inner;
+}
+
+public struct DiffNest10
+{
+    public DiffNest9 Inner;
+}
+
 /// <summary>
 /// Kernels that receive overlapping memory through two or more parameters: slices of one array, a span and its array, a
 /// <c>ref</c> to an element and its array, views of one array with different element types, one variable twice.
@@ -377,6 +428,17 @@ public static partial class MarshalingOverlapDifferentialKernels
         {
             field += 10;
             observed[0] = whole.Y;
+        }
+    }
+
+    // The in is an int ten structs deep in the variable that the ref receives
+    [GpuKernel]
+    public static void InDeepFieldAndRefStructKernel(in int field, ref DiffNest10 whole, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            whole.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Value += 10;
+            observed[0] = field;
         }
     }
 }
