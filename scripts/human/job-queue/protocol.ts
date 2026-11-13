@@ -14,6 +14,8 @@ export interface JobRequest {
   commandPid: number;
   spawnedAt: number;
   cwd: string;
+  /** The root of the worktree of cwd (absent from older clients: the scheduler then takes cwd). */
+  worktree?: string;
   command: string;
   queuedAt: number;
   /** The job id it had, kept across a restart; 0 for a new job. */
@@ -67,6 +69,8 @@ export interface JobView {
   commandPid: number | null;
   orphan: boolean;
   cwd: string;
+  /** The worktree it takes its turns for (absent from older schedulers). */
+  worktree?: string;
   command: string;
   queuedAt: number;
   grantedAt: number | null;
