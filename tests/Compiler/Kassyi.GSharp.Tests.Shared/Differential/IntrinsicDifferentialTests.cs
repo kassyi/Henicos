@@ -183,10 +183,13 @@ public class IntrinsicDifferentialTests
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         // A thread reads each counter twice; the counter only grows while the launch runs, so the second reading of
-        // Clock64 is not below the first, and the 32-bit Clock, which wraps, moves forward by less than 2^31 between
-        // them.
+        // Clock64 is not below the first. Clock is the low 32 bits of the same counter (PTX: %clock is the low half
+        // of %clock64; the CPU paths truncate their nanoseconds) and is read inside the two Clock64 readings, so it
+        // moves forward, modulo 2^32, by no more than Clock64 does. No bound on the time between the readings: a
+        // thread may be stopped for seconds on a busy machine, and the CPU paths count nanoseconds.
         // mutant: src/Compiler/Kassyi.GSharp.Compiler/Resources/Prelude/ThreadAndMemory.hpp `std::chrono::steady_clock`
-        // -> a counter that counts down (`0ull - ...count()`)
+        // -> a counter that counts down (`0ull - ...count()`); `__gsharp_clock` alone counting down
+        // (`(unsigned int)(0ull - __gsharp_clock64())`) fails the Clock check
         // input: every thread
         Verify = static (actual, s) =>
         {
@@ -200,10 +203,13 @@ public class IntrinsicDifferentialTests
                         $"Gpu.Clock64() of thread {i} went back: {output[o]} then {output[o + 1]}.");
                 }
 
-                if ((uint)output[o + 3] - (uint)output[o + 2] >= 0x8000_0000u)
+                ulong elapsed64 = output[o + 1] - output[o];
+                uint elapsed = (uint)output[o + 3] - (uint)output[o + 2];
+                if (elapsed64 <= uint.MaxValue && elapsed > elapsed64)
                 {
                     return PropertyResult.Fail(
-                        $"Gpu.Clock() of thread {i} went back: {output[o + 2]} then {output[o + 3]}.");
+                        $"Gpu.Clock() of thread {i} moved {elapsed} ({output[o + 2]} then {output[o + 3]}), "
+                        + $"more than Gpu.Clock64() around it moved ({elapsed64}).");
                 }
             }
 
