@@ -162,6 +162,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1439989105u, "MarshalingAl
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(529053070u, "MarshalingAliasingDifferentialKernels.cs", 338, 115, "InArrayMutationIsolationKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1045355971u, "MarshalingAliasingDifferentialKernels.cs", 338, 115, "InArrayMutationIsolationKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(383947593u, "MarshalingAliasingDifferentialKernels.cs", 351, 19, "OutArrayStridedWriteKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(278191834u, "MarshalingAliasingDifferentialKernels.cs", 351, 34, "OutArrayStridedWriteKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1525819285u, "MarshalingAliasingDifferentialKernels.cs", 353, 13, "OutArrayStridedWriteKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2124325429u, "MarshalingAliasingDifferentialKernels.cs", 353, 29, "OutArrayStridedWriteKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(276517094u, "MarshalingAliasingDifferentialKernels.cs", 354, 13, "OutArrayStridedWriteKernel", "G#: a null array is read"),
@@ -5778,7 +5779,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_4_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_4_tid<__gsharp_array_ref(__gsharp_id_0_src, 383947593u).length&&(__gsharp_id_4_tid%__gsharp_id_3_writeStride)==0)
+if(__gsharp_id_4_tid<__gsharp_array_ref(__gsharp_id_0_src, 383947593u).length&&(__gsharp_rem_i32(__gsharp_id_4_tid,__gsharp_id_3_writeStride,278191834u))==0)
 {
 __gsharp_array_at(__gsharp_id_1_dstPrim, __gsharp_id_4_tid, 1525819285u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_0_src, __gsharp_id_4_tid, 2124325429u),10),1);
 __gsharp_array_at(__gsharp_id_2_dstConvert, __gsharp_id_4_tid, 276517094u)=([&]() {
@@ -5887,7 +5888,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int tid = (global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X) + global::Kassyi.GSharp.Core.ThreadIndex.X;
-if (tid < src.Length && (tid % writeStride) == 0)
+if (tid < src.Length && (global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(tid, writeStride)) == 0)
 {
 dstPrim[tid] = (src[tid] * 10) + 1;
 dstConvert[tid] = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded

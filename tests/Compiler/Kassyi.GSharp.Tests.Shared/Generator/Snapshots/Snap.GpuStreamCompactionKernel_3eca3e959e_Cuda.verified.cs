@@ -244,7 +244,7 @@ __gsharp_launch_epoch = __gsharp_epoch;
 __shared__ unsigned int __gsharp_id_7_sharedMem[2176];
 int __gsharp_id_8_tid = (int)threadIdx.x;
 int __gsharp_id_9_bIdx = (int)blockIdx.x;
-int __gsharp_id_10_elementsPerBlock = __gsharp_mul_i32((int)blockDim.x,2);
+int __gsharp_id_10_elementsPerBlock = (int)blockDim.x*2;
 int __gsharp_id_11_globalOffset = __gsharp_mul_i32(__gsharp_id_9_bIdx,__gsharp_id_10_elementsPerBlock);
 int __gsharp_id_12_treeSize = __gsharp_id_10_elementsPerBlock;
 int __gsharp_id_13_stride = 1;
@@ -581,7 +581,7 @@ public const string AddBlockSums_Source = @"extern ""C"" __global__ void __gshar
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_4_bIdx = (int)blockIdx.x;
-int __gsharp_id_5_elementsPerBlock = __gsharp_mul_i32((int)blockDim.x,2);
+int __gsharp_id_5_elementsPerBlock = (int)blockDim.x*2;
 int __gsharp_id_6_globalOffset = __gsharp_mul_i32(__gsharp_id_4_bIdx,__gsharp_id_5_elementsPerBlock);
 int __gsharp_id_7_globalA = __gsharp_add_i32(__gsharp_id_6_globalOffset,__gsharp_id_3_tid);
 int __gsharp_id_8_globalB = __gsharp_add_i32(__gsharp_add_i32(__gsharp_id_6_globalOffset,__gsharp_id_3_tid),__gsharp_id_5_elementsPerBlock/2);

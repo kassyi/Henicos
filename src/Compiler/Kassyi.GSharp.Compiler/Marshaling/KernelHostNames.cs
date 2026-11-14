@@ -97,7 +97,27 @@ internal static class KernelHostNames
     public static string GetTypedPointerLaunchName(in KernelHostModel kernel) => GetLaunchName(kernel) + PointerSuffix;
 
     /// <summary>The name of the <c>IntPtr</c> launch wrapper: public for a kernel that is not overloaded, private otherwise.</summary>
-    public static string GetPointerLaunchName(in KernelEmission kernel) => LaunchPrefix + kernel.MemberKey + PointerSuffix;
+    public static string GetPointerLaunchName(in KernelEmission kernel) => GetPointerLaunchName(kernel.MemberKey);
+
+    /// <summary>The name of the <c>IntPtr</c> launch wrapper of the kernel keyed <paramref name="memberKey"/>.</summary>
+    public static string GetPointerLaunchName(string memberKey) => LaunchPrefix + memberKey + PointerSuffix;
+
+    /// <summary>The error site table that the wrapper class declares when its kernels have error sites.</summary>
+    public const string ErrorSitesFieldName = "s_errorSites";
+
+    /// <summary>
+    /// The constant that holds the generated source of a kernel with <c>GSharpEmitSource</c>, <c>{key}_Source</c>.
+    /// </summary>
+    public static string GetSourceConstantName(string memberKey) => memberKey + "_Source";
+
+    /// <summary>
+    /// The suffix of the per-kernel host members (<see cref="KernelEmission.MemberKey"/>): the name, or
+    /// <c>{name}__o{n}</c> for an overloaded kernel.
+    /// </summary>
+    public static string GetMemberKey(in KernelHostModel kernel, bool isOverloaded) =>
+        isOverloaded
+            ? $"{kernel.Name}__o{kernel.OverloadOrdinal.ToString(CultureInfo.InvariantCulture)}"
+            : kernel.Name;
 
     /// <summary>The class-qualified <see cref="GetPointerLaunchName"/> call target, so a parameter of the same name cannot shadow it.</summary>
     public static string GetQualifiedPointerLaunchName(in KernelEmission kernel) =>
@@ -177,35 +197,6 @@ internal static class KernelHostNames
         }
 
         writer.Append(')');
-        return writer.ToString();
-    }
-
-    /// <summary>
-    /// The parameter list as C# sees it in the wrapper: <c>ref</c> / <c>out</c> are part of the signature, <c>in</c> is
-    /// not. With <paramref name="typedPointers"/>, a device pointer is the <c>GpuBuffer&lt;T&gt;</c> of the typed wrapper.
-    /// </summary>
-    public static string GetSignatureKey(EquatableArray<KernelParameterShape> parameters, bool typedPointers)
-    {
-        using var writer = new SourceWriter();
-        foreach (var parameter in parameters)
-        {
-            if (typedPointers && parameter.TryAppendTypedBuffer(writer))
-            {
-                writer.Append(';');
-                continue;
-            }
-
-            if (!typedPointers)
-            {
-                AppendRefKind(
-                    writer,
-                    parameter.RefKind is RefKind.In && !parameter.IsInReference ? RefKind.None : parameter.RefKind
-                );
-            }
-
-            writer.Append(parameter.TypeName).Append(';');
-        }
-
         return writer.ToString();
     }
 
