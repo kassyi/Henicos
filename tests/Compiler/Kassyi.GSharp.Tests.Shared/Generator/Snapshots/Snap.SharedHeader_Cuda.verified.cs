@@ -556,6 +556,22 @@ template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
 __device__ inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
 template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
 __device__ inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
+// The range of Array.Reverse(array, index, count): .NET throws ArgumentOutOfRangeException for a negative start or
+// count and ArgumentException when the range passes the end
+__device__ inline GSharpArray<T> AsSpanOfArray(int start, int count, const char* outOfRangeMessage, const char* argumentMessage) const {
+#ifdef GSHARP_CHECKED
+if (start < 0 || count < 0) {
+__gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, outOfRangeMessage);
+return GSharpArray<T>();
+}
+if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
+static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+__gsharp_trap(GSharpErrorCode::Argument, argumentMessage);
+return GSharpArray<T>();
+}
+#endif
+return GSharpArray<T>(data + start, count);
+}
 __device__ inline bool IsEmpty() const { return length <= 0; }
 
 // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
