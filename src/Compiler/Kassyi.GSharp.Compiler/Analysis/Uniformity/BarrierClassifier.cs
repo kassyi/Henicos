@@ -70,7 +70,7 @@ internal sealed class BarrierClassifier(UniformityState state)
 
         var masks = GetSiteMasks(call);
         var callee = invocation.TargetMethod;
-        return state.Reader.TryGetDeviceFunction(callee, out var definition, out var declaration)
+        return state.Reader.TryGetSummarizedCallee(callee, out var definition, out var declaration)
             ? GetLocalCallSiteDivergence(call, definition, declaration, masks)
             : GetImportedCallSiteDivergence(call, callee, masks);
     }
@@ -347,7 +347,7 @@ internal sealed class BarrierClassifier(UniformityState state)
     {
         if (!state.Recorder.Sites.TryGetValue(call, out var site) ||
             site.Call is not { } invocation ||
-            !state.Reader.TryGetDeviceFunction(invocation.TargetMethod, out var definition, out var declaration))
+            !state.Reader.TryGetSummarizedCallee(invocation.TargetMethod, out var definition, out var declaration))
         {
             return BarrierDivergence.None;
         }

@@ -151,4 +151,154 @@ public static partial class PropertyVarianceKernels
         Gpu.SyncThreads();
         result[ThreadIndex.X] = 1;
     }
+
+    public struct Lanes
+    {
+        public int X;
+
+        public Lanes(int x)
+        {
+            X = x + ThreadIndex.X;
+        }
+
+        public static int operator +(Lanes a, int b) => ThreadIndex.X + b;
+
+        public static Lanes operator -(Lanes a, Lanes b) => new Lanes(0);
+
+        public static int operator ~(Lanes a) => ThreadIndex.X;
+
+        public static implicit operator int(Lanes a) => ThreadIndex.X;
+
+        public void Set(int value)
+        {
+            X = value;
+        }
+
+        public readonly int Get() => X;
+    }
+
+    // A user-defined binary operator that returns the lane
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void BinaryOperatorKernel(int[] result)
+    {
+        var lanes = default(Lanes);
+        if (lanes + 1 < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    // A user-defined operator that returns a struct whose constructor stores the lane
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void StructOperatorKernel(int[] result)
+    {
+        var a = default(Lanes);
+        var b = default(Lanes);
+        var difference = a - b;
+        if (difference.X < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    // A user-defined unary operator that returns the lane
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void UnaryOperatorKernel(int[] result)
+    {
+        var lanes = default(Lanes);
+        if (~lanes < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    // A user-defined implicit conversion that returns the lane
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void ConversionKernel(int[] result)
+    {
+        var lanes = default(Lanes);
+        int converted = lanes;
+        if (converted < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    // A constructor that stores the lane in a field
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void ConstructorKernel(int[] result)
+    {
+        var lanes = new Lanes(0);
+        if (lanes.X < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    // A member that writes the lane into its receiver, read back through a field and through a readonly member
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void ReceiverWriteKernel(int[] result)
+    {
+        var lanes = default(Lanes);
+        lanes.Set(ThreadIndex.X);
+        if (lanes.X < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void ReceiverWriteMemberReadKernel(int[] result)
+    {
+        var lanes = default(Lanes);
+        lanes.Set(ThreadIndex.X);
+        if (lanes.Get() < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    // Not reported: the same member with a uniform value
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void UniformReceiverWriteKernel(int[] result, int n)
+    {
+        var lanes = default(Lanes);
+        lanes.Set(n);
+        if (lanes.X < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
 }

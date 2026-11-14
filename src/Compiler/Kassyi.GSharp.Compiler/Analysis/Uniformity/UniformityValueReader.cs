@@ -35,9 +35,26 @@ internal sealed class UniformityValueReader(UniformityState state)
                 EvaluateCall(refCall, graph, current) | recorder.Memory.Read(refCall, current),
             IInvocationOperation invocation => EvaluateCall(invocation, graph, current),
             IFlowAnonymousFunctionOperation => ThreadVariance.Uniform,
+            IInstanceReferenceOperation { Type: { } self } =>
+                recorder.TryGetValue(self, out var thisIndex) ? current[thisIndex] : ThreadVariance.Uniform,
             IPropertyReferenceOperation { Property.GetMethod: { } getter } read
-                when TryGetDeviceFunction(getter, out var callee, out var declaration) =>
+                when TryGetSummarizedCallee(getter, out var callee, out var declaration) =>
                 EvaluateGetter(read, callee, declaration, graph, current),
+            IObjectCreationOperation { Constructor: { } constructor } creation
+                when TryGetSummarizedCallee(constructor, out var constructorCallee, out var constructorDeclaration) =>
+                GetCalleeSummary(constructorCallee, constructorDeclaration,
+                    GetArgumentMasks(creation.Arguments, graph, current)).This,
+            IBinaryOperation { OperatorMethod: { } binaryOperator } binary =>
+                EvaluateOperator(binary, binaryOperator, binary.LeftOperand, binary.RightOperand, graph, current),
+            IUnaryOperation { OperatorMethod: { } unaryOperator } unary =>
+                EvaluateOperator(unary, unaryOperator, unary.Operand, null, graph, current),
+            IConversionOperation { OperatorMethod: { } conversionOperator } conversion =>
+                EvaluateOperator(conversion, conversionOperator, conversion.Operand, null, graph, current),
+            IIncrementOrDecrementOperation { OperatorMethod: { } incrementOperator } increment =>
+                EvaluateOperator(increment, incrementOperator, increment.Target, null, graph, current),
+            ICompoundAssignmentOperation { OperatorMethod: { } compoundOperator } compoundCall =>
+                EvaluateOperator(compoundCall, compoundOperator, compoundCall.Target, compoundCall.Value, graph,
+                    current),
             IArrayElementReferenceOperation or IPropertyReferenceOperation { Property.IsIndexer: true } =>
                 EvaluateOperands(operation, graph, current) | recorder.Memory.Read(operation, current),
             ISimpleAssignmentOperation assignment => Evaluate(assignment.Value, graph, current),
@@ -67,11 +84,11 @@ internal sealed class UniformityValueReader(UniformityState state)
     }
 
     /// <summary>
-    /// A device function with a body in this compilation: a <c>[GpuDeviceFunction]</c>, or a method or property getter
-    /// of a struct that G# defines on the device (<paramref name="declaration"/> is then the method or accessor
-    /// declaration, or the expression body of the property).
+    /// A function with a body in this compilation whose calls are summarized: a <c>[GpuDeviceFunction]</c>, or a
+    /// method, property getter, operator, conversion or constructor of a struct that G# defines on the device
+    /// (<paramref name="declaration"/> is then its declaration, or the expression body of the property).
     /// </summary>
-    public bool TryGetDeviceFunction(IMethodSymbol method, [NotNullWhen(true)] out IMethodSymbol? callee,
+    public bool TryGetSummarizedCallee(IMethodSymbol method, [NotNullWhen(true)] out IMethodSymbol? callee,
         [NotNullWhen(true)] out SyntaxNode? declaration)
     {
         callee = (method.ReducedFrom ?? method).OriginalDefinition;
@@ -82,7 +99,12 @@ internal sealed class UniformityValueReader(UniformityState state)
             return true;
         }
 
-        if (callee is { MethodKind: MethodKind.Ordinary or MethodKind.PropertyGet, ContainingType: { } type } &&
+        if (callee is
+            {
+                MethodKind: MethodKind.Ordinary or MethodKind.PropertyGet or MethodKind.UserDefinedOperator
+                or MethodKind.Conversion or MethodKind.Constructor,
+                ContainingType: { } type
+            } &&
             GlobalCppNames.IsEmittedUserType(type) &&
             callee.TryGetDeclaringSyntax(out declaration) &&
             compilation.ContainsSyntaxTree(declaration.SyntaxTree) &&
@@ -190,10 +212,13 @@ internal sealed class UniformityValueReader(UniformityState state)
             }
         }
 
+        var self = state.Recorder.TryGetValue(state.Method.ContainingType, out var thisIndex)
+            ? state.In[state.Graph.Exit][thisIndex]
+            : ThreadVariance.Uniform;
         var (memory, fieldMemory, barrierOnEveryPath) =
             state.Recorder.Memory.Summarize(state.Method, state.In[state.Graph.Exit]);
         return new CalleeVariance(returned, byReference, state.Barriers.SummarizeBarriers(), memory, fieldMemory,
-            barrierOnEveryPath);
+            barrierOnEveryPath, self);
     }
 
     // A parameter of the analyzed method has a value from the start; one of a lambda or local function that is not
@@ -225,7 +250,7 @@ internal sealed class UniformityValueReader(UniformityState state)
                 : ThreadVariance.Block;
         }
 
-        if (TryGetDeviceFunction(method, out var callee, out var declaration))
+        if (TryGetSummarizedCallee(method, out var callee, out var declaration))
         {
             return GetCallVariance(callee, declaration, invocation, graph, current).Return |
                    EvaluateReceiver(invocation.Instance, graph, current);
@@ -237,13 +262,47 @@ internal sealed class UniformityValueReader(UniformityState state)
             : operands;
     }
 
-    // A method or accessor with a block or expression body, or the expression body of a property or indexer
+    // A method, operator, conversion, constructor or accessor with a block or expression body, or the expression body
+    // of a property or indexer
     private static bool HasBody(SyntaxNode declaration) => declaration switch
     {
-        MethodDeclarationSyntax method => method.HasBody(),
+        BaseMethodDeclarationSyntax method => method.Body != null || method.ExpressionBody != null,
         AccessorDeclarationSyntax accessor => accessor.Body != null || accessor.ExpressionBody != null,
         _ => declaration is ArrowExpressionClauseSyntax
     };
+
+    // A user-defined operator or conversion with a body returns what its summary says for the variance of its operands
+    // (by ordinal); any other is as variant as its operands
+    private ThreadVariance EvaluateOperator(IOperation operation, IMethodSymbol method, IOperation first,
+        IOperation? second, ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        if (!TryGetSummarizedCallee(method, out var callee, out var declaration))
+        {
+            return EvaluateOperands(operation, graph, current);
+        }
+
+        ulong blockMask = 0;
+        ulong gridMask = 0;
+        AddOperandMask(Evaluate(first, graph, current), 0, ref blockMask, ref gridMask);
+        if (second != null)
+        {
+            AddOperandMask(Evaluate(second, graph, current), 1, ref blockMask, ref gridMask);
+        }
+
+        return GetCalleeSummary(callee, declaration, new ArgumentMasks(blockMask, gridMask)).Return;
+    }
+
+    private static void AddOperandMask(ThreadVariance variance, int ordinal, ref ulong blockMask, ref ulong gridMask)
+    {
+        if (variance == ThreadVariance.Block)
+        {
+            blockMask |= ArgumentMasks.Bit(ordinal);
+        }
+        else if (variance == ThreadVariance.Grid)
+        {
+            gridMask |= ArgumentMasks.Bit(ordinal);
+        }
+    }
 
     // A getter with a body returns what its body returns for the variance of the indexer arguments; an indexer also
     // reads the memory it is an element of

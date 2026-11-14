@@ -113,31 +113,48 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
             actual);
     }
 
-    [Fact]
+    // The line of the barrier GSH0083 is reported at, 0 when nothing is reported
+    [Theory]
     [Scenario(TestScenario.SadPath)]
-    public async Task PropertyResults_GettersWithBodies_FollowTheGetterBody()
+    [InlineData("ExpressionGetterKernel", 37)]
+    [InlineData("BlockGetterKernel", 51)]
+    [InlineData("IndexerGetterKernel", 65)]
+    [InlineData("MemberKernel", 79)]
+    [InlineData("UniformGetterKernel", 0)]
+    [InlineData("VariantReceiverKernel", 110)]
+    [InlineData("DirectConditionKernel", 124)]
+    [InlineData("DeviceFunctionMemberKernel", 148)]
+    [InlineData("BinaryOperatorKernel", 188)]
+    [InlineData("StructOperatorKernel", 205)]
+    [InlineData("UnaryOperatorKernel", 220)]
+    [InlineData("ConversionKernel", 236)]
+    [InlineData("ConstructorKernel", 251)]
+    [InlineData("ReceiverWriteKernel", 267)]
+    [InlineData("ReceiverWriteMemberReadKernel", 282)]
+    [InlineData("UniformReceiverWriteKernel", 0)]
+    public async Task StructMembers_PerThreadResult_ReportTheBarrier(string kernel, int barrierLine)
     {
-        var actual = await RunAsync("Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs");
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
 
-        var warning = GSharpDiagnostics.LaunchDependentDivergentBarrier.Id;
+        var actual = diagnostics
+            .Where(d => IsInMethod(d, kernel))
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .Select(static d => (d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn))
+            .ToList();
 
-        // 37: an expression-bodied getter that returns the lane. 51: a getter with a block body. 65: an indexer
-        // getter that returns the lane for one index. 79: a struct member without [GpuDeviceFunction]. 110: a getter
-        // that reads a field of a thread-variant receiver. 124: the control, the lane read directly. 148: a
-        // [GpuDeviceFunction] member of a thread-variant struct value. Nothing at 94, where the same getter reads a
-        // field of a uniform receiver
-        Assert.Equal(
-            [
-                (warning, 37, 13, 37, 30),
-                (warning, 51, 13, 51, 30),
-                (warning, 65, 13, 65, 30),
-                (warning, 79, 13, 79, 30),
-                (warning, 110, 13, 110, 30),
-                (warning, 124, 13, 124, 30),
-                (warning, 148, 13, 148, 30)
-            ],
-            actual);
+        (string, int, int, int, int)[] expected = barrierLine == 0
+            ? []
+            : [(GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, barrierLine, 13, barrierLine, 30)];
+        Assert.Equal(expected, actual);
     }
+
+    private static bool IsInMethod(Diagnostic diagnostic, string method) =>
+        diagnostic.Location.SourceTree?.GetRoot()
+            .DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>()
+            .Any(m => m.Identifier.ValueText == method && m.Span.Contains(diagnostic.Location.SourceSpan)) == true;
 
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath)
