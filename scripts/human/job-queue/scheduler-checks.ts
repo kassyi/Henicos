@@ -532,6 +532,35 @@ export function checkStartNow(assert: AssertModule): void {
   assert.deepStrictEqual(s.enqueue(blocked), [], "and so does a job whose predecessor has not ended");
 }
 
+/**
+ * pause: nothing waiting is granted, neither slots nor GPU turns, however many slots are free; the jobs granted at once
+ * (GPU holders, start <id>) still are; the places are still kept; resume grants as usual.
+ */
+export function checkPause(assert: AssertModule): void {
+  const s = new Scheduler<SchedulerJob>(2, 0, "hrrn", 1000);
+  const a = job(1, 1, 1);
+  const b = job(2, 1, 2);
+  assert.deepStrictEqual(s.enqueue(a), [a]);
+  s.paused = true;
+  assert.deepStrictEqual(s.enqueue(b), [], "a slot is free, but the queue is paused");
+  const turn = Object.assign(job(3, 1, 3), { gpuTurn: true });
+  assert.deepStrictEqual(s.enqueue(turn), [], "a GPU turn is not granted while paused");
+  assert.deepStrictEqual(s.remove(a), [], "a running job ends and frees its slot: nothing takes it");
+  assert.deepStrictEqual(s.waiting.map((j) => j.id).sort(), [2, 3], "the waiting jobs keep their places");
+  assert.deepStrictEqual(s.backfill(Date.now()), [], "nothing is backfilled either");
+  const holder = job(4, 1, 4, true);
+  assert.deepStrictEqual(s.enqueue(holder), [holder], "a GPU holder is granted at once");
+  const byHand = Object.assign(job(5, 1, 5), { startNow: true });
+  assert.deepStrictEqual(s.enqueue(byHand), [byHand], "start <id> still works");
+  assert.deepStrictEqual(s.remove(holder).concat(s.remove(byHand)), [], "still nothing while paused");
+  s.paused = false;
+  assert.deepStrictEqual(
+    s.grant().map((j) => j.id),
+    [3, 2],
+    "resume: the GPU turn, then the job that fits, as usual",
+  );
+}
+
 export const SchedulerChecks: Record<string, (assert: AssertModule) => void> = {
   ...EstimateChecks,
   checkBasics,
@@ -544,5 +573,6 @@ export const SchedulerChecks: Record<string, (assert: AssertModule) => void> = {
   checkGpuTurns,
   checkMemory,
   checkStartNow,
+  checkPause,
   checkRunHistory,
 };
