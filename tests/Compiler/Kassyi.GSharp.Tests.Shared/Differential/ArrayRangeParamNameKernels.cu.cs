@@ -76,6 +76,18 @@ public static partial class ArrayRangeParamNameKernels
         {
             Array.Copy(a, 0, s, -1, 1);
         }
+        else if (call == RangeCalls.CopySourceTooShortAndDestinationIndexNegative)
+        {
+            Array.Copy(s, 0, a, -1, 3);
+        }
+        else if (call == RangeCalls.CopyBothIndexesNegative)
+        {
+            Array.Copy(a, -1, s, -1, 1);
+        }
+        else if (call == RangeCalls.CopyNegativeLengthAndIndex)
+        {
+            Array.Copy(a, -1, s, 0, -1);
+        }
 
         o[1] = 2;
     }
@@ -123,6 +135,18 @@ public static class RangeCalls
     /// <summary><c>Array.Copy(a, 0, s, -1, 1)</c>: ArgumentOutOfRangeException "destinationIndex".</summary>
     public const int CopyNegativeDestinationIndex = 12;
 
+    /// <summary>
+    /// <c>Array.Copy(s, 0, a, -1, 3)</c>: the source range is checked before the destination index, so
+    /// ArgumentException "sourceArray".
+    /// </summary>
+    public const int CopySourceTooShortAndDestinationIndexNegative = 13;
+
+    /// <summary><c>Array.Copy(a, -1, s, -1, 1)</c>: ArgumentOutOfRangeException "sourceIndex".</summary>
+    public const int CopyBothIndexesNegative = 14;
+
+    /// <summary><c>Array.Copy(a, -1, s, 0, -1)</c>: the length is checked first, "length".</summary>
+    public const int CopyNegativeLengthAndIndex = 15;
+
     /// <summary>The number of calls.</summary>
-    public const int Count = 13;
+    public const int Count = 16;
 }
