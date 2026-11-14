@@ -178,6 +178,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1224538804u, "ForUnrollBar
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(780446943u, "ForUnrollBarrierKernels.cs", 103, 9, "NestedForUnrollKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2006027216u, "ForUnrollBarrierKernels.cs", 115, 17, "MegaReducedKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(812293273u, "ForUnrollBarrierKernels.cs", 115, 30, "MegaReducedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1968699102u, "ForUnrollBarrierKernels.cs", 115, 34, "MegaReducedKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1289128583u, "ForUnrollBarrierKernels.cs", 120, 17, "MegaReducedKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(543608792u, "ForUnrollBarrierKernels.cs", 120, 27, "MegaReducedKernel", "G#: a null array is read"),
 };
@@ -1139,7 +1140,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at(__gsharp_id_1_scratch, __gsharp_id_6_i, 2006027216u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_5_src, (__gsharp_add_i32(__gsharp_id_6_i,1))%__gsharp_id_3_n, 812293273u),1);
+__gsharp_array_at(__gsharp_id_1_scratch, __gsharp_id_6_i, 2006027216u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_5_src, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_6_i,1),__gsharp_id_3_n,1968699102u), 812293273u),1);
 }
 }
 }
@@ -1166,7 +1167,7 @@ for(unsigned int __gsharp_gsl_2 = __gsharp_grid_stride_start(); __gsharp_gsl_2 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_2;
 {
-__gsharp_array_at(__gsharp_id_1_scratch, __gsharp_id_6_i, 2006027216u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_5_src, (__gsharp_add_i32(__gsharp_id_6_i,1))%__gsharp_id_3_n, 812293273u),1);
+__gsharp_array_at(__gsharp_id_1_scratch, __gsharp_id_6_i, 2006027216u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_5_src, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_6_i,1),__gsharp_id_3_n,1968699102u), 812293273u),1);
 }
 }
 }
@@ -1193,7 +1194,7 @@ for(unsigned int __gsharp_gsl_4 = __gsharp_grid_stride_start(); __gsharp_gsl_4 <
 {
 int __gsharp_id_6_i = (int)__gsharp_gsl_4;
 {
-__gsharp_array_at(__gsharp_id_1_scratch, __gsharp_id_6_i, 2006027216u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_5_src, (__gsharp_add_i32(__gsharp_id_6_i,1))%__gsharp_id_3_n, 812293273u),1);
+__gsharp_array_at(__gsharp_id_1_scratch, __gsharp_id_6_i, 2006027216u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_5_src, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_6_i,1),__gsharp_id_3_n,1968699102u), 812293273u),1);
 }
 }
 }

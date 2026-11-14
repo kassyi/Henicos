@@ -34,6 +34,8 @@ export interface RunOptions extends Endpoint {
   /** --after: the job that must end first; 0 for none. */
   after: number;
   keepIfFailed: boolean;
+  /** What the job is, in its queued line, when one run queues several jobs (run --gpu: "build, no GPU"). */
+  role?: string;
 }
 
 /** Ends the process with a usage error. */
@@ -105,6 +107,7 @@ export async function run(options: RunOptions): Promise<void> {
       }
       prefix(`the build succeeded; the tests wait for the GPU turn: ${step.tests}`);
       options.command = step.tests;
+      options.role = "tests, GPU turn";
       options.after = 0; // the build job waited for it
     }
     // Wait for the turn at the GPU in the scheduler (in order, visible and cancellable), then take the lock: the GPU

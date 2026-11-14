@@ -102,7 +102,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_sdata={ (float*)__gsharp_allocate_smem_static(0x80cb9df64cf94963ull, (8) * sizeof(float), alignof(float)) };
 __gsharp_ctx->__gsharp_id_4_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_5_i=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,__gsharp_mul_i32((int)blockDim.x,2)),__gsharp_ctx->__gsharp_id_4_tid);
+__gsharp_ctx->__gsharp_id_5_i=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x*2),__gsharp_ctx->__gsharp_id_4_tid);
 __gsharp_ctx->__gsharp_id_6_sum=0.0f;
 if(__gsharp_ctx->__gsharp_id_5_i<__gsharp_ctx->__gsharp_id_2_n)
 {

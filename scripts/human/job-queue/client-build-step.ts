@@ -90,7 +90,7 @@ export async function runBuildStep(
     return result.code;
   }
   const step = new StepRunHost(host);
-  const stepOptions: RunOptions = { ...options, command: build, commandWords: null, gpu: false };
+  const stepOptions: RunOptions = { ...options, command: build, commandWords: null, gpu: false, role: "build, no GPU" };
   void new QueuedRun(stepOptions, { ...placement }, false, false, step).run();
   return step.ended;
 }

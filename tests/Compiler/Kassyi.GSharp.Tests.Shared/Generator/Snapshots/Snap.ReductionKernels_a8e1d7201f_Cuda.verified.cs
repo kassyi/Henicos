@@ -110,7 +110,7 @@ extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__
 __gsharp_launch_epoch = __gsharp_epoch;
 __shared__ float __gsharp_id_3_sdata[8];
 auto __gsharp_id_4_tid = (int)threadIdx.x;
-auto __gsharp_id_5_i = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,__gsharp_mul_i32((int)blockDim.x,2)),__gsharp_id_4_tid);
+auto __gsharp_id_5_i = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x*2),__gsharp_id_4_tid);
 auto __gsharp_id_6_sum = 0.0f;
 if(__gsharp_id_5_i<__gsharp_id_2_n)
 {

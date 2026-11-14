@@ -31,6 +31,14 @@ public static partial class CrossAssemblyKernels
         result[tid] = LibMath.SumPair(pairs[tid]);
     }
 
+    // A library function that only divides: its record has a managed version, which the C# execution does not need
+    [GpuKernel]
+    public static void QuotientKernel(int[] a, int[] d, int[] result)
+    {
+        int tid = ThreadIndex.X;
+        result[tid] = LibMath.Quotient(a[tid], d[tid]);
+    }
+
     // A library function that expands the library's operator macro (#711)
     [GpuKernel]
     public static void AddPairKernel(Pair[] pairs, int[] result, int[] calls)

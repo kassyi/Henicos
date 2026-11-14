@@ -168,7 +168,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_2_v=(int)threadIdx.x+1;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_v,""Warp.ShuffleDownSync"",""PartialWarpShuffleKernels.cs(15,13)"");
 __gsharp_state=1;
 return;
@@ -505,7 +505,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_2_v=(int)threadIdx.x+1;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_v,""Warp.ShuffleXorSync"",""PartialWarpShuffleKernels.cs(23,13)"");
 __gsharp_state=1;
 return;
@@ -844,7 +844,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_3_v=(int)threadIdx.x+1;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_v,""Warp.ShuffleSync"",""PartialWarpShuffleKernels.cs(31,13)"");
 __gsharp_state=1;
 return;
@@ -1183,7 +1183,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_2_v=(int)threadIdx.x+1;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_2_v,""Warp.ShuffleDownSync"",""PartialWarpShuffleKernels.cs(39,13)"");
 __gsharp_state=1;
 return;
@@ -1522,7 +1522,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_3_v=(int)threadIdx.x+1;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_v,""Warp.ShuffleXorSync"",""PartialWarpShuffleKernels.cs(47,13)"");
 __gsharp_state=1;
 return;
@@ -1863,7 +1863,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_3_v=(int)threadIdx.x+1;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_v,""Warp.ShuffleUpSync"",""PartialWarpShuffleKernels.cs(55,13)"");
 __gsharp_state=1;
 return;
@@ -2200,7 +2200,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_1_v=(int)threadIdx.x+1;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_1_v,""Warp.ShuffleSync"",""PartialWarpShuffleKernels.cs(64,13)"");
 __gsharp_state=1;
 return;
@@ -2533,7 +2533,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_1_v=(int)threadIdx.x+1;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_1_v,""Warp.ShuffleSync"",""PartialWarpShuffleKernels.cs(73,13)"");
 __gsharp_state=1;
 return;
@@ -3576,7 +3576,7 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 auto __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,0,""PartialWarpShuffleKernels.cs(97,68)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.y,(int)blockDim.x),(int)threadIdx.x), 2082875413u)=__gsharp_warp_temp_0;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32((int)threadIdx.y*(int)blockDim.x,(int)threadIdx.x), 2082875413u)=__gsharp_warp_temp_0;
 __gsharp_state=-1;
 return;
 }
@@ -3898,7 +3898,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_2_v=(int)threadIdx.x+1;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_1_mask,__gsharp_ctx->__gsharp_id_2_v,""Gpu.MatchAnySync"",""PartialWarpShuffleKernels.cs(104,33)"");
 __gsharp_state=1;
 return;
@@ -4234,7 +4234,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_v=__gsharp_add_i32((int)threadIdx.x,1);
+__gsharp_ctx->__gsharp_id_2_v=(int)threadIdx.x+1;
 __gsharp_ctx->__gsharp_id_3_pred=0;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_1_mask,__gsharp_ctx->__gsharp_id_2_v,""Gpu.MatchAllSync"",""PartialWarpShuffleKernels.cs(112,33)"");
 __gsharp_state=1;

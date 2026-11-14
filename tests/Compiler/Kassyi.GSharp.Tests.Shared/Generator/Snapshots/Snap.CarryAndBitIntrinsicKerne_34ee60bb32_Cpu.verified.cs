@@ -33,6 +33,7 @@ private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_er
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1698306469u, "CarryAndBitIntrinsicKernels.cs", 13, 22, "BitIntrinsicsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(863442647u, "CarryAndBitIntrinsicKernels.cs", 14, 21, "BitIntrinsicsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1723238993u, "CarryAndBitIntrinsicKernels.cs", 14, 27, "BitIntrinsicsKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2127788457u, "CarryAndBitIntrinsicKernels.cs", 16, 9, "BitIntrinsicsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(210997727u, "CarryAndBitIntrinsicKernels.cs", 17, 9, "BitIntrinsicsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(984191457u, "CarryAndBitIntrinsicKernels.cs", 18, 9, "BitIntrinsicsKernel", "G#: a null array is read"),
@@ -68,7 +69,7 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_tid = (int)threadIdx.x;
 unsigned int __gsharp_id_4_value = __gsharp_array_at(__gsharp_id_0_input, __gsharp_id_3_tid, 1698306469u);
-unsigned int __gsharp_id_5_next = __gsharp_array_at(__gsharp_id_0_input, (__gsharp_add_i32(__gsharp_id_3_tid,1))%__gsharp_id_2_n, 863442647u);
+unsigned int __gsharp_id_5_next = __gsharp_array_at(__gsharp_id_0_input, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_3_tid,1),__gsharp_id_2_n,1723238993u), 863442647u);
 unsigned int __gsharp_id_6_shift = (unsigned int)__gsharp_id_3_tid;
 __gsharp_array_at(__gsharp_id_1_output, __gsharp_mul_i32(__gsharp_id_3_tid,3), 2127788457u)=__brev(__gsharp_id_4_value);
 __gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1), 210997727u)=__funnelshift_l(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
@@ -176,7 +177,7 @@ case 0:
 {
 int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 uint value = input[tid];
-uint next = input[(tid + 1) % n];
+uint next = input[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((tid + 1), n)];
 uint shift = (uint)tid;
 output[tid * 3] = global::Kassyi.GSharp.Core.Gpu.BitReverse(value);
 output[tid * 3 + 1] = global::Kassyi.GSharp.Core.Gpu.FunnelShiftLeft(value, next, shift);

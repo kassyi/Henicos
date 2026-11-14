@@ -37,6 +37,9 @@ internal sealed partial class ManagedExecutionRewriter(
     // The number of the next hidden variable that a using (<variable>) statement declares
     private int _nextUsingResourceId;
 
+    // The number of the next variable that holds the target of a division read before its value (ManagedDivision)
+    private int _nextDivisionCurrentId;
+
     public override SyntaxNode? Visit(SyntaxNode? node)
     {
         if (_nextUnrollId < 0 && node is not null)
@@ -68,6 +71,194 @@ internal sealed partial class ManagedExecutionRewriter(
         }
 
         return next;
+    }
+
+    // An int or long division that may divide the minimum by -1 gives the GPU result (ManagedDivision):
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(<left>, <right>)
+    public override SyntaxNode? VisitBinaryExpression(BinaryExpressionSyntax node)
+    {
+        var visited = base.VisitBinaryExpression(node);
+        if (visited is not BinaryExpressionSyntax rewritten ||
+            ManagedDivision.Plan(node, semanticModel) is not { } plan)
+        {
+            return visited;
+        }
+
+        return CallContext(plan.Helper, SyntaxFactory.Argument(rewritten.Left), SyntaxFactory.Argument(rewritten.Right))
+            .WithTriviaFrom(node);
+    }
+
+    // The compound form of the same division:
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(ref <target>, <value>), which stores and returns the
+    // result, or, for a property, <target> = global::Kassyi.GSharp.Core.ManagedGpuContext.<helper>(<target>, <value>)
+    public override SyntaxNode? VisitAssignmentExpression(AssignmentExpressionSyntax node)
+    {
+        var visited = base.VisitAssignmentExpression(node);
+        if (visited is not AssignmentExpressionSyntax rewritten ||
+            ManagedDivision.Plan(node, semanticModel) is not { } plan)
+        {
+            return visited;
+        }
+
+        var target = rewritten.Left.WithoutTrivia();
+        var value = SyntaxFactory.Argument(rewritten.Right.WithoutTrivia());
+        if (plan.Form == ManagedDivisionForm.AssignByReference)
+        {
+            return CallContext(plan.Helper, ByReference(target), value).WithTriviaFrom(node);
+        }
+
+        // The form the plan chose is the one written; a plan whose shape cannot be written is an internal error
+        switch (plan)
+        {
+            case { Form: ManagedDivisionForm.ReadFirst, Reader: { } reader }:
+                return ReadFirst(plan.Helper, reader, target, value).WithTriviaFrom(node);
+            case
+            {
+                Form: ManagedDivisionForm.PropertyByReference or ManagedDivisionForm.PropertyOfObject,
+                Reader: { } propertyReader,
+                ReceiverType: { } receiverType,
+                ValueType: { } valueType
+            } when rewritten.Left is MemberAccessExpressionSyntax property:
+                return ReadFirstProperty(plan, propertyReader, property, receiverType, valueType, value)
+                    .WithTriviaFrom(node);
+            case { Form: ManagedDivisionForm.Reassign }:
+                // <target> = <helper>(<target>, <value>)
+                return SyntaxFactory.AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    target,
+                    CallContext(plan.Helper, SyntaxFactory.Argument(target), value)
+                ).WithTriviaFrom(node);
+            default:
+                throw new InvalidOperationException(
+                    $"The division plan {plan.Form} of '{node}' cannot be written: its plan data is incomplete or " +
+                    "the target is not the shape the plan chose.");
+        }
+    }
+
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.<member>(<first>, <second>)
+    private static InvocationExpressionSyntax CallContext(string member, ArgumentSyntax first, ArgumentSyntax second) =>
+        SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(member),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([first, second]))
+        );
+
+    // The compound assignment of a property whose receiver is bound once (ManagedDivisionForm.PropertyByReference and
+    // PropertyOfObject): the getter and the setter are static lambdas over the receiver, which the reader hands on
+    //   <store>(ref <reader>(ref <receiver>, static (ref T r) => r.P, out var c), c, <value>,
+    //       static (ref T r, int v) => r.P = v)
+    // and for an object <store>(<reader>(<receiver>, static r => r.P, out var c), c, <value>, static (r, v) => r.P = v)
+    private ExpressionSyntax ReadFirstProperty(ManagedDivisionPlan plan, string reader,
+        MemberAccessExpressionSyntax property, ITypeSymbol receiverType, ITypeSymbol valueType,
+        ArgumentSyntax value)
+    {
+        var current = GSharpInternalNames.IntegerSemantics.DivisionCurrentPrefix +
+                      _nextDivisionCurrentId++.ToString(CultureInfo.InvariantCulture);
+        var name = property.Name.Identifier.ValueText;
+        var receiverTypeSyntax = receiverType.ToCsharpTypeSyntax();
+        var valueTypeSyntax = SyntaxFactory.PredefinedType(SyntaxFactory.Token(
+            valueType.SpecialType == SpecialType.System_Int64 ? SyntaxKind.LongKeyword : SyntaxKind.IntKeyword));
+        var byReference = plan.Form == ManagedDivisionForm.PropertyByReference;
+        var getter = CreatePropertyGetter(receiverTypeSyntax, name, byReference);
+        var setter = CreatePropertySetter(receiverTypeSyntax, valueTypeSyntax, name, byReference);
+        var declaration = SyntaxFactory.DeclarationExpression(
+            SyntaxFactory.IdentifierName("var"),
+            SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(current))
+        );
+        var receiverArgument = byReference
+            ? ByReference(property.Expression.WithoutTrivia())
+            : SyntaxFactory.Argument(property.Expression.WithoutTrivia());
+        var read = SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(reader),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([
+                receiverArgument,
+                SyntaxFactory.Argument(getter),
+                SyntaxFactory.Argument(declaration).WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.OutKeyword))
+            ]))
+        );
+        var arguments = SyntaxFactory.SeparatedList([
+            byReference ? ByReference(read) : SyntaxFactory.Argument(read),
+            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(current)),
+            value,
+            SyntaxFactory.Argument(setter)
+        ]);
+        return SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(plan.Helper),
+            SyntaxFactory.ArgumentList(arguments)
+        );
+    }
+
+    // static (ref <receiver> r) => r.<name>     or, for an object, static (<receiver> r) => r.<name>
+    private static ParenthesizedLambdaExpressionSyntax CreatePropertyGetter(TypeSyntax receiverType, string name,
+        bool byReference) =>
+        SyntaxFactory.ParenthesizedLambdaExpression(
+            SyntaxFactory.ParameterList(SyntaxFactory.SingletonSeparatedList(
+                CreateReceiverParameter(receiverType, byReference)
+            )),
+            CreatePropertyAccess(name)
+        ).WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.StaticKeyword)));
+
+    // static (ref <receiver> r, <value> v) => r.<name> = v
+    // or, for an object, static (<receiver> r, <value> v) => r.<name> = v
+    private static ParenthesizedLambdaExpressionSyntax CreatePropertySetter(TypeSyntax receiverType,
+        TypeSyntax valueType, string name, bool byReference) =>
+        SyntaxFactory.ParenthesizedLambdaExpression(
+            SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList([
+                CreateReceiverParameter(receiverType, byReference),
+                SyntaxFactory.Parameter(SyntaxFactory.Identifier("v")).WithType(valueType)
+            ])),
+            SyntaxFactory.AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                CreatePropertyAccess(name),
+                SyntaxFactory.IdentifierName("v")
+            )
+        ).WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.StaticKeyword)));
+
+    // [ref] <receiver> r
+    private static ParameterSyntax CreateReceiverParameter(TypeSyntax receiverType, bool byReference) =>
+        SyntaxFactory.Parameter(SyntaxFactory.Identifier("r"))
+            .WithType(receiverType)
+            .WithModifiers(byReference
+                ? SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.RefKeyword))
+                : default);
+
+    // r.<name>
+    private static MemberAccessExpressionSyntax CreatePropertyAccess(string name) =>
+        SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            SyntaxFactory.IdentifierName("r"),
+            SyntaxFactory.IdentifierName(name)
+        );
+
+    // ref <expression>
+    private static ArgumentSyntax ByReference(ExpressionSyntax expression) =>
+        SyntaxFactory.Argument(expression).WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword));
+
+    // [WHY] C# finds the location of the target, reads it, then evaluates the value. The location is found once and
+    // read by the reader before the value runs, as ref var t = ref <target>; t = t / <value>; does, in one expression:
+    // ManagedGpuContext.<store>(ref ManagedGpuContext.<reader>(ref <target>, out var <current>), <current>, <value>)
+    private ExpressionSyntax ReadFirst(string store, string reader, ExpressionSyntax target, ArgumentSyntax value)
+    {
+        var current = GSharpInternalNames.IntegerSemantics.DivisionCurrentPrefix +
+                      _nextDivisionCurrentId++.ToString(CultureInfo.InvariantCulture);
+        var declaration = SyntaxFactory.DeclarationExpression(
+            SyntaxFactory.IdentifierName("var"),
+            SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(current))
+        );
+        var outCurrent = SyntaxFactory.Argument(declaration)
+            .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.OutKeyword));
+        var read = SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(reader),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList([ByReference(target), outCurrent]))
+        );
+        var arguments = SyntaxFactory.SeparatedList([
+            ByReference(read),
+            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(current)),
+            value
+        ]);
+        return SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(store),
+            SyntaxFactory.ArgumentList(arguments)
+        );
     }
 
     public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>

@@ -192,7 +192,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         AppendMethodName(methodName, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            AppendArgumentWithStackArray(sourceArg, symbol.Parameters[0], in sequence, ref context);
+            AppendSpan(sourceArg.Expression, sourceArg, symbol.Parameters[0], in sequence, ref context);
 
             var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
             for (var i = 0; i < stageArgCount; i++)
@@ -219,38 +219,48 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
     private static void AppendSource(
         ExpressionSyntax receiver,
         in EvaluationOrder.CallSequence sequence,
-        ref TranspileContext context)
-    {
-        if (StackArrayLocals.IsStackArrayReference(receiver, context.Query.SemanticModel))
-        {
-            context.Emitter.Writer.Append("__gsharp_stackalloc_span(");
-            sequence.AppendReceiver(receiver, byReference: false, ref context);
-            context.Emitter.Writer.Append(')');
-        }
-        else
-        {
-            sequence.AppendReceiver(receiver, byReference: false, ref context);
-        }
-    }
+        ref TranspileContext context) =>
+        AppendSpan(receiver, null, null, in sequence, ref context);
 
     private static void AppendStageArgument(
         ArgumentSyntax stageArg,
         IParameterSymbol parameter,
         in EvaluationOrder.CallSequence sequence,
         ref TranspileContext context) =>
-        AppendArgumentWithStackArray(stageArg, parameter, in sequence, ref context);
+        AppendSpan(stageArg.Expression, stageArg, parameter, in sequence, ref context);
 
-    private static void AppendArgumentWithStackArray(
-        ArgumentSyntax argument,
-        IParameterSymbol parameter,
+    // <operand>, or __gsharp_stackalloc_span(<operand>) for a stack array local, which a template parameter that
+    // deduces GSharpArray<T> does not take as it is. The operand is the receiver of the call when argument is null
+    private static void AppendSpan(
+        ExpressionSyntax operand,
+        ArgumentSyntax? argument,
+        IParameterSymbol? parameter,
         in EvaluationOrder.CallSequence sequence,
         ref TranspileContext context)
     {
-        if (StackArrayLocals.IsStackArrayReference(argument.Expression, context.Query.SemanticModel))
+        if (!StackArrayLocals.NeedsView(operand, context.Query.SemanticModel))
         {
-            context.Emitter.Writer.Append("__gsharp_stackalloc_span(");
-            sequence.AppendArgument(argument, parameter, ref context);
-            context.Emitter.Writer.Append(')');
+            AppendOperand(operand, argument, parameter, in sequence, ref context);
+            return;
+        }
+
+        context.Emitter.Writer.Append(GSharpInternalNames.Prelude.StackAllocSpan);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            AppendOperand(operand, argument, parameter, in sequence, ref context);
+        }
+    }
+
+    private static void AppendOperand(
+        ExpressionSyntax operand,
+        ArgumentSyntax? argument,
+        IParameterSymbol? parameter,
+        in EvaluationOrder.CallSequence sequence,
+        ref TranspileContext context)
+    {
+        if (argument == null)
+        {
+            sequence.AppendReceiver(operand, byReference: false, ref context);
         }
         else
         {
