@@ -280,8 +280,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
+        var guards = Context.Emitter.ActiveGuards.Count;
         JumpedOverDeclarations.WriteDeclarations(node.Statements, ref Context);
         VisitStatements(node.Statements, 0);
+        Context.Emitter.EndGuardScope(guards);
     }
 
     /// <summary>

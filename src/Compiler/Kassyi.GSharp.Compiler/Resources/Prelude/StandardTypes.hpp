@@ -18,6 +18,8 @@ template <typename T>
 struct __gsharp_using_scope {
     T& resource;
     __device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
+    // Called by a failed check inside the scope (__gsharp_trap_unwind), where the thread ends without the destructor
+    __device__ inline void __gsharp_unwind() { resource.__gsharp_dispose(); }
 };
 
 template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }

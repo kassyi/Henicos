@@ -344,6 +344,8 @@ Prelude:
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }
     ConsumeLastErrorDetails: { Value: __gsharp_consume_last_error_details, Prelude: ErrorChannel.hpp }
     TrapSite: { Value: __gsharp_trap_site, Prelude: ErrorChannel.hpp }
+    # A failed check inside the scope of a using on CUDA: records, disposes the guards the check leaves, ends the thread
+    TrapUnwind: { Value: __gsharp_trap_unwind, Prelude: ../Prelude.cu }
     ErrorSlot: { Value: __gsharp_error_slot, Prelude: ../Prelude.cu }
     # The records and abort words of the CUDA launches with an epoch, and the epoch of the running launch (a block's
     # shared variable that every thread of a kernel sets first)

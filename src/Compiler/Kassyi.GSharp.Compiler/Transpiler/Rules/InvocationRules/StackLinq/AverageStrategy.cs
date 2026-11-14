@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 using static Kassyi.GSharp.Compiler.GSharpInternalNames.StackLinq;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
@@ -21,9 +22,9 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
         context.Emitter.Writer.AppendLine($"if ({resultVar}{CountSuffix} == 0)");
         using (context.Emitter.Writer.Braces())
         {
-            context.Emitter.Writer.AppendLine(
-                $"{GSharpInternalNames.Prelude.Trap}(" +
-                "GSharpErrorCode::InvalidOperation, \"Sequence contains no elements\");");
+            UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.Trap, "InvalidOperation", 0u,
+                "Sequence contains no elements");
+            context.Emitter.Writer.AppendLine(";");
         }
         context.Emitter.Writer.AppendLine("else");
         using (context.Emitter.Writer.Braces())
