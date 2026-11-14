@@ -98,40 +98,42 @@ internal static class TypeTests
     }
 
     /// <summary>
-    /// Writes <c>([&amp;]() { auto t = &lt;operand&gt;; &lt;name&gt; = &lt;value&gt;; return &lt;test&gt;; })()</c> for
-    /// <c>x is T name</c>: the operand is evaluated once, the variable (declared before the statement) gets its value
-    /// when the test holds, and the lambda gives the test (negated for <c>is not</c>). A test that no value passes
-    /// (<c>n is long</c> on a nullable) assigns nothing.
+    /// Writes <c>([&amp;]() { auto __gsharp_seq_n = &lt;operand&gt;; &lt;name&gt; = &lt;value&gt;; return &lt;test&gt;; }())</c>
+    /// for <c>x is T name</c> through <see cref="EvaluationOrder"/>: the operand is evaluated once, the variable
+    /// (declared before the statement) gets its value when the test holds, and the sequence gives the test (negated for
+    /// <c>is not</c>). A test that no value passes (<c>n is long</c> on a nullable) assigns nothing.
     /// </summary>
     public static void AppendDeclaration(in TypeTestPlan plan, bool negated, ExpressionSyntax operand,
         SingleVariableDesignationSyntax designation, ITypeSymbol declared, ITypeSymbol operandType,
         ref TranspileContext context)
     {
-        const string temp = GSharpInternalNames.Lowering.CoalesceTemp;
         var writer = context.Emitter.Writer;
-        using (writer.ImmediatelyInvokedLambda())
+        var isNullableOperand = operandType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
+        using var sequence = EvaluationOrder.BeginSequence(writer);
+        var temp = EvaluationOrder.DeclareTemp(ref context, operand, reference: false);
+        if (plan.Kind != TypeTestKind.Constant || plan.Value)
         {
-            writer.Append($"auto {temp} = ");
-            context.Visitor.Visit(operand);
-            writer.AppendLine(";");
-            if (plan.Kind != TypeTestKind.Constant || plan.Value)
-            {
-                CppNameResolver.AppendDeclaredName(designation, designation.Identifier, ref context);
-                var unwrap = operandType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
-                             declared.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T;
-                writer.AppendLine(unwrap ? $" = {temp}.Value;" : $" = {temp};");
-            }
-
-            writer.Append("return ");
-            writer.AppendIf(negated, "!(");
-            writer.Append(plan.Kind == TypeTestKind.NotNull
-                ? operandType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
-                    ? $"{temp}.HasValue"
-                    : $"{temp}.data != nullptr"
-                : plan.Value ? "true" : "false");
-            writer.AppendIf(negated, ")");
+            CppNameResolver.AppendDeclaredName(designation, designation.Identifier, ref context);
+            writer.Append(" = ");
+            EvaluationOrder.AppendTempName(writer, temp);
+            writer.AppendIf(isNullableOperand && declared.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T,
+                ".Value");
             writer.AppendLine(";");
         }
+
+        sequence.Return();
+        writer.AppendIf(negated, "!(");
+        if (plan.Kind == TypeTestKind.NotNull)
+        {
+            EvaluationOrder.AppendTempName(writer, temp);
+            writer.Append(isNullableOperand ? ".HasValue" : ".data != nullptr");
+        }
+        else
+        {
+            writer.Append(plan.Value ? "true" : "false");
+        }
+
+        writer.AppendIf(negated, ")");
     }
 
     // n is U, n is U? and n is I (an interface that U implements) are n.HasValue; n as U? is n; n is long is false

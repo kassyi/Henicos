@@ -26,6 +26,8 @@ public static partial class TypeTestDifferentialKernels
         "nullable_as", "nullable_other", "declare_array", "declare_nullable", "declare_value", "declare_not"
     ];
 
+    public static readonly string[] ScopeColumns = ["across_barrier", "in_switch"];
+
     [GpuDeviceFunction]
     public static int[] NextArray(int[] values, ref int calls)
     {
@@ -97,5 +99,35 @@ public static partial class TypeTestDifferentialKernels
         }
 
         r[o + 11] = absent + 3;
+    }
+
+    // A pattern variable that a barrier is crossed with (the CPU runs the threads as state machines), and one that is
+    // declared and used in a switch section. Every thread reaches the barrier: the launch covers the rows exactly.
+    [GpuKernel]
+    public static void PatternScopeKernel(int[] inputs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int v = inputs[tid] % 1000;
+        int? maybe = v % 2 == 0 ? v : null;
+        if (maybe is not int kept)
+        {
+            kept = -1;
+        }
+
+        Gpu.SyncThreads();
+        int o = tid * 2;
+        r[o] = kept + 1;
+        switch (v % 3)
+        {
+            case 0:
+                r[o + 1] = maybe is int zero ? zero : -1;
+                break;
+            case 1:
+                r[o + 1] = maybe is int one ? one + 10 : -2;
+                break;
+            default:
+                r[o + 1] = -3;
+                break;
+        }
     }
 }
