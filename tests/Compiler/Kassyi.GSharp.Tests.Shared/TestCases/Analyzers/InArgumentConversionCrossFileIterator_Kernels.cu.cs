@@ -3,6 +3,7 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 
 // Enumerates the iterators of InArgumentConversionCrossFileIterator_Iterator.cs, which are inlined from another syntax tree
+[SkipSnapshotConsistency("Needs its iterator from another file")]
 public static partial class InArgumentConversionCrossFileIteratorKernels
 {
     [GpuKernel]
