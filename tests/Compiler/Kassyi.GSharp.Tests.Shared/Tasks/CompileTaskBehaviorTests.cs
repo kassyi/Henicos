@@ -17,6 +17,8 @@ public class CompileTaskBehaviorTests
     [Theory]
     [InlineData(CompileTaskKind.Cuda, "kernel.cu", "nvcc", "-fatbin")]
     [InlineData(CompileTaskKind.Cpp, "kernel.cpp", "cl.exe", "/bigobj")]
+    // A goto that jumps past an initialization is an error on every OS, as it is for g++ and clang
+    [InlineData(CompileTaskKind.Cpp, "kernel.cpp", "cl.exe", "/we4533")]
     public void CompileTask_RealCompilation_CallsCompiler(
         CompileTaskKind kind,
         string sourceName,
