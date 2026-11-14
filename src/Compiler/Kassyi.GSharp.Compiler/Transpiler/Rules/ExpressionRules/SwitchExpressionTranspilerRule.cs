@@ -342,8 +342,8 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     // __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, "<message>");
     private static void AppendNoMatchTrap(NoMatchTrap trap, ref TranspileContext context)
     {
-        UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.TrapAbort, "SwitchExpression", trap.SiteId,
-            trap.Message);
+        UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.TrapAbort, "SwitchExpression",
+            UnwindingTrap.TrapSite.Of(trap.SiteId, trap.Message));
         context.Emitter.Writer.AppendLine(";");
     }
 

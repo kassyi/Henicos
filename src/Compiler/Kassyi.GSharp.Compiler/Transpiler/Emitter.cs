@@ -134,7 +134,9 @@ public struct Emitter(
     /// </summary>
     internal List<string> ActiveGuards { get; } = [];
 
-    /// <summary>Forgets the guards declared after the first <paramref name="count"/>: their C++ scope has ended.</summary>
+    /// <summary>
+    /// Forgets the guards declared after the first <paramref name="count"/>: their C++ scope has ended.
+    /// </summary>
     internal void EndGuardScope(int count)
     {
         if (ActiveGuards.Count > count)

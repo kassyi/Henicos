@@ -1,6 +1,7 @@
 // ReSharper disable All
 using System;
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
@@ -33,6 +34,18 @@ public struct FailingResource : IDisposable
 
         Log[0] = Log[0] + 1;
         Log[Log[0]] = -Id;
+    }
+}
+
+/// <summary>A resource that counts its <c>Dispose</c> calls in <c>Counts[Slot]</c>, for the kernels of many threads.</summary>
+public struct CountingResource : IDisposable
+{
+    public int[] Counts;
+    public int Slot;
+
+    public void Dispose()
+    {
+        Counts[Slot] = Counts[Slot] + 1;
     }
 }
 
@@ -425,5 +438,85 @@ public static partial class UsingFailureKernels
             1 => 6,
         };
 #pragma warning restore CS8509
+    }
+
+    // A StackLinq terminal that fails in the body of a using: First and Average of an empty sequence, Max of a
+    // sequence that Where leaves empty, First with a predicate that nothing matches. Mode 4 does not fail
+    [GpuKernel]
+    public static void LinqKernel(int[] log, int[] source, int[] outs, int mode)
+    {
+        using (var r = new FailingResource { Log = log, Source = source, Id = 1, Fail = 0 })
+        {
+            if (mode == 0)
+            {
+                outs[0] = source.AsSpan(0, 0).AsStackEnumerable().First();
+            }
+
+            if (mode == 1)
+            {
+                outs[0] = (int)source.AsSpan(0, 0).AsStackEnumerable().Average();
+            }
+
+            if (mode == 2)
+            {
+                outs[0] = source.AsSpan().AsStackEnumerable().Where(static x => x > 5).Max();
+            }
+
+            if (mode == 3)
+            {
+                outs[0] = source.AsSpan().AsStackEnumerable().First(static x => x > 5);
+            }
+
+            if (mode == 4)
+            {
+                outs[0] = source.AsSpan().AsStackEnumerable().First();
+            }
+
+            outs[1] = 9;
+        }
+
+        outs[2] = 3;
+    }
+
+    // A using declaration in a block that has ended, then a failing check under a using declaration after the block
+    [GpuKernel]
+    public static void BlockScopeKernel(int[] log, int[] source, int[] outs, int mode)
+    {
+        if (mode >= 0)
+        {
+            using var a = new FailingResource { Log = log, Source = source, Id = 1, Fail = 0 };
+            outs[0] = 4;
+        }
+
+        using var b = new FailingResource { Log = log, Source = source, Id = 2, Fail = 0 };
+#pragma warning disable CS8509
+        outs[1] = mode switch
+        {
+            0 => 5,
+            1 => 6,
+        };
+#pragma warning restore CS8509
+        outs[2] = 3;
+    }
+
+    // Four threads; the odd ones fail a switch expression under two usings. counts[2 * t] and counts[2 * t + 1] count
+    // the disposals of the resources of thread t
+    [GpuKernel]
+    public static void PartialKernel(int[] counts, int[] outs)
+    {
+        int t = ThreadIndex.X;
+        using var a = new CountingResource { Counts = counts, Slot = 2 * t };
+        using (var b = new CountingResource { Counts = counts, Slot = 2 * t + 1 })
+        {
+#pragma warning disable CS8509
+            outs[t] = t % 2 == 1
+                ? t switch
+                {
+                    0 => 1,
+                    2 => 2,
+                }
+                : 10 + t;
+#pragma warning restore CS8509
+        }
     }
 }

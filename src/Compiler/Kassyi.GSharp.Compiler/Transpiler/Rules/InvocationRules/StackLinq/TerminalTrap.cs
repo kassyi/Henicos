@@ -14,7 +14,8 @@ internal static class TerminalTrap
         context.Emitter.Writer.AppendLine($"if (!{resultVar}{flagSuffix})");
         using (context.Emitter.Writer.Braces())
         {
-            UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.Trap, "InvalidOperation", 0u, message);
+            UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.Trap, "InvalidOperation",
+                UnwindingTrap.TrapSite.OfMessage(message));
             context.Emitter.Writer.AppendLine(";");
         }
     }

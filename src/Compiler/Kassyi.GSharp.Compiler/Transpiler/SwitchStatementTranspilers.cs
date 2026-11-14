@@ -60,7 +60,6 @@ internal static class SwitchStatementTranspilers
             context.Emitter.Writer.AppendLine();
         }
 
-        var guards = context.Emitter.ActiveGuards.Count;
         using (context.Emitter.Writer.Scope())
         {
             JumpedOverDeclarations.WriteDeclarations(node.Statements, ref context);
@@ -94,7 +93,5 @@ internal static class SwitchStatementTranspilers
                 context.Emitter.Writer.AppendLine();
             }
         }
-
-        context.Emitter.EndGuardScope(guards);
     }
 }

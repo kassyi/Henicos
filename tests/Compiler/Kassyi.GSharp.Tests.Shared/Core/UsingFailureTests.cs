@@ -11,9 +11,9 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// A failed C# check in the body of a <c>using</c> or in its <c>Dispose</c> disposes as C# runs <c>Dispose</c> in a
 /// <c>finally</c>: each resource once, the last declared first, also when a jump leaves the <c>using</c>; a failure of
 /// <c>Dispose</c> replaces the failure in flight; nothing after the failure runs. Runs
-/// <see cref="UsingFailureKernels"/> on the managed and native paths (Tests.Cpu); CUDA does not dispose the resource of
-/// a failing thread in a callee yet (#1770 (a failed C# check inside using skips Dispose on CUDA)): the cases that fail in a
-/// device function run on the CPU paths only.
+/// <see cref="UsingFailureKernels"/> on the managed and native paths (Tests.Cpu); CUDA does not dispose the resource
+/// of a failing thread in a callee yet (#1770 (a failed C# check inside using skips Dispose on CUDA)): the cases that
+/// fail in a device function run on the CPU paths only.
 /// </summary>
 /// <remarks>
 /// The order lists the <c>Dispose</c> calls: <c>id</c> when one starts, <c>-id</c> when it ends. A failure of the
@@ -208,6 +208,50 @@ public class UsingFailureTests
         AssertUsing(exception, order, [out0, out1, 0],
             (log, source, outs) => UsingFailureKernels.LaunchSwitchAfterUsingKernel(log, source, outs, mode),
             AllPaths);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(0, typeof(InvalidOperationException), new[] { 1, -1 }, 0, 0)]
+    [InlineData(1, typeof(InvalidOperationException), new[] { 1, -1 }, 0, 0)]
+    [InlineData(2, typeof(InvalidOperationException), new[] { 1, -1 }, 0, 0)]
+    [InlineData(3, typeof(InvalidOperationException), new[] { 1, -1 }, 0, 0)]
+    [InlineData(4, null, new[] { 1, -1 }, 3, 9)]
+    public void Linq_TerminalFailsInBody_DisposesTheResourceBeforeTheThreadEnds(int mode, Type? exception,
+        int[] order, int out0, int out1) =>
+        AssertUsing(exception, order, [out0, out1, exception is null ? 3 : 0],
+            (log, source, outs) => UsingFailureKernels.LaunchLinqKernel(log, source, outs, mode), AllPaths);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(0, null, new[] { 1, -1, 2, -2 }, 4, 5, 3)]
+    [InlineData(2, typeof(SwitchExpressionException), new[] { 1, -1, 2, -2 }, 4, 0, 0)]
+    public void BlockScope_UsingDeclarationInAnEndedBlock_DoesNotLeakItsGuardIntoLaterChecks(int mode,
+        Type? exception, int[] order, int out0, int out1, int out2) =>
+        AssertUsing(exception, order, [out0, out1, out2],
+            (log, source, outs) => UsingFailureKernels.LaunchBlockScopeKernel(log, source, outs, mode), AllPaths);
+
+    // Only the odd threads fail: every thread disposes both its resources once, and the launch throws
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Partial_OddThreadsFail_EveryThreadDisposesItsResourcesOnce()
+    {
+        var selected = DiffPaths.Available.Where(p => (p.Path & AllPaths) != 0).ToArray();
+        Skip.If(selected.Length == 0, "No path of this build runs this launch");
+        foreach (var path in selected)
+        {
+            path.Preflight?.Invoke();
+            var counts = new int[8];
+            var outs = new int[4];
+            var thrown = Record.Exception(
+                () => path.Run(() => UsingFailureKernels.LaunchPartialKernel(counts, outs, blockDimX: 4)));
+            Assert.True(thrown is SwitchExpressionException,
+                $"{path.Name}: expected SwitchExpressionException, got {thrown?.GetType().Name ?? "none"}");
+            Assert.True(new[] { 1, 1, 1, 1, 1, 1, 1, 1 }.SequenceEqual(counts),
+                $"{path.Name}: expected every resource disposed once, got [{string.Join(", ", counts)}]");
+            Assert.True(new[] { 10, 0, 12, 0 }.SequenceEqual(outs),
+                $"{path.Name}: expected outs [10, 0, 12, 0], got [{string.Join(", ", outs)}]");
+        }
+    }
 
     // Runs the launch on each CPU path of this build and checks the exception, the Dispose order and outs
     private static void AssertUsing(Type? exception, int[] order, int[] outs, Action<int[], int[], int[]> launch,

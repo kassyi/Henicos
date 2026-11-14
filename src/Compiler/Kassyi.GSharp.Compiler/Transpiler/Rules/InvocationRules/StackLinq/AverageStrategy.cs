@@ -22,8 +22,8 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
         context.Emitter.Writer.AppendLine($"if ({resultVar}{CountSuffix} == 0)");
         using (context.Emitter.Writer.Braces())
         {
-            UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.Trap, "InvalidOperation", 0u,
-                "Sequence contains no elements");
+            UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.Trap, "InvalidOperation",
+                UnwindingTrap.TrapSite.OfMessage("Sequence contains no elements"));
             context.Emitter.Writer.AppendLine(";");
         }
         context.Emitter.Writer.AppendLine("else");
