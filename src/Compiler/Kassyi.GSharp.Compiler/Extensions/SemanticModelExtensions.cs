@@ -221,6 +221,17 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// The <c>Add</c> method that C# calls for <paramref name="element"/>, an element of a collection initializer, also
+    /// for a node of a lowered tree; null when it binds to none.
+    /// </summary>
+    public static IMethodSymbol? GetCollectionInitializerAdd(this SemanticModel semanticModel,
+        ExpressionSyntax element) =>
+        semanticModel.TryGetOriginalNode(element, out var original, out var originalModel) &&
+        original is ExpressionSyntax expression
+            ? originalModel.GetCollectionInitializerSymbolInfo(expression).Symbol as IMethodSymbol
+            : null;
+
+    /// <summary>
     /// Gets the resolved symbol for the specified syntax node, or null if unresolvable.
     /// </summary>
     public static ISymbol? GetSymbol(this SemanticModel semanticModel, SyntaxNode node,

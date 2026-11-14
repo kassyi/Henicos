@@ -54,8 +54,14 @@ internal static class CreationEffects
                     walker.AddValue(assignment.Right);
                     OperatorEffects.AddAccessorCalls(ref walker, assignment.Left, callsGetter: false);
                     break;
+                // An element of a collection initializer: its values, then the call of Add on the new object
                 default:
                     walker.AddValue(expression);
+                    if (walker.Model.GetCollectionInitializerAdd(expression) is { } add)
+                    {
+                        CallEffects.AddCallOf(ref walker, add.ReducedFrom ?? add, reference: null);
+                    }
+
                     break;
             }
         }

@@ -6,6 +6,7 @@ a receiver written with a leading dot) and where a new helper goes.
 | Intent | Use | Do not write |
 | ----- | ----- | ----- |
 | Symbol of a node | `.GetSymbol` | `GetSymbolInfo(node).Symbol` |
+| The `Add` that C# calls for an element of a collection initializer, also for a node of a lowered tree | `.GetCollectionInitializerAdd` | `GetCollectionInitializerSymbolInfo` on a lowered node, which binds to nothing |
 | Type of an expression | `.GetTypeSymbol` | `GetTypeInfo(node).Type` |
 | Type an expression converts to (the parameter type of an argument) | `.GetConvertedTypeSymbol` | `GetTypeInfo(node).ConvertedType` |
 | Declared symbol of a given kind | `.GetDeclaredSymbol` (`GetDeclaredSymbol<IMethodSymbol>(decl)`) | `GetDeclaredSymbol(decl) as IMethodSymbol` |

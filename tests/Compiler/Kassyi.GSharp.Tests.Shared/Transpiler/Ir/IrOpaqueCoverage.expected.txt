@@ -38,7 +38,8 @@ UnsupportedShape	CompoundAssignment	AddAssignmentExpression	1
 UnsupportedShape	Invocation	InvocationExpression	86
 UnsupportedShape	IsPattern	IsPatternExpression	2
 UnsupportedShape	ObjectCreation	ObjectCreationExpression class	8
-UnsupportedShape	ObjectCreation	ObjectCreationExpression nested-member-initializer	3
+UnsupportedShape	ObjectCreation	ObjectCreationExpression collection-initializer	9
+UnsupportedShape	ObjectCreation	ObjectCreationExpression nested-member-initializer	6
 statement UnsupportedOperation	Branch	GotoStatement	16
 statement UnsupportedOperation	Empty	EmptyStatement	2
 statement UnsupportedOperation	Labeled	LabeledStatement	19
