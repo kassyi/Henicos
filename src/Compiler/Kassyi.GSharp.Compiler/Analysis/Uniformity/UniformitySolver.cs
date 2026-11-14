@@ -425,11 +425,21 @@ internal sealed class UniformitySolver(UniformityState state)
         }
 
         var reader = state.Reader;
-        var written = reader.TryGetDeviceFunction(invocation.TargetMethod, out var callee, out var declaration)
-            ? reader.GetCallVariance(callee, declaration, invocation, graph, current).ByReference
-            : UniformityValueReader.IsThreadVariantCall(invocation.TargetMethod)
-                ? ThreadVariance.Block
-                : reader.EvaluateOperands(invocation, graph, current);
+        CalleeVariance? summary =
+            reader.TryGetSummarizedCallee(invocation.TargetMethod, out var callee, out var declaration)
+                ? reader.GetCallVariance(callee, declaration, invocation, graph, current)
+                : null;
+        var written = summary?.ByReference ??
+                      (UniformityValueReader.IsThreadVariantCall(invocation.TargetMethod)
+                          ? ThreadVariance.Block
+                          : reader.EvaluateOperands(invocation, graph, current));
+
+        // A member of a struct writes its receiver through this: the receiver keeps what the member did not write
+        if (summary is { } called && UniformityWrites.WritesReceiver(invocation) && invocation.Instance is { } receiver)
+        {
+            Assign(receiver, called.This, strong: false, current, opaque);
+        }
+
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
@@ -451,6 +461,7 @@ internal sealed class UniformitySolver(UniformityState state)
         {
             ILocalReferenceOperation local => local.Local,
             IParameterReferenceOperation parameter => parameter.Parameter,
+            IInstanceReferenceOperation { Type: { } self } => self,
             _ => null
         };
 

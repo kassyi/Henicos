@@ -41,6 +41,9 @@ internal static class UniformityWrites
             case IParameterReferenceOperation parameter:
                 AddWritten(node, values.ValueOf(parameter.Parameter));
                 break;
+            case IInstanceReferenceOperation { Type: { } self }:
+                AddWritten(node, values.ValueOf(self));
+                break;
             case IFieldReferenceOperation or IPropertyReferenceOperation
                 when GetStructRoot(operation) is IFlowCaptureReferenceOperation capture:
                 AddWritten(node, values.CaptureRootOf(capture, graph));
@@ -67,9 +70,26 @@ internal static class UniformityWrites
         }
     }
 
+    /// <summary>
+    /// Whether <paramref name="invocation"/> calls a member of a struct that G# defines that may write its receiver
+    /// (not <c>readonly</c>).
+    /// </summary>
+    public static bool WritesReceiver(IInvocationOperation invocation) =>
+        invocation is
+        {
+            TargetMethod: { IsStatic: false, IsReadOnly: false, ContainingType: { IsReadOnly: false } type },
+            Instance: not null
+        } &&
+        GlobalCppNames.IsEmittedUserType(type);
+
     private static void AllocateArguments(UniformityValues values, UniformityNode node, IInvocationOperation invocation,
         ControlFlowGraph graph)
     {
+        if (WritesReceiver(invocation) && invocation.Instance is { } receiver)
+        {
+            AllocateTargets(values, node, receiver, graph);
+        }
+
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
@@ -89,8 +109,9 @@ internal static class UniformityWrites
     }
 
     /// <summary>
-    /// The local, parameter or flow capture of struct type whose member target writes (p.X, p.Inner.Y, the capture that
-    /// an object initializer or a with expression fills), or null for any other target.
+    /// The local, parameter, <c>this</c> (by its type) or flow capture of struct type whose member target writes (p.X,
+    /// p.Inner.Y, X in a member of the struct, the capture that an object initializer or a with expression fills), or
+    /// null for any other target.
     /// </summary>
     public static IOperation? GetStructRoot(IOperation target)
     {
@@ -109,7 +130,8 @@ internal static class UniformityWrites
                 return null;
             }
 
-            if (instance is ILocalReferenceOperation or IParameterReferenceOperation or IFlowCaptureReferenceOperation)
+            if (instance is ILocalReferenceOperation or IParameterReferenceOperation or IInstanceReferenceOperation or
+                IFlowCaptureReferenceOperation)
             {
                 return instance;
             }
@@ -118,11 +140,15 @@ internal static class UniformityWrites
         }
     }
 
-    /// <summary>The local or parameter that <paramref name="root"/> names, or null for a flow capture.</summary>
+    /// <summary>
+    /// The local, parameter or struct type of <c>this</c> that <paramref name="root"/> names, or null for a flow
+    /// capture.
+    /// </summary>
     public static ISymbol? GetRootSymbol(IOperation root) => root switch
     {
         ILocalReferenceOperation local => local.Local,
         IParameterReferenceOperation parameter => parameter.Parameter,
+        IInstanceReferenceOperation { Type: { } self } => self,
         _ => null
     };
 }

@@ -91,6 +91,11 @@ public class MemoryUniformityAnalyzerTests : TranspilerTestBase
     [InlineData("InitAccessorBodyKernel", 225)]
     [InlineData("RepeatedLocalFunctionKernel", 248)]
     [InlineData("RefConditionalStructKernel", 264)]
+    [InlineData("InitializerGetterKernel", 288)]
+    [InlineData("LoopInitializerKernel", 308)]
+    [InlineData("LoopConditionalAliasKernel", 329)]
+    [InlineData("SpanConditionalValueKernel", 344)]
+    [InlineData("SpanConditionalAliasKernel", 359)]
     public async Task FlowCapturedValues_WritesThroughCaptures_AreFollowed(string kernel, int barrierLine)
     {
         var diagnostics = await GeneratorTestRunner
