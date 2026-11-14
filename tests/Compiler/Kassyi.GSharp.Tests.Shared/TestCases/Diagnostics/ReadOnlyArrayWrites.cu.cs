@@ -9,6 +9,11 @@ public struct ReadOnlyWriteHolder
     public uint[] Free;
 }
 
+public struct ReadOnlyAliasHolder
+{
+    public uint[] Data;
+}
+
 // GSH0118: a write to a [GpuReadOnly] array that the compiler can see
 public static partial class ReadOnlyArrayWriteKernels
 {
@@ -64,6 +69,58 @@ public static partial class ReadOnlyArrayWriteKernels
         WriteFirst(h.Fixed);
         WriteFirst(o);
         o[0] = ReadFirst(r) + ReadFirst(h.Fixed);
+    }
+
+    [GpuKernel]
+    public static void StructAliasKernel([GpuReadOnly] uint[] r, uint[] o)
+    {
+        var assigned = new ReadOnlyAliasHolder();
+        assigned.Data = r;
+        assigned.Data[0] = 4u;
+        var initialized = new ReadOnlyAliasHolder { Data = r };
+        initialized.Data[1] = 12u;
+        var writable = new ReadOnlyAliasHolder { Data = o };
+        writable.Data[0] = 1u;
+    }
+
+    [GpuKernel]
+    public static void RefForEachKernel([GpuReadOnly] uint[] r, uint[] o)
+    {
+        foreach (ref uint element in r.AsSpan())
+        {
+            element = 1u;
+        }
+
+        foreach (ref uint element in o.AsSpan())
+        {
+            element = 2u;
+        }
+
+        foreach (ref readonly uint element in r.AsSpan())
+        {
+            o[0] = element;
+        }
+    }
+
+    // The callee writes its second parameter, which is [GpuReadOnly] itself: it is reported there, not at the call
+    [GpuKernel]
+    public static void SecondParameterKernel([GpuReadOnly] uint[] r, uint[] o)
+    {
+        WriteSecond(r, o);
+    }
+
+    // A parameter that is given another array before the write is not the read-only array any more
+    [GpuKernel]
+    public static void ReassignedParameterKernel([GpuReadOnly] uint[] r, uint[] o)
+    {
+        r = o;
+        r[0] = 15u;
+    }
+
+    [GpuDeviceFunction]
+    private static void WriteSecond(uint[] first, [GpuReadOnly] uint[] second)
+    {
+        second[0] = first[0];
     }
 
     [GpuDeviceFunction]

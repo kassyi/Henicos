@@ -4,34 +4,46 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.ReadOnlyArrays;
 /// Which expressions hold a <c>[GpuReadOnly]</c> array: the array itself (a parameter, a field or a property with the
 /// attribute, or the parameter of a callee that is being checked), and what is computed from it without leaving the
 /// array: a conversion, <c>Gpu.NotNull</c>, a slice or <c>AsSpan()</c>, a <c>new Span&lt;T&gt;(array)</c>, a
-/// conditional of such values, and a local that is given nothing else.
+/// conditional of such values, and a variable (a local, a parameter or a field of a struct local) that is given nothing
+/// else.
 /// </summary>
+/// <param name="model">The semantic model of the body.</param>
+/// <param name="checkedParameter">
+/// The parameter of the callee that is being checked, taken as a read-only array whatever its attributes are, or
+/// <see langword="null"/> for the method that is analysed.
+/// </param>
+/// <param name="followsAttributes">
+/// Whether a <c>[GpuReadOnly]</c> parameter, field or property is a read-only array. A callee is checked for the one
+/// parameter, since a write to another <c>[GpuReadOnly]</c> parameter is reported where it is written.
+/// </param>
+/// <param name="sources">What each variable of the body is given (<see cref="AliasSources"/>).</param>
 internal sealed class ReadOnlyArrayRoots(
     SemanticModel model,
     IParameterSymbol? checkedParameter,
-    Dictionary<ILocalSymbol, ImmutableArray<ExpressionSyntax>> localSources)
+    bool followsAttributes,
+    Dictionary<AliasKey, ImmutableArray<ExpressionSyntax>> sources)
 {
-    // The locals whose every source is a read-only array, as far as the fixed point has got
-    private readonly HashSet<ILocalSymbol> _readOnlyLocals = new(SymbolEqualityComparer.Default);
+    // The variables whose every source is a read-only array, as far as the fixed point has got
+    private readonly HashSet<AliasKey> _readOnlyVariables = new();
 
-    /// <summary>Solves which locals hold only read-only arrays; call once before <see cref="RootOf"/>.</summary>
+    /// <summary>Solves which variables hold only read-only arrays; call once before <see cref="RootOf"/>.</summary>
     public void Solve()
     {
-        foreach (var local in localSources.Keys)
+        foreach (var key in sources.Keys)
         {
-            _readOnlyLocals.Add(local);
+            _readOnlyVariables.Add(key);
         }
 
         bool changed;
         do
         {
             changed = false;
-            foreach (var pair in localSources)
+            foreach (var pair in sources)
             {
-                if (_readOnlyLocals.Contains(pair.Key) &&
+                if (_readOnlyVariables.Contains(pair.Key) &&
                     !pair.Value.AsStackEnumerable().All(this, static (source, self) => self.RootOf(source) != null))
                 {
-                    _readOnlyLocals.Remove(pair.Key);
+                    _readOnlyVariables.Remove(pair.Key);
                     changed = true;
                 }
             }
@@ -59,7 +71,7 @@ internal sealed class ReadOnlyArrayRoots(
 
     private ISymbol? RootOf(ExpressionSyntax expression, int depth)
     {
-        // Locals that hold each other in a cycle make the walk end here
+        // Variables that hold each other in a cycle make the walk end here
         if (depth > 64)
         {
             return null;
@@ -79,7 +91,7 @@ internal sealed class ReadOnlyArrayRoots(
                     ? root
                     : null;
             case IdentifierNameSyntax or MemberAccessExpressionSyntax:
-                return RootOfSymbol(model.GetSymbol(expression), depth);
+                return RootOfVariable(expression, depth);
             case InvocationExpressionSyntax invocation:
                 return RootOfCall(invocation, depth);
             case ObjectCreationExpressionSyntax { ArgumentList.Arguments: [{ } only] } creation when
@@ -90,29 +102,40 @@ internal sealed class ReadOnlyArrayRoots(
         }
     }
 
-    private ISymbol? RootOfSymbol(ISymbol? symbol, int depth)
+    // A variable that is given values is read-only when all of them are; otherwise the attribute decides
+    private ISymbol? RootOfVariable(ExpressionSyntax expression, int depth)
+    {
+        if (AliasKey.Of(expression, model) is { } key && sources.TryGetValue(key, out var given))
+        {
+            return !_readOnlyVariables.Contains(key)
+                ? null
+                : given.Length > 0 && RootOf(given[0], depth + 1) is { } root
+                    ? root
+                    : key.Member ?? key.Variable;
+        }
+
+        return RootOfSymbol(model.GetSymbol(expression));
+    }
+
+    private ISymbol? RootOfSymbol(ISymbol? symbol)
     {
         switch (symbol)
         {
-            case IParameterSymbol parameter when
-                SymbolEqualityComparer.Default.Equals(parameter, checkedParameter) ||
-                (parameter.HasAttribute(KnownAttributes.GpuReadOnly) && IsArrayLike(parameter.Type)):
+            case IParameterSymbol parameter when SymbolEqualityComparer.Default.Equals(parameter, checkedParameter):
                 return parameter;
-            case IFieldSymbol { IsStatic: false } field when
-                field.HasAttribute(KnownAttributes.GpuReadOnly) && IsArrayLike(field.Type):
+            case IParameterSymbol parameter when IsReadOnlyArray(parameter, parameter.Type):
+                return parameter;
+            case IFieldSymbol { IsStatic: false } field when IsReadOnlyArray(field, field.Type):
                 return field;
-            case IPropertySymbol { IsStatic: false } property when
-                property.HasAttribute(KnownAttributes.GpuReadOnly) && IsArrayLike(property.Type):
+            case IPropertySymbol { IsStatic: false } property when IsReadOnlyArray(property, property.Type):
                 return property;
-            case ILocalSymbol local when _readOnlyLocals.Contains(local):
-                return localSources.TryGetValue(local, out var sources) && sources.Length > 0 &&
-                       RootOf(sources[0], depth + 1) is { } root
-                    ? root
-                    : local;
             default:
                 return null;
         }
     }
+
+    private bool IsReadOnlyArray(ISymbol symbol, ITypeSymbol type) =>
+        followsAttributes && symbol.HasAttribute(KnownAttributes.GpuReadOnly) && type.TryGetArrayLikeElementType(out _);
 
     private ISymbol? RootOfCall(InvocationExpressionSyntax invocation, int depth)
     {
@@ -137,6 +160,4 @@ internal sealed class ReadOnlyArrayRoots(
         var operand = ReceiverOrFirstArgument(invocation, method);
         return operand == null ? null : RootOf(operand, depth + 1);
     }
-
-    private static bool IsArrayLike(ITypeSymbol type) => type.TryGetArrayLikeElementType(out _);
 }
