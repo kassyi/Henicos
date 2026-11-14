@@ -200,12 +200,7 @@ internal static class KernelDeclaration
 
     // [CollectionBuilder(typeof(Builder), "Create")] on the collection type, which is what Create returns
     private static bool IsNamedByCollectionBuilder(IMethodSymbol kernel) =>
-        kernel.ReturnType.OriginalDefinition.GetAttribute(KnownAttributes.CollectionBuilder) is
-        {
-            ConstructorArguments: { Length: 2 } arguments
-        } &&
-        arguments[0].Value is INamedTypeSymbol builder &&
-        arguments[1].Value is string methodName &&
+        CollectionBuilderMethod.TryGetDeclaration(kernel.ReturnType, out var builder, out var methodName) &&
         methodName == kernel.Name &&
         builder.IsEqualTo(kernel.ContainingType.OriginalDefinition);
 

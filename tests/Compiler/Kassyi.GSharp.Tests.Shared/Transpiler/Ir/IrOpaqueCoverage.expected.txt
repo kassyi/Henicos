@@ -8,14 +8,16 @@ Invalid	Invalid	InvocationExpression	32
 Invalid	Invalid	ObjectCreationExpression	11
 Invalid	Invalid	SimpleMemberAccessExpression	12
 Invalid	SimpleAssignment	SimpleAssignmentExpression	3
+UnsupportedOperation	AnonymousFunction	ParenthesizedLambdaExpression	2
+UnsupportedOperation	AnonymousFunction	SimpleLambdaExpression	1
 UnsupportedOperation	Await	AwaitExpression	1
 UnsupportedOperation	CoalesceAssignment	CoalesceAssignmentExpression	14
-UnsupportedOperation	CollectionExpression	CollectionExpression	16
+UnsupportedOperation	CollectionExpression	CollectionExpression	23
 UnsupportedOperation	ConditionalAccess	ConditionalAccessExpression	5
 UnsupportedOperation	DeconstructionAssignment	SimpleAssignmentExpression	36
 UnsupportedOperation	DelegateCreation	GenericName	1
 UnsupportedOperation	DelegateCreation	IdentifierName	18
-UnsupportedOperation	DelegateCreation	ParenthesizedLambdaExpression	102
+UnsupportedOperation	DelegateCreation	ParenthesizedLambdaExpression	103
 UnsupportedOperation	DelegateCreation	SimpleLambdaExpression	299
 UnsupportedOperation	DelegateCreation	SimpleMemberAccessExpression	10
 UnsupportedOperation	InlineArrayAccess	ElementAccessExpression	82
@@ -35,7 +37,7 @@ UnsupportedShape	ArrayCreation	ArrayCreationExpression	2
 UnsupportedShape	ArrayElementReference	ElementAccessExpression	8
 UnsupportedShape	Binary	AddExpression	1
 UnsupportedShape	CompoundAssignment	AddAssignmentExpression	1
-UnsupportedShape	Invocation	InvocationExpression	86
+UnsupportedShape	Invocation	InvocationExpression	87
 UnsupportedShape	IsPattern	IsPatternExpression	2
 UnsupportedShape	ObjectCreation	ObjectCreationExpression class	8
 UnsupportedShape	ObjectCreation	ObjectCreationExpression nested-member-initializer	3
@@ -47,9 +49,9 @@ statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
 statement UnsupportedOperation	Loop	ForEachStatement	144
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
-statement UnsupportedOperation	Loop	ForStatement	125
+statement UnsupportedOperation	Loop	ForStatement	126
 statement UnsupportedOperation	Loop	WhileStatement	10
-statement UnsupportedOperation	None	FixedStatement	5
+statement UnsupportedOperation	None	FixedStatement	10
 statement UnsupportedOperation	Switch	SwitchStatement	50
 statement UnsupportedOperation	Try	TryStatement	3
 statement UnsupportedOperation	Using	UsingStatement	14

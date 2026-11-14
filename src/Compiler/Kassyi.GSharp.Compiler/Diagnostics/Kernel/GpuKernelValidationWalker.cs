@@ -172,6 +172,12 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         base.VisitLocalDeclarationStatement(node);
     }
 
+    public override void VisitCollectionExpression(CollectionExpressionSyntax node)
+    {
+        Analyze(node);
+        base.VisitCollectionExpression(node);
+    }
+
     private void Analyze<TNode>(TNode node) where TNode : SyntaxNode
     {
         foreach (var rule in SyntaxValidationRules<TNode>.All)

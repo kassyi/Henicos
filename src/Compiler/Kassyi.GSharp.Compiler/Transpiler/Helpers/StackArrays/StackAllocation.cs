@@ -8,8 +8,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.StackArrays;
 /// <param name="Length">The constant element count.</param>
 /// <param name="Elements">The initializer (<c>InitializerExpressionSyntax</c> or <c>CollectionExpressionSyntax</c>), or null.</param>
 /// <param name="IsPointer">Whether the value is converted to a pointer (<c>int* p = stackalloc int[4]</c>).</param>
+/// <param name="Builder">
+/// The <c>[CollectionBuilder]</c> method that a collection expression converted to its collection type is passed to as
+/// a span (<see cref="CollectionBuilderMethod"/>), or null.
+/// </param>
 internal readonly record struct StackAllocation(
     ITypeSymbol ElementType,
     int Length,
     SyntaxNode? Elements,
-    bool IsPointer);
+    bool IsPointer,
+    IMethodSymbol? Builder = null);
