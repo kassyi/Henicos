@@ -140,7 +140,8 @@ internal static class GenericCopyPlanner
         }
 
         // x.M(a) through a type parameter whose implementation is explicit or a default one: a helper makes the
-        // constrained call, as C# does, and the copy calls the helper with the receiver by reference
+        // constrained call, as C# does, and the copy calls the helper with the receiver by reference, or by value
+        // when it is not a variable (C# calls such a receiver on a temporary copy)
         private bool PlanConstrainedCall(int index, MemberAccessExpressionSyntax callee)
         {
             if (ResolveInstance(callee) is not ConstrainedMember.ConstrainedCall call)
@@ -148,15 +149,7 @@ internal static class GenericCopyPlanner
                 return false;
             }
 
-            if (!IsVariable(callee.Expression))
-            {
-                Problems.Add(new CopyProblem(index,
-                    $"the receiver '{callee.Expression}' of '{callee.Name}' is not a variable that a helper can take " +
-                    "by reference; call it on a local"));
-                return true;
-            }
-
-            var helper = new ConstrainedHelper(call.ClosedType, call.Member);
+            var helper = new ConstrainedHelper(call.ClosedType, call.Member, IsVariable(callee.Expression));
             var position = IndexOf(helper);
             if (position < 0)
             {
@@ -172,7 +165,8 @@ internal static class GenericCopyPlanner
         {
             for (var i = 0; i < Helpers.Count; i++)
             {
-                if (Helpers[i].ClosedType.IsEqualTo(helper.ClosedType) && Helpers[i].Member.IsEqualTo(helper.Member))
+                if (Helpers[i].ByReference == helper.ByReference && Helpers[i].ClosedType.IsEqualTo(helper.ClosedType) &&
+                    Helpers[i].Member.IsEqualTo(helper.Member))
                 {
                     return i;
                 }

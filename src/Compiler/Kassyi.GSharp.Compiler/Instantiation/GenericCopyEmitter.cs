@@ -68,7 +68,7 @@ internal static class GenericCopyEmitter
 
     private const string TypeParameterName = "TReceiver";
 
-    // private static <return type> <name><TReceiver>(ref TReceiver __gsharp_receiver, <parameters>)
+    // private static <return type> <name><TReceiver>([ref] TReceiver __gsharp_receiver, <parameters>)
     //     where TReceiver : <interface> => __gsharp_receiver.<member>(<arguments>);
     private static MethodDeclarationSyntax WriteHelper(ConstrainedHelper helper, string name)
     {
@@ -77,7 +77,9 @@ internal static class GenericCopyEmitter
         var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(member.Parameters.Length);
         parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(ReceiverName))
             .WithType(SyntaxFactory.IdentifierName(TypeParameterName))
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.RefKeyword))));
+            .WithModifiers(helper.ByReference
+                ? SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.RefKeyword))
+                : default));
         for (var i = 0; i < member.Parameters.Length; i++)
         {
             var parameter = member.Parameters[i];
@@ -237,13 +239,17 @@ internal static class GenericCopyEmitter
             return Parenthesize(SyntaxFactory.CastExpression(WriteType(type), max));
         }
 
-        // <helper><<type>>(ref <receiver>, <arguments>)
+        // <helper><<type>>(ref <receiver>, <arguments>), without ref when the receiver is not a variable
         private ExpressionSyntax WriteHelperCall(InvocationExpressionSyntax call, CopyRewrite.ConstrainedCall rewrite)
         {
             var helper = plan.Helpers[rewrite.HelperIndex];
             var callee = (MemberAccessExpressionSyntax)call.Expression;
-            var receiver = SyntaxFactory.Argument(callee.Expression.WithoutTrivia())
-                .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword));
+            var receiver = SyntaxFactory.Argument(callee.Expression.WithoutTrivia());
+            if (helper.ByReference)
+            {
+                receiver = receiver.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword));
+            }
+
             var name = WriteGenericName(
                 GetHelperName(copyName, rewrite.HelperIndex),
                 ImmutableArray.Create(helper.ClosedType));

@@ -205,7 +205,9 @@ namespace App
 
         public static int CallFoo<T>(T x) where T : IFoo => x.M();
 
-        public static int CallFooOfResult<T>(Func<T> make) where T : IFoo => make().M();
+        public static int CallFooOfValue<T>(T x) where T : IFoo => Same(x).M();
+
+        private static T Same<T>(T value) => value;
 
         // The calls change x itself: 1 and then 2
         public static int NextTwice<T>(T x) where T : ICounter
