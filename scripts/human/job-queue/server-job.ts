@@ -53,6 +53,7 @@ export function describeJob(job: ServerJob): JobView {
     queuedAt: job.queuedAt,
     grantedAt: job.grantedAt || null,
     typicalMs: job.estimate ? job.estimate.typicalMs : null,
+    estimateFrom: job.estimate?.from ?? "none",
     pin: job.pin,
     before: job.before,
     after: job.after,

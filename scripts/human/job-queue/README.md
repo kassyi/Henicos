@@ -87,7 +87,10 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts, restoring every record as held |
 | `scheduler.ts` | The scheduling decisions, with no I/O: order, grants, backfilling, GPU turns, the memory pool, the forecast |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
-| `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts |
+| `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts; `estimateWithFallback` guesses a command with no record from similar ones |
+| `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read; pure |
+| `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
+| `estimate-checks.ts` | Self-test checks of the keys, the fallback order and the accuracy log (run through `SchedulerChecks`) |
 | `machine.ts` | `MachineProfile`, the defaults that follow the machine: slots from the cores, the memory pool, test budgets; the CPU-only test projects (`GSharpTargetDialect` Cpu) for the hint of `run --gpu` |
 | `build-split.ts` | `planBuildStep`: which builds a `run --gpu` command runs first and its tests with `--no-build`, or no plan for a command that is not plain; pure |
 | `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
@@ -178,7 +181,10 @@ The scheduler runs in `tmp/job-queue` of the main checkout (never a worktree, so
 | :- | :- |
 | `server.log` | The scheduler log, rotated at 5 MB |
 | `history.json` | Run times per command text (last 9 runs, last 500 commands) |
+| `accuracy.json` | The last 1000 estimates with the run times that followed: time, source of the estimate, expected ms, actual ms |
 | `jobs-<port>.json` | `format` 2, the next id, every record (`jobs`: running, `waiting`, `provisional`), the ids of all records (`pending`, for an older scheduler) and the last 500 final outcomes (`ended`); written to a temporary file and renamed, and not written once the scheduler is stopping |
+
+Estimates: a command with no record of its own is estimated from the others of `history.json`, narrow to wide: `normalized` (the steps as the reader reads them, with the projects resolved against the job's directory and written relative to its worktree, the options that change the work (`-c`, `-f`, `-r`, `-p:`, `--no-build`, `--filter` and its value) and nothing else: no redirections, logger or MSBuild node options, assignments, comment, quotes or pipe into a filter), `shape` (each step's kind, the projects it names, `--no-build`, a filter present), `kind` (the kinds of step alone), else `none` (`UnknownTypicalMs`). The estimate is the median of the matched commands' typical times (longest: of their longest times). Each run that ends by itself adds [time, source, expected, actual] to `accuracy.json`; `status --accuracy` prints the median error and the share within 50% per source. A command the reader cannot read (a substitution, a heredoc, a group, an unbalanced quote) has no `normalized` key and no shape, only the kind of its first program. The keys are made when a run is recorded, in the job's directory and worktree, and kept with the entry in `history.json` (`keys`); an entry without them (an older history) has its keys made from its text with its paths as written. The levels and the median were chosen by a leave-one-out check over a real `history.json`.
 
 A restarted scheduler restores every record as held and detached: running jobs count their slots whether their client
 lives or not, waiting jobs keep their place, provisional ones wait for a report; a client's `adopt`, `request` or
