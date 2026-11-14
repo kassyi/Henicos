@@ -456,4 +456,16 @@ public static partial class SpanWriteKernels
 
         dst[1] = 100;
     }
+
+    // One thread reverses a range that the test chooses, to check the exception of a range past the end
+    [GpuKernel]
+    public static void ArrayReverseRangeKernel(int[] a, int index, int length)
+    {
+        if (ThreadIndex.X != 0 || BlockIndex.X != 0)
+        {
+            return;
+        }
+
+        Array.Reverse(a, index, length);
+    }
 }

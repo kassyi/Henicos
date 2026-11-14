@@ -96,7 +96,7 @@ break;
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_array_argument(__gsharp_id_0_x).AsSpan(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(141,43)"").Reverse();
+__gsharp_array_argument(__gsharp_id_0_x).AsSpanOfArray(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(141,43)"", ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(141,43)"").Reverse();
 break;
 }
 case 6:
@@ -319,7 +319,7 @@ break;
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_array_argument(__gsharp_id_0_h.__gsharp_mb_Data).AsSpan(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(39,43)"").Reverse();
+__gsharp_array_argument(__gsharp_id_0_h.__gsharp_mb_Data).AsSpanOfArray(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(39,43)"", ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(39,43)"").Reverse();
 break;
 }
 case 6:
@@ -559,7 +559,7 @@ break;
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_array_argument(__gsharp_array_at(__gsharp_id_0_hs, 0, 2065272845u).__gsharp_mb_Data).AsSpan(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(68,43)"").Reverse();
+__gsharp_array_argument(__gsharp_array_at(__gsharp_id_0_hs, 0, 2065272845u).__gsharp_mb_Data).AsSpanOfArray(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(68,43)"", ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(68,43)"").Reverse();
 break;
 }
 case 6:
@@ -846,7 +846,7 @@ break;
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_array_argument(__gsharp_id_3_local).AsSpan(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(105,43)"").Reverse();
+__gsharp_array_argument(__gsharp_id_3_local).AsSpanOfArray(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(105,43)"", ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(105,43)"").Reverse();
 break;
 }
 case 6:

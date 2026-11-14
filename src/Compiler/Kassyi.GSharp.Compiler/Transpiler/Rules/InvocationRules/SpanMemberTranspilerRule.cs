@@ -498,13 +498,14 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
     {
         var writer = context.Emitter.Writer;
         WriteArrayOperand(SpanMemberKind.ArrayReverse3, operands, temps, ref context);
-        writer.Append(".AsSpan");
+        writer.Append(".AsSpanOfArray");
         using (writer.Parentheses())
         {
             WriteOperand(operands, temps, 1, ref context);
             writer.Append(',');
             WriteOperand(operands, temps, 2, ref context);
             AppendRangeMessage(writer, SliceErrorCode.ArgumentOutOfRange, node, ref context);
+            AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
         }
 
         writer.Append(".Reverse()");
