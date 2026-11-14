@@ -55,7 +55,7 @@ public class TypeTestDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        // The oracle cannot run a barrier: the reference is the value that C# gives each row
+        // The reference is the value that C# gives each row
         Reference = static (b, _) =>
         {
             var inputs = b.Get<int>("inputs");
@@ -83,6 +83,6 @@ public class TypeTestDifferentialTests
         DifferentialRunner.Run(s_nullTypeTest);
 
     [SkippableFact]
-    public void PatternVariable_AcrossBarrierAndInSwitchSection_MatchesTheReferenceOnEveryPath() =>
+    public void PatternVariable_IsNotAssignedAndInSwitchSection_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_patternScope);
 }

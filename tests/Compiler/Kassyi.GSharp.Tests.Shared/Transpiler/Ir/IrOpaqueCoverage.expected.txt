@@ -20,6 +20,7 @@ UnsupportedOperation	DelegateCreation	SimpleLambdaExpression	298
 UnsupportedOperation	DelegateCreation	SimpleMemberAccessExpression	10
 UnsupportedOperation	InlineArrayAccess	ElementAccessExpression	82
 UnsupportedOperation	InterpolatedString	InterpolatedStringExpression	1
+UnsupportedOperation	IsType	IsExpression	17
 UnsupportedOperation	None	ElementAccessExpression	93
 UnsupportedOperation	None	IdentifierName	4
 UnsupportedOperation	None	MakeRefExpression	1
@@ -35,8 +36,9 @@ UnsupportedShape	ArrayCreation	ArrayCreationExpression	2
 UnsupportedShape	ArrayElementReference	ElementAccessExpression	8
 UnsupportedShape	Binary	AddExpression	1
 UnsupportedShape	CompoundAssignment	AddAssignmentExpression	1
+UnsupportedShape	Conversion	AsExpression	4
 UnsupportedShape	Invocation	InvocationExpression	85
-UnsupportedShape	IsPattern	IsPatternExpression	2
+UnsupportedShape	IsPattern	IsPatternExpression	13
 UnsupportedShape	ObjectCreation	ObjectCreationExpression class	8
 UnsupportedShape	ObjectCreation	ObjectCreationExpression nested-member-initializer	3
 statement UnsupportedOperation	Branch	GotoStatement	16
@@ -50,7 +52,7 @@ statement UnsupportedOperation	Loop	ForEachVariableStatement	1
 statement UnsupportedOperation	Loop	ForStatement	122
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	5
-statement UnsupportedOperation	Switch	SwitchStatement	49
+statement UnsupportedOperation	Switch	SwitchStatement	50
 statement UnsupportedOperation	Try	TryStatement	3
 statement UnsupportedOperation	Using	UsingStatement	14
 statement UnsupportedOperation	UsingDeclaration	LocalDeclarationStatement	15

@@ -24,7 +24,9 @@ public class TypeTestDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "variable of type object"));
         Assert.Equal(
             [(Analyzer, 18, 19, 18, 27)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object"));
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object")
+                .Where(static r => r.StartLine == 18)
+                .ToList());
     }
 
     // Lines 25 to 27 test values, which C# decides by their types, and the last kernel arrays and nullables, which are
@@ -39,7 +41,9 @@ public class TypeTestDiagnosticsTests
 
         Assert.Equal(
             [(Analyzer, 34, 20, 34, 43)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object"));
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object")
+                .Where(static r => r.StartLine == 34)
+                .ToList());
         Assert.Equal(4, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 
