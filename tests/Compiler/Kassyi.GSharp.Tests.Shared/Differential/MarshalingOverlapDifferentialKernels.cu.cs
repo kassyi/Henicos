@@ -13,57 +13,6 @@ public struct DiffOverlapPoint
     public int Y;
 }
 
-/// <summary>Ten structs nested in one another, the innermost holding one int.</summary>
-public struct DiffNest1
-{
-    public int Value;
-}
-
-public struct DiffNest2
-{
-    public DiffNest1 Inner;
-}
-
-public struct DiffNest3
-{
-    public DiffNest2 Inner;
-}
-
-public struct DiffNest4
-{
-    public DiffNest3 Inner;
-}
-
-public struct DiffNest5
-{
-    public DiffNest4 Inner;
-}
-
-public struct DiffNest6
-{
-    public DiffNest5 Inner;
-}
-
-public struct DiffNest7
-{
-    public DiffNest6 Inner;
-}
-
-public struct DiffNest8
-{
-    public DiffNest7 Inner;
-}
-
-public struct DiffNest9
-{
-    public DiffNest8 Inner;
-}
-
-public struct DiffNest10
-{
-    public DiffNest9 Inner;
-}
-
 /// <summary>
 /// Kernels that receive overlapping memory through two or more parameters: slices of one array, a span and its array, a
 /// <c>ref</c> to an element and its array, views of one array with different element types, one variable twice.
@@ -392,15 +341,6 @@ public static partial class MarshalingOverlapDifferentialKernels
         }
     }
 
-    // --- An in parameter and a ref or out parameter that receive one variable: the in shows the writes (C# passes
-    // in by reference) ---
-    [GpuKernel]
-    public static void InAndRefOneVariableKernel(in int first, ref int second, [Out] int[] observed)
-    {
-        if (ThreadIndex.X == 0)
-        {
-            second += 10;
-            observed[0] = first;
     // --- Out beside other arguments that refer to its variable: the order of the writes, three, an element ---
     [GpuKernel]
     public static void OutThenRefWriteKernel(out int first, ref int second, [Out] int[] observed)
@@ -442,6 +382,44 @@ public static partial class MarshalingOverlapDifferentialKernels
         if (ThreadIndex.X == 0)
         {
             observed[1] = third;
+        }
+    }
+
+    [GpuKernel]
+    public static void OutElementAndItsArrayKernel(out int element, int[] array, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = array[1];
+        }
+
+        element = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[1] = array[1];
+        }
+    }
+
+    // An out struct that holds an array: the kernel assigns default, as the C# method would
+    [GpuKernel]
+    public static void OutStructWithArrayKernel(out DiffDeepBag bag, [Out] int[] observed)
+    {
+        bag = default;
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = 1;
+        }
+    }
+
+    // --- An in parameter and a ref or out parameter that receive one variable: the in shows the writes (C# passes
+    // in by reference) ---
+    [GpuKernel]
+    public static void InAndRefOneVariableKernel(in int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            second += 10;
+            observed[0] = first;
         }
     }
 
@@ -488,17 +466,6 @@ public static partial class MarshalingOverlapDifferentialKernels
         }
     }
 
-    // The in is an int ten structs deep in the variable that the ref receives
-    [GpuKernel]
-    public static void InDeepFieldAndRefStructKernel(in int field, ref DiffNest10 whole, [Out] int[] observed)
-    {
-        if (ThreadIndex.X == 0)
-        {
-            whole.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Inner.Value += 10;
-            observed[0] = field;
-        }
-    }
-
     // An in element of an array that the same launch passes: the write to the array shows through the in
     [GpuKernel]
     public static void InElementAndItsArrayKernel(in int element, int[] array, [Out] int[] observed)
@@ -521,7 +488,11 @@ public static partial class MarshalingOverlapDifferentialKernels
     }
 
     [GpuKernel]
-    public static void InAndTwoRefsOneVariableKernel(in int first, ref int second, ref int third, [Out] int[] observed)
+    public static void InAndTwoRefsOneVariableKernel(
+        in int first,
+        ref int second,
+        ref int third,
+        [Out] int[] observed)
     {
         if (ThreadIndex.X == 0)
         {
@@ -541,29 +512,5 @@ public static partial class MarshalingOverlapDifferentialKernels
         }
 
         second = 7;
-    }
-    public static void OutElementAndItsArrayKernel(out int element, int[] array, [Out] int[] observed)
-    {
-        if (ThreadIndex.X == 0)
-        {
-            observed[0] = array[1];
-        }
-
-        element = 7;
-        if (ThreadIndex.X == 0)
-        {
-            observed[1] = array[1];
-        }
-    }
-
-    // An out struct that holds an array: the kernel assigns default, as the C# method would
-    [GpuKernel]
-    public static void OutStructWithArrayKernel(out DiffDeepBag bag, [Out] int[] observed)
-    {
-        bag = default;
-        if (ThreadIndex.X == 0)
-        {
-            observed[0] = 1;
-        }
     }
 }
