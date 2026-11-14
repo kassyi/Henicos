@@ -111,8 +111,8 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         Assert.DoesNotContain(": size\");", cppSource, StringComparison.Ordinal);
     }
 
-    // #1084: A SharedMemory<T> local that no barrier crosses stays a local, whether it is declared with the type or with
-    // var, so the sibling scopes of one name compile in the managed C#.
+    // #1084: The resume local of a hoisted SharedMemory<T> gets a name of its own when a nested scope declares a local
+    // of the same name, so the sibling scopes compile in the managed C#.
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void SharedMemorySiblingScopes_LocalDeclarations_CompilesWithoutCS0136InManagedCSharp()

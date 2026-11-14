@@ -66,8 +66,8 @@ internal static class ManagedContextFields
                 continue;
             }
 
-            // [WHY] A resume local is declared at the top of the state function, so a local of the same name declared in
-            // a nested scope of the body (one that no barrier crosses, a sibling of the hoisted one) is CS0136
+            // [WHY] A resume local is declared at the top of the state function, so a local of the same name declared
+            // in a nested scope of the body (one that no barrier crosses, a sibling of the hoisted one) is CS0136
             if (key.Symbol != null && !renamedLocals.ContainsKey(key) &&
                 bodyNames.Contains(field.Identifier.ValueText))
             {
