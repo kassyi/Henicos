@@ -13,8 +13,10 @@ import {
   ProtocolVersion,
   RegrantMs,
   StartupGraceMs,
+  UnknownTypicalMs,
   type Policy,
 } from "./constants.ts";
+import type { EstimateLevel } from "./estimate-fallback.ts";
 import { RunHistory } from "./history.ts";
 import {
   idField,
@@ -156,6 +158,17 @@ export class JobServer {
     };
   }
 
+  /** The first answer to a client that queues: its place and expected times, and that the queue is paused, if it is. */
+  queuedMessage(job: ServerJob): ServerMessage {
+    const scheduler = this.scheduler;
+    return {
+      type: "queued",
+      id: job.id,
+      ...(scheduler.paused ? { paused: true } : {}),
+      ...this.outlook(job, scheduler.forecast()),
+    };
+  }
+
   // Tells each waiting client its place and expected times when the place changed or the start moved by a minute
   private notifyWaiting(): void {
     const scheduler = this.scheduler;
@@ -216,6 +229,8 @@ export class JobServer {
   /** A record from a registration or a saved record, not bound to a connection yet (bind attaches it). */
   createJob(message: Incoming, id: number, phase: Phase): ServerJob {
     const command = String(message.command ?? "");
+    const cwd = String(message.cwd ?? "");
+    const worktree = worktreeKey(String(message.worktree ?? "") || cwd);
     return {
       id,
       phase,
@@ -232,14 +247,14 @@ export class JobServer {
       pid: numberField(message, "pid"),
       commandPid: numberField(message, "commandPid"),
       spawnedAt: numberField(message, "spawnedAt"),
-      cwd: String(message.cwd ?? ""),
+      cwd,
       // Resolved once by the client; an older client sends none, and its directory stands for its worktree
-      worktree: worktreeKey(String(message.worktree ?? "") || String(message.cwd ?? "")),
+      worktree,
       session: typeof message.session === "string" && message.session !== "" ? message.session : undefined,
       command,
       queuedAt: numberField(message, "queuedAt") || Date.now(),
       grantedAt: numberField(message, "grantedAt"),
-      estimate: this.history.estimate(command),
+      estimate: this.history.estimateWithFallback(command, { cwd, worktree }),
       pin: optionalNumberField(message, "pin"),
       before: idField(message, "before"),
       after: idField(message, "after"),
@@ -299,7 +314,13 @@ export class JobServer {
       !job.adopted &&
       job.grantedAt > 0
     ) {
-      this.history.record(job.command, Date.now() - job.grantedAt, this.nextId);
+      const actualMs = Date.now() - job.grantedAt;
+      this.history.accuracy.add(
+        (job.estimate?.from ?? "none") as EstimateLevel,
+        job.estimate ? job.estimate.typicalMs : UnknownTypicalMs,
+        actualMs,
+      );
+      this.history.record(job.command, actualMs, this.nextId, Date.now(), { cwd: job.cwd, worktree: job.worktree });
     }
     this.scheduler.detach(job);
     this.recordOutcome(job.id, outcome);
@@ -458,7 +479,8 @@ export class JobServer {
     // between two events, so grant again now and then while jobs wait
     setInterval(() => this.settle(), RegrantMs).unref();
     setInterval(() => {
-      if (scheduler.isIdle() && Date.now() - this.idleSince >= IdleExitMs) {
+      // A paused queue stays: the scheduler would forget the pause when it exits
+      if (scheduler.isIdle() && !scheduler.paused && Date.now() - this.idleSince >= IdleExitMs) {
         this.log("idle; exiting");
         process.exit(0);
       }
