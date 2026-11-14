@@ -63,11 +63,11 @@ internal static class SwitchStatementTranspilers
         using (context.Emitter.Writer.Scope())
         {
             JumpedOverDeclarations.WriteDeclarations(node.Statements, ref context);
-            var writtenAhead = LocalFunctionOrder.CreateWrittenSet(node.Statements, 0);
+            var localFunctions = LocalFunctionOrder.Create(node.Statements, 0, context.Query.SemanticModel);
             for (var i = 0; i < node.Statements.Count; i++)
             {
                 var stmt = node.Statements[i];
-                if (LocalFunctionOrder.TryWriteStatement(node.Statements, i, writtenAhead, ref context))
+                if (localFunctions != null && localFunctions.TryWriteStatement(node.Statements, i, ref context))
                 {
                     continue;
                 }

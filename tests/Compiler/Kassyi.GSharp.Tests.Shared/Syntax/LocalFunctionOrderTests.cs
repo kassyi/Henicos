@@ -14,17 +14,29 @@ public class LocalFunctionOrderTests : TranspilerTestBase
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void CallBeforeDeclaration_Native_UsesTheLocalFunctionAboveItsDeclaration() =>
-        LocalFunctionOrderScenarios.Run(s_runNative, static data => LocalFunctionOrderKernels.LaunchCallBeforeDeclarationKernel(data, blockDimX: 4), x => x + 1);
+        LocalFunctionOrderScenarios.Run(
+            s_runNative,
+            static data => LocalFunctionOrderKernels.LaunchCallBeforeDeclarationKernel(data, blockDimX: 4),
+            x => x + 1
+        );
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void CapturingCallBeforeDeclaration_Native_CapturesTheLocalsAboveTheCall() =>
-        LocalFunctionOrderScenarios.Run(s_runNative, static data => LocalFunctionOrderKernels.LaunchCapturingCallBeforeDeclarationKernel(data, 3, blockDimX: 4), x => x * 6 + 3);
+        LocalFunctionOrderScenarios.Run(
+            s_runNative,
+            static data => LocalFunctionOrderKernels.LaunchCapturingCallBeforeDeclarationKernel(data, 3, blockDimX: 4),
+            x => x * 6 + 3
+        );
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void CallChainBeforeDeclaration_Native_WritesTheUsedFunctionFirst() =>
-        LocalFunctionOrderScenarios.Run(s_runNative, static data => LocalFunctionOrderKernels.LaunchCallChainBeforeDeclarationKernel(data, blockDimX: 4), x => (x + 10) * 2);
+        LocalFunctionOrderScenarios.Run(
+            s_runNative,
+            static data => LocalFunctionOrderKernels.LaunchCallChainBeforeDeclarationKernel(data, blockDimX: 4),
+            x => (x + 10) * 2
+        );
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]

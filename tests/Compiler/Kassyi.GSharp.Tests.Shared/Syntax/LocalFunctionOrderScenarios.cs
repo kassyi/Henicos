@@ -3,7 +3,9 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-/// <summary>The scenarios of <see cref="LocalFunctionOrderKernels"/>; the native and managed classes share them.</summary>
+/// <summary>
+/// The scenarios of <see cref="LocalFunctionOrderKernels"/>; the native and managed classes share them.
+/// </summary>
 internal static class LocalFunctionOrderScenarios
 {
     public static void Run(Action<Action> run, Action<int[]> launch, Func<int, int> expected)
@@ -78,7 +80,12 @@ internal static class LocalFunctionOrderScenarios
         int[] source = [1];
         int[] outs = [7];
 
-        run(() => LocalFunctionOrderKernels.LaunchUsingBodyCallBeforeDeclarationKernel(log, source, outs, blockDimX: 1));
+        run(() => LocalFunctionOrderKernels.LaunchUsingBodyCallBeforeDeclarationKernel(
+            log,
+            source,
+            outs,
+            blockDimX: 1
+        ));
 
         // The local function ran, and the resource was disposed once at the end
         Assert.Equal([507], outs);
