@@ -30,10 +30,39 @@ export interface ViewState {
   helpPages: number;
   /** The chat panel is hidden (key a). */
   chatsHidden: boolean;
+  /** The mark flashed over the job rows after Space (pause or play), until `until`; null when none. */
+  flash: { kind: "pause" | "resume"; until: number } | null;
 }
 
+/** How long the mark of Space stays on the screen. */
+export const FlashMs = 1000;
+
+/** The big mark of Space, as rows of block characters, as the timeline is drawn: two bars for a pause, a right-pointing triangle for a play. */
+const FlashMarks: Record<"pause" | "resume", { rows: string[]; style: Style }> = {
+  pause: {
+    rows: Array.from({ length: 5 }, () => "████   ████"),
+    style: "now",
+  },
+  resume: {
+    rows: ["██        ", "██████    ", "██████████", "██████    ", "██        "],
+    style: "run",
+  },
+};
+/** The mark's rows are this tall and it needs this many rows of the job area and columns to be drawn. */
+const FlashRows = 5;
+const FlashMinColumns = 24;
+
 export function initialViewState(): ViewState {
-  return { selectedId: null, offset: 0, prompt: null, message: null, help: 0, helpPages: 2, chatsHidden: false };
+  return {
+    selectedId: null,
+    offset: 0,
+    prompt: null,
+    message: null,
+    help: 0,
+    helpPages: 2,
+    chatsHidden: false,
+    flash: null,
+  };
 }
 
 export interface Screen {
@@ -55,11 +84,14 @@ export interface ScreenJob extends StatusJob {
 /**
  * What a waiting job waits for, in words a person reads without the docs: "after #821" (its --after job), "GPU busy"
  * (another job has the GPU), "CPU full" (every slot in use), "mem full" (the memory pool of the test runs), or
- * "in line" (there is room, but an earlier job goes first).
+ * "in line" (there is room, but an earlier job goes first), "paused" (the queue is paused; start <id> still runs it).
  */
 function waitReason(job: StatusJob, reply: StatusReply): string {
   if (job.blockedBy != null) {
     return `after #${job.blockedBy}`;
+  }
+  if (reply.paused === true) {
+    return "paused";
   }
   if (job.gpuTurn) {
     return "GPU busy";
@@ -301,6 +333,9 @@ function headerLine(reply: StatusReply | null, jobs: ScreenJob[], columns: numbe
     return line.add("  no scheduler (idle)", "dim").padTo();
   }
   const slots = Math.min(Math.max(reply.capacity, 1), 10);
+  if (reply.paused === true) {
+    line.add("  || paused", "warn");
+  }
   line
     .add("  CPU ")
     .add(bar(reply.used, reply.capacity, slots), "run")
@@ -327,6 +362,7 @@ const HelpKeys: [string, string][] = [
   ["↑↓ j k", "select a job"],
   ["c", "cancel it (y/n)"],
   ["s", "start it now, over the pool (y/n)"],
+  ["Space", "pause / resume the queue"],
   ["m", "move it: f first, r reset,"],
   ["", "or an id + Enter (before that job)"],
   ["w", "its slots: a number + Enter"],
@@ -350,6 +386,7 @@ const HelpLegend: LegendEntry[] = [
   { sample: "CPU full", style: "warn", text: "every slot in use" },
   { sample: "mem full", style: "warn", text: "the memory pool is full" },
   { sample: "GPU busy", style: "warn", text: "another job has the GPU" },
+  { sample: "paused", style: "warn", text: "the queue is paused (Space)" },
   { sample: "in line", style: "warn", text: "an earlier job goes first" },
   { sample: "after #n", style: "warn", text: "until job n has ended" },
 ];
@@ -546,10 +583,11 @@ export function renderScreen(
   const help = helpLines(columns, chats);
   state.helpPages = Math.max(1, Math.ceil(help.length / listRows));
   const helpPage = Math.min(state.help, state.helpPages);
+  const area: { line: ScreenLine; selected: boolean }[] = [];
   if (helpPage > 0) {
     help
       .slice((helpPage - 1) * listRows, helpPage * listRows)
-      .forEach((line) => lines.push(line.padTo().render(color)));
+      .forEach((line) => area.push({ line: line.padTo(), selected: false }));
   } else {
     // Keep the selected job on screen; without one, keep the scroll position as far as the jobs still fill it
     const last = Math.max(0, jobs.length - listRows);
@@ -559,12 +597,30 @@ export function renderScreen(
         ? Math.min(Math.max(state.offset, 0), last)
         : Math.min(Math.max(state.offset, index - listRows + 1, 0), index, last);
     for (const job of jobs.slice(state.offset, state.offset + listRows)) {
-      lines.push(jobLine(job, job === selected, columns, idWidth, window, now).render(color, job === selected));
+      area.push({ line: jobLine(job, job === selected, columns, idWidth, window, now), selected: job === selected });
     }
   }
-  while (lines.length < rows - 2 - panel.length) {
-    lines.push(new ScreenLine(columns).padTo().render(color));
+  while (area.length < listRows) {
+    area.push({ line: new ScreenLine(columns).padTo(), selected: false });
   }
+  // The mark of Space floats over the middle of the job area (not over the help, and not on a screen too small for it)
+  const flash = state.flash;
+  if (
+    flash !== null &&
+    flash.until > now &&
+    helpPage === 0 &&
+    listRows >= FlashRows + 2 &&
+    columns >= FlashMinColumns
+  ) {
+    const mark = FlashMarks[flash.kind];
+    const top = Math.floor((listRows - FlashRows) / 2);
+    const width = (mark.rows[0] as string).length + 4; // two cells of space around the mark
+    const left = Math.floor((columns - width) / 2);
+    mark.rows.forEach((row, offset) => {
+      (area[top + offset] as { line: ScreenLine }).line.overlay(left, `  ${row.padEnd(width - 4)}  `, mark.style);
+    });
+  }
+  area.forEach(({ line, selected }) => lines.push(line.render(color, selected)));
   const hidden = helpPage > 0 ? 0 : jobs.length - Math.min(listRows, jobs.length);
   const chatNote =
     chats === null || waiting.length === 0

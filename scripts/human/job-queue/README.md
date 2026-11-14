@@ -42,6 +42,15 @@ screen colors:
 
 ![The help page](images/help.svg)
 
+Space pauses and resumes the queue, like the space bar of a video player, with no question (both ways are harmless and
+undone by pressing it again). The key flashes a big mark for a second over the middle of the job rows, in plain ASCII
+so that every terminal draws it the same: two bars for a pause, a triangle pointing right for a play (not on the help,
+and not on a screen too small for it). While the queue is paused (also by `pause`), the header keeps `|| paused` and
+every waiting job waits for `paused`; `s` still starts a selected job, since `start <id>` is the one grant a pause does
+not hold back. The screen below is the second after Space:
+
+![The paused queue, with the pause mark](images/paused.svg)
+
 Below the jobs, the agent chats that wait for an answer of the person (the files of
 `scripts/human/chat-status.js`, read every 2 s): one row per chat, first those that ask through a tool (`?`, a choice
 question or a permission prompt, in yellow), then those whose reply leaves a question open (`…?`); the most recent wait
@@ -76,7 +85,7 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `client-queued-run.ts` | `QueuedRun`: registers a job, waits for the grant, runs the command, reports its end, re-registers after a scheduler restart |
 | `client-run-host.ts` | `RunHost`, the effects of a `QueuedRun` (connection, command, exit), and `ProcessRunHost`, the real one; `commandEnd`, how a command's end is reported after a cancel; the GPU turn's run under `gpu-lock.js` |
 | `client-connect.ts` | One-shot requests to the scheduler, and `SchedulerLauncher`: connects, starts the scheduler on demand, reports a job's end to the next scheduler |
-| `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `wait`, `stop` |
+| `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `start`, `pause` / `resume`, `wait`, `stop` |
 | `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, the chats read through `chat-status.js` (`createRequire`), and `reduceKey`, the keys as a pure function |
 | `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
 | `view-chats.ts` | The chat panel: the chats that ask the person in order (idle reports counted), one row each or one summary line, their title, worktree and job ids, and the chat part of the help; pure |
@@ -88,7 +97,7 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `server-connection.ts` | `Connection`: one client connection, the dispatch of its messages to one handler per message type, and what its close means for the job |
 | `server-job-messages.ts` | The handlers of the messages about the client's own job: `request`, `adopt`, `started`, `done`, `report` |
 | `server-job-state.ts` | The decisions about one job record as pure functions: identity (`isSameClient`), `planRegistration`, `planClose`, `planObservation`, `planReport`, `outcomeOfEnd`, `cancelTargets` |
-| `server-control-messages.ts` | The handlers of the messages that act on the queue: `status`, `cancel`, `move`, `set-weight`, `start`, `await`, `stop` |
+| `server-control-messages.ts` | The handlers of the messages that act on the queue: `status`, `cancel`, `move`, `set-weight`, `start`, `pause`, `resume`, `await`, `stop` |
 | `server-job.ts` | The job record the server keeps (`ServerJob`), how `status` shows it, and the invariant of the records (`checkRecords`, for the self-test) |
 | `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts, restoring every record as held |
 | `scheduler.ts` | The scheduling decisions, with no I/O: order, grants, backfilling, GPU turns, the memory pool, the forecast |
@@ -125,6 +134,13 @@ sequenceDiagram
 - **One settle step per event**: a message, a closed connection or a timer only changes the jobs. At the end of the
   event, `settle()` cancels the jobs whose predecessor did not succeed (along chains), records predecessors that were
   lost, grants once and saves the state. Nothing is granted while an event is still changing the jobs.
+- **Pause**: `Scheduler.paused` is read in one place, `grant()`, right after the order is set: a paused scheduler grants
+  only what is granted at once (GPU holders and `start <id>`), so no slot and no GPU turn goes to a waiting job and
+  backfilling does nothing; the places are still ordered and told. `pause` and `resume` set the flag and the settle that
+  follows saves it (`paused` and `pausedAt` in `jobs-<port>.json`, restored by `JobStore.restore`), and a paused
+  scheduler does not exit when idle. The forecast replays the grants as if the queue were resumed now, and `status`
+  says that it is paused. Each waiting client is sent `paused` once, and a client that queues later has `paused` in its
+  `queued`; both print one line.
 - **Dependencies grant on evidence**: a job `--after` another is granted only when that job has a recorded outcome
   that lets it run (`succeeded`, or any outcome with `--keep-if-failed`), never because the other job is gone.
 - **Order**: response ratio (`hrrn`, the default), then two fairness rules (`fairOrder`): a job that has waited longer
@@ -188,7 +204,7 @@ The scheduler runs in `tmp/job-queue` of the main checkout (never a worktree, so
 | `server.log` | The scheduler log, rotated at 5 MB |
 | `history.json` | Run times per command text (last 9 runs, last 500 commands) |
 | `accuracy.json` | The last 1000 estimates with the run times that followed: time, source of the estimate, expected ms, actual ms |
-| `jobs-<port>.json` | `format` 2, the next id, every record (`jobs`: running, `waiting`, `provisional`), the ids of all records (`pending`, for an older scheduler) and the last 500 final outcomes (`ended`); written to a temporary file and renamed, and not written once the scheduler is stopping |
+| `jobs-<port>.json` | `format` 2, the next id, every record (`jobs`: running, `waiting`, `provisional`), the ids of all records (`pending`, for an older scheduler) and the last 500 final outcomes (`ended`), and `paused` / `pausedAt` while the queue is paused; written to a temporary file and renamed, and not written once the scheduler is stopping |
 
 Estimates: a command with no record of its own is estimated from the others of `history.json`, narrow to wide: `normalized` (the steps as the reader reads them, with the projects resolved against the job's directory and written relative to its worktree, the options that change the work (`-c`, `-f`, `-r`, `-p:`, `--no-build`, `--filter` and its value) and nothing else: no redirections, logger or MSBuild node options, assignments, comment, quotes or pipe into a filter), `shape` (each step's kind, the projects it names, `--no-build`, a filter present), `kind` (the kinds of step alone), else `none` (`UnknownTypicalMs`). The estimate is the median of the matched commands' typical times (longest: of their longest times). Each run that ends by itself adds [time, source, expected, actual] to `accuracy.json`; `status --accuracy` prints the median error and the share within 50% per source. A command the reader cannot read (a substitution, a heredoc, a group, an unbalanced quote) has no `normalized` key and no shape, only the kind of its first program. The keys are made when a run is recorded, in the job's directory and worktree, and kept with the entry in `history.json` (`keys`); an entry without them (an older history) has its keys made from its text with its paths as written. The levels and the median were chosen by a leave-one-out check over a real `history.json`.
 
@@ -206,7 +222,9 @@ save restores the granted job as waiting until its client adopts it.
 Clients and schedulers of different checkouts work together. `ProtocolVersion` (3) adds placement, dependencies and
 the exit code in `done`; the scheduler still accepts version 2 clients (`BaseProtocolVersion`), and a version 3 client
 falls back where an older scheduler refuses (for example `run --gpu` takes the GPU lock directly). Add a field as
-optional, and send a higher version only on the messages that need it (`wireVersion` in `protocol.ts`).
+optional, and send a higher version only on the messages that need it (`wireVersion` in `protocol.ts`). `pause` and
+`resume` are version 3 messages like `start`, with no new version: a scheduler of version 3 from an older checkout
+answers `unknown message type` (the client prints the hint to stop it), and ignores `paused` in the state file.
 
 The optional fields `turn` (in `request` and `adopt`) and `pid` / `queuedAt` (in `report`) need no new version: an
 older scheduler ignores them, and an older client that sends none is matched by its pid and command, and its report is
