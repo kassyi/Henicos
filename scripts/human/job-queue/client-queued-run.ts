@@ -56,6 +56,8 @@ export class QueuedRun {
   private lastNotice = -Infinity;
   private lastPosition = 0;
   private lastStartAt: number | null = null;
+  /** The pause was told (once per run). */
+  private pauseTold = false;
   /** Set once "done" was sent: called with true on the scheduler's receipt, with false when none comes. */
   private doneReceipt: ((received: boolean) => void) | null = null;
   /**
@@ -224,6 +226,9 @@ export class QueuedRun {
       case "waiting":
         this.onWaiting(message);
         break;
+      case "paused":
+        this.tellPaused();
+        break;
       case "granted":
         this.receipts = numberField(message, "protocol") >= 3;
         if (this.state === "waiting") {
@@ -258,7 +263,19 @@ export class QueuedRun {
     this.lastPosition = numberField(message, "position");
     this.lastStartAt = typeof message.startAt === "number" ? message.startAt : null;
     this.lastNotice = Date.now();
-    prefix(`queued #${jobId}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${jobId}" shows it`);
+    const role = this.options.role ? ` (${this.options.role})` : "";
+    prefix(`queued #${jobId}${role}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${jobId}" shows it`);
+    if (message.paused === true) {
+      this.tellPaused();
+    }
+  }
+
+  /** Once per run: the queue is paused, so the job starts only after "job-queue.js resume". */
+  private tellPaused(): void {
+    if (!this.pauseTold) {
+      this.pauseTold = true;
+      prefix(`the queue is paused: #${this.jobId} starts after "job-queue.js resume"`);
+    }
   }
 
   private onWaiting(message: Incoming): void {
@@ -399,6 +416,8 @@ export class QueuedRun {
       cwd: process.cwd(),
       // Resolved once per job (git), kept for the re-registrations after a scheduler restart
       worktree: (this.worktree ??= resolveWorktree(process.cwd())),
+      // The chat that queued it, so that the live view can show its jobs on its row
+      session: process.env.CLAUDE_CODE_SESSION_ID || process.env.ANTIGRAVITY_CONVERSATION_ID || undefined,
       command: options.command,
       queuedAt: this.queuedAt,
       id: this.jobId, // keeps the job id across a scheduler restart

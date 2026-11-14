@@ -76,42 +76,53 @@ public class ManagedRewriteConsistencyTests
         Assert.True(checkedBodies >= 100, $"Only {checkedBodies} functions without one were compared");
     }
 
-    // The direct rewrites of the classifier are the operator macro assignments and the float/double StackLinq sums
+    // The direct rewrites of the classifier are the operator macro assignments, the float/double StackLinq sums,
+    // Gpu.InlinePtx and the int or long divisions that may divide the minimum by -1
     [Fact]
-    public void Rewrite_SemanticRewriteCandidates_IsExpandedOperatorMacro()
+    public void Rewrite_SemanticRewriteCandidate_IsAListedRewrite()
     {
         var compilation = RoslynTestUtility.SharedCompilation;
-        var macros = 0;
-        var sequentialSums = 0;
+        var kinds = new Dictionary<string, int>();
         foreach (var (_, declaration, model) in EnumerateDeviceFunctions(compilation))
         {
             foreach (var node in declaration.DescendantNodes())
             {
-                if (!ManagedRewriteClassifier.IsSemanticRewrite(node, model))
+                if (ManagedRewriteClassifier.IsSemanticRewrite(node, model))
                 {
-                    continue;
-                }
-
-                if (node is AssignmentExpressionSyntax assignment)
-                {
-                    macros++;
-                    Assert.True(ManagedRewriteClassifier.TryGetOperatorMacro(assignment, model, out var macro));
-                    Assert.NotNull(macro.TargetMethod);
-                }
-                else
-                {
-                    var invocation = Assert.IsType<InvocationExpressionSyntax>(node);
-                    if (!ManagedRewriteClassifier.IsInlinePtx(invocation, model))
-                    {
-                        sequentialSums++;
-                        Assert.True(ManagedRewriteClassifier.IsSequentialSum(invocation, model));
-                    }
+                    var kind = ClassifyRewrite(node, model);
+                    kinds[kind] = kinds.GetValueOrDefault(kind) + 1;
                 }
             }
         }
 
-        Assert.True(macros > 0);
-        Assert.True(sequentialSums > 0);
+        Assert.True(kinds.GetValueOrDefault("macro") > 0);
+        Assert.True(kinds.GetValueOrDefault("sum") > 0);
+        Assert.True(kinds.GetValueOrDefault("division") > 0);
+    }
+
+    // Which listed rewrite a node the classifier reports is; fails for a node that is none of them
+    private static string ClassifyRewrite(SyntaxNode node, SemanticModel model)
+    {
+        if (ManagedDivision.Plan(node, model) is not null)
+        {
+            return "division";
+        }
+
+        if (node is AssignmentExpressionSyntax assignment)
+        {
+            Assert.True(ManagedRewriteClassifier.TryGetOperatorMacro(assignment, model, out var macro));
+            Assert.NotNull(macro.TargetMethod);
+            return "macro";
+        }
+
+        var invocation = Assert.IsType<InvocationExpressionSyntax>(node);
+        if (ManagedRewriteClassifier.IsInlinePtx(invocation, model))
+        {
+            return "ptx";
+        }
+
+        Assert.True(ManagedRewriteClassifier.IsSequentialSum(invocation, model));
+        return "sum";
     }
 
     [Fact]
