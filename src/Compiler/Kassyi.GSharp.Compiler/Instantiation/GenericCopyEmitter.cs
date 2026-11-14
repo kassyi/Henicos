@@ -26,7 +26,7 @@ internal static class GenericCopyEmitter
         string name,
         SyntaxAnnotation marker)
     {
-        var body = new Writer(plan).Visit(declaration) as MethodDeclarationSyntax ??
+        var body = new Writer(plan, name).Visit(declaration) as MethodDeclarationSyntax ??
                    throw new InvalidOperationException("Writing the copy of a method gave another kind of node.");
         return body
             .WithIdentifier(SyntaxFactory.Identifier(name).WithTriviaFrom(body.Identifier))
@@ -35,7 +35,94 @@ internal static class GenericCopyEmitter
             .WithAdditionalAnnotations(marker);
     }
 
-    private sealed class Writer(GenericCopyPlan plan) : CSharpSyntaxRewriter
+    /// <summary>
+    /// Writes the helpers that the copy calls (<see cref="GenericCopyPlan.Helpers"/>): one generic method each, to be
+    /// added beside the copy.
+    /// </summary>
+    /// <param name="declaration">The generic declaration, with the original spans annotated.</param>
+    /// <param name="plan">The plan of the copy.</param>
+    /// <param name="name">The name of the copy, which the names of the helpers derive from.</param>
+    public static ImmutableArray<MethodDeclarationSyntax> EmitHelpers(
+        MethodDeclarationSyntax declaration,
+        GenericCopyPlan plan,
+        string name)
+    {
+        var spans = declaration.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);
+        var helpers = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(plan.Helpers.Length);
+        for (var i = 0; i < plan.Helpers.Length; i++)
+        {
+            var helper = WriteHelper(plan.Helpers[i], GetHelperName(name, i));
+            helpers.Add(helper.ReplaceNodes(
+                helper.DescendantNodesAndSelf(),
+                (_, rewritten) => rewritten.WithAdditionalAnnotations(spans)));
+        }
+
+        return helpers.MoveToImmutable();
+    }
+
+    // The name of the helper of the copy <name> at <index>
+    private static string GetHelperName(string name, int index) =>
+        name + "_call" + index.ToString(CultureInfo.InvariantCulture);
+
+    private const string ReceiverName = "__gsharp_receiver";
+
+    private const string TypeParameterName = "TReceiver";
+
+    // private static <return type> <name><TReceiver>(ref TReceiver __gsharp_receiver, <parameters>)
+    //     where TReceiver : <interface> => __gsharp_receiver.<member>(<arguments>);
+    private static MethodDeclarationSyntax WriteHelper(ConstrainedHelper helper, string name)
+    {
+        var member = helper.Member;
+        var parameters = ImmutableArray.CreateBuilder<ParameterSyntax>(member.Parameters.Length + 1);
+        var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(member.Parameters.Length);
+        parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(ReceiverName))
+            .WithType(SyntaxFactory.IdentifierName(TypeParameterName))
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.RefKeyword))));
+        for (var i = 0; i < member.Parameters.Length; i++)
+        {
+            var parameter = member.Parameters[i];
+            var parameterName = "__gsharp_argument" + i.ToString(CultureInfo.InvariantCulture);
+            var modifier = GetModifier(parameter.RefKind);
+            parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier(parameterName))
+                .WithType(parameter.Type.ToCsharpTypeSyntax())
+                .WithModifiers(modifier is { } keyword
+                    ? SyntaxFactory.TokenList(SyntaxFactory.Token(keyword))
+                    : default));
+            arguments.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(parameterName))
+                .WithRefKindKeyword(modifier is { } kind ? SyntaxFactory.Token(kind) : default));
+        }
+
+        var call = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName(ReceiverName),
+                SyntaxFactory.IdentifierName(member.Name)),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments.ToImmutable())));
+        var constraint = SyntaxFactory.TypeParameterConstraintClause(SyntaxFactory.IdentifierName(TypeParameterName))
+            .WithConstraints(SyntaxFactory.SingletonSeparatedList<TypeParameterConstraintSyntax>(
+                SyntaxFactory.TypeConstraint(member.ContainingType.ToCsharpTypeSyntax())));
+        return SyntaxFactory.MethodDeclaration(member.ReturnType.ToCsharpTypeSyntax(), name)
+            .WithModifiers(SyntaxFactory.TokenList(
+                SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
+                SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .WithTypeParameterList(SyntaxFactory.TypeParameterList(
+                SyntaxFactory.SingletonSeparatedList(SyntaxFactory.TypeParameter(TypeParameterName))))
+            .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters.ToImmutable())))
+            .WithConstraintClauses(SyntaxFactory.SingletonList(constraint))
+            .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(call))
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+    private static SyntaxKind? GetModifier(RefKind kind) =>
+        kind switch
+        {
+            RefKind.Ref => SyntaxKind.RefKeyword,
+            RefKind.Out => SyntaxKind.OutKeyword,
+            RefKind.In => SyntaxKind.InKeyword,
+            _ => null,
+        };
+
+    private sealed class Writer(GenericCopyPlan plan, string copyName) : CSharpSyntaxRewriter
     {
         public override SyntaxNode? Visit(SyntaxNode? node)
         {
@@ -62,6 +149,7 @@ internal static class GenericCopyEmitter
                     member.Opaque),
                 CopyRewrite.NameOf nameOf => SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
                     SyntaxFactory.Literal(nameOf.Text)),
+                CopyRewrite.ConstrainedCall call => WriteHelperCall(Inner<InvocationExpressionSyntax>(node), call),
                 CopyRewrite.ArgumentCall => Parenthesize(Inner<InvocationExpressionSyntax>(node).ArgumentList
                     .Arguments[0].Expression),
                 CopyRewrite.FalseCall => SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression),
@@ -147,6 +235,21 @@ internal static class GenericCopyEmitter
                 ]))
             );
             return Parenthesize(SyntaxFactory.CastExpression(WriteType(type), max));
+        }
+
+        // <helper><<type>>(ref <receiver>, <arguments>)
+        private ExpressionSyntax WriteHelperCall(InvocationExpressionSyntax call, CopyRewrite.ConstrainedCall rewrite)
+        {
+            var helper = plan.Helpers[rewrite.HelperIndex];
+            var callee = (MemberAccessExpressionSyntax)call.Expression;
+            var receiver = SyntaxFactory.Argument(callee.Expression.WithoutTrivia())
+                .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword));
+            var name = WriteGenericName(
+                GetHelperName(copyName, rewrite.HelperIndex),
+                ImmutableArray.Create(helper.ClosedType));
+            return SyntaxFactory.InvocationExpression(
+                name,
+                call.ArgumentList.WithArguments(call.ArgumentList.Arguments.Insert(0, receiver)));
         }
 
         // global::System.Math.<name>(<arguments>), cast to the result type when there is one

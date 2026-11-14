@@ -56,6 +56,13 @@ internal abstract record CopyRewrite(int NodeIndex)
     /// </summary>
     public sealed record NameOf(int NodeIndex, string Text) : CopyRewrite(NodeIndex);
 
+    /// <summary>
+    /// The call <c>x.M(a)</c> of an interface method through a type parameter, whose implementation is explicit or a
+    /// default one: <c>Helper&lt;S&gt;(ref x, a)</c>, with the helper of <see cref="GenericCopyPlan.Helpers"/>.
+    /// </summary>
+    /// <param name="HelperIndex">The position of the helper in <see cref="GenericCopyPlan.Helpers"/>.</param>
+    public sealed record ConstrainedCall(int NodeIndex, int HelperIndex) : CopyRewrite(NodeIndex);
+
     /// <summary>A call that returns its argument: <c>T.Abs(x)</c> of an unsigned type as <c>(x)</c>.</summary>
     public sealed record ArgumentCall(int NodeIndex) : CopyRewrite(NodeIndex);
 

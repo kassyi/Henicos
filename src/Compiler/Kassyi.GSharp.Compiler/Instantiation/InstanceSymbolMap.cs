@@ -127,8 +127,15 @@ internal sealed class InstanceSymbolMap
             return new ConstrainedMember.Member(closed, implementation);
         }
 
-        return ResolvePrivate(target, closed) ?? new ConstrainedMember.Unsupported(closed,
-            $"'{closed.Name}' implements '{target.Name}' explicitly; implement it as a public member");
+        if (ResolvePrivate(target, closed) is { } closedForm)
+        {
+            return closedForm;
+        }
+
+        return CanBeCalledThroughHelper(member)
+            ? new ConstrainedMember.ConstrainedCall(closed, (IMethodSymbol)member)
+            : new ConstrainedMember.Unsupported(closed,
+                $"'{closed.Name}' implements '{target.Name}' explicitly; implement it as a public member");
     }
 
     // The type does not implement the member: its interface does, with a default implementation
@@ -142,12 +149,22 @@ internal sealed class InstanceSymbolMap
         }
 
         // The numeric types of the BCL leave Max, Min and Sign of char to the default implementations
-        return member is IMethodSymbol method && BuiltinNumerics.HasPrivateIdentities(closed) &&
-               ResolvePrivateMethod(method.Name, closed) is { } closedForm
-            ? closedForm
+        if (member is IMethodSymbol method && BuiltinNumerics.HasPrivateIdentities(closed) &&
+            ResolvePrivateMethod(method.Name, closed) is { } closedForm)
+        {
+            return closedForm;
+        }
+
+        return CanBeCalledThroughHelper(member)
+            ? new ConstrainedMember.ConstrainedCall(closed, (IMethodSymbol)member)
             : new ConstrainedMember.Unsupported(closed,
                 $"'{member.Name}' runs the default implementation of '{interfaceType.Name}'");
     }
+
+    // An instance method with no type parameters of its own and no ref return: a helper can forward to it
+    private static bool CanBeCalledThroughHelper(ISymbol member) =>
+        member is IMethodSymbol { IsStatic: false, IsGenericMethod: false, ReturnsByRef: false } method &&
+        method.MethodKind == MethodKind.Ordinary;
 
     // The BCL implements the generic math members of its numeric types privately; each has a closed form
     private static ConstrainedMember? ResolvePrivate(ISymbol target, ITypeSymbol closed)

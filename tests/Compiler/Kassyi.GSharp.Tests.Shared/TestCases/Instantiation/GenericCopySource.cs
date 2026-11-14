@@ -47,6 +47,33 @@ namespace App
     {
     }
 
+    public interface ICounter
+    {
+        int Next();
+
+        void Add(int amount, ref int total);
+
+        int Plus(int value);
+    }
+
+    // The members that change the struct are explicit: a call on a copy of it would not show
+    public struct Counter : ICounter
+    {
+        public int Count;
+
+        int ICounter.Next() => ++Count;
+
+        void ICounter.Add(int amount, ref int total)
+        {
+            Count += amount;
+            total += Count;
+        }
+
+        public int Plus(int value) => value;
+
+        int ICounter.Plus(int value) => Count + value;
+    }
+
     public static class Exts
     {
         public static int Ext<T>(this T value) => 2;
@@ -177,6 +204,29 @@ namespace App
         }
 
         public static int CallFoo<T>(T x) where T : IFoo => x.M();
+
+        public static int CallFooOfResult<T>(Func<T> make) where T : IFoo => make().M();
+
+        // The calls change x itself: 1 and then 2
+        public static int NextTwice<T>(T x) where T : ICounter
+        {
+            x.Next();
+            return x.Next();
+        }
+
+        public static int AddAndPlus<T>(T x, int amount) where T : ICounter
+        {
+            var total = 0;
+            x.Add(amount, ref total);
+            x.Add(amount, ref total);
+            return total * 100 + x.Plus(7);
+        }
+
+        public static int NextInArray<T>(T[] items) where T : ICounter
+        {
+            items[0].Next();
+            return items[0].Next() + items[1].Next();
+        }
 
         public static int CallDefault<T>(T x) where T : IDefault => x.M();
 
