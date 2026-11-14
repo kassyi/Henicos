@@ -176,9 +176,10 @@ export function formatAccuracy(rows: readonly LevelAccuracy[]): string {
   }
   const lines = ["level       runs  median error  within 50%"];
   for (const row of rows) {
-    lines.push(
-      `${row.level.padEnd(10)}  ${String(row.runs).padStart(4)}  ${`${row.medianErrorPercent}%`.padStart(12)}  ${`${row.within50Percent}%`.padStart(10)}`,
-    );
+    const runs = String(row.runs).padStart(4);
+    const error = `${row.medianErrorPercent}%`.padStart(12);
+    const within = `${row.within50Percent}%`.padStart(10);
+    lines.push(`${row.level.padEnd(10)}  ${runs}  ${error}  ${within}`);
   }
   return lines.join("\n");
 }
