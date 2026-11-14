@@ -177,9 +177,15 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         }
     }
 
-    // M(ref x), M(out y): written when the call returns
+    // M(ref x), M(out y), and s.M() of a struct member that may write s: written when the call returns
     public void OnCallReturned(IInvocationOperation invocation, ControlFlowGraph graph, int node)
     {
+        if (UniformityWrites.WritesReceiver(invocation))
+        {
+            AddWrite(invocation, graph, node);
+            return;
+        }
+
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)

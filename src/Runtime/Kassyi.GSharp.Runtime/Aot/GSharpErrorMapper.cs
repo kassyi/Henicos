@@ -47,6 +47,9 @@ public static class GSharpErrorMapper
             "G#: the dynamic shared memory of a block (sharedMemBytes) could not be allocated";
         dict[ComputeBuiltinMessageId("G#: the static shared memory of a declaration could not be allocated")] =
             "G#: the static shared memory of a declaration could not be allocated";
+        // A dynamic shared memory declaration of a negative count (__gsharp_dsmem_place of the CUDA prelude)
+        dict[ComputeBuiltinMessageId("G#: the count of a shared memory declaration is negative")] =
+            "G#: the count of a shared memory declaration is negative";
 
         // An ArraySegment<T> or ImmutableArray<T> without an array, and a null CopyTo destination
         // (__gsharp_view_message of the CUDA prelude); a null array passed to Array.Fill, Clear, Reverse or Copy
