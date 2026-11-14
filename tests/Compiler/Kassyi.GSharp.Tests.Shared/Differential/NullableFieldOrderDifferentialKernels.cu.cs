@@ -30,6 +30,20 @@ public struct NullableOrderLocalInner
 }
 
 /// <summary>
+/// A struct whose array field holds <see cref="System.Nullable{T}"/> values of a struct named nowhere else.
+/// </summary>
+public struct NullableOrderArrayHolder
+{
+    public NullableOrderArrayInner?[] Items;
+}
+
+/// <summary>The element struct of <see cref="NullableOrderArrayHolder"/>.</summary>
+public struct NullableOrderArrayInner
+{
+    public int A;
+}
+
+/// <summary>
 /// Differential kernels for structs with a <c>Nullable&lt;S&gt;</c> field of another user struct: the device needs
 /// <c>S</c> defined before the struct whose <c>System_Nullable&lt;S&gt;</c> field holds it (#1888).
 /// </summary>
@@ -43,6 +57,18 @@ public static partial class NullableFieldOrderDifferentialKernels
         "b",
         "local",
     ];
+
+    [GpuKernel]
+    public static void ReadNullableArrayFieldKernel(NullableOrderArrayHolder h, int[] r)
+    {
+        int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (i >= h.Items.Length)
+        {
+            return;
+        }
+
+        r[i] = h.Items[i].HasValue ? h.Items[i].GetValueOrDefault().A : -1;
+    }
 
     [GpuKernel]
     public static void ReadNullableStructFieldKernel(NullableOrderOuter[] items, int[] r)

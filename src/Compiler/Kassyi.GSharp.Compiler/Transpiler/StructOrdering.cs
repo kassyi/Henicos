@@ -169,9 +169,12 @@ internal static class StructOrdering
         // the device, which the `auto` local of an unfused query holds; a definition from its C# fields (a Func as a
         // delegate field) would only fail its layout checks (#1086).
         // [WHY] A Nullable<S> is the template System_Nullable<S> of the prelude, which needs S defined first; Nullable
-        // itself is not a user type, so S is what is registered and ordered (#1888)
+        // itself is not a user type, so S is what is registered and ordered (#1888), also as the element of an
+        // array-like type (S?[], Span<S?>, Memory<S?>)
         var unwrapped = typeSymbol?.UnwrapNullable();
-        var structType = unwrapped.TryGetArrayLikeElementType(out var elementType) ? elementType : unwrapped;
+        var structType = unwrapped.TryGetArrayLikeElementType(out var elementType)
+            ? elementType.UnwrapNullable()
+            : unwrapped;
         if (structType is INamedTypeSymbol candidate && GlobalCppNames.IsEmittedUserType(candidate) &&
             !StackLinqHelper.IsStackLinqType(candidate))
         {
