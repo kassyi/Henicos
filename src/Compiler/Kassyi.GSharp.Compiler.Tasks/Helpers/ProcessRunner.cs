@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Compiler.Tasks.Helpers;
@@ -21,7 +20,9 @@ public class ProcessRunner : IProcessRunner
     {
         ConfigureRedirection(startInfo);
 
-        var process = new Process
+        // Declared before the tree and the registration, so the registration is disposed (waiting for a running
+        // callback) before the process is.
+        using var process = new Process
         {
             StartInfo = startInfo
         };
@@ -36,19 +37,15 @@ public class ProcessRunner : IProcessRunner
             throw new TaskCanceledException();
         }
 
-        if (!process.Start())
-        {
-            throw new InvalidOperationException($"Failed to start process: {startInfo.FileName}");
-        }
-
+        using var tree = ProcessTree.Start(process);
         using var ctr = cancellationToken.Register(state =>
         {
-            if (state is Process p)
+            if (state is ProcessTree started)
             {
                 tcs.TrySetCanceled();
-                TryKill(p);
+                started.Kill();
             }
-        }, process);
+        }, tree);
 
 #if NET8_0_OR_GREATER
         var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
@@ -58,23 +55,17 @@ public class ProcessRunner : IProcessRunner
         var stderrTask = process.StandardError.ReadToEndAsync();
 #endif
 
-        try
-        {
-            await Task.WhenAll(tcs.Task, stdoutTask, stderrTask).ConfigureAwait(false);
-            return new ProcessResult(process.ExitCode, await stdoutTask, await stderrTask);
-        }
-        finally
-        {
-            process.Dispose();
-        }
+        await Task.WhenAll(tcs.Task, stdoutTask, stderrTask).ConfigureAwait(false);
+        return new ProcessResult(process.ExitCode, await stdoutTask, await stderrTask);
     }
 
     /// <inheritdoc />
     /// <remarks>
     /// Standard error is drained on a dedicated thread while standard output is read on the calling thread, so neither
     /// pipe can fill up and block the child. Both reads end at end-of-stream, which is why the output text is identical to
-    /// <see cref="RunAsync"/> including trailing newlines. On cancellation the process is killed (without its children,
-    /// which <c>netstandard2.0</c> cannot do) and <see cref="OperationCanceledException"/> is thrown.
+    /// <see cref="RunAsync"/> including trailing newlines. On cancellation the process is killed together with the
+    /// processes it started (which hold the pipes until they end) and <see cref="OperationCanceledException"/> is
+    /// thrown.
     /// </remarks>
     public ProcessResult Run(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
     {
@@ -82,20 +73,17 @@ public class ProcessRunner : IProcessRunner
         ConfigureRedirection(startInfo);
 
         using var process = new Process { StartInfo = startInfo };
-        if (!process.Start())
-        {
-            throw new InvalidOperationException($"Failed to start process: {startInfo.FileName}");
-        }
+        using var tree = ProcessTree.Start(process);
 
         var killedByCancellation = 0;
         using var registration = cancellationToken.Register(state =>
         {
-            if (state is Process p)
+            if (state is ProcessTree started)
             {
                 Interlocked.Exchange(ref killedByCancellation, 1);
-                TryKill(p);
+                started.Kill();
             }
-        }, process);
+        }, tree);
 
         var stderr = string.Empty;
         Exception? stderrFailure = null;
@@ -142,26 +130,5 @@ public class ProcessRunner : IProcessRunner
         startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
         startInfo.CreateNoWindow = true;
-    }
-
-    private static void TryKill(Process process)
-    {
-        try
-        {
-            if (!process.HasExited)
-            {
-                process.Kill();
-            }
-        }
-        // smell-scan: ignore swallowed-exception -- the process exited or was disposed between the check and the kill,
-        // so there is nothing left to stop
-        catch (InvalidOperationException)
-        {
-        }
-        // smell-scan: ignore swallowed-exception -- access denied or already terminating; killing is best-effort and
-        // the caller observes the cancellation anyway
-        catch (Win32Exception)
-        {
-        }
     }
 }

@@ -65,7 +65,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        NullRepresentation.AppendCoalesceAssignment(node.Left, node.Right, ref context);
+        NullRepresentation.AppendCoalesceAssignment(node, ref context);
     }
 
     // x = y, in the C# order when the operands interfere
