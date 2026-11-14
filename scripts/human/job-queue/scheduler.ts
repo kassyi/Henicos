@@ -15,6 +15,8 @@ import {
 export interface Estimate {
   typicalMs: number;
   longestMs: number;
+  /** Where it came from (estimate-fallback.ts); absent in hand-made estimates. */
+  from?: string;
 }
 
 /** What the scheduler needs to know of a job. The server's job record extends it. */

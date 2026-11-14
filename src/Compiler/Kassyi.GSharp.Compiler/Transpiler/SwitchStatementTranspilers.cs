@@ -72,8 +72,7 @@ internal static class SwitchStatementTranspilers
                     continue;
                 }
 
-                if (stmt is BlockSyntax nested &&
-                    nested.HasAnnotations(LoweringAnnotations.ScopedBlockAnnotationKind))
+                if (stmt is BlockSyntax nested && !CppBlockScopes.IsWrittenWithoutBraces(nested))
                 {
                     context.Visitor.VisitStatementOrBlock(nested);
                 }
