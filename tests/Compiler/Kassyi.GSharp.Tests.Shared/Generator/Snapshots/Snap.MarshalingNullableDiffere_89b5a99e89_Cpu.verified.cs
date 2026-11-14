@@ -74,6 +74,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(210991127u, "MarshalingNul
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(848851412u, "MarshalingNullableDifferentialKernels.cs", 225, 9, "BagsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(347232480u, "MarshalingNullableDifferentialKernels.cs", 226, 9, "BagsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(160170807u, "MarshalingNullableDifferentialKernels.cs", 226, 39, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1448591541u, "MarshalingNullableDifferentialKernels.cs", 226, 50, "BagsKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(100298297u, "MarshalingNullableDifferentialKernels.cs", 226, 56, "BagsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1669607319u, "MarshalingNullableDifferentialKernels.cs", 227, 22, "BagsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1970515428u, "MarshalingNullableDifferentialKernels.cs", 228, 9, "BagsKernel", "G#: a null array is read"),
@@ -2815,7 +2816,7 @@ __gsharp_state = -1;return;
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_3_tid,4);
 auto __gsharp_id_5_value = ((*__gsharp_id_0_bag).HasValue?(*__gsharp_id_0_bag).Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag{});
 __gsharp_array_at(__gsharp_id_2_probe, __gsharp_id_4_o+0, 848851412u)=((*__gsharp_id_0_bag).HasValue?__gsharp_id_5_value.__gsharp_mb_Tag:(-1));
-__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,1), 347232480u)=((*__gsharp_id_0_bag).HasValue?__gsharp_array_at(__gsharp_id_5_value.__gsharp_mb_Data, __gsharp_id_3_tid%__gsharp_array_ref(__gsharp_id_5_value.__gsharp_mb_Data, 100298297u).length, 160170807u):(-1));
+__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,1), 347232480u)=((*__gsharp_id_0_bag).HasValue?__gsharp_array_at(__gsharp_id_5_value.__gsharp_mb_Data, __gsharp_rem_i32(__gsharp_id_3_tid,__gsharp_array_ref(__gsharp_id_5_value.__gsharp_mb_Data, 100298297u).length,1448591541u), 160170807u):(-1));
 auto __gsharp_id_6_holder = __gsharp_array_at(__gsharp_id_1_holders, __gsharp_id_3_tid, 1669607319u).__gsharp_mb_Bag;
 __gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,2), 1970515428u)=(__gsharp_id_6_holder.HasValue?1:0);
 __gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,3), 1925223060u)=(__gsharp_id_6_holder.HasValue?__gsharp_array_at((__gsharp_id_6_holder.HasValue?__gsharp_id_6_holder.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag{}).__gsharp_mb_Data, 0, 2097966654u):(-1));
