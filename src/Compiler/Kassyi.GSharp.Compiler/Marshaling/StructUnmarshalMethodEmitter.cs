@@ -55,10 +55,10 @@ internal static class StructUnmarshalMethodEmitter
             return;
         }
 
-        if (member.Type.TryGetArrayLikeElementType(out var elementType))
+        if (member.Type.IsArrayLikeType())
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
+            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
         }
         else if (HostShadowStructs.UsesShadow(member.Type, dialect))
         {
@@ -89,9 +89,17 @@ internal static class StructUnmarshalMethodEmitter
         }
     }
 
+    // An array field, or the view of another array-like field (Memory<T>, ArraySegment<T>, ..., #1267)
     internal static void WriteUnmarshalArrayMember(SourceWriter writer, string host, string native,
-        ITypeSymbol elementType, ITranspilerDialect dialect)
+        ITypeSymbol arrayLikeType, ITranspilerDialect dialect)
     {
+        if (arrayLikeType is not IArrayTypeSymbol { ElementType: var elementType })
+        {
+            ArrayViewFieldEmitter.WriteUnmarshal(writer, ArrayFieldView.Create(arrayLikeType, dialect), host, native,
+                dialect);
+            return;
+        }
+
         if (!dialect.IsCuda)
         {
             WriteCpuUnmarshalArrayMember(writer, host, native, elementType, dialect);

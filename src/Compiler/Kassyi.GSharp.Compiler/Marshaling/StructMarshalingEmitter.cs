@@ -64,7 +64,7 @@ internal static class StructMarshalingEmitter
     {
         if (HostShadowStructs.TryGetNullableValue(s, out _))
         {
-            return NullableShadowEmitter.Render(NullableShadowPlan.Create(s, dialect));
+            return NullableShadowEmitter.Render(NullableShadowPlan.Create(s, dialect), dialect);
         }
 
         var structLayout = TypeLayoutCalculator.GetStructLayout(s, dialect);
@@ -129,7 +129,7 @@ internal static class StructMarshalingEmitter
             marshaledType.TryGetArrayLikeElementType(out var element) &&
             (KernelParameterShape.IsConvertedOnCuda(element) || KernelParameterShape.IsConverted(element, HostDialects.Cpu))
                 ? element
-                : type,
+                : marshaledType,
             structs);
     }
 
@@ -141,7 +141,7 @@ internal static class StructMarshalingEmitter
         HostShadowStructs.Collect(
             marshaledType.TryGetArrayLikeElementType(out var element) && KernelParameterShape.IsConverted(element, dialect)
                 ? element
-                : type,
+                : marshaledType,
             structs,
             dialect);
     }

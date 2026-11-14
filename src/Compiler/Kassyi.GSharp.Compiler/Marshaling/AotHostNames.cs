@@ -117,6 +117,15 @@ internal static class AotHostNames
         if (symbol is ITypeSymbol type && HostShadowStructs.TryGetNullableValue(type, out var value))
         {
             writer.Append(GSharpInternalNames.Launcher.NullableShadowPrefix);
+
+            // [WHY] The name of an array-like type says nothing of its element: Memory<int>? and Memory<float>? need
+            // keys of their own
+            if (value.TryGetArrayLikeElementType(out var element))
+            {
+                writer.Append(value is IArrayTypeSymbol ? "Array" : value.Name).Append('_');
+                return ref writer.AppendMarshalTypeKey(element);
+            }
+
             return ref writer.AppendMarshalTypeKey(value);
         }
 
@@ -156,6 +165,25 @@ internal static class AotHostNames
     {
         writer.Append(HoldsArrayMethodPrefix).AppendMarshalTypeKey(symbol);
         return ref writer;
+    }
+
+    /// <summary>Gets <c>Marshal_{key}</c>, as code inside <c>AotContexts</c> calls it.</summary>
+    public static string GetMarshalMethodName(ISymbol symbol) => GetName(symbol, MarshalMethodPrefix);
+
+    /// <summary>Gets <c>Unmarshal_{key}</c>, as code inside <c>AotContexts</c> calls it.</summary>
+    public static string GetUnmarshalMethodName(ISymbol symbol) => GetName(symbol, UnmarshalMethodPrefix);
+
+    /// <summary>Gets <c>CopyArrays_{key}</c>, as code inside <c>AotContexts</c> calls it.</summary>
+    public static string GetCopyArraysMethodName(ISymbol symbol) => GetName(symbol, CopyArraysMethodPrefix);
+
+    /// <summary>Gets <c>HoldsArray_{key}</c>, as code inside <c>AotContexts</c> calls it.</summary>
+    public static string GetHoldsArrayMethodName(ISymbol symbol) => GetName(symbol, HoldsArrayMethodPrefix);
+
+    private static string GetName(ISymbol symbol, string prefix)
+    {
+        using var writer = new SourceWriter();
+        writer.Append(prefix).AppendMarshalTypeKey(symbol);
+        return writer.ToString();
     }
 
     /// <summary>Appends <c>AotContexts.Marshal_{key}</c> (qualified by <paramref name="kernelClass"/> when given), the way a kernel wrapper calls it.</summary>

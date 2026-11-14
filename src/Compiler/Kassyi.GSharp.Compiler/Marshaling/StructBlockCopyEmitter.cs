@@ -102,16 +102,18 @@ internal static class StructBlockCopyEmitter
         writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
         using (writer.Scope())
         {
-            if (member.Type.TryGetArrayLikeElementType(out var arrayElementType))
+            if (member.Type.IsArrayLikeType())
             {
                 const string NativeElement = "((global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy*)pField)[k]";
                 if (toNative)
                 {
-                    StructMarshalMethodEmitter.WriteMarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType, dialect);
+                    StructMarshalMethodEmitter.WriteMarshalArrayMember(
+                        writer, "host[k]", NativeElement, member.Type, dialect);
                 }
                 else
                 {
-                    StructUnmarshalMethodEmitter.WriteUnmarshalArrayMember(writer, "host[k]", NativeElement, arrayElementType, dialect);
+                    StructUnmarshalMethodEmitter.WriteUnmarshalArrayMember(
+                        writer, "host[k]", NativeElement, member.Type, dialect);
                 }
 
                 return;

@@ -87,8 +87,15 @@ internal static class StructArrayHelperEmitter
     // [WHY] The launch's HostArrayCopies gives every holder of one array the same copy, and none to an array that a
     // writable argument holds (#985); only a new copy has elements still to copy, which also ends the walk of an array
     // that its own elements hold
-    private static void WriteCopyArraysValue(SourceWriter writer, string value, ITypeSymbol type)
+    internal static void WriteCopyArraysValue(SourceWriter writer, string value, ITypeSymbol type)
     {
+        // A view that is not an array is copied as its slice (#1267)
+        if (type.IsArrayLikeType() && type is not IArrayTypeSymbol)
+        {
+            ArrayViewFieldEmitter.WriteCopyArrays(writer, ArrayFieldView.Create(type, HostDialects.Cpu), value);
+            return;
+        }
+
         if (!type.TryGetArrayLikeElementType(out var element))
         {
             writer.AppendCopyArraysMethodName(type);
@@ -115,9 +122,9 @@ internal static class StructArrayHelperEmitter
     }
 
     // An array, or a user struct with an array field at any depth (TransferClassifier.TryFindArrayField), or a Nullable
-    // of one
+    // of either
     internal static bool HoldsArrays(ITypeSymbol type) =>
-        type.IsArrayLikeType() || HostShadowStructs.HoldsArrayFields(type);
+        type.IsArrayLikeType() || type.IsNullableArrayLike() || HostShadowStructs.HoldsArrayFields(type);
 
     // public static bool HoldsArray_<key>(<S> host, object array)
     // { <host mirror binding>; if (ReferenceEquals(host.<array>, array) [|| HoldsArray_<E>(host.<array>, array)]) return true;
