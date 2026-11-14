@@ -438,10 +438,89 @@ export async function checkStartAndRestore(assert: AssertModule): Promise<void> 
   });
 }
 
+/**
+ * pause and resume on a scheduler in this process: the waiting clients are told once, a client that queues while
+ * paused is told in its "queued", a freed slot is not taken, status shows the pause, the state file keeps it (a
+ * restored scheduler is paused too), and resume grants the waiting jobs in their order.
+ */
+export async function checkPauseAndRestore(assert: AssertModule): Promise<void> {
+  await withServer(1, async (server, port) => {
+    const a = await connectRaw(port);
+    a.send(registration("A", 1, process.pid));
+    const aId = Number((await a.until("granted"))?.id);
+    const b = await connectRaw(port);
+    b.send(registration("B", 1, process.pid));
+    assert.strictEqual((await b.until("queued"))?.paused, undefined, "not paused yet: no pause in its queued");
+    const first = await connectRaw(port);
+    first.send({ type: "pause" });
+    const paused = await first.until("pause-result");
+    assert.deepStrictEqual(
+      [paused?.paused, paused?.changed, paused?.running, paused?.waiting],
+      [true, true, 1, 1],
+      "pause says what it holds",
+    );
+    assert.strictEqual(typeof (await b.until("paused"))?.at, "number", "a waiting client is told once");
+    const again = await connectRaw(port);
+    again.send({ type: "pause" });
+    assert.strictEqual((await again.until("pause-result"))?.changed, false, "a second pause changes nothing");
+    const c = await connectRaw(port);
+    c.send(registration("C", 1, process.pid));
+    assert.strictEqual((await c.until("queued"))?.paused, true, "a client that queues while paused is told");
+    a.send({ type: "done", completed: true, exitCode: 0 });
+    await a.until("done-ok");
+    await until("A has ended", () => server.find(aId) === undefined);
+    assert.strictEqual(server.scheduler.running.length, 0, "the freed slot is not taken");
+    assert.strictEqual(server.scheduler.waiting.length, 2, "B and C keep waiting");
+    assert.strictEqual(
+      b.messages.some((m) => m.type === "granted"),
+      false,
+    );
+    const status = await connectRaw(port);
+    status.send({ type: "status" });
+    const shown = await status.until("status");
+    assert.deepStrictEqual([shown?.paused, typeof shown?.pausedAt], [true, "number"], "status shows the pause");
+    // The state file keeps it: a scheduler restored from it is paused
+    const next = new JobServer({
+      slots: 1,
+      memoryMb: 1e9,
+      policy: "fifo",
+      port: 0,
+      stateDir: path.dirname(server.store.path),
+      log: () => {},
+    });
+    assert.strictEqual(next.store.restore(), "current");
+    assert.deepStrictEqual(
+      [next.scheduler.paused, next.scheduler.pausedAt],
+      [true, server.scheduler.pausedAt],
+      "the pause survives a restart",
+    );
+    const resumed = await connectRaw(port);
+    resumed.send({ type: "resume" });
+    assert.deepStrictEqual(
+      [(await resumed.until("pause-result"))?.paused, (await b.until("granted")) !== null],
+      [false, true],
+      "resume grants the first waiting job",
+    );
+    server.store.persist();
+    const afterResume = new JobServer({
+      slots: 1,
+      memoryMb: 1e9,
+      policy: "fifo",
+      port: 0,
+      stateDir: path.dirname(server.store.path),
+      log: () => {},
+    });
+    afterResume.store.restore();
+    assert.strictEqual(afterResume.scheduler.paused, false, "a resume is saved as well");
+    [a, b, c, first, again, status, resumed].forEach((client) => client.close());
+  });
+}
+
 export const JobServerChecks: Record<string, (assert: AssertModule) => Promise<void>> = {
   checkRecordsFollowTheJobs,
   checkObservationEpoch,
   checkCloseCommutes,
   checkFinalOutcomeStays,
   checkStartAndRestore,
+  checkPauseAndRestore,
 };
