@@ -1,3 +1,6 @@
+using System.Threading.Tasks;
+using Kassyi.GSharp.Compiler.Lowering;
+
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
@@ -118,6 +121,148 @@ public class IteratorTypeResolverTests
         var model = s_compilation.Value.GetSemanticModel(forEach.SyntaxTree);
 
         Assert.Equal(expected, IteratorTypeResolver.IsIteratorForEachSource(forEach.Expression, model));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void TryResolveIteratorSource_LocalInitializedInDifferentSyntaxTree_ResolvesIteratorInvocation()
+    {
+        const string LibSource = """
+            using System.Collections.Generic;
+            using Kassyi.GSharp.Core;
+
+            public static partial class IterLib
+            {
+                [GpuDeviceFunction]
+                public static IEnumerable<int> Inner(int n)
+                {
+                    yield return n;
+                    yield return n + 1;
+                }
+
+                [GpuDeviceFunction]
+                public static IEnumerable<int> Outer(int n)
+                {
+                    var it = Inner(n);
+                    foreach (var x in it)
+                    {
+                        yield return x * 10;
+                    }
+                }
+            }
+            """;
+
+        const string KernelSource = """
+            using Kassyi.GSharp.Core;
+
+            public static partial class CrossFileKernels
+            {
+                [GpuKernel]
+                public static void SumKernel(int[] output)
+                {
+                    int tid = ThreadIndex.X;
+                    int sum = 0;
+                    foreach (var v in IterLib.Outer(tid))
+                    {
+                        sum += v;
+                    }
+                    output[tid] = sum;
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+            ("IterLib.cs", LibSource),
+            ("CrossFileKernels.cu.cs", KernelSource));
+
+        var libTree = compilation.SyntaxTrees.First(static t => t.FilePath.EndsWith("IterLib.cs", StringComparison.Ordinal));
+        var kernelTree = compilation.SyntaxTrees.First(static t => t.FilePath.EndsWith("CrossFileKernels.cu.cs", StringComparison.Ordinal));
+        var kernelModel = compilation.GetSemanticModel(kernelTree);
+
+        var outerDecl = libTree.GetRoot().DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Single(static m => m.Identifier.ValueText == "Outer");
+
+        var annotatedBody = LoweringAnnotations.AnnotateOriginalSpans(
+            outerDecl.Body ?? throw new InvalidOperationException("Outer has no body"),
+            compilation);
+
+        var forEach = annotatedBody.DescendantNodes()
+            .OfType<ForEachStatementSyntax>()
+            .Single(static f => f.Expression is IdentifierNameSyntax { Identifier.ValueText: "it" });
+
+        var resolved = IteratorTypeResolver.TryResolveIteratorSource(
+            forEach.Expression,
+            kernelModel,
+            out var invocation,
+            out var iteratorMethod);
+
+        Assert.True(resolved);
+        Assert.NotNull(invocation);
+        Assert.NotNull(iteratorMethod);
+        Assert.Equal("Inner", iteratorMethod.Name);
+        Assert.True(IteratorTypeResolver.IsIteratorForEachSource(forEach.Expression, kernelModel));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Generator_CrossFileIteratorEnumeratedThroughLocal_DoesNotEmitUndeclaredLoopVariable()
+    {
+        const string LibSource = """
+            using System.Collections.Generic;
+            using Kassyi.GSharp.Core;
+
+            public static partial class IterLib
+            {
+                [GpuDeviceFunction]
+                public static IEnumerable<int> Inner(int n)
+                {
+                    yield return n;
+                    yield return n + 1;
+                }
+
+                [GpuDeviceFunction]
+                public static IEnumerable<int> Outer(int n)
+                {
+                    var it = Inner(n);
+                    foreach (var x in it)
+                    {
+                        yield return x * 10;
+                    }
+                }
+            }
+            """;
+
+        const string KernelSource = """
+            using Kassyi.GSharp.Core;
+
+            public static partial class CrossFileKernels
+            {
+                [GpuKernel]
+                public static void SumKernel(int[] output)
+                {
+                    int tid = ThreadIndex.X;
+                    int sum = 0;
+                    foreach (var v in IterLib.Outer(tid))
+                    {
+                        sum += v;
+                    }
+                    output[tid] = sum;
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+            ("IterLib.cs", LibSource),
+            ("CrossFileKernels.cu.cs", KernelSource));
+
+        var (driver, output, diagnostics) = GeneratorTestRunner.RunGenerator(compilation, "Cpu");
+        var generatedTrees = driver.GetRunResult().GeneratedTrees;
+        var combinedGenerated = string.Join("\n", generatedTrees.Select(static t => t.GetText().ToString()));
+
+        Assert.NotEmpty(combinedGenerated);
+        Assert.Contains("__gsharp_il_1_1_it_arg_0", combinedGenerated);
+        Assert.DoesNotContain(": __gsharp_il_1_1_it)", combinedGenerated);
     }
 
     private static ITypeSymbol CandidateType(string parameterName) =>

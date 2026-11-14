@@ -195,13 +195,18 @@ internal static class IteratorTypeResolver
         if (unwrapped is IdentifierNameSyntax identifier &&
             semanticModel.GetSymbol(identifier) is ILocalSymbol local &&
             local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) &&
-            declarator.Initializer?.Value is { } initializerValue &&
-            UnwrapParentheses(initializerValue) is InvocationExpressionSyntax initInv &&
-            semanticModel.GetSymbol(initInv) is IMethodSymbol initMethod &&
-            IsExternalIteratorCandidate(initMethod))
+            declarator.Initializer?.Value is { } initializerValue)
         {
-            methodSymbol = initMethod;
-            return true;
+            var initModel = semanticModel.SyntaxTree == initializerValue.SyntaxTree
+                ? semanticModel
+                : semanticModel.Compilation.GetCachedSemanticModel(initializerValue.SyntaxTree);
+            if (UnwrapParentheses(initializerValue) is InvocationExpressionSyntax initInv &&
+                initModel.GetSymbol(initInv) is IMethodSymbol initMethod &&
+                IsExternalIteratorCandidate(initMethod))
+            {
+                methodSymbol = initMethod;
+                return true;
+            }
         }
 
         methodSymbol = null;
@@ -376,10 +381,15 @@ internal static class IteratorTypeResolver
         if (unwrapped is IdentifierNameSyntax identifier &&
             semanticModel.GetSymbol(identifier) is ILocalSymbol local &&
             local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) &&
-            declarator.Initializer?.Value is { } initializerValue &&
-            TryResolveIteratorInvocation(initializerValue, semanticModel, out invocation, out iteratorMethod))
+            declarator.Initializer?.Value is { } initializerValue)
         {
-            return true;
+            var initModel = semanticModel.SyntaxTree == initializerValue.SyntaxTree
+                ? semanticModel
+                : semanticModel.Compilation.GetCachedSemanticModel(initializerValue.SyntaxTree);
+            if (TryResolveIteratorInvocation(initializerValue, initModel, out invocation, out iteratorMethod))
+            {
+                return true;
+            }
         }
 
         invocation = null;
@@ -426,19 +436,23 @@ internal static class IteratorTypeResolver
             return false;
         }
 
+        var initModel = semanticModel.SyntaxTree == initializerValue.SyntaxTree
+            ? semanticModel
+            : semanticModel.Compilation.GetCachedSemanticModel(initializerValue.SyntaxTree);
+
         var unwrappedInit = UnwrapParentheses(initializerValue);
-        return IsIteratorCandidateInvocation(unwrappedInit, semanticModel) ||
+        return IsIteratorCandidateInvocation(unwrappedInit, initModel) ||
                unwrappedInit switch
                {
                    ConditionalExpressionSyntax conditional =>
-                       IsIteratorValueExpression(conditional.WhenTrue, semanticModel) ||
-                       IsIteratorValueExpression(conditional.WhenFalse, semanticModel),
+                       IsIteratorValueExpression(conditional.WhenTrue, initModel) ||
+                       IsIteratorValueExpression(conditional.WhenFalse, initModel),
                    BinaryExpressionSyntax { RawKind: (int)SyntaxKind.CoalesceExpression } binary =>
-                       IsIteratorValueExpression(binary.Left, semanticModel) ||
-                       IsIteratorValueExpression(binary.Right, semanticModel),
+                       IsIteratorValueExpression(binary.Left, initModel) ||
+                       IsIteratorValueExpression(binary.Right, initModel),
                    AssignmentExpressionSyntax assignment =>
-                       IsIteratorValueExpression(assignment.Left, semanticModel) ||
-                       IsIteratorValueExpression(assignment.Right, semanticModel),
+                       IsIteratorValueExpression(assignment.Left, initModel) ||
+                       IsIteratorValueExpression(assignment.Right, initModel),
                    _ => false
                };
     }
