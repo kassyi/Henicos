@@ -258,7 +258,8 @@ export class QueuedRun {
     this.lastPosition = numberField(message, "position");
     this.lastStartAt = typeof message.startAt === "number" ? message.startAt : null;
     this.lastNotice = Date.now();
-    prefix(`queued #${jobId}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${jobId}" shows it`);
+    const role = this.options.role ? ` (${this.options.role})` : "";
+    prefix(`queued #${jobId}${role}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${jobId}" shows it`);
   }
 
   private onWaiting(message: Incoming): void {
@@ -399,6 +400,8 @@ export class QueuedRun {
       cwd: process.cwd(),
       // Resolved once per job (git), kept for the re-registrations after a scheduler restart
       worktree: (this.worktree ??= resolveWorktree(process.cwd())),
+      // The chat that queued it, so that the live view can show its jobs on its row
+      session: process.env.CLAUDE_CODE_SESSION_ID || process.env.ANTIGRAVITY_CONVERSATION_ID || undefined,
       command: options.command,
       queuedAt: this.queuedAt,
       id: this.jobId, // keeps the job id across a scheduler restart

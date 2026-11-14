@@ -12,6 +12,8 @@ import {
   UsageExitCode,
   type ShellName,
 } from "./constants.ts";
+import { planBuildStep } from "./build-split.ts";
+import { runBuildStep } from "./client-build-step.ts";
 import { type Endpoint } from "./client-connect.ts";
 import { QueuedRun } from "./client-queued-run.ts";
 import { ProcessRunHost } from "./client-run-host.ts";
@@ -32,6 +34,8 @@ export interface RunOptions extends Endpoint {
   /** --after: the job that must end first; 0 for none. */
   after: number;
   keepIfFailed: boolean;
+  /** What the job is, in its queued line, when one run queues several jobs (run --gpu: "build, no GPU"). */
+  role?: string;
 }
 
 /** Ends the process with a usage error. */
@@ -91,9 +95,24 @@ export async function run(options: RunOptions): Promise<void> {
           "this job waits for the GPU and keeps the GPU jobs behind it waiting; queue it without --gpu",
       );
     }
+    const host = new ProcessRunHost(options);
+    const step = planBuildStep(options.command, CommandShell.resolve(options.shell).name);
+    if (step !== null) {
+      // Build first, on CPU slots: the GPU turn would otherwise be held, with the GPU idle, for the whole build
+      prefix(`building outside the GPU turn first, as a job of its own: ${step.build}`);
+      const code = await runBuildStep(options, placement, step.build, host);
+      if (code !== 0) {
+        prefix(`the build ended with ${code}; the tests do not ask for the GPU turn`);
+        process.exit(code);
+      }
+      prefix(`the build succeeded; the tests wait for the GPU turn: ${step.tests}`);
+      options.command = step.tests;
+      options.role = "tests, GPU turn";
+      options.after = 0; // the build job waited for it
+    }
     // Wait for the turn at the GPU in the scheduler (in order, visible and cancellable), then take the lock: the GPU
     // lock alone gives it to whichever waiter polls first. An --after predecessor blocks the turn there too.
-    await new QueuedRun(options, placement, false, true, new ProcessRunHost(options)).run();
+    await new QueuedRun(options, placement, false, true, host).run();
     return;
   }
   await new QueuedRun(options, placement, inGpuLock, false, new ProcessRunHost(options)).run();

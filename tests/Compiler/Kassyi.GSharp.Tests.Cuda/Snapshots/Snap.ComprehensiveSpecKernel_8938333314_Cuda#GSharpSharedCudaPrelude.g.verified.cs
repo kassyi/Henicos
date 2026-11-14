@@ -341,7 +341,7 @@ __nanosleep(64);
 }
 #ifndef __GSHARP_TRAP_EXITS
 // The other threads of the warp wait for the leader's record before their trap aborts the launch. [WHY] Not
-// when threads exit: an exiting thread stops only itself, as in __gsharp_null_read_trap, and the barrier is
+// when threads exit: an exiting thread stops only itself, as in __gsharp_inline_trap, and the barrier is
 // the only call left in this function, so without it ptxas saves no return address here (a module with a
 // recursive device function compiles every function that is not inlined with the call ABI)
 __syncwarp(active);
@@ -1017,16 +1017,18 @@ __forceinline__ __device__ long long __gsharp_atomicExch(long long* address, lon
 // --- Runtime Error / Trap ---
 // GSharpErrorCode and __gsharp_trap are defined above GSharpArray<T>.
 
-// The site ID of a null array read: a site of the kernel's error site table, or the builtin ID of a message
-__device__ __forceinline__ unsigned int __gsharp_null_read_site(const char* message) { return __gsharp_builtin_message_id(message); }
-__device__ __forceinline__ unsigned int __gsharp_null_read_site(unsigned int site_id) { return site_id; }
+// The site ID of a check written inline (a null array read, a divisor): a site of the kernel's error site table, or the
+// builtin ID of a message
+__device__ __forceinline__ unsigned int __gsharp_inline_site(const char* message) { return __gsharp_builtin_message_id(message); }
+__device__ __forceinline__ unsigned int __gsharp_inline_site(unsigned int site_id) { return site_id; }
 
-// The failure of a null array read, written inline: the record of __gsharp_trap_site without the warp leader election,
-// then the end of __gsharp_trap_site: the thread exits (sm_70+), or traps before sm_70 and without a record.
+// The failure of a check on a hot path (a null array read, a divisor of 0), written inline: the record of
+// __gsharp_trap_site without the warp leader election, then the end of __gsharp_trap_site: the thread exits (sm_70+),
+// or traps before sm_70 and without a record.
 // [WHY] A call to __gsharp_trap_site (__noinline__) makes ptxas keep the caller's live registers across the call: the
 // cooperative ReciprocalNewtonRaphsonMegaKernel of GpuMath went from 60 registers to 255 with a 336-byte stack and no
 // longer launched with 1024 threads per block (CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE). Written inline it takes 64
-[[noreturn]] __device__ __forceinline__ void __gsharp_null_read_trap(unsigned int site_id) {
+[[noreturn]] __device__ __forceinline__ void __gsharp_inline_trap(GSharpErrorCode error, unsigned int site_id) {
 const unsigned int epoch = __gsharp_launch_epoch;
 GSharpDeviceErrorSlot* record = __gsharp_launch_record(epoch);
 if (record == nullptr) {
@@ -1034,7 +1036,7 @@ if (record == nullptr) {
 asm volatile(""trap;"");
 __builtin_unreachable();
 }
-constexpr unsigned int code = static_cast<unsigned int>(GSharpErrorCode::NullReference);
+const unsigned int code = static_cast<unsigned int>(error);
 GSharpDeviceErrorSlot* held = __gsharp_record_error(record, epoch, code, site_id);
 __gsharp_signal_abort(epoch);
 #ifdef __GSHARP_TRAP_EXITS
@@ -1060,7 +1062,7 @@ __device__ __forceinline__ A __gsharp_array_ref(A&& array, S site)
 {
 if (array.data == nullptr)
 {
-__gsharp_null_read_trap(__gsharp_null_read_site(site));
+__gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site));
 }
 return static_cast<A&&>(array);
 }
@@ -1071,7 +1073,7 @@ __device__ __forceinline__ decltype(auto) __gsharp_array_at(A&& array, I index, 
 {
 if (array.data == nullptr)
 {
-__gsharp_null_read_trap(__gsharp_null_read_site(site));
+__gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site));
 }
 return array[index];
 }
@@ -1081,7 +1083,7 @@ __device__ __forceinline__ A __gsharp_array_not_null(A&& array, S site)
 {
 if (array.data == nullptr)
 {
-__gsharp_null_read_trap(__gsharp_null_read_site(site));
+__gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site));
 }
 return static_cast<A&&>(array);
 }
@@ -1095,6 +1097,83 @@ return static_cast<T&&>(value);
 }
 // [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)
 struct __gsharp_sort_compare_scope { };
+// --- C# integer division and remainder (both dialects; IntegerSemantics.cs decides where the transpiler calls them) ---
+
+// x / y and x % y of an integer type throw DivideByZeroException in C# when y is 0 (C# spec §12.10.3, §12.10.4). C++
+// leaves it undefined: x86 div and idiv raise a hardware exception that ends the native process, and PTX gives an
+// unspecified value. Every build tests the divisor, the release CUDA build included (semantics charter §2, §4); the
+// failing thread stops (the native step ends; a CUDA thread records the error and exits on sm_70 and later).
+// MinValue / -1 and MinValue % -1 are implementation-defined in an unchecked C# context (§12.10.3); G# follows the GPU,
+// which gives MinValue and 0 without an error. x86 idiv raises a hardware exception for them, so the native build tests
+// -1 as well; nvcc's division gives that result as it is.
+// The transpiler calls these only where the divisor may be 0 (or -1, for a dividend that may be MinValue). The place is
+// the site of the kernel's error site table (unsigned int) or, in a device function, a message that names it.
+// [WHY] On CUDA the failure is written inline (__gsharp_inline_trap, as for a null array read): a call of the noinline
+// __gsharp_trap_site makes ptxas keep the caller's live registers across the call.
+#if defined(__CUDACC__)
+#define __GSHARP_DIVISOR_CHECK(divisor, site) \
+do { if ((divisor) == 0) { __gsharp_inline_trap(GSharpErrorCode::DivideByZero, __gsharp_inline_site(site)); } } \
+while (0)
+#else
+#define __GSHARP_DIVISOR_CHECK(divisor, site) \
+do { if ((divisor) == 0) { __gsharp_trap_abort(GSharpErrorCode::DivideByZero, site); } } while (0)
+#endif
+
+template <typename S>
+__device__ __forceinline__ int __gsharp_div_i32(int a, int b, S site) {
+__GSHARP_DIVISOR_CHECK(b, site);
+#if !defined(__CUDACC__)
+if (b == -1) { return __gsharp_neg_i32(a); }
+#endif
+return a / b;
+}
+template <typename S>
+__device__ __forceinline__ int __gsharp_rem_i32(int a, int b, S site) {
+__GSHARP_DIVISOR_CHECK(b, site);
+#if !defined(__CUDACC__)
+if (b == -1) { return 0; }
+#endif
+return a % b;
+}
+template <typename S>
+__device__ __forceinline__ long long __gsharp_div_i64(long long a, long long b, S site) {
+__GSHARP_DIVISOR_CHECK(b, site);
+#if !defined(__CUDACC__)
+if (b == -1) { return __gsharp_neg_i64(a); }
+#endif
+return a / b;
+}
+template <typename S>
+__device__ __forceinline__ long long __gsharp_rem_i64(long long a, long long b, S site) {
+__GSHARP_DIVISOR_CHECK(b, site);
+#if !defined(__CUDACC__)
+if (b == -1) { return 0; }
+#endif
+return a % b;
+}
+template <typename S>
+__device__ __forceinline__ unsigned int __gsharp_div_u32(unsigned int a, unsigned int b, S site) {
+__GSHARP_DIVISOR_CHECK(b, site);
+return a / b;
+}
+template <typename S>
+__device__ __forceinline__ unsigned int __gsharp_rem_u32(unsigned int a, unsigned int b, S site) {
+__GSHARP_DIVISOR_CHECK(b, site);
+return a % b;
+}
+template <typename S>
+__device__ __forceinline__ unsigned long long __gsharp_div_u64(unsigned long long a, unsigned long long b, S site) {
+__GSHARP_DIVISOR_CHECK(b, site);
+return a / b;
+}
+template <typename S>
+__device__ __forceinline__ unsigned long long __gsharp_rem_u64(unsigned long long a, unsigned long long b, S site) {
+__GSHARP_DIVISOR_CHECK(b, site);
+return a % b;
+}
+
+#undef __GSHARP_DIVISOR_CHECK
+
 
 // --- AsParallel() aggregates (ParallelAggregatePlanner, Block strategy) ---
 // The linear rank and the number of the threads of the block (all three dimensions)

@@ -37,9 +37,29 @@ runs as, the full command):
 
 ![A selected job](images/selected.svg)
 
-The help (`?`): the keys and what the marks of the timeline and the wait reasons mean, drawn in their screen colors:
+The help (`?`): the keys and what the marks of the timeline, the wait reasons and the chat marks mean, drawn in their
+screen colors:
 
 ![The help page](images/help.svg)
+
+Below the jobs, the agent chats that wait for an answer of the person (the files of
+`scripts/human/chat-status.js`, read every 2 s): one row per chat, first those that ask through a tool (`?`, a choice
+question or a permission prompt, in yellow), then those whose reply leaves a question open (`…?`); the most recent wait
+first in each. Claude Haiku decides through the Claude Code CLI which questions a reply leaves open (also one asked in
+an earlier turn and not answered yet), else a question mark in the reply's last paragraph does
+(`scripts/human/chat-status/README.md`); a chat that only reported is idle and gets no row. A row shows the agent, the
+chat's title (Antigravity's, else Haiku's, else the start of its first prompt; after the worktree unless that is the
+main checkout, the worktree alone without a title), how long it has waited, the kind, the ids of the jobs it queued
+(the client sends `CLAUDE_CODE_SESSION_ID` or `ANTIGRAVITY_CONVERSATION_ID`; a job without one counts for the chats of
+its worktree, paths compared as the queue keys them, but never in the main checkout, where every chat is), and the
+text: the start of a tool's question, Haiku's newest open question marked `≈` with `(+n)` for the others, or the end
+of the asking paragraph. The rule above counts the chats by state (`idle`: a report). The help says who decides and
+how to turn Haiku on. The job list keeps at least four rows; a terminal of fewer than 16 rows (the 70 x 13 pane above)
+shows the waiting chats in one line instead. `a` hides the panel; the rule then still says how many chats wait:
+
+![The chat panel hidden](images/chats-hidden.svg)
+
+When `chat-status.js` cannot be loaded or its directory read, the view has no panel.
 
 ## Layout
 
@@ -52,15 +72,17 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | :- | :- |
 | `cli.ts` | Parses the arguments and runs the mode (`run`, `status`, `wait`, `cancel`, `move`, `serve`, ...) |
 | `client.ts` | `run`: checks the options, runs a command inside a queued job at once, and otherwise hands it to a `QueuedRun` |
+| `client-build-step.ts` | `runBuildStep`: the builds of a `run --gpu` run as a queued job without the GPU before the turn (a `QueuedRun` whose `RunHost` resolves its exit code instead of ending the process) |
 | `client-queued-run.ts` | `QueuedRun`: registers a job, waits for the grant, runs the command, reports its end, re-registers after a scheduler restart |
 | `client-run-host.ts` | `RunHost`, the effects of a `QueuedRun` (connection, command, exit), and `ProcessRunHost`, the real one; `commandEnd`, how a command's end is reported after a cancel; the GPU turn's run under `gpu-lock.js` |
 | `client-connect.ts` | One-shot requests to the scheduler, and `SchedulerLauncher`: connects, starts the scheduler on demand, reports a job's end to the next scheduler |
 | `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `wait`, `stop` |
-| `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, and `reduceKey`, the keys as a pure function |
+| `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, the chats read through `chat-status.js` (`createRequire`), and `reduceKey`, the keys as a pure function |
 | `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
+| `view-chats.ts` | The chat panel: the chats that ask the person in order (idle reports counted), one row each or one summary line, their title, worktree and job ids, and the chat part of the help; pure |
 | `screen-line.ts` | Styled text for the live view: the styles, the width of a string in terminal cells, `ScreenLine` |
 | `screenshot.ts` | `--screenshots`: the ANSI lines of the live view as an SVG of a terminal, and the sample screens of this README |
-| `view-sample.ts` | The fixed sample status the view's self-test and the screenshots draw from |
+| `view-sample.ts` | The fixed sample status and chats the view's self-test and the screenshots draw from |
 | `server.ts` | `JobServer`, the scheduler process: the TCP server, the job records, outcomes, the settle step and the timers |
 | `server-observe.ts` | `DetachedObserver`: every 2 s, what the processes show of the records whose client is away, applied per epoch (`planObservation`) |
 | `server-connection.ts` | `Connection`: one client connection, the dispatch of its messages to one handler per message type, and what its close means for the job |
@@ -71,12 +93,16 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts, restoring every record as held |
 | `scheduler.ts` | The scheduling decisions, with no I/O: order, grants, backfilling, GPU turns, the memory pool, the forecast |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
-| `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts |
+| `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts; `estimateWithFallback` guesses a command with no record from similar ones |
+| `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read; pure |
+| `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
+| `estimate-checks.ts` | Self-test checks of the keys, the fallback order and the accuracy log (run through `SchedulerChecks`) |
 | `machine.ts` | `MachineProfile`, the defaults that follow the machine: slots from the cores, the memory pool, test budgets; the CPU-only test projects (`GSharpTargetDialect` Cpu) for the hint of `run --gpu` |
+| `build-split.ts` | `planBuildStep`: which builds a `run --gpu` command runs first and its tests with `--no-build`, or no plan for a command that is not plain; pure |
 | `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
-| `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys |
+| `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys, `self-test-chats.ts` its chat panel |
 
 ## How a job runs
 
@@ -113,6 +139,22 @@ sequenceDiagram
 - **A slot follows the command**: when a client dies while its command runs on, the scheduler keeps the slot and polls
   the processes until the command has exited.
 
+## The build step of `--gpu`
+
+A `--gpu` job holds the GPU turn for its whole command, so a build inside it holds the GPU idle for minutes. Before it
+asks for the turn, `run --gpu` (`client.ts`) asks `planBuildStep` (`build-split.ts`) for the builds of its command: the
+`dotnet build` segments before the first test, and a `dotnet build` of each project that a `dotnet test` without
+`--no-build` names, with the options the build reads too. `runBuildStep` (`client-build-step.ts`) runs them as a job of
+their own, an ordinary `QueuedRun` on CPU slots with its own id, MSBuild node limit and run time in `history.json`,
+and the run then queues the tests, with `--no-build` added, for the turn. Two jobs instead of one job with two phases:
+no change to the protocol or the scheduler, a scheduler of an older checkout serves both, and each part is recorded
+and forecast by its own run time. The plan only reads plain commands (segments joined by `&&`, bare `dotnet build` /
+`dotnet test`, known options, bash assignments before a segment, output redirections after it, a leading `export` /
+`$env:` prefix copied to both steps, no other shell syntax outside quotes) and keeps each word as written; the test
+appends (`>>`) to the log its build wrote, so the log holds what the one command wrote. Anything else runs
+as before. Inside a queued job the builds run at once on that job's slots. The Claude Code hook splits
+`dotnet build X && dotnet test X --no-build` the same way into two queued runs (`queue-rewrite.js`).
+
 ## Job records
 
 The server keeps one `ServerJob` per id, from the first `request` (or its restore) until a final outcome is recorded:
@@ -145,7 +187,10 @@ The scheduler runs in `tmp/job-queue` of the main checkout (never a worktree, so
 | :- | :- |
 | `server.log` | The scheduler log, rotated at 5 MB |
 | `history.json` | Run times per command text (last 9 runs, last 500 commands) |
+| `accuracy.json` | The last 1000 estimates with the run times that followed: time, source of the estimate, expected ms, actual ms |
 | `jobs-<port>.json` | `format` 2, the next id, every record (`jobs`: running, `waiting`, `provisional`), the ids of all records (`pending`, for an older scheduler) and the last 500 final outcomes (`ended`); written to a temporary file and renamed, and not written once the scheduler is stopping |
+
+Estimates: a command with no record of its own is estimated from the others of `history.json`, narrow to wide: `normalized` (the steps as the reader reads them, with the projects resolved against the job's directory and written relative to its worktree, the options that change the work (`-c`, `-f`, `-r`, `-p:`, `--no-build`, `--filter` and its value) and nothing else: no redirections, logger or MSBuild node options, assignments, comment, quotes or pipe into a filter), `shape` (each step's kind, the projects it names, `--no-build`, a filter present), `kind` (the kinds of step alone), else `none` (`UnknownTypicalMs`). The estimate is the median of the matched commands' typical times (longest: of their longest times). Each run that ends by itself adds [time, source, expected, actual] to `accuracy.json`; `status --accuracy` prints the median error and the share within 50% per source. A command the reader cannot read (a substitution, a heredoc, a group, an unbalanced quote) has no `normalized` key and no shape, only the kind of its first program. The keys are made when a run is recorded, in the job's directory and worktree, and kept with the entry in `history.json` (`keys`); an entry without them (an older history) has its keys made from its text with its paths as written. The levels and the median were chosen by a leave-one-out check over a real `history.json`.
 
 A restarted scheduler restores every record as held and detached: running jobs count their slots whether their client
 lives or not, waiting jobs keep their place, provisional ones wait for a report; a client's `adopt`, `request` or

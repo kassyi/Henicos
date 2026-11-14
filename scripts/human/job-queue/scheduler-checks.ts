@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { HistoryRunsPerCommand, LongestRunMs, OverrunGuessMs, UnknownTypicalMs } from "./constants.ts";
+import { EstimateChecks } from "./estimate-checks.ts";
 import { RunHistory } from "./history.ts";
 import { Scheduler, type Estimate, type SchedulerJob } from "./scheduler.ts";
 
@@ -532,6 +533,7 @@ export function checkStartNow(assert: AssertModule): void {
 }
 
 export const SchedulerChecks: Record<string, (assert: AssertModule) => void> = {
+  ...EstimateChecks,
   checkBasics,
   checkBackfill,
   checkResponseRatio,
