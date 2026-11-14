@@ -39,8 +39,11 @@ internal static class UniformityWrites
             case IParameterReferenceOperation parameter:
                 AddWritten(node, values.ValueOf(parameter.Parameter));
                 break;
+            case IInstanceReferenceOperation { Type: { } self }:
+                AddWritten(node, values.ValueOf(self));
+                break;
             case IFieldReferenceOperation or IPropertyReferenceOperation
-                when UniformitySolver.GetStructRoot(operation) is { } root:
+                when GetStructRoot(operation) is { } root:
                 AddWritten(node, values.ValueOf(root));
                 break;
         }
@@ -55,8 +58,25 @@ internal static class UniformityWrites
         }
     }
 
+    /// <summary>
+    /// Whether <paramref name="invocation"/> calls a member of a struct that G# defines that may write its receiver
+    /// (not <c>readonly</c>).
+    /// </summary>
+    public static bool WritesReceiver(IInvocationOperation invocation) =>
+        invocation is
+        {
+            TargetMethod: { IsStatic: false, IsReadOnly: false, ContainingType: { IsReadOnly: false } type },
+            Instance: not null
+        } &&
+        GlobalCppNames.IsEmittedUserType(type);
+
     private static void AllocateArguments(UniformityValues values, UniformityNode node, IInvocationOperation invocation)
     {
+        if (WritesReceiver(invocation) && invocation.Instance is { } receiver)
+        {
+            AllocateTargets(values, node, receiver);
+        }
+
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
@@ -71,6 +91,42 @@ internal static class UniformityWrites
         foreach (var element in tuple.Elements)
         {
             AllocateTargets(values, node, element);
+        }
+    }
+
+    /// <summary>
+    /// The local, parameter or <c>this</c> (by its type) of struct type whose member target writes (p.X, p.Inner.Y, X in
+    /// a member of the struct), or null for any other target.
+    /// </summary>
+    public static ISymbol? GetStructRoot(IOperation target)
+    {
+        var current = target;
+        while (true)
+        {
+            var instance = current switch
+            {
+                IFieldReferenceOperation { Instance: { } fieldOwner } => fieldOwner,
+                IPropertyReferenceOperation { Instance: { } propertyOwner } => propertyOwner,
+                _ => null
+            };
+
+            if (instance is not { Type: { IsValueType: true, IsRefLikeType: false } })
+            {
+                return null;
+            }
+
+            switch (instance)
+            {
+                case ILocalReferenceOperation local:
+                    return local.Local;
+                case IParameterReferenceOperation parameter:
+                    return parameter.Parameter;
+                case IInstanceReferenceOperation { Type: { } self }:
+                    return self;
+                default:
+                    current = instance;
+                    continue;
+            }
         }
     }
 }
