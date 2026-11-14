@@ -44,12 +44,11 @@ internal abstract record ConstrainedMember(ITypeSymbol ClosedType)
 
     /// <summary>
     /// An instance method that the generic method runs through its constraint as an explicit implementation or a
-    /// default
-    /// one: the closed copy cannot name it, so it calls it through a helper that is generic over the receiver
+    /// default one: the closed copy cannot name it, so it calls it through a helper that is generic over the receiver
     /// (<see cref="ConstrainedHelper"/>).
     /// </summary>
-    /// <param name="Member">The interface method, as the instance reads it.</param>
-    public sealed record ConstrainedCall(ITypeSymbol ClosedType, IMethodSymbol Member) : ConstrainedMember(ClosedType);
+    /// <param name="Method">The interface method, as the instance reads it.</param>
+    public sealed record ConstrainedCall(ITypeSymbol ClosedType, IMethodSymbol Method) : ConstrainedMember(ClosedType);
 
     /// <summary>No closed C# spelling binds it.</summary>
     /// <param name="Reason">Why, for the message.</param>

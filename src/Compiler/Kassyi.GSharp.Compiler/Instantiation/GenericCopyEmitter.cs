@@ -94,6 +94,9 @@ internal static class GenericCopyEmitter
                 .WithRefKindKeyword(modifier is { } kind ? SyntaxFactory.Token(kind) : default));
         }
 
+        TypeSyntax returnType = member.ReturnsVoid
+            ? SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword))
+            : member.ReturnType.ToCsharpTypeSyntax();
         var call = SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
@@ -103,7 +106,7 @@ internal static class GenericCopyEmitter
         var constraint = SyntaxFactory.TypeParameterConstraintClause(SyntaxFactory.IdentifierName(TypeParameterName))
             .WithConstraints(SyntaxFactory.SingletonSeparatedList<TypeParameterConstraintSyntax>(
                 SyntaxFactory.TypeConstraint(member.ContainingType.ToCsharpTypeSyntax())));
-        return SyntaxFactory.MethodDeclaration(member.ReturnType.ToCsharpTypeSyntax(), name)
+        return SyntaxFactory.MethodDeclaration(returnType, name)
             .WithModifiers(SyntaxFactory.TokenList(
                 SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
                 SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
