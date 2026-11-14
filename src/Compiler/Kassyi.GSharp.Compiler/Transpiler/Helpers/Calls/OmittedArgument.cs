@@ -18,9 +18,9 @@ internal readonly record struct OmittedArgument(
 {
     /// <summary>
     /// Decides the argument of <paramref name="parameter"/>, which <paramref name="call"/> omits (no call: the default
-    /// value only). <paramref name="visitsDefaultSyntax"/> is set for a method call: a default clause of the declaration
-    /// is then written as the expression it is, so that a constant such as <c>float.NaN</c> keeps its form, and a
-    /// <c>params</c> parameter takes nothing; a constructor or a mapped call writes the default value.
+    /// value only). <paramref name="visitsDefaultSyntax"/> is set for a method call: a default clause of the
+    /// declaration is then written as the expression it is, so that a constant such as <c>float.NaN</c> keeps its
+    /// form, and a <c>params</c> parameter takes nothing; a constructor or a mapped call writes the default value.
     /// </summary>
     public static OmittedArgument Plan(IParameterSymbol parameter, SyntaxNode? call, SemanticModel semanticModel,
         bool visitsDefaultSyntax)

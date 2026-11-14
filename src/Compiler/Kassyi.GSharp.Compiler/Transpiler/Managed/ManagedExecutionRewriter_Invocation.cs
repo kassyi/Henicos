@@ -124,8 +124,8 @@ internal sealed partial class ManagedExecutionRewriter
         };
     }
 
-    // A method declared in this compilation, or a device function of another assembly (the managed path calls it, or its
-    // managed version, with the parameters it declares)
+    // A method declared in this compilation, or a device function of another assembly (the managed path calls it, or
+    // its managed version, with the parameters it declares)
     private static bool IsUserMethod(IMethodSymbol method) =>
         !method.OriginalDefinition.DeclaringSyntaxReferences.IsEmpty ||
         (method.ReducedFrom ?? method).OriginalDefinition.HasAttribute(KnownAttributes.GpuDeviceFunction);
