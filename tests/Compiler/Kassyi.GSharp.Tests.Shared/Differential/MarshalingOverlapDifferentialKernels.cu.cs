@@ -174,6 +174,22 @@ public static partial class MarshalingOverlapDifferentialKernels
         }
     }
 
+    // The caller's variable is read through the ref before the kernel assigns the out, as C# reads it
+    [GpuKernel]
+    public static void OutAndRefOneVariableKernel(out int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = second;
+        }
+
+        first = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[1] = second;
+        }
+    }
+
     [GpuKernel]
     public static void TwoRefStructsKernel(
         ref DiffOverlapPoint first,
@@ -385,6 +401,47 @@ public static partial class MarshalingOverlapDifferentialKernels
         {
             second += 10;
             observed[0] = first;
+    // --- Out beside other arguments that refer to its variable: the order of the writes, three, an element ---
+    [GpuKernel]
+    public static void OutThenRefWriteKernel(out int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = second;
+        }
+
+        first = 7;
+        second = 9;
+    }
+
+    [GpuKernel]
+    public static void RefThenOutWriteKernel(out int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = second;
+        }
+
+        second = 9;
+        first = 7;
+    }
+
+    [GpuKernel]
+    public static void OutAndTwoRefsOneVariableKernel(
+        out int first,
+        ref int second,
+        ref int third,
+        [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = second;
+        }
+
+        first = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[1] = third;
         }
     }
 
@@ -484,5 +541,29 @@ public static partial class MarshalingOverlapDifferentialKernels
         }
 
         second = 7;
+    }
+    public static void OutElementAndItsArrayKernel(out int element, int[] array, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = array[1];
+        }
+
+        element = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[1] = array[1];
+        }
+    }
+
+    // An out struct that holds an array: the kernel assigns default, as the C# method would
+    [GpuKernel]
+    public static void OutStructWithArrayKernel(out DiffDeepBag bag, [Out] int[] observed)
+    {
+        bag = default;
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = 1;
+        }
     }
 }

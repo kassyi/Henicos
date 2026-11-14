@@ -321,16 +321,27 @@ internal static class WrapperEmitter
         }
     }
 
-    internal static void WriteOutParameterDefaults(SourceWriter writer, in KernelHostModel kernel)
+    // Unsafe.SkipInit(out <name>);   for each out parameter that is not an array
+    // <name> = default;   instead, for an out struct that holds arrays and that the launcher does not compare
+    // [WHY] The launcher must assign its out parameters before it returns, and the launch assigns them when it ends.
+    // Writing default at the start would clear the caller's variable before the kernel reads it through a ref or in
+    // parameter that refers to the same variable, which C# reads as it was. An out struct that holds arrays is also
+    // marshaled from the caller's value, which would copy the caller's arrays, so it is cleared unless another
+    // argument may refer to it (a candidate of the aliasing plan, cleared after the comparison when none does)
+    internal static void WriteOutParametersAssigned(SourceWriter writer, in KernelHostModel kernel,
+        in LaunchAliasPlan aliases)
     {
-        foreach (var p in kernel.Parameters)
+        for (var i = 0; i < kernel.Parameters.Length; i++)
         {
+            var p = kernel.Parameters[i];
             if (p.RefKind is not RefKind.Out || p.IsArray)
             {
                 continue;
             }
 
-            writer.AppendLine($"{p.Identifier} = default;");
+            writer.AppendLine(p.HasArrayFields && aliases.MemberIndexOf(i) < 0
+                ? $"{p.Identifier} = default;"
+                : $"{HostTypeNames.Unsafe}.SkipInit(out {p.Identifier});");
         }
     }
 
