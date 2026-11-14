@@ -97,6 +97,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 continue;
             }
 
+            if (RefLocals.TryWriteDeclaration(v, ref hasEmittedAny, ref context))
+            {
+                continue;
+            }
+
             // A local that another switch section uses or jumps into is declared in a block around the switch
             // (SwitchSectionLocals), a const with its value; a struct with a C++ constructor that a goto jumps past is
             // declared at the start of its C++ scope (JumpedOverDeclarations)
