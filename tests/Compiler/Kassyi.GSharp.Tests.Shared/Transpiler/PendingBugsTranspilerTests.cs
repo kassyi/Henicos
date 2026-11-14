@@ -127,9 +127,9 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         Assert.Empty(compilerErrors);
     }
 
-    // #1085: Expect C++ declarations for parenthesized creation `s` and alias copy `alias` to be emitted once LocalDeclarationStatementTranspilerRule handles non-direct SharedMemory<T> initializers.
-    [Fact(Skip = "#1085: LocalDeclarationStatementTranspilerRule omits C++ variable declarations for non-direct SharedMemory initializers.")]
-    [Scenario(TestScenario.SadPath)]
+    // #1085: A parenthesized creation `s` and an alias copy `alias` are declared like a direct creation.
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void SharedMemoryLocal_ParenthesizedAndAliasForms_EmitsCppVariableDeclarations()
     {
         var (_, tree, model) =
@@ -149,9 +149,9 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         Assert.Contains("int* __gsharp_id_2_alias", cppSource, StringComparison.Ordinal);
     }
 
-    // #1085: Expect C++ declaration and consistent type for `returned = IdentitySharedMemory(localSmem)` once SharedMemory<T> local declarations and CPU representation are unified.
-    [Fact(Skip = "#1085: Helper returning SharedMemory omits returned local declaration in CPU dialect.")]
-    [Scenario(TestScenario.SadPath)]
+    // #1085: The result of a device function that returns a SharedMemory<T> is declared as the pointer it is.
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void SharedMemoryLocal_PassToHelperFunction_EmitsReturnedLocalDeclarationInCpuDialect()
     {
         var (_, tree, model) =
@@ -167,7 +167,7 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
             methodDecl, model, failures.Add, isDevice: false, new StandardCppDialect(), out _);
 
         Assert.Empty(failures);
-        Assert.Contains("__gsharp_id_2_returned =", cppSource, StringComparison.Ordinal);
+        Assert.Contains("int* __gsharp_id_2_returned =", cppSource, StringComparison.Ordinal);
     }
 
     // #543: Expect distinct site keys (Assert.NotEqual) for AliasInStruct<int> and AliasInStruct<float> once SharedMemorySiteKey includes constructed struct type arguments.
