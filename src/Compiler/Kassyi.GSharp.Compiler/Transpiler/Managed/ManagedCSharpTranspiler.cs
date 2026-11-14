@@ -157,18 +157,9 @@ internal static class ManagedCSharpTranspiler
             new ManagedExecutionRewriter(semanticModel, ManagedBodyKind.SuspendingDeviceFunction, accessors, isUnsafe,
                 callFrames));
 
-        // As visible as the function (a consumer of another assembly calls a public one), narrowed to the types its
-        // internal fields hold (ManagedStateMachineAvailability). The fields of the lowered body are checked as well: a
-        // spilled temporary may have a type that no local, parameter or return value has
-        var fieldTypes = ManagedStateMachineAvailability.GetCallFrames(callFrames, compilation);
-        foreach (var type in GetFrameFieldTypes(regularFields, copiedParameters))
-        {
-            fieldTypes = fieldTypes.WithInternalMember(type);
-        }
-
-        var accessibility = GeneratedMemberAccessibility.Narrowest(
-            ManagedStateMachineAvailability.GetFrameAccessibility(methodSymbol, compilation),
-            fieldTypes.ChooseIn(methodSymbol.ContainingType));
+        // As visible as the function, narrowed to the types its frame holds: the one answer that every caller uses
+        // (ManagedStateMachineAvailability), so the frame, its entries and its callers cannot disagree
+        var accessibility = ManagedStateMachineAvailability.GetFrameAccessibility(methodSymbol, compilation);
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
             writer, frameName, regularFields, copiedParameters, callFrames, accessibility, Accessibility.Internal,
@@ -178,7 +169,8 @@ internal static class ManagedCSharpTranspiler
             isUnsafe: isUnsafe);
         if (ManagedStateMachineAvailability.HasEntries(methodSymbol, accessibility))
         {
-            // With the function's declared accessibility: the callers of other classes run the private frame through them
+            // With the function's declared accessibility: the callers of other classes run the private frame through
+            // them
             ManagedStateMachineEmitter.EmitFrameEntries(writer, frameName, stateMachineName, methodSymbol,
                 copiedParameters, methodSymbol.DeclaredAccessibility, isUnsafe);
         }

@@ -10,18 +10,18 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// [WHY] An assembly that exports its device code emits the state machines whatever its dialect, so a library that
 /// built on main (CUDA, without kernels) must not stop building for them. A state machine is left out, and its record
 /// says so (<c>DeviceExportRecord.ManagedStateMachine</c>, GSH0089 for a consumer on the C++ dialect), when it could not
-/// compile: a containing type that is not partial, a type of its frame that the generated file cannot name (a file-local
-/// type), or a suspending callee whose frame it cannot name.
+/// compile: a containing type that is not partial, a type of its frame that the generated file cannot name (a
+/// file-local type), or a suspending callee whose frame it cannot name.
 /// </para>
 /// <para>
 /// The frame is as visible as the function (public or internal), narrowed to what the types it holds allow
 /// (<see cref="GeneratedMemberAccessibility"/>): a frame that holds a private nested type of the function's class is a
 /// private class nested in that class, which only that class and the types nested in it can name. Such a function also
-/// gets entries as visible as the function (<c>__gsharp_number_frame_</c>, <c>__gsharp_enter_</c>), which create, number
-/// and run the frame held as an <see cref="object"/>, so a caller of any class that C# lets call the function can run
-/// it. The context of a kernel and
-/// the frame of a device function ask <see cref="GetCallForm"/> how they hold a callee's frame; a kernel whose callee has
-/// no frame at all (a file-local type) is GSH0115
+/// gets entries as visible as the function (<c>__gsharp_number_frame_</c>, <c>__gsharp_enter_</c>), which create,
+/// number and run the frame held as an <see cref="object"/>, so a caller of any class that C# lets call the function
+/// can run it. The context of a kernel and
+/// the frame of a device function ask <see cref="GetCallForm"/> how they hold a callee's frame; a kernel whose callee
+/// has no frame at all (a file-local type) is GSH0115
 /// (<see cref="GetCallFailure(IMethodSymbol, INamedTypeSymbol, Compilation)"/>), and a device function whose callee has
 /// none has no state machine.
 /// </para>
@@ -78,20 +78,20 @@ internal static class ManagedStateMachineAvailability
     }
 
     /// <summary>
-    /// Whether the state machine of <paramref name="method"/>, whose frame has <paramref name="frame"/> accessibility, has
-    /// the entries through which the callers outside its class run it: the frame is private, and the function is not. The
-    /// entries take the function's parameters and have its declared accessibility (public, internal, protected, protected
-    /// internal or private protected), so every caller C# lets call the function can call them; a private function has no
-    /// callers outside its class.
+    /// Whether the state machine of <paramref name="method"/>, whose frame has <paramref name="frame"/> accessibility,
+    /// has the entries through which the callers outside its class run it: the frame is private, and the function is
+    /// not. The entries take the function's parameters and have its declared accessibility (public, internal,
+    /// protected, protected internal or private protected), so every caller C# lets call the function can call them; a
+    /// private function has no callers outside its class.
     /// </summary>
     public static bool HasEntries(IMethodSymbol method, Accessibility frame) =>
         frame == Accessibility.Private && method.DeclaredAccessibility != Accessibility.Private;
 
     /// <summary>
     /// Why a managed state machine declared in <paramref name="within"/> cannot hold the frame of
-    /// <paramref name="callee"/>, as the message argument of GSH0115; <see langword="null"/> when it can (by the frame's
-    /// type or through the entries), or when the frame is left out for a reason that another diagnostic reports (a type
-    /// that is not partial, a function of another assembly whose state machine was not emitted).
+    /// <paramref name="callee"/>, as the message argument of GSH0115; <see langword="null"/> when it can (by the
+    /// frame's type or through the entries), or when the frame is left out for a reason that another diagnostic reports
+    /// (a type that is not partial, a function of another assembly whose state machine was not emitted).
     /// </summary>
     public static string? GetCallFailure(IMethodSymbol callee, INamedTypeSymbol within, Compilation compilation) =>
         GetCallFailure(callee.OriginalDefinition, within, compilation,
@@ -137,8 +137,8 @@ internal static class ManagedStateMachineAvailability
     }
 
     /// <summary>
-    /// The frame types that a context or frame names for <paramref name="frames"/> (<see cref="PlanCallFrames"/>): those
-    /// it holds by their type; a frame held through the entries is an <see cref="object"/>.
+    /// The frame types that a context or frame names for <paramref name="frames"/> (<see cref="PlanCallFrames"/>):
+    /// those it holds by their type; a frame held through the entries is an <see cref="object"/>.
     /// </summary>
     public static GeneratedMemberAccessibility.NamedTypes GetCallFrames(ImmutableArray<ManagedCallFrame> frames,
         Compilation compilation)
@@ -256,7 +256,8 @@ internal static class ManagedStateMachineAvailability
             named = named.WithInternalMember(type);
         }
 
-        // The frame holds the frames of the calls that may suspend: by their types, or as objects run through the entries
+        // The frame holds the frames of the calls that may suspend: by their types, or as objects run through the
+        // entries
         foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body, compilation))
         {
             var calleeFrame = Get(callee.OriginalDefinition, compilation, results, visiting);
@@ -273,7 +274,11 @@ internal static class ManagedStateMachineAvailability
         return GeneratedMemberAccessibility.Narrowest(widest, named.ChooseIn(method.ContainingType));
     }
 
-    // The types the frame of <method> may hold: the return value, the parameters and the locals of its body
+    // The types the frame of <method> may hold: the return value, the parameters, the locals and the type of every
+    // expression of its body. The lowering spills operands into fields (argument temporaries, call results, switch and
+    // foreach temporaries) whose types come from expressions, so this is a superset of the lowered frame's fields:
+    // the one answer that the frame, its entries, its callers, the analyzer and the export record all use. A private
+    // type that only an intermediate value has makes the frame private as well, which the entries make callable
     private static bool TryGetFrameTypes(IMethodSymbol method, Compilation compilation,
         [NotNullWhen(true)] out SyntaxNode? body, out ImmutableArray<ITypeSymbol> types)
     {
@@ -293,23 +298,42 @@ internal static class ManagedStateMachineAvailability
             .Select(static p => p.Type)
             .AddTo(builder);
         var model = compilation.GetSemanticModel(declaration.SyntaxTree);
-        bodyNode.DescendantNodes()
-            .AsStackEnumerable()
-            .Select(model, static (node, m) =>
-                node is VariableDeclaratorSyntax or SingleVariableDesignationSyntax
-                    ? m.GetDeclaredSymbol(node) as ILocalSymbol
-                    : null
-            ).OfType<ILocalSymbol>()
-            .Select(static local => local.Type)
-            .AddTo(builder);
+        foreach (var node in bodyNode.DescendantNodesAndSelf())
+        {
+            switch (node)
+            {
+                case VariableDeclaratorSyntax or SingleVariableDesignationSyntax or ForEachStatementSyntax
+                    or CatchDeclarationSyntax:
+                    if (model.GetDeclaredSymbol(node) is ILocalSymbol local)
+                    {
+                        builder.Add(local.Type);
+                    }
+
+                    break;
+                case ExpressionSyntax expression:
+                    var info = model.GetTypeInfo(expression);
+                    if (info.Type is { } type)
+                    {
+                        builder.Add(type);
+                    }
+
+                    if (info.ConvertedType is { } converted)
+                    {
+                        builder.Add(converted);
+                    }
+
+                    break;
+            }
+        }
+
         types = builder.ToImmutable();
         return true;
     }
 
-    // How code in <within> holds the frame of <callee>, whose accessibility is <frame>: by its type when it can name it,
-    // else through the entries of a callee that has them. A private frame without entries belongs to a private function,
-    // which only code that C# rejects (CS0122) calls from outside its class; that code gets no frame and no diagnostic of
-    // its own, and the generator does not throw for it, since it also runs on code still being typed
+    // How code in <within> holds the frame of <callee>, whose accessibility is <frame>: by its type when it can name
+    // it, else through the entries of a callee that has them. A private frame without entries belongs to a private
+    // function, which only code that C# rejects (CS0122) calls from outside its class; that code gets no frame and no
+    // diagnostic of its own, and the generator does not throw for it, since it also runs on code still being typed
     private static SuspendingCallForm ChooseCallForm(Accessibility frame, IMethodSymbol callee,
         INamedTypeSymbol within) =>
         frame switch

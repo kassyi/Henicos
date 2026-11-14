@@ -159,8 +159,8 @@ internal static class GeneratedMemberAccessibility
         public NamedTypes With(ITypeSymbol type) => new(Domain.Intersect(GetTypeDomain(type)));
 
         /// <summary>
-        /// These types and <paramref name="type"/>, named by an <c>internal</c> member (a field of a frame): only a type
-        /// that part of the assembly cannot name narrows them.
+        /// These types and <paramref name="type"/>, named by an <c>internal</c> member (a field of a frame): only a
+        /// type that part of the assembly cannot name narrows them.
         /// </summary>
         public NamedTypes WithInternalMember(ITypeSymbol type) => WithInternalMember(GetTypeDomain(type));
 

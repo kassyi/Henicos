@@ -89,10 +89,10 @@ internal static class ManagedStateMachineEmitter
     /// <param name="warpSiteCount">The warp collectives of the body (<see cref="LoweredStateMachine.WarpSiteCount"/>).</param>
     /// <remarks>
     /// A call frame field is internal: the frame of a device function that is not public is an internal or private
-    /// class (<see cref="ManagedStateMachineAvailability.GetFrameAccessibility"/>). A frame private to a class that does
-    /// not contain this one is an <see cref="object"/>, which the callee's entries create on first use. Every context
-    /// numbers its frames for the warp collectives (<c>__gsharp_number_warp_paths</c>), which is public because a frame
-    /// of a public device function may belong to a caller in another assembly.
+    /// class (<see cref="ManagedStateMachineAvailability.GetFrameAccessibility"/>). A frame private to a class that
+    /// does not contain this one is an <see cref="object"/>, which the callee's entries create on first use. Every
+    /// context numbers its frames for the warp collectives (<c>__gsharp_number_warp_paths</c>), which is public because
+    /// a frame of a public device function may belong to a caller in another assembly.
     /// </remarks>
     public static void EmitContextClass(
         SourceWriter writer,
@@ -152,7 +152,8 @@ internal static class ManagedStateMachineEmitter
             }
 
             writer.Append("internal ");
-            AppendDeviceFunctionMember(writer, callFrames[i].Callee, GSharpInternalNames.SuspendingCall.FrameTypePrefix);
+            AppendDeviceFunctionMember(writer, callFrames[i].Callee,
+                GSharpInternalNames.SuspendingCall.FrameTypePrefix);
             writer.AppendLine(isUnsafe ? $" {frameField};" : $" {frameField} = new();");
         }
     }
@@ -182,7 +183,8 @@ internal static class ManagedStateMachineEmitter
     // The launcher numbers the frames of every thread in the same order, so a frame has the same number in every lane and
     // a different one from any other frame of the thread (the native path uses the frame's offset in the context).
     // public uint __gsharp_number_warp_paths(uint next) { __gsharp_warp_path = next++; next = __gsharp_call_frame_<i>.__gsharp_number_warp_paths(next); ... return next; }
-    // A frame held through the entries: next = <callee class>.__gsharp_number_frame_<callee>(ref __gsharp_call_frame_<i>, next);
+    // A frame held through the entries: next = <callee class>.__gsharp_number_frame_<callee>(ref
+    // __gsharp_call_frame_<i>, next);
     private static void EmitWarpPathNumbering(SourceWriter writer, ImmutableArray<ManagedCallFrame> callFrames)
     {
         var number = GSharpInternalNames.StateMachine.NumberWarpPaths;
@@ -261,9 +263,9 @@ internal static class ManagedStateMachineEmitter
 
     /// <summary>
     /// Writes the entries of a device function whose frame is private to its class
-    /// (<see cref="ManagedStateMachineAvailability.HasEntries"/>), through which a caller of another class holds the frame
-    /// as an <see cref="object"/>: one creates the frame when it is missing and numbers it for the warp collectives, the
-    /// other creates it when it is missing and runs the state machine on it.
+    /// (<see cref="ManagedStateMachineAvailability.HasEntries"/>), through which a caller of another class holds the
+    /// frame as an <see cref="object"/>: one creates the frame when it is missing and numbers it for the warp
+    /// collectives, the other creates it when it is missing and runs the state machine on it.
     /// </summary>
     /// <param name="writer">The writer.</param>
     /// <param name="frameName">The frame type.</param>
@@ -271,8 +273,8 @@ internal static class ManagedStateMachineEmitter
     /// <param name="methodSymbol">The device function.</param>
     /// <param name="copiedParameters">The parameters that the frame keeps.</param>
     /// <param name="accessibility">
-    /// The entries' accessibility: the function's declared one (public, internal, protected, protected internal or private
-    /// protected).
+    /// The entries' accessibility: the function's declared one (public, internal, protected, protected internal or
+    /// private protected).
     /// </param>
     /// <param name="isUnsafe">
     /// Whether the frame is an unsafe struct, which the entries keep in a one-element array on the pinned object heap
@@ -282,9 +284,10 @@ internal static class ManagedStateMachineEmitter
     /// [WHY] A caller outside the class cannot name a private frame, but it can hold one as an object, and only the
     /// class's own members cast it back. The frame is created on first use rather than by the caller's initializer, so
     /// that an unsafe context (a struct without a constructor) holds it as well. An unsafe frame may keep pointers into
-    /// itself across a resume (the address of a hoisted local), which the direct form keeps valid because the frame is a
-    /// field of the context the launcher pins for the whole launch; a boxed frame could move between two calls, so the
-    /// entries allocate it pinned (<c>GC.AllocateArray(1, pinned: true)</c>) and reach it in place, never through a copy.
+    /// itself across a resume (the address of a hoisted local), which the direct form keeps valid because the frame is
+    /// a field of the context the launcher pins for the whole launch; a boxed frame could move between two calls, so
+    /// the entries allocate it pinned (<c>GC.AllocateArray(1, pinned: true)</c>) and reach it in place, never through a
+    /// copy.
     /// </remarks>
     public static void EmitFrameEntries(
         SourceWriter writer,
@@ -297,13 +300,15 @@ internal static class ManagedStateMachineEmitter
     {
         var context = GSharpInternalNames.StateMachine.Context;
         var keyword = ToEntryKeyword(accessibility);
-        // ((<frame>)(__gsharp_ctx ??= new <frame>()))  or  ((<frame>[])(__gsharp_ctx ??= GC.AllocateArray<<frame>>(1, pinned: true)))[0]
+        // ((<frame>)(__gsharp_ctx ??= new <frame>()))  or  ((<frame>[])(__gsharp_ctx ??= GC.AllocateArray<<frame>>(1,
+        // pinned: true)))[0]
         var frame = isUnsafe
             ? $"(({frameName}[])({context} ??= {PinnedArray}<{frameName}>(1, pinned: true)))[0]"
             : $"(({frameName})({context} ??= new {frameName}()))";
         using (writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe))
         {
-            // <accessibility> static uint __gsharp_number_frame_<path>(ref object? __gsharp_ctx, uint next) => <frame>.__gsharp_number_warp_paths(next);
+            // <accessibility> static uint __gsharp_number_frame_<path>(ref object? __gsharp_ctx, uint next) =>
+            // <frame>.__gsharp_number_warp_paths(next);
             var number = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.NumberFramePrefix,
                 methodSymbol);
             writer.AppendLine(EditorBrowsableNever);
@@ -324,7 +329,8 @@ internal static class ManagedStateMachineEmitter
     // The body of the entry that runs the state machine on <frame>, after its signature:
     //  => <state machine>(<arguments>, <frame>[, ref __gsharp_result]);
     // or, for an unsafe frame (the array never moves; fixed only lets C# take the address of its element):
-    //  { fixed (<frame type>* __gsharp_frame = &<frame>) { return <state machine>(<arguments>, __gsharp_frame[, ...]); } }
+    //  { fixed (<frame type>* __gsharp_frame = &<frame>) { return <state machine>(<arguments>, __gsharp_frame[, ...]);
+    // } }
     private static void AppendEnterBody(SourceWriter writer, string frameName, string stateMachineName,
         IMethodSymbol methodSymbol, ImmutableArray<IParameterSymbol> copiedParameters, string frame, bool isUnsafe)
     {
@@ -390,9 +396,10 @@ internal static class ManagedStateMachineEmitter
         }
     }
 
-    // <accessibility> static [unsafe] bool <name>(<parameters>, <frame parameter type> __gsharp_ctx[, ref <result> __gsharp_result])
-    // with <frame parameter type> the frame, a pointer to an unsafe frame, or what the caller passes it as. Out parameters
-    // become ref: a suspended call returns before it assigns them, which C# rejects for out parameters
+    // <accessibility> static [unsafe] bool <name>(<parameters>, <frame parameter type> __gsharp_ctx[, ref <result>
+    // __gsharp_result]) with <frame parameter type> the frame, a pointer to an unsafe frame, or what the caller passes
+    // it as. Out parameters become ref: a suspended call returns before it assigns them, which C# rejects for out
+    // parameters
     private static void AppendDeviceStateMachineSignature(SourceWriter writer, string frameParameter, string name,
         IMethodSymbol methodSymbol, ImmutableArray<IParameterSymbol> copiedParameters, string accessibility, bool isUnsafe)
     {

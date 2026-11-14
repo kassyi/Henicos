@@ -7,12 +7,12 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// </summary>
 /// <remarks>
 /// [WHY] The context of the kernel holds the frame of every such call. A frame that would hold a file-local type is not
-/// emitted: no generated file can name that type (<see cref="ManagedStateMachineAvailability"/>). A frame private to the
-/// function's class is not reported: a kernel of another class holds it as an object and runs it through the entries
-/// generated beside it. The managed state machine of a kernel that reaches a missing frame throws instead, and this rule
-/// stops the build. The frames of device functions are left out without a diagnostic (an exported library on CUDA keeps
-/// building); a kernel that reaches one through another device function is reported at its own call, with the chain in
-/// the message.
+/// emitted: no generated file can name that type (<see cref="ManagedStateMachineAvailability"/>). A frame private to
+/// the function's class is not reported: a kernel of another class holds it as an object and runs it through the
+/// entries generated beside it. The managed state machine of a kernel that reaches a missing frame throws instead, and
+/// this rule stops the build. The frames of device functions are left out without a diagnostic (an exported library on
+/// CUDA keeps building); a kernel that reaches one through another device function is reported at its own call, with
+/// the chain in the message.
 /// </remarks>
 internal sealed class SuspendingCallFrameRule : ISyntaxValidationRule<InvocationExpressionSyntax>
 {

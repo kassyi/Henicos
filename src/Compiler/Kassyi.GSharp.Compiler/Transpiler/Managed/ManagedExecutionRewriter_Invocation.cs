@@ -2,8 +2,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal sealed partial class ManagedExecutionRewriter
 {
-    // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args, __gsharp_ctx.__gsharp_call_frame_n[, ref target]),
-    // or Class.__gsharp_enter_Foo(args, ref __gsharp_ctx.__gsharp_call_frame_n[, ref target]) for a frame held as an object
+    // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args,
+    // __gsharp_ctx.__gsharp_call_frame_n[, ref target]), or Class.__gsharp_enter_Foo(args, ref
+    // __gsharp_ctx.__gsharp_call_frame_n[, ref target]) for a frame held as an object
     public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
     {
         if (node.Expression is not IdentifierNameSyntax
@@ -68,8 +69,8 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.ArgumentList(callArguments));
     }
 
-    // The frame passed to the callee: __gsharp_ctx.__gsharp_call_frame_<i> (&__gsharp_ctx->... in an unsafe context), or
-    // ref __gsharp_ctx.__gsharp_call_frame_<i> (ref __gsharp_ctx->...) to the entry of a frame held as an object
+    // The frame passed to the callee: __gsharp_ctx.__gsharp_call_frame_<i> (&__gsharp_ctx->... in an unsafe context),
+    // or ref __gsharp_ctx.__gsharp_call_frame_<i> (ref __gsharp_ctx->...) to the entry of a frame held as an object
     private ArgumentSyntax CreateFrameArgument(string frameIndex, bool throughEntry)
     {
         var frameAccess = SyntaxFactory.MemberAccessExpression(

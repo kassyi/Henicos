@@ -1,6 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
-/// <summary>How a managed state machine holds and runs the frame of a device function it calls that may suspend.</summary>
+/// <summary>How a managed state machine holds and runs the frame of a device function it calls that may
+/// suspend.</summary>
 internal enum SuspendingCallForm
 {
     /// <summary>
@@ -14,6 +15,7 @@ internal enum SuspendingCallForm
     /// </summary>
     Entry,
 
-    /// <summary>The callee has no frame (<see cref="ManagedStateMachineAvailability.GetCallFailure(IMethodSymbol, INamedTypeSymbol, Compilation)"/>).</summary>
+    /// <summary>The callee has no frame (<see cref="ManagedStateMachineAvailability.GetCallFailure(IMethodSymbol,
+    /// INamedTypeSymbol, Compilation)"/>).</summary>
     Unavailable
 }
