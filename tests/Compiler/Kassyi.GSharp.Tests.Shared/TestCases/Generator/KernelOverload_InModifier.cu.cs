@@ -3,8 +3,7 @@ namespace OverloadTest
 {
     public static partial class InModifierKernels
     {
-        // C# tells the overloads apart by in, but Launch{Name} drops in, so both take one int (the array holds longs, so
-        // the in is a value, not an address)
+        // C# tells the overloads apart by in, but Launch{Name} drops in, so both take one int (long data: a value)
         [GpuKernel]
         [SkipSnapshotConsistency("Generator case")]
         public static void Run(long[] data, int value) { data[ThreadIndex.X] = value; }
