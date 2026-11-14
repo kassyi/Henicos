@@ -10,7 +10,9 @@ import {
   type StatusJob,
   type StatusReply,
 } from "./protocol.ts";
-import { prefix } from "./system.ts";
+import { AccuracyLog, formatAccuracy, summarizeAccuracy } from "./estimate-fallback.ts";
+import { prefix, resolveStateDirectory } from "./system.ts";
+import * as path from "node:path";
 
 function gigabytes(mb: number): string {
   return (mb / 1024).toFixed(1);
@@ -103,6 +105,19 @@ export async function status(port: number, id: number, json: boolean): Promise<v
   lines.push(`waiting (${reply.waiting.length}):`);
   reply.waiting.forEach((job) => lines.push(formatJob(job, now)));
   process.stdout.write(`${lines.join("\n")}\n`);
+}
+
+/** status --accuracy: the logged estimates against the run times that followed, per source of the estimate. */
+export function accuracy(json: boolean): Promise<void> {
+  const rows = summarizeAccuracy(AccuracyLog.read(path.join(resolveStateDirectory(), "accuracy.json")));
+  process.stdout.write(
+    json
+      ? `${JSON.stringify(rows)}
+`
+      : `${formatAccuracy(rows)}
+`,
+  );
+  return Promise.resolve();
 }
 
 export async function cancel(port: number, id: number | "all"): Promise<void> {
