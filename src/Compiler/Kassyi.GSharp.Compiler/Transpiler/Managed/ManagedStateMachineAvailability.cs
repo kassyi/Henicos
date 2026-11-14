@@ -9,7 +9,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// built on main (CUDA, without kernels) must not stop building for them. A state machine is left out, and its record
 /// says so (<c>DeviceExportRecord.ManagedStateMachine</c>, GSH0089 for a consumer on the C++ dialect), when it could not
 /// compile: a containing type that is not partial, a type of its frame that is less visible than internal (a private
-/// nested struct), or a suspending callee whose state machine is left out as well.
+/// nested struct), a file-local type that its body names or that contains it (<see cref="FileLocalNames"/>), or a
+/// suspending callee whose state machine is left out as well.
 /// </remarks>
 internal static class ManagedStateMachineAvailability
 {
@@ -103,6 +104,7 @@ internal static class ManagedStateMachineAvailability
         }
 
         if (!AreContainingTypesPartial(method) ||
+            FileLocalNames.BlocksCopy(method, compilation) ||
             !method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) ||
             declaration.GetBodyNode() is not { } body ||
             !GeneratedMemberAccessibility.IsAtLeastInternal(method.ReturnType) ||

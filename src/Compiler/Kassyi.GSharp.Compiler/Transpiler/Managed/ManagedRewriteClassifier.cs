@@ -37,10 +37,23 @@ internal static class ManagedRewriteClassifier
 {
     /// <summary>Whether the managed path rewrites <paramref name="node"/> into code that G# writes.</summary>
     public static bool IsSemanticRewrite(SyntaxNode node, SemanticModel semanticModel) =>
-        (node is AssignmentExpressionSyntax assignment && TryGetOperatorMacro(assignment, semanticModel, out _)) ||
-        (node is InvocationExpressionSyntax invocation &&
-         (IsSequentialSum(invocation, semanticModel) || IsInlinePtx(invocation, semanticModel))) ||
-        ManagedDivision.Plan(node, semanticModel) != null;
+        Describe(node, semanticModel) is not null;
+
+    /// <summary>
+    /// What the managed path rewrites <paramref name="node"/> for, as a noun phrase for a message, or
+    /// <see langword="null"/> when it does not (<see cref="IsSemanticRewrite"/>).
+    /// </summary>
+    public static string? Describe(SyntaxNode node, SemanticModel semanticModel) => node switch
+    {
+        AssignmentExpressionSyntax assignment when TryGetOperatorMacro(assignment, semanticModel, out _) =>
+            "an operator macro",
+        InvocationExpressionSyntax invocation when IsSequentialSum(invocation, semanticModel) =>
+            "a float or double StackLinq Sum",
+        InvocationExpressionSyntax invocation when IsInlinePtx(invocation, semanticModel) => "Gpu.InlinePtx",
+        _ when ManagedDivision.Plan(node, semanticModel) != null =>
+            "an integer division or remainder (int.MinValue / -1 is int.MinValue on the GPU and throws in C#)",
+        _ => null
+    };
 
     /// <summary>
     /// The operator macro that the managed path expands at <paramref name="assignment"/>: a simple assignment statement
