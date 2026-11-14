@@ -199,6 +199,20 @@ function checkKeys(): void {
   assert.strictEqual(reduceKey({ ...state, helpPages: 1 }, "?", null, Now).state.help, 1);
   assert.strictEqual(reduceKey({ ...state, help: 1, helpPages: 1 }, "?", null, Now).state.help, 0);
   press("?");
+  // While the help is open only ?, Esc, q and Ctrl+C act: every other key leaves the jobs, the selection and the queue
+  // as they are and says how to leave the help
+  for (const key of ["\x1b[A", "\x1b[B", "j", "k", "g", "G", "c", "m", "w", "s", " ", "a", "r", "\r"]) {
+    const result = reduceKey(state, key, reply, Now);
+    assert.strictEqual(result.action, undefined, `${JSON.stringify(key)} does nothing under the help`);
+    assert.deepStrictEqual(
+      { ...result.state, message: null },
+      { ...state, message: null },
+      `${JSON.stringify(key)} keeps the state`,
+    );
+    assert.match(result.state.message?.text ?? "", /Esc closes it/);
+  }
+  assert.strictEqual(reduceKey(state, "q", reply, Now).action, "quit", "q quits from the help");
+  assert.strictEqual(reduceKey(state, "\x03", reply, Now).action, "quit", "Ctrl+C quits from the help");
   assert.strictEqual(press("\x1b").state.help, 0);
   assert.strictEqual(state.selectedId, 812, "Esc closes the help first and keeps the selection");
   assert.strictEqual(press("q").action, "quit");
