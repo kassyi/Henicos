@@ -205,9 +205,10 @@ public class PendingBugsDifferentialTests
     public void DynamicSharedMemory_NonSuspendingHelperGrowthAfterLaterDecl_DivergesOnManaged() =>
         DifferentialRunner.Run(s_growthAfterLaterDecl);
 
-    // #904: Remove KnownDivergence entry once ManagedVersionAnalysis rewrites non-suspending helpers that allocate dynamic SharedMemory<T>(count).
+    // The helper is not rewritten on the managed path (#904), so its declaration takes the static allocation there,
+    // which reports a negative count like the dynamic placement (#1790)
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void DynamicSharedMemory_NonSuspendingHelperNegativeCount_DivergesOnManaged() =>
+    public void DynamicSharedMemory_NonSuspendingHelperNegativeCount_ThrowsOnEveryPath() =>
         DifferentialRunner.Run(s_negativeCount);
 }
