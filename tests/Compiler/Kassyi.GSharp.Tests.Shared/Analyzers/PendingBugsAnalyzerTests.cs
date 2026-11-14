@@ -187,7 +187,7 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
     }
 
     // #1083: Expect 2 SLQ0001 diagnostics once StackLinqChainAnalyzer counts StackEnumerable.OfType<T>() and static StackLinqExtensions calls.
-    [Fact(Skip = "#1083: StackLinqChainAnalyzer does not count OfType or static-form calls.")]
+    [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task StackLinqChain_ExceedingMaxDepthWithOfTypeOrStaticCall_ReportsSLQ0001()
     {
