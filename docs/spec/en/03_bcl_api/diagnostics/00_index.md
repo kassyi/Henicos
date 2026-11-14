@@ -18,7 +18,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0001](GSH0001.md) | Error | Object creation not supported in GPU kernels |
 | [GSH0002](GSH0002.md) | Error | String usage not supported in GPU kernels |
 | [GSH0003](GSH0003.md) | Error | Unsupported syntax in GPU kernel |
-| [GSH0004](GSH0004.md) | Error | GpuKernel return type must be void or blittable |
+| [GSH0004](GSH0004.md) | Error | GPU method return type must be void or blittable |
 | [GSH0005](GSH0005.md) | Error | GpuBigIntExpr must be assigned via .Value |
 | [GSH0006](GSH0006.md) | Error | InlinePtx argument must be a string literal |
 | [GSH0007](GSH0007.md) | Error | Foreach is not allowed in GPU kernels |
