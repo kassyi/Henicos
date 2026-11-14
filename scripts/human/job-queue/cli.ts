@@ -17,7 +17,7 @@ import {
   type ShellName,
 } from "./constants.ts";
 import { run, usageError, type RunOptions } from "./client.ts";
-import { accuracy, cancel, place, startNow, status, stop, wait } from "./client-commands.ts";
+import { accuracy, cancel, pause, place, resume, startNow, status, stop, wait } from "./client-commands.ts";
 import { MachineProfile } from "./machine.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
@@ -33,6 +33,8 @@ const Usage = [
   "  node scripts/human/job-queue.js move <id> (--first | --before <id> | --reset)",
   "  node scripts/human/job-queue.js set-weight <id> <n>",
   "  node scripts/human/job-queue.js start <id>",
+  "  node scripts/human/job-queue.js pause [--until-idle]",
+  "  node scripts/human/job-queue.js resume",
   "  node scripts/human/job-queue.js stop",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
   "  node scripts/human/job-queue.js --self-test",
@@ -52,8 +54,9 @@ const Usage = [
   "            with <id>, only that job (exit 1 when it ended or is unknown); --json prints the same as JSON.",
   "            --accuracy prints how close the expected run times were, per source (own runs, similar commands).",
   "            --watch shows the queue live in the terminal, one line per job with its timeline: arrows select a job,",
-  "            c cancels it, s starts, m moves and w re-weights a waiting one, ? lists the keys, q quits",
-  "            (just queue-watch). Below the jobs, the agent chats that wait for you (chat-status.js); a hides them.",
+  "            c cancels it, s starts, m moves and w re-weights a waiting one, Space pauses or resumes the queue,",
+  "            ? lists the keys, q quits (just queue-watch). Below the jobs, the agent chats that wait for you",
+  "            (chat-status.js); a hides them.",
   "wait        Waits until job <id> has ended (also across a scheduler restart) and exits with its outcome: 0",
   "            succeeded, 1 failed, 4 cancelled, 5 lost (its client died; the result is unknown), 2 for an unknown",
   "            id. Run it in the background to be told when a job ends; --json prints {id, outcome}.",
@@ -65,6 +68,10 @@ const Usage = [
   "set-weight  Changes the slots a waiting job takes.",
   "start       Starts a waiting job now, beside the running ones, over the slots and the memory pool (like a GPU",
   "            holder). Not for a job waiting for the GPU (one job at a time: move it --first) or for its --after job.",
+  "pause       The scheduler starts no waiting job (no slots, no GPU turns) until resume; running jobs finish, and a",
+  "            job queued meanwhile waits in its place. start <id> still works. The pause survives a scheduler",
+  "            restart. --until-idle then waits until no job runs and exits 0 (pause --until-idle && stop).",
+  "resume      Lifts the pause; the waiting jobs are granted as usual.",
   "stop        Stops the scheduler; running jobs keep running and register with the next one.",
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
   "            slot per 3 cores, at least 2); --memory-mb: the memory the budgets of the running test runs may add up",
@@ -89,6 +96,8 @@ const Modes = [
   "move",
   "set-weight",
   "start",
+  "pause",
+  "resume",
   "stop",
   "serve",
 ] as const;
@@ -101,6 +110,7 @@ interface Options extends RunOptions {
   json: boolean;
   watch: boolean;
   accuracy: boolean;
+  untilIdle: boolean;
   /** The job a mode acts on (status, cancel, move, set-weight, start); 0 for none. */
   jobId: number;
   moveFirst: boolean;
@@ -143,6 +153,7 @@ export function parseArgs(argv: string[]): Options {
     json: false,
     watch: false,
     accuracy: false,
+    untilIdle: false,
     jobId: 0,
     after: 0,
     keepIfFailed: false,
@@ -221,6 +232,9 @@ export function parseArgs(argv: string[]): Options {
       case "--accuracy":
         options.accuracy = true;
         break;
+      case "--until-idle":
+        options.untilIdle = true;
+        break;
       case "--timeout-minutes":
         options.timeoutMinutes = parsePositive("--timeout-minutes", own[++i], true);
         break;
@@ -274,6 +288,9 @@ export function parseArgs(argv: string[]): Options {
   if (options.accuracy && (options.mode !== "status" || options.watch || options.jobId > 0)) {
     usageError("--accuracy goes with status alone (no <id>, no --watch).");
   }
+  if (options.untilIdle && options.mode !== "pause") {
+    usageError("--until-idle goes with pause alone.");
+  }
   if (options.keepIfFailed && options.after === 0) {
     usageError("--keep-if-failed needs --after <id>.");
   }
@@ -324,6 +341,12 @@ export async function main(argv: string[]): Promise<void> {
         break;
       case "start":
         await startNow(options.port, options.jobId);
+        break;
+      case "pause":
+        await pause(options.port, options.untilIdle);
+        break;
+      case "resume":
+        await resume(options.port);
         break;
       case "stop":
         await stop(options.port);

@@ -56,6 +56,8 @@ export class QueuedRun {
   private lastNotice = -Infinity;
   private lastPosition = 0;
   private lastStartAt: number | null = null;
+  /** The pause was told (once per run). */
+  private pauseTold = false;
   /** Set once "done" was sent: called with true on the scheduler's receipt, with false when none comes. */
   private doneReceipt: ((received: boolean) => void) | null = null;
   /**
@@ -224,6 +226,9 @@ export class QueuedRun {
       case "waiting":
         this.onWaiting(message);
         break;
+      case "paused":
+        this.tellPaused();
+        break;
       case "granted":
         this.receipts = numberField(message, "protocol") >= 3;
         if (this.state === "waiting") {
@@ -260,6 +265,17 @@ export class QueuedRun {
     this.lastNotice = Date.now();
     const role = this.options.role ? ` (${this.options.role})` : "";
     prefix(`queued #${jobId}${role}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${jobId}" shows it`);
+    if (message.paused === true) {
+      this.tellPaused();
+    }
+  }
+
+  /** Once per run: the queue is paused, so the job starts only after "job-queue.js resume". */
+  private tellPaused(): void {
+    if (!this.pauseTold) {
+      this.pauseTold = true;
+      prefix(`the queue is paused: #${this.jobId} starts after "job-queue.js resume"`);
+    }
   }
 
   private onWaiting(message: Incoming): void {
