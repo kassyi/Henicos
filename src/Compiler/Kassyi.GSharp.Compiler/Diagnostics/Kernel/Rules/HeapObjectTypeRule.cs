@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// <remarks>
 /// <para>
 /// Left to other rules: a <c>new object()</c> or an array creation that initializes the variable (GSH0001), the type of a
-/// <c>x is object</c> test (decided by the types, <see cref="TypeTests"/>), and the signature of a method (whose parameter
+/// <c>x is object</c> test (decided by the types, <c>TypeTests</c>), and the signature of a method (whose parameter
 /// and return types have their own diagnostics).
 /// </para>
 /// </remarks>
