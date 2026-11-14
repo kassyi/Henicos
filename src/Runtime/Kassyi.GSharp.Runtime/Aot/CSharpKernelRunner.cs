@@ -40,7 +40,29 @@ public static class CSharpKernelRunner
     /// <see cref="CSharpExecutionUnsupportedException"/> ends the run at once: no thread of it has a C# value.
     /// </remarks>
     public static void Run(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ,
-        Action<long> thread)
+        Action<long> thread) =>
+        RunCore(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, thread, managedFallback: false);
+
+    /// <summary>
+    /// Runs <paramref name="thread"/> as <see cref="Run"/> does, for the managed path of a kernel that has no generated
+    /// copy because its body names a file-local type (GSH0119): an operation that cannot run one GPU thread at a time
+    /// throws <see cref="CSharpExecutionUnsupportedException"/> with a message about that path, not about
+    /// <see cref="KernelExecution.CSharp"/>, which is not the one running. For generated code only.
+    /// </summary>
+    /// <param name="gridDimX">The number of blocks in x.</param>
+    /// <param name="gridDimY">The number of blocks in y.</param>
+    /// <param name="gridDimZ">The number of blocks in z.</param>
+    /// <param name="blockDimX">The number of threads per block in x.</param>
+    /// <param name="blockDimY">The number of threads per block in y.</param>
+    /// <param name="blockDimZ">The number of threads per block in z.</param>
+    /// <param name="thread">The call of the kernel, given the linear index of the GPU thread.</param>
+    /// <exception cref="ArgumentOutOfRangeException">A dimension is 0.</exception>
+    public static void RunAsManagedFallback(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX,
+        uint blockDimY, uint blockDimZ, Action<long> thread) =>
+        RunCore(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, thread, managedFallback: true);
+
+    private static void RunCore(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY,
+        uint blockDimZ, Action<long> thread, bool managedFallback)
     {
         ArgumentNullException.ThrowIfNull(thread);
         var shape = new LaunchGeometry(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
@@ -50,7 +72,7 @@ public static class CSharpKernelRunner
         {
             try
             {
-                RunThreads(shape, order, thread);
+                RunThreads(shape, order, thread, managedFallback);
             }
             catch (Exception ex)
             {
@@ -100,21 +122,21 @@ public static class CSharpKernelRunner
     }
 
     private static void RunThreads(in LaunchGeometry shape, Func<CSharpLaunchDimensions, int[]>? order,
-        Action<long> thread)
+        Action<long> thread, bool managedFallback)
     {
         ExceptionDispatchInfo? first = null;
         if (order is null)
         {
             for (long id = 0; id < shape.ThreadCount; id++)
             {
-                RunThread(shape, id, thread, ref first);
+                RunThread(shape, id, thread, managedFallback, ref first);
             }
         }
         else
         {
             foreach (var id in GetOrder(shape, order))
             {
-                RunThread(shape, id, thread, ref first);
+                RunThread(shape, id, thread, managedFallback, ref first);
             }
         }
 
@@ -122,10 +144,10 @@ public static class CSharpKernelRunner
     }
 
     // Runs one GPU thread; its exception ends only this thread and is kept when it is the first one
-    private static void RunThread(in LaunchGeometry shape, long id, Action<long> thread,
+    private static void RunThread(in LaunchGeometry shape, long id, Action<long> thread, bool managedFallback,
         ref ExceptionDispatchInfo? first)
     {
-        ManagedGpuContext.BeginCSharpThread(shape.ContextOf(id));
+        ManagedGpuContext.BeginCSharpThread(shape.ContextOf(id), managedFallback);
         try
         {
             thread(id);

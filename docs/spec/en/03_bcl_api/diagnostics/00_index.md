@@ -116,6 +116,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0113](GSH0113.md) | Error | G# cannot generate the launcher of a [CudaImport] declaration |
 | [GSH0114](GSH0114.md) | Warning | G# has no launch limits for a GSharpTargetArchitectures architecture |
 | [GSH0117](GSH0117.md) | Error | SharedMemory<T> count must not be negative |
+| [GSH0119](GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates |
 | [SLQ0001](SLQ0001.md) | Error | StackLinq method chain is too deep |
 | [RS0030](RS0030.md) | Error | Banned API used (G# repository builds only) |
 
