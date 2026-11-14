@@ -143,6 +143,7 @@ internal sealed class TranspilerRuleRegistry
         ], new BinaryExpressionTranspilerRule());
         registry.Register(SyntaxKind.CastExpression, new CastExpressionTranspilerRule());
         registry.Register(SyntaxKind.ConditionalExpression, new ConditionalExpressionTranspilerRule());
+        registry.Register(SyntaxKind.ConditionalAccessExpression, new ConditionalAccessExpressionTranspilerRule());
         registry.Register(SyntaxKind.ElementAccessExpression, new ElementAccessExpressionTranspilerRule());
         registry.Register(SyntaxKind.InvocationExpression, new InvocationExpressionTranspilerRule());
         registry.Register([
