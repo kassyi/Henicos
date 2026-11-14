@@ -63,8 +63,15 @@ internal static class SwitchStatementTranspilers
         using (context.Emitter.Writer.Scope())
         {
             JumpedOverDeclarations.WriteDeclarations(node.Statements, ref context);
-            foreach (var stmt in node.Statements)
+            var localFunctions = LocalFunctionOrder.Create(node.Statements, 0, context.Query.SemanticModel);
+            for (var i = 0; i < node.Statements.Count; i++)
             {
+                var stmt = node.Statements[i];
+                if (localFunctions != null && localFunctions.TryWriteStatement(node.Statements, i, ref context))
+                {
+                    continue;
+                }
+
                 if (stmt is BlockSyntax nested && !CppBlockScopes.IsWrittenWithoutBraces(nested))
                 {
                     context.Visitor.VisitStatementOrBlock(nested);
