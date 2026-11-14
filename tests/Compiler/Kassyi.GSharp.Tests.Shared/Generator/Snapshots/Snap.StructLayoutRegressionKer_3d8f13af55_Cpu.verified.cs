@@ -478,7 +478,7 @@ public unsafe partial struct LayoutReproNullableInt
 {
 public const string DebugName_V = "global::System.Nullable<global::System.Int32>";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
-public AotContexts.__gsharp_nullable_of_Int32 V;
+public fixed byte V[8];
 public const string DebugName_X = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Int32 X;
@@ -490,35 +490,6 @@ native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp
 public static unsafe void Unmarshal_LayoutReproNullableInt(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNullableInt host, ref AotContexts.LayoutReproNullableInt native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproNullableInt, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproNullableInt>(ref native);
-}
-[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
-public unsafe partial struct __gsharp_nullable_of_Int32
-{
-[global::System.Runtime.InteropServices.FieldOffset(0)]
-public byte HasValue;
-[global::System.Runtime.InteropServices.FieldOffset(4)]
-public global::System.Int32 Value;
-}
-public static unsafe void Marshal___gsharp_nullable_of_Int32(ref global::System.Nullable<global::System.Int32> host, ref AotContexts.__gsharp_nullable_of_Int32 native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
-{
-native = default;
-if (host.HasValue)
-{
-native.HasValue = 1;
-global::System.Int32 value = host.GetValueOrDefault();
-native.Value = value;
-}
-}
-public static unsafe void Unmarshal___gsharp_nullable_of_Int32(ref global::System.Nullable<global::System.Int32> host, ref AotContexts.__gsharp_nullable_of_Int32 native, global::System.IntPtr hStream = default)
-{
-if (native.HasValue == 0)
-{
-host = null;
-return;
-}
-global::System.Int32 value = host.GetValueOrDefault();
-value = native.Value;
-host = value;
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 6)]
 public unsafe partial struct LayoutReproPacked

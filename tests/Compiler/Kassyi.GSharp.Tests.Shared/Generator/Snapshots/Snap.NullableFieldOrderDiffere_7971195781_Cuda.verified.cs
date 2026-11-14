@@ -196,6 +196,7 @@ return __gsharp_seq_0.HasValue?__gsharp_seq_0.Value:__gsharp_ty_Kassyi__GSharp__
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ReadNullableArrayFieldKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__NullableFieldOrderDifferentialKernels__ReadNullableArrayFieldKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+private static bool __gsharp_layout_checked_ReadNullableArrayFieldKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerReadNullableArrayFieldKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.NullableFieldOrderDifferentialKernels.__gsharp_hfunc_ReadNullableArrayFieldKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.NullableFieldOrderDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -203,6 +204,15 @@ public static void WarmupFunctionPointerReadNullableArrayFieldKernel() => global
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchReadNullableArrayFieldKernel(global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder h, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (!__gsharp_layout_checked_ReadNullableArrayFieldKernel)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayInner>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayInner", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayInner>());
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayInner __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayInner, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayInner", "A", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayInner, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.A))));
+}
+__gsharp_layout_checked_ReadNullableArrayFieldKernel = true;
+}
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableFieldOrderDifferentialKernels.ReadNullableArrayFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {

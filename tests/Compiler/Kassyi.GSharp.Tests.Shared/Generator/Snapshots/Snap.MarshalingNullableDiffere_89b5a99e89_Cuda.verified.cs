@@ -371,7 +371,7 @@ public const string DebugName_Inner = "global::System.Nullable<global::Kassyi.GS
 public AotContexts.__gsharp_nullable_of_NullableDiffInner Inner;
 public const string DebugName_N = "global::System.Nullable<global::System.Int32>";
 [global::System.Runtime.InteropServices.FieldOffset(48)]
-public AotContexts.__gsharp_nullable_of_Int32 N;
+public fixed byte N[8];
 }
 public static unsafe void Marshal_NullableDiffHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffHolder host, ref AotContexts.NullableDiffHolder native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
@@ -379,14 +379,20 @@ native = default;
 native.A = host.A;
 Marshal___gsharp_nullable_of_Vector2(ref host.V, ref native.V, deviceArrays, hStream);
 Marshal___gsharp_nullable_of_NullableDiffInner(ref host.Inner, ref native.Inner, deviceArrays, hStream);
-Marshal___gsharp_nullable_of_Int32(ref host.N, ref native.N, deviceArrays, hStream);
+fixed (byte* pField = native.N)
+{
+*((global::System.Nullable<global::System.Int32>*)pField) = host.N;
+}
 }
 public static unsafe void Unmarshal_NullableDiffHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffHolder host, ref AotContexts.NullableDiffHolder native, global::System.IntPtr hStream = default)
 {
 host.A = native.A;
 Unmarshal___gsharp_nullable_of_Vector2(ref host.V, ref native.V, hStream);
 Unmarshal___gsharp_nullable_of_NullableDiffInner(ref host.Inner, ref native.Inner, hStream);
-Unmarshal___gsharp_nullable_of_Int32(ref host.N, ref native.N, hStream);
+fixed (byte* pField = native.N)
+{
+host.N = *((global::System.Nullable<global::System.Int32>*)pField);
+}
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct NullableDiffArrayHolder
@@ -2083,20 +2089,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ArrayFieldsKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder
-{
-GSharpArray<System_Nullable<float2>> __gsharp_mb_Items;
-GSharpArray<System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>> __gsharp_mb_Inners;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder)==32,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder)==8,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder,__gsharp_mb_Items)==0,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder.Items: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder,__gsharp_mb_Inners)==16,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder.Inners: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner__
+public const string ArrayFieldsKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner
 {
@@ -2108,6 +2101,19 @@ static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__Nu
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner)==8,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffInner: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffInner.X: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner,__gsharp_mb_V)==8,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffInner.V: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder
+{
+GSharpArray<System_Nullable<float2>> __gsharp_mb_Items;
+GSharpArray<System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>> __gsharp_mb_Inners;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder)==32,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder)==8,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder,__gsharp_mb_Items)==0,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder.Items: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder,__gsharp_mb_Inners)==16,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder.Inners: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__ArrayFieldsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder __gsharp_id_0_h, GSharpArray<float> __gsharp_id_1_probe, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;

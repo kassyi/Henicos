@@ -2420,20 +2420,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 }
 }
 #pragma warning restore CS8500
-public const string ArrayFieldsKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder__
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder
-{
-GSharpArray<System_Nullable<float2>> __gsharp_mb_Items;
-GSharpArray<System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>> __gsharp_mb_Inners;
-}
-;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder)==32,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder: size"");
-static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder)==8,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder: alignment"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder,__gsharp_mb_Items)==0,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder.Items: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder,__gsharp_mb_Inners)==16,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder.Inners: offset"");
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner__
+public const string ArrayFieldsKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner
 {
@@ -2445,6 +2432,19 @@ static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__Nu
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner)==4,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffInner: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffInner.X: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner,__gsharp_mb_V)==4,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffInner.V: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder
+{
+GSharpArray<System_Nullable<float2>> __gsharp_mb_Items;
+GSharpArray<System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>> __gsharp_mb_Inners;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder)==32,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder)==8,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder,__gsharp_mb_Items)==0,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder.Items: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder,__gsharp_mb_Inners)==16,""Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder.Inners: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__ArrayFieldsKernel {
 int __gsharp_state = 0;

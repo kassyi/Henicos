@@ -251,16 +251,16 @@ public unsafe partial struct DiffNullableBlitHolder
 {
 public const string DebugName_IntOpt = "global::System.Nullable<global::System.Int32>";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
-public AotContexts.__gsharp_nullable_of_Int32 IntOpt;
+public fixed byte IntOpt[8];
 public const string DebugName_ByteOpt = "global::System.Nullable<global::System.Byte>";
 [global::System.Runtime.InteropServices.FieldOffset(8)]
-public AotContexts.__gsharp_nullable_of_Byte ByteOpt;
+public fixed byte ByteOpt[2];
 public const string DebugName_CharOpt = "global::System.Nullable<global::System.Char>";
 [global::System.Runtime.InteropServices.FieldOffset(10)]
-public AotContexts.__gsharp_nullable_of_Char CharOpt;
+public fixed byte CharOpt[4];
 public const string DebugName_BoolOpt = "global::System.Nullable<global::System.Boolean>";
 [global::System.Runtime.InteropServices.FieldOffset(14)]
-public AotContexts.__gsharp_nullable_of_Boolean BoolOpt;
+public fixed byte BoolOpt[2];
 }
 public static unsafe void Marshal_DiffNullableBlitHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder host, ref AotContexts.DiffNullableBlitHolder native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
 {
@@ -357,44 +357,15 @@ global::System.Char value = host.GetValueOrDefault();
 value = native.Value;
 host = value;
 }
-[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 2)]
-public unsafe partial struct __gsharp_nullable_of_Boolean
-{
-[global::System.Runtime.InteropServices.FieldOffset(0)]
-public byte HasValue;
-[global::System.Runtime.InteropServices.FieldOffset(1)]
-public global::System.Boolean Value;
-}
-public static unsafe void Marshal___gsharp_nullable_of_Boolean(ref global::System.Nullable<global::System.Boolean> host, ref AotContexts.__gsharp_nullable_of_Boolean native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
-{
-native = default;
-if (host.HasValue)
-{
-native.HasValue = 1;
-global::System.Boolean value = host.GetValueOrDefault();
-native.Value = value;
-}
-}
-public static unsafe void Unmarshal___gsharp_nullable_of_Boolean(ref global::System.Nullable<global::System.Boolean> host, ref AotContexts.__gsharp_nullable_of_Boolean native, global::System.IntPtr hStream = default)
-{
-if (native.HasValue == 0)
-{
-host = null;
-return;
-}
-global::System.Boolean value = host.GetValueOrDefault();
-value = native.Value;
-host = value;
-}
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 28)]
 public unsafe partial struct DiffNullableVec2Holder
 {
 public const string DebugName_V = "global::System.Nullable<global::System.Numerics.Vector2>";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
-public AotContexts.__gsharp_nullable_of_Vector2 V;
+public fixed byte V[12];
 public const string DebugName_Rv = "global::System.Nullable<global::System.Numerics.Vector2>";
 [global::System.Runtime.InteropServices.FieldOffset(12)]
-public AotContexts.__gsharp_nullable_of_Vector2 Rv;
+public fixed byte Rv[12];
 public const string DebugName_Tag = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(24)]
 public global::System.Int32 Tag;
@@ -406,41 +377,6 @@ native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp
 public static unsafe void Unmarshal_DiffNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder host, ref AotContexts.DiffNullableVec2Holder native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffNullableVec2Holder, global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder>(ref native);
-}
-[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 12)]
-public unsafe partial struct __gsharp_nullable_of_Vector2
-{
-[global::System.Runtime.InteropServices.FieldOffset(0)]
-public byte HasValue;
-[global::System.Runtime.InteropServices.FieldOffset(4)]
-public fixed byte Value[8];
-}
-public static unsafe void Marshal___gsharp_nullable_of_Vector2(ref global::System.Nullable<global::System.Numerics.Vector2> host, ref AotContexts.__gsharp_nullable_of_Vector2 native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
-{
-native = default;
-if (host.HasValue)
-{
-native.HasValue = 1;
-global::System.Numerics.Vector2 value = host.GetValueOrDefault();
-fixed (byte* pField = native.Value)
-{
-*((global::System.Numerics.Vector2*)pField) = value;
-}
-}
-}
-public static unsafe void Unmarshal___gsharp_nullable_of_Vector2(ref global::System.Nullable<global::System.Numerics.Vector2> host, ref AotContexts.__gsharp_nullable_of_Vector2 native, global::System.IntPtr hStream = default)
-{
-if (native.HasValue == 0)
-{
-host = null;
-return;
-}
-global::System.Numerics.Vector2 value = host.GetValueOrDefault();
-fixed (byte* pField = native.Value)
-{
-value = *((global::System.Numerics.Vector2*)pField);
-}
-host = value;
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct DiffExplicitGapped
