@@ -913,6 +913,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "SuspendingCallFrameUnreachable",
+    "id": "GSH0115",
+    "title": "The managed CPU path cannot run a device function that waits at a barrier",
+    "messageFormat": "The managed CPU path cannot run '{0}': {1}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "SharedMemorySizeNegative",
     "id": "GSH0117",
     "title": "SharedMemory<T> count must not be negative",

@@ -29,7 +29,7 @@ namespace StateMachineCase
             return buffer[(tid + 1) % 4];
         }
 
-        // A local of a private nested struct: no state machine
+        // A local of a private nested struct: a state machine private to LibSm, which another assembly cannot call
         [GpuDeviceFunction]
         public static int WaitPrivate(int[] buffer, int tid)
         {
@@ -40,7 +40,7 @@ namespace StateMachineCase
             return buffer[(tid + 1) % 4] + secret.V;
         }
 
-        // Calls WaitPrivate: no state machine either
+        // Calls WaitPrivate, whose private frame its own frame holds: private as well
         [GpuDeviceFunction]
         public static int WaitThrough(int[] buffer, int tid)
         {
@@ -48,6 +48,24 @@ namespace StateMachineCase
             Gpu.SyncThreads();
             return value + 1;
         }
+
+        // The private struct only as a temporary: MakeSecret(tid) is held across the barrier of WaitInner, though no
+        // local, parameter or return value of WaitSpilled has the type: its frame is private as well
+        [GpuDeviceFunction]
+        private static Secret MakeSecret(int tid) => new Secret { V = tid };
+
+        [GpuDeviceFunction]
+        private static int UseSecret(Secret secret, int waited) => secret.V + waited;
+
+        [GpuDeviceFunction]
+        public static int WaitInner(int[] buffer, int tid)
+        {
+            Gpu.SyncThreads();
+            return buffer[tid];
+        }
+
+        [GpuDeviceFunction]
+        public static int WaitSpilled(int[] buffer, int tid) => UseSecret(MakeSecret(tid), WaitInner(buffer, tid));
 
         private struct Secret
         {
