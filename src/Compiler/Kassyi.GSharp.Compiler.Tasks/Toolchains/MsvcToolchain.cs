@@ -266,7 +266,7 @@ public sealed class MsvcToolchain : INativeToolchain
     private const string OptimizationFlags = "/Oi /Ot /Oy /Ob2 /GF /Gy";
 
     // The flags of every native kernel build besides the optimization and the sanitizers (see BuildClArguments).
-    private const string CommonFlags = "/LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj";
+    private const string CommonFlags = "/LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj /we4533";
 
     // Logged once per task run by CompileCppToNativeTask when 'undefined' is requested with this toolchain.
     internal const string UndefinedSanitizerUnsupportedWarning =
@@ -285,6 +285,8 @@ public sealed class MsvcToolchain : INativeToolchain
     //        compiler assume that the extern "C" kernels never throw
     // /bigobj = Allow more than 65,279 sections: one translation unit holds every kernel of the assembly, and a
     //           large one (the test assemblies) fails with C1128 without it
+    // /we4533 = C4533 as an error: a goto or switch case that jumps past an initialization is ill-formed C++ that
+    //           MSVC accepts with this warning and that g++ and clang reject, so a Windows build catches it too
     // /fsanitize=address /Zi /Fd = AddressSanitizer with debug information for symbolized reports ('undefined' has no
     //                              MSVC counterpart and is ignored)
     private static string BuildClArguments(
