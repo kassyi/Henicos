@@ -132,19 +132,19 @@ public class DialectDependentDiagnosticsTests
         Assert.Equal(
             [
                 // A call: the whole invocation
-                (Analyzer, 17, 16, 17, 30, Unmapped, "'Math.Abs(long)'"),
-                (Analyzer, 17, 33, 17, 51, Unmapped, "'Math.Max(long, long)'"),
+                (Analyzer, 17, 16, 17, 34, Unmapped, "'Math.Min(long, long)'"),
+                (Analyzer, 17, 37, 17, 55, Unmapped, "'Math.Max(long, long)'"),
                 (Analyzer, 18, 16, 18, 32, Unmapped, "'MathF.Cbrt(float)'"),
                 // A method group: the member access
-                (Analyzer, 19, 30, 19, 38, Unmapped, "'Math.Abs(long)'"),
+                (Analyzer, 19, 36, 19, 44, Unmapped, "'Math.Min(long, long)'"),
                 // Through using static System.Math
                 (Analyzer, 20, 16, 20, 26, Unmapped, "'Math.Cbrt(double)'"),
-                (Analyzer, 21, 16, 21, 25, Unmapped, "'Math.Abs(long)'"),
+                (Analyzer, 21, 16, 21, 29, Unmapped, "'Math.Min(long, long)'"),
                 // A mapped member as a method group, qualified and through using static, and an unmapped one through
                 // using static: the member access or the name
                 (Analyzer, 22, 29, 22, 37, MethodGroup, "Math.Abs(int) (used as a method group)"),
                 (Analyzer, 23, 29, 23, 32, MethodGroup, "Math.Abs(int) (used as a method group)"),
-                (Analyzer, 24, 31, 24, 34, Unmapped, "'Math.Abs(long)'")
+                (Analyzer, 24, 37, 24, 40, Unmapped, "'Math.Min(long, long)'")
             ],
             diagnostics.Select(static d => (d.Origin, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn, d.Id,
                 d.Id == Unmapped ? ExtractMethod(d.Message) : ExtractSyntax(d.Message))));

@@ -56,6 +56,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1221237433u, "CppIdentifie
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1920609726u, "CppIdentifierRenameKernels.cs", 61, 25, "VerbatimAndReservedNamesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2103473601u, "CppIdentifierRenameKernels.cs", 74, 9, "VerbatimAndReservedNamesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1502637418u, "CppIdentifierRenameKernels.cs", 83, 21, "MappedFunctionNamedLocalsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1105255739u, "CppIdentifierRenameKernels.cs", 86, 19, "MappedFunctionNamedLocalsKernel", "Negating the minimum value of a twos complement number is invalid."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(708340743u, "CppIdentifierRenameKernels.cs", 89, 9, "MappedFunctionNamedLocalsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(115713870u, "CppIdentifierRenameKernels.cs", 106, 24, "DeclarationFormsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1615682337u, "CppIdentifierRenameKernels.cs", 128, 9, "DeclarationFormsKernel", "G#: a null array is read"),
@@ -676,7 +677,7 @@ int __gsharp_id_1_tid = (int)threadIdx.x;
 int __gsharp_id_2_value = __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1502637418u);
 int __gsharp_id_3_min = min(__gsharp_id_2_value,10);
 int __gsharp_id_4_max = max(__gsharp_id_2_value,10);
-int __gsharp_id_5_abs = abs(__gsharp_sub_i32(__gsharp_id_3_min,__gsharp_id_4_max));
+int __gsharp_id_5_abs = __gsharp_abs_i32(__gsharp_sub_i32(__gsharp_id_3_min,__gsharp_id_4_max),1105255739u);
 int __gsharp_id_6_fminf = min(__gsharp_id_5_abs,5);
 int __gsharp_id_7_fmaxf = max(__gsharp_id_6_fminf,1);
 __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 708340743u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_3_min,__gsharp_id_4_max),__gsharp_id_5_abs),__gsharp_id_6_fminf),__gsharp_id_7_fmaxf);

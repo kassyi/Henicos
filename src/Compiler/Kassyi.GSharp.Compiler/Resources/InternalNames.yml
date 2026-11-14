@@ -530,6 +530,11 @@ IntegerSemantics:
     RemainderInt64: { Value: __gsharp_rem_i64, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
     RemainderUInt32: { Value: __gsharp_rem_u32, Prelude: IntegerDivision.hpp }
     RemainderUInt64: { Value: __gsharp_rem_u64, Prelude: IntegerDivision.hpp }
+    # Math.Abs of a signed integer: OverflowException for the minimum value on every build (#947)
+    AbsInt32: { Value: __gsharp_abs_i32, Prelude: IntegerDivision.hpp }
+    AbsInt64: { Value: __gsharp_abs_i64, Prelude: IntegerDivision.hpp }
+    AbsInt16: { Value: __gsharp_abs_i16, Prelude: IntegerDivision.hpp }
+    AbsSByte: { Value: __gsharp_abs_i8, Prelude: IntegerDivision.hpp }
     # The signed ones above are also the managed form of a division that may divide the minimum by -1 (the GPU result
     # where .NET throws OverflowException); x /= y and x %= y of such an int or long target, by reference
     DivideAssignInt32: { Value: __gsharp_div_assign_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
