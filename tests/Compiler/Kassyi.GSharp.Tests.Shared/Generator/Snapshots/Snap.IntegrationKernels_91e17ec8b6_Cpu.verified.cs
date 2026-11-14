@@ -278,7 +278,7 @@ __gsharp_array_at(__gsharp_ctx->__gsharp_id_2_results, __gsharp_id_7_tid, 168485
 }
 }
 __gsharp_ctx->__gsharp_id_30_t=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_31_dynamicSharedMem={ (float*)__gsharp_allocate_smem_dynamic(0xf4a8b89f8fdf4f71ull, (__gsharp_ctx->__gsharp_id_6_dynamicSharedSize) * sizeof(float), alignof(float), ""Tier1_IntegrationKernels.cs(163,48)"") };
+__gsharp_ctx->__gsharp_id_31_dynamicSharedMem={ (float*)__gsharp_allocate_smem_dynamic(0xf4a8b89f8fdf4f71ull, (long long)(__gsharp_ctx->__gsharp_id_6_dynamicSharedSize), sizeof(float), alignof(float), ""Tier1_IntegrationKernels.cs(163,48)"") };
 if(__gsharp_ctx->__gsharp_id_30_t<__gsharp_ctx->__gsharp_id_5_count)
 {
 __gsharp_ctx->__gsharp_id_31_dynamicSharedMem[__gsharp_ctx->__gsharp_id_30_t]=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_results, __gsharp_ctx->__gsharp_id_30_t, 2030862434u);
