@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 using static Kassyi.GSharp.Compiler.Analysis.MemoryOperations;
 
@@ -62,6 +63,9 @@ internal sealed class MemoryUniformity(UniformityRecorder recorder)
         }
     }
 
+    /// <summary>A flow capture: what it refers to, when it holds a reference to memory.</summary>
+    public void AddCapture(IFlowCaptureOperation capture) => MemoryRecording.Capture(_values, _references, capture);
+
     /// <summary>
     /// <paramref name="target"/> written. A write is an assignment, compound assignment, increment or deconstruction
     /// whose target is a location of memory: an element (<c>arr[i]</c>, <c>span[i]</c>, <c>shared[i]</c>), a field or
@@ -78,7 +82,8 @@ internal sealed class MemoryUniformity(UniformityRecorder recorder)
             return;
         }
 
-        if (IsLocation(target))
+        // A location captured before the value branches (a[i] = c ? x : y) is written through its capture
+        if (IsLocation(target) || target is IFlowCaptureReferenceOperation)
         {
             MemoryRecording.AllocateLocation(_values, target);
             AddEvent(node, new UniformityEvent(UniformityEventKind.MemoryWrite, target, null, null,

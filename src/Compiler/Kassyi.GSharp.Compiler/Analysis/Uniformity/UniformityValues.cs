@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.FlowAnalysis;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Analysis;
 
@@ -11,6 +12,16 @@ internal sealed class UniformityValues(UniformityRecorder recorder)
 {
     private readonly Dictionary<ISymbol, int> _symbols = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<(ControlFlowGraph Graph, CaptureId Id), int> _captures = new();
+
+    // The flow captures whose members a write names, by the reference in that write
+    private readonly Dictionary<IFlowCaptureReferenceOperation, int> _captureRoots = new();
+
+    // The locals and parameters that a flow capture refers to by reference (each branch of a ref conditional)
+    private readonly Dictionary<(ControlFlowGraph Graph, CaptureId Id), ImmutableArray<ISymbol>.Builder>
+        _captureAliases = new();
+
+    // The same, by the reference of a write that names a member of the capture
+    private readonly Dictionary<IFlowCaptureReferenceOperation, ImmutableArray<ISymbol>.Builder> _rootAliases = new();
 
     // The result of each local function call whose body is spliced where it is called
     private readonly Dictionary<SyntaxNode, int> _results = new();
@@ -41,6 +52,50 @@ internal sealed class UniformityValues(UniformityRecorder recorder)
 
         return index;
     }
+
+    /// <summary>
+    /// The value index of the flow capture that <paramref name="reference"/> names as the struct a write changes, kept
+    /// for the reference.
+    /// </summary>
+    public int CaptureRootOf(IFlowCaptureReferenceOperation reference, ControlFlowGraph graph)
+    {
+        var index = ValueOf(graph, reference.Id);
+        _captureRoots[reference] = index;
+        if (_captureAliases.TryGetValue((graph, reference.Id), out var aliases))
+        {
+            _rootAliases[reference] = aliases;
+        }
+
+        return index;
+    }
+
+    /// <summary>
+    /// <paramref name="symbol"/> is what the flow capture <paramref name="id"/> refers to on one of its branches (a ref
+    /// conditional), given a value index.
+    /// </summary>
+    public void AddCaptureAlias(ControlFlowGraph graph, CaptureId id, ISymbol symbol)
+    {
+        if (!_captureAliases.TryGetValue((graph, id), out var aliases))
+        {
+            aliases = ImmutableArray.CreateBuilder<ISymbol>();
+            _captureAliases.Add((graph, id), aliases);
+        }
+
+        if (!aliases.AsStackEnumerable().Any(symbol, static (alias, target) => alias.IsEqualTo(target)))
+        {
+            aliases.Add(symbol);
+        }
+
+        ValueOf(symbol);
+    }
+
+    /// <summary>The locals and parameters that the capture <paramref name="reference"/> names refers to.</summary>
+    public ImmutableArray<ISymbol> GetRootAliases(IFlowCaptureReferenceOperation reference) =>
+        _rootAliases.TryGetValue(reference, out var aliases) ? aliases.ToImmutable() : ImmutableArray<ISymbol>.Empty;
+
+    /// <summary>The value index that <see cref="CaptureRootOf"/> kept for <paramref name="reference"/>.</summary>
+    public bool TryGetCaptureRoot(IFlowCaptureReferenceOperation reference, out int index) =>
+        _captureRoots.TryGetValue(reference, out index);
 
     /// <summary>The value index of a local or parameter, given one on first use.</summary>
     public int ValueOf(ISymbol symbol)

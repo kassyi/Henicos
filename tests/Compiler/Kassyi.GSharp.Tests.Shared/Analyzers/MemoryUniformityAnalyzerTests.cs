@@ -72,4 +72,65 @@ public class MemoryUniformityAnalyzerTests : TranspilerTestBase
             ],
             actual);
     }
+
+    // The line of the barrier GSH0083 is reported at in each kernel, 0 when nothing is reported
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("ConditionalValueKernel", 28)]
+    [InlineData("WithValueKernel", 41)]
+    [InlineData("SwitchValueKernel", 58)]
+    [InlineData("CompoundConditionalKernel", 71)]
+    [InlineData("InitializerKernel", 85)]
+    [InlineData("WithLocalKernel", 99)]
+    [InlineData("BarrierBetweenKernel", 0)]
+    [InlineData("PlainValueKernel", 130)]
+    [InlineData("ConditionalAliasKernel", 145)]
+    [InlineData("ElementFieldConditionalKernel", 164)]
+    [InlineData("WithCopyKernel", 0)]
+    [InlineData("InitAutoPropertyKernel", 210)]
+    [InlineData("InitAccessorBodyKernel", 226)]
+    [InlineData("RepeatedLocalFunctionKernel", 249)]
+    [InlineData("RefConditionalStructKernel", 265)]
+    [InlineData("InitializerGetterKernel", 288)]
+    [InlineData("SpanConditionalValueKernel", 304)]
+    [InlineData("SpanConditionalAliasKernel", 319)]
+    public async Task FlowCapturedValues_WritesThroughCaptures_AreFollowed(string kernel, int barrierLine)
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var actual = diagnostics
+            .Where(d => IsInMethod(d, kernel))
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .Select(static d => (d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn))
+            .ToList();
+
+        (string, int, int, int, int)[] expected = barrierLine == 0
+            ? []
+            : [(GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, barrierLine, 13, barrierLine, 30)];
+        Assert.Equal(expected, actual);
+    }
+
+    // A ref local rebound in a loop to a ref conditional over itself: its capture and the local refer to each other, so
+    // the resolution must visit each once. The loop-carried write is not reported (like the other forms that a loop
+    // assigns), so this checks only that the analysis ends without an error
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task SelfReferencingCapture_RefLocalReboundInLoop_ResolvesWithoutError()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var inKernel = diagnostics.Where(d => IsInMethod(d, "SelfReferencingCaptureKernel")).ToList();
+
+        Assert.DoesNotContain(inKernel, static d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    private static bool IsInMethod(Diagnostic diagnostic, string method) =>
+        diagnostic.Location.SourceTree?.GetRoot()
+            .DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>()
+            .Any(m => m.Identifier.ValueText == method && m.Span.Contains(diagnostic.Location.SourceSpan)) == true;
 }
