@@ -154,8 +154,7 @@ internal static class FileLocalNames
 
         if (ManagedVersionAnalysis.HasDirectRewrite(method, declaration, compilation))
         {
-            return "its body holds a construct that only the managed path rewrites (an operator macro, a float " +
-                   "StackLinq Sum or Gpu.InlinePtx)";
+            return $"its body holds {DescribeRewrite(declaration, compilation)}, which only the managed path rewrites";
         }
 
         var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
@@ -163,11 +162,28 @@ internal static class FileLocalNames
         {
             if (ManagedVersionAnalysis.Needs(callee, compilation))
             {
-                return $"it calls '{FormatMethod(callee)}', which holds a construct that only the managed path rewrites";
+                return $"it calls '{FormatMethod(callee)}', which needs the managed path's own rewrite of what it " +
+                       "holds (an operator macro, a float or double StackLinq Sum, Gpu.InlinePtx or an integer " +
+                       "division or remainder)";
             }
         }
 
         return null;
+    }
+
+    // The first construct of the body that only the managed path rewrites, as ManagedRewriteClassifier names it
+    private static string DescribeRewrite(MethodDeclarationSyntax declaration, Compilation compilation)
+    {
+        var model = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
+        foreach (var node in declaration.DescendantNodes())
+        {
+            if (ManagedRewriteClassifier.Describe(node, model) is { } description)
+            {
+                return description;
+            }
+        }
+
+        return "a construct";
     }
 
     /// <summary>

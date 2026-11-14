@@ -77,7 +77,7 @@ internal static class ManagedFallbackEmitter
             return;
         }
 
-        CSharpExecutionEmitter.WriteBranchBody(writer, plan);
+        CSharpExecutionEmitter.WriteBranchBody(writer, plan, asManagedFallback: true);
     }
 
     private static string Literal(string? value) => SymbolDisplay.FormatLiteral(value ?? string.Empty, quote: true);

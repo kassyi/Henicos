@@ -25,7 +25,7 @@ public class FileLocalTypeDiagnosticsTests
     // The bodies that need a copy: a kernel that waits at a barrier (names at 109), a suspending function (121), a
     // nested type of a file-local type (129), a generic call of a file-local class (138), an extension Deconstruct
     // (146), a function that holds an operator macro (170), and the kernels that call a function that needs one (the
-    // identifier at 152 and 178). The kernels of LocalKernels and the plain device function are not copied, so none
+    // identifier at 152, 178 and 213). The kernels of LocalKernels and the plain device function are not copied, so none
     // of the names in them is reported
     [Fact]
     [Scenario(TestScenario.SadPath)]
@@ -45,7 +45,10 @@ public class FileLocalTypeDiagnosticsTests
                 (DiagnosticOrigin.Analyzer, 152, 28, 152, 31),
                 (DiagnosticOrigin.Analyzer, 170, 13, 170, 23),
                 (DiagnosticOrigin.Analyzer, 170, 32, 170, 42),
-                (DiagnosticOrigin.Analyzer, 178, 28, 178, 31)
+                (DiagnosticOrigin.Analyzer, 178, 28, 178, 31),
+                (DiagnosticOrigin.Analyzer, 208, 13, 208, 23),
+                (DiagnosticOrigin.Analyzer, 208, 32, 208, 42),
+                (DiagnosticOrigin.Analyzer, 213, 28, 213, 31)
             ],
             diagnostics.Ranges(s_id));
         Assert.DoesNotContain(diagnostics, static d => d.Id == "GSH0048");
@@ -74,7 +77,13 @@ public class FileLocalTypeDiagnosticsTests
             StringComparison.Ordinal);
 
         var rewritten = Assert.Single(diagnostics, static d => d.Id == s_id && d is { StartLine: 170, StartColumn: 13 });
-        Assert.Contains("only the managed path rewrites", rewritten.Message, StringComparison.Ordinal);
+        Assert.Contains("an operator macro, which only the managed path rewrites", rewritten.Message,
+            StringComparison.Ordinal);
+
+        // An integer division that may divide int.MinValue by -1 is such a rewrite, and the reason names it
+        var divided = Assert.Single(diagnostics, static d => d.Id == s_id && d is { StartLine: 208, StartColumn: 13 });
+        Assert.Contains("an integer division or remainder", divided.Message, StringComparison.Ordinal);
+        Assert.Contains("int.MinValue / -1", divided.Message, StringComparison.Ordinal);
     }
 
     // The copy writes what the user's directives resolve as qualified names, so they name the type as well; nameof is
@@ -135,6 +144,7 @@ public class FileLocalTypeDiagnosticsTests
     [InlineData("FileLocalRepro.BarrierKernels", "Sync", nameof(ManagedKernelMode.Unavailable))]
     [InlineData("FileLocalRepro.SuspendingKernels", "Run", nameof(ManagedKernelMode.Unavailable))]
     [InlineData("FileLocalRepro.MacroFunctions", "Run", nameof(ManagedKernelMode.Unavailable))]
+    [InlineData("FileLocalRepro.DivisionFunctions", "Run", nameof(ManagedKernelMode.Unavailable))]
     public void ManagedMode_KernelsAndTheirCopies_FollowsTheNeedForACopy(string className, string kernel,
         string expected)
     {
@@ -149,7 +159,9 @@ public class FileLocalTypeDiagnosticsTests
     [InlineData("FileLocalRepro.BarrierKernels", "Sync", "FileLocalRepro.BarrierKernels.Sync(int[])", "reaches")]
     [InlineData("FileLocalRepro.SuspendingKernels", "Run", "FileLocalRepro.SuspendingKernels.Wait(int)", "suspends")]
     [InlineData("FileLocalRepro.MacroFunctions", "Run", "FileLocalRepro.MacroFunctions.Rewritten(",
-        "only the managed path rewrites")]
+        "an operator macro, which only the managed path rewrites")]
+    [InlineData("FileLocalRepro.DivisionFunctions", "Run", "FileLocalRepro.DivisionFunctions.Divide(",
+        "an integer division or remainder")]
     public void ManagedUnavailableReason_NeedsACopy_NamesTheBodyTheTypeAndWhy(string className, string kernel,
         string body, string why)
     {

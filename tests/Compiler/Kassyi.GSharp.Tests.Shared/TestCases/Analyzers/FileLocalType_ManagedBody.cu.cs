@@ -198,4 +198,21 @@ namespace FileLocalRepro
             data[ThreadIndex.X] = Plain(data[ThreadIndex.X]);
         }
     }
+
+    // A non-constant integer division is rewritten by the managed path (int.MinValue / -1), so it needs a copy as well
+    public static partial class DivisionFunctions
+    {
+        [GpuDeviceFunction]
+        public static int Divide(int a, int b)
+        {
+            LocalValue v = new LocalValue { A = a };
+            return v.A / b + v.A % b;
+        }
+
+        [GpuKernel]
+        public static void Run(int[] data, int divisor)
+        {
+            data[ThreadIndex.X] = Divide(data[ThreadIndex.X], divisor);
+        }
+    }
 }

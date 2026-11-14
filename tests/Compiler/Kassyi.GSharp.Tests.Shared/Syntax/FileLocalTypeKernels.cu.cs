@@ -46,4 +46,13 @@ public static partial class FileLocalTypeKernels
         Gpu.SyncThreads();
         values[i] = values[i] * scale.Factor + scale.Offset;
     }
+
+    // A non-constant integer division is rewritten by the managed path (int.MinValue / -1), so that path needs a copy
+    [GpuKernel]
+    public static void DivideKernel(int[] values, int divisor)
+    {
+        int i = ThreadIndex.X;
+        FileLocalScale scale = new FileLocalScale { Factor = divisor, Offset = 1 };
+        values[i] = values[i] / scale.Factor * 10 + values[i] % scale.Factor;
+    }
 }
