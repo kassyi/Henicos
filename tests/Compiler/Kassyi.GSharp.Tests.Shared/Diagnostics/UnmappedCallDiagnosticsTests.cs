@@ -43,8 +43,7 @@ public class UnmappedCallDiagnosticsTests
     [InlineData("Cpu", "'int.Abs(int)'", "; use Math.Abs(int) instead")]
     [InlineData("Cpu", "'Math.Max(long, long)'",
         "; the dialect implements Math.Max(double, double), Math.Max(float, float), Math.Max(int, int)")]
-    [InlineData("Cpu", "'short.Abs(short)'",
-        "; the dialect implements Math.Abs(double), Math.Abs(float), Math.Abs(int), MathF.Abs(float)")]
+    [InlineData("Cpu", "'short.Abs(short)'", "; use Math.Abs(short) instead")]
     [InlineData("Cpu", "'MathF.Cbrt(float)'", "cannot be called from GPU code")]
     [InlineData("Cuda", "'int.Max(int, int)'", "; use Math.Max(int, int) instead")]
     [Scenario(TestScenario.SadPath)]

@@ -37,7 +37,10 @@ Layout:
 Intrinsics:
   System.Math.Abs(float): "fabsf"
   System.Math.Abs(double): "fabs"
-  System.Math.Abs(int): "abs"
+  System.Math.Abs(int): "__gsharp_abs_i32"
+  System.Math.Abs(long): "__gsharp_abs_i64"
+  System.Math.Abs(short): "__gsharp_abs_i16"
+  System.Math.Abs(sbyte): "__gsharp_abs_i8"
   System.Math.Max(float, float): "__gsharp_max_f32"
   System.Math.Max(double, double): "__gsharp_max_f64"
   System.Math.Max(int, int): "max"

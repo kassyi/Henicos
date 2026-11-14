@@ -53,6 +53,108 @@ public class MathAbsAndFloatConversionDifferentialTests
         OracleIsLaunch = true,
     };
 
+    internal static readonly DifferentialCase s_mathAbsInt64 = new(
+        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsInt64Kernel)))
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            long[] safeVals = [0, 1, -1, 2, -2, long.MaxValue, long.MinValue + 1, -4294967296L];
+            var vals = new long[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                vals[k] = safeVals[k % safeVals.Length];
+            }
+
+            if (rng.Seed == 1)
+            {
+                vals[7] = long.MinValue;
+            }
+
+            return new DiffBuffers()
+                .In("vals", vals, readOnly: true)
+                .Out<long>("dst", rows, ["abs_int64"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsInt64Kernel(
+            b.Get<long>("vals"),
+            b.Get<long>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        OracleIsLaunch = true,
+    };
+
+    internal static readonly DifferentialCase s_mathAbsInt16 = new(
+        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsInt16Kernel)))
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            short[] safeVals = [0, 1, -1, 2, -2, short.MaxValue, short.MinValue + 1, -128];
+            var vals = new short[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                vals[k] = safeVals[k % safeVals.Length];
+            }
+
+            if (rng.Seed == 1)
+            {
+                vals[7] = short.MinValue;
+            }
+
+            return new DiffBuffers()
+                .In("vals", vals, readOnly: true)
+                .Out<short>("dst", rows, ["abs_int16"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsInt16Kernel(
+            b.Get<short>("vals"),
+            b.Get<short>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        OracleIsLaunch = true,
+    };
+
+    internal static readonly DifferentialCase s_mathAbsSByte = new(
+        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsSByteKernel)))
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            sbyte[] safeVals = [0, 1, -1, 2, -2, sbyte.MaxValue, sbyte.MinValue + 1, -64];
+            var vals = new sbyte[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                vals[k] = safeVals[k % safeVals.Length];
+            }
+
+            if (rng.Seed == 1)
+            {
+                vals[7] = sbyte.MinValue;
+            }
+
+            return new DiffBuffers()
+                .In("vals", vals, readOnly: true)
+                .Out<sbyte>("dst", rows, ["abs_sbyte"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsSByteKernel(
+            b.Get<sbyte>("vals"),
+            b.Get<sbyte>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        OracleIsLaunch = true,
+    };
+
     internal static readonly DifferentialCase s_mathAbsSingle = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel)))
     {
@@ -172,6 +274,18 @@ public class MathAbsAndFloatConversionDifferentialTests
     [SkippableFact]
     public void MathAbs_Int32_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mathAbsInt32);
+
+    [SkippableFact]
+    public void MathAbs_Int64_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mathAbsInt64);
+
+    [SkippableFact]
+    public void MathAbs_Int16_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mathAbsInt16);
+
+    [SkippableFact]
+    public void MathAbs_SByte_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mathAbsSByte);
 
     [SkippableFact]
     public void MathAbs_Single_MatchesTheOracleOnEveryPath() =>

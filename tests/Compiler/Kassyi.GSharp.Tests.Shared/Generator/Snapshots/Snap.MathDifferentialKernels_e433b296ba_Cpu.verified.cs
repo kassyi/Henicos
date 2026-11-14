@@ -167,10 +167,13 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1366410659u, "MathDifferen
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1055586084u, "MathDifferentialKernels.cs", 371, 45, "MixedFloatMaxMinMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(130813032u, "MathDifferentialKernels.cs", 378, 18, "Int32MathMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(529510163u, "MathDifferentialKernels.cs", 384, 9, "Int32MathMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1791691989u, "MathDifferentialKernels.cs", 384, 16, "Int32MathMatrixKernel", "Negating the minimum value of a twos complement number is invalid."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(691001244u, "MathDifferentialKernels.cs", 384, 25, "Int32MathMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1610003839u, "MathDifferentialKernels.cs", 385, 9, "Int32MathMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1935924607u, "MathDifferentialKernels.cs", 385, 20, "Int32MathMatrixKernel", "Negating the minimum value of a twos complement number is invalid."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1066424856u, "MathDifferentialKernels.cs", 385, 34, "Int32MathMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1280107439u, "MathDifferentialKernels.cs", 386, 9, "Int32MathMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2091901097u, "MathDifferentialKernels.cs", 386, 20, "Int32MathMatrixKernel", "Negating the minimum value of a twos complement number is invalid."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(119492019u, "MathDifferentialKernels.cs", 386, 34, "Int32MathMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1135644811u, "MathDifferentialKernels.cs", 387, 9, "Int32MathMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2076388077u, "MathDifferentialKernels.cs", 387, 29, "Int32MathMatrixKernel", "G#: a null array is read"),
@@ -2182,9 +2185,9 @@ if(__gsharp_id_7_t>=__gsharp_array_ref(__gsharp_id_0_a, 130813032u).length)
 __gsharp_state = -1;return;
 }
 int __gsharp_id_8_o = __gsharp_mul_i32(__gsharp_id_7_t,8);
-__gsharp_array_at(__gsharp_id_6_r, __gsharp_id_8_o, 529510163u)=abs(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_7_t, 691001244u));
-__gsharp_array_at(__gsharp_id_6_r, __gsharp_add_i32(__gsharp_id_8_o,1), 1610003839u)=abs((int)__gsharp_array_at(__gsharp_id_2_s, __gsharp_id_7_t, 1066424856u));
-__gsharp_array_at(__gsharp_id_6_r, __gsharp_add_i32(__gsharp_id_8_o,2), 1280107439u)=abs((int)__gsharp_array_at(__gsharp_id_3_sb, __gsharp_id_7_t, 119492019u));
+__gsharp_array_at(__gsharp_id_6_r, __gsharp_id_8_o, 529510163u)=__gsharp_abs_i32(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_7_t, 691001244u),1791691989u);
+__gsharp_array_at(__gsharp_id_6_r, __gsharp_add_i32(__gsharp_id_8_o,1), 1610003839u)=__gsharp_abs_i32((int)__gsharp_array_at(__gsharp_id_2_s, __gsharp_id_7_t, 1066424856u),1935924607u);
+__gsharp_array_at(__gsharp_id_6_r, __gsharp_add_i32(__gsharp_id_8_o,2), 1280107439u)=__gsharp_abs_i32((int)__gsharp_array_at(__gsharp_id_3_sb, __gsharp_id_7_t, 119492019u),2091901097u);
 __gsharp_array_at(__gsharp_id_6_r, __gsharp_add_i32(__gsharp_id_8_o,3), 1135644811u)=max(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_7_t, 2076388077u),__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_7_t, 1661111988u));
 __gsharp_array_at(__gsharp_id_6_r, __gsharp_add_i32(__gsharp_id_8_o,4), 2034841131u)=min(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_7_t, 1449984747u),__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_7_t, 3206710u));
 __gsharp_array_at(__gsharp_id_6_r, __gsharp_add_i32(__gsharp_id_8_o,5), 1087770559u)=max(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_7_t, 2018572289u),(int)__gsharp_array_at(__gsharp_id_2_s, __gsharp_id_7_t, 2069495978u));

@@ -146,9 +146,6 @@
     - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel
       paths: [Cuda]
       columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel
-      paths: [Cuda]
-      columns: [$exception]
 
 - issue: 904
   title: "[Bug]: GSH0063 warns about SharedMemory<T> declarations on one line instead of giving them distinct keys on the managed path"
@@ -162,13 +159,6 @@
       columns: [$exception]
     - case: PendingBugsDifferentialKernels.HelperDynamicSharedMemoryNegativeCountKernel
       paths: [Managed]
-      columns: [$exception]
-
-- issue: 947
-  title: "Math.Abs of the minimum signed value is undefined on native CPU and CUDA but throws in C#"
-  entries:
-    - case: IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel
-      paths: [Native]
       columns: [$exception]
 
 - issue: 961
