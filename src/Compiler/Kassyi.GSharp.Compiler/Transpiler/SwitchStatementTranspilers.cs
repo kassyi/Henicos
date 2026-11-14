@@ -65,8 +65,7 @@ internal static class SwitchStatementTranspilers
             JumpedOverDeclarations.WriteDeclarations(node.Statements, ref context);
             foreach (var stmt in node.Statements)
             {
-                if (stmt is BlockSyntax nested &&
-                    nested.HasAnnotations(LoweringAnnotations.ScopedBlockAnnotationKind))
+                if (stmt is BlockSyntax nested && !CppBlockScopes.IsWrittenWithoutBraces(nested))
                 {
                     context.Visitor.VisitStatementOrBlock(nested);
                 }
