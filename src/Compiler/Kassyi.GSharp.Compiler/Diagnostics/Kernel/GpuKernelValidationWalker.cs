@@ -76,6 +76,12 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         base.VisitIdentifierName(node);
     }
 
+    public override void VisitGenericName(GenericNameSyntax node)
+    {
+        Analyze(node);
+        base.VisitGenericName(node);
+    }
+
     public override void VisitParameter(ParameterSyntax node)
     {
         Analyze(node);

@@ -160,9 +160,6 @@
     - case: PendingBugsDifferentialKernels.HelperDynamicSharedMemoryGrowthAfterLaterDeclKernel
       paths: [Managed]
       columns: [$exception]
-    - case: PendingBugsDifferentialKernels.HelperDynamicSharedMemoryNegativeCountKernel
-      paths: [Managed]
-      columns: [$exception]
 
 - issue: 947
   title: "Math.Abs of the minimum signed value is undefined on native CPU and CUDA but throws in C#"

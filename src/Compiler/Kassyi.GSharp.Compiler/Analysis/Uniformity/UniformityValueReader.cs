@@ -35,6 +35,26 @@ internal sealed class UniformityValueReader(UniformityState state)
                 EvaluateCall(refCall, graph, current) | recorder.Memory.Read(refCall, current),
             IInvocationOperation invocation => EvaluateCall(invocation, graph, current),
             IFlowAnonymousFunctionOperation => ThreadVariance.Uniform,
+            IInstanceReferenceOperation { Type: { } self } =>
+                recorder.TryGetValue(self, out var thisIndex) ? current[thisIndex] : ThreadVariance.Uniform,
+            IPropertyReferenceOperation { Property.GetMethod: { } getter } read
+                when TryGetSummarizedCallee(getter, out var callee, out var declaration) =>
+                EvaluateGetter(read, callee, declaration, graph, current),
+            IObjectCreationOperation { Constructor: { } constructor } creation
+                when TryGetSummarizedCallee(constructor, out var constructorCallee, out var constructorDeclaration) =>
+                GetCalleeSummary(constructorCallee, constructorDeclaration,
+                    GetArgumentMasks(creation.Arguments, graph, current)).This,
+            IBinaryOperation { OperatorMethod: { } binaryOperator } binary =>
+                EvaluateOperator(binary, binaryOperator, binary.LeftOperand, binary.RightOperand, graph, current),
+            IUnaryOperation { OperatorMethod: { } unaryOperator } unary =>
+                EvaluateOperator(unary, unaryOperator, unary.Operand, null, graph, current),
+            IConversionOperation { OperatorMethod: { } conversionOperator } conversion =>
+                EvaluateOperator(conversion, conversionOperator, conversion.Operand, null, graph, current),
+            IIncrementOrDecrementOperation { OperatorMethod: { } incrementOperator } increment =>
+                EvaluateOperator(increment, incrementOperator, increment.Target, null, graph, current),
+            ICompoundAssignmentOperation { OperatorMethod: { } compoundOperator } compoundCall =>
+                EvaluateOperator(compoundCall, compoundOperator, compoundCall.Target, compoundCall.Value, graph,
+                    current),
             IArrayElementReferenceOperation or IPropertyReferenceOperation { Property.IsIndexer: true } =>
                 EvaluateOperands(operation, graph, current) | recorder.Memory.Read(operation, current),
             ISimpleAssignmentOperation assignment => Evaluate(assignment.Value, graph, current),
@@ -63,35 +83,56 @@ internal sealed class UniformityValueReader(UniformityState state)
         return variance;
     }
 
-    /// <summary>A device function with a body in this compilation.</summary>
-    public bool TryGetDeviceFunction(IMethodSymbol method, [NotNullWhen(true)] out IMethodSymbol? callee,
-        [NotNullWhen(true)] out MethodDeclarationSyntax? declaration)
+    /// <summary>
+    /// A function with a body in this compilation whose calls are summarized: a <c>[GpuDeviceFunction]</c>, or a
+    /// method, property getter, operator, conversion or constructor of a struct that G# defines on the device
+    /// (<paramref name="declaration"/> is then its declaration, or the expression body of the property).
+    /// </summary>
+    public bool TryGetSummarizedCallee(IMethodSymbol method, [NotNullWhen(true)] out IMethodSymbol? callee,
+        [NotNullWhen(true)] out SyntaxNode? declaration)
     {
         callee = (method.ReducedFrom ?? method).OriginalDefinition;
-        if (SuspensionAnalysis.TryGetDeviceFunctionBody(callee, state.Model.Compilation, out declaration))
+        var compilation = state.Model.Compilation;
+        if (SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var deviceFunction))
+        {
+            declaration = deviceFunction;
+            return true;
+        }
+
+        if (callee is
+            {
+                MethodKind: MethodKind.Ordinary or MethodKind.PropertyGet or MethodKind.UserDefinedOperator
+                or MethodKind.Conversion or MethodKind.Constructor,
+                ContainingType: { } type
+            } &&
+            GlobalCppNames.IsEmittedUserType(type) &&
+            callee.TryGetDeclaringSyntax(out declaration) &&
+            compilation.ContainsSyntaxTree(declaration.SyntaxTree) &&
+            HasBody(declaration))
         {
             return true;
         }
 
         callee = null;
+        declaration = null;
         return false;
     }
 
     /// <summary>What <paramref name="callee"/> gives the call <paramref name="invocation"/> for the variance of its arguments.</summary>
-    public CalleeVariance GetCallVariance(IMethodSymbol callee, MethodDeclarationSyntax declaration,
+    public CalleeVariance GetCallVariance(IMethodSymbol callee, SyntaxNode declaration,
         IInvocationOperation invocation, ControlFlowGraph graph, ThreadVariance[] current)
     {
-        var masks = GetArgumentMasks(invocation, graph, current);
+        var masks = GetArgumentMasks(invocation.Arguments, graph, current);
         return GetCalleeSummary(callee, declaration, masks);
     }
 
     /// <summary>Which parameters receive a value that varies within a block, or between blocks only.</summary>
-    public ArgumentMasks GetArgumentMasks(IInvocationOperation invocation, ControlFlowGraph graph,
+    public ArgumentMasks GetArgumentMasks(ImmutableArray<IArgumentOperation> arguments, ControlFlowGraph graph,
         ThreadVariance[] current)
     {
         ulong blockMask = 0;
         ulong gridMask = 0;
-        foreach (var argument in invocation.Arguments)
+        foreach (var argument in arguments)
         {
             var variance = Evaluate(argument.Value, graph, current);
             if (argument.Parameter is not { } parameter || variance == ThreadVariance.Uniform)
@@ -114,8 +155,7 @@ internal sealed class UniformityValueReader(UniformityState state)
     }
 
     /// <summary>What a call of <paramref name="callee"/> with <paramref name="masks"/> gives its caller, cached per compilation.</summary>
-    public CalleeVariance GetCalleeSummary(IMethodSymbol callee, MethodDeclarationSyntax declaration,
-        ArgumentMasks masks)
+    public CalleeVariance GetCalleeSummary(IMethodSymbol callee, SyntaxNode declaration, ArgumentMasks masks)
     {
         var cache = s_callees.For(state.Model.Compilation)
             .GetOrAdd(callee, static _ => new ConcurrentDictionary<ArgumentMasks, CalleeVariance>());
@@ -172,10 +212,13 @@ internal sealed class UniformityValueReader(UniformityState state)
             }
         }
 
+        var self = state.Recorder.TryGetValue(state.Method.ContainingType, out var thisIndex)
+            ? state.In[state.Graph.Exit][thisIndex]
+            : ThreadVariance.Uniform;
         var (memory, fieldMemory, barrierOnEveryPath) =
             state.Recorder.Memory.Summarize(state.Method, state.In[state.Graph.Exit]);
         return new CalleeVariance(returned, byReference, state.Barriers.SummarizeBarriers(), memory, fieldMemory,
-            barrierOnEveryPath);
+            barrierOnEveryPath, self);
     }
 
     // A parameter of the analyzed method has a value from the start; one of a lambda or local function that is not
@@ -193,10 +236,10 @@ internal sealed class UniformityValueReader(UniformityState state)
         method.MethodKind == MethodKind.DelegateInvoke ||
         SyncIntrinsicClassifier.Classify(method).ResultIsThreadVariant;
 
-    // A device function returns what its summary says for the variance of its arguments; a local function what its
-    // body, spliced at the call, returned (anything for a call whose body is not spliced, a recursive one); an
-    // intrinsic that returns a thread-variant value and a call through a delegate are thread-variant; any other call is
-    // as variant as its operands
+    // A device function returns what its summary says for the variance of its arguments, and as much as its receiver
+    // varies; a local function what its body, spliced at the call, returned (anything for a call whose body is not
+    // spliced, a recursive one); an intrinsic that returns a thread-variant value and a call through a delegate are
+    // thread-variant; any other call is as variant as its operands
     private ThreadVariance EvaluateCall(IInvocationOperation invocation, ControlFlowGraph graph, ThreadVariance[] current)
     {
         var method = invocation.TargetMethod;
@@ -207,9 +250,10 @@ internal sealed class UniformityValueReader(UniformityState state)
                 : ThreadVariance.Block;
         }
 
-        if (TryGetDeviceFunction(method, out var callee, out var declaration))
+        if (TryGetSummarizedCallee(method, out var callee, out var declaration))
         {
-            return GetCallVariance(callee, declaration, invocation, graph, current).Return;
+            return GetCallVariance(callee, declaration, invocation, graph, current).Return |
+                   EvaluateReceiver(invocation.Instance, graph, current);
         }
 
         var operands = EvaluateOperands(invocation, graph, current);
@@ -218,7 +262,65 @@ internal sealed class UniformityValueReader(UniformityState state)
             : operands;
     }
 
-    private CalleeVariance AnalyzeCallee(IMethodSymbol callee, MethodDeclarationSyntax declaration,
+    // A method, operator, conversion, constructor or accessor with a block or expression body, or the expression body
+    // of a property or indexer
+    private static bool HasBody(SyntaxNode declaration) => declaration switch
+    {
+        BaseMethodDeclarationSyntax method => method.Body != null || method.ExpressionBody != null,
+        AccessorDeclarationSyntax accessor => accessor.Body != null || accessor.ExpressionBody != null,
+        _ => declaration is ArrowExpressionClauseSyntax
+    };
+
+    // A user-defined operator or conversion with a body returns what its summary says for the variance of its operands
+    // (by ordinal); any other is as variant as its operands
+    private ThreadVariance EvaluateOperator(IOperation operation, IMethodSymbol method, IOperation first,
+        IOperation? second, ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        if (!TryGetSummarizedCallee(method, out var callee, out var declaration))
+        {
+            return EvaluateOperands(operation, graph, current);
+        }
+
+        ulong blockMask = 0;
+        ulong gridMask = 0;
+        AddOperandMask(Evaluate(first, graph, current), 0, ref blockMask, ref gridMask);
+        if (second != null)
+        {
+            AddOperandMask(Evaluate(second, graph, current), 1, ref blockMask, ref gridMask);
+        }
+
+        return GetCalleeSummary(callee, declaration, new ArgumentMasks(blockMask, gridMask)).Return;
+    }
+
+    private static void AddOperandMask(ThreadVariance variance, int ordinal, ref ulong blockMask, ref ulong gridMask)
+    {
+        if (variance == ThreadVariance.Block)
+        {
+            blockMask |= ArgumentMasks.Bit(ordinal);
+        }
+        else if (variance == ThreadVariance.Grid)
+        {
+            gridMask |= ArgumentMasks.Bit(ordinal);
+        }
+    }
+
+    // A getter with a body returns what its body returns for the variance of the indexer arguments; an indexer also
+    // reads the memory it is an element of
+    private ThreadVariance EvaluateGetter(IPropertyReferenceOperation read, IMethodSymbol getter,
+        SyntaxNode declaration, ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        var masks = GetArgumentMasks(read.Arguments, graph, current);
+        var variance = GetCalleeSummary(getter, declaration, masks).Return |
+                       EvaluateReceiver(read.Instance, graph, current);
+        return read.Property.IsIndexer ? variance | state.Recorder.Memory.Read(read, current) : variance;
+    }
+
+    // The body of an instance member reads the fields of this as uniform: the member returns as much as its receiver
+    // varies
+    private ThreadVariance EvaluateReceiver(IOperation? receiver, ControlFlowGraph graph, ThreadVariance[] current) =>
+        receiver == null ? ThreadVariance.Uniform : Evaluate(receiver, graph, current);
+
+    private CalleeVariance AnalyzeCallee(IMethodSymbol callee, SyntaxNode declaration,
         ArgumentMasks masks, out bool metCalleeInProgress)
     {
         metCalleeInProgress = false;

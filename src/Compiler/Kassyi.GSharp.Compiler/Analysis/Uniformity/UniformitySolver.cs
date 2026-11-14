@@ -149,37 +149,6 @@ internal sealed class UniformitySolver(UniformityState state)
         }
     }
 
-    /// <summary>The local or parameter of struct type whose member target writes (p.X, p.Inner.Y), or null for any other target.</summary>
-    public static ISymbol? GetStructRoot(IOperation target)
-    {
-        var current = target;
-        while (true)
-        {
-            var instance = current switch
-            {
-                IFieldReferenceOperation { Instance: { } fieldOwner } => fieldOwner,
-                IPropertyReferenceOperation { Instance: { } propertyOwner } => propertyOwner,
-                _ => null
-            };
-
-            if (instance is not { Type: { IsValueType: true, IsRefLikeType: false } })
-            {
-                return null;
-            }
-
-            switch (instance)
-            {
-                case ILocalReferenceOperation local:
-                    return local.Local;
-                case IParameterReferenceOperation parameter:
-                    return parameter.Parameter;
-                default:
-                    current = instance;
-                    continue;
-            }
-        }
-    }
-
     /// <summary>Whether <paramref name="symbol"/> is declared inside <paramref name="scope"/>.</summary>
     public static bool IsDeclaredIn(ISymbol symbol, SyntaxNode scope) =>
         symbol.DeclaringSyntaxReferences
@@ -436,11 +405,21 @@ internal sealed class UniformitySolver(UniformityState state)
         }
 
         var reader = state.Reader;
-        var written = reader.TryGetDeviceFunction(invocation.TargetMethod, out var callee, out var declaration)
-            ? reader.GetCallVariance(callee, declaration, invocation, graph, current).ByReference
-            : UniformityValueReader.IsThreadVariantCall(invocation.TargetMethod)
-                ? ThreadVariance.Block
-                : reader.EvaluateOperands(invocation, graph, current);
+        CalleeVariance? summary =
+            reader.TryGetSummarizedCallee(invocation.TargetMethod, out var callee, out var declaration)
+                ? reader.GetCallVariance(callee, declaration, invocation, graph, current)
+                : null;
+        var written = summary?.ByReference ??
+                      (UniformityValueReader.IsThreadVariantCall(invocation.TargetMethod)
+                          ? ThreadVariance.Block
+                          : reader.EvaluateOperands(invocation, graph, current));
+
+        // A member of a struct writes its receiver through this: the receiver keeps what the member did not write
+        if (summary is { } called && UniformityWrites.WritesReceiver(invocation) && invocation.Instance is { } receiver)
+        {
+            Assign(receiver, called.This, strong: false, current, opaque);
+        }
+
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
@@ -462,12 +441,13 @@ internal sealed class UniformitySolver(UniformityState state)
         {
             ILocalReferenceOperation local => local.Local,
             IParameterReferenceOperation parameter => parameter.Parameter,
+            IInstanceReferenceOperation { Type: { } self } => self,
             _ => null
         };
 
         // A field or property of a struct local or parameter: the struct keeps its other members, so the write only
         // adds to its variance
-        if (symbol == null && GetStructRoot(target) is { } root)
+        if (symbol == null && UniformityWrites.GetStructRoot(target) is { } root)
         {
             symbol = root;
             strong = false;
