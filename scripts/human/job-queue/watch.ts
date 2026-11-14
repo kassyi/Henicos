@@ -8,8 +8,16 @@ import * as path from "node:path";
 import { request } from "./client-connect.ts";
 import { usageError } from "./client.ts";
 import type { ClientMessage, Incoming, StatusReply } from "./protocol.ts";
-import { initialViewState, renderScreen, screenJobs, selectedJob, type Style, type ViewState } from "./view.ts";
-import type { ChatRecord, ChatView } from "./view-chats.ts";
+import {
+  FlashMs,
+  initialViewState,
+  renderScreen,
+  screenJobs,
+  selectedJob,
+  type Style,
+  type ViewState,
+} from "./view.ts";
+import type { ChatRecord, ChatView, SummaryState } from "./view-chats.ts";
 
 const RefreshMs = 1000;
 const ChatRefreshMs = 2000;
@@ -93,6 +101,14 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
       return { state, action: "refresh" };
     case "a":
       return { state: { ...state, chatsHidden: !state.chatsHidden } };
+    case " ": {
+      // Like the space bar of a video player: no question, since both ways are harmless and undone by pressing it again
+      if (reply === null) {
+        return { state: note(state, "no scheduler running", now) };
+      }
+      const kind = reply.paused === true ? "resume" : "pause";
+      return { state: { ...state, flash: { kind, until: now + FlashMs } }, action: { type: kind } };
+    }
     case "\x1b[A":
     case "k":
       return select(index < 0 ? jobs.length - 1 : index - 1); // from no selection: the last job
@@ -153,6 +169,11 @@ export function describeResult(message: ClientMessage, reply: Incoming | null): 
   if (reply.type === "start-result") {
     return { text: `#${String(reply.id)} started over the pool`, style: "run" };
   }
+  if (reply.type === "pause-result") {
+    const paused = reply.paused === true;
+    const text = paused ? "paused: nothing new starts until resume (Space)" : "resumed";
+    return { text: reply.changed === true ? text : paused ? "was already paused" : "was not paused", style: "run" };
+  }
   if (reply.type === "move-result") {
     const position = Number(reply.position);
     return {
@@ -166,6 +187,8 @@ export function describeResult(message: ClientMessage, reply: Incoming | null): 
 interface ChatStatusModule {
   listChats: () => ChatRecord[];
   readMainCheckout: (root: string) => string | null;
+  /** Absent from an older chat-status.js. */
+  summaryStatus?: () => SummaryState;
 }
 
 /**
@@ -186,9 +209,16 @@ export function chatReader(): (() => ChatView | null) | null {
   } catch {
     mainCheckout = null; // "main" is then shown as the last part of its path
   }
+  // Read once: whether the help says that summaries are on, and how to turn them on
+  let summaries: SummaryState | null = null;
+  try {
+    summaries = module.summaryStatus?.() ?? null;
+  } catch {
+    summaries = null; // the help then leaves the line out
+  }
   return () => {
     try {
-      return { chats: module.listChats(), mainCheckout, ignoreCase: process.platform === "win32" };
+      return { chats: module.listChats(), mainCheckout, ignoreCase: process.platform === "win32", summaries };
     } catch {
       return null; // a directory that cannot be read: no panel this time
     }
@@ -269,6 +299,9 @@ export async function watch(port: number): Promise<void> {
       }
     }
     draw();
+    if (state.flash !== null) {
+      setTimeout(draw, FlashMs + 50); // the mark is gone a second after the key, not at the next refresh
+    }
   });
 
   while (!stopped) {

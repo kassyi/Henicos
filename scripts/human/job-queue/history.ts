@@ -3,11 +3,15 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { HistoryCommands, HistoryRunsPerCommand, LongestRunMs } from "./constants.ts";
+import { AccuracyLog, FallbackIndex, type EstimateLevel } from "./estimate-fallback.ts";
+import { commandKeys, type CommandKeys, type KeyContext } from "./estimate-key.ts";
 import type { Estimate } from "./scheduler.ts";
 
 interface HistoryEntry {
   runs: number[];
   lastUsed: number;
+  /** The keys of the fallback, made when the run was recorded; absent from a history of an older version. */
+  keys?: CommandKeys;
 }
 
 /**
@@ -22,10 +26,14 @@ export class RunHistory {
    */
   commands: Record<string, HistoryEntry> = Object.create(null) as Record<string, HistoryEntry>;
   nextId = 1;
+  readonly accuracy: AccuracyLog;
+  private readonly _fallback: FallbackIndex;
 
   constructor(file: string, log: (text: string) => void) {
     this.file = file;
     this.log = log;
+    this.accuracy = new AccuracyLog(path.join(path.dirname(file), "accuracy.json"), log);
+    this._fallback = new FallbackIndex(this.commands);
     try {
       // Keep only well-formed entries, so that a damaged file costs its records, never the scheduler
       const saved: unknown = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -37,7 +45,8 @@ export class RunHistory {
           const valid = runs.filter(isRunTime).slice(-HistoryRunsPerCommand);
           if (valid.length > 0) {
             const lastUsed = isObject(entry) && Number.isFinite(entry.lastUsed) ? (entry.lastUsed as number) : 0;
-            this.commands[key] = { runs: valid, lastUsed };
+            const keys = isObject(entry) ? readKeys(entry.keys) : undefined;
+            this.commands[key] = keys === undefined ? { runs: valid, lastUsed } : { runs: valid, lastUsed, keys };
           }
         }
       }
@@ -69,13 +78,31 @@ export class RunHistory {
     return { typicalMs, longestMs: runs[runs.length - 1] as number };
   }
 
-  record(command: string, ms: number, nextId = this.nextId, now = Date.now()): void {
+  /**
+   * The estimate of a command: its own runs, else those of similar commands (same text without redirections, paths and
+   * the like; same shape; same kinds of step), else null. `from` says which.
+   */
+  estimateWithFallback(command: string, context: KeyContext): (Estimate & { from: EstimateLevel }) | null {
+    const own = this.estimate(command);
+    return own !== null ? { ...own, from: "exact" } : this._fallback.lookup(command, context);
+  }
+
+  /** `context`: the directory and worktree the command ran in, in which its keys are made (none: paths as written). */
+  record(
+    command: string,
+    ms: number,
+    nextId = this.nextId,
+    now = Date.now(),
+    context: KeyContext = { cwd: "", worktree: "" },
+  ): void {
     this.nextId = Math.max(this.nextId, nextId);
     const key = RunHistory.key(command);
     const entry = this.commands[key] ?? { runs: [], lastUsed: 0 };
     entry.runs = entry.runs.concat(Math.min(Math.round(ms), LongestRunMs)).slice(-HistoryRunsPerCommand);
     entry.lastUsed = now;
+    entry.keys = commandKeys(command, context);
     this.commands[key] = entry;
+    this._fallback.invalidate();
     const keys = Object.keys(this.commands);
     if (keys.length > HistoryCommands) {
       const lastUsed = (name: string): number => (this.commands[name] as HistoryEntry).lastUsed;
@@ -83,6 +110,7 @@ export class RunHistory {
         .sort((a, b) => lastUsed(a) - lastUsed(b))
         .slice(0, keys.length - HistoryCommands)
         .forEach((old) => delete this.commands[old]);
+      this._fallback.invalidate();
     }
     const temporary = `${this.file}.${process.pid}.tmp`;
     try {
@@ -113,6 +141,16 @@ export function replaceFile(from: string, to: string): void {
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * attempt);
     }
   }
+}
+
+/** The stored keys of an entry, or undefined when they are missing or damaged (they are then made from the text). */
+function readKeys(value: unknown): CommandKeys | undefined {
+  return isObject(value) &&
+    typeof value.normalized === "string" &&
+    typeof value.shape === "string" &&
+    typeof value.kind === "string"
+    ? { normalized: value.normalized, shape: value.shape, kind: value.kind }
+    : undefined;
 }
 
 function isRunTime(value: unknown): value is number {
