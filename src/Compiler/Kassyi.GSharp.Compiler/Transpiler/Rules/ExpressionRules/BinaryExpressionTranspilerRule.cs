@@ -24,6 +24,12 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     /// <inheritdoc />
     public override void Transpile(BinaryExpressionSyntax node, ref TranspileContext context)
     {
+        if (node.Kind() is SyntaxKind.IsExpression or SyntaxKind.AsExpression)
+        {
+            TranspileTypeTest(node, ref context);
+            return;
+        }
+
         if (node.IsKind(SyntaxKind.CoalesceExpression))
         {
             NullRepresentation.AppendCoalesce(node.Left, node.Right, ref context,
@@ -125,6 +131,23 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         context.Visitor.Visit(node.Left);
         AppendOperator(node, node.Right, ref context);
         context.Visitor.Visit(node.Right);
+    }
+
+    // x is T on a value is decided by its type (TypeTests); any other type test, and as, needs run-time type information
+    private static void TranspileTypeTest(BinaryExpressionSyntax node, ref TranspileContext context)
+    {
+        if (node.IsKind(SyntaxKind.IsExpression) &&
+            TypeTests.GetConstantResult(node, context.Query.SemanticModel) is { } result)
+        {
+            TypeTests.AppendConstant(node, result, ref context);
+            return;
+        }
+
+        context.Reporter.Fail(
+            GSharpDiagnostics.UnsupportedSyntax,
+            node,
+            node.IsKind(SyntaxKind.AsExpression) ? TypeTests.AsConversion : TypeTests.ReferenceOperand);
+        context.Visitor.AppendUnsupportedPlaceholder(node);
     }
 
     // An integer constant is written as its value: C# folds a constant shift with the masked count (3 << 33 is 6),

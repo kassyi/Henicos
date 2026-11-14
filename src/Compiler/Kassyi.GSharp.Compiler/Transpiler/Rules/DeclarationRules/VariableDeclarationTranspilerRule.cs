@@ -83,6 +83,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
         }
 
+        if (GpuCodeConstraints.IsObject(typeSymbol))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, GpuCodeConstraints.ObjectVariable);
+        }
+
         StructOrdering.RegisterUsedStructIfApplicable(typeSymbol, ref context);
     }
 
