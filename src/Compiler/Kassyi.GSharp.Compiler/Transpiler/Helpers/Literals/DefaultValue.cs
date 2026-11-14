@@ -11,9 +11,13 @@ internal enum DefaultValueForm
 }
 
 /// <summary>
-/// The decision how a <c>default</c> is written: its form and, for <see cref="DefaultValueForm.Typed"/>, <c>T</c>.
+/// The decision how a <c>default</c> is written: its form and, for <see cref="DefaultValueForm.Typed"/>, <c>T</c>, and
+/// the <c>Nullable&lt;U&gt;</c> it converts to when <c>U</c> is another type (<c>long? l = default(int)</c>).
 /// </summary>
-internal readonly record struct DefaultValuePlan(DefaultValueForm Form, ITypeSymbol? Type);
+internal readonly record struct DefaultValuePlan(
+    DefaultValueForm Form,
+    ITypeSymbol? Type,
+    INamedTypeSymbol? NullableTarget = null);
 
 /// <summary>
 /// <c>default(T)</c> and the <c>default</c> literal. <c>{}</c> is C++ only where a braced list may stand: the
@@ -47,7 +51,18 @@ internal static class DefaultValue
 
         if (type != null)
         {
-            return new DefaultValuePlan(DefaultValueForm.Typed, type);
+            // A value of another type than the underlying type of the nullable it converts to is converted to that type
+            // first, which is one conversion for C++ to pick: int{} could also be read as a null pointer constant
+            var target = node is DefaultExpressionSyntax
+                ? model.GetConvertedTypeSymbol(node) as INamedTypeSymbol
+                : null;
+            return new DefaultValuePlan(
+                DefaultValueForm.Typed,
+                type,
+                target is { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlying] } &&
+                !underlying.IsEqualTo(type)
+                    ? target
+                    : null);
         }
 
         // An omitted optional argument is built by the compiler without a position in the source (the original-span
@@ -70,10 +85,24 @@ internal static class DefaultValue
             return;
         }
 
+        // <Nullable<U>>(static_cast<U>(<value>)) for a nullable of another underlying type, otherwise <value>
+        var target = plan.NullableTarget;
+        if (target is not null)
+        {
+            context.Emitter.Dialect.AppendType(ref context, target);
+            context.Emitter.Writer.Append("(static_cast<");
+            context.Emitter.Dialect.AppendType(ref context, target.TypeArguments[0]);
+            context.Emitter.Writer.Append(">(");
+        }
+
         context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TypedValue);
         context.Emitter.Writer.Append('<');
         context.Emitter.Dialect.AppendType(ref context, type);
         context.Emitter.Writer.Append(">{}");
+        if (target is not null)
+        {
+            context.Emitter.Writer.Append("))");
+        }
     }
 
     /// <summary>
