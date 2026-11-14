@@ -1326,9 +1326,9 @@ __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_4_idx = __gsharp_array_at(__gsharp_id_1_sideEffectTracker, __gsharp_id_3_tid, 1084152896u);
 __gsharp_array_at(__gsharp_id_1_sideEffectTracker, __gsharp_id_3_tid, 1025911726u)=__gsharp_add_i32(__gsharp_id_4_idx,1);
-([&]() -> decltype(auto) {
+([&]() {
 auto& __gsharp_coalesce_target = __gsharp_array_at(__gsharp_id_0_targetArray, __gsharp_id_4_idx, 1080496212u);
-return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = __gsharp_array_at(__gsharp_id_2_values, __gsharp_id_3_tid, 2022491493u)) : __gsharp_coalesce_target.Value;
+return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = __gsharp_array_at(__gsharp_id_2_values, __gsharp_id_3_tid, 2022491493u)).Value : __gsharp_coalesce_target.Value;
 }());
 }
 ";
