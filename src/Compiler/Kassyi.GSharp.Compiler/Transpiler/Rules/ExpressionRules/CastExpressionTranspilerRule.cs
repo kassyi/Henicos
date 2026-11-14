@@ -161,19 +161,9 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             return;
         }
 
-        // A Nullable<S> converted to S or to another type reads its Value, then converts it as S converts (#1143):
-        // (int)opt is (opt).Value, (long)opt is (long long)(opt).Value
-        if (IsNullable(sourceType) && targetType != null && !IsNullable(targetType))
+        if (TryAppendNullableValueCast(node, sourceType, sourceUnderlying, targetType, ref context) ||
+            TryAppendNullArrayCast(node, targetType, model, ref context))
         {
-            if (!targetType.IsEqualTo(sourceUnderlying))
-            {
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    context.Emitter.Dialect.AppendType(ref context, targetType);
-                }
-            }
-
-            AppendValueOf(node.Expression, ref context);
             return;
         }
 
@@ -184,6 +174,49 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
 
         context.Visitor.Visit(node.Expression);
     }
+
+    // A Nullable<S> converted to S or to another type reads its Value, then converts it as S converts (#1143):
+    // (int)opt is (opt).Value, (long)opt is (long long)(opt).Value
+    private static bool TryAppendNullableValueCast(CastExpressionSyntax node, ITypeSymbol? sourceType,
+        ITypeSymbol? sourceUnderlying, ITypeSymbol? targetType, ref TranspileContext context)
+    {
+        if (!IsNullable(sourceType) || targetType == null || IsNullable(targetType))
+        {
+            return false;
+        }
+
+        if (!targetType.IsEqualTo(sourceUnderlying))
+        {
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, targetType);
+            }
+        }
+
+        AppendValueOf(node.Expression, ref context);
+        return true;
+    }
+
+    // (int[])null, (int[])null! and (int[]?)default: the null array, the empty view of the target type (data is
+    // nullptr); the view has no constructor from nullptr and no cast from {}, so (GSharpArray<int>)nullptr would not
+    // compile
+    private static bool TryAppendNullArrayCast(CastExpressionSyntax node, ITypeSymbol? targetType, SemanticModel model,
+        ref TranspileContext context)
+    {
+        if (targetType is not { } arrayType || !arrayType.IsArrayLikeType() ||
+            !IsNullArrayValue(NullRepresentation.SkipNullPreservingConversions(node.Expression, model), model))
+        {
+            return false;
+        }
+
+        LiteralTranspiler.AppendEmptyView(arrayType, ref context);
+        return true;
+    }
+
+    // null, default, or default(T) of an array-like T
+    private static bool IsNullArrayValue(ExpressionSyntax operand, SemanticModel model) =>
+        operand.IsKind(SyntaxKind.NullLiteralExpression, SyntaxKind.DefaultLiteralExpression) ||
+        (operand is DefaultExpressionSyntax && model.GetTypeSymbol(operand).IsArrayLikeType());
 
     private static bool IsNullable(ITypeSymbol? type) =>
         type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };

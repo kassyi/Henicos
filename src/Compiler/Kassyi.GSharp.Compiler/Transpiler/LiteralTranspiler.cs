@@ -20,9 +20,18 @@ internal static class LiteralTranspiler
             return false;
         }
 
+        AppendEmptyView(type, ref context);
+        return true;
+    }
+
+    /// <summary>
+    /// Writes the empty view of the array-like <paramref name="type"/>, <c>GSharpArray&lt;int&gt;()</c>: its <c>data</c>
+    /// is <c>nullptr</c>, which is how a null array is represented.
+    /// </summary>
+    public static void AppendEmptyView(ITypeSymbol type, ref TranspileContext context)
+    {
         context.Emitter.Dialect.AppendType(ref context, type);
         context.Emitter.Writer.Append("()");
-        return true;
     }
 
     /// <summary>Writes <paramref name="node"/> as a C++ literal.</summary>
