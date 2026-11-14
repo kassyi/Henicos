@@ -87,9 +87,25 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(796983403u, "UserMarkerDef
 public static partial class AotContexts
 {
 }
-public const string UserMarkerDefaultKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel(GSharpArray<int> __gsharp_id_0_output, unsigned int __gsharp_epoch){
+public const string UserMarkerDefaultKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag__
+struct __gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag
+{
+int __gsharp_mb_X;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag)==4,""Kassyi.GSharp.Tests.TestCases.Analyzers.WmmaUserMarker.DefaultShapeTag: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag)==4,""Kassyi.GSharp.Tests.TestCases.Analyzers.WmmaUserMarker.DefaultShapeTag: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.TestCases.Analyzers.WmmaUserMarker.DefaultShapeTag.X: offset"");
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag __gsharp_ctor_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag(int __gsharp_id_0_x) {
+__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag __gsharp_self{};
+__gsharp_self.__gsharp_mb_X=__gsharp_id_0_x;
+return __gsharp_self;
+}
+#endif
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel(GSharpArray<int> __gsharp_id_0_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_0_output, 0, 796983403u)=__gsharp_add_i32({}.__gsharp_mb_X,1);
+__gsharp_array_at(__gsharp_id_0_output, 0, 796983403u)=__gsharp_add_i32(__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag>{}.__gsharp_mb_X,1);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UserMarkerDefaultKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

@@ -311,14 +311,23 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     // A params parameter without arguments takes nothing
     private static void AppendOmittedArgument(IParameterSymbol parameter, ref TranspileContext context)
     {
+        if (!parameter.HasExplicitDefaultValue && !parameter.IsOptional)
+        {
+            return;
+        }
+
+        // An in parameter takes the address of a temporary that holds the default
+        var byAddress = ArgumentMatchingHelper.BeginOmittedArgument(parameter, ref context);
         if (parameter.HasExplicitDefaultValue)
         {
             EmitDefaultValue(parameter, ref context);
         }
-        else if (parameter.IsOptional)
+        else
         {
             context.Emitter.Writer.Append("{}");
         }
+
+        ArgumentMatchingHelper.EndOmittedArgument(byAddress, ref context);
     }
 
     private static void EmitDefaultValue(IParameterSymbol parameter, ref TranspileContext context)

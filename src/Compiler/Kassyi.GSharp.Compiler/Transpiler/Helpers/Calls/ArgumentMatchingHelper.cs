@@ -118,13 +118,46 @@ internal static class ArgumentMatchingHelper
     /// </remarks>
     public static void AppendDefaultArgument(IParameterSymbol parameter, ref TranspileContext context)
     {
+        var byAddress = BeginOmittedArgument(parameter, ref context);
         if (parameter.ExplicitDefaultValue is not { } value)
         {
             context.Emitter.Writer.Append("{}");
-            return;
+        }
+        else
+        {
+            context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));
         }
 
-        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));
+        EndOmittedArgument(byAddress, ref context);
+    }
+
+    /// <summary>
+    /// Starts the value of an omitted argument. An <c>in</c> or <c>ref readonly</c> parameter is a C++ pointer, and C#
+    /// passes a reference to a temporary that holds the default, so the value is wrapped in
+    /// <c>__gsharp_temp_address&lt;T&gt;(</c>; <see cref="EndOmittedArgument"/> closes it.
+    /// </summary>
+    /// <returns>Whether the value is passed by the address of a temporary.</returns>
+    public static bool BeginOmittedArgument(IParameterSymbol parameter, ref TranspileContext context)
+    {
+        if (parameter.RefKind is not (RefKind.In or RefKind.RefReadOnlyParameter))
+        {
+            return false;
+        }
+
+        context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempAddress);
+        context.Emitter.Writer.Append('<');
+        context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+        context.Emitter.Writer.Append(">(");
+        return true;
+    }
+
+    /// <summary>Ends the value started by <see cref="BeginOmittedArgument"/>.</summary>
+    public static void EndOmittedArgument(bool byAddress, ref TranspileContext context)
+    {
+        if (byAddress)
+        {
+            context.Emitter.Writer.Append(')');
+        }
     }
 
     // (-<max> - 1)
