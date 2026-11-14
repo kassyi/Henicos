@@ -77,16 +77,32 @@ internal static class StackArrayLocals
         IsStackArrayReference(expression, semanticModel) &&
         !(TryGetLength(expression, semanticModel, out var length) && length == 0);
 
-    /// <summary>Whether <paramref name="expression"/> (parentheses aside) names a stack array local.</summary>
+    /// <summary>
+    /// Whether <paramref name="expression"/> (parentheses and <c>Gpu.NotNull</c> aside) names a stack array local.
+    /// </summary>
     public static bool IsStackArrayReference(ExpressionSyntax expression, SemanticModel semanticModel) =>
         IsStackArrayReference(expression, semanticModel, out _);
 
     private static bool IsStackArrayReference(ExpressionSyntax expression, SemanticModel semanticModel,
         [NotNullWhen(true)] out VariableDeclaratorSyntax? declarator)
     {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        // Parentheses and Gpu.NotNull(a), which returns its argument, name the same stack array
+        while (true)
         {
-            expression = parenthesized.Expression;
+            if (expression is ParenthesizedExpressionSyntax parenthesized)
+            {
+                expression = parenthesized.Expression;
+            }
+            else if (expression is InvocationExpressionSyntax { ArgumentList.Arguments: [{ } only] } call &&
+                     semanticModel.GetSymbol(call) is IMethodSymbol method &&
+                     GpuMacroClassifier.Classify(method).Kind == GpuMacroKind.NotNull)
+            {
+                expression = only.Expression;
+            }
+            else
+            {
+                break;
+            }
         }
 
         declarator = null;

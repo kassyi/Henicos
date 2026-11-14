@@ -307,7 +307,8 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
 
                 break;
             default:
-                context.Visitor.Visit(arm.Expression);
+                // A stack array arm is the span it converts to, as the arms of a conditional are
+                StackArrayLocals.AppendView(arm.Expression, ref context);
                 break;
         }
 
