@@ -1,6 +1,6 @@
 known, a by-value extension receiver is not written	283
 known, a discard is written by no one	6
 known, a field of a struct temporary reads no memory	7
-known, an initializer writes the new value	182
-known, an operator macro is taken as writing memory	110
+known, an initializer writes the new value	184
+known, an operator macro is taken as writing memory	113
 known, the location of this reads nothing	7
