@@ -2951,10 +2951,12 @@ return decltype(source.Current())();
 
 template <typename TSource>
 __device__ static inline auto ElementAtOrDefault(TSource source, int index) {
+if (index >= 0) {
 int count = 0;
 while (source.MoveNext()) {
 if (count == index) return source.Current();
 count++;
+}
 }
 return decltype(source.Current())();
 }

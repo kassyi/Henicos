@@ -138,6 +138,79 @@ public class StackLinqElementsTests
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ElementAtOrDefault_NegativeIndex_DoesNotEnumerateOrExecuteUpstreamSideEffects()
+    {
+        int[] data = [10, 20, 30, 40];
+        int selectCalls = 0;
+        int whereCalls = 0;
+
+        int selectResult = data.AsStackEnumerable()
+            .Select(x => { selectCalls++; return x * 2; })
+            .ElementAtOrDefault(-1);
+
+        int whereResult = data.AsStackEnumerable()
+            .Where(x => { whereCalls++; return x > 20; })
+            .ElementAtOrDefault(-1);
+
+        Assert.Equal(0, selectResult);
+        Assert.Equal(0, selectCalls);
+        Assert.Equal(0, whereResult);
+        Assert.Equal(0, whereCalls);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ElementAt_NegativeIndex_ThrowsWithoutEnumeratingOrExecutingUpstreamSideEffects()
+    {
+        int[] data = [10, 20, 30, 40];
+        int selectCalls = 0;
+        int whereCalls = 0;
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            data.AsStackEnumerable()
+                .Select(x => { selectCalls++; return x * 2; })
+                .ElementAt(-1));
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            data.AsStackEnumerable()
+                .Where(x => { whereCalls++; return x > 20; })
+                .ElementAt(-1));
+
+        Assert.Equal(0, selectCalls);
+        Assert.Equal(0, whereCalls);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ElementAtOrDefault_NegativeIndex_WithThrowingSelector_DoesNotThrow()
+    {
+        int[] data = [10, 20, 30];
+        int result = data.AsStackEnumerable()
+            .Select((int x) => ThrowInvalidOp(x))
+            .ElementAtOrDefault(-1);
+
+        Assert.Equal(0, result);
+
+        static int ThrowInvalidOp(int _) => throw new InvalidOperationException("Should not be called");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ElementAt_NegativeIndex_WithThrowingSelector_ThrowsArgumentOutOfRangeExceptionNotSelectorException()
+    {
+        int[] data = [10, 20, 30];
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            data.AsStackEnumerable()
+                .Select((int x) => ThrowInvalidOp(x))
+                .ElementAt(-1));
+
+        Assert.NotNull(ex);
+
+        static int ThrowInvalidOp(int _) => throw new InvalidOperationException("Should not be called");
+    }
+
+    [Fact]
     public void TakeLast_NegativeCount_ReturnsEmpty()
     {
         int[] data = { 10, 20, 30, 40, 50 };

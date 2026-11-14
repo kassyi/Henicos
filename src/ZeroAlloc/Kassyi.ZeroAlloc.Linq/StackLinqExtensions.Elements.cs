@@ -119,6 +119,11 @@ public static partial class StackLinqExtensions
         int index)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
+        if (index < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
         var enumerator = source.Enumerator;
         if (TryTakeRemainingSpan<TEnumerator, TSource>(ref enumerator, out var span))
         {
@@ -157,6 +162,11 @@ public static partial class StackLinqExtensions
         int index)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
+        if (index < 0)
+        {
+            return default;
+        }
+
         var enumerator = source.Enumerator;
         if (TryTakeRemainingSpan<TEnumerator, TSource>(ref enumerator, out var span))
         {

@@ -225,11 +225,6 @@
       columns: [item0_x, item0_y, item1_has, item1_x, item1_y, h]
 
 
-- issue: 1060
-  title: "[Bug]: StackLinq ElementAtOrDefault with a negative index enumerates the source and runs upstream side effects"
-  entries:
-    - case: BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectKernel
-      paths: [Managed, Native, Cuda]
-      columns: [select_neg_eval_count, where_neg_eval_count]
+
 
 
