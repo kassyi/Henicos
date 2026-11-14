@@ -67,7 +67,7 @@ if(__gsharp_id_2_tid<__gsharp_id_1_count)
 __gsharp_id_3_shared[__gsharp_id_2_tid]=__gsharp_id_0_value;
 }
 __syncthreads();
-int __gsharp_id_4_rotated = (__gsharp_id_2_tid<__gsharp_id_1_count?__gsharp_id_3_shared[(__gsharp_add_i32(__gsharp_id_2_tid,1))%__gsharp_id_1_count]:0);
+int __gsharp_id_4_rotated = (__gsharp_id_2_tid<__gsharp_id_1_count?__gsharp_id_3_shared[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_2_tid,1),__gsharp_id_1_count,""Attempted to divide by zero. at SharedMemoryRegionKernels.cs(53,44)"")]:0);
 __syncthreads();
 return __gsharp_id_4_rotated;
 }
@@ -128,7 +128,7 @@ return false;
 
 case 1:
 {
-__gsharp_ctx.rotated = __gsharp_ctx.tid < __gsharp_ctx.count ? shared[(__gsharp_ctx.tid + 1) % __gsharp_ctx.count] : 0;
+__gsharp_ctx.rotated = __gsharp_ctx.tid < __gsharp_ctx.count ? shared[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.count)] : 0;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return false;

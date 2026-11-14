@@ -28,7 +28,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_s={ (int*)__gsharp_allocate_smem_dynamic(0x78590bc00341a113ull, (__gsharp_ctx->__gsharp_id_0_count) * sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(87,17)"") };
+__gsharp_ctx->__gsharp_id_2_s={ (int*)__gsharp_allocate_smem_dynamic(0x78590bc00341a113ull, (long long)(__gsharp_ctx->__gsharp_id_0_count), sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(87,17)"") };
 if(__gsharp_ctx->__gsharp_id_1_tid<__gsharp_ctx->__gsharp_id_0_count)
 {
 __gsharp_ctx->__gsharp_id_2_s[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1);
@@ -140,9 +140,11 @@ public partial class SharedMemoryLimitKernels
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1579493057u, "SharedMemoryLimitKernels.cs", 27, 13, "FillKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1771782295u, "SharedMemoryLimitKernels.cs", 27, 27, "FillKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2013643245u, "SharedMemoryLimitKernels.cs", 39, 13, "FillWithoutBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(136283176u, "SharedMemoryLimitKernels.cs", 62, 9, "TwoRegionsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1140780048u, "SharedMemoryLimitKernels.cs", 79, 9, "HoistedCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1886881654u, "SharedMemoryLimitKernels.cs", 79, 69, "HoistedCountKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(862661164u, "SharedMemoryLimitKernels.cs", 109, 9, "RegionOrderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1021033428u, "SharedMemoryLimitKernels.cs", 261, 9, "ManyStaticDeclarationsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1045154764u, "SharedMemoryLimitKernels.cs", 276, 9, "PerBlockCountKernel", "G#: a null array is read"),
@@ -176,7 +178,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_s={ (int*)__gsharp_allocate_smem_dynamic(0xecc626cdde7f7467ull, (__gsharp_ctx->__gsharp_id_1_n) * sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(18,17)"") };
+__gsharp_ctx->__gsharp_id_2_s={ (int*)__gsharp_allocate_smem_dynamic(0xecc626cdde7f7467ull, (long long)(__gsharp_ctx->__gsharp_id_1_n), sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(18,17)"") };
 for(__gsharp_ctx->__gsharp_id_3_i=(int)threadIdx.x;__gsharp_ctx->__gsharp_id_3_i<__gsharp_ctx->__gsharp_id_1_n;__gsharp_ctx->__gsharp_id_3_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_i,(int)blockDim.x))
 {
 __gsharp_ctx->__gsharp_id_2_s[__gsharp_ctx->__gsharp_id_3_i]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_i,1);
@@ -190,7 +192,7 @@ __gsharp_switch_1_state_1:
 {
 for(int __gsharp_id_4_i = (int)threadIdx.x;__gsharp_id_4_i<__gsharp_ctx->__gsharp_id_1_n;__gsharp_id_4_i=__gsharp_add_i32(__gsharp_id_4_i,(int)blockDim.x))
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_id_4_i, 1579493057u)=__gsharp_ctx->__gsharp_id_2_s[(__gsharp_add_i32(__gsharp_id_4_i,1))%__gsharp_ctx->__gsharp_id_1_n];
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_id_4_i, 1579493057u)=__gsharp_ctx->__gsharp_id_2_s[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_4_i,1),__gsharp_ctx->__gsharp_id_1_n,1771782295u)];
 }
 __gsharp_state=-1;
 return;
@@ -316,7 +318,7 @@ case 1:
 {
 for (int i = global::Kassyi.GSharp.Core.ThreadIndex.X; i < __gsharp_ctx.n; i += global::Kassyi.GSharp.Core.BlockDimension.X)
 {
-__gsharp_ctx.output[i] = s[(i + 1) % __gsharp_ctx.n];
+__gsharp_ctx.output[i] = s[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((i + 1), __gsharp_ctx.n)];
 }
 
 __gsharp_ctx.__gsharp_state = -1;
@@ -480,7 +482,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int* __gsharp_id_2_s = (int*)__gsharp_allocate_smem_dynamic(0x6803bea60603c5b6ull, (__gsharp_id_1_n) * sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(35,17)"");
+int* __gsharp_id_2_s = (int*)__gsharp_allocate_smem_dynamic(0x6803bea60603c5b6ull, (long long)(__gsharp_id_1_n), sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(35,17)"");
 for(int __gsharp_id_3_i = (int)threadIdx.x;__gsharp_id_3_i<__gsharp_id_1_n;__gsharp_id_3_i=__gsharp_add_i32(__gsharp_id_3_i,(int)blockDim.x))
 {
 __gsharp_id_2_s[__gsharp_id_3_i]=__gsharp_mul_i32(2,__gsharp_id_3_i);
@@ -767,8 +769,8 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_4_first={ (int*)__gsharp_allocate_smem_dynamic(0xc6fa9a003ca4ac1aull, (__gsharp_ctx->__gsharp_id_1_a) * sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(49,21)"") };
-__gsharp_ctx->__gsharp_id_5_second={ (double*)__gsharp_allocate_smem_dynamic(0xc6fa9b003ca4adcdull, (__gsharp_ctx->__gsharp_id_2_b) * sizeof(double), alignof(double), ""SharedMemoryLimitKernels.cs(50,22)"") };
+__gsharp_ctx->__gsharp_id_4_first={ (int*)__gsharp_allocate_smem_dynamic(0xc6fa9a003ca4ac1aull, (long long)(__gsharp_ctx->__gsharp_id_1_a), sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(49,21)"") };
+__gsharp_ctx->__gsharp_id_5_second={ (double*)__gsharp_allocate_smem_dynamic(0xc6fa9b003ca4adcdull, (long long)(__gsharp_ctx->__gsharp_id_2_b), sizeof(double), alignof(double), ""SharedMemoryLimitKernels.cs(50,22)"") };
 if(__gsharp_ctx->__gsharp_id_3_tid<__gsharp_ctx->__gsharp_id_1_a)
 {
 __gsharp_ctx->__gsharp_id_4_first[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1);
@@ -1088,7 +1090,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_1_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_2_n=__gsharp_add_i32(4,__gsharp_mul_i32(4,(int)blockIdx.x%2));
-__gsharp_ctx->__gsharp_id_3_a={ (int*)__gsharp_allocate_smem_dynamic(0xd90fdd0a7254bddaull, (__gsharp_ctx->__gsharp_id_2_n) * sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(72,17)"") };
+__gsharp_ctx->__gsharp_id_3_a={ (int*)__gsharp_allocate_smem_dynamic(0xd90fdd0a7254bddaull, (long long)(__gsharp_ctx->__gsharp_id_2_n), sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(72,17)"") };
 if(__gsharp_ctx->__gsharp_id_1_tid<__gsharp_ctx->__gsharp_id_2_n)
 {
 __gsharp_ctx->__gsharp_id_3_a[__gsharp_ctx->__gsharp_id_1_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1);
@@ -1100,7 +1102,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_1_tid), 1140780048u)=(__gsharp_ctx->__gsharp_id_1_tid<__gsharp_ctx->__gsharp_id_2_n?__gsharp_ctx->__gsharp_id_3_a[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1))%__gsharp_ctx->__gsharp_id_2_n]:0);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_1_tid), 1140780048u)=(__gsharp_ctx->__gsharp_id_1_tid<__gsharp_ctx->__gsharp_id_2_n?__gsharp_ctx->__gsharp_id_3_a[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1),__gsharp_ctx->__gsharp_id_2_n,1886881654u)]:0);
 __gsharp_state=-1;
 return;
 }
@@ -1224,7 +1226,7 @@ return;
 
 case 1:
 {
-__gsharp_ctx.output[global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + __gsharp_ctx.tid] = __gsharp_ctx.tid < __gsharp_ctx.n ? a[(__gsharp_ctx.tid + 1) % __gsharp_ctx.n] : 0;
+__gsharp_ctx.output[global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + __gsharp_ctx.tid] = __gsharp_ctx.tid < __gsharp_ctx.n ? a[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.n)] : 0;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1411,7 +1413,7 @@ __gsharp_state=1;
 return;
 }
 __gsharp_ctx->__gsharp_id_4_first=__gsharp_ctx->__gsharp_call_temp_0;
-__gsharp_ctx->__gsharp_id_5_second={ (double*)__gsharp_allocate_smem_dynamic(0x9418ed423d4a4ffbull, (__gsharp_ctx->__gsharp_id_2_b) * sizeof(double), alignof(double), ""SharedMemoryLimitKernels.cs(102,22)"") };
+__gsharp_ctx->__gsharp_id_5_second={ (double*)__gsharp_allocate_smem_dynamic(0x9418ed423d4a4ffbull, (long long)(__gsharp_ctx->__gsharp_id_2_b), sizeof(double), alignof(double), ""SharedMemoryLimitKernels.cs(102,22)"") };
 if(__gsharp_ctx->__gsharp_id_3_tid<__gsharp_ctx->__gsharp_id_2_b)
 {
 __gsharp_ctx->__gsharp_id_5_second[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_3_tid+0.5;
@@ -1868,7 +1870,7 @@ int* __gsharp_id_71_s68 = (int*)__gsharp_allocate_smem_static(0xc7a442ee48024c1e
 __gsharp_id_71_s68[__gsharp_id_2_tid%4]=68;
 int* __gsharp_id_72_s69 = (int*)__gsharp_allocate_smem_static(0xc7a443ee48024dd1ull, (4) * sizeof(int), alignof(int));
 __gsharp_id_72_s69[__gsharp_id_2_tid%4]=69;
-int* __gsharp_id_73_d = (int*)__gsharp_allocate_smem_dynamic(0xc7a7c0ee4805580full, (__gsharp_id_1_n) * sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(259,17)"");
+int* __gsharp_id_73_d = (int*)__gsharp_allocate_smem_dynamic(0xc7a7c0ee4805580full, (long long)(__gsharp_id_1_n), sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(259,17)"");
 __gsharp_id_73_d[__gsharp_id_2_tid]=__gsharp_id_2_tid;
 __gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1021033428u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_73_d[__gsharp_id_2_tid],__gsharp_id_3_s00[__gsharp_id_2_tid%4]),__gsharp_id_4_s01[__gsharp_id_2_tid%4]),__gsharp_id_5_s02[__gsharp_id_2_tid%4]),__gsharp_id_6_s03[__gsharp_id_2_tid%4]),__gsharp_id_7_s04[__gsharp_id_2_tid%4]),__gsharp_id_8_s05[__gsharp_id_2_tid%4]),__gsharp_id_9_s06[__gsharp_id_2_tid%4]),__gsharp_id_10_s07[__gsharp_id_2_tid%4]),__gsharp_id_11_s08[__gsharp_id_2_tid%4]),__gsharp_id_12_s09[__gsharp_id_2_tid%4]),__gsharp_id_13_s10[__gsharp_id_2_tid%4]),__gsharp_id_14_s11[__gsharp_id_2_tid%4]),__gsharp_id_15_s12[__gsharp_id_2_tid%4]),__gsharp_id_16_s13[__gsharp_id_2_tid%4]),__gsharp_id_17_s14[__gsharp_id_2_tid%4]),__gsharp_id_18_s15[__gsharp_id_2_tid%4]),__gsharp_id_19_s16[__gsharp_id_2_tid%4]),__gsharp_id_20_s17[__gsharp_id_2_tid%4]),__gsharp_id_21_s18[__gsharp_id_2_tid%4]),__gsharp_id_22_s19[__gsharp_id_2_tid%4]),__gsharp_id_23_s20[__gsharp_id_2_tid%4]),__gsharp_id_24_s21[__gsharp_id_2_tid%4]),__gsharp_id_25_s22[__gsharp_id_2_tid%4]),__gsharp_id_26_s23[__gsharp_id_2_tid%4]),__gsharp_id_27_s24[__gsharp_id_2_tid%4]),__gsharp_id_28_s25[__gsharp_id_2_tid%4]),__gsharp_id_29_s26[__gsharp_id_2_tid%4]),__gsharp_id_30_s27[__gsharp_id_2_tid%4]),__gsharp_id_31_s28[__gsharp_id_2_tid%4]),__gsharp_id_32_s29[__gsharp_id_2_tid%4]),__gsharp_id_33_s30[__gsharp_id_2_tid%4]),__gsharp_id_34_s31[__gsharp_id_2_tid%4]),__gsharp_id_35_s32[__gsharp_id_2_tid%4]),__gsharp_id_36_s33[__gsharp_id_2_tid%4]),__gsharp_id_37_s34[__gsharp_id_2_tid%4]),__gsharp_id_38_s35[__gsharp_id_2_tid%4]),__gsharp_id_39_s36[__gsharp_id_2_tid%4]),__gsharp_id_40_s37[__gsharp_id_2_tid%4]),__gsharp_id_41_s38[__gsharp_id_2_tid%4]),__gsharp_id_42_s39[__gsharp_id_2_tid%4]),__gsharp_id_43_s40[__gsharp_id_2_tid%4]),__gsharp_id_44_s41[__gsharp_id_2_tid%4]),__gsharp_id_45_s42[__gsharp_id_2_tid%4]),__gsharp_id_46_s43[__gsharp_id_2_tid%4]),__gsharp_id_47_s44[__gsharp_id_2_tid%4]),__gsharp_id_48_s45[__gsharp_id_2_tid%4]),__gsharp_id_49_s46[__gsharp_id_2_tid%4]),__gsharp_id_50_s47[__gsharp_id_2_tid%4]),__gsharp_id_51_s48[__gsharp_id_2_tid%4]),__gsharp_id_52_s49[__gsharp_id_2_tid%4]),__gsharp_id_53_s50[__gsharp_id_2_tid%4]),__gsharp_id_54_s51[__gsharp_id_2_tid%4]),__gsharp_id_55_s52[__gsharp_id_2_tid%4]),__gsharp_id_56_s53[__gsharp_id_2_tid%4]),__gsharp_id_57_s54[__gsharp_id_2_tid%4]),__gsharp_id_58_s55[__gsharp_id_2_tid%4]),__gsharp_id_59_s56[__gsharp_id_2_tid%4]),__gsharp_id_60_s57[__gsharp_id_2_tid%4]),__gsharp_id_61_s58[__gsharp_id_2_tid%4]),__gsharp_id_62_s59[__gsharp_id_2_tid%4]),__gsharp_id_63_s60[__gsharp_id_2_tid%4]),__gsharp_id_64_s61[__gsharp_id_2_tid%4]),__gsharp_id_65_s62[__gsharp_id_2_tid%4]),__gsharp_id_66_s63[__gsharp_id_2_tid%4]),__gsharp_id_67_s64[__gsharp_id_2_tid%4]),__gsharp_id_68_s65[__gsharp_id_2_tid%4]),__gsharp_id_69_s66[__gsharp_id_2_tid%4]),__gsharp_id_70_s67[__gsharp_id_2_tid%4]),__gsharp_id_71_s68[__gsharp_id_2_tid%4]),__gsharp_id_72_s69[__gsharp_id_2_tid%4]);
 __gsharp_state=-1;
@@ -2286,8 +2288,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_first={ (int*)__gsharp_allocate_smem_dynamic(0x59bccf8bd2e6ee5bull, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_n,(int)blockIdx.x)) * sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(270,21)"") };
-__gsharp_ctx->__gsharp_id_3_second={ (int*)__gsharp_allocate_smem_dynamic(0x59bcce8bd2e6eca8ull, (__gsharp_ctx->__gsharp_id_1_n) * sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(271,22)"") };
+__gsharp_ctx->__gsharp_id_2_first={ (int*)__gsharp_allocate_smem_dynamic(0x59bccf8bd2e6ee5bull, (long long)(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_n,(int)blockIdx.x)), sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(270,21)"") };
+__gsharp_ctx->__gsharp_id_3_second={ (int*)__gsharp_allocate_smem_dynamic(0x59bcce8bd2e6eca8ull, (long long)(__gsharp_ctx->__gsharp_id_1_n), sizeof(int), alignof(int), ""SharedMemoryLimitKernels.cs(271,22)"") };
 __gsharp_ctx->__gsharp_id_4_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_2_first[__gsharp_ctx->__gsharp_id_4_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_tid,(int)blockIdx.x);
 __gsharp_ctx->__gsharp_id_3_second[__gsharp_ctx->__gsharp_id_4_tid]=__gsharp_mul_i32(2,__gsharp_ctx->__gsharp_id_4_tid);

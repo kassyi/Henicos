@@ -117,6 +117,64 @@ function lastTextOf(file, pick) {
   return null;
 }
 
+/** The first prompt of a chat is kept to this many characters (a title is made from it). */
+const MaxFirstPromptLength = 500;
+/** How much of the start of a transcript is searched for the first prompt. */
+const TranscriptHeadBytes = 256 * 1024;
+
+/** The text of the first record in the first TranscriptHeadBytes of a JSONL transcript that `pick` returns one for. */
+function firstTextOf(file, pick) {
+  const handle = fs.openSync(file, 'r');
+  let text;
+  try {
+    const buffer = Buffer.alloc(Math.min(fs.fstatSync(handle).size, TranscriptHeadBytes));
+    fs.readSync(handle, buffer, 0, buffer.length, 0);
+    text = buffer.toString('utf8');
+  } finally {
+    fs.closeSync(handle);
+  }
+  for (const line of text.split('\n')) {
+    let record;
+    try {
+      record = JSON.parse(line);
+    } catch {
+      continue; // a blank line, or the last one cut by the limit
+    }
+    const found = pick(record);
+    if (typeof found === 'string' && found.trim() !== '') {
+      return clip(found.trim(), MaxFirstPromptLength);
+    }
+  }
+  return null;
+}
+
+/** A user record that the person did not type: a command, its output or caveat, a background task notification. */
+const NotPrompt = /^\s*(?:<(?:command-|local-command|task-notification)|Caveat:)/;
+
+/** Claude Code: the text of a prompt the person typed (not a subagent's, not a command's output or caveat). */
+function claudeUserText(record) {
+  if (record?.type !== 'user' || record.isSidechain === true || record.isMeta === true) {
+    return null;
+  }
+  const content = record.message?.content;
+  const text = Array.isArray(content)
+    ? content
+        .filter((block) => block?.type === 'text' && typeof block.text === 'string')
+        .map((block) => block.text)
+        .join('\n\n')
+    : content;
+  return typeof text === 'string' && !NotPrompt.test(text) ? text : null;
+}
+
+/** Antigravity: the content of an input of the person, inside its <USER_REQUEST> wrapper when it has one. */
+function antigravityUserText(record) {
+  if (record?.type !== 'USER_INPUT' || typeof record.content !== 'string') {
+    return null;
+  }
+  const request = /<USER_REQUEST>([\s\S]*?)<\/USER_REQUEST>/.exec(record.content);
+  return request ? request[1].trim() : record.content;
+}
+
 /** Claude Code: the text blocks of the last assistant message of the main chain (not a subagent's). */
 function claudeAssistantText(record) {
   if (record?.type !== 'assistant' || record.isSidechain === true || !Array.isArray(record.message?.content)) {
@@ -170,10 +228,14 @@ function joinQuestions(questions) {
 
 module.exports = {
   MaxQuestionLength,
+  MaxFirstPromptLength,
   clip,
   extractReply,
   extractQuestion,
   lastTextOf,
+  firstTextOf,
+  claudeUserText,
+  antigravityUserText,
   claudeAssistantText,
   antigravityPlannerText,
   antigravityTranscripts,

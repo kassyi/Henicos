@@ -527,8 +527,8 @@
   {
     "name": "IndistinguishableKernelOverloads",
     "id": "GSH0059",
-    "title": "Kernel overloads cannot be told apart by their launch wrappers",
-    "messageFormat": "The [GpuKernel] overloads '{0}' and '{1}' produce the same {2} launch wrapper signature. Rename one of the kernels.",
+    "title": "A kernel declares or makes G# generate a member that its class already has",
+    "messageFormat": "The [GpuKernel] method '{0}' declares or makes G# generate the member '{1}', which {2}. Rename the kernel.",
     "category": "GSharpCompiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -910,6 +910,15 @@
     "messageFormat": "GSharpTargetArchitectures includes {0}, whose compute capability G# has no launch limits for; the launch limits of the target GPUs are taken from the other architectures only",
     "category": "GSharpCompiler",
     "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "SharedMemorySizeNegative",
+    "id": "GSH0117",
+    "title": "SharedMemory<T> count must not be negative",
+    "messageFormat": "SharedMemory<T> cannot have a negative count ({0})",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
     "isEnabledByDefault": true
   },
   {

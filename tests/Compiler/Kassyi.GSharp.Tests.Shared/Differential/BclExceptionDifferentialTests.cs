@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Kassyi.ZeroAlloc.Linq;
 using Xunit;
@@ -504,10 +503,6 @@ public sealed class BclExceptionDifferentialTests
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv terminates process)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;

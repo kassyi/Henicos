@@ -16,5 +16,13 @@ public enum CuFunctionAttribute
     /// per-block limit minus the static shared memory and can be raised with <c>cuFuncSetAttribute</c> up to the opt-in
     /// limit of the device minus the static shared memory.
     /// </summary>
-    MaxDynamicSharedSizeBytes = 8
+    MaxDynamicSharedSizeBytes = 8,
+
+    /// <summary>
+    /// The shared memory mode of the function (<c>CUsharedMemoryMode</c>). The mode
+    /// <c>ALLOW_OVERSIZED_SHARED_MEMORY</c> (3) lets a launch use the oversized shared memory per block of the device,
+    /// which <see cref="MaxDynamicSharedSizeBytes"/> cannot reach; once a mode is set,
+    /// <see cref="MaxDynamicSharedSizeBytes"/> is ignored.
+    /// </summary>
+    SharedMemoryMode = 17
 }
