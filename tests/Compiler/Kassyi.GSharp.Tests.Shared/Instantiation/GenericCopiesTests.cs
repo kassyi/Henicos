@@ -98,6 +98,11 @@ public class GenericCopiesTests
     [InlineData("CompareTo", "System.Int32")]
     [InlineData("CompareTo", "System.Char")]
     [InlineData("CallFoo", "App.Plain")]
+    [InlineData("CallFoo", "App.Both")]
+    [InlineData("CallDefault", "App.Defaulted")]
+    [InlineData("NextTwice", "App.Counter")]
+    [InlineData("AddAndPlus", "App.Counter")]
+    [InlineData("NextInArray", "App.Counter")]
     [InlineData("Sum", "System.Int64")]
     [InlineData("Sum", "System.IntPtr")]
     [InlineData("Sum", "System.Decimal")]
@@ -120,8 +125,7 @@ public class GenericCopiesTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("Sum", "App.Odd", "implements", "a + b")]
     [InlineData("CompoundDivideWithEffect", "System.SByte", "has side effects", "data[i++] /= b")]
-    [InlineData("CallFoo", "App.Both", "explicitly", "x.M()")]
-    [InlineData("CallDefault", "App.Defaulted", "default implementation", "x.M()")]
+    [InlineData("CallFooOfResult", "App.Both", "is not a variable", "make().M()")]
     public void Create_FormWithoutAClosedSpelling_ReportsItsNode(
         string method,
         string typeArgument,
@@ -133,6 +137,49 @@ public class GenericCopiesTests
         var finding = Assert.Single(copy.Findings);
         Assert.Contains(reason, finding.Reason, StringComparison.Ordinal);
         Assert.Equal(expression, SourceText.From(s_source).ToString(finding.Location.SourceSpan));
+    }
+
+    // A call through the constraint that runs an explicit or a default implementation goes through a helper that is
+    // generic over the receiver: the implementation that runs is the one the generic method runs, and the receiver is
+    // passed by reference, so a member that changes it changes it (the second Next of a counter gives 2, not 1)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("CallFoo", "App.Both", "2")]
+    [InlineData("CallFoo", "App.Plain", "5")]
+    [InlineData("CallDefault", "App.Defaulted", "3")]
+    [InlineData("NextTwice", "App.Counter", "2")]
+    public void Emit_CallThroughTheConstraint_RunsTheImplementationOfTheGenericMethod(
+        string method,
+        string typeArgument,
+        string expected)
+    {
+        var loaded = Load(method, typeArgument);
+        var value = CreateDefault(loaded.Type);
+
+        Assert.Equal(expected, Run(loaded.Generic, [value]));
+        Assert.Equal(expected, Run(loaded.Closed, [value]));
+    }
+
+    // ref and out-like parameters of the interface member pass through the helper, and an array element is a variable
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Emit_CallWithRefArgumentThroughTheConstraint_ChangesTheReceiverAndTheArgument()
+    {
+        var loaded = Load("AddAndPlus", "App.Counter");
+        var arguments = new[] { CreateDefault(loaded.Type), 3 };
+
+        Assert.Equal("913", Run(loaded.Generic, arguments));
+        Assert.Equal("913", Run(loaded.Closed, [CreateDefault(loaded.Type), 3]));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Emit_CallOnArrayElementsThroughTheConstraint_ChangesTheElements()
+    {
+        var loaded = Load("NextInArray", "App.Counter");
+
+        Assert.Equal("3", Run(loaded.Generic, [CreateArray(loaded.Type)]));
+        Assert.Equal("3", Run(loaded.Closed, [CreateArray(loaded.Type)]));
     }
 
     [Fact]
@@ -288,6 +335,22 @@ public class GenericCopiesTests
     [MemberData(nameof(RealTypeCases))]
     public void Emit_Copy_ComputesWhatGenericMathComputes(string method, string typeArgument)
     {
+        var loaded = Load(method, typeArgument);
+        var arity = loaded.Generic.GetParameters().Length;
+
+        var compared = 0;
+        foreach (var arguments in Inputs(loaded.Type, arity, loaded.TakesCount))
+        {
+            Assert.Equal(Run(loaded.Generic, arguments), Run(loaded.Closed, arguments));
+            compared++;
+        }
+
+        Assert.True(compared >= (arity == 0 ? 1 : MinimumInputs), $"only {compared} inputs");
+    }
+
+    // The generic method closed over the type argument, and the closed copy, of an assembly compiled from the copies
+    private static LoadedMethods Load(string method, string typeArgument)
+    {
         var (copy, set) = CreateCopy(method, typeArgument);
         Assert.True(copy.IsFaithful, Describe(copy));
         var copyName = Assert.IsAssignableFrom<IMethodSymbol>(copy.Symbol).Name;
@@ -296,26 +359,36 @@ public class GenericCopiesTests
         Assert.True(emitted.Success, string.Join("\n", emitted.Diagnostics));
 
 #pragma warning disable RS0030 // Reflection calls an assembly this test compiled at run time
-        var kernels = System.Reflection.Assembly.Load(stream.ToArray()).GetType("App.Kernels") ??
+        var assembly = System.Reflection.Assembly.Load(stream.ToArray());
+        var kernels = assembly.GetType("App.Kernels") ??
                       throw new InvalidOperationException("No App.Kernels in the emitted assembly.");
-        var type = Type.GetType(typeArgument) ?? throw new InvalidOperationException(typeArgument);
+        var type = Type.GetType(typeArgument) ?? assembly.GetType(typeArgument) ??
+                   throw new InvalidOperationException(typeArgument);
         var definition = kernels.GetMethod(method) ?? throw new InvalidOperationException(method);
-        var generic = definition.MakeGenericMethod(type);
         var closed = kernels.GetMethod(copyName) ?? throw new InvalidOperationException(copyName);
         // A second parameter that is not of the type argument is a shift count
         var takesCount = definition.GetParameters() is [_, { ParameterType.IsGenericParameter: false }];
-        var arity = generic.GetParameters().Length;
+        return new LoadedMethods(type, definition.MakeGenericMethod(type), closed, takesCount);
 #pragma warning restore RS0030
-
-        var compared = 0;
-        foreach (var arguments in Inputs(type, arity, takesCount))
-        {
-            Assert.Equal(Run(generic, arguments), Run(closed, arguments));
-            compared++;
-        }
-
-        Assert.True(compared >= (arity == 0 ? 1 : MinimumInputs), $"only {compared} inputs");
     }
+
+    private static object CreateDefault(Type type) =>
+        Activator.CreateInstance(type) ?? throw new InvalidOperationException(type.Name);
+
+    // Two default values of the type, in an array
+    private static Array CreateArray(Type type)
+    {
+        var items = Array.CreateInstance(type, 2);
+        items.SetValue(CreateDefault(type), 0);
+        items.SetValue(CreateDefault(type), 1);
+        return items;
+    }
+
+    private sealed record LoadedMethods(
+        Type Type,
+        System.Reflection.MethodInfo Generic,
+        System.Reflection.MethodInfo Closed,
+        bool TakesCount);
 
     private static string Run(System.Reflection.MethodBase method, object[] arguments)
     {

@@ -7,7 +7,9 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// <param name="Instance">The instance the copy is for.</param>
 /// <param name="Rewrites">The nodes written differently, by node index.</param>
 /// <param name="Problems">The nodes the planner already knows have no faithful copy.</param>
+/// <param name="Helpers">The methods the copy needs beside itself, by the index its rewrites name.</param>
 internal sealed record GenericCopyPlan(
     GenericInstance Instance,
     ImmutableDictionary<int, CopyRewrite> Rewrites,
-    ImmutableArray<CopyProblem> Problems);
+    ImmutableArray<CopyProblem> Problems,
+    ImmutableArray<ConstrainedHelper> Helpers);
