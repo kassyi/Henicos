@@ -220,7 +220,8 @@ public static partial class GpuBigIntDivRem
 
             if (GetActualBits(currentRoot) == 0)
             {
-                currentRoot.Workspace.Provider.WriteWord(currentRoot.DevicePointer, 0, 1u, currentRoot.Workspace.Stream);
+                var rootWorkspace = currentRoot.Workspace;
+                rootWorkspace.Provider.WriteWord(currentRoot.DevicePointer, 0, 1u, rootWorkspace.Stream);
             }
 
             return currentRoot;
