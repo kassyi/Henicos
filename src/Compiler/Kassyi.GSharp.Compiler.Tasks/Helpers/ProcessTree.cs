@@ -28,32 +28,50 @@ namespace Kassyi.GSharp.Compiler.Tasks.Helpers;
 /// terminal no longer reach them directly; they rely on the cancellation that MSBuild sends. Windows covers this case
 /// with the kill-on-close limit of the job. <c>PR_SET_PDEATHSIG</c> is no substitute: it fires when the thread that
 /// started the child ends, which for a thread-pool thread of the host is any time, and it reaches the direct child
-/// only.
+/// only. A subreaper (<c>PR_SET_CHILD_SUBREAPER</c>) or a pidfd only changes who adopts or watches the orphans. The
+/// known way to reach the tree of a dead parent is a watchdog process that holds the other end of a pipe from the host
+/// and kills the group when the pipe closes.
 /// </para>
 /// </remarks>
 internal sealed class ProcessTree : IDisposable
 {
     private static readonly bool s_isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
+    private static readonly Func<WindowsJobObject, bool> s_terminateJob = static job => job.Terminate();
+
     private readonly Process _process;
     private readonly WindowsJobObject? _job;
     private readonly bool _ownsGroup;
+    private readonly Func<WindowsJobObject, bool> _terminateJob;
 
     // Read once at the start: a cancellation may arrive after the caller disposed the Process, which forgets its ID.
     private readonly int _processId;
 
-    private ProcessTree(Process process, WindowsJobObject? job, bool ownsGroup)
+    private ProcessTree(
+        Process process,
+        WindowsJobObject? job,
+        bool ownsGroup,
+        Func<WindowsJobObject, bool>? terminateJob = null
+    )
     {
         _process = process;
         _job = job;
         _ownsGroup = ownsGroup;
         _processId = process.Id;
+        _terminateJob = terminateJob ?? s_terminateJob;
     }
 
     /// <summary>Starts <paramref name="process"/> so that <see cref="Kill"/> reaches its descendants.</summary>
     /// <exception cref="InvalidOperationException">The process did not start.</exception>
     public static ProcessTree Start(Process process) =>
-        s_isWindows ? StartInJob(process) : StartInGroup(process);
+        s_isWindows ? StartInJob(process, s_terminateJob) : StartInGroup(process);
+
+    /// <summary>
+    /// Starts <paramref name="process"/> as <see cref="Start(Process)"/> does, with <paramref name="terminateJob"/> in
+    /// place of <see cref="WindowsJobObject.Terminate"/>, so a test can make the termination of the job fail.
+    /// </summary>
+    internal static ProcessTree Start(Process process, Func<WindowsJobObject, bool> terminateJob) =>
+        s_isWindows ? StartInJob(process, terminateJob) : StartInGroup(process);
 
     /// <summary>
     /// Stops the process and its descendants; best effort, as a process may end at the same time. Never throws, also
@@ -64,13 +82,15 @@ internal sealed class ProcessTree : IDisposable
         if (s_isWindows)
         {
             // The job holds every descendant started after the assignment; the walk finds the ones started before it
-            // and, when Windows refused the job, all of them.
-            if (_job is null || !_job.Terminate())
+            // and, when Windows refused the job or its termination failed, all of them: the members of a job that was
+            // not terminated are left to the walk too.
+            var terminated = _job is not null && _terminateJob(_job);
+            if (!terminated)
             {
                 KillProcessOnly(_process);
             }
 
-            WindowsDescendants.Kill(_process, _processId, _job);
+            WindowsDescendants.Kill(_process, _processId, terminated ? _job : null);
             return;
         }
 
@@ -108,7 +128,7 @@ internal sealed class ProcessTree : IDisposable
         }
     }
 
-    private static ProcessTree StartInJob(Process process)
+    private static ProcessTree StartInJob(Process process, Func<WindowsJobObject, bool> terminateJob)
     {
         var job = WindowsJobObject.TryCreate();
         try
@@ -127,7 +147,7 @@ internal sealed class ProcessTree : IDisposable
             job = null;
         }
 
-        return new ProcessTree(process, job, ownsGroup: false);
+        return new ProcessTree(process, job, ownsGroup: false, terminateJob);
     }
 
     private static ProcessTree StartInGroup(Process process)

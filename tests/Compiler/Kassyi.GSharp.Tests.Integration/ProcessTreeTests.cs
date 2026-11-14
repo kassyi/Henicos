@@ -60,6 +60,29 @@ public sealed class ProcessTreeTests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void Kill_TerminationOfTheJobFails_WalkKillsTheMembersOfTheJob()
+    {
+        // The grandchild is in the job; a walk that skipped the members of a job it was told had been terminated would
+        // leave it running.
+        Skip.IfNot(OperatingSystem.IsWindows(), "Job objects are Windows only.");
+        using var probe = Kassyi.GSharp.Tests.Shared.Helpers.DescendantProcessProbe.Create();
+        var startInfo = probe.WaitingShell(60);
+        startInfo.UseShellExecute = false;
+        startInfo.RedirectStandardOutput = true;
+        using var process = new Process { StartInfo = startInfo };
+        using var tree = ProcessTree.Start(process, static _ => false);
+        Assert.True(probe.WaitFor(static n => n == 1, TimeSpan.FromSeconds(30)), "The grandchild did not start.");
+
+        tree.Kill();
+
+        Assert.True(
+            probe.WaitFor(static n => n == 0, TimeSpan.FromSeconds(10)),
+            "The grandchild in the job survived a failed termination of the job."
+        );
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void FindInPath_NonExecutableFileFirst_TakesTheExecutableOne()
     {
