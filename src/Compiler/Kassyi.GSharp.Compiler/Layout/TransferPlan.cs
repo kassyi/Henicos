@@ -62,17 +62,32 @@ internal abstract record TransferPlan(int? HostSize, int DeviceSize)
     /// <summary>
     /// A <c>Nullable&lt;T&gt;</c>: <c>HasValue</c> and the value, which has its own plan. The host side reads and
     /// writes it through <c>HasValue</c> and <c>GetValueOrDefault()</c>, so <c>T</c> may have a host layout that the
-    /// CLR decides at run time (<c>LayoutKind.Auto</c>); a <c>T</c> that holds a managed reference is
-    /// <see cref="Unsupported"/>.
+    /// CLR decides at run time (<c>LayoutKind.Auto</c>, an array field).
     /// </summary>
     /// <param name="Value">The plan of <c>T</c>.</param>
     /// <param name="ValueDeviceOffset">The device offset of the value after the <c>HasValue</c> flag.</param>
+    /// <param name="ValueHostOffset">
+    /// The host offset of the value, or <see langword="null"/> when the CLR decides the layout of <c>T</c> at run time.
+    /// </param>
     /// <param name="HostSize">
     /// The host size, or <see langword="null"/> when the CLR decides the layout of <c>T</c> at run time.
     /// </param>
     /// <param name="DeviceSize">The device size.</param>
-    public sealed record Nullable(TransferPlan Value, int ValueDeviceOffset, int? HostSize, int DeviceSize)
-        : TransferPlan(HostSize, DeviceSize);
+    public sealed record Nullable(
+        TransferPlan Value,
+        int ValueDeviceOffset,
+        int? ValueHostOffset,
+        int? HostSize,
+        int DeviceSize
+    ) : TransferPlan(HostSize, DeviceSize)
+    {
+        /// <summary>
+        /// Whether the host bytes are the device bytes: the value is copied as one block and sits at the same offset
+        /// in a value of the same size.
+        /// </summary>
+        public bool IsIdentical =>
+            Value is Blit && HostSize == DeviceSize && ValueHostOffset == ValueDeviceOffset;
+    }
 
     /// <summary>
     /// An array or an array-like value (<c>Span&lt;T&gt;</c>, <c>ImmutableArray&lt;T&gt;</c>, ...). The host holds a

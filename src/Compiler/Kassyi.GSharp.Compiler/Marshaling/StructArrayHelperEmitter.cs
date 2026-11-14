@@ -114,12 +114,10 @@ internal static class StructArrayHelperEmitter
         }
     }
 
-    // An array, or a user struct with an array field at any depth (TransferClassifier.TryFindArrayField)
+    // An array, or a user struct with an array field at any depth (TransferClassifier.TryFindArrayField), or a Nullable
+    // of one
     internal static bool HoldsArrays(ITypeSymbol type) =>
-        type.IsArrayLikeType() ||
-        type is INamedTypeSymbol named &&
-        TypeLayoutCalculator.IsUserStruct(named) &&
-        TransferClassifier.TryFindArrayField(named, out _);
+        type.IsArrayLikeType() || HostShadowStructs.HoldsArrayFields(type);
 
     // public static bool HoldsArray_<key>(<S> host, object array)
     // { <host mirror binding>; if (ReferenceEquals(host.<array>, array) [|| HoldsArray_<E>(host.<array>, array)]) return true;
@@ -253,13 +251,10 @@ internal static class StructArrayHelperEmitter
         }
     }
 
-    // A T[], or a user struct with an array field at any depth (TransferClassifier.TryFindArrayField), whose HoldsArray_
-    // method exists
+    // A T[], or a user struct with an array field at any depth (TransferClassifier.TryFindArrayField) or a Nullable of
+    // one, whose HoldsArray_ method exists
     internal static bool HoldsComparableArrays(ITypeSymbol type) =>
-        type is IArrayTypeSymbol ||
-        type is INamedTypeSymbol named &&
-        TypeLayoutCalculator.IsUserStruct(named) &&
-        TransferClassifier.TryFindArrayField(named, out _);
+        type is IArrayTypeSymbol || HostShadowStructs.HoldsArrayFields(type);
 
     // The host value of a struct with a host mirror arrives under this name, and `host` is then the mirror
 

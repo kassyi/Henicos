@@ -15,7 +15,7 @@ public struct ElemArrayHolder
     public PlainElem[] Items;
 }
 
-// Without the element's shadow (TypeLayoutCalculator.CollectStructs) the generated wrapper does not compile
+// Without the element's shadow (HostShadowStructs.Collect) the generated wrapper does not compile
 [SkipSnapshotConsistency]
 public static partial class StructArrayFieldElementKernels
 {

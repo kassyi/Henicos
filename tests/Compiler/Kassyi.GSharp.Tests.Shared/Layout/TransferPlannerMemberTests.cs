@@ -44,6 +44,33 @@ public class TransferPlannerMemberTests
         Assert.Equal(Unsafe.SizeOf<Float2?>(), nullable.HostSize);
         Assert.Equal(16, nullable.DeviceSize);
         Assert.Equal(8, nullable.ValueDeviceOffset);
+        Assert.Equal(HostValueOffset<Float2>(), nullable.ValueHostOffset);
+        Assert.False(nullable.IsIdentical);
+    }
+
+    // The offset of the value of a T? in CLR memory, which the plan predicts (ValueHostOffset)
+    private static int HostValueOffset<T>()
+        where T : struct
+    {
+        T? value = default(T);
+        ref byte start = ref Unsafe.As<T?, byte>(ref value);
+        ref byte inner = ref Unsafe.As<T, byte>(ref Unsafe.AsRef(in System.Nullable.GetValueRefOrDefaultRef(in value)));
+        return (int)Unsafe.ByteOffset(ref start, ref inner);
+    }
+
+    // A Nullable is identical only when its value is at the same offset in a value of the same size: int? and double?
+    // are, Float2? is not on CUDA (#961)
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_NullableFields_AreIdenticalOnlyWhereTheValueOffsetMatches()
+    {
+        var plan = Assert.IsType<TransferPlan.Convert>(
+            TransferPlanner.Plan(GetLayoutCaseStruct(nameof(NullableFieldsStruct)), HostDialects.Cuda));
+        var nullables = plan.Members.Select(static m => m.Plan).OfType<TransferPlan.Nullable>().ToArray();
+        int?[] expectedOffsets = [HostValueOffset<int>(), HostValueOffset<double>(), HostValueOffset<Float2>()];
+        Assert.Equal(expectedOffsets, nullables.Select(static n => n.ValueHostOffset));
+        Assert.Equal(new[] { true, true, false }, nullables.Select(static n => n.IsIdentical));
     }
 
     // A struct with an array of its own type is converted, as the layout model says, and not reported

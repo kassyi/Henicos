@@ -45,6 +45,14 @@ public static partial class Arguments
     {
     }
 
+    // A Nullable<T> goes by address like a struct (#961): the host value when its layouts agree, its native shadow
+    // when its value is converted (an array field)
+    [GpuKernel]
+    public static void NullableKinds(int? count, Holder? holder, ref int? total)
+    {
+        total = count;
+    }
+
     [GpuKernel]
     public static int ScalarResult(int x) => x;
 

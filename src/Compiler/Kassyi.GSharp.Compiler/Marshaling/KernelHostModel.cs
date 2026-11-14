@@ -301,6 +301,8 @@ internal readonly record struct KernelHostModel
             type = elementType;
         }
 
+        // The value of a Nullable<S> is a block-copied S when the Nullable is identical
+        type = type.UnwrapNullable();
         if (!TypeLayoutCalculator.IsUserStruct(type))
         {
             return;

@@ -55,7 +55,6 @@ public class TransferPlannerDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("NullablePricedHolder", "GSH0079", "Item.Price", "decimal", "field 'Item' of type ")]
     [InlineData("NullableMisalignedHolder", "GSH0078", null, null, "field 'Item' of type ")]
-    [InlineData("NullableBagHolder", "GSH0078", null, null, "field 'Item' of type ")]
     [InlineData("DecimalArrayHolder", "GSH0079", "Items", "decimal", "field 'Items' of type 'decimal[]': ")]
     [InlineData("PricedArrayHolder", "GSH0079", "Items.Price", "decimal", "field 'Items' of type ")]
     [InlineData("NestedHolder", "GSH0079", "Holder.Item.Price", "decimal", "field 'Holder' of type ")]
@@ -99,22 +98,23 @@ public class TransferPlannerDiagnosticsTests
         }
     }
 
-    // A Nullable whose value holds a managed reference (an array field) stays GSH0078 (design N4, section 8 step 5)
+    // A Nullable whose value holds a managed reference (an array field) converts through the value's plan (#972)
     [Fact]
     [Category(TestCategory.Compiler)]
-    [Scenario(TestScenario.SadPath)]
-    public void Plan_NullableOfAStructHoldingAnArray_IsGsh0078()
+    [Scenario(TestScenario.HappyPath)]
+    public void Plan_NullableOfAStructHoldingAnArray_ConvertsTheValue()
     {
         var (compilation, _, _) = GetContext(s_transferPlanCases);
         var bag = GetTransferPlanCase(compilation, "Bag");
         foreach (var dialect in s_dialects)
         {
-            Assert.IsType<TransferPlan.Convert>(TransferPlanner.Plan(bag, dialect));
-            var plan = Assert.IsType<TransferPlan.Unsupported>(
+            var bagPlan = Assert.IsType<TransferPlan.Convert>(TransferPlanner.Plan(bag, dialect));
+            var plan = Assert.IsType<TransferPlan.Nullable>(
                 TransferPlanner.Plan(MakeNullable(compilation, bag), dialect));
-            Assert.Equal("GSH0078", plan.DiagnosticId);
-            Assert.Null(plan.FieldPath);
-            Assert.Null(plan.FieldTypeName);
+            Assert.Equal(bagPlan, plan.Value);
+            Assert.Null(plan.ValueHostOffset);
+            Assert.Null(plan.HostSize);
+            Assert.False(plan.IsIdentical);
         }
     }
 }

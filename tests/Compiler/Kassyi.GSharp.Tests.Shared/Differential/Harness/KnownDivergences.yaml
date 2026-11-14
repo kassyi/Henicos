@@ -168,23 +168,6 @@
       paths: [Native]
       columns: [$exception]
 
-- issue: 961
-  title: "[Bug]: A Nullable<T> whose host and device layouts differ is copied with the host layout on every path (return value, array, argument, struct field)"
-  entries:
-    # Nullable<T> scalar and by-ref kernel arguments throw MarshalDirectiveException on the native CPU launch
-    - case: MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel
-      paths: [Native]
-      columns: [v_has, v_val, rb_has, rb_val, rb, oc]
-    # Nullable<Vector2>: 12 bytes on the host, 16 bytes on CUDA
-    - case: MarshalingBoundaryDifferentialKernels.NullableConvertPositionsKernel
-      paths: [Cuda]
-      columns: [v_x, v_y, rv_x, rv_y, h]
-    # [InlineArray(2)] of Nullable<Vector2> is block-copied without a per-element conversion on CUDA
-    - case: MarshalingBoundaryDifferentialKernels.InlineArrayNullableVec2Kernel
-      paths: [Cuda]
-      columns: [item0_x, item0_y, item1_has, item1_x, item1_y, h]
-
-
 - issue: 1060
   title: "[Bug]: StackLinq ElementAtOrDefault with a negative index enumerates the source and runs upstream side effects"
   entries:

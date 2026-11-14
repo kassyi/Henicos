@@ -27,8 +27,8 @@ internal static class TransferPlanGuards
     }
 
     // [WHY] Like KernelHostModel.CollectBlockCopiedStructs, an array is looked into once (its element, not the element
-    // of a nested array), a Nullable<T> and a struct outside the user structs are not looked into, and every member of
-    // a user struct is, whether it is copied as a block or converted
+    // of a nested array), so is the value of a Nullable<T>, a struct outside the user structs is not looked into, and
+    // every member of a user struct is, whether it is copied as a block or converted
     private static void Collect(TransferPlan plan, string launcherAssemblyName, HashSet<string> visited,
         ImmutableArray<StructLayoutGuard>.Builder guards)
     {
@@ -36,6 +36,9 @@ internal static class TransferPlanGuards
         {
             case TransferPlan.ArrayView { Element: not TransferPlan.ArrayView } array:
                 Collect(array.Element, launcherAssemblyName, visited, guards);
+                break;
+            case TransferPlan.Nullable nullable:
+                Collect(nullable.Value, launcherAssemblyName, visited, guards);
                 break;
             case TransferPlan.Blit { UserStructDisplayName: { } displayName } blit:
                 if (!visited.Add(blit.CSharpType))

@@ -330,15 +330,102 @@ public static unsafe void Unmarshal_DiffNullableBlitHolder(ref global::Kassyi.GS
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.DiffNullableBlitHolder, global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder>(ref native);
 }
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
+public unsafe partial struct __gsharp_nullable_of_Int32
+{
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public byte HasValue;
+[global::System.Runtime.InteropServices.FieldOffset(4)]
+public global::System.Int32 Value;
+}
+public static unsafe void Marshal___gsharp_nullable_of_Int32(ref global::System.Nullable<global::System.Int32> host, ref AotContexts.__gsharp_nullable_of_Int32 native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+{
+native = default;
+if (host.HasValue)
+{
+native.HasValue = 1;
+global::System.Int32 value = host.GetValueOrDefault();
+native.Value = value;
+}
+}
+public static unsafe void Unmarshal___gsharp_nullable_of_Int32(ref global::System.Nullable<global::System.Int32> host, ref AotContexts.__gsharp_nullable_of_Int32 native, global::System.IntPtr hStream = default)
+{
+if (native.HasValue == 0)
+{
+host = null;
+return;
+}
+global::System.Int32 value = host.GetValueOrDefault();
+value = native.Value;
+host = value;
+}
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 2)]
+public unsafe partial struct __gsharp_nullable_of_Byte
+{
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public byte HasValue;
+[global::System.Runtime.InteropServices.FieldOffset(1)]
+public global::System.Byte Value;
+}
+public static unsafe void Marshal___gsharp_nullable_of_Byte(ref global::System.Nullable<global::System.Byte> host, ref AotContexts.__gsharp_nullable_of_Byte native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+{
+native = default;
+if (host.HasValue)
+{
+native.HasValue = 1;
+global::System.Byte value = host.GetValueOrDefault();
+native.Value = value;
+}
+}
+public static unsafe void Unmarshal___gsharp_nullable_of_Byte(ref global::System.Nullable<global::System.Byte> host, ref AotContexts.__gsharp_nullable_of_Byte native, global::System.IntPtr hStream = default)
+{
+if (native.HasValue == 0)
+{
+host = null;
+return;
+}
+global::System.Byte value = host.GetValueOrDefault();
+value = native.Value;
+host = value;
+}
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 4)]
+public unsafe partial struct __gsharp_nullable_of_Char
+{
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public byte HasValue;
+[global::System.Runtime.InteropServices.FieldOffset(2)]
+public global::System.Char Value;
+}
+public static unsafe void Marshal___gsharp_nullable_of_Char(ref global::System.Nullable<global::System.Char> host, ref AotContexts.__gsharp_nullable_of_Char native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+{
+native = default;
+if (host.HasValue)
+{
+native.HasValue = 1;
+global::System.Char value = host.GetValueOrDefault();
+native.Value = value;
+}
+}
+public static unsafe void Unmarshal___gsharp_nullable_of_Char(ref global::System.Nullable<global::System.Char> host, ref AotContexts.__gsharp_nullable_of_Char native, global::System.IntPtr hStream = default)
+{
+if (native.HasValue == 0)
+{
+host = null;
+return;
+}
+global::System.Char value = host.GetValueOrDefault();
+value = native.Value;
+host = value;
+}
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 40)]
 public unsafe partial struct DiffNullableVec2Holder
 {
 public const string DebugName_V = "global::System.Nullable<global::System.Numerics.Vector2>";
 [global::System.Runtime.InteropServices.FieldOffset(0)]
-public fixed byte V[16];
+public AotContexts.__gsharp_nullable_of_Vector2 V;
 public const string DebugName_Rv = "global::System.Nullable<global::System.Numerics.Vector2>";
 [global::System.Runtime.InteropServices.FieldOffset(16)]
-public fixed byte Rv[16];
+public AotContexts.__gsharp_nullable_of_Vector2 Rv;
 public const string DebugName_Tag = "global::System.Int32";
 [global::System.Runtime.InteropServices.FieldOffset(32)]
 public global::System.Int32 Tag;
@@ -346,27 +433,50 @@ public global::System.Int32 Tag;
 public static unsafe void Marshal_DiffNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder host, ref AotContexts.DiffNullableVec2Holder native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
 {
 native = default;
-fixed (byte* pField = native.V)
-{
-*((global::System.Nullable<global::System.Numerics.Vector2>*)pField) = host.V;
-}
-fixed (byte* pField = native.Rv)
-{
-*((global::System.Nullable<global::System.Numerics.Vector2>*)pField) = host.Rv;
-}
+Marshal___gsharp_nullable_of_Vector2(ref host.V, ref native.V, deviceArrays, hStream);
+Marshal___gsharp_nullable_of_Vector2(ref host.Rv, ref native.Rv, deviceArrays, hStream);
 native.Tag = host.Tag;
 }
 public static unsafe void Unmarshal_DiffNullableVec2Holder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableVec2Holder host, ref AotContexts.DiffNullableVec2Holder native, global::System.IntPtr hStream = default)
 {
-fixed (byte* pField = native.V)
-{
-host.V = *((global::System.Nullable<global::System.Numerics.Vector2>*)pField);
-}
-fixed (byte* pField = native.Rv)
-{
-host.Rv = *((global::System.Nullable<global::System.Numerics.Vector2>*)pField);
-}
+Unmarshal___gsharp_nullable_of_Vector2(ref host.V, ref native.V, hStream);
+Unmarshal___gsharp_nullable_of_Vector2(ref host.Rv, ref native.Rv, hStream);
 host.Tag = native.Tag;
+}
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
+public unsafe partial struct __gsharp_nullable_of_Vector2
+{
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public byte HasValue;
+[global::System.Runtime.InteropServices.FieldOffset(8)]
+public fixed byte Value[8];
+}
+public static unsafe void Marshal___gsharp_nullable_of_Vector2(ref global::System.Nullable<global::System.Numerics.Vector2> host, ref AotContexts.__gsharp_nullable_of_Vector2 native, global::Kassyi.GSharp.Runtime.Interop.DeviceArrayRegions? deviceArrays, global::System.IntPtr hStream = default)
+{
+native = default;
+if (host.HasValue)
+{
+native.HasValue = 1;
+global::System.Numerics.Vector2 value = host.GetValueOrDefault();
+fixed (byte* pField = native.Value)
+{
+*((global::System.Numerics.Vector2*)pField) = value;
+}
+}
+}
+public static unsafe void Unmarshal___gsharp_nullable_of_Vector2(ref global::System.Nullable<global::System.Numerics.Vector2> host, ref AotContexts.__gsharp_nullable_of_Vector2 native, global::System.IntPtr hStream = default)
+{
+if (native.HasValue == 0)
+{
+host = null;
+return;
+}
+global::System.Numerics.Vector2 value = host.GetValueOrDefault();
+fixed (byte* pField = native.Value)
+{
+value = *((global::System.Numerics.Vector2*)pField);
+}
+host = value;
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct DiffExplicitGapped
@@ -656,14 +766,20 @@ public static unsafe void Marshal_DiffInlineNullableVec2(ref global::Kassyi.GSha
 native = default;
 fixed (byte* pField = native._e0)
 {
-global::System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);
+for (int k = 0; k < 2; k++)
+{
+Marshal___gsharp_nullable_of_Vector2(ref host[k], ref ((AotContexts.__gsharp_nullable_of_Vector2*)pField)[k], deviceArrays, hStream);
+}
 }
 }
 public static unsafe void Unmarshal_DiffInlineNullableVec2(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInlineNullableVec2 host, ref AotContexts.DiffInlineNullableVec2 native, global::System.IntPtr hStream = default)
 {
 fixed (byte* pField = native._e0)
 {
-global::System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);
+for (int k = 0; k < 2; k++)
+{
+Unmarshal___gsharp_nullable_of_Vector2(ref host[k], ref ((AotContexts.__gsharp_nullable_of_Vector2*)pField)[k], hStream);
+}
 }
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
@@ -1817,6 +1933,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNullableBlitHolder,__gsharp_mb_CharOpt)==10,""Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder.CharOpt: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNullableBlitHolder,__gsharp_mb_BoolOpt)==14,""Kassyi.GSharp.Tests.Shared.Differential.DiffNullableBlitHolder.BoolOpt: offset"");
 #endif
+static_assert(sizeof(System_Nullable<int>)==8,""int?: size"");
+static_assert(offsetof(System_Nullable<int>,Value)==4,""int?: value offset"");
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitPositionsKernel(GSharpArray<System_Nullable<int>> __gsharp_id_0_arr, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNullableBlitHolder* __gsharp_id_1_h, GSharpArray<int> __gsharp_id_2_probe, System_Nullable<int>* __restrict__ __gsharp_auto_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
@@ -2210,7 +2328,13 @@ if (d___gsharp_auto_result != global::System.IntPtr.Zero) global::Kassyi.GSharp.
 return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
-public const string NullableBlitScalarArgKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitScalarArgKernel(System_Nullable<int> __gsharp_id_0_v, System_Nullable<unsigned char>* __gsharp_id_1_rb, System_Nullable<char16_t>* __gsharp_id_2_oc, GSharpArray<int> __gsharp_id_3_probe, unsigned int __gsharp_epoch){
+public const string NullableBlitScalarArgKernel_Source = @"static_assert(sizeof(System_Nullable<int>)==8,""int?: size"");
+static_assert(offsetof(System_Nullable<int>,Value)==4,""int?: value offset"");
+static_assert(sizeof(System_Nullable<unsigned char>)==2,""byte?: size"");
+static_assert(offsetof(System_Nullable<unsigned char>,Value)==1,""byte?: value offset"");
+static_assert(sizeof(System_Nullable<char16_t>)==4,""char?: size"");
+static_assert(offsetof(System_Nullable<char16_t>,Value)==2,""char?: value offset"");
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__NullableBlitScalarArgKernel(System_Nullable<int> __gsharp_id_0_v, System_Nullable<unsigned char>* __gsharp_id_1_rb, System_Nullable<char16_t>* __gsharp_id_2_oc, GSharpArray<int> __gsharp_id_3_probe, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_4_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_0_v.HasValue)
@@ -2305,10 +2429,12 @@ if (__gsharp_aliases != null)
 __gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), hStream);
 }
 }
-// Marshal scalar: v
+// Marshal scalar struct: v
 __gsharp_kernel_params[0] = &v;
-// Marshal ref/out scalar: rb
-int __gsharp_size_1 = sizeof(global::System.Nullable<global::System.Byte>);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.__gsharp_nullable_of_Byte __gsharp_native_1 = default;
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal___gsharp_nullable_of_Byte(ref rb, ref __gsharp_native_1, null, hStream);
+// Marshal ref/out struct: rb
+int __gsharp_size_1 = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.__gsharp_nullable_of_Byte);
 if (__gsharp_aliases?.IsMember(0) == true)
 {
 __gsharp_d_1 = __gsharp_aliases.GetDevicePointer(0);
@@ -2317,15 +2443,14 @@ else
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
 // Fast zero-allocation copy to device
-fixed (global::System.Nullable<global::System.Byte>* __gsharp_p_temp_1 = &rb)
-{
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_temp_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)(&__gsharp_native_1), (global::System.IntPtr)__gsharp_size_1, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
-}
 __gsharp_kernel_params[1] = &__gsharp_d_1;
-// Marshal ref/out scalar: oc
-int __gsharp_size_2 = sizeof(global::System.Nullable<global::System.Char>);
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.__gsharp_nullable_of_Char __gsharp_native_2 = default;
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal___gsharp_nullable_of_Char(ref oc, ref __gsharp_native_2, null, hStream);
+// Marshal ref/out struct: oc
+int __gsharp_size_2 = sizeof(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.__gsharp_nullable_of_Char);
 if (__gsharp_aliases?.IsMember(1) == true)
 {
 __gsharp_d_2 = __gsharp_aliases.GetDevicePointer(1);
@@ -2397,22 +2522,17 @@ __gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias
 }
 if (!(__gsharp_aliases?.IsMember(0) == true))
 {
-// Fast zero-allocation copy from device for scalar: rb
-fixed (global::System.Nullable<global::System.Byte>* __gsharp_ptr_1 = &rb)
-{
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_ptr_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+// Fast zero-allocation copy from device
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_1), __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-}
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal___gsharp_nullable_of_Byte(ref rb, ref __gsharp_native_1, hStream);
 }
 if (!(__gsharp_aliases?.IsMember(1) == true))
 {
-oc = default;
-// Fast zero-allocation copy from device for scalar: oc
-fixed (global::System.Nullable<global::System.Char>* __gsharp_ptr_2 = &oc)
-{
-global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_ptr_2, __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
+// Fast zero-allocation copy from device
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)(&__gsharp_native_2), __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
-}
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Unmarshal___gsharp_nullable_of_Char(ref oc, ref __gsharp_native_2, hStream);
 }
 // Copy back array: probe
 if (__gsharp_size_3 > 0 && __gsharp_d_3 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(2) == true))
@@ -2460,11 +2580,11 @@ uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextL
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[5];
-// Marshal scalar: v
+// Marshal scalar struct: v
 __gsharp_kernel_params[0] = &v;
-// Marshal device scalar: rb
+// Marshal device struct: rb
 __gsharp_kernel_params[1] = &rb;
-// Marshal device scalar: oc
+// Marshal device struct: oc
 __gsharp_kernel_params[2] = &oc;
 // Marshal device array: probe
 global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
