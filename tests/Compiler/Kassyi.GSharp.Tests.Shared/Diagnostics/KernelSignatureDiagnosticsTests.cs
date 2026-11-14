@@ -31,6 +31,28 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
+    public async Task DeviceFunctionReturnType_UnsupportedType_ReportsGsh0004WithoutGpuKernelWording(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/DeviceFunctionReturnType_SadPath.cs", dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 9, 26, 9, 39)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id));
+
+        var gsh0004 = Assert.Single(diagnostics.Where(static d => d.Id == GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id));
+        Assert.Equal(DiagnosticOrigin.Analyzer, gsh0004.Origin);
+        Assert.DoesNotContain("[GpuKernel]", gsh0004.Message, StringComparison.Ordinal);
+        Assert.Equal(
+            "Method 'ManagedResult' returns unsupported type 'string'. Kernels and device functions must return void or an unmanaged blittable type; a device function may also be a device iterator.",
+            gsh0004.Message);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
     public async Task DeviceFunction_InstanceMethod_ReportsGsh0066AtMethodName(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/InstanceDeviceFunction_SadPath.cs", dialect);
