@@ -6,9 +6,12 @@
 const fs = require('fs');
 const {
   MaxQuestionLength,
+  MaxFirstPromptLength,
   clip,
-  extractReply,
   lastTextOf,
+  firstTextOf,
+  claudeUserText,
+  antigravityUserText,
   claudeAssistantText,
   antigravityPlannerText,
   antigravityTranscripts,
@@ -16,6 +19,8 @@ const {
   questionsOf,
   joinQuestions,
 } = require('./questions.js');
+const { prompted, endTurn } = require('./open-questions.js');
+const { conversationFacts } = require('./antigravity.js');
 
 /**
  * What one hook call means, with no file access but the transcript read: `{ agent, session, cwd, update, remove,
@@ -36,10 +41,13 @@ function waiting(kind, now, question, options) {
   return { state: 'waiting', kind, since: now, question: question ?? null, options: options ?? null, asks: null };
 }
 
-/** A turn that ended: the paragraph that asks (or the last one), and whether it asks. */
-function replied(now, text) {
-  const reply = extractReply(text);
-  return { ...waiting('reply', now, reply?.question), asks: reply?.asks ?? false };
+/** The first prompt of the chat, once: nothing when one is recorded, else what `read` finds (or nothing). */
+function firstPrompt(previous, read) {
+  if (typeof previous?.firstPrompt === 'string' && previous.firstPrompt !== '') {
+    return {};
+  }
+  const text = read();
+  return typeof text === 'string' && text.trim() !== '' ? { firstPrompt: clip(text.trim(), MaxFirstPromptLength) } : {};
 }
 
 function working(now) {
@@ -51,16 +59,27 @@ function interpretClaude(payload, now) {
   const base = { agent: 'claude', session: payload.session_id, cwd: payload.cwd, output: '', remove: false };
   switch (event) {
     case 'UserPromptSubmit':
-      return { ...base, update: () => working(now) };
+      return {
+        ...base,
+        update: (previous) => ({
+          ...working(now),
+          ...prompted(now, payload.prompt),
+          ...firstPrompt(previous, () => payload.prompt),
+        }),
+      };
     case 'Stop':
       return {
         ...base,
-        update: () => {
+        update: (previous) => {
+          const transcript =
+            payload.transcript_path && fs.existsSync(payload.transcript_path) ? payload.transcript_path : null;
           let text = typeof payload.last_assistant_message === 'string' ? payload.last_assistant_message : null;
-          if (!text && payload.transcript_path && fs.existsSync(payload.transcript_path)) {
-            text = lastTextOf(payload.transcript_path, claudeAssistantText);
+          if (!text && transcript !== null) {
+            text = lastTextOf(transcript, claudeAssistantText);
           }
-          return replied(now, text);
+          // a chat that started before the first prompt was recorded: from the start of its transcript
+          const first = firstPrompt(previous, () => transcript && firstTextOf(transcript, claudeUserText));
+          return { ...endTurn(previous, now, text, null), ...first };
         },
       };
     case 'PreToolUse':
@@ -104,7 +123,31 @@ function interpretClaude(payload, now) {
   }
 }
 
+/**
+ * An Antigravity event, unless its conversation is a subagent's (its transcript opens with a system message): such a
+ * chat is never shown, so its file is removed instead (a subagent fires the same hooks). The title Antigravity gave
+ * the conversation is recorded as `agentTitle`.
+ */
 function interpretAntigravity(payload, now) {
+  const action = antigravityAction(payload, now);
+  if (typeof action.session !== 'string' || action.session === '') {
+    return action;
+  }
+  const facts = conversationFacts(action.session, payload.transcriptPath);
+  if (facts.subagent === true) {
+    return { ...action, remove: true, update: () => null };
+  }
+  const titled = facts.title === null ? {} : { agentTitle: facts.title };
+  return {
+    ...action,
+    update: (previous) => {
+      const fields = action.update(previous);
+      return fields === null ? null : { ...fields, ...titled };
+    },
+  };
+}
+
+function antigravityAction(payload, now) {
   const event = payload.hookEventName;
   const workspace = Array.isArray(payload.workspacePaths) ? payload.workspacePaths[0] : undefined;
   const base = { agent: 'antigravity', session: payload.conversationId, cwd: payload.cwd || workspace, remove: false };
@@ -113,21 +156,34 @@ function interpretAntigravity(payload, now) {
       return {
         ...base,
         output: '{}',
-        update: () => {
+        update: (previous) => {
           if (payload.fullyIdle !== true) {
             return { state: 'background', kind: null, since: now, question: null, options: null, asks: null };
           }
-          let text = null;
+          let file = null;
           if (typeof payload.transcriptPath === 'string' && payload.transcriptPath !== '') {
-            const file = firstExisting(antigravityTranscripts(payload.transcriptPath));
-            text = file ? lastTextOf(file, antigravityPlannerText) : null;
+            file = firstExisting(antigravityTranscripts(payload.transcriptPath));
           }
-          return replied(now, text);
+          const text = file ? lastTextOf(file, antigravityPlannerText) : null;
+          // the latest input: from the transcript, else the payload's lastUserInput
+          const input = typeof payload.lastUserInput === 'string' ? payload.lastUserInput : null;
+          const prompt = (file ? lastTextOf(file, antigravityUserText) : null) ?? input;
+          const first = firstPrompt(previous, () => file && firstTextOf(file, antigravityUserText));
+          const last = prompt === null ? {} : { lastPrompt: prompted(now, prompt).lastPrompt };
+          return { ...endTurn(previous, now, text, prompt), ...last, ...first };
         },
       };
     case 'PreInvocation':
-      // fires before every model call: only the first one after a Stop or a question changes the state
-      return { ...base, output: '{}', update: (previous) => (previous?.state === 'working' ? null : working(now)) };
+      // fires before every model call: only the first one after a Stop or a question changes the state, and the first
+      // after a wait stands for the person's prompt (Antigravity has no event for it)
+      return {
+        ...base,
+        output: '{}',
+        update: (previous) =>
+          previous?.state === 'working'
+            ? null
+            : { ...working(now), ...(previous?.state === 'waiting' ? prompted(now, null) : {}) },
+      };
     case 'PreToolUse':
       if (payload.toolCall?.name !== 'ask_question') {
         return { ...base, output: '', update: () => null };

@@ -190,17 +190,12 @@ public static class FuzzCompositeExpressionEmitter
         // Statement-form `??=`
         state.Statements.Add($"sNullBag.OptInt0 ??= ({i32.Name} ^ 0x1357);");
 
-        if (!state.IssueFilter.AvoidCoalesceAssignValue || state.Swarm.Focus == FuzzSwarmFocus.CoalesceAssignValue)
-        {
-            // Value-consuming `??=` where the RHS is a non-nullable scalar `T`
-            state.Statements.Add($"{i32.Name} = ((sNullBag.OptInt1 ??= ({i32.Name} + 11)) ^ {i32.Name});");
-        }
-        else
-        {
-            // Default mode when #1101 is avoided: statement-level `??=` followed by value-consuming `??`
-            state.Statements.Add($"sNullBag.OptInt1 ??= sNullBag.OptInt0;");
-            state.Statements.Add($"{i32.Name} = ((sNullBag.OptInt1 ?? {i32.Name}) + (sNullBag.OptInt0.HasValue ? 3 : 1));");
-        }
+        // Value-consuming `??=` where the RHS is a non-nullable scalar `T`
+        state.Statements.Add($"{i32.Name} = ((sNullBag.OptInt1 ??= ({i32.Name} + 11)) ^ {i32.Name});");
+
+        // Statement-level `??=` followed by a value-consuming `??`
+        state.Statements.Add($"sNullBag.OptInt1 ??= sNullBag.OptInt0;");
+        state.Statements.Add($"{i32.Name} = ((sNullBag.OptInt1 ?? {i32.Name}) + (sNullBag.OptInt0.HasValue ? 3 : 1));");
 
         // Same-width `??` on long?
         state.Statements.Add($"{i64.Name} = ((sNullBag.OptLong0 ?? {i64.Name}) ^ (sNullBag.OptLong0.HasValue ? 7L : 0L));");
