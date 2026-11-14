@@ -7,6 +7,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import type { StatusReply } from "./protocol.ts";
 import {
+  FlashMs,
   displayWidth,
   fit,
   helpLines,
@@ -21,6 +22,7 @@ import {
 import { describeResult, reduceKey, splitKeys } from "./watch.ts";
 import { CellWidth, Padding, Screenshots, terminalSvg, writeScreenshots } from "./screenshot.ts";
 import { Minute, Now, job, sampleReply } from "./view-sample.ts";
+import { checkChats } from "./self-test-chats.ts";
 
 const plain = (lines: string[]): string[] => lines;
 
@@ -322,6 +324,79 @@ function checkStartKey(): void {
   );
 }
 
+/**
+ * Space pauses or resumes at once and flashes its mark for a second; the header and the wait reasons show the pause.
+ */
+function checkPauseKey(): void {
+  const reply = sampleReply();
+  const paused: StatusReply = { ...reply, paused: true, pausedAt: Now - 4 * Minute };
+  const state = initialViewState();
+  const pressed = reduceKey(state, " ", reply, Now);
+  assert.deepStrictEqual(pressed.action, { type: "pause" }, "Space pauses at once, with no question");
+  assert.deepStrictEqual(pressed.state.flash, { kind: "pause", until: Now + FlashMs });
+  assert.strictEqual(pressed.state.prompt, null);
+  const again = reduceKey(state, " ", paused, Now);
+  assert.deepStrictEqual(again.action, { type: "resume" }, "Space on a paused queue resumes");
+  assert.deepStrictEqual(again.state.flash, { kind: "resume", until: Now + FlashMs });
+  assert.match(reduceKey(state, " ", null, Now).state.message?.text ?? "", /no scheduler/);
+  const cancelAsked = reduceKey({ ...state, selectedId: 820 }, "c", reply, Now).state;
+  assert.strictEqual(reduceKey(cancelAsked, " ", reply, Now).action, undefined, "Space answers no question");
+  // The screen: the header marker stays while paused, the mark floats for FlashMs
+  const size = { columns: 120, rows: 17, now: Now };
+  const normal = renderScreen(reply, state, size, false);
+  const stopped = renderScreen(paused, state, size, false);
+  assert.ok(!(normal[0] ?? "").includes("paused") && (stopped[0] ?? "").includes("|| paused"), "the header says it");
+  assert.ok(
+    stopped.some((line) => /820 .*paused [│┃]/.test(line)),
+    "a waiting job waits because it is paused",
+  );
+  assert.ok(!normal.some((line) => /paused/.test(line)), "nothing of it while running as usual");
+  // The mark is what changes against the screen without it: the five cells-wide rows from its column on
+  const markRows = (lines: string[], base = stopped): string[] =>
+    lines.flatMap((line, i) => (line === base[i] ? [] : [line.slice(54, 66).trim()]));
+  const pauseMark = renderScreen(paused, pressed.state, size, false);
+  assert.deepStrictEqual(markRows(pauseMark), Array(5).fill("████   ████"), "two equal bars with a gap");
+  const playMark = renderScreen(reply, again.state, size, false);
+  assert.deepStrictEqual(
+    markRows(playMark, normal).map((row) => /^█+/.exec(row)?.[0].length),
+    [2, 6, 10, 6, 2],
+    "the play mark is a triangle pointing right",
+  );
+  assert.ok(
+    pauseMark.every((line) => displayWidth(line) <= 120),
+    "inside the width",
+  );
+  const at = pauseMark.findIndex((line, i) => line !== stopped[i]);
+  assert.ok(at >= 2 && at + 4 <= 14, "inside the job rows, in the middle");
+  const colored = renderScreen(paused, pressed.state, size, true);
+  assert.ok(
+    colored.some((line) => line.includes("[1;33m  ████   ████")),
+    "drawn bold yellow",
+  );
+  // How many lines the flash changes on a screen: none once it expired, on the help or on a screen too small for it
+  const changed = (extra: Partial<ViewState>, at = size): number => {
+    const withMark = renderScreen(paused, { ...pressed.state, ...extra }, at, false);
+    const without = renderScreen(paused, { ...pressed.state, ...extra, flash: null }, at, false);
+    return withMark.filter((line, i) => line !== without[i]).length;
+  };
+  assert.strictEqual(changed({}), 5, "the mark changes five lines");
+  assert.strictEqual(changed({}, { ...size, now: Now + FlashMs }), 0, "gone after a second");
+  assert.strictEqual(changed({ help: 1 }), 0, "not on the help");
+  assert.strictEqual(changed({}, { ...size, rows: 10 }), 0, "not on a screen too short for it");
+  assert.strictEqual(changed({}, { ...size, columns: 20 }), 0, "not on a screen too narrow for it");
+  assert.strictEqual(
+    describeResult(
+      { type: "pause" },
+      { type: "pause-result", paused: true, changed: true, running: 1, waiting: 2, pausedAt: Now },
+    ).text,
+    "paused: nothing new starts until resume (Space)",
+  );
+  assert.strictEqual(
+    describeResult({ type: "resume" }, { type: "pause-result", paused: false, changed: true }).text,
+    "resumed",
+  );
+}
+
 /** The help: keys and legend side by side when they fit, else one per page; the samples in their screen colors. */
 function checkHelp(): void {
   const plainText = (lines: { text: string }[]): string[] => lines.map((line) => line.text);
@@ -350,7 +425,7 @@ function checkHelp(): void {
   assert.match(first[11] ?? "", /── help 1\/\d, \? next/);
   const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false));
   assert.ok(
-    last.some((line) => /after #n +until job n has ended/.test(line)),
+    last.some((line) => /#n +a job it queued/.test(line)),
     "the last page ends the legend",
   );
   const colored = helpLines(100).map((line) => line.render(true));
@@ -399,9 +474,11 @@ function checkScreenshots(): void {
 export function checkView(): void {
   checkHelp();
   checkStartKey();
+  checkPauseKey();
   checkPieces();
   checkLayout();
   checkKeys();
   checkGpuPairsAndReasons();
+  checkChats();
   checkScreenshots();
 }

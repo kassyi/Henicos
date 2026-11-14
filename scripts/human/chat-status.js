@@ -18,12 +18,22 @@
 // after PreToolUse (an Antigravity "allow" would skip the permission prompt, as in check-queued-command.js).
 //
 // Modules (chat-status/): hook.js (--hook), events.js (the events), questions.js (question extraction), store.js (the
-// files and listChats), self-test.js.
+// files and listChats), open-questions.js (the heuristic), summary.js (Claude Haiku), summarizer.js (its process),
+// antigravity.js (subagents and titles of Antigravity), self-test*.js.
+//
+// Open questions: at each Stop the hook records the questions the chat leaves open for the person by a heuristic (kept
+// until a new prompt, then a question mark in the reply), and starts chat-status/summarizer.js detached, which asks
+// Claude Haiku through the Claude Code CLI (the person's subscription) for the open questions after the turn and a
+// title, and writes them while the chat still waits in that state. A chat that only reported is idle. The CLI:
+// GSHARP_CHAT_STATUS_CLAUDE, else CLAUDE_CODE_EXECPATH of the hook (kept in claude-executable.txt for the hooks without
+// it), else the newest Claude Code extension of Antigravity, VS Code or VS Code Insiders. GSHARP_CHAT_STATUS_SUMMARY=0
+// turns Haiku off; without a CLI the heuristic decides alone. Antigravity subagents are never recorded.
 //
 // Events:
 //   Claude Code   UserPromptSubmit                   working
-//                 Stop                               waiting for a reply; the question is taken from the last
-//                                                    assistant text of transcript_path
+//                 Stop                               waiting for a reply; the text is the last paragraph with a
+//                                                    question mark of the last assistant text (else its last
+//                                                    paragraph), with asks: whether it has one
 //                 PreToolUse AskUserQuestion         waiting for an answer, with the questions and their options
 //                 PostToolUse                        working again, when the chat waited for an answer or a permission
 //                 Notification                       waiting for a permission (permission_prompt) or for input
@@ -43,8 +53,10 @@
 
 const { runHook } = require('./chat-status/hook.js');
 const store = require('./chat-status/store.js');
-const { extractQuestion, MaxQuestionLength } = require('./chat-status/questions.js');
+const { extractQuestion, extractReply, MaxQuestionLength } = require('./chat-status/questions.js');
 const { interpret } = require('./chat-status/events.js');
+const summary = require('./chat-status/summary.js');
+const { openOf } = require('./chat-status/open-questions.js');
 
 const usage = 'Usage: chat-status.js (--hook | --list [--json] | --self-test | --help)';
 
@@ -57,9 +69,18 @@ function printList(json) {
   const now = Date.now();
   for (const chat of chats) {
     const minutes = Math.round((now - chat.since) / 60000);
-    const state = chat.state === 'waiting' ? `waiting (${chat.kind})` : chat.state;
-    const question = chat.question ? `  ${chat.question.replace(/\s+/g, ' ').slice(0, 80)}` : '';
-    process.stdout.write(`${chat.agent}\t${chat.worktree ?? '?'}\t${state}\t${minutes}m${question}\n`);
+    const kind = chat.kind === 'reply' ? (summary.asksPerson(chat) ? 'reply, asks' : 'reply, reports') : chat.kind;
+    const state = chat.state === 'waiting' ? `waiting (${kind})` : chat.state;
+    // a reply: its newest open question (marked with ≈ when Haiku judged it); else the recorded text
+    const open = chat.kind === 'reply' ? openOf(chat) : [];
+    const judged = chat.askVerdict === 'haiku' && chat.summaryOf === chat.since ? '≈ ' : '';
+    const more = open.length > 1 ? ` (+${open.length - 1})` : '';
+    const shown = open.length > 0 ? `${judged}${open[0].text}${more}` : chat.question;
+    const text = shown ? Array.from(shown.replace(/\s+/g, ' ')) : [];
+    const question = text.length === 0 ? '' : `  ${text.length > 80 ? '…' : ''}${text.slice(-80).join('')}`;
+    const named = chat.agentTitle || chat.title;
+    const title = named ? `\t${named}` : '';
+    process.stdout.write(`${chat.agent}\t${chat.worktree ?? '?'}${title}\t${state}\t${minutes}m${question}\n`);
   }
 }
 
@@ -83,11 +104,14 @@ module.exports = {
   StaleMs: store.StaleMs,
   MaxQuestionLength,
   extractQuestion,
+  extractReply,
   interpret,
   applyPayload: store.applyPayload,
   writeAtomically: store.writeAtomically,
   readMainCheckout: store.readMainCheckout,
   listChats: store.listChats,
+  /** Whether summaries are made (the live view's help): `{ on, executable, source }` or `{ on: false, reason }`. */
+  summaryStatus: (options = {}) => summary.summaryStatus({ directory: store.resolveStatusDirectory(), ...options }),
   chatFileName: store.chatFileName,
 };
 

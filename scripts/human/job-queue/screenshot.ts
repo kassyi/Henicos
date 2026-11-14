@@ -7,7 +7,7 @@ import * as path from "node:path";
 import type { StatusJob, StatusReply } from "./protocol.ts";
 import { displayWidth } from "./screen-line.ts";
 import { initialViewState, renderScreen, type ViewState } from "./view.ts";
-import { Minute, Now, job, sampleReply } from "./view-sample.ts";
+import { LaneWorktree, Minute, Now, PanelWorktree, job, sampleChats, sampleReply } from "./view-sample.ts";
 
 export const CellWidth = 8.4;
 export const LineHeight = 18;
@@ -169,6 +169,13 @@ export function terminalSvg(lines: string[], columns: number): string {
   ].join("\n");
 }
 
+/** The worktrees of some jobs, as the scheduler keys them on Windows (lower case), for the chat panel's job ids. */
+const Worktrees: Record<number, string> = {
+  818: PanelWorktree.toLowerCase(),
+  821: LaneWorktree.toLowerCase(),
+  822: LaneWorktree.toLowerCase(),
+};
+
 /** Commands as the jobs of the self-test's sample would have them on a real queue. */
 const Commands: Record<number, string> = {
   815: "dotnet build src/Compiler/Kassyi.GSharp.Compiler",
@@ -185,7 +192,11 @@ const Commands: Record<number, string> = {
  */
 export function screenshotReply(): StatusReply {
   const base = sampleReply();
-  const named = (sample: StatusJob): StatusJob => ({ ...sample, command: Commands[sample.id] ?? sample.command });
+  const named = (sample: StatusJob): StatusJob => ({
+    ...sample,
+    command: Commands[sample.id] ?? sample.command,
+    worktree: Worktrees[sample.id] ?? sample.worktree,
+  });
   const runtime = "just test-category Runtime";
   return {
     ...base,
@@ -207,6 +218,7 @@ export function screenshotReply(): StatusReply {
       ...base.running.slice(1).map(named),
       job(818, {
         state: "running",
+        worktree: Worktrees[818],
         memoryMb: 4096,
         command: "dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu -c Release",
         typicalMs: 12 * Minute,
@@ -248,6 +260,8 @@ export interface Screenshot {
   columns: number;
   rows: number;
   state: Partial<ViewState>;
+  /** The queue is paused (pause) in this sample. */
+  paused?: boolean;
 }
 
 export const Screenshots: Screenshot[] = [
@@ -255,6 +269,10 @@ export const Screenshots: Screenshot[] = [
   { file: "small.svg", columns: 70, rows: 13, state: {} },
   { file: "selected.svg", columns: 120, rows: 17, state: { selectedId: 812 } },
   { file: "help.svg", columns: 120, rows: 17, state: { help: 1 } },
+  { file: "chats-hidden.svg", columns: 120, rows: 17, state: { chatsHidden: true } },
+  { file: "paused.svg", columns: 120, rows: 17, state: { flash: { kind: "pause", until: Now + 1000 } }, paused: true },
+  // just resumed: the play mark, and nothing of the pause in the header
+  { file: "resumed.svg", columns: 120, rows: 17, state: { flash: { kind: "resume", until: Now + 1000 } } },
 ];
 
 /** The time zone of the clock times on the screens, so that they do not follow the machine that draws them. */
@@ -266,12 +284,13 @@ export function writeScreenshots(dir: string): string[] {
   process.env.TZ = TimeZone;
   try {
     fs.mkdirSync(dir, { recursive: true });
-    return Screenshots.map(({ file, columns, rows, state }) => {
+    return Screenshots.map(({ file, columns, rows, state, paused }) => {
       const lines = renderScreen(
-        screenshotReply(),
+        paused ? { ...screenshotReply(), paused: true, pausedAt: Now - 4 * Minute } : screenshotReply(),
         { ...initialViewState(), ...state },
         { columns, rows, now: Now },
         true,
+        sampleChats(),
       );
       const target = path.join(dir, file);
       fs.writeFileSync(target, terminalSvg(lines, columns));

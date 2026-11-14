@@ -2,7 +2,9 @@
 
 // Self-test of chat-status.js (`node scripts/human/chat-status.js --self-test`): the question extraction, every event
 // of both agents on synthetic payloads and transcripts, the PreInvocation-after-Stop rule, fullyIdle, the atomic write,
-// the 12-hour drop and the order of listChats, and the hook as a child process (exit code 0 and what it prints).
+// the 12-hour drop and the order of listChats, and the hook as a child process (exit code 0 and what it prints);
+// self-test-summary.js adds the summaries (finding the CLI, the prompt, the summarizer with a fake CLI, the guards),
+// self-test-antigravity.js what is read from Antigravity's files (subagents, titles).
 // It writes only under <repository>/tmp/chat-status-self-test-<pid>/ and removes it at the end.
 
 const assert = require('assert');
@@ -43,40 +45,55 @@ function sameWorktree(actual, expected) {
 
 // --- question extraction -------------------------------------------------------------------------------------------
 
-check('extract: the last question sentence, with text after it', () => {
-  assert.strictEqual(chat.extractQuestion('Done. Should I push it? The tests pass.'), 'Should I push it?');
-  assert.strictEqual(chat.extractQuestion('Is A right? Or is B right? Both build.'), 'Or is B right?');
+check('extract: the question at the end, after a long summary', () => {
+  const summary = 'I changed three files.\n\n- view.ts: the panel\n- watch.ts: the reader\n\nAll checks pass.';
+  const text = `${summary}\n\nTwo pull requests touch the queue; **which one goes first?**`;
+  assert.deepStrictEqual(chat.extractReply(text), {
+    question: 'Two pull requests touch the queue; which one goes first?',
+    asks: true,
+  });
+});
+
+check('extract: the last asking paragraph, not the first one', () => {
+  const text = 'Should I keep the old key?\n\nDone with the panel.\n\nShall I push it now?\n\nThe tests pass.';
+  assert.deepStrictEqual(chat.extractReply(text), { question: 'Shall I push it now?', asks: true });
 });
 
 check('extract: a full-width question mark', () => {
-  const text = '修正しました。\n\nマージしてよいですか？次は検証です。';
-  assert.strictEqual(chat.extractQuestion(text), 'マージしてよいですか？');
+  const text = '修正しました。\n\nマージしてよいですか？次は検証です。\n\n以上です。';
+  const question = 'マージしてよいですか？次は検証です。';
+  assert.deepStrictEqual(chat.extractReply(text), { question, asks: true });
 });
 
-check('extract: list markers and emphasis around the question', () => {
-  assert.strictEqual(chat.extractQuestion('Options:\n- **Which one do you want?**\n'), '**Which one do you want?**');
-  assert.strictEqual(chat.extractQuestion('Notes\n\n## Merge now?'), 'Merge now?');
+check('extract: Markdown that only takes width is removed', () => {
+  const text = 'Notes\n\n## Merge now?\n- see [the PR](https://example.com/pull/1) and **its checks**';
+  assert.strictEqual(chat.extractQuestion(text), 'Merge now?\nsee the PR and its checks');
 });
 
-check('extract: a ? in a URL or a code block is not a question', () => {
+check('extract: a ? in a URL, a code span or a code block is not a question', () => {
   const url = 'See https://example.com/?a=b for details.';
-  assert.strictEqual(chat.extractQuestion(url), url);
-  assert.strictEqual(chat.extractQuestion('Ran it.\n```\nx = a ? b : c?\n```\nAll green.'), 'All green.');
+  assert.deepStrictEqual(chat.extractReply(url), { question: url, asks: false });
+  assert.deepStrictEqual(chat.extractReply('Ran it.\n```\nx = a ? b : c?\n```\nAll green.'), {
+    question: 'All green.',
+    asks: false,
+  });
+  assert.deepStrictEqual(chat.extractReply('Use `a ? b : c?` here.\n\nDone.'), { question: 'Done.', asks: false });
 });
 
-check('extract: no question -> the last paragraph', () => {
+check('extract: no question -> the last paragraph, asks false', () => {
   const text = 'First paragraph.\n\nSecond paragraph,\nstill second.';
-  assert.strictEqual(chat.extractQuestion(text), 'Second paragraph,\nstill second.');
+  assert.deepStrictEqual(chat.extractReply(text), { question: 'Second paragraph,\nstill second.', asks: false });
   assert.strictEqual(chat.extractQuestion('   \n\n'), null);
   assert.strictEqual(chat.extractQuestion(null), null);
 });
 
-check('extract: a long text is cut to MaxQuestionLength', () => {
+check('extract: a long paragraph is cut from its start, so that the question stays', () => {
   const question = chat.extractQuestion(`${'word '.repeat(1000)}`);
   assert.strictEqual(Array.from(question).length, chat.MaxQuestionLength);
-  assert.ok(question.endsWith('…'));
-  const long = chat.extractQuestion(`${'x'.repeat(3000)}?`);
+  assert.ok(question.startsWith('…'));
+  const long = chat.extractQuestion(`${'x '.repeat(3000)}which one goes first?`);
   assert.strictEqual(Array.from(long).length, chat.MaxQuestionLength);
+  assert.ok(long.endsWith('which one goes first?'));
 });
 
 // --- Claude Code ----------------------------------------------------------------------------------------------------
@@ -119,7 +136,8 @@ check('claude: Stop -> waiting for a reply, question from the main chain of the 
   const record = readChat(directory, 'claude', 'c1');
   assert.strictEqual(record.state, 'waiting');
   assert.strictEqual(record.kind, 'reply');
-  assert.strictEqual(record.question, 'Shall I open the pull request?');
+  assert.strictEqual(record.question, 'Changed it. Shall I open the pull request? CI is green.');
+  assert.strictEqual(record.asks, true);
 });
 
 check('claude: Stop reads only the last MiB of the transcript', (root) => {
@@ -239,7 +257,8 @@ check('antigravity: Stop with fullyIdle -> waiting, question from transcript_ful
   assert.strictEqual(chat.applyPayload(payload, directory, 100), '{}');
   const record = readChat(directory, 'antigravity', 'g1');
   assert.deepStrictEqual([record.state, record.kind, record.since], ['waiting', 'reply', 100]);
-  assert.strictEqual(record.question, 'Do you want the window on the left?');
+  const question = 'Built it. Do you want the window on the left? It fits.';
+  assert.deepStrictEqual([record.question, record.asks], [question, true]);
   assert.ok(sameWorktree(record.worktree, RepositoryRoot), record.worktree);
 });
 
@@ -375,11 +394,11 @@ check('listChats: drops entries older than 12 hours, waiting first, the longest 
 
 // --- the hook as a process ------------------------------------------------------------------------------------------
 
-function runHook(directory, input) {
+function runHook(directory, input, env = {}) {
   return spawnSync(process.execPath, [Script, '--hook'], {
     input,
     encoding: 'utf8',
-    env: { ...process.env, GSHARP_CHAT_STATUS_DIR: directory },
+    env: { ...process.env, GSHARP_CHAT_STATUS_DIR: directory, ...env },
     timeout: 20000,
     windowsHide: true,
   });
@@ -415,7 +434,13 @@ check('hook process: a directory that cannot be created still gives exit 0 and n
   assert.deepStrictEqual([result.status, result.stdout], [0, '']);
 });
 
+const summaryHelpers = { freshDirectory, readChat, writeJsonl, claude, antigravity, runHook };
+checks.push(...require('./self-test-summary.js').summaryChecks(summaryHelpers));
+checks.push(...require('./self-test-antigravity.js').antigravityChecks(summaryHelpers));
+
 function selfTest() {
+  // No check may reach the real Claude Code CLI: summaries are off unless a check names its fake CLI
+  process.env.GSHARP_CHAT_STATUS_SUMMARY = '0';
   const root = path.join(RepositoryRoot, 'tmp', `chat-status-self-test-${process.pid}`);
   fs.rmSync(root, { recursive: true, force: true });
   fs.mkdirSync(root, { recursive: true });

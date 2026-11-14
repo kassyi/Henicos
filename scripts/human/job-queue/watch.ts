@@ -1,13 +1,26 @@
 // status --watch: the live view of the queue in the terminal. Asks the scheduler for its status every second, draws
 // the screen of view.ts on the alternate screen, and acts on keys (select, cancel, move, set-weight). It never starts a
-// scheduler; while none runs it shows "no scheduler" and keeps asking.
+// scheduler; while none runs it shows "no scheduler" and keeps asking. Every 2 s it also reads the agent chats
+// (listChats() of chat-status.js) for the chat panel; when that script cannot be loaded, the panel is left out.
 
+import { createRequire } from "node:module";
+import * as path from "node:path";
 import { request } from "./client-connect.ts";
 import { usageError } from "./client.ts";
 import type { ClientMessage, Incoming, StatusReply } from "./protocol.ts";
-import { initialViewState, renderScreen, screenJobs, selectedJob, type Style, type ViewState } from "./view.ts";
+import {
+  FlashMs,
+  initialViewState,
+  renderScreen,
+  screenJobs,
+  selectedJob,
+  type Style,
+  type ViewState,
+} from "./view.ts";
+import type { ChatRecord, ChatView, SummaryState } from "./view-chats.ts";
 
 const RefreshMs = 1000;
+const ChatRefreshMs = 2000;
 /** What m, w and s do, for the message on a running job. */
 const Verbs: Record<string, string> = { m: "move", w: "change its slots", s: "start" };
 const MessageMs = 4000;
@@ -86,6 +99,16 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
       return { state: state.help > 0 ? { ...state, help: 0 } : { ...state, selectedId: null } };
     case "r":
       return { state, action: "refresh" };
+    case "a":
+      return { state: { ...state, chatsHidden: !state.chatsHidden } };
+    case " ": {
+      // Like the space bar of a video player: no question, since both ways are harmless and undone by pressing it again
+      if (reply === null) {
+        return { state: note(state, "no scheduler running", now) };
+      }
+      const kind = reply.paused === true ? "resume" : "pause";
+      return { state: { ...state, flash: { kind, until: now + FlashMs } }, action: { type: kind } };
+    }
     case "\x1b[A":
     case "k":
       return select(index < 0 ? jobs.length - 1 : index - 1); // from no selection: the last job
@@ -146,6 +169,11 @@ export function describeResult(message: ClientMessage, reply: Incoming | null): 
   if (reply.type === "start-result") {
     return { text: `#${String(reply.id)} started over the pool`, style: "run" };
   }
+  if (reply.type === "pause-result") {
+    const paused = reply.paused === true;
+    const text = paused ? "paused: nothing new starts until resume (Space)" : "resumed";
+    return { text: reply.changed === true ? text : paused ? "was already paused" : "was not paused", style: "run" };
+  }
   if (reply.type === "move-result") {
     const position = Number(reply.position);
     return {
@@ -154,6 +182,47 @@ export function describeResult(message: ClientMessage, reply: Incoming | null): 
     };
   }
   return { text: JSON.stringify(reply), style: "warn" };
+}
+
+interface ChatStatusModule {
+  listChats: () => ChatRecord[];
+  readMainCheckout: (root: string) => string | null;
+  /** Absent from an older chat-status.js. */
+  summaryStatus?: () => SummaryState;
+}
+
+/**
+ * A reader of the chats for the panel: null when chat-status.js cannot be loaded (an older checkout). A failed read
+ * shows no panel until the next one.
+ */
+export function chatReader(): (() => ChatView | null) | null {
+  let module: ChatStatusModule;
+  try {
+    module = createRequire(import.meta.url)("../chat-status.js") as ChatStatusModule;
+  } catch {
+    return null; // no chat-status.js beside the queue: the view works without the panel
+  }
+  const root = path.resolve(import.meta.dirname, "..", "..", "..");
+  let mainCheckout: string | null = null;
+  try {
+    mainCheckout = module.readMainCheckout(root);
+  } catch {
+    mainCheckout = null; // "main" is then shown as the last part of its path
+  }
+  // Read once: whether the help says that summaries are on, and how to turn them on
+  let summaries: SummaryState | null = null;
+  try {
+    summaries = module.summaryStatus?.() ?? null;
+  } catch {
+    summaries = null; // the help then leaves the line out
+  }
+  return () => {
+    try {
+      return { chats: module.listChats(), mainCheckout, ignoreCase: process.platform === "win32", summaries };
+    } catch {
+      return null; // a directory that cannot be read: no panel this time
+    }
+  };
 }
 
 export async function watch(port: number): Promise<void> {
@@ -165,11 +234,19 @@ export async function watch(port: number): Promise<void> {
   const color = process.env.NO_COLOR === undefined && output.hasColors();
   let reply: StatusReply | null = null;
   let state = initialViewState();
+  const readChats = chatReader();
+  let chats: ChatView | null = null;
+  let chatsReadAt = 0;
   let stopped = false;
   let wake: (() => void) | null = null;
 
   const draw = (): void => {
-    const lines = renderScreen(reply, state, { columns: output.columns, rows: output.rows, now: Date.now() }, color);
+    const now = Date.now();
+    if (readChats !== null && now - chatsReadAt >= ChatRefreshMs) {
+      chats = readChats();
+      chatsReadAt = now;
+    }
+    const lines = renderScreen(reply, state, { columns: output.columns, rows: output.rows, now }, color, chats);
     output.write(`\x1b[H${lines.join("\x1b[K\r\n")}\x1b[K\x1b[J`);
   };
   const restore = (): void => {
@@ -222,6 +299,9 @@ export async function watch(port: number): Promise<void> {
       }
     }
     draw();
+    if (state.flash !== null) {
+      setTimeout(draw, FlashMs + 50); // the mark is gone a second after the key, not at the next refresh
+    }
   });
 
   while (!stopped) {
