@@ -413,7 +413,7 @@ internal static class AliasGroupEmitter
     // HostAliasCopies.<method><<T>>(__gsharp_aliases, <k>, <ranges>,   (the out arguments follow)
     private static string CopyCall(in ArraySharingPlan sharing, int parameterIndex, string method, string element) =>
         $"{CopiesType}.{method}<{element}>({Aliases}, {sharing.Aliases.MemberIndexOf(parameterIndex)}, " +
-        $"{AliasRangeEmitter.RangesSpan(sharing.Aliases.Ranges)}, ";
+        $"{AliasRangeEmitter.RangesSpan(sharing.Aliases.Ranges, sharing.Aliases.HasHeldArrays)}, ";
 
     // ", <copies>, <CopyArrays_>": an element that holds arrays gets copies of them too, through the launch's
     // HostArrayCopies; empty for other elements
