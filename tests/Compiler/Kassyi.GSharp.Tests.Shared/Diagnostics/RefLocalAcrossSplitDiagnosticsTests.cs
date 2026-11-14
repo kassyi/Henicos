@@ -56,13 +56,17 @@ public class RefLocalAcrossSplitDiagnosticsTests
         Assert.Equal(
             [
                 (DiagnosticOrigin.Generator, 19, 17, 19, 22),
-                (DiagnosticOrigin.Generator, 32, 17, 32, 22),
-                (DiagnosticOrigin.Generator, 51, 26, 51, 27),
-                (DiagnosticOrigin.Generator, 62, 26, 62, 27),
-                (DiagnosticOrigin.Generator, 73, 26, 73, 27),
+                (DiagnosticOrigin.Generator, 32, 17, 32, 22)
             ],
             held.Ranges(Gsh0003, Constraint));
-        Assert.Empty(held.Ranges(GSharpDiagnostics.CrossBarrierRefStructProhibited.Id));
+        // The variable of a ref foreach whose loop has a barrier is GSH0039 at the variable (#1657)
+        Assert.Equal(
+            [
+                (Analyzer, 51, 26, 51, 27),
+                (Analyzer, 62, 26, 62, 27),
+                (Analyzer, 73, 26, 73, 27)
+            ],
+            held.Ranges(GSharpDiagnostics.CrossBarrierRefStructProhibited.Id));
     }
 
     [Fact]
