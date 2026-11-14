@@ -47,7 +47,12 @@ Console.WriteLine($"FastMath.Log(10.0f) = {f:F4}");
 
 ## Remarks
 
-Usable in both CPU fallback (delegating to `MathF.Log`) and GPU device kernels (mapped to the CUDA `__logf` fast-math intrinsic).
+Usable in both CPU fallback (delegating to `MathF.Log`) and GPU device kernels (mapped to the CUDA `__logf` fast-math intrinsic). Calling on the host CPU evaluates `MathF.Log` directly and does not throw `GpuOnlyException`.
+
+### Error Bound
+
+- **GPU (CUDA `__logf`)**: Maximum absolute error is $2^{-21.41}$ (approx. $3.58 \times 10^{-7}$) for $x \in [0.5, 2.0]$, and within 3 ULP otherwise.
+- **CPU Fallback (`MathF.Log`)**: Correctly rounded (within 1 ULP).
 
 ## See also
 

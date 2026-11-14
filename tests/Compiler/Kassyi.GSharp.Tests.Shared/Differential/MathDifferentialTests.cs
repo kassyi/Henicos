@@ -191,7 +191,7 @@ public class MathDifferentialTests
         ("FastMath.Sqrt(|x|)", OutputPolicy.Bitwise),
         ("FastMath.Abs(x)", OutputPolicy.Bitwise),
         ("FastMath.Exp(expX)", OutputPolicy.Ulp(14, "CUDA Programming Guide __expf <= 2 + floor(|1.173*x|) ulp on [-10,10] + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
-        ("FastMath.Log(logUnitX)", OutputPolicy.Ignore),
+        ("FastMath.Log(logUnitX)", OutputPolicy.Absolute(4.8e-7, "CUDA Programming Guide __logf abs error <= 2^-21.41 (~3.576e-7) on [0.5, 2.0] + host 1 ulp")),
         ("FastMath.Log(logWideX)", OutputPolicy.Ulp(4, "CUDA Programming Guide __logf <= 3 ulp outside [0.5,2.0] + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
     ];
 
