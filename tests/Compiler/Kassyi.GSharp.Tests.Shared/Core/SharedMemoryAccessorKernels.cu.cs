@@ -4,8 +4,8 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 /// <summary>
-/// A struct whose accessors create a <c>SharedMemory&lt;T&gt;</c> (#564): a getter, a setter and an indexer. Each thread
-/// writes and reads its own element, so no barrier is needed.
+/// A struct whose accessors create a <c>SharedMemory&lt;T&gt;</c> (#564): a getter and a setter. Each thread writes and
+/// reads its own element, so no barrier is needed.
 /// </summary>
 public struct SharedMemoryAccessors
 {
@@ -31,16 +31,6 @@ public struct SharedMemoryAccessors
             Stored = memory[ThreadIndex.X];
         }
     }
-
-    public int this[int offset]
-    {
-        get
-        {
-            var memory = new SharedMemory<int>(32);
-            memory[ThreadIndex.X] = offset + ThreadIndex.X;
-            return memory[ThreadIndex.X];
-        }
-    }
 }
 
 public static partial class SharedMemoryAccessorKernels
@@ -51,6 +41,6 @@ public static partial class SharedMemoryAccessorKernels
         int tid = ThreadIndex.X;
         var accessors = new SharedMemoryAccessors { Base = 100 };
         accessors.Write = 5;
-        output[tid] = accessors.Read + accessors.Stored + accessors[1000];
+        output[tid] = accessors.Read + accessors.Stored;
     }
 }

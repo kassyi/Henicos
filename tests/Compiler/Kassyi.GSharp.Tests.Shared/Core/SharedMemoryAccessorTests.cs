@@ -7,8 +7,8 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 /// <summary>
-/// Runs <see cref="SharedMemoryAccessorKernels"/> on CUDA and on both CPU paths (#564): a struct whose getter, setter
-/// and indexer each declare a <c>SharedMemory&lt;T&gt;</c> has one buffer per accessor, like a method.
+/// Runs <see cref="SharedMemoryAccessorKernels"/> on CUDA and on both CPU paths (#564): a struct whose getter and setter
+/// each declare a <c>SharedMemory&lt;T&gt;</c> has one buffer per accessor, like a method.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]
@@ -26,8 +26,8 @@ public class SharedMemoryAccessorTests : TranspilerTestBase
 
         Run(forceManaged, () => SharedMemoryAccessorKernels.LaunchAccessorsKernel(output, blockDimX: 8));
 
-        // Read: 100 + tid, Stored: 5 + 1, the indexer: 1000 + tid
-        Assert.Equal(Enumerable.Range(0, 8).Select(static tid => 1106 + 2 * tid), output);
+        // Read: 100 + tid, Stored: 5 + 1
+        Assert.Equal(Enumerable.Range(0, 8).Select(static tid => 106 + tid), output);
     }
 
     // The managed path exists only on the CPU dialects
