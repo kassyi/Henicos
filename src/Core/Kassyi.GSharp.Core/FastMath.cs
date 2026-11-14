@@ -16,6 +16,7 @@ public static class FastMath
     /// <returns>The value <c>e^x</c> calculated using fast hardware approximation.</returns>
     /// <remarks>
     /// <para><b>Execution Target:</b> Usable in both CPU fallback and GPU device kernels.</para>
+    /// <para><b>Error Bound:</b> On the GPU (CUDA <c>__expf</c>), maximum error is within 2 + floor(|1.173 * x|) ULP. The CPU fallback returns <see cref="MathF.Exp(float)"/>, which is correctly rounded (within 1 ULP).</para>
     /// </remarks>
     public static float Exp(float x) => MathF.Exp(x);
 
@@ -26,6 +27,7 @@ public static class FastMath
     /// <returns>The natural logarithm of <paramref name="x"/> calculated using fast hardware approximation.</returns>
     /// <remarks>
     /// <para><b>Execution Target:</b> Usable in both CPU fallback and GPU device kernels.</para>
+    /// <para><b>Error Bound:</b> On the GPU (CUDA <c>__logf</c>), maximum absolute error is 2^-21.41 (approx. 3.58e-7) for <paramref name="x"/> in [0.5, 2.0], and within 3 ULP otherwise. The CPU fallback returns <see cref="MathF.Log(float)"/>, which is correctly rounded (within 1 ULP).</para>
     /// </remarks>
     public static float Log(float x) => MathF.Log(x);
 

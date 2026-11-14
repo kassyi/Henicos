@@ -320,6 +320,49 @@ public class DifferentialPolicyTests
         Assert.False(expected.Find("r").CellsMatch(actual.Find("r"), 0));
     }
 
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void DiffPolicy_Absolute_ComparesWithinAbsoluteTolerance()
+    {
+        var absPolicy = OutputPolicy.Absolute(1e-5, "test absolute error");
+        Assert.Equal(OutputPolicyKind.Absolute, absPolicy.Kind);
+        Assert.Equal(1e-5, absPolicy.MaxAbsoluteError);
+        Assert.Equal("test absolute error", absPolicy.Reason);
+        Assert.Equal("Absolute(1E-05, \"test absolute error\")", absPolicy.ToString());
+
+        // Single precision
+        Assert.True(CellsMatch(1.0f, 1.0f + 5e-6f, absPolicy));
+        Assert.True(CellsMatch(1.0f, 1.0f - 8e-6f, absPolicy));
+        Assert.False(CellsMatch(1.0f, 1.0f + 2e-5f, absPolicy));
+        Assert.False(CellsMatch(1.0f, 1.0f - 2e-5f, absPolicy));
+
+        // NaN handling
+        Assert.True(CellsMatch(float.NaN, float.NaN, absPolicy));
+        Assert.False(CellsMatch(1.0f, float.NaN, absPolicy));
+        Assert.False(CellsMatch(float.NaN, 1.0f, absPolicy));
+
+        // Infinity handling
+        Assert.True(CellsMatch(float.PositiveInfinity, float.PositiveInfinity, absPolicy));
+        Assert.True(CellsMatch(float.NegativeInfinity, float.NegativeInfinity, absPolicy));
+        Assert.False(CellsMatch(float.PositiveInfinity, float.NegativeInfinity, absPolicy));
+        Assert.False(CellsMatch(float.PositiveInfinity, 1e30f, absPolicy));
+
+        // Double precision
+        var absDouble = OutputPolicy.Absolute(1e-9, "double tolerance");
+        Assert.True(CellsMatch(2.0, 2.0 + 5e-10, absDouble));
+        Assert.True(CellsMatch(2.0, 2.0 - 5e-10, absDouble));
+        Assert.False(CellsMatch(2.0, 2.0 + 2e-9, absDouble));
+        Assert.False(CellsMatch(2.0, 2.0 - 2e-9, absDouble));
+        Assert.True(CellsMatch(double.NaN, double.NaN, absDouble));
+        Assert.False(CellsMatch(2.0, double.NaN, absDouble));
+
+        // Argument validation
+        Assert.Throws<ArgumentOutOfRangeException>(() => OutputPolicy.Absolute(-1.0, "negative"));
+        Assert.Throws<ArgumentException>(() => OutputPolicy.Absolute(1.0, ""));
+    }
+
     // ---- Helpers ----
 
     private readonly record struct DeepBagProbe(int[]? Data, int Tag);
