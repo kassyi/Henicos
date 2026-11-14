@@ -123,7 +123,12 @@ public static partial class SpillOwner
     }
 
     [GpuDeviceFunction]
-    private static Spilled SpillMake(int[] data) => new Spilled { X = data[ThreadIndex.X] * 2 };
+    private static Spilled SpillMake(int[] data)
+    {
+        Spilled spilled;
+        spilled.X = data[ThreadIndex.X] * 2;
+        return spilled;
+    }
 
     [GpuDeviceFunction]
     private static int SpillUse(Spilled spilled, int waited) => spilled.X + waited;

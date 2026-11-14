@@ -211,9 +211,21 @@
     ir:     spill(c ? 1u : -1) split(Suspend())
     syntax: split(Suspend())
 #991 an earlier operand of an operation that does not split
+  PrivateFrameTypeKernels.cu.cs PrivateFrameTypeKernels.SpillFunction: => SpillUse(SpillMake(data), SpillWait(data))
+    ir:     spill(SpillMake(data)) split(SpillWait(data))
+    syntax: split(SpillWait(data))
+#991 an earlier operand of an operation that does not split
   SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.OperandOrderKernel: output[o + 3] = Triple(Add3(d, l), Double(d, l), Warp.ShuffleSync(Full, d[l], l));
     ir:     spill(Add3(d, l)) spill(Double(d, l)) spill(d[l]) split(Warp.ShuffleSync(Full, d[l], l))
     syntax: spill(d[l]) split(Warp.ShuffleSync(Full, d[l], l))
+#991 an earlier operand of an operation that does not split
+  StateMachineVisibility.cs LibSm.WaitSpilled: => UseSecret(MakeSecret(tid), WaitInner(buffer, tid))
+    ir:     spill(MakeSecret(tid)) split(WaitInner(buffer, tid))
+    syntax: split(WaitInner(buffer, tid))
+#991 an earlier operand of an operation that does not split
+  SuspendingCallFrameSadPath.cs SpillOwner.SpillF: => SpillUse(SpillMake(data), SpillWait(data))
+    ir:     spill(SpillMake(data)) split(SpillWait(data))
+    syntax: split(SpillWait(data))
 #991 an earlier operand of an operation that does not split + #991 the read of a compound assignment target
   IrSpillPlannerCases.cs Cases.CompoundThenReadSameElement: r[l] = Triple(a[l] += Warp.ShuffleSync(0xffffffffu, x, 0), a[l], Warp.ShuffleSync(0xffffffffu, y, 0));
     ir:     spill(a[l]) split(Warp.ShuffleSync(0xffffffffu, x, 0)) spill(a[l] += Warp.ShuffleSync(0xffffffffu, x, 0)) spill(a[l]) split(Warp.ShuffleSync(0xffffffffu, y, 0))

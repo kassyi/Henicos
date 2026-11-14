@@ -55,7 +55,12 @@ public static partial class PrivateFrameTypeKernels
     // frame of SpillFunction keeps across SpillWait, though no local, parameter or return value of the function has the
     // type of the struct
     [GpuDeviceFunction]
-    private static State SpillMake(int[] data) => new State { X = data[ThreadIndex.X] * 2 };
+    private static State SpillMake(int[] data)
+    {
+        State state;
+        state.X = data[ThreadIndex.X] * 2;
+        return state;
+    }
 
     [GpuDeviceFunction]
     private static int SpillUse(State state, int waited) => state.X + waited;
