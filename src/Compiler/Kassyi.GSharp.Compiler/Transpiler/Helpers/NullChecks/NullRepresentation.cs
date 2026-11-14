@@ -209,34 +209,45 @@ internal static class NullRepresentation
 
     /// <summary>
     /// Emits <c>&lt;left&gt; ??= &lt;right&gt;</c>:
-    /// <c>([&amp;]() -> decltype(auto) {
-    /// auto&amp; t = &lt;left&gt;; return !t.HasValue ? (t = &lt;right&gt;) : t.Value;
-    /// })()</c>.
+    /// <c>([&amp;]() {
+    /// auto&amp; t = &lt;left&gt;; return !t.HasValue ? (t = &lt;right&gt;).Value : t.Value;
+    /// })()</c>, whose value has the type C# gives it: the underlying type when <paramref name="node"/> is a
+    /// <c>Nullable&lt;T&gt;</c> target whose right side converts to <c>T</c> (#1101), the nullable type otherwise
+    /// (<c>!t.HasValue ? (t = &lt;right&gt;) : t</c>). The lambda returns a copy, as C# reads the value once.
     /// </summary>
     /// <remarks>
     /// An array is tested by its <c>data</c> pointer and is the value itself (#880):
     /// <c>return t.data == nullptr ? (t = &lt;right&gt;) : t;</c>.
     /// </remarks>
-    public static void AppendCoalesceAssignment(ExpressionSyntax left, ExpressionSyntax right,
-        ref TranspileContext context)
+    public static void AppendCoalesceAssignment(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
         const string target = GSharpInternalNames.Lowering.CoalesceTarget;
-        var isArray = context.Query.SemanticModel.GetTypeSymbol(left) is { } leftType && leftType.IsArrayLikeType();
-        using (context.Emitter.Writer.ImmediatelyInvokedLambda("decltype(auto)"))
+        var model = context.Query.SemanticModel;
+        // No type, no shape: writing the nullable form for an unresolved type would fail the C++ build far from the cause
+        var targetType = model.GetTypeSymbol(node.Left) ?? throw new InvalidOperationException(
+            $"The type of the ??= target '{node.Left}' did not resolve.");
+        var valueType = model.GetTypeSymbol(node) ?? throw new InvalidOperationException(
+            $"The type of the ??= expression '{node}' did not resolve.");
+        var isArray = targetType.IsArrayLikeType();
+        var valueIsUnderlying = !isArray && !valueType.IsEqualTo(targetType) &&
+                                valueType.IsEqualTo(targetType.UnwrapNullable());
+        var nullTest = isArray ? $"{target}.data == nullptr" : $"!{target}.HasValue";
+        var valueSuffix = valueIsUnderlying ? ".Value" : "";
+
+        using (context.Emitter.Writer.ImmediatelyInvokedLambda(isArray ? "decltype(auto)" : null))
         {
             context.Emitter.Writer.Append($"auto& {target} = ");
-            context.Visitor.Visit(left);
+            context.Visitor.Visit(node.Left);
             context.Emitter.Writer.AppendLine(";");
 
-            context.Emitter.Writer.Append(
-                $"return {(isArray ? "" : "!")}{target}{(isArray ? ".data == nullptr" : ".HasValue")} ? ");
+            context.Emitter.Writer.Append($"return {nullTest} ? ");
             using (context.Emitter.Writer.Parentheses())
             {
                 context.Emitter.Writer.Append($"{target} = ");
-                context.Visitor.Visit(right);
+                context.Visitor.Visit(node.Right);
             }
 
-            context.Emitter.Writer.AppendLine($" : {target}{(isArray ? "" : ".Value")};");
+            context.Emitter.Writer.AppendLine($"{valueSuffix} : {target}{valueSuffix};");
         }
     }
 }
