@@ -99,32 +99,62 @@
   </ItemGroup>
 
   <!-- Each target below that runs the generator lists it among its inputs, so a change of what it writes regenerates
-       the sources, and empties its output directory first, so files that it no longer writes are not compiled. -->
+       the sources. The generator writes a fresh <name>.new directory, which then replaces the output directory: files
+       that it no longer writes are not compiled, and a build reading the output meanwhile never finds it empty while
+       the generator runs, only for the moment of the move. -->
   <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles);$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
+    <RemoveDir Directories="$(IntermediateOutputPath)GeneratedDialects.new" />
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedDialects.new" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; dialects &quot;$(MSBuildThisFileDirectory)Dialects&quot; &quot;$(IntermediateOutputPath)GeneratedDialects.new&quot;" />
+    <ItemGroup>
+      <_GSharpGeneratedDialects Include="$(IntermediateOutputPath)GeneratedDialects.new\*" />
+    </ItemGroup>
     <RemoveDir Directories="$(IntermediateOutputPath)GeneratedDialects" />
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedDialects" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; dialects &quot;$(MSBuildThisFileDirectory)Dialects&quot; &quot;$(IntermediateOutputPath)GeneratedDialects&quot;" />
+    <Move SourceFiles="@(_GSharpGeneratedDialects)" DestinationFolder="$(IntermediateOutputPath)GeneratedDialects" />
+    <RemoveDir Directories="$(IntermediateOutputPath)GeneratedDialects.new" />
     <Touch Files="$(IntermediateOutputPath)GeneratedDialects.stamp" AlwaysCreate="true" />
   </Target>
 
   <Target Name="GenerateDiagnostics" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)Diagnostics\diagnostics.json;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedDiagnostics.stamp">
+    <RemoveDir Directories="$(IntermediateOutputPath)GeneratedDiagnostics.new" />
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedDiagnostics.new" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; diagnostics &quot;$(MSBuildThisFileDirectory)Diagnostics/diagnostics.json&quot; &quot;$(IntermediateOutputPath)GeneratedDiagnostics.new&quot;" />
+    <ItemGroup>
+      <_GSharpGeneratedDiagnostics Include="$(IntermediateOutputPath)GeneratedDiagnostics.new\*" />
+    </ItemGroup>
     <RemoveDir Directories="$(IntermediateOutputPath)GeneratedDiagnostics" />
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedDiagnostics" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; diagnostics &quot;$(MSBuildThisFileDirectory)Diagnostics/diagnostics.json&quot; &quot;$(IntermediateOutputPath)GeneratedDiagnostics&quot;" />
+    <Move SourceFiles="@(_GSharpGeneratedDiagnostics)" DestinationFolder="$(IntermediateOutputPath)GeneratedDiagnostics" />
+    <RemoveDir Directories="$(IntermediateOutputPath)GeneratedDiagnostics.new" />
     <Touch Files="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" AlwaysCreate="true" />
   </Target>
 
   <Target Name="GeneratePrelude" BeforeTargets="CoreCompile" Inputs="@(PreludeResourceFiles);$(MSBuildThisFileDirectory)Resources\InternalNames.yml;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedPrelude.stamp">
+    <RemoveDir Directories="$(IntermediateOutputPath)GeneratedPrelude.new" />
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedPrelude.new" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; prelude &quot;$(MSBuildThisFileDirectory)Resources&quot; &quot;$(IntermediateOutputPath)GeneratedPrelude.new&quot;" />
+    <ItemGroup>
+      <_GSharpGeneratedPrelude Include="$(IntermediateOutputPath)GeneratedPrelude.new\*" />
+    </ItemGroup>
     <RemoveDir Directories="$(IntermediateOutputPath)GeneratedPrelude" />
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedPrelude" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; prelude &quot;$(MSBuildThisFileDirectory)Resources&quot; &quot;$(IntermediateOutputPath)GeneratedPrelude&quot;" />
+    <Move SourceFiles="@(_GSharpGeneratedPrelude)" DestinationFolder="$(IntermediateOutputPath)GeneratedPrelude" />
+    <RemoveDir Directories="$(IntermediateOutputPath)GeneratedPrelude.new" />
     <Touch Files="$(IntermediateOutputPath)GeneratedPrelude.stamp" AlwaysCreate="true" />
   </Target>
 
   <Target Name="GenerateInternalNames" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)Resources\InternalNames.yml;@(PreludeResourceFiles);$(MSBuildThisFileDirectory)..\..\Core\Kassyi.GSharp.Core\ManagedGpuContext.cs;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedInternalNames.stamp">
+    <RemoveDir Directories="$(IntermediateOutputPath)GeneratedInternalNames.new" />
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedInternalNames.new" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; internal-names &quot;$(MSBuildThisFileDirectory)Resources/InternalNames.yml&quot; &quot;$(MSBuildThisFileDirectory)Resources/Prelude&quot; &quot;$(MSBuildThisFileDirectory)../../Core/Kassyi.GSharp.Core&quot; &quot;$(IntermediateOutputPath)GeneratedInternalNames.new&quot;" />
+    <ItemGroup>
+      <_GSharpGeneratedInternalNames Include="$(IntermediateOutputPath)GeneratedInternalNames.new\*" />
+    </ItemGroup>
     <RemoveDir Directories="$(IntermediateOutputPath)GeneratedInternalNames" />
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedInternalNames" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; internal-names &quot;$(MSBuildThisFileDirectory)Resources/InternalNames.yml&quot; &quot;$(MSBuildThisFileDirectory)Resources/Prelude&quot; &quot;$(MSBuildThisFileDirectory)../../Core/Kassyi.GSharp.Core&quot; &quot;$(IntermediateOutputPath)GeneratedInternalNames&quot;" />
+    <Move SourceFiles="@(_GSharpGeneratedInternalNames)" DestinationFolder="$(IntermediateOutputPath)GeneratedInternalNames" />
+    <RemoveDir Directories="$(IntermediateOutputPath)GeneratedInternalNames.new" />
     <Touch Files="$(IntermediateOutputPath)GeneratedInternalNames.stamp" AlwaysCreate="true" />
   </Target>
 
