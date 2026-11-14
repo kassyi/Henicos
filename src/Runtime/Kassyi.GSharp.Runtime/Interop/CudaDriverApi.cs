@@ -35,7 +35,13 @@ public static partial class CudaDriverApi
         /// <summary>The shared memory in bytes that the system reserves for each block on top of the user's.</summary>
         ReservedSharedMemoryPerBlock = 111,
         CanUse64BitStreamMemOps = 122,
-        CanUseStreamWaitValueNor = 123
+        CanUseStreamWaitValueNor = 123,
+        /// <summary>
+        /// The shared memory per block in bytes that a function may use in the oversized shared memory mode (static
+        /// plus dynamic). A GPU without an oversized configuration may return its opt-in limit
+        /// (<see cref="MaxSharedMemoryPerBlockOptin"/>), so only a larger value means it has one.
+        /// </summary>
+        MaxOversizedSharedMemoryPerBlock = 150
     }
 }
 
