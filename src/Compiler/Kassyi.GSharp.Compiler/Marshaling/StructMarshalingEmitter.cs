@@ -69,7 +69,7 @@ internal static class StructMarshalingEmitter
 
         var structLayout = TypeLayoutCalculator.GetStructLayout(s, dialect);
         using var writer = new SourceWriter();
-        NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout, launcherAssembly);
+        NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout, dialect, launcherAssembly);
         StructMarshalMethodEmitter.WriteMarshalMethod(writer, s, structLayout, dialect, launcherAssembly);
         StructUnmarshalMethodEmitter.WriteUnmarshalMethod(writer, s, structLayout, dialect, launcherAssembly);
         if (!dialect.IsCuda)
@@ -142,7 +142,8 @@ internal static class StructMarshalingEmitter
             marshaledType.TryGetArrayLikeElementType(out var element) && KernelParameterShape.IsConverted(element, dialect)
                 ? element
                 : type,
-            structs);
+            structs,
+            dialect);
     }
 
     // [WHY] The auto result array of a kernel that returns a user struct or a Nullable<T> is read back like an [Out]
@@ -153,7 +154,7 @@ internal static class StructMarshalingEmitter
     {
         if (KernelParameterShape.IsConvertedReturn(returnType, dialect))
         {
-            HostShadowStructs.Collect(returnType, structs);
+            HostShadowStructs.Collect(returnType, structs, dialect);
         }
     }
 

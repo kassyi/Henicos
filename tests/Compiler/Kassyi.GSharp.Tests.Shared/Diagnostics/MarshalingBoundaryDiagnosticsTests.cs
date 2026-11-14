@@ -113,12 +113,13 @@ public sealed class MarshalingBoundaryDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.FieldTypeHasNoDeviceRepresentation.Id));
     }
 
-    // Nullable<DeepStruct> parameter where struct has an array field (#972) -> GSH0078
-    [Theory(Skip = "Nullable<DeepStruct> parameter is not diagnosed (#972)")]
+    // Nullable<DeepStruct> parameter where the struct has an array field (#972): converted through the shadow of its
+    // Nullable, whose Marshal_ marshals the value's array, so nothing is reported
+    [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task NullableDeepStructParameter_NullableComplexStruct_ReportsGsh0078(string dialect)
+    [Scenario(TestScenario.HappyPath)]
+    public async Task NullableDeepStructParameter_NullableComplexStruct_ConvertsWithoutDiagnostic(string dialect)
     {
         const string source = """
             using Kassyi.GSharp.Core;
@@ -141,10 +142,15 @@ public sealed class MarshalingBoundaryDiagnosticsTests
             }
             """;
 
-        var diagnostics = await KernelDiagnostics.RunAsync(source, dialect);
-        Assert.Equal(
-            [(DiagnosticOrigin.Analyzer, 15, 46, 15, 61)],
-            diagnostics.Ranges(GSharpDiagnostics.StructLayoutNotRepresentable.Id));
+        var run = await KernelDiagnostics.RunCompilationAsync(RoslynTestUtility.CreateCompilation(source), dialect);
+        var generated = string.Join("
+", run.Output.SyntaxTrees.Select(static t => t.ToString()));
+
+        Assert.DoesNotContain(run.Analyzer, static d => d.Id == GSharpDiagnostics.StructLayoutNotRepresentable.Id);
+        Assert.DoesNotContain(run.Generator, static d => d.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(
+            "Marshal___gsharp_nullable_of_DeepBag(ref optBag, ref ", generated, System.StringComparison.Ordinal);
+        Assert.Contains("Marshal_DeepBag(ref value, ref native.Value, ", generated, System.StringComparison.Ordinal);
     }
 
     // Returning an unmapped BCL struct (DateTime) reports GSH0004 at the kernel name (regression test for #1007)

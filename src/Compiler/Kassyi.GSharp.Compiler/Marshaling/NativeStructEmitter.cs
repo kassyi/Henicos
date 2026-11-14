@@ -6,11 +6,12 @@ internal static class NativeStructEmitter
     /// <summary>Emits the explicit struct declaration with computed field offsets for <paramref name="dialect"/>.</summary>
     internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s,
         ITranspilerDialect dialect, IAssemblySymbol launcherAssembly) =>
-        WriteNativeStructDeclaration(writer, s, TypeLayoutCalculator.GetStructLayout(s, dialect), launcherAssembly);
+        WriteNativeStructDeclaration(writer, s, TypeLayoutCalculator.GetStructLayout(s, dialect), dialect,
+            launcherAssembly);
 
     /// <summary>Emits the explicit struct declaration with computed field offsets from <paramref name="structLayout"/>.</summary>
     internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s,
-        StructLayoutInfo structLayout, IAssemblySymbol launcherAssembly)
+        StructLayoutInfo structLayout, ITranspilerDialect dialect, IAssemblySymbol launcherAssembly)
     {
         var parents = AotHostNames.GetEnclosingCustomStructs(s);
 
@@ -41,7 +42,7 @@ internal static class NativeStructEmitter
                 writer.AppendLine("\";");
                 writer.AppendLine($"[{HostTypeNames.FieldOffset}({offset})]");
 
-                MapToNativeField(writer, field, fieldLayout.Size);
+                MapToNativeField(writer, field, fieldLayout.Size, dialect);
             }
 
             if (NeedsHostMirror(s, structLayout, launcherAssembly))
@@ -222,7 +223,8 @@ internal static class NativeStructEmitter
         member.Kind == StructAbiMemberKind.UnknownHiddenField ||
         (member.Type.IsReferenceType && !member.Type.IsArrayLikeType());
 
-    private static void MapToNativeField(SourceWriter writer, StructAbiMember field, int fieldSize)
+    private static void MapToNativeField(SourceWriter writer, StructAbiMember field, int fieldSize,
+        ITranspilerDialect dialect)
     {
         if (field.Kind is StructAbiMemberKind.FixedBuffer or StructAbiMemberKind.InlineArrayElement)
         {
@@ -233,7 +235,7 @@ internal static class NativeStructEmitter
         {
             writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {field.Name.ToCSharpIdentifier()};");
         }
-        else if (HostShadowStructs.Has(field.Type))
+        else if (HostShadowStructs.UsesShadow(field.Type, dialect))
         {
             writer.Append("public ");
             writer.AppendAotStructPath(field.Type);

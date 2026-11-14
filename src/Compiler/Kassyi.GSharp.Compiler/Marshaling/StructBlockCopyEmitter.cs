@@ -167,7 +167,7 @@ internal static class StructBlockCopyEmitter
     internal static void WriteArrayElementSize(SourceWriter writer, string host, ITypeSymbol elementType)
     {
         writer.Append($"int size = checked({host}.Length * sizeof(");
-        if (HostShadowStructs.Has(elementType))
+        if (HostShadowStructs.UsesShadow(elementType, HostDialects.Cuda))
         {
             writer.AppendAotStructPath(elementType);
         }

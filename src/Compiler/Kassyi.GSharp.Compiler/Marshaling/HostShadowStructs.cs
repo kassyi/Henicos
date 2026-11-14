@@ -39,6 +39,14 @@ internal static class HostShadowStructs
     }
 
     /// <summary>
+    /// Whether the marshaling of a member, or of an element of an array member, under <paramref name="dialect"/> goes
+    /// through the shadow of <paramref name="type"/>: every user struct (an identical one through <c>Unsafe.As</c>),
+    /// and a <c>Nullable&lt;T&gt;</c> only when the dialect converts it; an identical <c>int?</c> keeps its bytes.
+    /// </summary>
+    public static bool UsesShadow(ITypeSymbol type, ITranspilerDialect dialect) =>
+        TypeLayoutCalculator.IsUserStruct(type) || (TryGetNullableValue(type, out _) && IsConverted(type, dialect));
+
+    /// <summary>
     /// Whether <paramref name="type"/> has a shadow and its host bytes are not its device bytes under
     /// <paramref name="dialect"/>, so that a launcher converts it member by member through <c>Marshal_</c>.
     /// </summary>
@@ -67,15 +75,27 @@ internal static class HostShadowStructs
 
     /// <summary>
     /// Collects the shadowed types that <paramref name="type"/> reaches: the type itself, the members of a user struct
-    /// (the element of an array-like member), and the value of a <c>Nullable&lt;T&gt;</c>.
+    /// (the element of an array-like member), and the value of a <c>Nullable&lt;T&gt;</c>. A <c>Nullable&lt;T&gt;</c>
+    /// member is collected only when <paramref name="dialect"/> converts it (<see cref="UsesShadow"/>; either dialect
+    /// when <see langword="null"/>), so that an identical one leaves no unused shadow.
     /// </summary>
-    public static void Collect(ITypeSymbol type, HashSet<INamedTypeSymbol> types)
+    public static void Collect(ITypeSymbol type, HashSet<INamedTypeSymbol> types, ITranspilerDialect? dialect = null) =>
+        Collect(type, types, dialect, isMember: false);
+
+    private static void Collect(ITypeSymbol type, HashSet<INamedTypeSymbol> types, ITranspilerDialect? dialect,
+        bool isMember)
     {
         if (TryGetNullableValue(type, out var value))
         {
-            if (types.Add((INamedTypeSymbol)type))
+            var used = !isMember ||
+                       (dialect is null
+                           ? IsConverted(type, HostDialects.Cuda) || IsConverted(type, HostDialects.Cpu)
+                           : IsConverted(type, dialect));
+
+            // The value of an identical Nullable member is copied with its bytes and needs no shadow of its own
+            if (used && types.Add((INamedTypeSymbol)type))
             {
-                Collect(value, types);
+                Collect(value, types, dialect, isMember: false);
             }
 
             return;
@@ -89,7 +109,7 @@ internal static class HostShadowStructs
         foreach (var member in StructAbiMembers.Get((INamedTypeSymbol)type))
         {
             var memberType = member.Type.TryGetArrayLikeElementType(out var element) ? element : member.Type;
-            Collect(memberType, types);
+            Collect(memberType, types, dialect, isMember: true);
         }
     }
 }

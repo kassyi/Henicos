@@ -9,7 +9,8 @@ internal static class NullableLayoutAssertEmitter
 {
     /// <summary>
     /// The <c>Nullable&lt;T&gt;</c> types that cross the boundary as parameters, elements of array-like parameters or
-    /// the return value of <paramref name="kernel"/>, each once, with their device layout under <paramref name="dialect"/>.
+    /// the return value of <paramref name="kernel"/>, each once, with their device layout under
+    /// <paramref name="dialect"/>.
     /// </summary>
     public static ImmutableArray<(ITypeSymbol Type, int Size, int ValueOffset)> Plan(IMethodSymbol kernel,
         ITranspilerDialect dialect)
