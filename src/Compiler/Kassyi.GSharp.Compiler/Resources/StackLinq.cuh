@@ -376,7 +376,7 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 }
             }
             if (site_id != 0) __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, site_id);
-            else __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "Index was out of range.");
+            else __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')");
             return decltype(source.Current())();
         }
 

@@ -81,7 +81,10 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         switch (methodName)
         {
             case "ElementAt":
-                return (table.Register(node, model, memberName, "Index was out of range.", "ElementAt"), 0u);
+                return (
+                    table.Register(node, model, memberName, ArgumentExceptionMessages.ElementAtIndex, "ElementAt"),
+                    0u
+                );
             case "First" when hasPredicate:
                 return (table.Register(node, model, memberName, "Sequence contains no matching element", "First.Predicate"), 0u);
             case "First":

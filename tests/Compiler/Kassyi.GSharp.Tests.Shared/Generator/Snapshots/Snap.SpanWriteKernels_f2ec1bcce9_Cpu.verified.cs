@@ -43,11 +43,54 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1229861131u, "SpanWriteKer
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1653184215u, "SpanWriteKernels.cs", 237, 9, "SpanEmptyAndIsEmptyKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2012172203u, "SpanWriteKernels.cs", 238, 9, "SpanEmptyAndIsEmptyKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1036224839u, "SpanWriteKernels.cs", 239, 9, "SpanEmptyAndIsEmptyKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1464763902u, "SpanWriteKernels.cs", 251, 9, "ArrayFillAndClearKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1556565017u, "SpanWriteKernels.cs", 251, 9, "ArrayFillAndClearKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1933836316u, "SpanWriteKernels.cs", 276, 9, "ArrayCopy3Kernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(812422923u, "SpanWriteKernels.cs", 276, 9, "ArrayCopy3Kernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(141965445u, "SpanWriteKernels.cs", 276, 9, "ArrayCopy3Kernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(720099644u, "SpanWriteKernels.cs", 276, 9, "ArrayCopy3Kernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(121465664u, "SpanWriteKernels.cs", 276, 9, "ArrayCopy3Kernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(502182994u, "SpanWriteKernels.cs", 287, 9, "ArrayCopy5Kernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(651337633u, "SpanWriteKernels.cs", 287, 9, "ArrayCopy5Kernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(498863051u, "SpanWriteKernels.cs", 287, 9, "ArrayCopy5Kernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1393112478u, "SpanWriteKernels.cs", 287, 9, "ArrayCopy5Kernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1378770858u, "SpanWriteKernels.cs", 287, 9, "ArrayCopy5Kernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1073124088u, "SpanWriteKernels.cs", 298, 9, "ArrayCopySameBufferKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1113838535u, "SpanWriteKernels.cs", 298, 9, "ArrayCopySameBufferKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(490988017u, "SpanWriteKernels.cs", 298, 9, "ArrayCopySameBufferKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(611652128u, "SpanWriteKernels.cs", 298, 9, "ArrayCopySameBufferKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(985139876u, "SpanWriteKernels.cs", 298, 9, "ArrayCopySameBufferKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1666383360u, "SpanWriteKernels.cs", 345, 9, "EvaluationOrderSpanWriteKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(632775919u, "SpanWriteKernels.cs", 348, 9, "EvaluationOrderSpanWriteKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1337861418u, "SpanWriteKernels.cs", 348, 9, "EvaluationOrderSpanWriteKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(908986184u, "SpanWriteKernels.cs", 349, 9, "EvaluationOrderSpanWriteKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1305353267u, "SpanWriteKernels.cs", 353, 9, "EvaluationOrderSpanWriteKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1734823298u, "SpanWriteKernels.cs", 353, 9, "EvaluationOrderSpanWriteKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1576640158u, "SpanWriteKernels.cs", 353, 9, "EvaluationOrderSpanWriteKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1862307559u, "SpanWriteKernels.cs", 353, 9, "EvaluationOrderSpanWriteKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(467847505u, "SpanWriteKernels.cs", 353, 9, "EvaluationOrderSpanWriteKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(21819296u, "SpanWriteKernels.cs", 354, 9, "EvaluationOrderSpanWriteKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1702773112u, "SpanWriteKernels.cs", 355, 9, "EvaluationOrderSpanWriteKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1810987299u, "SpanWriteKernels.cs", 377, 9, "OutOfRangeArrayFillKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(578950158u, "SpanWriteKernels.cs", 377, 9, "OutOfRangeArrayFillKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1170083365u, "SpanWriteKernels.cs", 388, 9, "OutOfRangeArrayCopyKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(860176932u, "SpanWriteKernels.cs", 388, 9, "OutOfRangeArrayCopyKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(862778856u, "SpanWriteKernels.cs", 388, 9, "OutOfRangeArrayCopyKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(775900469u, "SpanWriteKernels.cs", 388, 9, "OutOfRangeArrayCopyKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(635034127u, "SpanWriteKernels.cs", 388, 9, "OutOfRangeArrayCopyKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1282122407u, "SpanWriteKernels.cs", 423, 9, "ArrayNullArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1217596163u, "SpanWriteKernels.cs", 430, 13, "ArrayNullArgumentKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(318555182u, "SpanWriteKernels.cs", 430, 13, "ArrayNullArgumentKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1871565674u, "SpanWriteKernels.cs", 450, 13, "ArrayNullArgumentKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(548672441u, "SpanWriteKernels.cs", 450, 13, "ArrayNullArgumentKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1171744739u, "SpanWriteKernels.cs", 450, 13, "ArrayNullArgumentKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2035501350u, "SpanWriteKernels.cs", 450, 13, "ArrayNullArgumentKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(658543890u, "SpanWriteKernels.cs", 450, 13, "ArrayNullArgumentKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2002043332u, "SpanWriteKernels.cs", 454, 13, "ArrayNullArgumentKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(268238483u, "SpanWriteKernels.cs", 454, 13, "ArrayNullArgumentKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1624833901u, "SpanWriteKernels.cs", 454, 13, "ArrayNullArgumentKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1210022836u, "SpanWriteKernels.cs", 454, 13, "ArrayNullArgumentKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1910410168u, "SpanWriteKernels.cs", 454, 13, "ArrayNullArgumentKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1994464411u, "SpanWriteKernels.cs", 457, 9, "ArrayNullArgumentKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -4386,7 +4429,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 __gsharp_state = -1;return;
 }
 __gsharp_array_argument(__gsharp_id_0_a).Fill(5);
-__gsharp_array_argument(__gsharp_id_1_b).AsSpan(2,3, ""G#: index was out of range at SpanWriteKernels.cs(251,9)"").Fill(8);
+__gsharp_array_argument(__gsharp_id_1_b).AsSpan(2,3, 1464763902u, 1556565017u).Fill(8);
 __gsharp_array_argument(__gsharp_id_2_c).Clear();
 __gsharp_array_argument(__gsharp_id_3_d).AsSpan<GSharpErrorCode::IndexOutOfRange>(1,4, ""G#: index was outside the bounds of the array at SpanWriteKernels.cs(253,9)"").Clear();
 __gsharp_state=-1;
@@ -4641,6 +4684,10 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ArrayFillAndClearKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ArrayFillAndClearKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__ArrayFillAndClearKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
 fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(b))
 fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(c))
@@ -4949,7 +4996,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_copy_arguments(__gsharp_id_0_src,__gsharp_id_1_dst).AsSpan<GSharpErrorCode::Argument>(0,__gsharp_id_2_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(276,9)"").CopyTo(__gsharp_id_1_dst.AsSpan<GSharpErrorCode::Argument>(0,__gsharp_id_2_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(276,9)""));
+__gsharp_copy_arguments(__gsharp_id_0_src,__gsharp_id_1_dst).CopySlice(0,__gsharp_id_2_length, 1933836316u, 812422923u, 141965445u).CopyTo(__gsharp_id_1_dst.CopySlice(0,__gsharp_id_2_length, 1933836316u, 720099644u, 121465664u));
 __gsharp_state=-1;
 return;
 }
@@ -5198,6 +5245,10 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ArrayCopy3Kernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ArrayCopy3Kernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__ArrayCopy3Kernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(src))
 fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(dst))
 {
@@ -5226,7 +5277,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_copy_arguments(__gsharp_id_0_src,__gsharp_id_2_dst).AsSpan<GSharpErrorCode::Argument>(__gsharp_id_1_srcIdx,__gsharp_id_4_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(287,9)"").CopyTo(__gsharp_id_2_dst.AsSpan<GSharpErrorCode::Argument>(__gsharp_id_3_dstIdx,__gsharp_id_4_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(287,9)""));
+__gsharp_copy_arguments(__gsharp_id_0_src,__gsharp_id_2_dst).CopySlice(__gsharp_id_1_srcIdx,__gsharp_id_4_length, 502182994u, 651337633u, 498863051u).CopyTo(__gsharp_id_2_dst.CopySlice(__gsharp_id_3_dstIdx,__gsharp_id_4_length, 502182994u, 1393112478u, 1378770858u));
 __gsharp_state=-1;
 return;
 }
@@ -5477,6 +5528,10 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ArrayCopy5Kernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ArrayCopy5Kernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__ArrayCopy5Kernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(src))
 fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(dst))
 {
@@ -5505,7 +5560,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_copy_arguments(__gsharp_id_0_data,__gsharp_id_0_data).AsSpan<GSharpErrorCode::Argument>(__gsharp_id_1_srcIdx,__gsharp_id_3_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(298,9)"").CopyTo(__gsharp_id_0_data.AsSpan<GSharpErrorCode::Argument>(__gsharp_id_2_dstIdx,__gsharp_id_3_length, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(298,9)""));
+__gsharp_copy_arguments(__gsharp_id_0_data,__gsharp_id_0_data).CopySlice(__gsharp_id_1_srcIdx,__gsharp_id_3_length, 1073124088u, 1113838535u, 490988017u).CopyTo(__gsharp_id_0_data.CopySlice(__gsharp_id_2_dstIdx,__gsharp_id_3_length, 1073124088u, 611652128u, 985139876u));
 __gsharp_state=-1;
 return;
 }
@@ -5755,6 +5810,10 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_ArrayCopySameBufferKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ArrayCopySameBufferKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__ArrayCopySameBufferKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(data))
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (data?.Length ?? 0) }, srcIdx, dstIdx, length);
@@ -6621,7 +6680,7 @@ auto __gsharp_seq_3 = __gsharp_id_2_dst2;
 int __gsharp_seq_4 = __gsharp_mul_i32(__gsharp_id_7_j,10);
 int __gsharp_seq_5 = __gsharp_sub_i32((__gsharp_id_7_j=__gsharp_add_i32(__gsharp_id_7_j,1)),1);
 int __gsharp_seq_6 = (__gsharp_id_7_j=__gsharp_add_i32(__gsharp_id_7_j,1));
-return __gsharp_array_argument(__gsharp_seq_3).AsSpan(__gsharp_seq_5,__gsharp_seq_6, ""G#: index was out of range at SpanWriteKernels.cs(348,9)"").Fill(__gsharp_seq_4);
+return __gsharp_array_argument(__gsharp_seq_3).AsSpan(__gsharp_seq_5,__gsharp_seq_6, 632775919u, 1337861418u).Fill(__gsharp_seq_4);
 }());
 __gsharp_array_at(__gsharp_id_4_counters, 1, 908986184u)=__gsharp_id_7_j;
 auto __gsharp_id_8_k = 0;
@@ -6632,7 +6691,7 @@ int __gsharp_seq_8 = __gsharp_sub_i32((__gsharp_id_8_k=__gsharp_add_i32(__gsharp
 auto __gsharp_seq_9 = __gsharp_id_3_dst3;
 int __gsharp_seq_10 = __gsharp_sub_i32((__gsharp_id_8_k=__gsharp_add_i32(__gsharp_id_8_k,1)),1);
 int __gsharp_seq_11 = (__gsharp_id_9_len=__gsharp_add_i32(__gsharp_id_9_len,1));
-return __gsharp_copy_arguments(__gsharp_seq_7,__gsharp_seq_9).AsSpan<GSharpErrorCode::Argument>(__gsharp_seq_8,__gsharp_seq_11, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(353,9)"").CopyTo(__gsharp_seq_9.AsSpan<GSharpErrorCode::Argument>(__gsharp_seq_10,__gsharp_seq_11, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(353,9)""));
+return __gsharp_copy_arguments(__gsharp_seq_7,__gsharp_seq_9).CopySlice(__gsharp_seq_8,__gsharp_seq_11, 1305353267u, 1734823298u, 1576640158u).CopyTo(__gsharp_seq_9.CopySlice(__gsharp_seq_10,__gsharp_seq_11, 1305353267u, 1862307559u, 467847505u));
 }());
 __gsharp_array_at(__gsharp_id_4_counters, 2, 21819296u)=__gsharp_id_8_k;
 __gsharp_array_at(__gsharp_id_4_counters, 3, 1702773112u)=__gsharp_id_9_len;
@@ -7206,7 +7265,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_argument(__gsharp_id_0_a).AsSpan(2,10, ""G#: index was out of range at SpanWriteKernels.cs(377,9)"").Fill(5);
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(2,10, 1810987299u, 578950158u).Fill(5);
 __gsharp_state=-1;
 return;
 }
@@ -7453,6 +7512,10 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_OutOfRangeArrayFillKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_OutOfRangeArrayFillKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeArrayFillKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
 {
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) });
@@ -7480,7 +7543,7 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_copy_arguments(__gsharp_id_0_src,__gsharp_id_1_dst).AsSpan<GSharpErrorCode::Argument>(0,4, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(388,9)"").CopyTo(__gsharp_id_1_dst.AsSpan<GSharpErrorCode::Argument>(2,4, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(388,9)""));
+__gsharp_copy_arguments(__gsharp_id_0_src,__gsharp_id_1_dst).CopySlice(0,4, 1170083365u, 860176932u, 862778856u).CopyTo(__gsharp_id_1_dst.CopySlice(2,4, 1170083365u, 775900469u, 635034127u));
 __gsharp_state=-1;
 return;
 }
@@ -7728,6 +7791,10 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_OutOfRangeArrayCopyKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_OutOfRangeArrayCopyKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__SpanWriteKernels__OutOfRangeArrayCopyKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(src))
 fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(dst))
 {
@@ -8313,7 +8380,7 @@ else
 {
 if(__gsharp_id_2_mode==1)
 {
-__gsharp_array_argument(__gsharp_id_0_a).AsSpan(0,0, ""G#: index was out of range at SpanWriteKernels.cs(430,13)"").Fill(5);
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(0,0, 1217596163u, 318555182u).Fill(5);
 }
 else
 {
@@ -8343,11 +8410,11 @@ else
 {
 if(__gsharp_id_2_mode==6)
 {
-__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_b).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(450,13)"").CopyTo(__gsharp_id_1_b.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(450,13)""));
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_b).CopySlice(0,0, 1871565674u, 548672441u, 1171744739u).CopyTo(__gsharp_id_1_b.CopySlice(0,0, 1871565674u, 2035501350u, 658543890u));
 }
 else
 {
-__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_b).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(454,13)"").CopyTo(__gsharp_id_1_b.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at SpanWriteKernels.cs(454,13)""));
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_b).CopySlice(0,0, 2002043332u, 268238483u, 1624833901u).CopyTo(__gsharp_id_1_b.CopySlice(0,0, 2002043332u, 1210022836u, 1910410168u));
 }
 }
 }

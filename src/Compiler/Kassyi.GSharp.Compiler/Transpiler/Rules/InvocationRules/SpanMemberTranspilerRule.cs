@@ -361,10 +361,8 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
                 WriteArrayReverse3(node, operands, temps, ref context);
                 break;
             case CallShape.ArrayCopy3:
-                WriteArrayCopy3(node, operands, temps, ref context);
-                break;
             case CallShape.ArrayCopy5:
-                WriteArrayCopy5(node, operands, temps, ref context);
+                WriteArrayCopy(node, kind, operands, temps, ref context);
                 break;
         }
     }
@@ -460,7 +458,13 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
             WriteOperand(operands, temps, 2, ref context);
             writer.Append(',');
             WriteOperand(operands, temps, 3, ref context);
-            AppendRangeMessage(writer, SliceErrorCode.ArgumentOutOfRange, node, ref context);
+            ArgumentCheckSite.Append(
+                writer,
+                [
+                    ArgumentCheckSite.Plan(
+                        node, ArgumentExceptionMessages.FillStartIndex, "Array.Fill.StartIndex", ref context),
+                    ArgumentCheckSite.Plan(node, ArgumentExceptionMessages.FillCount, "Array.Fill.Count", ref context),
+                ]);
         }
 
         writer.Append(".Fill");
@@ -510,65 +514,58 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         writer.Append(".Reverse()");
     }
 
-    private static void WriteArrayCopy3(
+    // <source>.CopySlice(<start>, <length>, <sites>).CopyTo(<destination>.CopySlice(<start>, <length>, <sites>)): the
+    // operands of Array.Copy(source, destination, length) or Array.Copy(source, sourceIndex, destination,
+    // destinationIndex, length); a start the call does not have is 0
+    private static void WriteArrayCopy(
         InvocationExpressionSyntax node,
+        SpanMemberKind kind,
         ReadOnlySpan<Operand> operands,
         ReadOnlySpan<int> temps,
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        WriteArrayOperand(SpanMemberKind.ArrayCopy3, operands, temps, ref context);
-        writer.Append(".AsSpan<GSharpErrorCode::Argument>");
-        using (writer.Parentheses())
-        {
-            writer.Append("0,");
-            WriteOperand(operands, temps, 2, ref context);
-            AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
-        }
+        var hasIndexes = kind == SpanMemberKind.ArrayCopy5;
+        var destination = hasIndexes ? 2 : 1;
+        var length = hasIndexes ? 4 : 2;
+        var sourceSide = ArgumentCheckSite.PlanCopySide(node, isSource: true, ref context);
+        var destinationSide = ArgumentCheckSite.PlanCopySide(node, isSource: false, ref context);
 
+        WriteArrayOperand(kind, operands, temps, ref context);
+        WriteCopySlice(writer, hasIndexes ? 1 : -1, length, sourceSide, operands, temps, ref context);
         writer.Append(".CopyTo");
         using (writer.Parentheses())
         {
-            WriteOperand(operands, temps, 1, ref context);
-            writer.Append(".AsSpan<GSharpErrorCode::Argument>");
-            using (writer.Parentheses())
-            {
-                writer.Append("0,");
-                WriteOperand(operands, temps, 2, ref context);
-                AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
-            }
+            WriteOperand(operands, temps, destination, ref context);
+            WriteCopySlice(writer, hasIndexes ? 3 : -1, length, destinationSide, operands, temps, ref context);
         }
     }
 
-    private static void WriteArrayCopy5(
-        InvocationExpressionSyntax node,
+    // .CopySlice(<start>, <length>, <length site>, <index site>, <range site>); start is an operand, or -1 for 0
+    private static void WriteCopySlice(
+        SourceWriter writer,
+        int start,
+        int length,
+        in ArgumentCheckSite.CopySide side,
         ReadOnlySpan<Operand> operands,
         ReadOnlySpan<int> temps,
         ref TranspileContext context)
     {
-        var writer = context.Emitter.Writer;
-        WriteArrayOperand(SpanMemberKind.ArrayCopy5, operands, temps, ref context);
-        writer.Append(".AsSpan<GSharpErrorCode::Argument>");
+        writer.Append(".CopySlice");
         using (writer.Parentheses())
         {
-            WriteOperand(operands, temps, 1, ref context);
-            writer.Append(',');
-            WriteOperand(operands, temps, 4, ref context);
-            AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
-        }
-
-        writer.Append(".CopyTo");
-        using (writer.Parentheses())
-        {
-            WriteOperand(operands, temps, 2, ref context);
-            writer.Append(".AsSpan<GSharpErrorCode::Argument>");
-            using (writer.Parentheses())
+            if (start < 0)
             {
-                WriteOperand(operands, temps, 3, ref context);
-                writer.Append(',');
-                WriteOperand(operands, temps, 4, ref context);
-                AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
+                writer.Append('0');
             }
+            else
+            {
+                WriteOperand(operands, temps, start, ref context);
+            }
+
+            writer.Append(',');
+            WriteOperand(operands, temps, length, ref context);
+            ArgumentCheckSite.Append(writer, side);
         }
     }
 

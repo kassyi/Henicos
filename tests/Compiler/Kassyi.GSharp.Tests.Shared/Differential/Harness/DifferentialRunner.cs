@@ -362,7 +362,12 @@ public static partial class DifferentialRunner
             expected = RunOracleOrders(testCase, oracle, initial, shape, seed, out var thrown);
             if (thrown is not null)
             {
-                matchedExceptionPolicy = new ExceptionPolicy(thrown.GetType(), testCase.ExceptionPaths);
+                matchedExceptionPolicy = new ExceptionPolicy(thrown.GetType(), testCase.ExceptionPaths)
+                {
+                    // C# names the parameter of an argument exception, or none; every path has to do the same
+                    ParamName = (thrown as ArgumentException)?.ParamName,
+                    ParamNameIsExact = thrown is ArgumentException,
+                };
                 afterException = expected;
                 return null;
             }

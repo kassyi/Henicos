@@ -70,7 +70,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(347600120u, "BclExceptionD
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(588156921u, "BclExceptionDifferentialKernels.cs", 299, 9, "StackLinqAggregateKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(311304607u, "BclExceptionDifferentialKernels.cs", 299, 57, "StackLinqAggregateKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(344092521u, "BclExceptionDifferentialKernels.cs", 313, 9, "StackLinqElementAtKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(940680236u, "BclExceptionDifferentialKernels.cs", 313, 18, "StackLinqElementAtKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(940680236u, "BclExceptionDifferentialKernels.cs", 313, 18, "StackLinqElementAtKernel", "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(177545301u, "BclExceptionDifferentialKernels.cs", 313, 54, "StackLinqElementAtKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(800531933u, "BclExceptionDifferentialKernels.cs", 343, 9, "ElementAtOrDefaultNegativeIndexSideEffectKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(384339357u, "BclExceptionDifferentialKernels.cs", 344, 9, "ElementAtOrDefaultNegativeIndexSideEffectKernel", "G#: a null array is read"),
