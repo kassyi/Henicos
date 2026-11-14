@@ -31,6 +31,7 @@ public partial class GridSyncModeKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1598496439u, "GridSyncModeKernels.cs", 25, 20, "EveryModeSpellingKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1451716197u, "GridSyncModeKernels.cs", 26, 9, "EveryModeSpellingKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(583055091u, "GridSyncModeKernels.cs", 28, 19, "EveryModeSpellingKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1131484199u, "GridSyncModeKernels.cs", 30, 9, "EveryModeSpellingKernel", "G#: a null array is read"),
@@ -38,6 +39,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2016530571u, "GridSyncMode
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(269260423u, "GridSyncModeKernels.cs", 34, 9, "EveryModeSpellingKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(867122431u, "GridSyncModeKernels.cs", 36, 9, "EveryModeSpellingKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(985621917u, "GridSyncModeKernels.cs", 36, 29, "EveryModeSpellingKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(31345211u, "GridSyncModeKernels.cs", 46, 20, "FastInsideBodyKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1598131066u, "GridSyncModeKernels.cs", 50, 13, "FastInsideBodyKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1857548403u, "GridSyncModeKernels.cs", 51, 19, "FastInsideBodyKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(610032762u, "GridSyncModeKernels.cs", 53, 13, "FastInsideBodyKernel", "G#: a null array is read"),
@@ -45,6 +47,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1031772478u, "GridSyncMode
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(429410227u, "GridSyncModeKernels.cs", 56, 9, "FastInsideBodyKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(147040181u, "GridSyncModeKernels.cs", 64, 9, "DeterministicOnlyKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2004494647u, "GridSyncModeKernels.cs", 72, 9, "FastOnlyKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1707960515u, "GridSyncModeKernels.cs", 84, 24, "FastRoundsKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1756057714u, "GridSyncModeKernels.cs", 89, 13, "FastRoundsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1182940490u, "GridSyncModeKernels.cs", 89, 32, "FastRoundsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1644845980u, "GridSyncModeKernels.cs", 100, 21, "FailBeforeFastGridSyncKernel", "Non-exhaustive switch expression failed to match its input."),
@@ -89,7 +92,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_threads=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-__gsharp_ctx->__gsharp_id_4_next=(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,(int)blockDim.x))%__gsharp_ctx->__gsharp_id_2_threads;
+__gsharp_ctx->__gsharp_id_4_next=__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,(int)blockDim.x),__gsharp_ctx->__gsharp_id_2_threads,1598496439u);
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_values, __gsharp_ctx->__gsharp_id_3_tid, 1451716197u)=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1);
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=1;
@@ -281,7 +284,7 @@ case 0:
 {
 __gsharp_ctx.threads = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.next = (__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X) % __gsharp_ctx.threads;
+__gsharp_ctx.next = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X), __gsharp_ctx.threads);
 __gsharp_ctx.values[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
@@ -524,7 +527,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_threads=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-__gsharp_ctx->__gsharp_id_4_next=(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,(int)blockDim.x))%__gsharp_ctx->__gsharp_id_2_threads;
+__gsharp_ctx->__gsharp_id_4_next=__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,(int)blockDim.x),__gsharp_ctx->__gsharp_id_2_threads,31345211u);
 __gsharp_ctx->__gsharp_id_5_sum=0;
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_values, __gsharp_ctx->__gsharp_id_3_tid, 1598131066u)=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,1);
 __gsharp_yielded_for_grid_sync=true;
@@ -702,7 +705,7 @@ case 0:
 {
 __gsharp_ctx.threads = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.next = (__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X) % __gsharp_ctx.threads;
+__gsharp_ctx.next = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X), __gsharp_ctx.threads);
 __gsharp_ctx.sum = 0;
 __gsharp_ctx.values[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
@@ -1641,7 +1644,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_threads=__gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-__gsharp_ctx->__gsharp_id_4_neighbor=(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,(int)blockDim.x))%__gsharp_ctx->__gsharp_id_2_threads;
+__gsharp_ctx->__gsharp_id_4_neighbor=__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,(int)blockDim.x),__gsharp_ctx->__gsharp_id_2_threads,1707960515u);
 __gsharp_ctx->__gsharp_id_5_round=0;
 goto __gsharp_switch_1_state_1;
 }
@@ -1826,7 +1829,7 @@ case 0:
 {
 __gsharp_ctx.threads = global::Kassyi.GSharp.Core.GridDimension.X * global::Kassyi.GSharp.Core.BlockDimension.X;
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_ctx.neighbor = (__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X) % __gsharp_ctx.threads;
+__gsharp_ctx.neighbor = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + global::Kassyi.GSharp.Core.BlockDimension.X), __gsharp_ctx.threads);
 __gsharp_ctx.round = 0;
 goto case 1;
 }

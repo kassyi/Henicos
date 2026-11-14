@@ -245,7 +245,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         // The class models come from the kernels of one compilation (#383); each class and the warmup list compare on
         // their own, so an edit reruns only the outputs whose model changed
-        var kernelModule = allKernels.Select(static (kernels, _) => KernelModuleModel.Create(kernels));
+        var kernelModule = allKernels.Combine(configProvider.Select(static (config, _) => config.EmitSource))
+            .Select(static (input, _) => KernelModuleModel.Create(input.Left, input.Right));
         var kernelClasses = kernelModule
             .SelectMany(static (module, _) => module.Classes.AsImmutableArray())
             .WithTrackingName(KernelClassTrackingName);
@@ -705,7 +706,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             DivergentExitOnlyParameters: divergence.ExitOnlyParameters,
             HasExitOnlyBarrier: divergence.HasExitOnlyBarrier,
             ReachesArrivalBarrier: SuspensionAnalysis.ReachesArrivalBarrier(method, compilation),
-            ReachesSharedMemory: CSharpExecutionAnalysis.ReachesSharedMemory(method, compilation));
+            ReachesSharedMemory: CSharpExecutionAnalysis.ReachesSharedMemory(method, compilation),
+            ReachesGeneratedMeaning: CSharpExecutionAnalysis.ReachesGeneratedMeaning(method, compilation));
 
         return new DeviceExportRecord(
             DeviceExportRecord.FunctionKind,

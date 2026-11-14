@@ -72,7 +72,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0056](GSH0056.md) | Error | GPU method name is a C++ keyword (Deprecated) |
 | [GSH0057](GSH0057.md) | Error | Malformed trusted key line |
 | [GSH0058](GSH0058.md) | Error | Two structs share one AotContexts name |
-| [GSH0059](GSH0059.md) | Error | Kernel overloads cannot be told apart by their launch wrappers |
+| [GSH0059](GSH0059.md) | Error | A kernel declares or makes G# generate a member that its class already has |
 | [GSH0060](GSH0060.md) | Error | User-defined operators are not supported in GPU code |
 | [GSH0061](GSH0061.md) | Error | Device functions that reach a barrier cannot be recursive |
 | [GSH0062](GSH0062.md) | Error | A call that suspends at a barrier is not supported in this context |
@@ -116,6 +116,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0113](GSH0113.md) | Error | G# cannot generate the launcher of a [CudaImport] declaration |
 | [GSH0114](GSH0114.md) | Warning | G# has no launch limits for a GSharpTargetArchitectures architecture |
 | [GSH0115](GSH0115.md) | Error | The managed CPU path cannot run a device function that waits at a barrier |
+| [GSH0117](GSH0117.md) | Error | SharedMemory<T> count must not be negative |
 | [SLQ0001](SLQ0001.md) | Error | StackLinq method chain is too deep |
 | [RS0030](RS0030.md) | Error | Banned API used (G# repository builds only) |
 

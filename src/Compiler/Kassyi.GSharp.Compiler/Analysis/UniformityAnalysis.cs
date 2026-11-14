@@ -280,8 +280,7 @@ internal sealed class UniformityAnalysis
     public CalleeVariance Summarize() => _state.Reader.Summarize();
 
     /// <inheritdoc cref="UniformityValueReader.GetCalleeSummary"/>
-    public CalleeVariance GetCalleeSummary(IMethodSymbol callee, MethodDeclarationSyntax declaration,
-        ArgumentMasks masks) =>
+    public CalleeVariance GetCalleeSummary(IMethodSymbol callee, SyntaxNode declaration, ArgumentMasks masks) =>
         _state.Reader.GetCalleeSummary(callee, declaration, masks);
 
     private static UniformityAnalysis Run(UniformityState state)
