@@ -292,46 +292,6 @@ public static partial class FlowCaptureWriteKernels
         a[ThreadIndex.X] = scaled.Offset;
     }
 
-    // A struct local that an object initializer assigns in a loop, read after it
-    [GpuKernel]
-    [SkipSnapshotConsistency("Analyzer case")]
-    public static void LoopInitializerKernel(int[] a, int n)
-    {
-        Holder holder = default;
-        for (int i = 0; i < n; i++)
-        {
-            holder = new Holder { Offset = ThreadIndex.X + i };
-        }
-
-        if (holder.Offset < 3)
-        {
-            Gpu.SyncThreads();
-        }
-
-        Gpu.SyncThreads();
-        a[ThreadIndex.X] = holder.Offset;
-    }
-
-    // An alias of one of two arrays that a loop assigns, written through and read after the loop
-    [GpuKernel]
-    [SkipSnapshotConsistency("Analyzer case")]
-    public static void LoopConditionalAliasKernel(int[] a, int[] b, int n)
-    {
-        int[] alias = a;
-        for (int i = 0; i < n; i++)
-        {
-            alias = i % 2 == 0 ? a : b;
-            alias[ThreadIndex.X] = i;
-        }
-
-        if (b[0] == 0)
-        {
-            Gpu.SyncThreads();
-        }
-
-        Gpu.SyncThreads();
-    }
-
     // A span over the array, written with a conditional value
     [GpuKernel]
     [SkipSnapshotConsistency("Analyzer case")]

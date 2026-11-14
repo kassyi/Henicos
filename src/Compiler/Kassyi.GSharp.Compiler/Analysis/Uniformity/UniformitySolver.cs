@@ -330,13 +330,11 @@ internal sealed class UniformitySolver(UniformityState state)
 
     private void WriteCompound(ICompoundAssignmentOperation compound, ControlFlowGraph graph, ThreadVariance[] current,
         SyntaxNode? opaque) =>
-        Assign(compound.Target,
-            state.Reader.Evaluate(compound.Target, graph, current) | state.Reader.Evaluate(compound.Value, graph, current),
-            strong: true, current, opaque);
+        Assign(compound.Target, state.Reader.Evaluate(compound, graph, current), strong: true, current, opaque);
 
     private void WriteIncrement(IIncrementOrDecrementOperation increment, ControlFlowGraph graph,
         ThreadVariance[] current, SyntaxNode? opaque) =>
-        Assign(increment.Target, state.Reader.Evaluate(increment.Target, graph, current), strong: true, current, opaque);
+        Assign(increment.Target, state.Reader.Evaluate(increment, graph, current), strong: true, current, opaque);
 
     // (a, b) = (x, y): each element from its own value when both sides are tuples, from the whole value otherwise
     private void Deconstruct(IOperation target, IOperation value, ControlFlowGraph graph, ThreadVariance[] current,
