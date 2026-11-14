@@ -58,4 +58,40 @@ public sealed class HostArrayCopies
         array = copy;
         return true;
     }
+
+    /// <summary>
+    /// Replaces a <c>Memory&lt;T&gt;</c> with a view of the same length over a new copy of its elements, for a kernel
+    /// whose writes the caller must not see.
+    /// </summary>
+    /// <param name="memory">The view, replaced in place; a view over no memory stays as it is.</param>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <returns>Whether the view was copied, so that the caller copies the arrays its elements hold.</returns>
+    public static bool CopyView<T>(ref Memory<T> memory)
+    {
+        if (ArrayPinning.IsNull(memory.Span))
+        {
+            return false;
+        }
+
+        memory = memory.ToArray();
+        return true;
+    }
+
+    /// <summary>
+    /// Replaces an <c>ArraySegment&lt;T&gt;</c> with a segment over a new copy of its elements, for a kernel whose
+    /// writes the caller must not see.
+    /// </summary>
+    /// <param name="segment">The segment, replaced in place; a segment over no array stays as it is.</param>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <returns>Whether the segment was copied, so that the caller copies the arrays its elements hold.</returns>
+    public static bool CopyView<T>(ref ArraySegment<T> segment)
+    {
+        if (segment.Array is null)
+        {
+            return false;
+        }
+
+        segment = new ArraySegment<T>(segment.AsSpan().ToArray());
+        return true;
+    }
 }

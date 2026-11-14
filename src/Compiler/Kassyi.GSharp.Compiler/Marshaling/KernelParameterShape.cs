@@ -361,7 +361,8 @@ internal readonly record struct KernelParameterShape
 
     // Only reached for an array-like type, which TryGetArrayLikeElementType has already checked by namespace
 #pragma warning disable HNT0003 // The namespace check is in TryGetArrayLikeElementType, the caller's guard
-    private static ArrayContainerKind GetContainer(ITypeSymbol arrayLike) => arrayLike switch
+    /// <summary>The container of <paramref name="arrayLike"/>, an array-like type.</summary>
+    internal static ArrayContainerKind GetContainer(ITypeSymbol arrayLike) => arrayLike switch
     {
         IArrayTypeSymbol => ArrayContainerKind.Array,
         { Name: TypeConstants.SpanType } => ArrayContainerKind.Span,
