@@ -6,6 +6,7 @@ internal static class DiagnosticRuleRegistry
         CallTargetRule.Instance,
         CopyAsyncRule.Instance,
         CppReservedIdentifierRule.Instance,
+        FileLocalTypeRule.Instance,
         ForEachNotSupportedRule.Instance,
         GpuFinalizerRule.Instance,
         GpuMacroArgumentRule.Instance,
