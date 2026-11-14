@@ -971,8 +971,8 @@ public int __gsharp_state;
 public uint __gsharp_warp_path;
 public global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlySuspensionContext ctx;
 public int[] output;
-public int[] first;
-public int[] second;
+public int[]? first;
+public int[]? second;
 public int tid;
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;

@@ -564,8 +564,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ReadOnly
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__ReadOnlyArraySuspensionKernels__ChainedLocalKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__ReadOnlySuspensionContext __gsharp_id_0_ctx, GSharpArray<int> __gsharp_id_1_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-GSharpArray<int> __gsharp_id_2_first = __gsharp_id_0_ctx.__gsharp_mb_Source;
-GSharpArray<int> __gsharp_id_3_second = __gsharp_id_2_first;
+auto __gsharp_id_2_first = __gsharp_id_0_ctx.__gsharp_mb_Source;
+auto __gsharp_id_3_second = __gsharp_id_2_first;
 int __gsharp_id_4_tid = (int)threadIdx.x;
 __syncthreads();
 __gsharp_array_at(__gsharp_id_1_output, __gsharp_id_4_tid, 221066151u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_3_second, __gsharp_id_4_tid, 1880359994u),__gsharp_array_at(__gsharp_id_2_first, __gsharp_id_4_tid, 1503470684u));
