@@ -99,6 +99,7 @@ public class GenericCopiesTests
     [InlineData("CompareTo", "System.Char")]
     [InlineData("CallFoo", "App.Plain")]
     [InlineData("CallFoo", "App.Both")]
+    [InlineData("CallFooOfValue", "App.Both")]
     [InlineData("CallDefault", "App.Defaulted")]
     [InlineData("NextTwice", "App.Counter")]
     [InlineData("AddAndPlus", "App.Counter")]
@@ -125,7 +126,6 @@ public class GenericCopiesTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("Sum", "App.Odd", "implements", "a + b")]
     [InlineData("CompoundDivideWithEffect", "System.SByte", "has side effects", "data[i++] /= b")]
-    [InlineData("CallFooOfResult", "App.Both", "is not a variable", "make().M()")]
     public void Create_FormWithoutAClosedSpelling_ReportsItsNode(
         string method,
         string typeArgument,
@@ -145,6 +145,7 @@ public class GenericCopiesTests
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("CallFoo", "App.Both", "2")]
+    [InlineData("CallFooOfValue", "App.Both", "2")]
     [InlineData("CallFoo", "App.Plain", "5")]
     [InlineData("CallDefault", "App.Defaulted", "3")]
     [InlineData("NextTwice", "App.Counter", "2")]
