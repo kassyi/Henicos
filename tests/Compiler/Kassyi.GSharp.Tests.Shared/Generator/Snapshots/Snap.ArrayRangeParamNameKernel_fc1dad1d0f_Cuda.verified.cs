@@ -44,6 +44,7 @@ public static void Warmup()
 // Force load the module first
 GetOrLoadModule();
 global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.WarmupFunctionPointerArrayRangeCallKernel();
+global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.WarmupFunctionPointerArrayRangeDeviceFunctionKernel();
 }}}
 
 
@@ -55,7 +56,151 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"";
+public const string Source = @"inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ArrayRangeParamNameKernels__RangeCall(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_s, int __gsharp_id_2_call, GSharpArray<int> __gsharp_id_3_o);
+
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ArrayRangeParamNameKernels__RangeCall(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_s, int __gsharp_id_2_call, GSharpArray<int> __gsharp_id_3_o){
+switch(__gsharp_id_2_call)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(5,0, ""Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"", ""Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"").Fill(7);
+break;
+}
+case 1:
+__gsharp_switch_1_state_1:
+{
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan((-1),1, ""Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"", ""Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"").Fill(7);
+break;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(1,5, ""Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"", ""Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"").Fill(7);
+break;
+}
+case 3:
+__gsharp_switch_1_state_3:
+{
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(0,(-1), ""Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"", ""Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"").Fill(7);
+break;
+}
+case 4:
+__gsharp_switch_1_state_4:
+{
+__gsharp_copy_arguments(__gsharp_id_1_s,__gsharp_id_0_a).CopySlice(0,3, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_0_a.CopySlice(0,3, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 5:
+__gsharp_switch_1_state_5:
+{
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,3, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_1_s.CopySlice(0,3, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 6:
+__gsharp_switch_1_state_6:
+{
+__gsharp_copy_arguments(__gsharp_id_1_s,__gsharp_id_0_a).CopySlice(0,3, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_0_a.CopySlice(0,3, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 7:
+__gsharp_switch_1_state_7:
+{
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,3, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_1_s.CopySlice(0,3, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 8:
+__gsharp_switch_1_state_8:
+{
+__gsharp_id_0_a.AsSpan().CopyTo(__gsharp_id_1_s.AsSpan());
+break;
+}
+case 9:
+__gsharp_switch_1_state_9:
+{
+__gsharp_id_3_o[1]=__gsharp_id_0_a.AsSpan().Slice(5, ""G#: index was out of range at ArrayRangeParamNameKernels.cs(142,24)"").length;
+break;
+}
+case 10:
+__gsharp_switch_1_state_10:
+{
+([&]() {
+auto __gsharp_seq_0 = __gsharp_id_0_a;
+auto __gsharp_seq_1 = __gsharp_id_1_s;
+int __gsharp_seq_2 = (-1);
+return __gsharp_copy_arguments(__gsharp_seq_0,__gsharp_seq_1).CopySlice(0,__gsharp_seq_2, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_seq_1.CopySlice(0,__gsharp_seq_2, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+}());
+break;
+}
+case 11:
+__gsharp_switch_1_state_11:
+{
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice((-1),1, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_1_s.CopySlice(0,1, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 12:
+__gsharp_switch_1_state_12:
+{
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,1, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_1_s.CopySlice((-1),1, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 13:
+__gsharp_switch_1_state_13:
+{
+__gsharp_copy_arguments(__gsharp_id_1_s,__gsharp_id_0_a).CopySlice(0,3, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_0_a.CopySlice((-1),3, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 14:
+__gsharp_switch_1_state_14:
+{
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice((-1),1, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_1_s.CopySlice((-1),1, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 15:
+__gsharp_switch_1_state_15:
+{
+([&]() {
+auto __gsharp_seq_3 = __gsharp_id_0_a;
+auto __gsharp_seq_4 = __gsharp_id_1_s;
+int __gsharp_seq_5 = (-1);
+return __gsharp_copy_arguments(__gsharp_seq_3,__gsharp_seq_4).CopySlice((-1),__gsharp_seq_5, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_seq_4.CopySlice(0,__gsharp_seq_5, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+}());
+break;
+}
+case 16:
+__gsharp_switch_1_state_16:
+{
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(3,0, ""Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"", ""Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"").Fill(7);
+break;
+}
+case 17:
+__gsharp_switch_1_state_17:
+{
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(3,0, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_1_s.CopySlice(0,0, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 18:
+__gsharp_switch_1_state_18:
+{
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,0, ""length must be a non-negative value. (Parameter 'length')"", ""sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"", ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_1_s.CopySlice(1,0, ""length must be a non-negative value. (Parameter 'length')"", ""destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"", ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
+break;
+}
+case 19:
+__gsharp_switch_1_state_19:
+{
+__gsharp_id_3_o[1]=__gsharp_id_0_a.AsSpan().Slice(3, ""G#: index was out of range at ArrayRangeParamNameKernels.cs(172,24)"").length;
+break;
+}
+case 20:
+__gsharp_switch_1_state_20:
+{
+__gsharp_id_3_o[1]=__gsharp_id_0_a.AsSpan(1,2, ""G#: index was out of range at ArrayRangeParamNameKernels.cs(175,24)"").length;
+break;
+}
+}
+}
+
+";
 }
 }
 
@@ -80,67 +225,86 @@ public partial class ArrayRangeParamNameKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2014802640u, "ArrayRangeParamNameKernels.cs", 26, 9, "ArrayRangeCallKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1223012076u, "ArrayRangeParamNameKernels.cs", 29, 13, "ArrayRangeCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(563330979u, "ArrayRangeParamNameKernels.cs", 29, 13, "ArrayRangeCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(477117937u, "ArrayRangeParamNameKernels.cs", 33, 13, "ArrayRangeCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(240593344u, "ArrayRangeParamNameKernels.cs", 33, 13, "ArrayRangeCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1611766668u, "ArrayRangeParamNameKernels.cs", 37, 13, "ArrayRangeCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(331793795u, "ArrayRangeParamNameKernels.cs", 37, 13, "ArrayRangeCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2128421845u, "ArrayRangeParamNameKernels.cs", 41, 13, "ArrayRangeCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1788711684u, "ArrayRangeParamNameKernels.cs", 41, 13, "ArrayRangeCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(295009869u, "ArrayRangeParamNameKernels.cs", 45, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2139512588u, "ArrayRangeParamNameKernels.cs", 45, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1486603152u, "ArrayRangeParamNameKernels.cs", 45, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1375193997u, "ArrayRangeParamNameKernels.cs", 45, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1043799079u, "ArrayRangeParamNameKernels.cs", 45, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1320059309u, "ArrayRangeParamNameKernels.cs", 49, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(280211372u, "ArrayRangeParamNameKernels.cs", 49, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1582132208u, "ArrayRangeParamNameKernels.cs", 49, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(310130477u, "ArrayRangeParamNameKernels.cs", 49, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2048018439u, "ArrayRangeParamNameKernels.cs", 49, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1016819063u, "ArrayRangeParamNameKernels.cs", 53, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(7524278u, "ArrayRangeParamNameKernels.cs", 53, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2007248610u, "ArrayRangeParamNameKernels.cs", 53, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1741060851u, "ArrayRangeParamNameKernels.cs", 53, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(763841805u, "ArrayRangeParamNameKernels.cs", 53, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(637823551u, "ArrayRangeParamNameKernels.cs", 57, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1281113470u, "ArrayRangeParamNameKernels.cs", 57, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1640857034u, "ArrayRangeParamNameKernels.cs", 57, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(559467883u, "ArrayRangeParamNameKernels.cs", 57, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1327957157u, "ArrayRangeParamNameKernels.cs", 57, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(788456343u, "ArrayRangeParamNameKernels.cs", 65, 13, "ArrayRangeCallKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(689206082u, "ArrayRangeParamNameKernels.cs", 69, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(796151505u, "ArrayRangeParamNameKernels.cs", 69, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(469609979u, "ArrayRangeParamNameKernels.cs", 69, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(750648302u, "ArrayRangeParamNameKernels.cs", 69, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(136395322u, "ArrayRangeParamNameKernels.cs", 69, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1441529468u, "ArrayRangeParamNameKernels.cs", 73, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1951644331u, "ArrayRangeParamNameKernels.cs", 73, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(551208933u, "ArrayRangeParamNameKernels.cs", 73, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1818901852u, "ArrayRangeParamNameKernels.cs", 73, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(720462368u, "ArrayRangeParamNameKernels.cs", 73, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1297279964u, "ArrayRangeParamNameKernels.cs", 77, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1203828683u, "ArrayRangeParamNameKernels.cs", 77, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1222070853u, "ArrayRangeParamNameKernels.cs", 77, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1249737980u, "ArrayRangeParamNameKernels.cs", 77, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1653051648u, "ArrayRangeParamNameKernels.cs", 77, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(205714008u, "ArrayRangeParamNameKernels.cs", 81, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1944964839u, "ArrayRangeParamNameKernels.cs", 81, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(35948881u, "ArrayRangeParamNameKernels.cs", 81, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1454091712u, "ArrayRangeParamNameKernels.cs", 81, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1303167364u, "ArrayRangeParamNameKernels.cs", 81, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1124559424u, "ArrayRangeParamNameKernels.cs", 85, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1803618031u, "ArrayRangeParamNameKernels.cs", 85, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1282304665u, "ArrayRangeParamNameKernels.cs", 85, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(92007160u, "ArrayRangeParamNameKernels.cs", 85, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(140987868u, "ArrayRangeParamNameKernels.cs", 85, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1234375136u, "ArrayRangeParamNameKernels.cs", 89, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'length')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1140053967u, "ArrayRangeParamNameKernels.cs", 89, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'sourceIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1354234425u, "ArrayRangeParamNameKernels.cs", 89, 13, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(787910744u, "ArrayRangeParamNameKernels.cs", 89, 13, "ArrayRangeCallKernel", "Non-negative number required. (Parameter 'destinationIndex')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1569169916u, "ArrayRangeParamNameKernels.cs", 89, 13, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(565269262u, "ArrayRangeParamNameKernels.cs", 92, 9, "ArrayRangeCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1882047010u, "ArrayRangeParamNameKernels.cs", 25, 9, "ArrayRangeCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1931088004u, "ArrayRangeParamNameKernels.cs", 29, 17, "ArrayRangeCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(792832475u, "ArrayRangeParamNameKernels.cs", 29, 17, "ArrayRangeCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1217733240u, "ArrayRangeParamNameKernels.cs", 32, 17, "ArrayRangeCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(523831471u, "ArrayRangeParamNameKernels.cs", 32, 17, "ArrayRangeCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(708463724u, "ArrayRangeParamNameKernels.cs", 35, 17, "ArrayRangeCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(532440099u, "ArrayRangeParamNameKernels.cs", 35, 17, "ArrayRangeCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(623422368u, "ArrayRangeParamNameKernels.cs", 38, 17, "ArrayRangeCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(239970871u, "ArrayRangeParamNameKernels.cs", 38, 17, "ArrayRangeCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(884516565u, "ArrayRangeParamNameKernels.cs", 41, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2082593428u, "ArrayRangeParamNameKernels.cs", 41, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1937679576u, "ArrayRangeParamNameKernels.cs", 41, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1599481477u, "ArrayRangeParamNameKernels.cs", 41, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(303305823u, "ArrayRangeParamNameKernels.cs", 41, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(229316281u, "ArrayRangeParamNameKernels.cs", 44, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(872968344u, "ArrayRangeParamNameKernels.cs", 44, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2035317820u, "ArrayRangeParamNameKernels.cs", 44, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1427504593u, "ArrayRangeParamNameKernels.cs", 44, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1438970619u, "ArrayRangeParamNameKernels.cs", 44, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(638484078u, "ArrayRangeParamNameKernels.cs", 47, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(536666269u, "ArrayRangeParamNameKernels.cs", 47, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2090296503u, "ArrayRangeParamNameKernels.cs", 47, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1603854770u, "ArrayRangeParamNameKernels.cs", 47, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1281447246u, "ArrayRangeParamNameKernels.cs", 47, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1841810498u, "ArrayRangeParamNameKernels.cs", 50, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2057943505u, "ArrayRangeParamNameKernels.cs", 50, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1622214395u, "ArrayRangeParamNameKernels.cs", 50, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1706319086u, "ArrayRangeParamNameKernels.cs", 50, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1398187322u, "ArrayRangeParamNameKernels.cs", 50, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(313244699u, "ArrayRangeParamNameKernels.cs", 56, 17, "ArrayRangeCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1266805822u, "ArrayRangeParamNameKernels.cs", 59, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(51488813u, "ArrayRangeParamNameKernels.cs", 59, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(810640135u, "ArrayRangeParamNameKernels.cs", 59, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(160175394u, "ArrayRangeParamNameKernels.cs", 59, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(259341566u, "ArrayRangeParamNameKernels.cs", 59, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2113602033u, "ArrayRangeParamNameKernels.cs", 62, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(351681712u, "ArrayRangeParamNameKernels.cs", 62, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(983495028u, "ArrayRangeParamNameKernels.cs", 62, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1791534489u, "ArrayRangeParamNameKernels.cs", 62, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1428492035u, "ArrayRangeParamNameKernels.cs", 62, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1929055261u, "ArrayRangeParamNameKernels.cs", 65, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(866856604u, "ArrayRangeParamNameKernels.cs", 65, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1078021216u, "ArrayRangeParamNameKernels.cs", 65, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(513594429u, "ArrayRangeParamNameKernels.cs", 65, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1154540439u, "ArrayRangeParamNameKernels.cs", 65, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1917017845u, "ArrayRangeParamNameKernels.cs", 68, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2044106740u, "ArrayRangeParamNameKernels.cs", 68, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1772689144u, "ArrayRangeParamNameKernels.cs", 68, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(946169445u, "ArrayRangeParamNameKernels.cs", 68, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(543923455u, "ArrayRangeParamNameKernels.cs", 68, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1240913764u, "ArrayRangeParamNameKernels.cs", 71, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1925478131u, "ArrayRangeParamNameKernels.cs", 71, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(777265421u, "ArrayRangeParamNameKernels.cs", 71, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1552274836u, "ArrayRangeParamNameKernels.cs", 71, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1220947416u, "ArrayRangeParamNameKernels.cs", 71, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1274069872u, "ArrayRangeParamNameKernels.cs", 74, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1671509343u, "ArrayRangeParamNameKernels.cs", 74, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1510581065u, "ArrayRangeParamNameKernels.cs", 74, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2139556168u, "ArrayRangeParamNameKernels.cs", 74, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(389875564u, "ArrayRangeParamNameKernels.cs", 74, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1989553988u, "ArrayRangeParamNameKernels.cs", 77, 17, "ArrayRangeCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1792544411u, "ArrayRangeParamNameKernels.cs", 77, 17, "ArrayRangeCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1707396862u, "ArrayRangeParamNameKernels.cs", 80, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(722986477u, "ArrayRangeParamNameKernels.cs", 80, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(349680839u, "ArrayRangeParamNameKernels.cs", 80, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1589000162u, "ArrayRangeParamNameKernels.cs", 80, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1065719742u, "ArrayRangeParamNameKernels.cs", 80, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1040488630u, "ArrayRangeParamNameKernels.cs", 83, 17, "ArrayRangeCallKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(304715077u, "ArrayRangeParamNameKernels.cs", 83, 17, "ArrayRangeCallKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(274576927u, "ArrayRangeParamNameKernels.cs", 83, 17, "ArrayRangeCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1475844970u, "ArrayRangeParamNameKernels.cs", 83, 17, "ArrayRangeCallKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(487770182u, "ArrayRangeParamNameKernels.cs", 83, 17, "ArrayRangeCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(584600147u, "ArrayRangeParamNameKernels.cs", 86, 17, "ArrayRangeCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1256610139u, "ArrayRangeParamNameKernels.cs", 89, 17, "ArrayRangeCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1164562908u, "ArrayRangeParamNameKernels.cs", 93, 9, "ArrayRangeCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1984509408u, "ArrayRangeParamNameKernels.cs", 104, 9, "ArrayRangeDeviceFunctionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(855566507u, "ArrayRangeParamNameKernels.cs", 105, 19, "ArrayRangeDeviceFunctionKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1527282032u, "ArrayRangeParamNameKernels.cs", 105, 22, "ArrayRangeDeviceFunctionKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(981335638u, "ArrayRangeParamNameKernels.cs", 105, 31, "ArrayRangeDeviceFunctionKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(437690156u, "ArrayRangeParamNameKernels.cs", 106, 9, "ArrayRangeDeviceFunctionKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -153,127 +317,147 @@ if((int)threadIdx.x!=0)
 {
 return;
 }
-__gsharp_array_at(__gsharp_id_3_o, 0, 2014802640u)=1;
-if(__gsharp_id_2_call==0)
+__gsharp_array_at(__gsharp_id_3_o, 0, 1882047010u)=1;
+switch(__gsharp_id_2_call)
 {
-__gsharp_array_argument(__gsharp_id_0_a).AsSpan(5,0, 1223012076u, 563330979u).Fill(7);
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(5,0, 1931088004u, 792832475u).Fill(7);
+break;
 }
-else
+case 1:
+__gsharp_switch_1_state_1:
 {
-if(__gsharp_id_2_call==1)
-{
-__gsharp_array_argument(__gsharp_id_0_a).AsSpan((-1),1, 477117937u, 240593344u).Fill(7);
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan((-1),1, 1217733240u, 523831471u).Fill(7);
+break;
 }
-else
+case 2:
+__gsharp_switch_1_state_2:
 {
-if(__gsharp_id_2_call==2)
-{
-__gsharp_array_argument(__gsharp_id_0_a).AsSpan(1,5, 1611766668u, 331793795u).Fill(7);
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(1,5, 708463724u, 532440099u).Fill(7);
+break;
 }
-else
+case 3:
+__gsharp_switch_1_state_3:
 {
-if(__gsharp_id_2_call==3)
-{
-__gsharp_array_argument(__gsharp_id_0_a).AsSpan(0,(-1), 2128421845u, 1788711684u).Fill(7);
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(0,(-1), 623422368u, 239970871u).Fill(7);
+break;
 }
-else
+case 4:
+__gsharp_switch_1_state_4:
 {
-if(__gsharp_id_2_call==4)
-{
-__gsharp_copy_arguments(__gsharp_id_1_s,__gsharp_id_0_a).CopySlice(0,3, 295009869u, 2139512588u, 1486603152u).CopyTo(__gsharp_id_0_a.CopySlice(0,3, 295009869u, 1375193997u, 1043799079u));
+__gsharp_copy_arguments(__gsharp_id_1_s,__gsharp_id_0_a).CopySlice(0,3, 884516565u, 2082593428u, 1937679576u).CopyTo(__gsharp_id_0_a.CopySlice(0,3, 884516565u, 1599481477u, 303305823u));
+break;
 }
-else
+case 5:
+__gsharp_switch_1_state_5:
 {
-if(__gsharp_id_2_call==5)
-{
-__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,3, 1320059309u, 280211372u, 1582132208u).CopyTo(__gsharp_id_1_s.CopySlice(0,3, 1320059309u, 310130477u, 2048018439u));
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,3, 229316281u, 872968344u, 2035317820u).CopyTo(__gsharp_id_1_s.CopySlice(0,3, 229316281u, 1427504593u, 1438970619u));
+break;
 }
-else
+case 6:
+__gsharp_switch_1_state_6:
 {
-if(__gsharp_id_2_call==6)
-{
-__gsharp_copy_arguments(__gsharp_id_1_s,__gsharp_id_0_a).CopySlice(0,3, 1016819063u, 7524278u, 2007248610u).CopyTo(__gsharp_id_0_a.CopySlice(0,3, 1016819063u, 1741060851u, 763841805u));
+__gsharp_copy_arguments(__gsharp_id_1_s,__gsharp_id_0_a).CopySlice(0,3, 638484078u, 536666269u, 2090296503u).CopyTo(__gsharp_id_0_a.CopySlice(0,3, 638484078u, 1603854770u, 1281447246u));
+break;
 }
-else
+case 7:
+__gsharp_switch_1_state_7:
 {
-if(__gsharp_id_2_call==7)
-{
-__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,3, 637823551u, 1281113470u, 1640857034u).CopyTo(__gsharp_id_1_s.CopySlice(0,3, 637823551u, 559467883u, 1327957157u));
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,3, 1841810498u, 2057943505u, 1622214395u).CopyTo(__gsharp_id_1_s.CopySlice(0,3, 1841810498u, 1706319086u, 1398187322u));
+break;
 }
-else
-{
-if(__gsharp_id_2_call==8)
+case 8:
+__gsharp_switch_1_state_8:
 {
 __gsharp_id_0_a.AsSpan().CopyTo(__gsharp_id_1_s.AsSpan());
+break;
 }
-else
+case 9:
+__gsharp_switch_1_state_9:
 {
-if(__gsharp_id_2_call==9)
-{
-__gsharp_array_at(__gsharp_id_3_o, 1, 788456343u)=__gsharp_id_0_a.AsSpan().Slice(5, ""G#: index was out of range at ArrayRangeParamNameKernels.cs(65,20)"").length;
+__gsharp_array_at(__gsharp_id_3_o, 1, 313244699u)=__gsharp_id_0_a.AsSpan().Slice(5, ""G#: index was out of range at ArrayRangeParamNameKernels.cs(56,24)"").length;
+break;
 }
-else
-{
-if(__gsharp_id_2_call==10)
+case 10:
+__gsharp_switch_1_state_10:
 {
 ([&]() {
 auto __gsharp_seq_0 = __gsharp_id_0_a;
 auto __gsharp_seq_1 = __gsharp_id_1_s;
 int __gsharp_seq_2 = (-1);
-return __gsharp_copy_arguments(__gsharp_seq_0,__gsharp_seq_1).CopySlice(0,__gsharp_seq_2, 689206082u, 796151505u, 469609979u).CopyTo(__gsharp_seq_1.CopySlice(0,__gsharp_seq_2, 689206082u, 750648302u, 136395322u));
+return __gsharp_copy_arguments(__gsharp_seq_0,__gsharp_seq_1).CopySlice(0,__gsharp_seq_2, 1266805822u, 51488813u, 810640135u).CopyTo(__gsharp_seq_1.CopySlice(0,__gsharp_seq_2, 1266805822u, 160175394u, 259341566u));
 }());
+break;
 }
-else
+case 11:
+__gsharp_switch_1_state_11:
 {
-if(__gsharp_id_2_call==11)
-{
-__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice((-1),1, 1441529468u, 1951644331u, 551208933u).CopyTo(__gsharp_id_1_s.CopySlice(0,1, 1441529468u, 1818901852u, 720462368u));
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice((-1),1, 2113602033u, 351681712u, 983495028u).CopyTo(__gsharp_id_1_s.CopySlice(0,1, 2113602033u, 1791534489u, 1428492035u));
+break;
 }
-else
+case 12:
+__gsharp_switch_1_state_12:
 {
-if(__gsharp_id_2_call==12)
-{
-__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,1, 1297279964u, 1203828683u, 1222070853u).CopyTo(__gsharp_id_1_s.CopySlice((-1),1, 1297279964u, 1249737980u, 1653051648u));
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,1, 1929055261u, 866856604u, 1078021216u).CopyTo(__gsharp_id_1_s.CopySlice((-1),1, 1929055261u, 513594429u, 1154540439u));
+break;
 }
-else
+case 13:
+__gsharp_switch_1_state_13:
 {
-if(__gsharp_id_2_call==13)
-{
-__gsharp_copy_arguments(__gsharp_id_1_s,__gsharp_id_0_a).CopySlice(0,3, 205714008u, 1944964839u, 35948881u).CopyTo(__gsharp_id_0_a.CopySlice((-1),3, 205714008u, 1454091712u, 1303167364u));
+__gsharp_copy_arguments(__gsharp_id_1_s,__gsharp_id_0_a).CopySlice(0,3, 1917017845u, 2044106740u, 1772689144u).CopyTo(__gsharp_id_0_a.CopySlice((-1),3, 1917017845u, 946169445u, 543923455u));
+break;
 }
-else
+case 14:
+__gsharp_switch_1_state_14:
 {
-if(__gsharp_id_2_call==14)
-{
-__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice((-1),1, 1124559424u, 1803618031u, 1282304665u).CopyTo(__gsharp_id_1_s.CopySlice((-1),1, 1124559424u, 92007160u, 140987868u));
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice((-1),1, 1240913764u, 1925478131u, 777265421u).CopyTo(__gsharp_id_1_s.CopySlice((-1),1, 1240913764u, 1552274836u, 1220947416u));
+break;
 }
-else
-{
-if(__gsharp_id_2_call==15)
+case 15:
+__gsharp_switch_1_state_15:
 {
 ([&]() {
 auto __gsharp_seq_3 = __gsharp_id_0_a;
 auto __gsharp_seq_4 = __gsharp_id_1_s;
 int __gsharp_seq_5 = (-1);
-return __gsharp_copy_arguments(__gsharp_seq_3,__gsharp_seq_4).CopySlice((-1),__gsharp_seq_5, 1234375136u, 1140053967u, 1354234425u).CopyTo(__gsharp_seq_4.CopySlice(0,__gsharp_seq_5, 1234375136u, 787910744u, 1569169916u));
+return __gsharp_copy_arguments(__gsharp_seq_3,__gsharp_seq_4).CopySlice((-1),__gsharp_seq_5, 1274069872u, 1671509343u, 1510581065u).CopyTo(__gsharp_seq_4.CopySlice(0,__gsharp_seq_5, 1274069872u, 2139556168u, 389875564u));
 }());
+break;
+}
+case 16:
+__gsharp_switch_1_state_16:
+{
+__gsharp_array_argument(__gsharp_id_0_a).AsSpan(3,0, 1989553988u, 1792544411u).Fill(7);
+break;
+}
+case 17:
+__gsharp_switch_1_state_17:
+{
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(3,0, 1707396862u, 722986477u, 349680839u).CopyTo(__gsharp_id_1_s.CopySlice(0,0, 1707396862u, 1589000162u, 1065719742u));
+break;
+}
+case 18:
+__gsharp_switch_1_state_18:
+{
+__gsharp_copy_arguments(__gsharp_id_0_a,__gsharp_id_1_s).CopySlice(0,0, 1040488630u, 304715077u, 274576927u).CopyTo(__gsharp_id_1_s.CopySlice(1,0, 1040488630u, 1475844970u, 487770182u));
+break;
+}
+case 19:
+__gsharp_switch_1_state_19:
+{
+__gsharp_array_at(__gsharp_id_3_o, 1, 584600147u)=__gsharp_id_0_a.AsSpan().Slice(3, ""G#: index was out of range at ArrayRangeParamNameKernels.cs(86,24)"").length;
+break;
+}
+case 20:
+__gsharp_switch_1_state_20:
+{
+__gsharp_array_at(__gsharp_id_3_o, 1, 1256610139u)=__gsharp_id_0_a.AsSpan(1,2, ""G#: index was out of range at ArrayRangeParamNameKernels.cs(89,24)"").length;
+break;
 }
 }
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-__gsharp_array_at(__gsharp_id_3_o, 1, 565269262u)=2;
+__gsharp_array_at(__gsharp_id_3_o, 1, 1164562908u)=2;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ArrayRangeCallKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ArrayRangeParamNameKernels__ArrayRangeCallKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -458,6 +642,240 @@ using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsha
 {
 global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.__gsharp_hfunc_ArrayRangeCallKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ArrayRangeParamNameKernels.ArrayRangeCallKernel");
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[5];
+// Marshal device array: a
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = a.Data;
+((int*)(__gsharp_proxy_0 + 1))[0] = a.Length;
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal device array: s
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = s.Data;
+((int*)(__gsharp_proxy_1 + 1))[0] = s.Length;
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+// Marshal scalar: call
+__gsharp_kernel_params[2] = &call;
+// Marshal device array: o
+global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_3[0] = o.Data;
+((int*)(__gsharp_proxy_3 + 1))[0] = o.Length;
+((int*)(__gsharp_proxy_3 + 1))[1] = 0;
+__gsharp_kernel_params[3] = __gsharp_proxy_3;
+__gsharp_kernel_params[4] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string ArrayRangeDeviceFunctionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ArrayRangeParamNameKernels__ArrayRangeDeviceFunctionKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_s, int __gsharp_id_2_call, GSharpArray<int> __gsharp_id_3_o, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+if((int)threadIdx.x!=0)
+{
+return;
+}
+__gsharp_array_at(__gsharp_id_3_o, 0, 1984509408u)=1;
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ArrayRangeParamNameKernels__RangeCall(__gsharp_array_ref(__gsharp_id_0_a, 855566507u),__gsharp_array_ref(__gsharp_id_1_s, 1527282032u),__gsharp_id_2_call,__gsharp_array_ref(__gsharp_id_3_o, 981335638u));
+__gsharp_array_at(__gsharp_id_3_o, 1, 437690156u)=2;
+}
+";
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ArrayRangeDeviceFunctionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ArrayRangeParamNameKernels__ArrayRangeDeviceFunctionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
+public static void WarmupFunctionPointerArrayRangeDeviceFunctionKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.__gsharp_hfunc_ArrayRangeDeviceFunctionKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.s_errorSites);
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchArrayRangeDeviceFunctionKernel(global::System.Int32[] a, global::System.Int32[] s, global::System.Int32 call, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ArrayRangeParamNameKernels.ArrayRangeDeviceFunctionKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::System.Int32[] __gsharp_csharp_arg_0 = a;
+global::System.Int32[] __gsharp_csharp_arg_1 = s;
+global::System.Int32 __gsharp_csharp_arg_2 = call;
+global::System.Int32[] __gsharp_csharp_arg_3 = o;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.ArrayRangeDeviceFunctionKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3));
+return;
+}
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.__gsharp_hfunc_ArrayRangeDeviceFunctionKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.s_errorSites);
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ArrayRangeParamNameKernels.ArrayRangeDeviceFunctionKernel");
+global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
+global::System.IntPtr __gsharp_d_3 = global::System.IntPtr.Zero;
+uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, true);
+try
+{
+void** __gsharp_kernel_params = stackalloc void*[5];
+// Marshal array: a
+int __gsharp_size_0 = checked((a?.Length ?? 0) * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(a) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_0 + 1))[0] = (a?.Length ?? 0);
+((int*)(__gsharp_proxy_0 + 1))[1] = 0;
+if (__gsharp_size_0 > 0)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+fixed (global::System.Int32* __gsharp_p_0 = a)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+__gsharp_proxy_0[0] = __gsharp_d_0;
+}
+__gsharp_kernel_params[0] = __gsharp_proxy_0;
+// Marshal array: s
+int __gsharp_size_1 = checked((s?.Length ?? 0) * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_1 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_1[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(s) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_1 + 1))[0] = (s?.Length ?? 0);
+((int*)(__gsharp_proxy_1 + 1))[1] = 0;
+if (__gsharp_size_1 > 0)
+{
+if (global::System.Object.ReferenceEquals(s, a))
+{
+__gsharp_d_1 = __gsharp_d_0;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+fixed (global::System.Int32* __gsharp_p_1 = s)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_1[0] = __gsharp_d_1;
+}
+__gsharp_kernel_params[1] = __gsharp_proxy_1;
+// Marshal scalar: call
+__gsharp_kernel_params[2] = &call;
+// Marshal array: o
+int __gsharp_size_3 = checked((o?.Length ?? 0) * sizeof(global::System.Int32));
+global::System.IntPtr* __gsharp_proxy_3 = stackalloc global::System.IntPtr[2];
+__gsharp_proxy_3[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(o) ? global::System.IntPtr.Zero : (global::System.IntPtr)global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy.EmptyArrayData;
+((int*)(__gsharp_proxy_3 + 1))[0] = (o?.Length ?? 0);
+((int*)(__gsharp_proxy_3 + 1))[1] = 0;
+if (__gsharp_size_3 > 0)
+{
+if (global::System.Object.ReferenceEquals(o, a))
+{
+__gsharp_d_3 = __gsharp_d_0;
+}
+else if (global::System.Object.ReferenceEquals(o, s))
+{
+__gsharp_d_3 = __gsharp_d_1;
+}
+else
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_3, (global::System.IntPtr)__gsharp_size_3, hStream));
+fixed (global::System.Int32* __gsharp_p_3 = o)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_3, (global::System.IntPtr)__gsharp_p_3, (global::System.IntPtr)__gsharp_size_3, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+__gsharp_proxy_3[0] = __gsharp_d_3;
+}
+__gsharp_kernel_params[3] = __gsharp_proxy_3;
+__gsharp_kernel_params[4] = &__gsharp_epoch;
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuLaunchKernel(
+__gsharp_hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+__gsharp_kernel_params,
+global::System.IntPtr.Zero // Extra
+));
+// Copy back array: a
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+{
+fixed (global::System.Int32* __gsharp_p_0 = a)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_0, __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: s
+if (__gsharp_size_1 > 0 && __gsharp_d_1 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(s, a))
+{
+fixed (global::System.Int32* __gsharp_p_1 = s)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+// Copy back array: o
+if (__gsharp_size_3 > 0 && __gsharp_d_3 != global::System.IntPtr.Zero && !global::System.Object.ReferenceEquals(o, a) && !global::System.Object.ReferenceEquals(o, s))
+{
+fixed (global::System.Int32* __gsharp_p_3 = o)
+{
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_p_3, __gsharp_d_3, (global::System.IntPtr)__gsharp_size_3, hStream));
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
+}
+finally
+{
+global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
+if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && __gsharp_d_1 != __gsharp_d_0) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+if (__gsharp_d_3 != global::System.IntPtr.Zero && __gsharp_d_3 != __gsharp_d_0 && __gsharp_d_3 != __gsharp_d_1) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_3, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchArrayRangeDeviceFunctionKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy s, global::System.Int32 call, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (a.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("a", a.Length, "The array length must not be negative.");
+}
+if (a.Data == global::System.IntPtr.Zero && a.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "a");
+}
+if (s.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("s", s.Length, "The array length must not be negative.");
+}
+if (s.Data == global::System.IntPtr.Zero && s.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "s");
+}
+if (o.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("o", o.Length, "The array length must not be negative.");
+}
+if (o.Data == global::System.IntPtr.Zero && o.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "o");
+}
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ArrayRangeParamNameKernels.ArrayRangeDeviceFunctionKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ArrayRangeParamNameKernels.ArrayRangeDeviceFunctionKernel", "LaunchArrayRangeDeviceFunctionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchArrayRangeDeviceFunctionKernel");
+}
+using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsharp_cuda_context_scope = new())
+{
+global::System.IntPtr __gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.__gsharp_hfunc_ArrayRangeDeviceFunctionKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.ArrayRangeParamNameKernels.s_errorSites);
+global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ArrayRangeParamNameKernels.ArrayRangeDeviceFunctionKernel");
 uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextLaunchEpoch(hStream, false);
 try
 {

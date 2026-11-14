@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.ErrorSites;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 using Kassyi.GSharp.Core;
@@ -122,6 +123,36 @@ public sealed class DeviceErrorChannelTests
 
             Assert.NotNull(ex.ParamName);
             Assert.Contains(ex.ParamName, message);
+        }
+    }
+
+    [Theory]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Resources/Prelude.cu")]
+    [InlineData("Resources/Prelude/Types.hpp")]
+    [InlineData("Resources/StackLinq.cuh")]
+    public void ErrorMapper_EveryParameterMessageOfThePrelude_IsAKnownBuiltinMessage(string preludeFile)
+    {
+        // C++ text has no syntax tree: the literals of the prelude that name a parameter are read from the file
+        var text = File.ReadAllText(
+            RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler", preludeFile));
+#pragma warning disable RS0030 // C++ text of the prelude has no syntax tree
+        var literals = Regex.Matches(text, @"""((?:[^""\\]|\\.)*\(Parameter '[^']*'\))""");
+#pragma warning restore RS0030
+        Assert.NotEmpty(literals);
+
+        foreach (var literal in literals.Select(static m => m.Groups[1].Value))
+        {
+            var slot = new GSharpDeviceErrorSlot
+            {
+                Code = (uint)GSharpErrorCode.ArgumentOutOfRange | GSharpErrorMapper.CompletionBit,
+                SiteId = GSharpErrorMapper.ComputeBuiltinMessageId(literal),
+            };
+
+            var ex = Assert.IsType<ArgumentOutOfRangeException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+            Assert.True(ex.ParamName is not null, $"The mapper does not know \"{literal}\" of {preludeFile}");
         }
     }
 

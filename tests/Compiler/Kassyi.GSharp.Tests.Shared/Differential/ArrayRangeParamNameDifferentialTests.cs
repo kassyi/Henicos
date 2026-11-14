@@ -21,24 +21,49 @@ public sealed class ArrayRangeParamNameDifferentialTests
 {
     private static readonly string[] s_callNames =
     [
-        "FillStartPastEnd", "FillStartNegative", "FillCountPastEnd", "FillCountNegative", "CopySourceTooShort",
-        "CopyDestinationTooShort", "CopyRangeSourceTooShort", "CopyRangeDestinationTooShort", "SpanCopyToShorter",
-        "SpanSlicePastEnd", "CopyNegativeLength", "CopyNegativeSourceIndex", "CopyNegativeDestinationIndex",
-        "CopySourceTooShortAndDestinationIndexNegative", "CopyBothIndexesNegative", "CopyNegativeLengthAndIndex",
+        "FillStartPastEnd",
+        "FillStartNegative",
+        "FillCountPastEnd",
+        "FillCountNegative",
+        "CopySourceTooShort",
+        "CopyDestinationTooShort",
+        "CopyRangeSourceTooShort",
+        "CopyRangeDestinationTooShort",
+        "SpanCopyToShorter",
+        "SpanSlicePastEnd",
+        "CopyNegativeLength",
+        "CopyNegativeSourceIndex",
+        "CopyNegativeDestinationIndex",
+        "CopySourceTooShortAndDestinationIndexNegative",
+        "CopyBothIndexesNegative",
+        "CopyNegativeLengthAndIndex",
+        "FillStartAtEnd",
+        "CopyEmptyAtEnd",
+        "CopyEmptyDestinationAtEnd",
+        "SliceStartAtEnd",
+        "SliceCountToEnd",
     ];
 
-    internal static readonly DifferentialCase[] s_cases = [.. Enumerable.Range(0, RangeCalls.Count).Select(Create)];
+    // Each call from the kernel (error sites of the kernel) and from a device function (messages)
+    internal static readonly DifferentialCase[] s_cases =
+    [
+        .. Enumerable.Range(0, RangeCalls.Count).Select(static call => Create(call, inDeviceFunction: false)),
+        .. Enumerable.Range(0, RangeCalls.Count).Select(static call => Create(call, inDeviceFunction: true)),
+    ];
 
     /// <summary>The names of <see cref="s_cases"/>.</summary>
-    public static TheoryData<string> CallNames => [.. s_callNames];
+    public static TheoryData<string> CaseNames => [.. s_cases.Select(static c => c.Name)];
 
     [SkippableTheory]
-    [MemberData(nameof(CallNames))]
-    public void ArrayRangeCall_FailedCheck_NamesTheParameterAsCSharpDoes(string callName) =>
-        DifferentialRunner.Run(s_cases[Array.IndexOf(s_callNames, callName)]);
+    [MemberData(nameof(CaseNames))]
+    public void ArrayRangeCall_FailedCheck_NamesTheParameterAsCSharpDoes(string caseName) =>
+        DifferentialRunner.Run(s_cases.Single(c => c.Name == caseName));
 
-    private static DifferentialCase Create(int call) =>
-        new(DiffKernelNames.Of(typeof(K), nameof(K.ArrayRangeCallKernel), s_callNames[call]))
+    private static DifferentialCase Create(int call, bool inDeviceFunction) =>
+        new(DiffKernelNames.Of(
+            typeof(K),
+            inDeviceFunction ? nameof(K.ArrayRangeDeviceFunctionKernel) : nameof(K.ArrayRangeCallKernel),
+            s_callNames[call]))
         {
             Shape = LaunchShapes.SingleThread(),
             Seeds = [0],
@@ -49,8 +74,19 @@ public sealed class ArrayRangeParamNameDifferentialTests
                 .In("a", new[] { 1, 2, 3 }, readOnly: true)
                 .In("s", new[] { 9 }, readOnly: true)
                 .Out<int>("o", 2, OutputPolicy.Exact),
-            Launch = (b, s) => K.LaunchArrayRangeCallKernel(
-                b.Get<int>("a"), b.Get<int>("s"), call, b.Get<int>("o"), gridDimX: s.GridX, blockDimX: s.BlockX),
+            Launch = (b, s) =>
+            {
+                if (inDeviceFunction)
+                {
+                    K.LaunchArrayRangeDeviceFunctionKernel(
+                        b.Get<int>("a"), b.Get<int>("s"), call, b.Get<int>("o"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                }
+                else
+                {
+                    K.LaunchArrayRangeCallKernel(
+                        b.Get<int>("a"), b.Get<int>("s"), call, b.Get<int>("o"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                }
+            },
             OracleIsLaunch = true,
         };
 }

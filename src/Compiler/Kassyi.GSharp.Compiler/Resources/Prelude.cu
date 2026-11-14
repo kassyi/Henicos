@@ -391,9 +391,11 @@ struct GSharpArray {
 #endif
         return GSharpArray<T>(data + start, count);
     }
-    // One side of Array.Copy, in the order .NET checks it: a negative length is ArgumentOutOfRange (length), a negative
-    // index ArgumentOutOfRange (sourceIndex or destinationIndex), a range past the end Argument (sourceArray or
-    // destinationArray). Each failure is an error site (uint32_t) or a message (const char*)
+    // One side of Array.Copy, in the order of CopyImpl of .NET 10 (the source side first: length, source index, source
+    // range; then the destination side: destination index, destination range; .NET 8 and 9 check both indexes before
+    // both ranges). A negative length is ArgumentOutOfRange (length), a negative index ArgumentOutOfRange (sourceIndex
+    // or destinationIndex), a range past the end Argument (sourceArray or destinationArray). Each failure is an error
+    // site (uint32_t) or a message (const char*)
     template <typename S>
     __device__ inline GSharpArray<T> CopySlice(int start, int count, S lengthSite, S indexSite, S longSite) const {
 #ifdef GSHARP_CHECKED

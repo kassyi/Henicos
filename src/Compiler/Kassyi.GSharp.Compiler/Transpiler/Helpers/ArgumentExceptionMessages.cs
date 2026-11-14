@@ -1,9 +1,10 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 /// <summary>
-/// The messages of the argument exceptions that device code raises for a failed check of a BCL call, worded as .NET
-/// words them. The text after the last <c>" (Parameter '"</c> names the parameter: <c>GSharpErrorMapper</c> reads it
-/// into <see cref="ArgumentException.ParamName"/>, since the device error record has no field for it.
+/// The messages of the argument exceptions that device code raises for a failed check of a BCL call, worded as
+/// .NET 10 words them (without the actual value that its argument-out-of-range messages append). The text after the
+/// last <c>" (Parameter '"</c> names the parameter: <c>GSharpErrorMapper</c> reads it into
+/// <see cref="ArgumentException.ParamName"/>, since the device error record has no field for it.
 /// </summary>
 /// <remarks>
 /// A kernel registers each message as a site of its error site table, which adds the place. A device function has no
@@ -33,22 +34,28 @@ internal static class ArgumentExceptionMessages
         "(Parameter 'destinationArray')";
 
     /// <summary><c>Array.Copy</c> with a negative length.</summary>
-    public const string CopyLength = "Non-negative number required. (Parameter 'length')";
+    public const string CopyLength = "length must be a non-negative value. (Parameter 'length')";
 
     /// <summary><c>Array.Copy</c> with a negative source index.</summary>
-    public const string CopySourceIndex = "Non-negative number required. (Parameter 'sourceIndex')";
+    public const string CopySourceIndex =
+        "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')";
 
     /// <summary><c>Array.Copy</c> with a negative destination index.</summary>
-    public const string CopyDestinationIndex = "Non-negative number required. (Parameter 'destinationIndex')";
+    public const string CopyDestinationIndex =
+        "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')";
 
     /// <summary><c>ElementAt(index)</c> with an index outside the sequence.</summary>
     public const string ElementAtIndex =
         "Index was out of range. Must be non-negative and less than the size of the collection. " +
         "(Parameter 'index')";
 
+    /// <summary><c>Span.CopyTo</c> into a shorter span (written by the prelude, not by an emitter).</summary>
+    public const string SpanCopyToDestination = "Destination is too short. (Parameter 'destination')";
+
     /// <summary>Every message above, for the builtin list of the runtime.</summary>
     public static readonly string[] All = [
         FillStartIndex, FillCount, CopySource, CopyDestination, CopyLength, CopySourceIndex,
         CopyDestinationIndex, ElementAtIndex,
+        SpanCopyToDestination,
     ];
 }

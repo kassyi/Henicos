@@ -25,6 +25,9 @@ enum class GSharpErrorCode : int32_t {
 // attributes are on the definition only: GCC warns when a declaration that is not a definition combines inline and
 // noinline
 [[noreturn]] void __gsharp_trap(GSharpErrorCode code, const char* message);
+// The same with the place of the check in the kernel's error site table (ErrorChannel.hpp). Declared here as well:
+// the calls of GSharpArray below have a non-dependent argument type, which g++ binds where it reads them
+[[noreturn]] void __gsharp_trap(GSharpErrorCode code, uint32_t site_id);
 
 template <GSharpErrorCode ErrorCode>
 inline const char* __gsharp_range_message() {
@@ -107,9 +110,11 @@ struct GSharpArray {
         }
         return GSharpArray<T>(data + start, count);
     }
-    // One side of Array.Copy, in the order .NET checks it: a negative length is ArgumentOutOfRange (length), a negative
-    // index ArgumentOutOfRange (sourceIndex or destinationIndex), a range past the end Argument (sourceArray or
-    // destinationArray). Each failure is an error site (uint32_t) or a message (const char*)
+    // One side of Array.Copy, in the order of CopyImpl of .NET 10 (the source side first: length, source index, source
+    // range; then the destination side: destination index, destination range; .NET 8 and 9 check both indexes before
+    // both ranges). A negative length is ArgumentOutOfRange (length), a negative index ArgumentOutOfRange (sourceIndex
+    // or destinationIndex), a range past the end Argument (sourceArray or destinationArray). Each failure is an error
+    // site (uint32_t) or a message (const char*)
     template <typename S>
     inline GSharpArray<T> CopySlice(int start, int count, S lengthSite, S indexSite, S longSite) const {
         if (count < 0) {

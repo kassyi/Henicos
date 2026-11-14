@@ -6,15 +6,14 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Kernels whose <c>System.Array</c> and span calls fail a range check that C# words as an argument exception with a
-/// parameter name: <c>Array.Fill</c> with a start or a count outside the array, <c>Array.Copy</c> with a source or a
-/// destination that is too short, <c>Span.CopyTo</c> into a shorter span. <c>a</c> has 3 elements and <c>s</c> has 1.
-/// The calls are an <c>if</c> chain, not a <c>switch</c>. <c>o[0]</c> is written before the call and <c>o[1]</c> after it.
+/// parameter name: <c>Array.Fill</c> with a start or a count outside the array, <c>Array.Copy</c> with a negative
+/// argument or a source or a destination that is too short, <c>Span.CopyTo</c> into a shorter span; and the calls on
+/// the edge that must not fail. <c>ArrayRangeCallKernel</c> makes the calls itself (its checks are error sites of the
+/// kernel); <c>ArrayRangeDeviceFunctionKernel</c> makes them in a device function (whose checks pass their messages).
+/// <c>a</c> has 3 elements and <c>s</c> has 1. <c>o[0]</c> is written before the call and <c>o[1]</c> after it.
 /// </summary>
 public static partial class ArrayRangeParamNameKernels
 {
-    /// <summary>The length of the longer array a launch passes.</summary>
-    public const int LongLength = 3;
-
     [GpuKernel]
     public static void ArrayRangeCallKernel(int[] a, int[] s, int call, int[] o)
     {
@@ -24,72 +23,158 @@ public static partial class ArrayRangeParamNameKernels
         }
 
         o[0] = 1;
-        if (call == RangeCalls.FillStartPastEnd)
+        switch (call)
         {
-            Array.Fill(a, 7, 5, 0);
-        }
-        else if (call == RangeCalls.FillStartNegative)
-        {
-            Array.Fill(a, 7, -1, 1);
-        }
-        else if (call == RangeCalls.FillCountPastEnd)
-        {
-            Array.Fill(a, 7, 1, 5);
-        }
-        else if (call == RangeCalls.FillCountNegative)
-        {
-            Array.Fill(a, 7, 0, -1);
-        }
-        else if (call == RangeCalls.CopySourceTooShort)
-        {
-            Array.Copy(s, a, 3);
-        }
-        else if (call == RangeCalls.CopyDestinationTooShort)
-        {
-            Array.Copy(a, s, 3);
-        }
-        else if (call == RangeCalls.CopyRangeSourceTooShort)
-        {
-            Array.Copy(s, 0, a, 0, 3);
-        }
-        else if (call == RangeCalls.CopyRangeDestinationTooShort)
-        {
-            Array.Copy(a, 0, s, 0, 3);
-        }
-        else if (call == RangeCalls.SpanCopyToShorter)
-        {
-            a.AsSpan().CopyTo(s.AsSpan());
-        }
-        else if (call == RangeCalls.SpanSlicePastEnd)
-        {
-            o[1] = a.AsSpan().Slice(5).Length;
-        }
-        else if (call == RangeCalls.CopyNegativeLength)
-        {
-            Array.Copy(a, s, -1);
-        }
-        else if (call == RangeCalls.CopyNegativeSourceIndex)
-        {
-            Array.Copy(a, -1, s, 0, 1);
-        }
-        else if (call == RangeCalls.CopyNegativeDestinationIndex)
-        {
-            Array.Copy(a, 0, s, -1, 1);
-        }
-        else if (call == RangeCalls.CopySourceTooShortAndDestinationIndexNegative)
-        {
-            Array.Copy(s, 0, a, -1, 3);
-        }
-        else if (call == RangeCalls.CopyBothIndexesNegative)
-        {
-            Array.Copy(a, -1, s, -1, 1);
-        }
-        else if (call == RangeCalls.CopyNegativeLengthAndIndex)
-        {
-            Array.Copy(a, -1, s, 0, -1);
+            case RangeCalls.FillStartPastEnd:
+                Array.Fill(a, 7, 5, 0);
+                break;
+            case RangeCalls.FillStartNegative:
+                Array.Fill(a, 7, -1, 1);
+                break;
+            case RangeCalls.FillCountPastEnd:
+                Array.Fill(a, 7, 1, 5);
+                break;
+            case RangeCalls.FillCountNegative:
+                Array.Fill(a, 7, 0, -1);
+                break;
+            case RangeCalls.CopySourceTooShort:
+                Array.Copy(s, a, 3);
+                break;
+            case RangeCalls.CopyDestinationTooShort:
+                Array.Copy(a, s, 3);
+                break;
+            case RangeCalls.CopyRangeSourceTooShort:
+                Array.Copy(s, 0, a, 0, 3);
+                break;
+            case RangeCalls.CopyRangeDestinationTooShort:
+                Array.Copy(a, 0, s, 0, 3);
+                break;
+            case RangeCalls.SpanCopyToShorter:
+                a.AsSpan().CopyTo(s.AsSpan());
+                break;
+            case RangeCalls.SpanSlicePastEnd:
+                o[1] = a.AsSpan().Slice(5).Length;
+                break;
+            case RangeCalls.CopyNegativeLength:
+                Array.Copy(a, s, -1);
+                break;
+            case RangeCalls.CopyNegativeSourceIndex:
+                Array.Copy(a, -1, s, 0, 1);
+                break;
+            case RangeCalls.CopyNegativeDestinationIndex:
+                Array.Copy(a, 0, s, -1, 1);
+                break;
+            case RangeCalls.CopySourceTooShortAndDestinationIndexNegative:
+                Array.Copy(s, 0, a, -1, 3);
+                break;
+            case RangeCalls.CopyBothIndexesNegative:
+                Array.Copy(a, -1, s, -1, 1);
+                break;
+            case RangeCalls.CopyNegativeLengthAndIndex:
+                Array.Copy(a, -1, s, 0, -1);
+                break;
+            case RangeCalls.FillStartAtEnd:
+                Array.Fill(a, 7, 3, 0);
+                break;
+            case RangeCalls.CopyEmptyAtEnd:
+                Array.Copy(a, 3, s, 0, 0);
+                break;
+            case RangeCalls.CopyEmptyDestinationAtEnd:
+                Array.Copy(a, 0, s, 1, 0);
+                break;
+            case RangeCalls.SliceStartAtEnd:
+                o[1] = a.AsSpan().Slice(3).Length;
+                break;
+            case RangeCalls.SliceCountToEnd:
+                o[1] = a.AsSpan(1, 2).Length;
+                break;
         }
 
         o[1] = 2;
+    }
+
+    [GpuKernel]
+    public static void ArrayRangeDeviceFunctionKernel(int[] a, int[] s, int call, int[] o)
+    {
+        if (ThreadIndex.X != 0)
+        {
+            return;
+        }
+
+        o[0] = 1;
+        RangeCall(a, s, call, o);
+        o[1] = 2;
+    }
+
+    [GpuDeviceFunction]
+    public static void RangeCall(int[] a, int[] s, int call, int[] o)
+    {
+        switch (call)
+        {
+            case RangeCalls.FillStartPastEnd:
+                Array.Fill(a, 7, 5, 0);
+                break;
+            case RangeCalls.FillStartNegative:
+                Array.Fill(a, 7, -1, 1);
+                break;
+            case RangeCalls.FillCountPastEnd:
+                Array.Fill(a, 7, 1, 5);
+                break;
+            case RangeCalls.FillCountNegative:
+                Array.Fill(a, 7, 0, -1);
+                break;
+            case RangeCalls.CopySourceTooShort:
+                Array.Copy(s, a, 3);
+                break;
+            case RangeCalls.CopyDestinationTooShort:
+                Array.Copy(a, s, 3);
+                break;
+            case RangeCalls.CopyRangeSourceTooShort:
+                Array.Copy(s, 0, a, 0, 3);
+                break;
+            case RangeCalls.CopyRangeDestinationTooShort:
+                Array.Copy(a, 0, s, 0, 3);
+                break;
+            case RangeCalls.SpanCopyToShorter:
+                a.AsSpan().CopyTo(s.AsSpan());
+                break;
+            case RangeCalls.SpanSlicePastEnd:
+                o[1] = a.AsSpan().Slice(5).Length;
+                break;
+            case RangeCalls.CopyNegativeLength:
+                Array.Copy(a, s, -1);
+                break;
+            case RangeCalls.CopyNegativeSourceIndex:
+                Array.Copy(a, -1, s, 0, 1);
+                break;
+            case RangeCalls.CopyNegativeDestinationIndex:
+                Array.Copy(a, 0, s, -1, 1);
+                break;
+            case RangeCalls.CopySourceTooShortAndDestinationIndexNegative:
+                Array.Copy(s, 0, a, -1, 3);
+                break;
+            case RangeCalls.CopyBothIndexesNegative:
+                Array.Copy(a, -1, s, -1, 1);
+                break;
+            case RangeCalls.CopyNegativeLengthAndIndex:
+                Array.Copy(a, -1, s, 0, -1);
+                break;
+            case RangeCalls.FillStartAtEnd:
+                Array.Fill(a, 7, 3, 0);
+                break;
+            case RangeCalls.CopyEmptyAtEnd:
+                Array.Copy(a, 3, s, 0, 0);
+                break;
+            case RangeCalls.CopyEmptyDestinationAtEnd:
+                Array.Copy(a, 0, s, 1, 0);
+                break;
+            case RangeCalls.SliceStartAtEnd:
+                o[1] = a.AsSpan().Slice(3).Length;
+                break;
+            case RangeCalls.SliceCountToEnd:
+                o[1] = a.AsSpan(1, 2).Length;
+                break;
+        }
     }
 }
 
@@ -136,8 +221,8 @@ public static class RangeCalls
     public const int CopyNegativeDestinationIndex = 12;
 
     /// <summary>
-    /// <c>Array.Copy(s, 0, a, -1, 3)</c>: the source range is checked before the destination index, so
-    /// ArgumentException "sourceArray".
+    /// <c>Array.Copy(s, 0, a, -1, 3)</c>: the source range is checked before the destination index (CopyImpl of
+    /// .NET 10), ArgumentException "sourceArray".
     /// </summary>
     public const int CopySourceTooShortAndDestinationIndexNegative = 13;
 
@@ -147,6 +232,21 @@ public static class RangeCalls
     /// <summary><c>Array.Copy(a, -1, s, 0, -1)</c>: the length is checked first, "length".</summary>
     public const int CopyNegativeLengthAndIndex = 15;
 
+    /// <summary><c>Array.Fill(a, 7, 3, 0)</c>: no exception: a start equal to the length is inside the array.</summary>
+    public const int FillStartAtEnd = 16;
+
+    /// <summary><c>Array.Copy(a, 3, s, 0, 0)</c>: no exception: an empty range at the end of the source.</summary>
+    public const int CopyEmptyAtEnd = 17;
+
+    /// <summary><c>Array.Copy(a, 0, s, 1, 0)</c>: no exception: an empty range at the end of the destination.</summary>
+    public const int CopyEmptyDestinationAtEnd = 18;
+
+    /// <summary><c>a.AsSpan().Slice(3)</c>: no exception: a start equal to the length.</summary>
+    public const int SliceStartAtEnd = 19;
+
+    /// <summary><c>a.AsSpan(1, 2)</c>: no exception: a range that ends at the end.</summary>
+    public const int SliceCountToEnd = 20;
+
     /// <summary>The number of calls.</summary>
-    public const int Count = 16;
+    public const int Count = 21;
 }

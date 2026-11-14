@@ -361,10 +361,8 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
                 WriteArrayReverse3(node, operands, temps, ref context);
                 break;
             case CallShape.ArrayCopy3:
-                WriteArrayCopy3(node, operands, temps, ref context);
-                break;
             case CallShape.ArrayCopy5:
-                WriteArrayCopy5(node, operands, temps, ref context);
+                WriteArrayCopy(node, kind, operands, temps, ref context);
                 break;
         }
     }
@@ -421,69 +419,6 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         CppStringLiteral.Append(writer, msg);
     }
 
-    // , <start site>u[, <count site>u]: the error sites of the failed checks of a call (the messages name the parameter
-    // C# names); in a method without an error site table the messages themselves, which the mapper knows
-    private static void AppendRangeChecks(
-        SourceWriter writer,
-        InvocationExpressionSyntax node,
-        string startMessage,
-        string startKind,
-        string? countMessage,
-        string? countKind,
-        ref TranspileContext context)
-    {
-        var table = context.Emitter.ErrorSites;
-        var model = context.Query.SemanticModel;
-        var member = context.Emitter.CurrentMemberName ?? "";
-        writer.Append(", ");
-        if (table is null)
-        {
-            CppStringLiteral.Append(writer, startMessage);
-            if (countMessage is not null)
-            {
-                writer.Append(", ");
-                CppStringLiteral.Append(writer, countMessage);
-            }
-
-            return;
-        }
-
-        writer.Append($"{table.Register(node, model, member, startMessage, startKind)}u");
-        if (countMessage is not null)
-        {
-            writer.Append($", {table.Register(node, model, member, countMessage, countKind ?? "")}u");
-        }
-    }
-
-    // , <length>, <index>, <too long>: the three failures of one side of Array.Copy, as error sites or, in a method
-    // without an error site table, the messages themselves
-    private static void AppendCopyChecks(
-        SourceWriter writer,
-        InvocationExpressionSyntax node,
-        string indexMessage,
-        string longMessage,
-        string side,
-        ref TranspileContext context)
-    {
-        var table = context.Emitter.ErrorSites;
-        var model = context.Query.SemanticModel;
-        var member = context.Emitter.CurrentMemberName ?? "";
-        string[] messages = [ArgumentExceptionMessages.CopyLength, indexMessage, longMessage];
-        string[] kinds = ["Array.Copy.Length", $"Array.Copy.{side}Index", $"Array.Copy.{side}"];
-        for (var i = 0; i < messages.Length; i++)
-        {
-            writer.Append(", ");
-            if (table is null)
-            {
-                CppStringLiteral.Append(writer, messages[i]);
-            }
-            else
-            {
-                writer.Append($"{table.Register(node, model, member, messages[i], kinds[i])}u");
-            }
-        }
-    }
-
     private static void WriteSliceOrSpan(
         string memberName,
         SliceErrorCode errorCode,
@@ -523,14 +458,13 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
             WriteOperand(operands, temps, 2, ref context);
             writer.Append(',');
             WriteOperand(operands, temps, 3, ref context);
-            AppendRangeChecks(
+            ArgumentCheckSite.Append(
                 writer,
-                node,
-                ArgumentExceptionMessages.FillStartIndex,
-                "Array.Fill.StartIndex",
-                ArgumentExceptionMessages.FillCount,
-                "Array.Fill.Count",
-                ref context);
+                [
+                    ArgumentCheckSite.Plan(
+                        node, ArgumentExceptionMessages.FillStartIndex, "Array.Fill.StartIndex", ref context),
+                    ArgumentCheckSite.Plan(node, ArgumentExceptionMessages.FillCount, "Array.Fill.Count", ref context),
+                ]);
         }
 
         writer.Append(".Fill");
@@ -580,89 +514,58 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         writer.Append(".Reverse()");
     }
 
-    private static void WriteArrayCopy3(
+    // <source>.CopySlice(<start>, <length>, <sites>).CopyTo(<destination>.CopySlice(<start>, <length>, <sites>)): the
+    // operands of Array.Copy(source, destination, length) or Array.Copy(source, sourceIndex, destination,
+    // destinationIndex, length); a start the call does not have is 0
+    private static void WriteArrayCopy(
         InvocationExpressionSyntax node,
+        SpanMemberKind kind,
         ReadOnlySpan<Operand> operands,
         ReadOnlySpan<int> temps,
         ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        WriteArrayOperand(SpanMemberKind.ArrayCopy3, operands, temps, ref context);
-        writer.Append(".CopySlice");
-        using (writer.Parentheses())
-        {
-            writer.Append("0,");
-            WriteOperand(operands, temps, 2, ref context);
-            AppendCopyChecks(
-                writer,
-                node,
-                ArgumentExceptionMessages.CopySourceIndex,
-                ArgumentExceptionMessages.CopySource,
-                "Source",
-                ref context);
-        }
+        var hasIndexes = kind == SpanMemberKind.ArrayCopy5;
+        var destination = hasIndexes ? 2 : 1;
+        var length = hasIndexes ? 4 : 2;
+        var sourceSide = ArgumentCheckSite.PlanCopySide(node, isSource: true, ref context);
+        var destinationSide = ArgumentCheckSite.PlanCopySide(node, isSource: false, ref context);
 
+        WriteArrayOperand(kind, operands, temps, ref context);
+        WriteCopySlice(writer, hasIndexes ? 1 : -1, length, sourceSide, operands, temps, ref context);
         writer.Append(".CopyTo");
         using (writer.Parentheses())
         {
-            WriteOperand(operands, temps, 1, ref context);
-            writer.Append(".CopySlice");
-            using (writer.Parentheses())
-            {
-                writer.Append("0,");
-                WriteOperand(operands, temps, 2, ref context);
-                AppendCopyChecks(
-                    writer,
-                    node,
-                    ArgumentExceptionMessages.CopyDestinationIndex,
-                    ArgumentExceptionMessages.CopyDestination,
-                    "Destination",
-                    ref context);
-            }
+            WriteOperand(operands, temps, destination, ref context);
+            WriteCopySlice(writer, hasIndexes ? 3 : -1, length, destinationSide, operands, temps, ref context);
         }
     }
 
-    private static void WriteArrayCopy5(
-        InvocationExpressionSyntax node,
+    // .CopySlice(<start>, <length>, <length site>, <index site>, <range site>); start is an operand, or -1 for 0
+    private static void WriteCopySlice(
+        SourceWriter writer,
+        int start,
+        int length,
+        in ArgumentCheckSite.CopySide side,
         ReadOnlySpan<Operand> operands,
         ReadOnlySpan<int> temps,
         ref TranspileContext context)
     {
-        var writer = context.Emitter.Writer;
-        WriteArrayOperand(SpanMemberKind.ArrayCopy5, operands, temps, ref context);
         writer.Append(".CopySlice");
         using (writer.Parentheses())
         {
-            WriteOperand(operands, temps, 1, ref context);
-            writer.Append(',');
-            WriteOperand(operands, temps, 4, ref context);
-            AppendCopyChecks(
-                writer,
-                node,
-                ArgumentExceptionMessages.CopySourceIndex,
-                ArgumentExceptionMessages.CopySource,
-                "Source",
-                ref context);
-        }
-
-        writer.Append(".CopyTo");
-        using (writer.Parentheses())
-        {
-            WriteOperand(operands, temps, 2, ref context);
-            writer.Append(".CopySlice");
-            using (writer.Parentheses())
+            if (start < 0)
             {
-                WriteOperand(operands, temps, 3, ref context);
-                writer.Append(',');
-                WriteOperand(operands, temps, 4, ref context);
-                AppendCopyChecks(
-                    writer,
-                    node,
-                    ArgumentExceptionMessages.CopyDestinationIndex,
-                    ArgumentExceptionMessages.CopyDestination,
-                    "Destination",
-                    ref context);
+                writer.Append('0');
             }
+            else
+            {
+                WriteOperand(operands, temps, start, ref context);
+            }
+
+            writer.Append(',');
+            WriteOperand(operands, temps, length, ref context);
+            ArgumentCheckSite.Append(writer, side);
         }
     }
 

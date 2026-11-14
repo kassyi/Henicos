@@ -76,9 +76,9 @@ public static class GSharpErrorMapper
                      "Destination array was not long enough. Check the destination index, length, and the array's " +
                      "lower bounds. " +
                      "(Parameter 'destinationArray')",
-                     "Non-negative number required. (Parameter 'length')",
-                     "Non-negative number required. (Parameter 'sourceIndex')",
-                     "Non-negative number required. (Parameter 'destinationIndex')",
+                     "length must be a non-negative value. (Parameter 'length')",
+                     "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')",
+                     "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')",
                      "Index was out of range. Must be non-negative and less than the size of the collection. " +
                      "(Parameter 'index')",
                  ])
@@ -334,11 +334,16 @@ public static class GSharpErrorMapper
     {
         GSharpErrorSite? site = TryGetSite(location.SiteId, location.ModuleId, out var found) ? found : null;
         var baseMessage = ResolveBaseMessage(code, location.SiteId, explicitMessage, site);
-        var paramName = innerException is null ? SplitParameterName(code, ref baseMessage) : null;
+        // ArgumentOutOfRangeException and ArgumentNullException have no constructor with both a parameter name and an
+        // inner exception: with one, the name stays in the text only
+        var paramName = innerException is null || code == GSharpErrorCode.Argument
+            ? SplitParameterName(code, ref baseMessage)
+            : null;
         var (tx, ty, tz) = UnpackThreadIndex(location.ThreadLinear);
         var threadCoord = $"({tx},{ty},{tz})";
         var blockCoord = $"({location.BlockCoord.X},{location.BlockCoord.Y},{location.BlockCoord.Z})";
-        var rawMessage = preserveRawMessageWhenNoSite ? (paramName is null ? explicitMessage : baseMessage) : null;
+        // The explicit message as it is, except that the name taken from its end is no longer part of the text
+        var rawMessage = !preserveRawMessageWhenNoSite ? null : paramName is null ? explicitMessage : baseMessage;
         var message = FormatMessage(baseMessage, site, threadCoord, blockCoord, rawMessage);
 
         var exception = InstantiateException(code, message, paramName, innerException);
@@ -440,6 +445,12 @@ public static class GSharpErrorMapper
 
         var nameStart = start + Marker.Length;
         var name = message[nameStart..^2];
+        if (name.Length == 0)
+        {
+            // new ArgumentException(message, "") drops the suffix: the text stays as it is
+            return null;
+        }
+
         message = message[..start];
         return name;
     }
@@ -459,7 +470,7 @@ public static class GSharpErrorMapper
                 : new ArgumentOutOfRangeException(paramName, message),
             GSharpErrorCode.Argument => paramName is null
                 ? new ArgumentException(message, innerException)
-                : new ArgumentException(message, paramName),
+                : new ArgumentException(message, paramName, innerException),
             GSharpErrorCode.NullReference => new NullReferenceException(message, innerException),
             GSharpErrorCode.DivideByZero => new DivideByZeroException(message, innerException),
             GSharpErrorCode.Overflow => new OverflowException(message, innerException),
