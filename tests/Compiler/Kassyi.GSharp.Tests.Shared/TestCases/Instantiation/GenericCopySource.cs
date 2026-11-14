@@ -88,6 +88,15 @@ namespace App
 
         public static int CallsExt<T>(T[] d) => d[0].Ext();
 
+        public static int Over(object value) => 1;
+        public static int Over(int value) => 2;
+
+        // The generic method binds Over(object); the copy for int would bind Over(int)
+        public static int CallsOver<T>(T value) => Over(value);
+
+        // The generic method has no member of T to call; the copy for a value type has no ?. to write
+        public static string? NullConditional<T>(T value) => value?.ToString();
+
         public static T Sum<T>(T a, T b) where T : IAdditionOperators<T, T, T> => a + b;
 
         public static T CheckedSum<T>(T a, T b) where T : IAdditionOperators<T, T, T> => checked(a + b);

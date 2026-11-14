@@ -31,6 +31,68 @@ public class GenericCopiesTests
         Assert.Equal(SpecialType.System_Int32, callee.TypeArguments[0].SpecialType);
     }
 
+    // The probe that motivated the pinning: Helper(s) with T = int binds Helper(int) once the copy says int
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_InferredGenericCallWithoutItsPin_RejectsTheCopy()
+    {
+        var copy = CreateWithout<CopyRewrite.ExplicitTypeArguments>("CallsHelper", "System.Int32");
+
+        Assert.False(copy.IsFaithful);
+        var finding = Assert.Single(copy.Findings, f => f.Reason.Contains("binds", StringComparison.Ordinal));
+        Assert.Equal(LineOf("public static int CallsHelper<T>"), finding.Location.GetLineSpan().StartLinePosition.Line);
+    }
+
+    // A call that the declaration binds to a candidate that is not generic, where the copy binds another one
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_OverloadThatTheClosedTypeBindsAnother_RejectsTheCopy()
+    {
+        var (copy, _) = CreateCopy("CallsOver", "System.Int32");
+
+        Assert.False(copy.IsFaithful);
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("Over", StringComparison.Ordinal));
+    }
+
+    // A copy that does not compile is not faithful: ?. on an unconstrained type parameter has no form for int
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_CopyThatDoesNotCompile_IsNotFaithful()
+    {
+        var (copy, _) = CreateCopy("NullConditional", "System.Int32");
+
+        Assert.False(copy.IsFaithful);
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("does not compile", StringComparison.Ordinal));
+    }
+
+    // A closed form that the plan wrote and the copy loses leaves a call the instance does not have: the check sees it
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_ConstrainedCallWithoutItsHelper_RejectsTheCopy()
+    {
+        var copy = CreateWithout<CopyRewrite.ConstrainedCall>("CallFoo", "App.Both");
+
+        Assert.False(copy.IsFaithful);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_StaticMemberWithoutItsClosedForm_RejectsTheCopy()
+    {
+        var copy = CreateWithout<CopyRewrite.StaticMember>("MaxValue", "System.Int32");
+
+        Assert.False(copy.IsFaithful);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_MathCallWithoutItsClosedForm_RejectsTheCopy()
+    {
+        var copy = CreateWithout<CopyRewrite.MathCall>("Max", "System.Char");
+
+        Assert.False(copy.IsFaithful);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Create_ExtensionCallOnTypeWithSameInstanceMember_KeepsTheExtension()
@@ -40,6 +102,17 @@ public class GenericCopiesTests
         Assert.True(copy.IsFaithful, Describe(copy));
         var callee = Assert.IsAssignableFrom<IMethodSymbol>(SymbolOf(set, Single<InvocationExpressionSyntax>(copy)));
         Assert.Equal("Exts", callee.ContainingType.Name);
+    }
+
+    // The second probe: d[0].Ext() with T = Odd binds Odd.Ext() once the copy says Odd
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_ExtensionCallWithoutItsPin_RejectsTheCopy()
+    {
+        var copy = CreateWithout<CopyRewrite.StaticExtensionCall>("CallsExt", "App.Odd");
+
+        Assert.False(copy.IsFaithful);
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("Odd.Ext", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -181,6 +254,23 @@ public class GenericCopiesTests
 
         Assert.Equal("3", Run(loaded.Generic, [CreateArray(loaded.Type)]));
         Assert.Equal("3", Run(loaded.Closed, [CreateArray(loaded.Type)]));
+    }
+
+    // A sibling member of a generic type is not pinned to the closed type yet: the check stops the copy
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Create_SiblingOfGenericType_IsRejectedNotEmitted()
+    {
+        var compilation = CreateCompilation();
+        var outer = compilation.GetTypeByMetadataName("App.Outer`1") ??
+                    throw new InvalidOperationException("No Outer.");
+        var run = outer.Construct(compilation.GetSpecialType(SpecialType.System_Int32)).GetTypeMembers("Kernels")[0]
+            .GetMembers("Run").OfType<IMethodSymbol>().Single();
+
+        var copy = GenericCopies.Create(compilation, [GenericInstance.Of(run)]).Copies.Single();
+
+        Assert.False(copy.IsFaithful);
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("does not compile", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -541,6 +631,20 @@ public class GenericCopiesTests
     {
         var set = GenericCopies.Create(compilation, [Instance(compilation, method, type)]);
         return (set.Copies.Single(), set);
+    }
+
+    // The copy made from the plan without the rewrites of one kind
+    private static GenericCopy CreateWithout<TRewrite>(string method, string typeArgument) where TRewrite : CopyRewrite
+    {
+        var compilation = CreateCompilation();
+        var type = compilation.GetTypeByMetadataName(typeArgument) ??
+                   throw new InvalidOperationException($"No type '{typeArgument}'.");
+        var plan = GenericCopies.Plan(compilation, Instance(compilation, method, type));
+        var removed = plan.Rewrites.Values.OfType<TRewrite>().Select(r => r.NodeIndex).ToArray();
+        Assert.NotEmpty(removed);
+
+        var withoutThem = plan with { Rewrites = plan.Rewrites.RemoveRange(removed) };
+        return GenericCopies.Create(compilation, [withoutThem]).Copies.Single();
     }
 
     private static GenericInstance Instance(Compilation compilation, string method, ITypeSymbol type)
