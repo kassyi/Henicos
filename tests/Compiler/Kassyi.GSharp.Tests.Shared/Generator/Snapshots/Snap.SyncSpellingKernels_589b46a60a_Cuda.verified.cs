@@ -1234,7 +1234,7 @@ finally
 #pragma warning restore CS8500
 public const string UsingStaticThreadIndexKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SyncSpellingKernels__UsingStaticThreadIndexKernel(GSharpArray<int> __gsharp_id_0_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_0_output, (int)threadIdx.x, 1000875798u)=__gsharp_mul_i32((int)threadIdx.x,3);
+__gsharp_array_at(__gsharp_id_0_output, (int)threadIdx.x, 1000875798u)=(int)threadIdx.x*3;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UsingStaticThreadIndexKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SyncSpellingKernels__UsingStaticThreadIndexKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

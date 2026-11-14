@@ -6,7 +6,10 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <param name="Host">The kernel's own launch ABI.</param>
 /// <param name="MemberKey">The suffix of the per-kernel host members: the name, or <c>{name}__o{n}</c> for an overloaded kernel.</param>
 /// <param name="IsOverloaded">Whether another <c>[GpuKernel]</c> of the class has the same name.</param>
-/// <param name="IsIndistinguishable">Whether an earlier overload has the same wrapper parameter list (GSH0059), so the wrappers are left out.</param>
+/// <param name="IsIndistinguishable">
+/// Whether an earlier kernel of the class already has one of the kernel's launchers or its warmup method with the same
+/// parameter types (GSH0059, <see cref="LauncherSignatures.FindConflicts"/>), so its host members are left out.
+/// </param>
 /// <param name="CudaSource">The CUDA source of the kernel.</param>
 /// <param name="CppSource">The C++ source of the kernel.</param>
 /// <param name="ManagedCSharpSource">The managed fallback of the kernel.</param>
