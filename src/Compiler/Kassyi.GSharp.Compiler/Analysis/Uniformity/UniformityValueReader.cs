@@ -10,6 +10,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </summary>
 internal sealed class UniformityValueReader(UniformityState state)
 {
+    // The parameters read as uniform while EvaluateWithUniformParameters runs
+    private ImmutableArray<IParameterSymbol> _uniformParameters = ImmutableArray<IParameterSymbol>.Empty;
+
     private static readonly
         PerCompilationSymbolCache<IMethodSymbol, ConcurrentDictionary<ArgumentMasks, CalleeVariance>> s_callees = new();
 
@@ -34,7 +37,10 @@ internal sealed class UniformityValueReader(UniformityState state)
             IInvocationOperation { TargetMethod.ReturnsByRef: true } refCall =>
                 EvaluateCall(refCall, graph, current) | recorder.Memory.Read(refCall, current),
             IInvocationOperation invocation => EvaluateCall(invocation, graph, current),
-            IFlowAnonymousFunctionOperation => ThreadVariance.Uniform,
+            IFlowAnonymousFunctionOperation function =>
+                recorder.TryGetResult(function.Syntax, out var lambdaResult)
+                    ? current[lambdaResult]
+                    : ThreadVariance.Uniform,
             IArrayElementReferenceOperation or IPropertyReferenceOperation { Property.IsIndexer: true } =>
                 EvaluateOperands(operation, graph, current) | recorder.Memory.Read(operation, current),
             ISimpleAssignmentOperation assignment => Evaluate(assignment.Value, graph, current),
@@ -49,6 +55,25 @@ internal sealed class UniformityValueReader(UniformityState state)
         }
 
         return variance;
+    }
+
+    /// <summary>
+    /// The variance of <paramref name="operation"/> with <paramref name="parameters"/> read as uniform (the parameters
+    /// of the lambda that returns it).
+    /// </summary>
+    public ThreadVariance EvaluateWithUniformParameters(ImmutableArray<IParameterSymbol> parameters,
+        IOperation operation, ControlFlowGraph graph, ThreadVariance[] current)
+    {
+        var saved = _uniformParameters;
+        _uniformParameters = parameters;
+        try
+        {
+            return Evaluate(operation, graph, current);
+        }
+        finally
+        {
+            _uniformParameters = saved;
+        }
     }
 
     /// <summary>The variance of the operands of <paramref name="operation"/> together.</summary>
@@ -181,8 +206,14 @@ internal sealed class UniformityValueReader(UniformityState state)
     // A parameter of the analyzed method has a value from the start; one of a lambda or local function that is not
     // defined where it is spliced belongs to a body whose callers are not followed
     private ThreadVariance ReadParameter(IParameterSymbol parameter, ThreadVariance[] current) =>
+        IsReadAsUniform(parameter) ? ThreadVariance.Uniform :
         state.Recorder.TryGetValue(parameter, out var index) ? current[index] :
         parameter.ContainingSymbol.IsEqualTo(state.Method) ? ThreadVariance.Uniform : ThreadVariance.Block;
+
+    private bool IsReadAsUniform(IParameterSymbol parameter) =>
+        _uniformParameters
+            .AsStackEnumerable()
+            .Any(parameter, static (p, target) => p.IsEqualTo(target));
 
     /// <summary>
     /// Whether a call that is neither a device function with a body nor a local function may give each thread a

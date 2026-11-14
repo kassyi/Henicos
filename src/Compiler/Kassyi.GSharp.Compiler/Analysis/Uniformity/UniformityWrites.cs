@@ -40,7 +40,7 @@ internal static class UniformityWrites
                 AddWritten(node, values.ValueOf(parameter.Parameter));
                 break;
             case IFieldReferenceOperation or IPropertyReferenceOperation
-                when UniformitySolver.GetStructRoot(operation) is { } root:
+                when GetStructRoot(operation) is { } root:
                 AddWritten(node, values.ValueOf(root));
                 break;
         }
@@ -71,6 +71,40 @@ internal static class UniformityWrites
         foreach (var element in tuple.Elements)
         {
             AllocateTargets(values, node, element);
+        }
+    }
+
+    /// <summary>
+    /// The local or parameter of struct type whose member target writes (p.X, p.Inner.Y), or null for any other
+    /// target.
+    /// </summary>
+    public static ISymbol? GetStructRoot(IOperation target)
+    {
+        var current = target;
+        while (true)
+        {
+            var instance = current switch
+            {
+                IFieldReferenceOperation { Instance: { } fieldOwner } => fieldOwner,
+                IPropertyReferenceOperation { Instance: { } propertyOwner } => propertyOwner,
+                _ => null
+            };
+
+            if (instance is not { Type: { IsValueType: true, IsRefLikeType: false } })
+            {
+                return null;
+            }
+
+            switch (instance)
+            {
+                case ILocalReferenceOperation local:
+                    return local.Local;
+                case IParameterReferenceOperation parameter:
+                    return parameter.Parameter;
+                default:
+                    current = instance;
+                    continue;
+            }
         }
     }
 }
