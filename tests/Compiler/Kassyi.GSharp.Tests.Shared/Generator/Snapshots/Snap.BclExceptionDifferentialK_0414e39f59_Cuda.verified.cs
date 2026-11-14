@@ -152,6 +152,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1910157366u, "BclException
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1038272178u, "BclExceptionDifferentialKernels.cs", 420, 13, "MemoryExtensionsSortComparerTrapKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(909169862u, "BclExceptionDifferentialKernels.cs", 442, 25, "TrapNonContinuationGuardKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1514239189u, "BclExceptionDifferentialKernels.cs", 444, 9, "TrapNonContinuationGuardKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1647685439u, "BclExceptionDifferentialKernels.cs", 444, 18, "TrapNonContinuationGuardKernel", "Attempted to divide by zero."),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -4362,7 +4363,7 @@ if (!__gsharp_fusion_res_found)
 {__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }return __gsharp_fusion_res;
 }());
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1514239189u)=100/__gsharp_id_7_denom;
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1514239189u)=__gsharp_div_i32(100,__gsharp_id_7_denom,1647685439u);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_TrapNonContinuationGuardKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__BclExceptionDifferentialKernels__TrapNonContinuationGuardKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
