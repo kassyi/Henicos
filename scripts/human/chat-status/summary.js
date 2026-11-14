@@ -168,7 +168,10 @@ const KindWords = {
   permission: 'a permission prompt',
 };
 
-/** What the person wrote in a chat: the prompt of the turn and the recent prompts (not the first: it is broad and old), without tags. */
+/**
+ * What the person wrote in a chat: the prompt of the turn and the recent prompts (not the first: it is broad and old),
+ * without tags.
+ */
 function personTexts(record) {
   const recent = Array.isArray(record.recentPrompts) ? record.recentPrompts : [];
   return [record.turnPrompt, ...recent]
@@ -181,7 +184,8 @@ function personTexts(record) {
  * prompt of the turn and the latest text, each as a delimited block of data. */
 function buildPrompt(record) {
   // A closing tag inside the data would end its block early
-  const quote = (text) => String(text).replace(/<(\/?)(first_prompt|recent_prompts|open_before|turn_prompt|latest)>/gi, '< $1$2>');
+  const blockTag = /<(\/?)(first_prompt|recent_prompts|open_before|turn_prompt|latest)>/gi;
+  const quote = (text) => String(text).replace(blockTag, '< $1$2>');
   const before = openOf({ openQuestions: record.openBefore });
   const block = (name, text) => [`<${name}>`, quote(text), `</${name}>`];
   const first = stripPromptTags(record.firstPrompt ?? '');
@@ -197,13 +201,15 @@ function buildPrompt(record) {
     'Who wrote what: first_prompt, recent_prompts and turn_prompt are written by the PERSON; open_before and latest ' +
       'are written by the AGENT.',
     'Answer with one JSON object and nothing else, no Markdown: {"title": "...", "open": ["..."]}',
-    '- title: a short title in Japanese, at most 16 full-width characters, of the work the chat is doing now: take it ' +
+    '- title: a short title in Japanese, at most 16 full-width characters, of the work the chat is doing ' +
+      'now: take it ' +
       'from recent_prompts, turn_prompt and latest. first_prompt only tells how the chat began (a long chat may have ' +
       'moved far from it): use it for the title only when nothing newer says what the chat is about.',
     '- open: the questions the AGENT still waits for the person to answer after this turn, newest first, at most 3. ' +
       "Only a question the agent asks counts. A sentence the person wrote (in turn_prompt or any earlier prompt) is " +
       'never an open question, even when it is a complaint, a request or a question: it is what the agent had to ' +
-      "answer, and the agent's answer is in latest. Start from the open questions before this turn; drop each one the " +
+      "answer, and the agent's answer is in latest. Start from the open questions before this turn; " +
+      'drop each one the ' +
       "person's prompt answered or the latest text settled; add the question the latest text asks, if any. Judge " +
       'the meaning, not the question mark: a request to decide, ' +
       'approve, confirm or act counts even without one; a rhetorical question, a question mark inside code, a path, ' +

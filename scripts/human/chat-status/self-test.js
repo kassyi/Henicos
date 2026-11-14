@@ -3,7 +3,8 @@
 // Self-test of chat-status.js (`node scripts/human/chat-status.js --self-test`): the question extraction, every event
 // of both agents on synthetic payloads and transcripts, the PreInvocation-after-Stop rule, fullyIdle, the atomic write,
 // the 12-hour drop and the order of listChats, and the hook as a child process (exit code 0 and what it prints);
-// self-test-summary.js adds the summaries (finding the CLI, the prompt, the summarizer with a fake CLI, the guards),
+// self-test-summary.js adds the summaries (finding the CLI, the prompt, the summarizer with a fake CLI, the guards)
+// and through self-test-open-questions.js the open questions,
 // self-test-antigravity.js what is read from Antigravity's files (subagents, titles).
 // It writes only under <repository>/tmp/chat-status-self-test-<pid>/ and removes it at the end.
 

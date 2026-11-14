@@ -19,7 +19,7 @@ chat that only reported is idle, not waiting for an answer.
 | `chat-status/summary.js` | Finding the Claude Code CLI, the prompt, the answer, starting the summarizer, `runSummarizer` |
 | `chat-status/summarizer.js` | The summarizer process the hook starts detached |
 | `chat-status/antigravity.js` | Antigravity's own files: subagent conversations, the title of a conversation |
-| `chat-status/self-test.js`, `self-test-summary.js`, `self-test-antigravity.js` | `--self-test` (a fake CLI, fake Antigravity folders; never the real CLI) |
+| `chat-status/self-test.js`, `self-test-summary.js`, `self-test-open-questions.js`, `self-test-antigravity.js` | `--self-test` (a fake CLI, fake Antigravity folders; never the real CLI) |
 
 ## Where
 

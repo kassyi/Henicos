@@ -150,7 +150,8 @@ function firstTextOf(file, pick) {
 
 /**
  * The tags the IDE and Claude Code put around a prompt (the file the person has open, the selection, system reminders,
- * command markers): not the person's words, so they never reach the stored prompts. A block is removed with its content.
+ * command markers): not the person's words, so they never reach the stored prompts. A block is removed with its
+ * content.
  */
 const PromptTagNames = [
   'ide_opened_file',
