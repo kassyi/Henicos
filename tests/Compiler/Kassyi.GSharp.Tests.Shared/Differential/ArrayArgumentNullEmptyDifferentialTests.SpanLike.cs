@@ -29,12 +29,13 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                 yield return Create(nameof(K.MemoryKernel), valueName, read,
                     (o, s) => K.LaunchMemoryKernel(
                         new Memory<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
-                if (read == R.Length)
-                {
-                    yield return Create(nameof(K.SegmentKernel), valueName, read,
-                        (o, s) => K.LaunchSegmentKernel(
-                            Segment(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
-                }
+            }
+
+            foreach (int read in (int[])[R.Length, R.ForEach])
+            {
+                yield return Create(nameof(K.SegmentKernel), valueName, read,
+                    (o, s) => K.LaunchSegmentKernel(
+                        Segment(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
             foreach (int read in (int[])[R.IsNull, R.Length, R.Element, R.ForEach])

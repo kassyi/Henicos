@@ -126,8 +126,12 @@ internal static class ExpressionTraps
     // (ArrayNullCheck.TryAppendAnnotatedCheck), while its original node is the array alone
     private static bool HasLoweredArrayCheck(ExpressionSyntax expression) =>
         expression.ContainsAnnotations &&
+        (HasAnnotatedNode(expression, LoweringAnnotations.ArrayNullCheckAnnotationKind) ||
+         HasAnnotatedNode(expression, LoweringAnnotations.SegmentCheckAnnotationKind));
+
+    private static bool HasAnnotatedNode(ExpressionSyntax expression, string kind) =>
         expression
-            .GetAnnotatedNodes(LoweringAnnotations.ArrayNullCheckAnnotationKind)
+            .GetAnnotatedNodes(kind)
             .AsStackEnumerable()
             .Any();
 

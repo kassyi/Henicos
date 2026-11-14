@@ -67,6 +67,14 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
             case ArrayArgumentReads.Length:
                 o[0] = g.Count;
                 break;
+            case ArrayArgumentReads.ForEach:
+                o[0] = 100;
+                foreach (var v in g)
+                {
+                    o[0] += v + 1;
+                }
+
+                break;
         }
     }
 

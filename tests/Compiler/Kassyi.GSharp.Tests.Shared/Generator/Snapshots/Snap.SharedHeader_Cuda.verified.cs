@@ -1061,6 +1061,17 @@ __gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site))
 }
 return static_cast<A&&>(array);
 }
+// The ArraySegment<T> that a foreach reads: a default one has no array, which C# reports as InvalidOperationException
+// (""The underlying array is null."") when the loop starts. The place is as for __gsharp_array_ref
+template <typename A, typename S>
+__device__ __forceinline__ A __gsharp_segment_ref(A&& segment, S site)
+{
+if (segment.data == nullptr)
+{
+__gsharp_inline_trap(GSharpErrorCode::InvalidOperation, __gsharp_inline_site(site));
+}
+return static_cast<A&&>(segment);
+}
 // The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
 // evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
 template <typename A, typename I, typename S>

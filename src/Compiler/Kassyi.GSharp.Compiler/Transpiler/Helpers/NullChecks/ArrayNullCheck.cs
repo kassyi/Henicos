@@ -235,26 +235,70 @@ internal static class ArrayNullCheck
     /// place the annotation carries.
     /// </summary>
     /// <returns><see langword="false"/>, writing nothing, when the expression carries no such annotation.</returns>
-    public static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, ref TranspileContext context)
+    public static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, ref TranspileContext context) =>
+        TryAppendAnnotatedCheck(expression, LoweringAnnotations.ArrayNullCheckAnnotationKind, ref context) ||
+        TryAppendAnnotatedCheck(expression, LoweringAnnotations.SegmentCheckAnnotationKind, ref context);
+
+    private static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, string kind, ref TranspileContext context)
     {
-        if (!expression.HasAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        if (!expression.HasAnnotations(kind))
         {
             return false;
         }
 
-        foreach (var annotation in expression.GetAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        foreach (var annotation in expression.GetAnnotations(kind))
         {
             if (annotation.Data is { } place)
             {
                 // The expression itself, without the annotation that brought it here
-                var receiver = expression.WithoutAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind);
-                AppendCheck(receiver, PlanSite(receiver, place, ref context), ref context);
+                var receiver = expression.WithoutAnnotations(kind);
+                if (kind == LoweringAnnotations.SegmentCheckAnnotationKind)
+                {
+                    AppendSegmentCheck(receiver, PlanSegmentSite(receiver, place, ref context), ref context);
+                }
+                else
+                {
+                    AppendCheck(receiver, PlanSite(receiver, place, ref context), ref context);
+                }
+
                 return true;
             }
         }
 
         return false;
     }
+
+    /// <summary>The text of the error of a default <c>ArraySegment&lt;T&gt;</c>, which .NET words this way.</summary>
+    public const string SegmentSiteMessage = "The underlying array is null.";
+
+    private const string SegmentTrapKind = "SegmentNull";
+
+    /// <summary>Whether <paramref name="type"/> is <c>ArraySegment&lt;T&gt;</c>, whose default value has no array.</summary>
+    public static bool IsArraySegment(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { IsGenericType: true, Name: "ArraySegment" } named &&
+        named.ContainingNamespace.IsSystemNamespace();
+
+    /// <summary>
+    /// Writes the source <paramref name="receiver"/> of a <c>foreach</c> over an <c>ArraySegment&lt;T&gt;</c> through
+    /// <c>__gsharp_segment_ref(&lt;receiver&gt;, &lt;site&gt;)</c>, which C# enters with InvalidOperationException for a
+    /// default value; any other source as it is (<see cref="AppendReceiver"/>).
+    /// </summary>
+    public static void AppendForEachSource(ExpressionSyntax receiver, ref TranspileContext context)
+    {
+        if (!IsArraySegment(context.Query.SemanticModel.GetTypeSymbol(receiver)))
+        {
+            AppendReceiver(receiver, ref context);
+            return;
+        }
+
+        AppendSegmentCheck(receiver, PlanSegmentSite(receiver, null, ref context), ref context);
+    }
+
+    private static NullCheckSite PlanSegmentSite(ExpressionSyntax receiver, string? place, ref TranspileContext context) =>
+        PlanSite(receiver, place, SegmentSiteMessage, SegmentTrapKind, ref context);
+
+    private static void AppendSegmentCheck(ExpressionSyntax receiver, NullCheckSite site, ref TranspileContext context) =>
+        AppendHelperCall(GSharpInternalNames.Prelude.SegmentRef, receiver, site, ref context);
 
     /// <summary>Writes <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>.</summary>
     public static void AppendCheck(ExpressionSyntax receiver, NullCheckSite site, ref TranspileContext context) =>

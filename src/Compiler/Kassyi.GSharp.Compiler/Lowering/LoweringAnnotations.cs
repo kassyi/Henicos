@@ -122,6 +122,13 @@ public static class LoweringAnnotations
     public const string ArrayNullCheckAnnotationKind = "GSharpArrayNullCheck";
 
     /// <summary>
+    /// Annotation kind of the source of a lowered <c>foreach</c> over an <c>ArraySegment&lt;T&gt;</c>, which the
+    /// transpiler writes through the check of a default segment (<c>InvalidOperationException</c>); its data is the
+    /// place of the user's expression.
+    /// </summary>
+    public const string SegmentCheckAnnotationKind = "GSharpSegmentCheck";
+
+    /// <summary>
     /// Annotation kind that marks a lowered <c>foreach</c> loop index declarator
     /// (<c>__gsharp_foreach_i_&lt;id&gt;</c>) as <see cref="int"/> when hoisted into a context struct.
     /// </summary>
