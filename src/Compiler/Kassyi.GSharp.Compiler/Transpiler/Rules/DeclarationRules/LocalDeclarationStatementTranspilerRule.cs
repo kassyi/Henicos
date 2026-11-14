@@ -45,36 +45,61 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
         for (var i = 0; i < node.Declaration.Variables.Count; i++)
         {
             var variable = node.Declaration.Variables[i];
-            if (!context.Emitter.Dialect.IsCuda)
+            if (DynamicSharedMemoryAnalysis.GetCreation(variable) is not { } creation)
             {
-                if (variable.Initializer?.Value is BaseObjectCreationExpressionSyntax creation)
+                // A copy of another local or the result of a call is a handle to memory that is already declared
+                if (variable.Initializer is { } initializer)
                 {
-                    WriteCpuSharedMemory(variable, creation, typeArg, node, i, ref context);
+                    WriteSharedMemoryHandle(variable, initializer, typeArg, ref context);
+                    AppendLineBetween(node, i, ref context);
                 }
 
                 continue;
             }
 
-            if (!DynamicSharedMemoryAnalysis.TryGetCount(variable, context.Query.SemanticModel, out var cudaCreation,
-                    out var count, out var constantCount))
+            if (!context.Emitter.Dialect.IsCuda)
+            {
+                WriteCpuSharedMemory(variable, creation, typeArg, node, i, ref context);
+                continue;
+            }
+
+            if (!DynamicSharedMemoryAnalysis.TryGetCount(creation, context.Query.SemanticModel, out var count,
+                    out var constantCount))
             {
                 continue;
             }
 
             if (constantCount == null)
             {
-                DynamicSharedMemoryEmitter.WritePlacement(variable, cudaCreation, count, typeArg, ref context);
+                DynamicSharedMemoryEmitter.WritePlacement(variable, creation, count, typeArg, ref context);
             }
             else
             {
                 WriteStaticSharedMemory(variable, count, typeArg, ref context);
             }
 
-            if (i < node.Declaration.Variables.Count - 1)
-            {
-                context.Emitter.Writer.AppendLine();
-            }
+            AppendLineBetween(node, i, ref context);
         }
+    }
+
+    private static void AppendLineBetween(LocalDeclarationStatementSyntax node, int index, ref TranspileContext context)
+    {
+        if (index < node.Declaration.Variables.Count - 1)
+        {
+            context.Emitter.Writer.AppendLine();
+        }
+    }
+
+    // <T>* <name> = <initializer>;
+    private static void WriteSharedMemoryHandle(VariableDeclaratorSyntax declarator, EqualsValueClauseSyntax initializer,
+        ITypeSymbol elementType, ref TranspileContext context)
+    {
+        context.Emitter.Dialect.AppendType(ref context, elementType);
+        context.Emitter.Writer.Append("* ");
+        CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
+        context.Emitter.Writer.Append(" = ");
+        context.Visitor.Visit(initializer.Value);
+        context.Emitter.Writer.Append(';');
     }
 
     private static void WriteCpuSharedMemory(

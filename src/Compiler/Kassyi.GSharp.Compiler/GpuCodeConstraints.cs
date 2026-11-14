@@ -20,10 +20,16 @@ internal static class GpuCodeConstraints
     public static bool HasSupportedReturnType(IMethodSymbol method, ITranspilerDialect dialect) =>
         method.ReturnType.SpecialType == SpecialType.System_Void ||
         IteratorTypeResolver.IsDeviceIteratorMethod(method) ||
+        IsSharedMemoryHandleReturn(method) ||
         (method.ReturnType.IsUnmanagedType &&
          !(method.ReturnType.IsRefLikeType && method.HasAttribute(KnownAttributes.GpuKernel)) &&
          (StructLayoutValidator.HasDeviceRepresentation(method.ReturnType, dialect) ||
           IsReportedAsRuntimeOnly(method.ReturnType)));
+
+    // [WHY] A SharedMemory<T> is the pointer to its block's memory on the device, so a device function can hand it on
+    // (#1085); a kernel cannot return one to the host
+    private static bool IsSharedMemoryHandleReturn(IMethodSymbol method) =>
+        method.ReturnType.IsSharedMemoryType() && !method.HasAttribute(KnownAttributes.GpuKernel);
 
     // [WHY] GSH0003 already reports a runtime-only type (decimal, GCHandle, ...); GSH0004 would repeat it
     private static bool IsReportedAsRuntimeOnly(ITypeSymbol type) => GetRuntimeOnlyTypeName(type) is not null;

@@ -41,9 +41,19 @@ internal static class DynamicSharedMemoryAnalysis
     {
         constantCount = null;
         count = null;
-        creation = declarator.Initializer?.Value as BaseObjectCreationExpressionSyntax;
+        creation = GetCreation(declarator);
         return creation != null && TryGetCount(creation, semanticModel, out count, out constantCount);
     }
+
+    /// <summary>
+    /// The creation that initializes a <c>SharedMemory&lt;T&gt;</c> local declarator, also when it is written in
+    /// parentheses; <see langword="null"/> for any other initializer (a copy of another local, the result of a call) and
+    /// for no initializer.
+    /// </summary>
+    public static BaseObjectCreationExpressionSyntax? GetCreation(VariableDeclaratorSyntax declarator) =>
+        declarator.Initializer is { } initializer
+            ? IteratorTypeResolver.UnwrapParentheses(initializer.Value) as BaseObjectCreationExpressionSyntax
+            : null;
 
     /// <summary>
     /// Reads the count of a <c>SharedMemory&lt;T&gt;</c> creation (also one in a lowered tree, such as the assignment
