@@ -718,7 +718,7 @@ finally
 #pragma warning restore CS8500
 public const string AtomicRefParameterKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicRefParameterKernel(GSharpArray<int> __gsharp_id_0_counter, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(&__gsharp_array_at(__gsharp_id_0_counter, 0, 1587351333u),__gsharp_add_i32((int)threadIdx.x,1));
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(&__gsharp_array_at(__gsharp_id_0_counter, 0, 1587351333u),(int)threadIdx.x+1);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_AtomicRefParameterKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicRefParameterKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

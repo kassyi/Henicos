@@ -318,7 +318,7 @@ public static partial class AotContexts
 }
 public const string ShuffleDownPostIncrementKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleDownPostIncrementKernel(GSharpArray<int> __gsharp_id_0_result, GSharpArray<int> __gsharp_id_1_afterV, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_2_v = __gsharp_mul_i32(__gsharp_add_i32((int)threadIdx.x,1),10);
+int __gsharp_id_2_v = __gsharp_mul_i32((int)threadIdx.x+1,10);
 int __gsharp_id_3_r = __shfl_down_sync(0xFFFFFFFFu,__gsharp_sub_i32((__gsharp_id_2_v=__gsharp_add_i32(__gsharp_id_2_v,1)),1),1u,32);
 __gsharp_array_at(__gsharp_id_0_result, (int)threadIdx.x, 1063184623u)=__gsharp_id_3_r;
 __gsharp_array_at(__gsharp_id_1_afterV, (int)threadIdx.x, 1293322137u)=__gsharp_id_2_v;
@@ -1041,7 +1041,7 @@ finally
 #pragma warning restore CS8500
 public const string ShuffleInWhileConditionKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__ShuffleInWhileConditionKernel(GSharpArray<int> __gsharp_id_0_rounds, GSharpArray<int> __gsharp_id_1_afterV, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_2_v = __gsharp_mul_i32((int)threadIdx.x,100);
+int __gsharp_id_2_v = (int)threadIdx.x*100;
 int __gsharp_id_3_n = 0;
 while(__shfl_sync(0xFFFFFFFFu,__gsharp_sub_i32((__gsharp_id_2_v=__gsharp_add_i32(__gsharp_id_2_v,1)),1),0,32)<3)
 {
@@ -1216,7 +1216,7 @@ finally
 #pragma warning restore CS8500
 public const string TargetTypedArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__TargetTypedArgumentKernel(GSharpArray<long long> __gsharp_id_0_viaCall, GSharpArray<float> __gsharp_id_1_viaShuffle, int __gsharp_id_2_flag, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_3_i = __gsharp_add_i32((int)threadIdx.x,1);
+int __gsharp_id_3_i = (int)threadIdx.x+1;
 unsigned int __gsharp_id_4_u = (unsigned int)(int)threadIdx.x+100u;
 __gsharp_array_at(__gsharp_id_0_viaCall, (int)threadIdx.x, 2070451892u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__WaitAndReturn((__gsharp_id_2_flag!=0?(long long)__gsharp_id_3_i:(long long)__gsharp_id_4_u));
 __gsharp_array_at(__gsharp_id_1_viaShuffle, (int)threadIdx.x, 693745237u)=__shfl_sync(0xFFFFFFFFu,(__gsharp_id_2_flag!=0?(float)__gsharp_id_3_i:(float)__gsharp_id_4_u),1,32);
@@ -1391,7 +1391,7 @@ finally
 #pragma warning restore CS8500
 public const string RefElementIndexWrittenLaterKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__WarpShuffleArgumentOrderKernels__RefElementIndexWrittenLaterKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_afterI, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_2_i = __gsharp_mul_i32((int)threadIdx.x,2);
+int __gsharp_id_2_i = (int)threadIdx.x*2;
 ([&]() {
 auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_i, 306958613u);
 int __gsharp_seq_1 = __gsharp_sub_i32((__gsharp_id_2_i=__gsharp_add_i32(__gsharp_id_2_i,1)),1);
