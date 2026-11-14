@@ -302,7 +302,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         for (var i = start; i < statements.Count; i++)
         {
             var statement = statements[i];
-            if (localFunctions != null && localFunctions.TryWriteStatement(statements, i, ref Context))
+            if (localFunctions != null && localFunctions.TryWriteStatement(i, ref Context))
             {
                 continue;
             }
