@@ -48,6 +48,31 @@ public class SwitchSectionSharedNamesManagedTests : TranspilerTestBase
     public void ChainedLocalFunctionAcrossSections_Managed_SharesTheCalledFunction(int mode, int expected) =>
         SwitchSectionSharedNamesScenarios.ChainedLocalFunctionAcrossSections(s_runManaged, mode, expected);
 
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void SpanAcrossSections_Managed_DeclaresTheViewBeforeTheSwitch(int mode) =>
+        SwitchSectionSharedNamesScenarios.SpanAcrossSections(s_runManaged, mode);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void GotoCaseSharedOutVar_Managed_KeepsTheVariableAcrossTheJump() =>
+        SwitchSectionSharedNamesScenarios.GotoCaseSharedOutVar(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void SharedInLoop_Managed_DeclaresTheVariableOnEveryPass() =>
+        SwitchSectionSharedNamesScenarios.SharedInLoop(s_runManaged);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 0, 6)]
+    [InlineData(0, 1, 12)]
+    [InlineData(1, 0, 20)]
+    public void NestedSwitchShared_Managed_DeclaresEachSwitchsOwnVariable(int outer, int inner, int expected) =>
+        SwitchSectionSharedNamesScenarios.NestedSwitchShared(s_runManaged, outer, inner, expected);
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))

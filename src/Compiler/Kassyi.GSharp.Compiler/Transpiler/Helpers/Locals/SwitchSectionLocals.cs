@@ -158,14 +158,17 @@ internal static class SwitchSectionLocals
         VariableDeclaratorSyntax declarator, SemanticModel model) =>
         declaration.Declaration.Type is not RefTypeSyntax &&
         model.GetDeclaredSymbol<ISymbol>(declarator) is ILocalSymbol local &&
-        CanDeclareLocal(local);
+        CanDeclareLocal(local, declarator.Initializer?.Value);
 
-    // The same condition for a local of any form (an expression variable included)
-    internal static bool CanDeclareLocal(ILocalSymbol local) =>
+    // The same condition for a local of any form (an expression variable included). A span over an array is a view
+    // that C++ declares empty and assigns later, as an array alias; a span over a stackalloc is a C++ array and is not
+    internal static bool CanDeclareLocal(ILocalSymbol local, ExpressionSyntax? initializer) =>
         local is { IsRef: false } &&
+        initializer is not (
+            StackAllocArrayCreationExpressionSyntax or ImplicitStackAllocArrayCreationExpressionSyntax) &&
         local.Type is not { TypeKind: TypeKind.Error } &&
         local.Type is IArrayTypeSymbol or IPointerTypeSymbol or { TypeKind: TypeKind.Enum or TypeKind.Struct } &&
-        !local.Type.IsRefLikeType &&
+        (!local.Type.IsRefLikeType || local.Type.IsArrayLikeType()) &&
         !local.Type.IsSharedMemoryType() &&
         !local.Type.IsWmmaFragmentType() &&
         !local.Type.IsWmmaMarkerType() &&

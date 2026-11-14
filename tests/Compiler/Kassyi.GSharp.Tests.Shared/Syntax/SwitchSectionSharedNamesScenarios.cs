@@ -58,4 +58,43 @@ internal static class SwitchSectionSharedNamesScenarios
 
         Assert.Equal([expected], output);
     }
+
+    public static void SpanAcrossSections(Action<Action> run, int mode)
+    {
+        int[] a = [0, 0];
+        int[] b = [0, 0];
+
+        run(() => SwitchSectionSharedNamesKernels.LaunchSpanAcrossSectionsKernel(a, b, mode, blockDimX: 1));
+
+        Assert.Equal(mode == 0 ? [1, 0] : [0, 0], a);
+        Assert.Equal(mode == 0 ? [0, 0] : [2, 0], b);
+    }
+
+    public static void GotoCaseSharedOutVar(Action<Action> run)
+    {
+        int[] output = [0, 0, 0];
+
+        run(() => SwitchSectionSharedNamesKernels.LaunchGotoCaseSharedOutVarKernel(output, blockDimX: 1));
+
+        Assert.Equal([0, 10, 7], output);
+    }
+
+    public static void SharedInLoop(Action<Action> run)
+    {
+        int[] output = [0, 0];
+
+        run(() => SwitchSectionSharedNamesKernels.LaunchSharedInLoopKernel(output, blockDimX: 1));
+
+        // pass 0: v = 6 (case 0); pass 1: v = 5 (default)
+        Assert.Equal([6, 5], output);
+    }
+
+    public static void NestedSwitchShared(Action<Action> run, int outer, int inner, int expected)
+    {
+        int[] output = [0];
+
+        run(() => SwitchSectionSharedNamesKernels.LaunchNestedSwitchSharedKernel(output, outer, inner, blockDimX: 1));
+
+        Assert.Equal([expected], output);
+    }
 }

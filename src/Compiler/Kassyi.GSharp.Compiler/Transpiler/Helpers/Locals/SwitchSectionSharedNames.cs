@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 
 /// <summary>
@@ -6,41 +9,52 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 /// </summary>
 /// <remarks>
 /// [WHY] C# gives the switch block one scope for the locals of its sections, and the expression variables of an
-/// expression statement (<c>out var v</c>, <c>var (a, b) = ...</c>) and the local functions of a section too. C++ braces
-/// each section, so the block around the switch declares them: a variable as <c>&lt;type&gt; &lt;name&gt;;</c> (the
-/// prelude of its statement then writes nothing), a local function as its lambda, in front of the switch. A local that
-/// a shared local function uses, and a local function that a shared one calls, are shared too, so that the lambda
-/// captures names that are declared before it. A shared local function is written as a plain lambda in the order of
-/// the source; one that is recursive or that is used above its declaration is not ordered here.
+/// expression statement (<c>out var v</c>, <c>var (a, b) = ...</c>) and the local functions of a section too. C++
+/// braces each section, so the block around the switch declares them: a variable as
+/// <c>&lt;type&gt; &lt;name&gt;;</c> (the prelude of its statement then writes nothing), a local function as its
+/// lambda, in front of the switch. A local that a shared local function uses, and a local function that a shared one
+/// calls, are shared too, so that the lambda captures names that are declared before it. What a switch shares is decided once, by
+/// <see cref="SharedNames"/>;
+/// the writers only follow it. A shared local function is written as a plain lambda in the order of the source.
 /// </remarks>
 internal static class SwitchSectionSharedNames
 {
-    /// <summary>Whether the block around the switch declares the expression variable <paramref name="designation"/>.</summary>
+    private static readonly ConditionalWeakTable<SwitchStatementSyntax, SharedNames> s_plans = new();
+
+    /// <summary>What the block around a switch declares for its sections.</summary>
+    /// <param name="Variables">The expression variables that another section uses, in the order of the source.</param>
+    /// <param name="Unsupported">
+    /// The expression variables that another section uses and that cannot be declared first.
+    /// </param>
+    /// <param name="Functions">The local functions that another section calls, or that a shared one calls.</param>
+    internal sealed record SharedNames(
+        List<(SingleVariableDesignationSyntax Designation, ILocalSymbol Local)> Variables,
+        List<SingleVariableDesignationSyntax> Unsupported,
+        HashSet<LocalFunctionStatementSyntax> Functions);
+
+    /// <summary>
+    /// Whether the block around the switch declares the expression variable <paramref name="designation"/>.
+    /// </summary>
     public static bool IsDeclaredBeforeSwitch(SingleVariableDesignationSyntax designation, SemanticModel model) =>
         TryGetSection(designation, out var section) &&
-        IsShared(designation, section, model) &&
-        model.GetDeclaredSymbol<ILocalSymbol>(designation) is { } local &&
-        SwitchSectionLocals.CanDeclareLocal(local);
+        section.Parent is SwitchStatementSyntax switchStatement &&
+        Find(switchStatement, model).Variables
+            .AsStackEnumerable()
+            .Any(designation, static (variable, d) => variable.Designation == d);
 
-    /// <summary>Whether the block around the switch declares the local function <paramref name="function"/>.</summary>
+    /// <summary>
+    /// Whether the block around the switch declares the local function <paramref name="function"/>.
+    /// </summary>
     public static bool IsSharedFunction(LocalFunctionStatementSyntax function, SemanticModel model) =>
         function.Parent is SwitchSectionSyntax { Parent: SwitchStatementSyntax switchStatement } &&
-        SharedFunctions(switchStatement, model).Contains(function);
+        Find(switchStatement, model).Functions.Contains(function);
 
     /// <summary>Whether a shared local function of the switch uses the local <paramref name="local"/>.</summary>
     public static bool IsReferencedBySharedFunction(SwitchSectionLocals.LocalIdentity local,
-        SwitchStatementSyntax switchStatement, SemanticModel model)
-    {
-        foreach (var function in SharedFunctions(switchStatement, model))
-        {
-            if (References(function, local))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+        SwitchStatementSyntax switchStatement, SemanticModel model) =>
+        Find(switchStatement, model).Functions
+            .AsStackEnumerable()
+            .Any(local, static (function, l) => References(function, l));
 
     /// <summary>
     /// Reports the shared expression variables that cannot be declared before the switch, and returns whether the
@@ -48,41 +62,24 @@ internal static class SwitchSectionSharedNames
     /// </summary>
     public static bool ReportAndFind(SwitchStatementSyntax switchStatement, ref TranspileContext context)
     {
-        var model = context.Query.SemanticModel;
-        var found = SharedFunctions(switchStatement, model).Count > 0;
-        foreach (var (section, designation) in ExpressionVariables(switchStatement))
+        var shared = Find(switchStatement, context.Query.SemanticModel);
+        foreach (var designation in shared.Unsupported)
         {
-            if (!IsShared(designation, section, model))
-            {
-                continue;
-            }
-
-            if (IsDeclaredBeforeSwitch(designation, model))
-            {
-                found = true;
-            }
-            else
-            {
-                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, designation,
-                    GpuCodeConstraints.SwitchSectionLocalNotDeclarable);
-            }
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, designation,
+                GpuCodeConstraints.SwitchSectionLocalNotDeclarable);
         }
 
-        return found;
+        return shared.Variables.Count > 0 || shared.Functions.Count > 0;
     }
 
-    /// <summary>Writes the shared expression variables, then the shared local functions, in the order of the source.</summary>
+    /// <summary>
+    /// Writes the shared expression variables, then the shared local functions, in the order of the source.
+    /// </summary>
     public static void WriteDeclarations(SwitchStatementSyntax switchStatement, ref TranspileContext context)
     {
-        var model = context.Query.SemanticModel;
-        foreach (var (_, designation) in ExpressionVariables(switchStatement))
+        var shared = Find(switchStatement, context.Query.SemanticModel);
+        foreach (var (designation, local) in shared.Variables)
         {
-            if (!IsDeclaredBeforeSwitch(designation, model) ||
-                model.GetDeclaredSymbol<ILocalSymbol>(designation) is not { } local)
-            {
-                continue;
-            }
-
             // <type> <name>;
             context.Emitter.Dialect.AppendType(ref context, local.Type);
             context.Emitter.Writer.Append(' ');
@@ -90,25 +87,56 @@ internal static class SwitchSectionSharedNames
             context.Emitter.Writer.AppendLine(";");
         }
 
-        var shared = SharedFunctions(switchStatement, model);
-        foreach (var section in switchStatement.Sections)
+        foreach (var function in AllFunctions(switchStatement))
         {
-            foreach (var statement in section.Statements)
+            if (shared.Functions.Contains(function))
             {
-                if (statement is LocalFunctionStatementSyntax function && shared.Contains(function))
-                {
-                    context.Visitor.Visit(function);
-                    context.Emitter.Writer.AppendLine();
-                }
+                context.Visitor.Visit(function);
+                context.Emitter.Writer.AppendLine();
             }
         }
     }
 
+    // What the switch shares: found once per switch and kept with its syntax node
+    private static SharedNames Find(SwitchStatementSyntax switchStatement, SemanticModel model)
+    {
+        return s_plans.GetValue(switchStatement, node => Build(node, model));
+    }
+
+    private static SharedNames Build(SwitchStatementSyntax switchStatement, SemanticModel model)
+    {
+        var functions = FindFunctions(switchStatement, model);
+        List<(SingleVariableDesignationSyntax, ILocalSymbol)> variables = [];
+        List<SingleVariableDesignationSyntax> unsupported = [];
+        foreach (var (section, designation) in ExpressionVariables(switchStatement))
+        {
+            var identity = SwitchSectionLocals.LocalIdentity.Of(designation, designation.Identifier.ValueText, model);
+            if (!IsReferencedByOtherSection(switchStatement, section, identity) &&
+                !functions.AsStackEnumerable().Any(identity, static (function, l) => References(function, l)))
+            {
+                continue;
+            }
+
+            if (model.GetDeclaredSymbol<ILocalSymbol>(designation) is { } local &&
+                SwitchSectionLocals.CanDeclareLocal(local, initializer: null))
+            {
+                variables.Add((designation, local));
+            }
+            else
+            {
+                unsupported.Add(designation);
+            }
+        }
+
+        return new SharedNames(variables, unsupported, functions);
+    }
+
     // The section of a statement that leaks its expression variables into the switch block: an expression statement
     // or a local declaration directly in the section, with no block or lambda between it and the variable
-    private static bool TryGetSection(SingleVariableDesignationSyntax designation, out SwitchSectionSyntax section)
+    private static bool TryGetSection(SingleVariableDesignationSyntax designation,
+        [NotNullWhen(true)] out SwitchSectionSyntax? section)
     {
-        section = null!; // Assigned on every path that returns true
+        section = null;
         for (SyntaxNode? node = designation.Parent; node != null; node = node.Parent)
         {
             if (node is AnonymousFunctionExpressionSyntax or BlockSyntax)
@@ -134,59 +162,33 @@ internal static class SwitchSectionSharedNames
         return false;
     }
 
-    private static bool IsShared(SingleVariableDesignationSyntax designation, SwitchSectionSyntax section,
-        SemanticModel model)
-    {
-        if (designation.Parent is not DeclarationExpressionSyntax &&
-            !StatementPrelude.IsDeconstructionVariable(designation))
-        {
-            return false;
-        }
+    // Another section names the declaration: C# forbids two locals of one name whose scopes overlap, so a matching
+    // name is a reference to it unless it binds to something else (a member name, a lambda parameter)
+    private static bool IsReferencedByOtherSection(SwitchStatementSyntax switchStatement, SwitchSectionSyntax section,
+        SwitchSectionLocals.LocalIdentity identity) =>
+        switchStatement.Sections
+            .AsStackEnumerable()
+            .Where(section, static (other, own) => other != own)
+            .Any(identity, static (other, id) => References(other, id));
 
-        var identity = SwitchSectionLocals.LocalIdentity.Of(designation, designation.Identifier.ValueText, model);
-        if (section.Parent is not SwitchStatementSyntax switchStatement)
-        {
-            return false;
-        }
+    private static bool References(SyntaxNode scope, SwitchSectionLocals.LocalIdentity identity) =>
+        scope
+            .DescendantNodes()
+            .AsStackEnumerable()
+            .Any(identity, static (node, id) => id.IsReferencedBy(node));
 
-        foreach (var other in switchStatement.Sections)
-        {
-            if (other != section && References(other, identity))
-            {
-                return true;
-            }
-        }
-
-        return IsReferencedBySharedFunction(identity, switchStatement, model);
-    }
-
-    private static bool References(SyntaxNode scope, SwitchSectionLocals.LocalIdentity identity)
-    {
-        foreach (var node in scope.DescendantNodes())
-        {
-            if (identity.IsReferencedBy(node))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // The local functions that another section uses, and the ones that those use
-    private static HashSet<LocalFunctionStatementSyntax> SharedFunctions(SwitchStatementSyntax switchStatement,
+    // The local functions that another section calls, and the ones that those call
+    private static HashSet<LocalFunctionStatementSyntax> FindFunctions(SwitchStatementSyntax switchStatement,
         SemanticModel model)
     {
         HashSet<LocalFunctionStatementSyntax> shared = [];
-        foreach (var section in switchStatement.Sections)
+        foreach (var function in AllFunctions(switchStatement))
         {
-            foreach (var statement in section.Statements)
+            var identity = SwitchSectionLocals.LocalIdentity.Of(function, function.Identifier.ValueText, model);
+            if (function.Parent is SwitchSectionSyntax section &&
+                IsReferencedByOtherSection(switchStatement, section, identity))
             {
-                if (statement is LocalFunctionStatementSyntax function &&
-                    IsUsedByOtherSection(function, section, switchStatement, model))
-                {
-                    shared.Add(function);
-                }
+                shared.Add(function);
             }
         }
 
@@ -194,17 +196,14 @@ internal static class SwitchSectionSharedNames
         while (grew)
         {
             grew = false;
-            foreach (var section in switchStatement.Sections)
+            foreach (var function in AllFunctions(switchStatement))
             {
-                foreach (var statement in section.Statements)
+                var identity = SwitchSectionLocals.LocalIdentity.Of(function, function.Identifier.ValueText, model);
+                if (!shared.Contains(function) &&
+                    shared.AsStackEnumerable().Any(identity, static (user, id) => References(user, id)))
                 {
-                    if (statement is LocalFunctionStatementSyntax function &&
-                        !shared.Contains(function) &&
-                        IsUsedBySharedFunction(function, shared, model))
-                    {
-                        shared.Add(function);
-                        grew = true;
-                    }
+                    shared.Add(function);
+                    grew = true;
                 }
             }
         }
@@ -212,34 +211,16 @@ internal static class SwitchSectionSharedNames
         return shared;
     }
 
-    private static bool IsUsedBySharedFunction(LocalFunctionStatementSyntax function,
-        HashSet<LocalFunctionStatementSyntax> shared, SemanticModel model)
+    // The local functions declared directly in a section, in the order of the source
+    private static List<LocalFunctionStatementSyntax> AllFunctions(SwitchStatementSyntax switchStatement)
     {
-        var identity = SwitchSectionLocals.LocalIdentity.Of(function, function.Identifier.ValueText, model);
-        foreach (var user in shared)
-        {
-            if (References(user, identity))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsUsedByOtherSection(LocalFunctionStatementSyntax function, SwitchSectionSyntax section,
-        SwitchStatementSyntax switchStatement, SemanticModel model)
-    {
-        var identity = SwitchSectionLocals.LocalIdentity.Of(function, function.Identifier.ValueText, model);
-        foreach (var other in switchStatement.Sections)
-        {
-            if (other != section && References(other, identity))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        List<LocalFunctionStatementSyntax> functions = [];
+        switchStatement.Sections
+            .AsStackEnumerable()
+            .SelectMany(static section => section.Statements.AsStackEnumerable())
+            .OfType<LocalFunctionStatementSyntax>()
+            .AddTo(functions);
+        return functions;
     }
 
     // Each expression variable of an expression statement or a local declaration directly in a section
@@ -260,7 +241,9 @@ internal static class SwitchSectionSharedNames
                 {
                     if (node is SingleVariableDesignationSyntax designation &&
                         (designation.Parent is DeclarationExpressionSyntax ||
-                         StatementPrelude.IsDeconstructionVariable(designation)))
+                         StatementPrelude.IsDeconstructionVariable(designation)) &&
+                        TryGetSection(designation, out var own) &&
+                        own == section)
                     {
                         found.Add((section, designation));
                     }

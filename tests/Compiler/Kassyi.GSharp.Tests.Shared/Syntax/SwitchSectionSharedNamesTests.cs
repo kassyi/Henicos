@@ -43,4 +43,29 @@ public class SwitchSectionSharedNamesTests : TranspilerTestBase
     [InlineData(1, 16)]
     public void ChainedLocalFunctionAcrossSections_Native_SharesTheCalledFunction(int mode, int expected) =>
         SwitchSectionSharedNamesScenarios.ChainedLocalFunctionAcrossSections(s_runNative, mode, expected);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void SpanAcrossSections_Native_DeclaresTheViewBeforeTheSwitch(int mode) =>
+        SwitchSectionSharedNamesScenarios.SpanAcrossSections(s_runNative, mode);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void GotoCaseSharedOutVar_Native_KeepsTheVariableAcrossTheJump() =>
+        SwitchSectionSharedNamesScenarios.GotoCaseSharedOutVar(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void SharedInLoop_Native_DeclaresTheVariableOnEveryPass() =>
+        SwitchSectionSharedNamesScenarios.SharedInLoop(s_runNative);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 0, 6)]
+    [InlineData(0, 1, 12)]
+    [InlineData(1, 0, 20)]
+    public void NestedSwitchShared_Native_DeclaresEachSwitchsOwnVariable(int outer, int inner, int expected) =>
+        SwitchSectionSharedNamesScenarios.NestedSwitchShared(s_runNative, outer, inner, expected);
 }

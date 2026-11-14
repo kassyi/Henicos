@@ -1,3 +1,4 @@
+using System;
 // ReSharper disable All
 using Kassyi.GSharp.Core;
 
@@ -99,6 +100,88 @@ public static partial class SwitchSectionSharedNamesKernels
                 break;
             default:
                 output[0] = Outer(5);
+                break;
+        }
+    }
+
+    // A span over an array that the first section declares and the second assigns: the view is declared first
+    [GpuKernel]
+    public static void SpanAcrossSectionsKernel(int[] a, int[] b, int mode)
+    {
+        switch (mode)
+        {
+            case 0:
+                Span<int> view = a;
+                view[0] = 1;
+                break;
+            default:
+                view = b;
+                view[0] = 2;
+                break;
+        }
+    }
+
+    // goto case from the section that declares the out variable to the one that assigns it
+    [GpuKernel]
+    public static void GotoCaseSharedOutVarKernel(int[] output)
+    {
+        switch (output[0])
+        {
+            case 0:
+                TryDouble(5, out var v);
+                output[1] = v;
+                goto case 1;
+            case 1:
+                v = 7;
+                output[2] = v;
+                break;
+        }
+    }
+
+    // The switch is in a loop: the variable is declared again on every pass
+    [GpuKernel]
+    public static void SharedInLoopKernel(int[] output)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            switch (i)
+            {
+                case 0:
+                    TryDouble(i + 3, out var v);
+                    output[0] = v;
+                    break;
+                default:
+                    v = 5;
+                    output[1] = v;
+                    break;
+            }
+        }
+    }
+
+    // A switch in a section of another switch: each one declares its own shared variable
+    [GpuKernel]
+    public static void NestedSwitchSharedKernel(int[] output, int outer, int inner)
+    {
+        switch (outer)
+        {
+            case 0:
+                TryDouble(1, out var a);
+                switch (inner)
+                {
+                    case 0:
+                        TryDouble(2, out var b);
+                        output[0] = a + b;
+                        break;
+                    default:
+                        b = 10;
+                        output[0] = a + b;
+                        break;
+                }
+
+                break;
+            default:
+                a = 20;
+                output[0] = a;
                 break;
         }
     }
