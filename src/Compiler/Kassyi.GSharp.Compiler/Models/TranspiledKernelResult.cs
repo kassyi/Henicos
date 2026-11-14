@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Aot;
+
 namespace Kassyi.GSharp.Compiler.Models;
 
 /// <summary>The transpiled outputs of one <c>[GpuKernel]</c>, for both native dialects and the managed fallback.</summary>
@@ -20,6 +22,9 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// The ref locals that the CPU state machine would keep in its frame and GSH0039 does not report; the generator reports
 /// GSH0003 at each on a CPU dialect build (#1640).
 /// </param>
+/// <param name="Spill">
+/// What the spill warning (GS0001) of the kernel covers (<see cref="SpillSuppressionPlan"/>).
+/// </param>
 internal readonly record struct TranspiledKernelResult(
     HostClassHeader Class,
     KernelHostModel Host,
@@ -31,7 +36,8 @@ internal readonly record struct TranspiledKernelResult(
     string InternalError,
     EquatableArray<DeviceExportRecord> StructExports = default,
     EquatableArray<ErrorSiteEntry> ErrorSites = default,
-    EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default)
+    EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default,
+    KernelSpillScope Spill = default)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 

@@ -441,15 +441,15 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1682904337u, "OperatorMacr
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(907322937u, "OperatorMacroRoutingKernels.cs", 96, 9, "TransitiveKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(291583627u, "OperatorMacroRoutingKernels.cs", 96, 27, "TransitiveKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1865863231u, "OperatorMacroRoutingKernels.cs", 97, 9, "TransitiveKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1644167283u, "OperatorMacroRoutingKernels.cs", 120, 9, "RecursionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1025487051u, "OperatorMacroRoutingKernels.cs", 121, 9, "RecursionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1296880355u, "OperatorMacroRoutingKernels.cs", 128, 9, "ExtensionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1556789360u, "OperatorMacroRoutingKernels.cs", 128, 33, "ExtensionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1834403479u, "OperatorMacroRoutingKernels.cs", 128, 44, "ExtensionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(647060939u, "OperatorMacroRoutingKernels.cs", 129, 9, "ExtensionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1975120283u, "OperatorMacroRoutingKernels.cs", 150, 9, "LambdaKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1381027323u, "OperatorMacroRoutingKernels.cs", 158, 9, "ExtensionMethodGroupKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1451451327u, "OperatorMacroRoutingKernels.cs", 162, 9, "ExtensionMethodGroupKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2136332559u, "OperatorMacroRoutingKernels.cs", 122, 9, "RecursionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(276397199u, "OperatorMacroRoutingKernels.cs", 123, 9, "RecursionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1178527679u, "OperatorMacroRoutingKernels.cs", 131, 9, "ExtensionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1615760956u, "OperatorMacroRoutingKernels.cs", 131, 33, "ExtensionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(54970627u, "OperatorMacroRoutingKernels.cs", 131, 44, "ExtensionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(504658611u, "OperatorMacroRoutingKernels.cs", 132, 9, "ExtensionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(493204843u, "OperatorMacroRoutingKernels.cs", 153, 9, "LambdaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1423937995u, "OperatorMacroRoutingKernels.cs", 161, 9, "ExtensionMethodGroupKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1855333979u, "OperatorMacroRoutingKernels.cs", 165, 9, "ExtensionMethodGroupKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -652,8 +652,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteC
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__RecursionKernel(GSharpArray<int> __gsharp_id_0_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteCtx __gsharp_id_1_ctx = {};
-__gsharp_array_at(__gsharp_id_0_result, 0, 1644167283u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__SumTo(&__gsharp_id_1_ctx,4);
-__gsharp_array_at(__gsharp_id_0_result, 1, 1025487051u)=__gsharp_id_1_ctx.__gsharp_mb_Calls;
+__gsharp_array_at(__gsharp_id_0_result, 0, 2136332559u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__SumTo(&__gsharp_id_1_ctx,4);
+__gsharp_array_at(__gsharp_id_0_result, 1, 276397199u)=__gsharp_id_1_ctx.__gsharp_mb_Calls;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RecursionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__RecursionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -786,8 +786,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteC
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteCtx __gsharp_id_2_ctx = {};
-__gsharp_array_at(__gsharp_id_1_result, 0, 1296880355u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RouteExtensions__AddInto(&__gsharp_id_2_ctx,__gsharp_array_at(__gsharp_id_0_values, 0, 1556789360u),__gsharp_array_at(__gsharp_id_0_values, 1, 1834403479u));
-__gsharp_array_at(__gsharp_id_1_result, 1, 647060939u)=__gsharp_id_2_ctx.__gsharp_mb_Calls;
+__gsharp_array_at(__gsharp_id_1_result, 0, 1178527679u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RouteExtensions__AddInto(&__gsharp_id_2_ctx,__gsharp_array_at(__gsharp_id_0_values, 0, 1615760956u),__gsharp_array_at(__gsharp_id_0_values, 1, 54970627u));
+__gsharp_array_at(__gsharp_id_1_result, 1, 504658611u)=__gsharp_id_2_ctx.__gsharp_mb_Calls;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ExtensionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -955,7 +955,7 @@ finally
 #pragma warning restore CS8500
 public const string LambdaKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__LambdaKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_1_result, 0, 1975120283u)=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_1_result, 0, 493204843u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_values;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -1139,7 +1139,7 @@ finally
 public const string ExtensionMethodGroupKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__ExtensionMethodGroupKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_ten, GSharpArray<int> __gsharp_id_2_ninetyNine, GSharpArray<int> __gsharp_id_3_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 GSharpArray<int> __gsharp_id_4_x = __gsharp_id_1_ten;
-__gsharp_array_at(__gsharp_id_3_result, 0, 1381027323u)=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_3_result, 0, 1423937995u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_values;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -1154,7 +1154,7 @@ return __gsharp_fusion_res;
 }());
 auto __gsharp_id_5_addTen = [__gsharp_id_0_x = (__gsharp_id_4_x)](int __gsharp_id_1_a) { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RouteGroupExtensions__AddElement(__gsharp_id_0_x, __gsharp_id_1_a); };
 __gsharp_id_4_x=__gsharp_id_2_ninetyNine;
-__gsharp_array_at(__gsharp_id_3_result, 1, 1451451327u)=([&]() -> auto {
+__gsharp_array_at(__gsharp_id_3_result, 1, 1855333979u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_values;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -1547,10 +1547,10 @@ public partial class NestedRoutingKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1655971954u, "OperatorMacroRoutingKernels.cs", 185, 13, "NestedKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1162176093u, "OperatorMacroRoutingKernels.cs", 185, 44, "NestedKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2059509447u, "OperatorMacroRoutingKernels.cs", 185, 55, "NestedKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1169163192u, "OperatorMacroRoutingKernels.cs", 186, 13, "NestedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(119792240u, "OperatorMacroRoutingKernels.cs", 188, 13, "NestedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(33535299u, "OperatorMacroRoutingKernels.cs", 188, 44, "NestedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(236784373u, "OperatorMacroRoutingKernels.cs", 188, 55, "NestedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(687901170u, "OperatorMacroRoutingKernels.cs", 189, 13, "NestedKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1571,8 +1571,8 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteC
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RouteOuter__NestedRoutingKernels__NestedKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RouteCtx __gsharp_id_2_ctx = {};
-__gsharp_array_at(__gsharp_id_1_result, 0, 1655971954u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RouteOuter__NestedRoutingKernels__AddNested(&__gsharp_id_2_ctx,__gsharp_array_at(__gsharp_id_0_values, 0, 1162176093u),__gsharp_array_at(__gsharp_id_0_values, 1, 2059509447u));
-__gsharp_array_at(__gsharp_id_1_result, 1, 1169163192u)=__gsharp_id_2_ctx.__gsharp_mb_Calls;
+__gsharp_array_at(__gsharp_id_1_result, 0, 119792240u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RouteOuter__NestedRoutingKernels__AddNested(&__gsharp_id_2_ctx,__gsharp_array_at(__gsharp_id_0_values, 0, 33535299u),__gsharp_array_at(__gsharp_id_0_values, 1, 236784373u));
+__gsharp_array_at(__gsharp_id_1_result, 1, 687901170u)=__gsharp_id_2_ctx.__gsharp_mb_Calls;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RouteOuter__NestedRoutingKernels__NestedKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

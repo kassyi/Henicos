@@ -6,8 +6,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 /// <summary>
 /// Recursive local functions. C# allows a local function to call itself and the local functions of its group, with no
-/// barrier in them; a C++ lambda cannot call itself through the <c>auto</c> variable that it initializes.
+/// barrier in them; a C++ lambda cannot call itself through the <c>auto</c> variable that it initializes. The recursion
+/// spills on purpose (GS0001).
 /// </summary>
+#pragma warning disable GS0001
 public static partial class LocalFunctionRecursionKernels
 {
     // A local function that calls itself and captures a local and a parameter
@@ -84,3 +86,4 @@ public static partial class LocalFunctionRecursionKernels
         int Factorial(int n) => n <= 1 ? 1 : n * Factorial(n - 1);
     }
 }
+#pragma warning restore GS0001

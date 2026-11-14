@@ -162,13 +162,13 @@ internal static class NvccInvoker
             try
             {
                 var content = File.ReadAllText(sourcePath);
-                foreach (var fn in SpillSuppressionParser.GetSuppressedSpillFunctions(content))
+                foreach (var fn in SpillSuppression.ReadSuppressedFunctions(content))
                 {
                     suppressed.Add(fn);
                 }
             }
             // smell-scan: ignore swallowed-exception -- the failure is written to the MSBuild log; an unreadable source
-            // only means its suppress comments are not seen
+            // only means its suppression line is not seen
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 log.LogMessage(MessageImportance.Low,

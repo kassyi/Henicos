@@ -74,14 +74,15 @@ public class NvccOutputParserTests
     }
 
     [Fact]
-    public void HasRegisterSpill_ScopedSuppression_OnlySuppressesMarkedFunction()
+    [Scenario(TestScenario.HappyPath)]
+    public void HasRegisterSpill_ListedKernel_SuppressesOnlyThatKernel()
     {
         var cuContent = """
-            // gsharp:suppress GS0001
+            // gsharp:suppress GS0001 __gsharp_k_SuppressedKernel
             extern "C" __global__ void __gsharp_k_SuppressedKernel(int* a) {}
             extern "C" __global__ void __gsharp_k_UnsuppressedKernel(int* b) {}
             """;
-        var suppressed = SpillSuppressionParser.GetSuppressedSpillFunctions(cuContent);
+        var suppressed = SpillSuppression.ReadSuppressedFunctions(cuContent);
 
         var suppressedOnlyOutput = """
             ptxas warning : Registers are spilled to local memory in function '__gsharp_k_SuppressedKernel', 12 bytes spill stores, 12 bytes spill loads
@@ -98,5 +99,48 @@ public class NvccOutputParserTests
         Assert.True(NvccOutputParser.HasRegisterSpill(mixedOutput, "", out var errorMessage, suppressed));
         Assert.Contains("__gsharp_k_UnsuppressedKernel", errorMessage);
         Assert.DoesNotContain("__gsharp_k_SuppressedKernel", errorMessage);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    // A kernel whose name starts with a listed name is another kernel
+    [InlineData("ptxas info    : Function properties for __gsharp_k_FooBar", false)]
+    [InlineData("ptxas info    : Function properties for __gsharp_k_Foo", true)]
+    [InlineData("ptxas warning : Registers are spilled to local memory in function '__gsharp_k_FooBar', 8 B", false)]
+    // A device function is named in its mangled form: the identifier is the <length> characters after _Z<length>
+    [InlineData("ptxas info    : Function properties for _Z18__gsharp_fn_Helperi", true)]
+    [InlineData("ptxas info    : Function properties for _Z23__gsharp_fn_HelperOtherii", false)]
+    [InlineData("ptxas info    : Function properties for _ZL18__gsharp_fn_Helperv", true)]
+    // The lambda of a local function is a local entity of the function that encloses it
+    [InlineData("ptxas info    : Function properties for _ZZ14__gsharp_k_Foo11GSharpArrayIiEjENKUliE_clEi", true)]
+    [InlineData(
+        "ptxas info    : Function properties for _ZZZ14__gsharp_k_Foo11GSharpArrayIiEjENKUliE_clEiENKUliE_clEi",
+        true
+    )]
+    [InlineData("ptxas info    : Function properties for _ZZ17__gsharp_k_FooBar11GSharpArrayIiEjENKUliE_clEi", false)]
+    [InlineData("ptxas warning : Stack size for entry function '__gsharp_k_Foo' cannot be determined", true)]
+    // A line that names no function
+    [InlineData("    8 bytes stack frame, 8 bytes spill stores, 8 bytes spill loads", false)]
+    public void IsSuppressed_FunctionOfThePtxasLine_ComparesTheWholeName(string line, bool expected)
+    {
+        var suppressed = SpillSuppression.ReadSuppressedFunctions(
+            "// gsharp:suppress GS0001 __gsharp_k_Foo __gsharp_fn_Helper\n");
+
+        Assert.Equal(expected, SpillSuppression.IsSuppressed(line, suppressed));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    // No line, or a line without names (the marker the generator wrote before it listed names), suppresses nothing
+    [InlineData("extern \"C\" __global__ void __gsharp_k_Foo(int* a) {}\n")]
+    [InlineData("// gsharp:suppress GS0001\nextern \"C\" __global__ void __gsharp_k_Foo(int* a) {}\n")]
+    public void ReadSuppressedFunctions_NoNamesListed_SuppressesNothing(string cuContent)
+    {
+        var suppressed = SpillSuppression.ReadSuppressedFunctions(cuContent);
+
+        Assert.Empty(suppressed);
+        Assert.False(
+            SpillSuppression.IsSuppressed("ptxas info    : Function properties for __gsharp_k_Foo", suppressed)
+        );
     }
 }
