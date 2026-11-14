@@ -301,10 +301,30 @@ public class NullableDifferentialTests
             .Out<int>(
                 "dst",
                 rows,
-                ["cast_is_null", "picked_is_null", "parenthesized_is_null", "coalesce_keeps_array"],
+                ["cast_is_null", "picked_is_null", "parenthesized_is_null", "coalesce_keeps_array", "default_is_null",
+                 "default_expression_is_null"],
                 OutputPolicy.Exact),
         Launch = static (b, s) => NullableDifferentialKernels.LaunchNullLiteralCastToArrayKernel(
             b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
+            gridDimX: s.GridX, blockDimX: s.BlockX),
+        OracleIsLaunch = true,
+    };
+
+    internal static readonly DifferentialCase s_emptyArrayIsNotNull = new(
+        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.EmptyArrayIsNotNullKernel)}")
+    {
+        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
+        Inputs = static (rng, rows) => new DiffBuffers()
+            .In("empty", Array.Empty<int>())
+            .In("other", DiffValues.Int32(rng, rows))
+            .Out<int>(
+                "dst",
+                rows,
+                ["empty_is_null", "empty_is_null_pattern", "coalesce_length", "empty_length", "slice_length",
+                 "slice_is_null"],
+                OutputPolicy.Exact),
+        Launch = static (b, s) => NullableDifferentialKernels.LaunchEmptyArrayIsNotNullKernel(
+            b.Get<int>("empty"), b.Get<int>("other"), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
@@ -399,4 +419,10 @@ public class NullableDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void NullableOperations_NullLiteralCastToArray_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_nullLiteralCastToArray);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void NullableOperations_EmptyArrayFromTheHost_IsNotNull() => DifferentialRunner.Run(s_emptyArrayIsNotNull);
 }
