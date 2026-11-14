@@ -335,6 +335,8 @@ Prelude:
     # The array that a C# array read (Length, an element, foreach) goes through: a null array fails with
     # NullReferenceException on every build; declared by ErrorChannel.hpp and the CUDA prelude
     ArrayRef: { Value: __gsharp_array_ref, Prelude: ErrorChannel.hpp }
+    # The ArraySegment<T> of a foreach: a default one has no array and fails with InvalidOperationException
+    SegmentRef: { Value: __gsharp_segment_ref, Prelude: ErrorChannel.hpp }
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
     # The array of a Gpu.NotNull call: a null array fails with NullReferenceException, a null kernel argument included
