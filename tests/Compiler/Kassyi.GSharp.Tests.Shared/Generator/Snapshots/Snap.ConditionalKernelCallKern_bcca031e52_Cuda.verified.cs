@@ -91,7 +91,7 @@ public static partial class AotContexts
 }
 public const string RemovedKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConditionalKernelCallKernels__RemovedKernel(GSharpArray<int> __gsharp_id_0_data, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_0_data, 1, 630125556u)=__gsharp_add_i32((int)threadIdx.x,100);
+__gsharp_array_at(__gsharp_id_0_data, 1, 630125556u)=(int)threadIdx.x+100;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RemovedKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConditionalKernelCallKernels__RemovedKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

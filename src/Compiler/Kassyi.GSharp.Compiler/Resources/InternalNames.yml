@@ -520,3 +520,36 @@ IntegerSemantics:
     ConvertToUInt32: { Value: __gsharp_to_u32, Prelude: IntegerSemantics.hpp }
     ConvertToInt64: { Value: __gsharp_to_i64, Prelude: IntegerSemantics.hpp }
     ConvertToUInt64: { Value: __gsharp_to_u64, Prelude: IntegerSemantics.hpp }
+    # x / y and x % y where y may be 0 (DivideByZeroException on every build), or -1 for a
+    # dividend that may be MinValue (the GPU result, which x86 idiv would turn into a hardware exception)
+    DivideInt32: { Value: __gsharp_div_i32, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DivideInt64: { Value: __gsharp_div_i64, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DivideUInt32: { Value: __gsharp_div_u32, Prelude: IntegerDivision.hpp }
+    DivideUInt64: { Value: __gsharp_div_u64, Prelude: IntegerDivision.hpp }
+    RemainderInt32: { Value: __gsharp_rem_i32, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderInt64: { Value: __gsharp_rem_i64, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderUInt32: { Value: __gsharp_rem_u32, Prelude: IntegerDivision.hpp }
+    RemainderUInt64: { Value: __gsharp_rem_u64, Prelude: IntegerDivision.hpp }
+    # The signed ones above are also the managed form of a division that may divide the minimum by -1 (the GPU result
+    # where .NET throws OverflowException); x /= y and x %= y of such an int or long target, by reference
+    DivideAssignInt32: { Value: __gsharp_div_assign_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DivideAssignInt64: { Value: __gsharp_div_assign_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderAssignInt32: { Value: __gsharp_rem_assign_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderAssignInt64: { Value: __gsharp_rem_assign_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
+    # A compound assignment of a location in memory whose value writes it: the reader finds the location once and reads
+    # it before the value (out into a local DivisionCurrentPrefix<n>), the store divides and stores
+    ReadReferenceInt32: { Value: __gsharp_read_ref_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
+    ReadReferenceInt64: { Value: __gsharp_read_ref_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DivideStoreInt32: { Value: __gsharp_div_store_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DivideStoreInt64: { Value: __gsharp_div_store_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderStoreInt32: { Value: __gsharp_rem_store_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderStoreInt64: { Value: __gsharp_rem_store_i64, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DivisionCurrentPrefix: __gsharp_div_current_
+    # The same for a property whose receiver is found once: a value type through a reference to its variable, a
+    # reference type by the object it holds; the getter and the setter are static lambdas
+    ReadProperty: { Value: __gsharp_read_property, Managed: ManagedGpuContext.IntegerDivision.cs }
+    ReadPropertyOf: { Value: __gsharp_read_property_of, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DividePropertyStore: { Value: __gsharp_div_property_store, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderPropertyStore: { Value: __gsharp_rem_property_store, Managed: ManagedGpuContext.IntegerDivision.cs }
+    DividePropertyStoreOf: { Value: __gsharp_div_property_store_of, Managed: ManagedGpuContext.IntegerDivision.cs }
+    RemainderPropertyStoreOf: { Value: __gsharp_rem_property_store_of, Managed: ManagedGpuContext.IntegerDivision.cs }
