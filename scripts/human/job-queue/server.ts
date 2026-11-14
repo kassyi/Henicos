@@ -158,6 +158,17 @@ export class JobServer {
     };
   }
 
+  /** The first answer to a client that queues: its place and expected times, and that the queue is paused, if it is. */
+  queuedMessage(job: ServerJob): ServerMessage {
+    const scheduler = this.scheduler;
+    return {
+      type: "queued",
+      id: job.id,
+      ...(scheduler.paused ? { paused: true } : {}),
+      ...this.outlook(job, scheduler.forecast()),
+    };
+  }
+
   // Tells each waiting client its place and expected times when the place changed or the start moved by a minute
   private notifyWaiting(): void {
     const scheduler = this.scheduler;
@@ -468,7 +479,8 @@ export class JobServer {
     // between two events, so grant again now and then while jobs wait
     setInterval(() => this.settle(), RegrantMs).unref();
     setInterval(() => {
-      if (scheduler.isIdle() && Date.now() - this.idleSince >= IdleExitMs) {
+      // A paused queue stays: the scheduler would forget the pause when it exits
+      if (scheduler.isIdle() && !scheduler.paused && Date.now() - this.idleSince >= IdleExitMs) {
         this.log("idle; exiting");
         process.exit(0);
       }
