@@ -239,6 +239,7 @@ export class JobServer {
       cwd,
       // Resolved once by the client; an older client sends none, and its directory stands for its worktree
       worktree,
+      session: typeof message.session === "string" && message.session !== "" ? message.session : undefined,
       command,
       queuedAt: numberField(message, "queuedAt") || Date.now(),
       grantedAt: numberField(message, "grantedAt"),
