@@ -31,6 +31,11 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
+        if (RefLocals.TryWriteRebinding(node, ref context))
+        {
+            return;
+        }
+
         var isAccessorProperty = PropertyAccessorCall.IsAccessorPropertyTarget(node.Left, ref context);
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
