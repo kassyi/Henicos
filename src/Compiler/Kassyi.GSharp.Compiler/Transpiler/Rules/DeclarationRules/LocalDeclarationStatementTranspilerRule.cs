@@ -88,6 +88,15 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
         context.Emitter.Dialect.AppendType(ref context, typeArg);
         context.Emitter.Writer.Append("* ");
         CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
+        if (GotoJumpAnalysis.MayBeJumpedOver(node))
+        {
+            // A goto may jump past the declaration, and C++ forbids that jump past an initialization:
+            // <T>* <name>;
+            // <name> = <allocation>;
+            context.Emitter.Writer.AppendLine(";");
+            CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
+        }
+
         context.Emitter.Writer.Append(" = ");
         SharedMemorySiteKey.AppendCpuAllocation(creation, typeArg, ref context);
         context.Emitter.Writer.Append(';');

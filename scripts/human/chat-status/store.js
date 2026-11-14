@@ -7,12 +7,15 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { interpret } = require('./events.js');
+const { conversationFacts } = require('./antigravity.js');
 
 const DirectoryVariable = 'GSHARP_CHAT_STATUS_DIR';
 const FormatVersion = 1;
 /** A chat file not updated for this long is not shown, and the hook removes it. */
 const StaleMs = 12 * 60 * 60 * 1000;
 const ErrorLogLimitBytes = 1024 * 1024;
+/** The fields of a chat that a new state keeps unless it sets them (the rest are written anew by every state). */
+const ChatFields = ['firstPrompt', 'title', 'agentTitle', 'openQuestions', 'lastPrompt', 'promptedAt', 'stoppedAt'];
 
 /**
  * The main checkout from the `.git` entry of this script's checkout, without starting git (a hook runs on every
@@ -113,10 +116,10 @@ function writeAtomically(file, text) {
   }
 }
 
-/** Removes the chat files and stray temporary files not changed for StaleMs. */
+/** Removes the chat files, stray temporary files and summarizer locks not changed for StaleMs. */
 function pruneStale(directory, now) {
   for (const name of fs.readdirSync(directory)) {
-    if (!name.endsWith('.json') && !name.endsWith('.tmp')) {
+    if (!name.endsWith('.json') && !name.endsWith('.tmp') && !name.endsWith('.lock')) {
       continue;
     }
     const file = path.join(directory, name);
@@ -134,9 +137,10 @@ function pruneStale(directory, now) {
 
 /**
  * Applies one hook payload to the chat files in `directory`. Returns the text to print on stdout. Throws on a file
- * error; the caller logs it.
+ * error; the caller logs it. `onRecord(file, record)`, when given, is called with each record written (the hook starts
+ * the summarizer from it).
  */
-function applyPayload(payload, directory, now) {
+function applyPayload(payload, directory, now, onRecord = null) {
   const action = interpret(payload, now);
   if (action === null) {
     return '';
@@ -164,11 +168,14 @@ function applyPayload(payload, directory, now) {
     cwd,
     worktree,
     ...fields,
+    // what belongs to the chat outlives its states; Haiku's verdict on one wait is dropped with it
+    ...Object.fromEntries(ChatFields.map((name) => [name, fields[name] ?? previous?.[name] ?? null])),
     event: payload.hook_event_name ?? payload.hookEventName,
     updatedAt: now,
   };
   writeAtomically(file, `${JSON.stringify(record, null, 2)}\n`);
   pruneStale(directory, now);
+  onRecord?.(file, record);
   return action.output;
 }
 
@@ -193,7 +200,8 @@ function logError(directory, error) {
 /**
  * The chats recorded in `directory` (default: the main checkout's tmp/chat-status), without those not updated for
  * 12 hours, sorted: waiting chats first, the longest wait first, then the others, the longest in their state first.
- * Unreadable files are skipped (a file is replaced by a rename, so a reader sees the old or the new one).
+ * Unreadable files are skipped (a file is replaced by a rename, so a reader sees the old or the new one), and so are
+ * the chats of Antigravity subagents (`options.antigravityRoot`: its folder, default ~/.gemini/antigravity).
  */
 function listChats(options = {}) {
   const directory = options.directory ?? resolveStatusDirectory();
@@ -221,6 +229,14 @@ function listChats(options = {}) {
     if (typeof record?.updatedAt !== 'number' || now - record.updatedAt > StaleMs) {
       continue;
     }
+    if (record.agent === 'antigravity' && typeof record.session === 'string') {
+      // a subagent's file from before the hook could tell is never shown; a title given since is read now
+      const facts = conversationFacts(record.session, null, options.antigravityRoot);
+      if (facts.subagent === true) {
+        continue;
+      }
+      record.agentTitle = record.agentTitle ?? facts.title;
+    }
     chats.push(record);
   }
   const rank = (chat) => (chat.state === 'waiting' ? 0 : 1);
@@ -232,6 +248,7 @@ module.exports = {
   readMainCheckout,
   resolveStatusDirectory,
   chatFileName,
+  readJson,
   writeAtomically,
   applyPayload,
   logError,
