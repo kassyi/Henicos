@@ -2793,7 +2793,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_output, (int)threadIdx.x, 1000875798u)=__gsharp_mul_i32((int)threadIdx.x,3);
+__gsharp_array_at(__gsharp_id_0_output, (int)threadIdx.x, 1000875798u)=(int)threadIdx.x*3;
 __gsharp_state=-1;
 return;
 }

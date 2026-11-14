@@ -115,14 +115,13 @@ public class StackLinqRangeTests : TranspilerTestBase
     }
 
     // C# calls the selector for the elements a following Skip drops, so an error it raises there is raised; the same
-    // chains over elements that raise nothing give the C# sum. The native build checks neither an integer division by
-    // zero nor an index yet (#718 (Array and span bounds, integer division by zero, Nullable.Value, Math.Clamp and
+    // chains over elements that raise nothing give the C# sum. The native build checks the integer division by zero; it
+    // does not check an index yet (#718 (Array and span bounds, integer division by zero, Nullable.Value, Math.Clamp and
     // Math.Abs(MinValue) are not checked as in C#)), so there the generated snapshot shows that the selector runs for
     // the skipped element (StackLinqRangeKernels snapshot: the Skip counts in the loop instead of narrowing the range).
-    // This is not the regression test of the fold: the managed path runs the host StackLinq, which always called the
-    // selector, so the throws held before the fix too. The fold is guarded by
-    // ExpressionTrapsTests.CountRangeStages_StopsAfterATrappingSelector and the snapshot. This test checks that
-    // the CPU paths still give the C# sums, and becomes the native check of the error once #718 lands.
+    // The managed path runs the host StackLinq, which always called the selector, so its throws held before the fold
+    // was fixed too. The fold is guarded by ExpressionTrapsTests.CountRangeStages_StopsAfterATrappingSelector and the
+    // snapshot; on the native build, the division by zero of the element the Skip drops raises the error as well.
     [SkippableTheory]
     [MemberData(nameof(Paths))]
     [TestTarget(ExecutionTarget.CpuExecution)]
@@ -137,12 +136,13 @@ public class StackLinqRangeTests : TranspilerTestBase
         int[] table = [7];
         var result = new int[2];
 
+        // mutant: IntegerDivision.hpp without the divisor check (the native launch ends the process)
+        Assert.Throws<DivideByZeroException>(() => Run(
+            managed,
+            () => StackLinqRangeKernels.LaunchDividingSelectSkipKernel([0, 2], result, gridDimX: 1, blockDimX: 1)
+        ));
         if (managed)
         {
-            Assert.Throws<DivideByZeroException>(() => Run(
-                managed,
-                () => StackLinqRangeKernels.LaunchDividingSelectSkipKernel([0, 2], result, gridDimX: 1, blockDimX: 1)
-            ));
             Assert.Throws<IndexOutOfRangeException>(() => Run(
                 managed,
                 () => StackLinqRangeKernels.LaunchIndexingSelectSkipKernel(

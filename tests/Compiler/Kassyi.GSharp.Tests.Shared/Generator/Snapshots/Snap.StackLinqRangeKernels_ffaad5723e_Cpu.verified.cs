@@ -46,6 +46,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(690712025u, "StackLinqRang
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1110401708u, "StackLinqRangeKernels.cs", 108, 99, "SelectSkipCountKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1078748565u, "StackLinqRangeKernels.cs", 119, 13, "DividingSelectSkipKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2120921973u, "StackLinqRangeKernels.cs", 120, 13, "DividingSelectSkipKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(474669973u, "StackLinqRangeKernels.cs", 120, 62, "DividingSelectSkipKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(476368303u, "StackLinqRangeKernels.cs", 130, 13, "IndexingSelectSkipKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(713051150u, "StackLinqRangeKernels.cs", 130, 62, "IndexingSelectSkipKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1713125983u, "StackLinqRangeKernels.cs", 141, 13, "TakeCountKernel", "G#: a null array is read"),
@@ -1582,7 +1583,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
-return 10/__gsharp_id_3_x;
+return __gsharp_div_i32(10,__gsharp_id_3_x,474669973u);
 }
 )(__gsharp_val_0);
 if (__gsharp_stage_1_count < __gsharp_stage_1_n)

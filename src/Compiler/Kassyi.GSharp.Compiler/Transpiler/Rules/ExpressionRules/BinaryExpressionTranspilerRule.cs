@@ -56,17 +56,19 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             return;
         }
 
-        // int and long arithmetic that C++ leaves undefined goes through the Prelude (#722); a call leaves the order of its
-        // arguments unspecified, so interfering operands go through temporaries
+        // int and long arithmetic that C++ leaves undefined goes through the Prelude (#722), and so does a division
+        // whose divisor may be 0 or -1, with the place of its check (#718); a call leaves the order of its arguments
+        // unspecified, so interfering operands go through temporaries
         if (operation != null && IntegerSemantics.GetBinaryHelper(operation) is { } helper)
         {
+            var site = DivisorCheck.PlanSite(helper, node, ref context);
             if (OperandsInterfere(node, ref context))
             {
-                TranspileSequencedCall(node, helper, ref context);
+                TranspileSequencedCall(node, helper, site, ref context);
                 return;
             }
 
-            IntegerSemanticsEmitter.AppendCall(helper, node.Left, node.Right, ref context);
+            IntegerSemanticsEmitter.AppendCall(helper, node.Left, node.Right, site, ref context);
             return;
         }
 
@@ -235,8 +237,10 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         EvaluationOrder.AppendTempName(writer, right);
     }
 
-    // ([&]() { auto __gsharp_seq_0 = <left>; auto __gsharp_seq_1 = <right>; return <helper>(__gsharp_seq_0,__gsharp_seq_1); }())
-    private static void TranspileSequencedCall(BinaryExpressionSyntax node, string helper, ref TranspileContext context)
+    // ([&]() { auto __gsharp_seq_0 = <left>; auto __gsharp_seq_1 = <right>;
+    //   return <helper>(__gsharp_seq_0,__gsharp_seq_1[,<site>]); }())
+    private static void TranspileSequencedCall(BinaryExpressionSyntax node, string helper, NullCheckSite? site,
+        ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         using var sequence = EvaluationOrder.BeginSequence(writer);
@@ -249,6 +253,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             EvaluationOrder.AppendTempName(writer, left);
             writer.Append(',');
             EvaluationOrder.AppendTempName(writer, right);
+            DivisorCheck.AppendSiteArgument(writer, site);
         }
     }
 

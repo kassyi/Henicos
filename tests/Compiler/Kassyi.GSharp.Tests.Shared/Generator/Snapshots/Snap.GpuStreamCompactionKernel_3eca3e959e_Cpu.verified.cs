@@ -223,7 +223,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_7_sharedMem={ (unsigned int*)__gsharp_allocate_smem_static(0x50a36458aec438a9ull, (2176) * sizeof(unsigned int), alignof(unsigned int)) };
 __gsharp_ctx->__gsharp_id_8_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_9_bIdx=(int)blockIdx.x;
-__gsharp_ctx->__gsharp_id_10_elementsPerBlock=__gsharp_mul_i32((int)blockDim.x,2);
+__gsharp_ctx->__gsharp_id_10_elementsPerBlock=(int)blockDim.x*2;
 __gsharp_ctx->__gsharp_id_11_globalOffset=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_9_bIdx,__gsharp_ctx->__gsharp_id_10_elementsPerBlock);
 __gsharp_ctx->__gsharp_id_12_treeSize=__gsharp_ctx->__gsharp_id_10_elementsPerBlock;
 __gsharp_ctx->__gsharp_id_13_stride=1;
@@ -786,7 +786,7 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_4_bIdx = (int)blockIdx.x;
-int __gsharp_id_5_elementsPerBlock = __gsharp_mul_i32((int)blockDim.x,2);
+int __gsharp_id_5_elementsPerBlock = (int)blockDim.x*2;
 int __gsharp_id_6_globalOffset = __gsharp_mul_i32(__gsharp_id_4_bIdx,__gsharp_id_5_elementsPerBlock);
 int __gsharp_id_7_globalA = __gsharp_add_i32(__gsharp_id_6_globalOffset,__gsharp_id_3_tid);
 int __gsharp_id_8_globalB = __gsharp_add_i32(__gsharp_add_i32(__gsharp_id_6_globalOffset,__gsharp_id_3_tid),__gsharp_id_5_elementsPerBlock/2);

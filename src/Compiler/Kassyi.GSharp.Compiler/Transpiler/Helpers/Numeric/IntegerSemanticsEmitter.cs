@@ -73,7 +73,7 @@ internal static class IntegerSemanticsEmitter
                 ? StepForm.OldValue
                 : StepForm.NewValue;
         var undo = IntegerSemantics.GetStepUndoHelper(operation);
-        AppendWithSpilledTarget(operand, step, value: null, cast, form, undo, ref context);
+        AppendWithSpilledTarget(operand, value: null, new StepPlan(step, Site: null, cast, form, undo), ref context);
     }
 
     /// <summary>
@@ -81,18 +81,23 @@ internal static class IntegerSemanticsEmitter
     /// <see cref="IntegerSemantics.GetCompoundHelper"/> gave <paramref name="binaryHelper"/>, as
     /// <c>x=(T)__gsharp_add_i32(x,y)</c> (parenthesized where its value is used; the cast narrows to a target narrower
     /// than the operator), with the parts of the target whose evaluation writes something in temporaries (see
-    /// <see cref="AppendStep"/>).
+    /// <see cref="AppendStep"/>). A division passes the place of its divisor check last (<paramref name="site"/>,
+    /// <see cref="DivisorCheck"/>).
     /// </summary>
     public static void AppendCompound(ICompoundAssignmentOperation operation, AssignmentExpressionSyntax node,
-        string binaryHelper, ref TranspileContext context)
+        string binaryHelper, NullCheckSite? site, ref TranspileContext context)
     {
         var cast = IntegerSemantics.GetCompoundNarrowing(operation);
         var form = IsValueUsed(node, context.Query.SemanticModel) ? StepForm.NewValue : StepForm.Statement;
-        AppendWithSpilledTarget(node.Left, binaryHelper, node.Right, cast, form, undo: null, ref context);
+        var plan = new StepPlan(binaryHelper, site, cast, form, Undo: null);
+        AppendWithSpilledTarget(node.Left, node.Right, plan, ref context);
     }
 
-    /// <summary>Writes <c>&lt;helper&gt;(&lt;left&gt;,&lt;right&gt;)</c>.</summary>
-    public static void AppendCall(string helper, ExpressionSyntax left, ExpressionSyntax right,
+    /// <summary>
+    /// Writes <c>&lt;helper&gt;(&lt;left&gt;,&lt;right&gt;)</c>; a division passes the place of its divisor check last
+    /// (<paramref name="site"/>, <see cref="DivisorCheck"/>).
+    /// </summary>
+    public static void AppendCall(string helper, ExpressionSyntax left, ExpressionSyntax right, NullCheckSite? site,
         ref TranspileContext context)
     {
         context.Emitter.Writer.Append(helper);
@@ -101,6 +106,7 @@ internal static class IntegerSemanticsEmitter
             context.Visitor.Visit(Unparenthesize(left));
             context.Emitter.Writer.Append(',');
             context.Visitor.Visit(Unparenthesize(right));
+            DivisorCheck.AppendSiteArgument(context.Emitter.Writer, site);
         }
     }
 
@@ -137,18 +143,24 @@ internal static class IntegerSemanticsEmitter
         OldValue
     }
 
+    // What a step or a compound assignment writes: the Prelude function of its operator and the place of its divisor
+    // check (a division), the type its result is cast back to, how its value is used, and the function that steps the
+    // value back (the old value of a postfix step)
+    private readonly record struct StepPlan(string Helper, NullCheckSite? Site, ITypeSymbol? Cast, StepForm Form,
+        string? Undo);
+
     // <target>=(<cast>)<helper>(<target>,<value or 1>) in the form <form>. When finding the target writes something
     // (data[k++].B += 3), those parts are evaluated into temporaries first, in the C# order, and the target is written
     // with them (C# spec §12.21.4: the location is found once):
     // ([&]() { int __gsharp_seq_0 = <k++>; return data[__gsharp_seq_0].B=__gsharp_add_i32(data[__gsharp_seq_0].B,3); }())
-    private static void AppendWithSpilledTarget(ExpressionSyntax target, string helper, ExpressionSyntax? value,
-        ITypeSymbol? cast, StepForm form, string? undo, ref TranspileContext context)
+    private static void AppendWithSpilledTarget(ExpressionSyntax target, ExpressionSyntax? value, in StepPlan plan,
+        ref TranspileContext context)
     {
         var spills = ImmutableArray.CreateBuilder<(ExpressionSyntax Expression, bool Reference)>();
         CollectSpills(target, context.Query.SemanticModel, spills);
         if (spills.Count == 0)
         {
-            AppendStepForm(target, helper, value, cast, form, undo, inSequence: false, ref context);
+            AppendStepForm(target, value, plan, inSequence: false, ref context);
             return;
         }
 
@@ -162,7 +174,7 @@ internal static class IntegerSemanticsEmitter
             }
 
             sequence.Return();
-            AppendStepForm(target, helper, value, cast, form, undo, inSequence: true, ref context);
+            AppendStepForm(target, value, plan, inSequence: true, ref context);
         }
         finally
         {
@@ -259,13 +271,14 @@ internal static class IntegerSemanticsEmitter
     }
 
     // The step itself; its value is parenthesized where it is a part of an expression (not the value a sequence returns)
-    private static void AppendStepForm(ExpressionSyntax target, string helper, ExpressionSyntax? value,
-        ITypeSymbol? cast, StepForm form, string? undo, bool inSequence, ref TranspileContext context)
+    private static void AppendStepForm(ExpressionSyntax target, ExpressionSyntax? value, in StepPlan plan,
+        bool inSequence, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
+        var form = plan.Form;
         if (form == StepForm.Statement || (form == StepForm.NewValue && inSequence))
         {
-            AppendRepeatedAssignment(target, helper, value, cast, ref context);
+            AppendRepeatedAssignment(target, value, plan, ref context);
             return;
         }
 
@@ -273,14 +286,14 @@ internal static class IntegerSemanticsEmitter
         {
             using (writer.Parentheses())
             {
-                AppendRepeatedAssignment(target, helper, value, cast, ref context);
+                AppendRepeatedAssignment(target, value, plan, ref context);
             }
 
             return;
         }
 
         // The value before the step: the new value stepped back, which wraps back as well
-        if (cast != null)
+        if (plan.Cast is { } cast)
         {
             using (writer.Parentheses())
             {
@@ -288,26 +301,26 @@ internal static class IntegerSemanticsEmitter
             }
         }
 
-        writer.Append(undo ?? helper);
+        writer.Append(plan.Undo ?? plan.Helper);
         using (writer.Parentheses())
         {
             using (writer.Parentheses())
             {
-                AppendRepeatedAssignment(target, helper, value, cast, ref context);
+                AppendRepeatedAssignment(target, value, plan, ref context);
             }
 
             writer.Append(",1");
         }
     }
 
-    // <target>=(<cast>)<helper>(<target>,<value or 1>)
-    private static void AppendRepeatedAssignment(ExpressionSyntax target, string helper, ExpressionSyntax? value,
-        ITypeSymbol? cast, ref TranspileContext context)
+    // <target>=(<cast>)<helper>(<target>,<value or 1>[,<site>])
+    private static void AppendRepeatedAssignment(ExpressionSyntax target, ExpressionSyntax? value, in StepPlan plan,
+        ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         context.Visitor.Visit(target);
         writer.Append('=');
-        if (cast != null)
+        if (plan.Cast is { } cast)
         {
             using (writer.Parentheses())
             {
@@ -315,7 +328,7 @@ internal static class IntegerSemanticsEmitter
             }
         }
 
-        writer.Append(helper);
+        writer.Append(plan.Helper);
         using (writer.Parentheses())
         {
             context.Visitor.Visit(Unparenthesize(target));
@@ -328,6 +341,8 @@ internal static class IntegerSemanticsEmitter
             {
                 context.Visitor.Visit(Unparenthesize(value));
             }
+
+            DivisorCheck.AppendSiteArgument(writer, plan.Site);
         }
     }
 

@@ -274,6 +274,20 @@ export async function checkBuildStep(assert: AssertModule): Promise<void> {
       ["dotnet build P", false, false, 2, 7],
       "the builds queue on CPU slots, after the run's predecessor",
     );
+    const notices: string[] = [];
+    const write = process.stderr.write;
+    process.stderr.write = ((text: string | Uint8Array) =>
+      notices.push(String(text)) > 0) as typeof process.stderr.write;
+    try {
+      FakeScheduler.send(first, { type: "queued", id: 8, state: "running" });
+      await until("the queued line", () => notices.some((n) => n.includes("queued #8")));
+    } finally {
+      process.stderr.write = write;
+    }
+    assert.ok(
+      notices.some((n) => n.includes("queued #8 (build, no GPU)")),
+      "the build's queued line says that it is the build, so that its id is not taken for the tests",
+    );
     FakeScheduler.send(first, { type: "granted", id: 8, cpus: 1, capacity: 2, protocol: ProtocolVersion });
     await until("the build starts", () => host.commands.length === 1);
     host.commands[0]?.end({ code: 2, signaled: false });

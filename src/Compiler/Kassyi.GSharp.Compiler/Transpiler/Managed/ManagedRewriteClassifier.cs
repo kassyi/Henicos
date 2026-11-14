@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The list has three cases today:
+/// The list has four cases today:
 /// <list type="bullet">
 /// <item><description>an operator macro assignment (<c>c = a + b;</c> with a <c>[GpuOperatorMacro]</c> operator), whose
 /// operator body throws <c>GpuOnlyException</c> and has no run-time stand-in;</description></item>
@@ -18,7 +18,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// is <see cref="float"/> or <see cref="double"/> (#730), which the host <c>Sum</c> vectorized with SIMD in a different
 /// addition order from the GPU loop;</description></item>
 /// <item><description>a <c>Gpu.InlinePtx</c> statement (#581), which the managed path replaces with a
-/// <see cref="NotSupportedException"/> throw instead of the stub's <c>GpuOnlyException</c>.</description></item>
+/// <see cref="NotSupportedException"/> throw instead of the stub's <c>GpuOnlyException</c>;</description></item>
+/// <item><description>an int or long <c>/</c>, <c>%</c>, <c>/=</c> or <c>%=</c> that may divide the minimum by -1
+/// (<see cref="ManagedDivision"/>, #718), where .NET throws <see cref="OverflowException"/> and G# gives the GPU
+/// result.</description></item>
 /// </list>
 /// </para>
 /// <para>
@@ -36,7 +39,8 @@ internal static class ManagedRewriteClassifier
     public static bool IsSemanticRewrite(SyntaxNode node, SemanticModel semanticModel) =>
         (node is AssignmentExpressionSyntax assignment && TryGetOperatorMacro(assignment, semanticModel, out _)) ||
         (node is InvocationExpressionSyntax invocation &&
-         (IsSequentialSum(invocation, semanticModel) || IsInlinePtx(invocation, semanticModel)));
+         (IsSequentialSum(invocation, semanticModel) || IsInlinePtx(invocation, semanticModel))) ||
+        ManagedDivision.Plan(node, semanticModel) != null;
 
     /// <summary>
     /// The operator macro that the managed path expands at <paramref name="assignment"/>: a simple assignment statement

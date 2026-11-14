@@ -60,6 +60,7 @@ internal static class DeviceExportAttributeNames
         public const string HasExitOnlyBarrier = "HasExitOnlyBarrier";
         public const string ReachesArrivalBarrier = "ReachesArrivalBarrier";
         public const string ReachesSharedMemory = "ReachesSharedMemory";
+        public const string ReachesGeneratedMeaning = "ReachesGeneratedMeaning";
     }
 
     /// <summary>The names of one dialect's <see cref="DeviceExportRecord.DialectText"/>.</summary>

@@ -59,6 +59,24 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
 
 - By default, G# follows C# and emits the check.
 - The compiler removes the check where it can prove the access is in range, as the .NET JIT does for loop indices.
+- An integer `/` or `%` (and `/=`, `%=`) whose divisor may be 0 throws `DivideByZeroException` on every path: the
+  native CPU build, the managed path and the CUDA build, release included (the failing CUDA thread records the error
+  and exits, §6.3). A divisor whose constant or type excludes 0 has no check (`x / 7`).
+  `MinValue / -1` and `MinValue % -1`, which C# leaves implementation-defined in an unchecked context, give the GPU
+  result, `MinValue` and `0`, on every path: the native CPU build tests for `-1`, and the managed path calls a G#
+  function for a division that may reach that case, in a kernel and in a device function alike, where the C# operator
+  would throw `OverflowException`. The C# execution (`KernelExecution.CSharp`) runs the user's C# as it is and throws
+  it. The managed path throws it too in three forms that keep the C# operator:
+  - a device function declared in a `struct` that is not `partial` (a class that holds device functions must be
+    `partial`, GSH0036): the rewritten copy of the function is written into a partial declaration of its types, and
+    such a function has none;
+  - the compound assignment (`/=`, `%=`) of an indexer whose receiver or argument writes, may throw, or reads what
+    the right side writes (`g[k++] /= -1`): the getter and the setter would evaluate it twice;
+  - the compound assignment of a property of a value type whose receiver is not a variable (a call that returns the
+    value type by value, `MakeCell().P /= d`; a call that returns a `ref` is a variable and is rewritten), or of a
+    property of a type parameter.
+  The other compound assignments are rewritten, also where the right side writes the variable of the target or the
+  receiver of the property: the target is found once and read before the right side.
 - The null check of an array read is removed where the array cannot be `null`: a stack array, and a parameter of a
   device function that is declared non-nullable (`T[]` in a `#nullable enable` context, or a struct that holds such an
   array) and never assigned. A call of a device function checks an argument that may be `null` once, at the call, for

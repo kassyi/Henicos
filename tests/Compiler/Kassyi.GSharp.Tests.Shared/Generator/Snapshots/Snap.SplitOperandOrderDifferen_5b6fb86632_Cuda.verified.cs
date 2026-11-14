@@ -246,7 +246,7 @@ return 1;
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenDivide(GSharpArray<int> __gsharp_id_0_counts, int __gsharp_id_1_zero){
 __syncthreads();
 __gsharp_array_at(__gsharp_id_0_counts, 0, ""G#: a null array is read at SplitOperandOrderDifferentialKernels.cs(282,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_counts, 0, ""G#: a null array is read at SplitOperandOrderDifferentialKernels.cs(282,9)""),1);
-return 1/__gsharp_id_1_zero;
+return __gsharp_div_i32(1,__gsharp_id_1_zero,""Attempted to divide by zero. at SplitOperandOrderDifferentialKernels.cs(283,16)"");
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__StoreValue(int* __gsharp_id_0_target, int __gsharp_id_1_value){

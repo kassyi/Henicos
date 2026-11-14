@@ -100,11 +100,17 @@ internal readonly record struct KernelHostModel
     /// </summary>
     public int GridScratchSlotBytes { get; init; }
 
-    /// <summary>The parameter list of <c>Launch{Name}</c> as C# compares overloads.</summary>
-    public string ManagedSignatureKey { get; init; }
+    /// <summary>The parameter types of <c>Launch{Name}</c> as C# compares overloads (<see cref="LauncherSignatures"/>).</summary>
+    public string ManagedParameterTypes { get; init; }
 
-    /// <summary>The parameter list of the typed <c>Launch{Name}Ptr</c> as C# compares overloads.</summary>
-    public string TypedPointerSignatureKey { get; init; }
+    /// <summary>The parameter types of the untyped <c>Launch{Name}Ptr</c> as C# compares overloads.</summary>
+    public string PointerParameterTypes { get; init; }
+
+    /// <summary>The parameter types of the typed <c>Launch{Name}Ptr</c> of an overloaded kernel as C# compares overloads.</summary>
+    public string TypedPointerParameterTypes { get; init; }
+
+    /// <summary>The parameter types of the kernel's own method as C# compares overloads.</summary>
+    public string OwnParameterTypes { get; init; }
 
     /// <summary><c>Name(type, type)</c>, for the GSH0059 message.</summary>
     public string DisplaySignature { get; init; }
@@ -186,8 +192,10 @@ internal readonly record struct KernelHostModel
                                    declaration.SyntaxTree == model.SyntaxTree
                 ? ParallelAggregatePlanner.GetGridScratchSlotBytes(declaration, model)
                 : 0,
-            ManagedSignatureKey = KernelHostNames.GetSignatureKey(parameters, typedPointers: false),
-            TypedPointerSignatureKey = KernelHostNames.GetSignatureKey(parameters, typedPointers: true),
+            ManagedParameterTypes = LauncherSignatures.FormatParameterTypes(parameters, LauncherKind.Managed),
+            PointerParameterTypes = LauncherSignatures.FormatParameterTypes(parameters, LauncherKind.Pointer),
+            TypedPointerParameterTypes = LauncherSignatures.FormatParameterTypes(parameters, LauncherKind.TypedPointer),
+            OwnParameterTypes = LauncherSignatures.FormatOwnParameterTypes(parameters),
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
             Parameters = parameters,
             LauncherUnavailableReason = unavailableReason,
