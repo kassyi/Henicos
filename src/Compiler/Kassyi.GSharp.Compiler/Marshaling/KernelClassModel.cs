@@ -3,12 +3,23 @@ using Kassyi.GSharp.Compiler.Models;
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>The kernels of one class, which the generator emits as one wrapper source.</summary>
+/// <param name="Class">The class.</param>
+/// <param name="Kernels">The kernels, in the order given.</param>
+/// <param name="Structs">The structs that <c>AotContexts</c> marshals.</param>
+/// <param name="ErrorSites">The error sites of the kernels.</param>
+/// <param name="WarmupRelays">The warmup relays of the containers.</param>
+/// <param name="OmitsClassMembers">
+/// Whether a kernel's own method has the name of a member that G# generates in every kernel class (GSH0059,
+/// <see cref="LauncherSignatures.ClassMemberNames"/>): the class then gets none of them and no kernel gets host
+/// members, since leaving out the kernel does not remove the collision.
+/// </param>
 internal readonly record struct KernelClassModel(
     HostClassHeader Class,
     EquatableArray<KernelEmission> Kernels,
     EquatableArray<StructHostSource> Structs,
     EquatableArray<ErrorSiteEntry> ErrorSites = default,
-    EquatableArray<WarmupRelay> WarmupRelays = default)
+    EquatableArray<WarmupRelay> WarmupRelays = default,
+    bool OmitsClassMembers = false)
 {
     /// <summary>
     /// The accessibility of the <c>AotContexts</c> class: the narrowest that its structs need
@@ -57,9 +68,11 @@ internal readonly record struct KernelClassModel(
 
     /// <summary>
     /// Builds the class model from the kernels of one class, in the order given; the overloads, member keys and the
-    /// indistinguishable overloads are derived from these models only.
+    /// kernels whose generated members another kernel already has (<see cref="LauncherSignatures.FindConflicts"/>) are
+    /// derived from these models only.
     /// </summary>
-    public static KernelClassModel Create(HostClassHeader header, IReadOnlyList<TranspiledKernelResult> kernels)
+    public static KernelClassModel Create(HostClassHeader header, IReadOnlyList<TranspiledKernelResult> kernels,
+        bool emitsSource)
     {
         var hosts = ImmutableArray.CreateBuilder<KernelHostModel>(kernels.Count);
         kernels
@@ -67,6 +80,10 @@ internal readonly record struct KernelClassModel(
             .Select(static kernel => kernel.Host)
             .AddTo(hosts);
 
+        var conflicts = LauncherSignatures.FindConflicts(hosts, emitsSource);
+        var omitsClassMembers = conflicts
+            .AsStackEnumerable()
+            .Any(static conflict => conflict.IsClassMember);
         var emissions = ImmutableArray.CreateBuilder<KernelEmission>(kernels.Count);
         var structs = ImmutableArray.CreateBuilder<StructHostSource>();
         var structIndices = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -83,14 +100,11 @@ internal readonly record struct KernelClassModel(
             }
 
             var isOverloaded = IsOverloaded(hosts, i);
-            var memberKey = isOverloaded
-                ? $"{kernel.Host.Name}__o{kernel.Host.OverloadOrdinal.ToString(CultureInfo.InvariantCulture)}"
-                : kernel.Host.Name;
             emissions.Add(new KernelEmission(
                 kernel.Host,
-                memberKey,
+                KernelHostNames.GetMemberKey(kernel.Host, isOverloaded),
                 isOverloaded,
-                TryFindIndistinguishableOverload(hosts, i, out _, out _),
+                omitsClassMembers || conflicts[i].IsConflict,
                 kernel.CudaSource,
                 kernel.CppSource,
                 kernel.ManagedCSharpSource,
@@ -119,7 +133,8 @@ internal readonly record struct KernelClassModel(
             kernelEmissions.AsEquatableArray(),
             structs.ToImmutable().AsEquatableArray(),
             classErrorSites.AsEquatableArray(),
-            WarmupRelayPlan.Create(header, kernelEmissions));
+            WarmupRelayPlan.Create(header, kernelEmissions),
+            omitsClassMembers);
     }
 
     /// <summary>
@@ -137,51 +152,6 @@ internal readonly record struct KernelClassModel(
         kernels
             .AsStackEnumerable()
             .Count(kernels[index].Name, static (k, name) => k.Name == name) > 1;
-
-    /// <summary>
-    /// Finds an earlier overload of <c>kernels[index]</c> whose <c>Launch{Name}</c> or typed <c>Launch{Name}Ptr</c> has the
-    /// same parameter list, which C# would reject as a duplicate member (GSH0059).
-    /// </summary>
-    /// <param name="kernels">The kernels of one class.</param>
-    /// <param name="index">The kernel to check.</param>
-    /// <param name="earlier">The index of the earlier overload, or -1.</param>
-    /// <param name="wrapperName">The wrapper that would be duplicated, or empty.</param>
-    public static bool TryFindIndistinguishableOverload(IReadOnlyList<KernelHostModel> kernels, int index,
-        out int earlier, out string wrapperName)
-    {
-        earlier = -1;
-        wrapperName = string.Empty;
-        if (!IsOverloaded(kernels, index))
-        {
-            return false;
-        }
-
-        var kernel = kernels[index];
-        for (var i = 0; i < kernels.Count; i++)
-        {
-            var other = kernels[i];
-            if (other.Name != kernel.Name || other.OverloadOrdinal >= kernel.OverloadOrdinal)
-            {
-                continue;
-            }
-
-            if (string.Equals(other.ManagedSignatureKey, kernel.ManagedSignatureKey, StringComparison.Ordinal))
-            {
-                earlier = i;
-                wrapperName = KernelHostNames.GetLaunchName(kernel);
-                return true;
-            }
-
-            if (string.Equals(other.TypedPointerSignatureKey, kernel.TypedPointerSignatureKey, StringComparison.Ordinal))
-            {
-                earlier = i;
-                wrapperName = KernelHostNames.GetTypedPointerLaunchName(kernel);
-                return true;
-            }
-        }
-
-        return false;
-    }
 }
 
 /// <summary>

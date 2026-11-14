@@ -71,7 +71,7 @@ return __gsharp_add_i32(7,__gsharp_id_0_i);
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__AddAfterBarrier(GSharpArray<int> __gsharp_id_0_shared, int __gsharp_id_1_i){
 __gsharp_array_at(__gsharp_id_0_shared, __gsharp_id_1_i, ""G#: a null array is read at PartialMethodKernels.cs(36,9)"")=__gsharp_add_i32(__gsharp_id_1_i,1);
 __syncthreads();
-return __gsharp_array_at(__gsharp_id_0_shared, (__gsharp_add_i32(__gsharp_id_1_i,1))%__gsharp_array_ref(__gsharp_id_0_shared, ""G#: a null array is read at PartialMethodKernels.cs(38,33)"").length, ""G#: a null array is read at PartialMethodKernels.cs(38,16)"");
+return __gsharp_array_at(__gsharp_id_0_shared, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_1_i,1),__gsharp_array_ref(__gsharp_id_0_shared, ""G#: a null array is read at PartialMethodKernels.cs(38,33)"").length,""Attempted to divide by zero. at PartialMethodKernels.cs(38,23)""), ""G#: a null array is read at PartialMethodKernels.cs(38,16)"");
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__PartialMethodKernels__Bump(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_i){

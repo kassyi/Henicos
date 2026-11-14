@@ -77,7 +77,7 @@ internal static class PropertyAccessorAssignment
         {
             var operation = model.GetSafeOperation(node) as ICompoundAssignmentOperation;
             if (operation is { OperatorMethod: not null } or { IsLifted: true } ||
-                CompoundOperator.ForAssignment(node, operation) is not { } compoundOperator)
+                CompoundOperator.ForAssignment(node, operation, ref context) is not { } compoundOperator)
             {
                 Fail(node, ref context);
                 return;
