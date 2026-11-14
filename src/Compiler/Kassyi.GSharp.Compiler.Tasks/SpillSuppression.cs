@@ -89,8 +89,10 @@ public static class SpillSuppression
         return true;
     }
 
-    // _Z<length><identifier>... (also _ZL for a function with internal linkage) gives the identifier; any other symbol
-    // is the name itself. A nested name (_ZN...E) is not emitted by G#, so it stays as it is and matches no name.
+    // _Z<length><identifier>... (also _ZL for a function with internal linkage) gives the identifier. A local entity,
+    // _ZZ<length><identifier>...E<entity> (the lambda of a local function; _ZZZ for one nested in another), gives the
+    // identifier of the function that encloses it, so its spills count as that function's. Any other symbol is the
+    // name itself; a nested name (_ZN...E) is not emitted by G#, so it stays as it is and matches no name.
     private static ReadOnlySpan<char> Demangle(ReadOnlySpan<char> symbol)
     {
         if (!symbol.StartsWith("_Z".AsSpan(), StringComparison.Ordinal))
@@ -98,7 +100,17 @@ public static class SpillSuppression
             return symbol;
         }
 
-        var position = symbol.Length > 2 && symbol[2] == 'L' ? 3 : 2;
+        var position = 2;
+        while (position < symbol.Length && symbol[position] == 'Z')
+        {
+            position++;
+        }
+
+        if (position < symbol.Length && symbol[position] == 'L')
+        {
+            position++;
+        }
+
         var length = 0;
         var digits = 0;
         while (position + digits < symbol.Length && char.IsDigit(symbol[position + digits]))

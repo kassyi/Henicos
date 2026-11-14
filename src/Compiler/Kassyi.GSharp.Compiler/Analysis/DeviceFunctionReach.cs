@@ -14,7 +14,9 @@ internal static class DeviceFunctionReach
     // [WHY] The direct callees of each function are found once per compilation; the walk of each kernel reuses them.
     private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<IMethodSymbol>> s_callees = new();
 
-    /// <summary>The names of the device functions that <paramref name="body"/> reaches, sorted, without repeats.</summary>
+    /// <summary>
+    /// The names of the device functions that <paramref name="body"/> reaches, sorted, without repeats.
+    /// </summary>
     public static EquatableArray<string> GetReachedFunctionNames(SyntaxNode body, Compilation compilation)
     {
         var names = new SortedSet<string>(StringComparer.Ordinal);

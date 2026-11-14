@@ -84,16 +84,16 @@ public partial class LocalFunctionRecursionKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(179668756u, "LocalFunctionRecursionKernels.cs", 19, 9, "SelfRecursionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(997604473u, "LocalFunctionRecursionKernels.cs", 19, 25, "SelfRecursionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(536279342u, "LocalFunctionRecursionKernels.cs", 30, 29, "MutualRecursionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(812307780u, "LocalFunctionRecursionKernels.cs", 31, 9, "MutualRecursionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1066270781u, "LocalFunctionRecursionKernels.cs", 60, 13, "VoidRecursionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(132014901u, "LocalFunctionRecursionKernels.cs", 51, 14, "VoidRecursionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(981889962u, "LocalFunctionRecursionKernels.cs", 70, 9, "RecursionBeforeDeclarationKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1020789170u, "LocalFunctionRecursionKernels.cs", 70, 27, "RecursionBeforeDeclarationKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(455338048u, "LocalFunctionRecursionKernels.cs", 82, 9, "DelegateOfRecursiveKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1067906386u, "LocalFunctionRecursionKernels.cs", 82, 26, "DelegateOfRecursiveKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2056186538u, "LocalFunctionRecursionKernels.cs", 21, 9, "SelfRecursionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(428161369u, "LocalFunctionRecursionKernels.cs", 21, 25, "SelfRecursionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(810180302u, "LocalFunctionRecursionKernels.cs", 32, 29, "MutualRecursionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1730148604u, "LocalFunctionRecursionKernels.cs", 33, 9, "MutualRecursionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(534600689u, "LocalFunctionRecursionKernels.cs", 62, 13, "VoidRecursionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2112294281u, "LocalFunctionRecursionKernels.cs", 53, 14, "VoidRecursionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(769777502u, "LocalFunctionRecursionKernels.cs", 72, 9, "RecursionBeforeDeclarationKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1693760850u, "LocalFunctionRecursionKernels.cs", 72, 27, "RecursionBeforeDeclarationKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(732581092u, "LocalFunctionRecursionKernels.cs", 84, 9, "DelegateOfRecursiveKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1942596114u, "LocalFunctionRecursionKernels.cs", 84, 26, "DelegateOfRecursiveKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -121,7 +121,7 @@ auto __gsharp_id_4_Sum = [&](int __gsharp_id_5_n) -> int
 return __gsharp_lf_impl___gsharp_id_4_Sum(__gsharp_lf_impl___gsharp_id_4_Sum, __gsharp_id_5_n);
 }
 ;
-__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_tid, 179668756u)=__gsharp_id_4_Sum(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_tid, 997604473u));
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_tid, 2056186538u)=__gsharp_id_4_Sum(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_tid, 428161369u));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_SelfRecursionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionRecursionKernels__SelfRecursionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -297,8 +297,8 @@ auto __gsharp_id_6_IsOdd = [&](int __gsharp_id_7_n) -> int
 return __gsharp_lf_impl___gsharp_id_6_IsOdd(__gsharp_lf_impl___gsharp_id_4_IsEven, __gsharp_lf_impl___gsharp_id_6_IsOdd, __gsharp_id_7_n);
 }
 ;
-int __gsharp_id_3_result = __gsharp_id_4_IsEven(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 536279342u));
-__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 812307780u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_result,100),__gsharp_id_2_calls);
+int __gsharp_id_3_result = __gsharp_id_4_IsEven(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 810180302u));
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1730148604u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_result,100),__gsharp_id_2_calls);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MutualRecursionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionRecursionKernels__MutualRecursionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -434,7 +434,7 @@ if(__gsharp_id_3_n<=0)
 {
 return;
 }
-__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1066270781u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1066270781u),__gsharp_id_4_depth);
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 534600689u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 534600689u),__gsharp_id_4_depth);
 __gsharp_id_2_Fill(__gsharp_sub_i32(__gsharp_id_3_n,1),__gsharp_add_i32(__gsharp_id_4_depth,1));
 }
 }
@@ -444,7 +444,7 @@ auto __gsharp_id_2_Fill = [&](int __gsharp_id_3_n, int __gsharp_id_4_depth) -> v
 __gsharp_lf_impl___gsharp_id_2_Fill(__gsharp_lf_impl___gsharp_id_2_Fill, __gsharp_id_3_n, __gsharp_id_4_depth);
 }
 ;
-__gsharp_id_2_Fill(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 132014901u),0);
+__gsharp_id_2_Fill(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 2112294281u),0);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_VoidRecursionKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionRecursionKernels__VoidRecursionKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -589,7 +589,7 @@ auto __gsharp_id_2_Count = [&](int __gsharp_id_3_n) -> int
 return __gsharp_lf_impl___gsharp_id_2_Count(__gsharp_lf_impl___gsharp_id_2_Count, __gsharp_id_3_n);
 }
 ;
-__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 981889962u)=__gsharp_id_2_Count(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1020789170u));
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 769777502u)=__gsharp_id_2_Count(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1693760850u));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RecursionBeforeDeclarationKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalFunctionRecursionKernels__RecursionBeforeDeclarationKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -734,8 +734,8 @@ auto __gsharp_id_2_pick = __gsharp_id_3_Factorial;
 ([&]() {
 auto __gsharp_seq_0 = __gsharp_id_0_data;
 auto __gsharp_seq_1 = __gsharp_id_1_tid;
-int __gsharp_seq_2 = __gsharp_id_2_pick(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1067906386u));
-return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 455338048u) = __gsharp_seq_2;
+int __gsharp_seq_2 = __gsharp_id_2_pick(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1942596114u));
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 732581092u) = __gsharp_seq_2;
 }());
 }
 ";

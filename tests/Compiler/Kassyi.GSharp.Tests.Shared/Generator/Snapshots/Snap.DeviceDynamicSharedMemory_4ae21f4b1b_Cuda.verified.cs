@@ -430,13 +430,13 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1322931156u, "DeviceDynami
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(588950664u, "DeviceDynamicSharedMemoryKernels.cs", 126, 9, "PlainPersistKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(166416756u, "DeviceDynamicSharedMemoryKernels.cs", 148, 9, "StaticPersistKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1905345464u, "DeviceDynamicSharedMemoryKernels.cs", 179, 9, "GrowAfterCallerKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1075664808u, "DeviceDynamicSharedMemoryKernels.cs", 206, 9, "RecursiveKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1656761612u, "DeviceDynamicSharedMemoryKernels.cs", 237, 9, "NestedScopeKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2102761572u, "DeviceDynamicSharedMemoryKernels.cs", 256, 9, "ZeroThenGrowKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(945141536u, "DeviceDynamicSharedMemoryKernels.cs", 272, 9, "MiddleCallerKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1670171624u, "DeviceDynamicSharedMemoryKernels.cs", 289, 9, "NoParameterCallerKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1040047128u, "DeviceDynamicSharedMemoryKernels.cs", 307, 9, "NestedFunctionCallerKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(75006812u, "DeviceDynamicSharedMemoryKernels.cs", 323, 9, "NegativeCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(334075220u, "DeviceDynamicSharedMemoryKernels.cs", 208, 9, "RecursiveKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(787276676u, "DeviceDynamicSharedMemoryKernels.cs", 240, 9, "NestedScopeKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1205295804u, "DeviceDynamicSharedMemoryKernels.cs", 259, 9, "ZeroThenGrowKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1722219100u, "DeviceDynamicSharedMemoryKernels.cs", 275, 9, "MiddleCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(668610468u, "DeviceDynamicSharedMemoryKernels.cs", 292, 9, "NoParameterCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(710568908u, "DeviceDynamicSharedMemoryKernels.cs", 310, 9, "NestedFunctionCallerKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(863251756u, "DeviceDynamicSharedMemoryKernels.cs", 326, 9, "NegativeCountKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1572,7 +1572,7 @@ int __gsharp_id_2_tid = (int)threadIdx.x;
 int* __gsharp_id_3_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel::Slot<0x514817400221aa76ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,100);
 int __gsharp_id_4_r = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(__gsharp_id_1_n,2,__gsharp_dsmem);
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1075664808u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_r);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 334075220u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_r);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_RecursiveKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -1729,7 +1729,7 @@ int* __gsharp_id_7_b = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp_
 __gsharp_id_7_b[__gsharp_id_2_tid]=__gsharp_add_i32(1000,__gsharp_id_2_tid);
 __gsharp_id_4_outer=__gsharp_id_7_b[__gsharp_id_2_tid];
 }
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1656761612u)=__gsharp_add_i32(__gsharp_id_3_inner,__gsharp_id_4_outer);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 787276676u)=__gsharp_add_i32(__gsharp_id_3_inner,__gsharp_id_4_outer);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedScopeKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -1875,7 +1875,7 @@ __syncthreads();
 int __gsharp_id_5_h0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(0,0,__gsharp_id_3_tid,__gsharp_dsmem);
 int __gsharp_id_6_h1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(__gsharp_id_2_large,0,__gsharp_id_3_tid,__gsharp_dsmem);
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_3_tid, 2102761572u)=__gsharp_add_i32(__gsharp_add_i32((__gsharp_id_3_tid<__gsharp_id_1_small?__gsharp_id_4_outer[__gsharp_id_3_tid]:0),__gsharp_id_6_h1),__gsharp_id_5_h0);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_3_tid, 1205295804u)=__gsharp_add_i32(__gsharp_add_i32((__gsharp_id_3_tid<__gsharp_id_1_small?__gsharp_id_4_outer[__gsharp_id_3_tid]:0),__gsharp_id_6_h1),__gsharp_id_5_h0);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ZeroThenGrowKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2021,7 +2021,7 @@ __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,100);
 __syncthreads();
 int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Middle(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 945141536u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1722219100u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_helperResult);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MiddleCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2158,7 +2158,7 @@ __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKer
 __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_1_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1670171624u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper(__gsharp_dsmem);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 668610468u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper(__gsharp_dsmem);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NoParameterCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2305,7 +2305,7 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemor
 int __gsharp_id_7_plain = __gsharp_id_4_CallPlainHelper(__gsharp_id_2_tid);
 int __gsharp_id_8_noParameter = __gsharp_id_6_callNoParameterHelper();
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1040047128u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_7_plain),__gsharp_id_8_noParameter);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 710568908u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_7_plain),__gsharp_id_8_noParameter);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NestedFunctionCallerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2448,7 +2448,7 @@ int* __gsharp_id_5_second = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GS
 int* __gsharp_id_6_third = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel::Slot<0x0c3a506c39b2a5dbull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_6_third[__gsharp_id_3_tid]=__gsharp_add_i32(1000,__gsharp_id_3_tid);
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_3_tid, 75006812u)=__gsharp_id_4_first[__gsharp_id_3_tid];
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_3_tid, 863251756u)=__gsharp_id_4_first[__gsharp_id_3_tid];
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_NegativeCountKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

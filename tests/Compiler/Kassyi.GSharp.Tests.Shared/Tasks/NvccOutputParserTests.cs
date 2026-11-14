@@ -111,6 +111,13 @@ public class NvccOutputParserTests
     [InlineData("ptxas info    : Function properties for _Z18__gsharp_fn_Helperi", true)]
     [InlineData("ptxas info    : Function properties for _Z23__gsharp_fn_HelperOtherii", false)]
     [InlineData("ptxas info    : Function properties for _ZL18__gsharp_fn_Helperv", true)]
+    // The lambda of a local function is a local entity of the function that encloses it
+    [InlineData("ptxas info    : Function properties for _ZZ14__gsharp_k_Foo11GSharpArrayIiEjENKUliE_clEi", true)]
+    [InlineData(
+        "ptxas info    : Function properties for _ZZZ14__gsharp_k_Foo11GSharpArrayIiEjENKUliE_clEiENKUliE_clEi",
+        true
+    )]
+    [InlineData("ptxas info    : Function properties for _ZZ17__gsharp_k_FooBar11GSharpArrayIiEjENKUliE_clEi", false)]
     [InlineData("ptxas warning : Stack size for entry function '__gsharp_k_Foo' cannot be determined", true)]
     // A line that names no function
     [InlineData("    8 bytes stack frame, 8 bytes spill stores, 8 bytes spill loads", false)]
