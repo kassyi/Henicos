@@ -183,7 +183,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        DefaultVisit(node);
+        // The initializer of a ref local, the right side of a ref assignment and a branch of a ref conditional: the
+        // pointer that the ref local holds (RefLocals)
+        RefLocals.AppendReferenced(node, ref Context);
     }
 
     /// <inheritdoc />
