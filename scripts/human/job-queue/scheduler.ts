@@ -15,6 +15,8 @@ import {
 export interface Estimate {
   typicalMs: number;
   longestMs: number;
+  /** Where it came from (estimate-fallback.ts); absent in hand-made estimates. */
+  from?: string;
 }
 
 /** What the scheduler needs to know of a job. The server's job record extends it. */
@@ -107,6 +109,12 @@ export class Scheduler<J extends SchedulerJob> {
   memoryCapacity: number;
   used = 0;
   memoryUsed = 0;
+  /**
+   * pause: nothing new is granted, neither slots nor GPU turns (grant). The jobs that run keep their slots, and the
+   * jobs granted at once (GPU holders, start <id>) still are. pausedAt is when it was set (0 while not paused).
+   */
+  paused = false;
+  pausedAt = 0;
   running: J[] = [];
   waiting: J[] = [];
   rotation: Rotation = { grants: 0, slots: new Map(), turns: new Map() };
@@ -373,8 +381,9 @@ export class Scheduler<J extends SchedulerJob> {
   }
 
   /**
-   * Grants GPU holders at once, then the GPU turn to the first waiting turn in order while the GPU is free, then the
-   * first grantable waiting job while it fits, then backfills (unless fifo).
+   * Grants GPU holders and the jobs started by hand at once (also while paused: nothing else is), then the GPU turn to
+   * the first waiting turn in order while the GPU is free, then the first grantable waiting job while it fits, then
+   * backfills (unless fifo).
    */
   grant(now = Date.now()): J[] {
     const granted: J[] = [];
@@ -393,6 +402,9 @@ export class Scheduler<J extends SchedulerJob> {
       .filter((job) => (job.gpu || job.startNow === true) && !job.gpuTurn && !this.isBlocked(job))
       .forEach(take);
     this.order(now);
+    if (this.paused) {
+      return granted; // the places are told (order), but no waiting job starts
+    }
     // The GPU goes to the waiting turns one at a time, in the same order as the slots, so that none is passed for ever
     const turn = this.gpuBusy() ? undefined : this.waiting.find((job) => job.gpuTurn === true && !this.isBlocked(job));
     if (turn !== undefined) {
