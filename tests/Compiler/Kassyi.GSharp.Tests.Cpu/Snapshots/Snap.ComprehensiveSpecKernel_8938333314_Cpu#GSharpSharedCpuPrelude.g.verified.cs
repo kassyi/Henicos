@@ -110,6 +110,9 @@ __device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 
 template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
+// T as a single name, so that __gsharp_type<unsigned char>{} and __gsharp_type<int*>{} are valid functional casts
+template <class T> using __gsharp_type = T;
+
 enum class GSharpErrorCode : int32_t {
 None = 0,
 NotSupported = 1,
