@@ -73,6 +73,9 @@ public static class GSharpErrorMapper
                      "Destination array was not long enough. Check the destination index, length, and the array's " +
                      "lower bounds. " +
                      "(Parameter 'destinationArray')",
+                     "Non-negative number required. (Parameter 'length')",
+                     "Non-negative number required. (Parameter 'sourceIndex')",
+                     "Non-negative number required. (Parameter 'destinationIndex')",
                      "Index was out of range. Must be non-negative and less than the size of the collection. " +
                      "(Parameter 'index')",
                  ])

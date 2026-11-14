@@ -455,6 +455,35 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         }
     }
 
+    // , <length>, <index>, <too long>: the three failures of one side of Array.Copy, as error sites or, in a method
+    // without an error site table, the messages themselves
+    private static void AppendCopyChecks(
+        SourceWriter writer,
+        InvocationExpressionSyntax node,
+        string indexMessage,
+        string longMessage,
+        string side,
+        ref TranspileContext context)
+    {
+        var table = context.Emitter.ErrorSites;
+        var model = context.Query.SemanticModel;
+        var member = context.Emitter.CurrentMemberName ?? "";
+        string[] messages = [ArgumentExceptionMessages.CopyLength, indexMessage, longMessage];
+        string[] kinds = ["Array.Copy.Length", $"Array.Copy.{side}Index", $"Array.Copy.{side}"];
+        for (var i = 0; i < messages.Length; i++)
+        {
+            writer.Append(", ");
+            if (table is null)
+            {
+                CppStringLiteral.Append(writer, messages[i]);
+            }
+            else
+            {
+                writer.Append($"{table.Register(node, model, member, messages[i], kinds[i])}u");
+            }
+        }
+    }
+
     private static void WriteSliceOrSpan(
         string memberName,
         SliceErrorCode errorCode,
@@ -559,18 +588,17 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
     {
         var writer = context.Emitter.Writer;
         WriteArrayOperand(SpanMemberKind.ArrayCopy3, operands, temps, ref context);
-        writer.Append(".AsSpan<GSharpErrorCode::Argument>");
+        writer.Append(".CopySlice");
         using (writer.Parentheses())
         {
             writer.Append("0,");
             WriteOperand(operands, temps, 2, ref context);
-            AppendRangeChecks(
+            AppendCopyChecks(
                 writer,
                 node,
+                ArgumentExceptionMessages.CopySourceIndex,
                 ArgumentExceptionMessages.CopySource,
-                "Array.Copy.Source",
-                null,
-                null,
+                "Source",
                 ref context);
         }
 
@@ -578,18 +606,17 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         using (writer.Parentheses())
         {
             WriteOperand(operands, temps, 1, ref context);
-            writer.Append(".AsSpan<GSharpErrorCode::Argument>");
+            writer.Append(".CopySlice");
             using (writer.Parentheses())
             {
                 writer.Append("0,");
                 WriteOperand(operands, temps, 2, ref context);
-                AppendRangeChecks(
+                AppendCopyChecks(
                     writer,
                     node,
+                    ArgumentExceptionMessages.CopyDestinationIndex,
                     ArgumentExceptionMessages.CopyDestination,
-                    "Array.Copy.Destination",
-                    null,
-                    null,
+                    "Destination",
                     ref context);
             }
         }
@@ -603,19 +630,18 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
     {
         var writer = context.Emitter.Writer;
         WriteArrayOperand(SpanMemberKind.ArrayCopy5, operands, temps, ref context);
-        writer.Append(".AsSpan<GSharpErrorCode::Argument>");
+        writer.Append(".CopySlice");
         using (writer.Parentheses())
         {
             WriteOperand(operands, temps, 1, ref context);
             writer.Append(',');
             WriteOperand(operands, temps, 4, ref context);
-            AppendRangeChecks(
+            AppendCopyChecks(
                 writer,
                 node,
+                ArgumentExceptionMessages.CopySourceIndex,
                 ArgumentExceptionMessages.CopySource,
-                "Array.Copy.Source",
-                null,
-                null,
+                "Source",
                 ref context);
         }
 
@@ -623,19 +649,18 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         using (writer.Parentheses())
         {
             WriteOperand(operands, temps, 2, ref context);
-            writer.Append(".AsSpan<GSharpErrorCode::Argument>");
+            writer.Append(".CopySlice");
             using (writer.Parentheses())
             {
                 WriteOperand(operands, temps, 3, ref context);
                 writer.Append(',');
                 WriteOperand(operands, temps, 4, ref context);
-                AppendRangeChecks(
+                AppendCopyChecks(
                     writer,
                     node,
+                    ArgumentExceptionMessages.CopyDestinationIndex,
                     ArgumentExceptionMessages.CopyDestination,
-                    "Array.Copy.Destination",
-                    null,
-                    null,
+                    "Destination",
                     ref context);
             }
         }

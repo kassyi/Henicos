@@ -32,11 +32,23 @@ internal static class ArgumentExceptionMessages
         "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. " +
         "(Parameter 'destinationArray')";
 
+    /// <summary><c>Array.Copy</c> with a negative length.</summary>
+    public const string CopyLength = "Non-negative number required. (Parameter 'length')";
+
+    /// <summary><c>Array.Copy</c> with a negative source index.</summary>
+    public const string CopySourceIndex = "Non-negative number required. (Parameter 'sourceIndex')";
+
+    /// <summary><c>Array.Copy</c> with a negative destination index.</summary>
+    public const string CopyDestinationIndex = "Non-negative number required. (Parameter 'destinationIndex')";
+
     /// <summary><c>ElementAt(index)</c> with an index outside the sequence.</summary>
     public const string ElementAtIndex =
         "Index was out of range. Must be non-negative and less than the size of the collection. " +
         "(Parameter 'index')";
 
     /// <summary>Every message above, for the builtin list of the runtime.</summary>
-    public static readonly string[] All = [FillStartIndex, FillCount, CopySource, CopyDestination, ElementAtIndex];
+    public static readonly string[] All = [
+        FillStartIndex, FillCount, CopySource, CopyDestination, CopyLength, CopySourceIndex,
+        CopyDestinationIndex, ElementAtIndex,
+    ];
 }

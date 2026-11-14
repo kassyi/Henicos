@@ -64,6 +64,18 @@ public static partial class ArrayRangeParamNameKernels
         {
             o[1] = a.AsSpan().Slice(5).Length;
         }
+        else if (call == RangeCalls.CopyNegativeLength)
+        {
+            Array.Copy(a, s, -1);
+        }
+        else if (call == RangeCalls.CopyNegativeSourceIndex)
+        {
+            Array.Copy(a, -1, s, 0, 1);
+        }
+        else if (call == RangeCalls.CopyNegativeDestinationIndex)
+        {
+            Array.Copy(a, 0, s, -1, 1);
+        }
 
         o[1] = 2;
     }
@@ -102,6 +114,15 @@ public static class RangeCalls
     /// <summary><c>a.AsSpan().Slice(5)</c>: ArgumentOutOfRangeException without a parameter name.</summary>
     public const int SpanSlicePastEnd = 9;
 
+    /// <summary><c>Array.Copy(a, s, -1)</c>: ArgumentOutOfRangeException "length".</summary>
+    public const int CopyNegativeLength = 10;
+
+    /// <summary><c>Array.Copy(a, -1, s, 0, 1)</c>: ArgumentOutOfRangeException "sourceIndex".</summary>
+    public const int CopyNegativeSourceIndex = 11;
+
+    /// <summary><c>Array.Copy(a, 0, s, -1, 1)</c>: ArgumentOutOfRangeException "destinationIndex".</summary>
+    public const int CopyNegativeDestinationIndex = 12;
+
     /// <summary>The number of calls.</summary>
-    public const int Count = 10;
+    public const int Count = 13;
 }

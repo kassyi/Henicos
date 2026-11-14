@@ -23,7 +23,7 @@ public sealed class ArrayRangeParamNameDifferentialTests
     [
         "FillStartPastEnd", "FillStartNegative", "FillCountPastEnd", "FillCountNegative", "CopySourceTooShort",
         "CopyDestinationTooShort", "CopyRangeSourceTooShort", "CopyRangeDestinationTooShort", "SpanCopyToShorter",
-        "SpanSlicePastEnd",
+        "SpanSlicePastEnd", "CopyNegativeLength", "CopyNegativeSourceIndex", "CopyNegativeDestinationIndex",
     ];
 
     internal static readonly DifferentialCase[] s_cases = [.. Enumerable.Range(0, RangeCalls.Count).Select(Create)];

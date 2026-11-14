@@ -391,6 +391,27 @@ struct GSharpArray {
 #endif
         return GSharpArray<T>(data + start, count);
     }
+    // One side of Array.Copy, in the order .NET checks it: a negative length is ArgumentOutOfRange (length), a negative
+    // index ArgumentOutOfRange (sourceIndex or destinationIndex), a range past the end Argument (sourceArray or
+    // destinationArray). Each failure is an error site (uint32_t) or a message (const char*)
+    template <typename S>
+    __device__ inline GSharpArray<T> CopySlice(int start, int count, S lengthSite, S indexSite, S longSite) const {
+#ifdef GSHARP_CHECKED
+        if (count < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, lengthSite);
+            return GSharpArray<T>();
+        }
+        if (start < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, indexSite);
+            return GSharpArray<T>();
+        }
+        if (start > length || count > length - start) {
+            __gsharp_trap(GSharpErrorCode::Argument, longSite);
+            return GSharpArray<T>();
+        }
+#endif
+        return GSharpArray<T>(data + start, count);
+    }
     __device__ inline void Fill(const T& value) const { for (int i = 0; i < length; i++) { data[i] = value; } }
     __device__ inline void Clear() const { for (int i = 0; i < length; i++) { data[i] = T{}; } }
     // Ported from dotnet/runtime src/libraries/System.Private.CoreLib/src/System/MemoryExtensions.cs
