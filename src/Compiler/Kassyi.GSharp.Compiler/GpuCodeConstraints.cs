@@ -201,6 +201,26 @@ internal static class GpuCodeConstraints
     public const string SharedMemoryWithoutCount =
         "SharedMemory<T> without an element count (default); declare it with new SharedMemory<T>(count)";
 
+    /// <summary>The GSH0003 text for a <c>SharedMemory&lt;T&gt;</c> local declared without an initializer.</summary>
+    public const string SharedMemoryLocalWithoutInitializer =
+        "SharedMemory<T> local without an initializer; declare it with new SharedMemory<T>(count)";
+
+    /// <summary>
+    /// The GSH0003 text for a struct local whose <c>SharedMemory&lt;T&gt;</c> member no code of the method assigns: the
+    /// local is <c>default</c> or <c>new T()</c>, so the member has no size.
+    /// </summary>
+    public const string SharedMemoryHolderWithoutMemory =
+        "struct local with a SharedMemory<T> member that the method never assigns (default or new T()); " +
+        "assign the member a SharedMemory<T> declared with new SharedMemory<T>(count)";
+
+    /// <summary>
+    /// The GSH0003 text for a call of a generic method that uses <c>default</c> of a type parameter, instantiated with
+    /// <c>SharedMemory&lt;T&gt;</c>.
+    /// </summary>
+    public const string SharedMemoryGenericDefault =
+        "generic method that uses default of a type parameter, instantiated with SharedMemory<T> " +
+        "(a SharedMemory<T> has no size until it is declared with new SharedMemory<T>(count))";
+
     /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
     public const string DynamicArraySize = "dynamic array size";
 

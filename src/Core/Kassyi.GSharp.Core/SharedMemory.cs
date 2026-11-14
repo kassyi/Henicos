@@ -25,7 +25,8 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// </summary>
     /// <exception cref="InvalidOperationException">Always.</exception>
     /// <remarks>
-    /// The attribute makes <c>new SharedMemory&lt;T&gt;()</c> and the target-typed <c>new()</c> a compile error (CS0619).
+    /// The attribute makes <c>new SharedMemory&lt;T&gt;()</c> and the target-typed <c>new()</c> a compile error
+    /// (CS0619).
     /// <see langword="default"/> cannot be blocked by the language; the G# analyzer reports it (GSH0003).
     /// </remarks>
     [Obsolete("A SharedMemory<T> needs an element count: use new SharedMemory<T>(count).", error: true)]
