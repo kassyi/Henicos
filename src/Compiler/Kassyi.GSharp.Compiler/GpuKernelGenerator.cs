@@ -394,7 +394,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 out var requiredIncludesCuda, cudaStructs, errorSites));
             var cppSource = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
                 out var requiredIncludesCpp, cppStructs, errorSites));
-            var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
+            // A kernel that names a file-local type has no copy: the user's method runs, or nothing (GSH0119)
+            var managedCSharpSource = host.ManagedMode == ManagedKernelMode.Copy
+                ? MethodTranspiler.GenerateManagedCSharpSource(in plan)
+                : string.Empty;
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
             var kernelErrorSites = errorSites.Entries.AsEquatableArray();
