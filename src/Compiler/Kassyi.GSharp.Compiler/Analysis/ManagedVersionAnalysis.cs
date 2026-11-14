@@ -46,8 +46,9 @@ internal static class ManagedVersionAnalysis
 
     /// <summary>
     /// Whether the managed bodies G# emits call the managed version of <paramref name="method"/> instead of the user's
-    /// method: a device function of this compilation that needs one and whose containing types are all
-    /// <c>partial</c> (the version is written into them), or one of another assembly that recorded one.
+    /// method: a device function of this compilation that needs one, whose containing types are all <c>partial</c>
+    /// (the version is written into them) and whose body names no file-local type (GSH0119,
+    /// <see cref="Transpiler.FileLocalNames"/>), or one of another assembly that recorded one.
     /// </summary>
     /// <remarks>
     /// GSH0036 requires <c>partial</c> on the class of every device function; the check covers the types that contain
@@ -66,7 +67,9 @@ internal static class ManagedVersionAnalysis
             return IsImportedWithManagedVersion(definition, compilation);
         }
 
-        return Needs(definition, compilation) && ManagedStateMachineAvailability.AreContainingTypesPartial(definition);
+        return Needs(definition, compilation) &&
+               ManagedStateMachineAvailability.AreContainingTypesPartial(definition) &&
+               !FileLocalNames.BlocksCopy(definition, compilation);
     }
 
     /// <summary>
