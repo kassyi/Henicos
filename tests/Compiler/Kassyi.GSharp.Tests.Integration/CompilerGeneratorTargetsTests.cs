@@ -44,17 +44,19 @@ public class CompilerGeneratorTargetsTests
         Assert.Contains(GeneratorDll, inputs, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Theory]
     [Scenario(TestScenario.Boundary)]
-    public void GenerateYamlDialects_BeforeTheGeneratorRuns_RemovesTheFilesOfTheLastRun()
+    [MemberData(nameof(GeneratorTargets))]
+    public void Steps_TargetRunningTheGenerator_RemoveItsOutputDirectoryFirst(string targetName)
     {
         // A generator that changed the names of its files would otherwise leave the old files to be compiled.
-        var steps = LoadTargets().Single(static t => Name(t) == "GenerateYamlDialects").Elements().ToList();
-
-        var removal = steps.FindIndex(static s => s.Name.LocalName == "RemoveDir"
-            && ((string?)s.Attribute("Directories") ?? string.Empty)
-                .Contains("GeneratedDialects", StringComparison.Ordinal));
+        var steps = LoadTargets().Single(t => Name(t) == targetName).Elements().ToList();
         var generation = steps.FindIndex(static s => s.Name.LocalName == "Exec");
+        var command = (string?)steps[generation].Attribute("Command") ?? string.Empty;
+
+        var removal = steps.FindIndex(s => s.Name.LocalName == "RemoveDir"
+            && (string?)s.Attribute("Directories") is { Length: > 0 } directory
+            && command.Contains(directory, StringComparison.Ordinal));
 
         Assert.InRange(removal, 0, generation - 1);
     }
