@@ -373,8 +373,12 @@ public class GenericCopiesTests
 #pragma warning restore RS0030
     }
 
-    private static object CreateDefault(Type type) =>
-        Activator.CreateInstance(type) ?? throw new InvalidOperationException(type.Name);
+    private static object CreateDefault(Type type)
+    {
+#pragma warning disable RS0030 // Reflection creates a value of a type this test compiled at run time
+        return Activator.CreateInstance(type) ?? throw new InvalidOperationException(type.Name);
+#pragma warning restore RS0030
+    }
 
     // Two default values of the type, in an array
     private static Array CreateArray(Type type)
