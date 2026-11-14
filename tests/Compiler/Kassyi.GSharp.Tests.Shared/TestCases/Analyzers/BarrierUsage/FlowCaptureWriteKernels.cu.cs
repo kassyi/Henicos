@@ -321,4 +321,25 @@ public static partial class FlowCaptureWriteKernels
 
         Gpu.SyncThreads();
     }
+
+    // A ref local that a loop rebinds to a ref conditional over itself: the capture of the conditional and the local
+    // refer to each other
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void SelfReferencingCaptureKernel(int[] a, int[] b, bool flag, int n)
+    {
+        ref int target = ref a[0];
+        for (int i = 0; i < n; i++)
+        {
+            target = ref flag ? ref target : ref b[i];
+            target = ThreadIndex.X;
+        }
+
+        if (b[0] == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
 }
