@@ -45,7 +45,7 @@ statement UnsupportedOperation	Labeled	LabeledStatement	19
 statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	56
 statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
-statement UnsupportedOperation	Loop	ForEachStatement	144
+statement UnsupportedOperation	Loop	ForEachStatement	147
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
 statement UnsupportedOperation	Loop	ForStatement	125
 statement UnsupportedOperation	Loop	WhileStatement	10
