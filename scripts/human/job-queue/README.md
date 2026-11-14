@@ -51,6 +51,10 @@ not hold back. The screen below is the second after Space:
 
 ![The paused queue, with the pause mark](images/paused.svg)
 
+The second after Space again: the queue runs, the play mark is on the screen and the header no longer says paused:
+
+![The resumed queue, with the play mark](images/resumed.svg)
+
 Below the jobs, the agent chats that wait for an answer of the person (the files of
 `scripts/human/chat-status.js`, read every 2 s): one row per chat, first those that ask through a tool (`?`, a choice
 question or a permission prompt, in yellow), then those whose reply leaves a question open (`…?`); the most recent wait

@@ -271,6 +271,8 @@ export const Screenshots: Screenshot[] = [
   { file: "help.svg", columns: 120, rows: 17, state: { help: 1 } },
   { file: "chats-hidden.svg", columns: 120, rows: 17, state: { chatsHidden: true } },
   { file: "paused.svg", columns: 120, rows: 17, state: { flash: { kind: "pause", until: Now + 1000 } }, paused: true },
+  // just resumed: the play mark, and nothing of the pause in the header
+  { file: "resumed.svg", columns: 120, rows: 17, state: { flash: { kind: "resume", until: Now + 1000 } } },
 ];
 
 /** The time zone of the clock times on the screens, so that they do not follow the machine that draws them. */
