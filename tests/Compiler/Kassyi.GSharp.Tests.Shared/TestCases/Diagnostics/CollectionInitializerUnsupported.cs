@@ -63,7 +63,8 @@ namespace CollectionInitializerUnsupportedTest
             var indexed = new Indexed { [2] = 8 };
             var array = new Holder(output) { Values = { [1] = 9 } };
             var barrier = new BarrierBag { 10 };
-            output[0] = single.Sum + multi.Sum + unmarked.Sum + nested.Bag.Sum + nested.Table.Sum + indexed.Sum + barrier.Sum;
+            output[0] = single.Sum + multi.Sum + unmarked.Sum + nested.Bag.Sum + nested.Table.Sum + indexed.Sum +
+                barrier.Sum;
         }
     }
 
