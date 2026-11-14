@@ -15,10 +15,15 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// The barrier that every path to its return passes: <see cref="ThreadVariance.Uniform"/> a grid barrier,
 /// <see cref="ThreadVariance.Grid"/> a block barrier, <see cref="ThreadVariance.Block"/> none.
 /// </param>
+/// <param name="This">
+/// For a constructor or an instance member of a struct, the variance of what it leaves in <c>this</c> (its body reads
+/// <c>this</c> as uniform; the caller adds its receiver).
+/// </param>
 internal readonly record struct CalleeVariance(
     ThreadVariance Return,
     ThreadVariance ByReference,
     BarrierDivergence Barrier,
     ImmutableArray<ThreadVariance> MemoryAtExit,
     ThreadVariance FieldMemoryAtExit,
-    ThreadVariance BarrierOnEveryPath);
+    ThreadVariance BarrierOnEveryPath,
+    ThreadVariance This = ThreadVariance.Uniform);
