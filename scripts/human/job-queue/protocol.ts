@@ -16,6 +16,8 @@ export interface JobRequest {
   cwd: string;
   /** The root of the worktree of cwd (absent from older clients: the scheduler then takes cwd). */
   worktree?: string;
+  /** The agent chat that queued it (CLAUDE_CODE_SESSION_ID, ANTIGRAVITY_CONVERSATION_ID; absent from other callers). */
+  session?: string;
   command: string;
   queuedAt: number;
   /** The job id it had, kept across a restart; 0 for a new job. */
@@ -71,6 +73,8 @@ export interface JobView {
   cwd: string;
   /** The worktree it takes its turns for (absent from older schedulers). */
   worktree?: string;
+  /** The agent chat that queued it, for the chat panel (absent when none was known, and from older schedulers). */
+  session?: string;
   command: string;
   queuedAt: number;
   grantedAt: number | null;
