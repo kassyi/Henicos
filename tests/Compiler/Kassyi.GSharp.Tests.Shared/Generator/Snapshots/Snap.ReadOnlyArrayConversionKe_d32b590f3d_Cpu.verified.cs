@@ -98,16 +98,10 @@ native.Optional.Length = host.Optional.Length;
 public static unsafe void Unmarshal_ReadOnlyArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder host, ref AotContexts.ReadOnlyArrayHolder native, global::System.IntPtr hStream = default)
 {
 }
-public static void CopyArrays_ReadOnlyArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder host)
+public static void CopyArrays_ReadOnlyArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
-if (host.Fixed != null)
-{
-host.Fixed = (global::System.UInt32[])host.Fixed.Clone();
-}
-if (host.Optional != null)
-{
-host.Optional = (global::System.UInt32[])host.Optional.Clone();
-}
+_ = copies.Copy(ref host.Fixed);
+_ = copies.Copy(ref host.Optional);
 }
 public static bool HoldsArray_ReadOnlyArrayHolder(global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder host, object array)
 {
