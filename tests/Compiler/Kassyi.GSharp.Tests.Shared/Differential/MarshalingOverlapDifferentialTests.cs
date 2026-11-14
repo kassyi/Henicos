@@ -729,4 +729,63 @@ public sealed class MarshalingOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void FieldOverlap_RefStructFieldArrayAndAReadOnlySliceOfIt_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_refFieldAndReadOnlySlice);
+
+    internal static readonly DifferentialCase s_inFieldAndInSlice = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InFieldAndInSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact, readOnly: true)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            // One array for both holders: the write through the field is read through the slice, and the other way
+            b.Get<int>("observed")[0] = 12;
+            b.Get<int>("observed")[1] = 103;
+        },
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var bag = new DiffDeepBag { Data = backing, Tag = 1 };
+            MarshalingOverlapDifferentialKernels.LaunchInFieldAndInSliceKernel(
+                bag, backing.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_convertedFieldAndSlice = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.ConvertedFieldAndSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<float>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            DiffVec2Padded[] items =
+            [
+                new DiffVec2Padded { A = 1f },
+                new DiffVec2Padded { A = 2f },
+                new DiffVec2Padded { A = 3f },
+                new DiffVec2Padded { A = 4f }
+            ];
+            MarshalingOverlapDifferentialKernels.LaunchConvertedFieldAndSliceKernel(
+                new DiffPaddedHolder { Items = items },
+                items.AsSpan(1, 2),
+                b.Get<float>("observed"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_InStructFieldArrayAndAnInSliceOfIt_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_inFieldAndInSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_ConvertedElementFieldArrayAndASliceOfIt_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_convertedFieldAndSlice);
 }
