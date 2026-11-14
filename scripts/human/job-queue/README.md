@@ -42,14 +42,20 @@ screen colors:
 
 ![The help page](images/help.svg)
 
-Below the jobs, the agent chats that wait for the person (the files of `scripts/human/chat-status.js`, read every 2 s):
-one row per chat, first those that ask through a tool (`?`, a choice question or a permission prompt, in yellow), then
-those whose reply ends in a question (`…?`), then those that only reported; the most recent wait first in each. A row
-shows the agent, the worktree (`main` for the main checkout), how long it has waited, the kind, the ids of the running
-and waiting jobs of its worktree (paths compared as the queue keys them: one letter case on Windows, either separator),
-and the text: the start of a tool's question, the end of a reply (where agents ask). The rule above counts the chats
-by state. The job list keeps at least four rows; a terminal of fewer than 16 rows (the 70 x 13 pane above) shows the
-waiting chats in one line instead. `a` hides the panel; the rule then still says how many chats wait:
+Below the jobs, the agent chats that wait for an answer of the person (the files of
+`scripts/human/chat-status.js`, read every 2 s): one row per chat, first those that ask through a tool (`?`, a choice
+question or a permission prompt, in yellow), then those whose reply leaves a question open (`…?`); the most recent wait
+first in each. Claude Haiku decides through the Claude Code CLI which questions a reply leaves open (also one asked in
+an earlier turn and not answered yet), else a question mark in the reply's last paragraph does
+(`scripts/human/chat-status/README.md`); a chat that only reported is idle and gets no row. A row shows the agent, the
+chat's title (Antigravity's, else Haiku's, else the start of its first prompt; after the worktree unless that is the
+main checkout, the worktree alone without a title), how long it has waited, the kind, the ids of the jobs it queued
+(the client sends `CLAUDE_CODE_SESSION_ID` or `ANTIGRAVITY_CONVERSATION_ID`; a job without one counts for the chats of
+its worktree, paths compared as the queue keys them, but never in the main checkout, where every chat is), and the
+text: the start of a tool's question, Haiku's newest open question marked `≈` with `(+n)` for the others, or the end
+of the asking paragraph. The rule above counts the chats by state (`idle`: a report). The help says who decides and
+how to turn Haiku on. The job list keeps at least four rows; a terminal of fewer than 16 rows (the 70 x 13 pane above)
+shows the waiting chats in one line instead. `a` hides the panel; the rule then still says how many chats wait:
 
 ![The chat panel hidden](images/chats-hidden.svg)
 
@@ -73,7 +79,7 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `wait`, `stop` |
 | `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, the chats read through `chat-status.js` (`createRequire`), and `reduceKey`, the keys as a pure function |
 | `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
-| `view-chats.ts` | The chat panel: the waiting chats in order, one row each or one summary line, their worktree and job ids; pure |
+| `view-chats.ts` | The chat panel: the chats that ask the person in order (idle reports counted), one row each or one summary line, their title, worktree and job ids, and the chat part of the help; pure |
 | `screen-line.ts` | Styled text for the live view: the styles, the width of a string in terminal cells, `ScreenLine` |
 | `screenshot.ts` | `--screenshots`: the ANSI lines of the live view as an SVG of a terminal, and the sample screens of this README |
 | `view-sample.ts` | The fixed sample status and chats the view's self-test and the screenshots draw from |
