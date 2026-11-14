@@ -57,6 +57,42 @@ internal static class HoistedFieldTypeResolver
         throw new InvalidOperationException(BuildErrorMessage(field, semanticModel, kernelName, declaredSymbol, type1, type2));
     }
 
+    /// <summary>
+    /// Whether the hoisted field holds a <c>[GpuReadOnly]</c> array: its initializer is such a parameter, field or
+    /// property, or a local that is initialized from one. The native context field then keeps the <c>const</c> elements of
+    /// the value (<c>GSharpArray&lt;const T&gt;</c>), which a <c>GSharpArray&lt;T&gt;</c> field cannot be initialized from.
+    /// The managed field is a C# array and has no <c>const</c>, so only the native writers ask.
+    /// </summary>
+    public static bool HoldsReadOnlyArray(VariableDeclaratorSyntax field, SemanticModel semanticModel)
+    {
+        var value = field.Initializer?.Value;
+
+        // A chain of locals that are initialized from each other ends at the declaration order, so this is a safety bound
+        for (var depth = 0; value != null && depth < 16; depth++)
+        {
+            while (value is ParenthesizedExpressionSyntax or CastExpressionSyntax)
+            {
+                value = value is ParenthesizedExpressionSyntax parenthesized
+                    ? parenthesized.Expression
+                    : ((CastExpressionSyntax)value).Expression;
+            }
+
+            var symbol = semanticModel.GetSymbol(value);
+            switch (symbol)
+            {
+                case IParameterSymbol or IFieldSymbol or IPropertySymbol:
+                    return symbol.HasAttribute(KnownAttributes.GpuReadOnly);
+                case ILocalSymbol local when local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator):
+                    value = declarator.Initializer?.Value;
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
     // [WHY] An argument temporary holds the value the callee receives, converted to the parameter type: a target-typed
     // 'flag != 0 ? i : u' (int and uint) has no type of its own and is a long for a long parameter, and an int
     // expression passed to a long parameter is a long there (#788). For other initializers, the expression's own type is
