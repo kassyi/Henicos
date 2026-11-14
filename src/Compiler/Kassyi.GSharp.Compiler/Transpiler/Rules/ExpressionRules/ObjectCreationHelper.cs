@@ -266,13 +266,15 @@ internal static class ObjectCreationHelper
         context.Emitter.Writer.Append(function);
         using (context.Emitter.Writer.Parentheses())
         {
-            AppendMatchedArguments(constructor, matched, in sequence, ref context);
+            AppendMatchedArguments(constructor, argumentList?.Parent, matched, in sequence, ref context);
         }
     }
 
-    // <argument or temporary of each parameter>, or the default of an omitted one
-    private static void AppendMatchedArguments(IMethodSymbol constructor, ArgumentSyntax?[] matched,
-        in EvaluationOrder.CallSequence sequence, ref TranspileContext context, bool convertToParameter = false)
+    // <argument or temporary of each parameter>, or for an omitted one the call site's value of a caller-info parameter
+    // or the default
+    private static void AppendMatchedArguments(IMethodSymbol constructor, SyntaxNode? creation,
+        ArgumentSyntax?[] matched, in EvaluationOrder.CallSequence sequence, ref TranspileContext context,
+        bool convertToParameter = false)
     {
         for (var i = 0; i < constructor.Parameters.Length; i++)
         {
@@ -284,7 +286,8 @@ internal static class ObjectCreationHelper
             }
             else
             {
-                ArgumentMatchingHelper.AppendDefaultArgument(parameter, ref context);
+                OmittedArgument.Plan(parameter, creation, context.Query.SemanticModel, visitsDefaultSyntax: false)
+                    .Append(parameter, ref context);
             }
         }
     }
@@ -303,7 +306,8 @@ internal static class ObjectCreationHelper
             context.Emitter.Dialect.AppendType(ref context, typeSymbol);
             using (context.Emitter.Writer.Braces())
             {
-                AppendMatchedArguments(constructor, ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, constructor),
+                AppendMatchedArguments(constructor, argumentList?.Parent,
+                    ArgumentMatchingHelper.MatchArgumentsToParameters(arguments, constructor),
                     in sequence, ref context, convertToParameter: true);
             }
 

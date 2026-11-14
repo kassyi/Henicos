@@ -30,7 +30,7 @@ internal sealed class LocalFunctionPlan
     /// </summary>
     /// <param name="statements">The statement list.</param>
     /// <param name="model">The semantic model of the tree of the list.</param>
-    public static LocalFunctionPlan? Create(SyntaxList<StatementSyntax> statements, SemanticModel model)
+    public static LocalFunctionPlan? Create(IReadOnlyList<StatementSyntax> statements, SemanticModel model)
     {
         var count = statements.Count;
         var isFunction = new bool[count];
@@ -88,7 +88,7 @@ internal sealed class LocalFunctionPlan
     /// <summary>Whether the local function at <paramref name="index"/> reaches itself.</summary>
     public bool IsRecursive(int index) => _recursive[index];
 
-    private static int[][] FindUses(SyntaxList<StatementSyntax> statements, SemanticModel model)
+    private static int[][] FindUses(IReadOnlyList<StatementSyntax> statements, SemanticModel model)
     {
         var byName = new Dictionary<string, List<int>>();
         for (var i = 0; i < statements.Count; i++)

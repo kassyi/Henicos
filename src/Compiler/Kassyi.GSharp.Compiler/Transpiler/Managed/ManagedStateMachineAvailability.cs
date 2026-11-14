@@ -10,8 +10,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// [WHY] An assembly that exports its device code emits the state machines whatever its dialect, so a library that
 /// built on main (CUDA, without kernels) must not stop building for them. A state machine is left out, and its record
 /// says so (<c>DeviceExportRecord.ManagedStateMachine</c>, GSH0089 for a consumer on the C++ dialect), when it could not
-/// compile: a containing type that is not partial, a type of its frame that the generated file cannot name (a
-/// file-local type), or a suspending callee whose frame it cannot name.
+/// compile: a containing type that is not partial, a file-local type that its body names, that its frame would hold
+/// or that contains it (<see cref="FileLocalNames"/>), or a suspending callee whose frame it cannot name.
 /// </para>
 /// <para>
 /// The frame is as visible as the function (public or internal), narrowed to what the types it holds allow
@@ -241,6 +241,7 @@ internal static class ManagedStateMachineAvailability
         }
 
         if (!AreContainingTypesPartial(method) ||
+            FileLocalNames.BlocksCopy(method, compilation) ||
             !TryGetFrameTypes(method, compilation, out var body, out var frameTypes) ||
             frameTypes
                 .AsStackEnumerable()
