@@ -377,12 +377,12 @@ internal static class EvaluationOrder
 
     private static bool NeedsConversion(ExpressionSyntax expression, SemanticModel model)
     {
-        if (model.GetOriginalNode(expression) is not { } original)
+        if (!model.TryGetOriginalNode(expression, out var original, out var originalModel))
         {
             return false;
         }
 
-        var typeInfo = model.GetTypeInfo(original);
+        var typeInfo = originalModel.GetTypeInfo(original);
         return typeInfo.Type != null && typeInfo.ConvertedType != null && !typeInfo.Type.IsEqualTo(typeInfo.ConvertedType);
     }
 
