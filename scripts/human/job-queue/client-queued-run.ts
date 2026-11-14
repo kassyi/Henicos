@@ -258,7 +258,8 @@ export class QueuedRun {
     this.lastPosition = numberField(message, "position");
     this.lastStartAt = typeof message.startAt === "number" ? message.startAt : null;
     this.lastNotice = Date.now();
-    prefix(`queued #${jobId}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${jobId}" shows it`);
+    const role = this.options.role ? ` (${this.options.role})` : "";
+    prefix(`queued #${jobId}${role}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${jobId}" shows it`);
   }
 
   private onWaiting(message: Incoming): void {

@@ -10,7 +10,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </remarks>
 internal readonly record struct KernelParameterShape
 {
-    private const string GpuBufferType = "global::Kassyi.GSharp.Runtime.GpuBuffer";
     private const string ArrayPinningType = HostTypeNames.ArrayPinning;
 
     /// <summary>The zero-based position of the parameter in the kernel's parameter list, which the launcher's locals (<c>__gsharp_d_0</c>, ...) build on.</summary>
@@ -223,18 +222,6 @@ internal readonly record struct KernelParameterShape
         ArrayContainerKind.ArraySegment or ArrayContainerKind.ImmutableArray => $"{ValueExpression}.AsSpan()",
         _ => ValueExpression
     };
-
-    /// <summary>Appends <c>GpuBuffer&lt;T&gt;</c> when the parameter has a <see cref="BufferElementTypeName"/>.</summary>
-    public bool TryAppendTypedBuffer(SourceWriter writer)
-    {
-        if (BufferElementTypeName is not { } element)
-        {
-            return false;
-        }
-
-        writer.Append($"{GpuBufferType}<{element}>");
-        return true;
-    }
 
     /// <summary>Classifies <paramref name="parameter"/>.</summary>
     public static KernelParameterShape Classify(IParameterSymbol parameter)

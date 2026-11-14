@@ -61,21 +61,8 @@
     - case: BclExceptionDifferentialKernels.MathClampDoubleKernel
       paths: [Native, Cuda]
       columns: [$exception]
-    # Unchecked MinValue / -1 and MinValue % -1: the managed path throws OverflowException
-    - case: IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel
-      paths: [Managed]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel
-      paths: [Managed]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel
-      paths: [Managed]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel
-      paths: [Managed]
-      columns: [$exception]
-    # Array and span bounds, bounds-check elimination guards, simultaneous traps, integer division by zero and
-    # Math.Abs(MinValue) on CUDA: they still diverge after the device error channel of #729 (closed)
+    # Array and span bounds, bounds-check elimination guards, simultaneous traps and Math.Abs(MinValue) on CUDA: they
+    # still diverge after the device error channel of #729 (closed)
     - case: BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel
       paths: [Cuda]
       columns: [$exception]
@@ -157,30 +144,6 @@
       paths: [Cuda]
       columns: [$exception]
     - case: BoundsAndMemoryDifferentialKernels.BoundsCheckEliminationUpperOnlyKernel
-      paths: [Cuda]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.Int32DivideKernel
-      paths: [Cuda]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.Int32RemainderKernel
-      paths: [Cuda]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.UInt32DivideKernel
-      paths: [Cuda]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.UInt32RemainderKernel
-      paths: [Cuda]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.Int64DivideKernel
-      paths: [Cuda]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.UInt64DivideKernel
-      paths: [Cuda]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.Int16CompoundDivideKernel
-      paths: [Cuda]
-      columns: [$exception]
-    - case: IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel
       paths: [Cuda]
       columns: [$exception]
     - case: IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel
