@@ -79,6 +79,8 @@ export interface JobView {
   queuedAt: number;
   grantedAt: number | null;
   typicalMs: number | null;
+  /** Where typicalMs came from: exact, normalized, shape, kind, or none (absent from older schedulers). */
+  estimateFrom?: string;
   pin: number | null;
   before: number | null;
   after: number | null;
