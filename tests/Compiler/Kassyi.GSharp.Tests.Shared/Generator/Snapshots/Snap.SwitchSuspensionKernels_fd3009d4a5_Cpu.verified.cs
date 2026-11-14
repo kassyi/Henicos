@@ -35,6 +35,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(958775732u, "SwitchSuspens
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1670244292u, "SwitchSuspensionKernels.cs", 27, 17, "BarrierInSectionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(874256068u, "SwitchSuspensionKernels.cs", 32, 9, "BarrierInSectionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(177858845u, "SwitchSuspensionKernels.cs", 32, 23, "BarrierInSectionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1809735410u, "SwitchSuspensionKernels.cs", 32, 28, "BarrierInSectionKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(796259844u, "SwitchSuspensionKernels.cs", 56, 9, "ShuffleInSeveralSectionsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1343701540u, "SwitchSuspensionKernels.cs", 96, 9, "NestedSwitchKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1373152218u, "SwitchSuspensionKernels.cs", 123, 9, "GotoCaseKernel", "G#: a null array is read"),
@@ -121,7 +122,7 @@ goto __gsharp_switch_1_state_5;
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_4_tid, 874256068u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_tid,1))%__gsharp_ctx->__gsharp_id_3_count, 177858845u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_4_tid, 874256068u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_tid,1),__gsharp_ctx->__gsharp_id_3_count,1809735410u), 177858845u);
 __gsharp_state=-1;
 return;
 }
@@ -275,7 +276,7 @@ goto case 5;
 
 case 5:
 {
-__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.data[(__gsharp_ctx.tid + 1) % __gsharp_ctx.count];
+__gsharp_ctx.output[__gsharp_ctx.tid] = __gsharp_ctx.data[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.tid + 1), __gsharp_ctx.count)];
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

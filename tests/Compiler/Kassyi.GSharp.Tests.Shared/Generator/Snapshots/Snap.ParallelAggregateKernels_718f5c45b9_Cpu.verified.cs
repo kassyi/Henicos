@@ -949,8 +949,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_rank = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockDim.x,__gsharp_add_i32((int)threadIdx.y,__gsharp_mul_i32((int)blockDim.y,(int)threadIdx.z))));
-int __gsharp_id_3_size = __gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z);
+int __gsharp_id_2_rank = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)blockDim.x,__gsharp_add_i32((int)threadIdx.y,(int)blockDim.y*(int)threadIdx.z)));
+int __gsharp_id_3_size = __gsharp_mul_i32((int)blockDim.x*(int)blockDim.y,(int)blockDim.z);
 int __gsharp_id_4_block = __gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)gridDim.x,__gsharp_add_i32((int)blockIdx.y,__gsharp_mul_i32((int)gridDim.y,(int)blockIdx.z))));
 __gsharp_array_at(__gsharp_id_1_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_block,__gsharp_id_3_size),__gsharp_id_2_rank), 1074719755u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -4151,7 +4151,7 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 {
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
-return __gsharp_mul_i32(__gsharp_id_3_x,__gsharp_add_i32((int)threadIdx.x,1));
+return __gsharp_mul_i32(__gsharp_id_3_x,(int)threadIdx.x+1);
 }
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
