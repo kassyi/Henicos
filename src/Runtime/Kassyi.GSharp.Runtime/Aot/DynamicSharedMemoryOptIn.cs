@@ -14,7 +14,8 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// <para>
 /// Each function is queried and opted in at most once (the state is cached per <c>CUfunction</c>), the first time a
 /// launch requests more than the function currently allows. The opt-in raises the limit to the device maximum, so later
-/// launches of any size compare two integers and make no driver call.
+/// launches of any size make no driver call: until the shared memory mode is set they compare two integers, and after
+/// it each one goes through <see cref="SharedMemoryOptInPlan.Decide"/>.
 /// </para>
 /// <para>
 /// A kernel that allows oversized shared memory may go past the opt-in limit on a device that has an oversized shared
@@ -72,7 +73,7 @@ public static class DynamicSharedMemoryOptIn
         }
 
         var plan = SharedMemoryOptInPlan.Decide(sharedMemBytes, allowsOversizedSharedMemory,
-            limits.ReadState(allowsOversizedSharedMemory));
+            limits.ReadState());
         switch (plan.Action)
         {
             case SharedMemoryOptInAction.RaiseDynamicLimit:
@@ -165,10 +166,10 @@ public static class DynamicSharedMemoryOptIn
 
         public int ModeSetCount => Volatile.Read(ref _modeSetCount);
 
-        // Only a kernel that allows oversized shared memory reads the device attribute, once per function
-        public SharedMemoryFunctionState ReadState(bool allowsOversized) =>
-            new(StaticBytes, _allowedDynamicBytes, OptInBytesPerBlock, allowsOversized ? OversizedBytesPerBlock() : 0,
-                _modeIsSet);
+        // Every kernel reads the device attribute, once per function: a kernel that does not allow oversized shared
+        // memory needs it for the hint of its rejection
+        public SharedMemoryFunctionState ReadState() =>
+            new(StaticBytes, _allowedDynamicBytes, OptInBytesPerBlock, OversizedBytesPerBlock(), _modeIsSet);
 
         public static FunctionLimits Query(IntPtr hfunc)
         {
