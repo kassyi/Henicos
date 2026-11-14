@@ -62,43 +62,50 @@ internal static class StructMarshalMethodEmitter
     private static void WriteMarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
     {
         // GSH0078 reports the member; the shadow struct leaves it out
-        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
-            StructBlockCopyEmitter.TryWriteBlockCopy(writer, member, toNative: true, dialect))
+        if (NativeStructEmitter.IsOmittedFromShadow(member))
         {
             return;
         }
 
-        if (member.Type.TryGetArrayLikeElementType(out var elementType))
-        {
-            var name = member.Name.ToCSharpIdentifier();
-            WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
-        }
-        else if (TypeLayoutCalculator.IsUserStruct(member.Type))
-        {
-            writer.AppendMarshalMethodName(member.Type);
-            using (writer.Parentheses())
-            {
-                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, {StructArrayHelperEmitter.ArraysParameter(dialect)}, hStream");
-            }
+        var kind = NativeStructEmitter.ClassifyField(member);
+        var name = member.Name.ToCSharpIdentifier();
 
-            writer.AppendLine(";");
-        }
-        else
+        switch (kind)
         {
-            if (member.Type.IsReferenceType || member.Type.SpecialType != SpecialType.None)
-            {
-                writer.AppendLine($"native.{member.Name.ToCSharpIdentifier()} = host.{member.Name.ToCSharpIdentifier()};");
-            }
-            else
-            {
-                writer.AppendLine($"fixed (byte* pField = native.{member.Name.ToCSharpIdentifier()})");
+            case NativeStructEmitter.NativeFieldKind.FixedBuffer:
+                StructBlockCopyEmitter.TryWriteBlockCopy(writer, member, toNative: true, dialect);
+                break;
+
+            case NativeStructEmitter.NativeFieldKind.ArrayProxy:
+                if (member.Type.TryGetArrayLikeElementType(out var elementType))
+                {
+                    WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
+                }
+                break;
+
+            case NativeStructEmitter.NativeFieldKind.UserStruct:
+                writer.AppendMarshalMethodName(member.Type);
+                using (writer.Parentheses())
+                {
+                    writer.Append($"ref host.{name}, ref native.{name}, {StructArrayHelperEmitter.ArraysParameter(dialect)}, hStream");
+                }
+
+                writer.AppendLine(";");
+                break;
+
+            case NativeStructEmitter.NativeFieldKind.DirectValue:
+                writer.AppendLine($"native.{name} = host.{name};");
+                break;
+
+            case NativeStructEmitter.NativeFieldKind.FixedBytesFallback:
+                writer.AppendLine($"fixed (byte* pField = native.{name})");
                 using (writer.Scope())
                 {
                     writer.Append("*((");
                     writer.AppendFullyQualifiedCsharpName(member.Type);
-                    writer.AppendLine($"*)pField) = host.{member.Name.ToCSharpIdentifier()};");
+                    writer.AppendLine($"*)pField) = host.{name};");
                 }
-            }
+                break;
         }
     }
 
