@@ -38,7 +38,7 @@ internal static class GenericCopies
     }
 
     /// <summary>
-    /// Writes the copies that <paramref name="plans"/> describe into one derived compilation and checks them.
+    /// Writes the copies that <paramref name="plans"/> describe into one derived compilation.
     /// </summary>
     public static GenericCopySet Create(Compilation compilation, ImmutableArray<GenericCopyPlan> plans)
     {

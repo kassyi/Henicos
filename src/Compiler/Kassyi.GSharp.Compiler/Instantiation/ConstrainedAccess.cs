@@ -11,10 +11,21 @@ internal static class ConstrainedAccess
     // A name inside a call (T.Max in T.Max(a, b)) has no operation of its own; its call is at most this far up
     private const int MaxDepth = 4;
 
-    /// <summary>Whether <paramref name="symbol"/> is a member that a type parameter can reach by constraint.</summary>
+    /// <summary>
+    /// Whether <paramref name="symbol"/> is a static abstract or virtual member of an interface, which a type parameter
+    /// reaches by its constraint (<c>T.Zero</c>, an operator).
+    /// </summary>
     public static bool IsConstrainable(ISymbol? symbol) =>
         symbol is { IsStatic: true, ContainingType.TypeKind: TypeKind.Interface } &&
         (symbol.IsAbstract || symbol.IsVirtual);
+
+    /// <summary>
+    /// Whether <paramref name="symbol"/> is an instance method, property or event of an interface, which a value of a
+    /// type parameter reaches by its constraint (<c>x.CompareTo(y)</c> on <c>T : IComparable&lt;T&gt;</c>).
+    /// </summary>
+    public static bool IsInterfaceInstanceMember(ISymbol? symbol) =>
+        symbol is IMethodSymbol or IPropertySymbol or IEventSymbol &&
+        symbol is { IsStatic: false, ContainingType.TypeKind: TypeKind.Interface };
 
     /// <summary>
     /// The type <paramref name="node"/> reaches <paramref name="member"/> through, or <see langword="null"/> when it
