@@ -33,13 +33,6 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
         }
 
         var delegateForm = DelegateCasts.Plan(node, model, context.Emitter.Dialect);
-        if (delegateForm == DelegateCastForm.HeapObject)
-        {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DelegateAsHeapObject);
-            context.Visitor.AppendUnsupportedPlaceholder(node);
-            return;
-        }
-
         var targetType = model.GetTypeSymbol(node.Type);
         var conversionMethod = operation is IConversionOperation
         {

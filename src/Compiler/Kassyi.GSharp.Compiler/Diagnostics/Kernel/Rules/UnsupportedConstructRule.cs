@@ -211,7 +211,7 @@ internal sealed class UnsupportedConstructRule :
         return null;
     }
 
-    private static bool IsInSignature(SyntaxNode node)
+    internal static bool IsInSignature(SyntaxNode node)
     {
         for (var current = node.Parent; current != null; current = current.Parent)
         {

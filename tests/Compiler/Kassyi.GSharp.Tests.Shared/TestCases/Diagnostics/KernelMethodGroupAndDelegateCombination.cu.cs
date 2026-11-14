@@ -54,5 +54,7 @@ public static partial class KernelMethodGroupKernels
         Action<int[]> device = Set;
         var boxed = (object)Set;
         var viaDelegate = (Delegate)device;
+        object implicitObject = device;
+        Delegate implicitDelegate = Set;
     }
 }

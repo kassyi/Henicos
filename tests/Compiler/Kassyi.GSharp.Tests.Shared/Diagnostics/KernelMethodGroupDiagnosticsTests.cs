@@ -50,20 +50,24 @@ public class KernelMethodGroupDiagnosticsTests
         Assert.Equal(9, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 
-    // Line 55 casts a method group to object, line 56 a delegate to Delegate: both are heap objects
+    // Every place that writes object or Delegate in a body is reported once, at the type, whatever the value is: a cast of
+    // a method group (line 55) or a delegate (line 56), and a variable that a delegate or a method group is assigned to
+    // (lines 57 and 58)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task DelegateCast_ToObjectOrDelegate_ReportsGsh0003AtTheCast(string dialect)
+    public async Task HeapObjectType_DelegateConverted_ReportsGsh0003AtTheType(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
         Assert.Equal(
             [
-                (Analyzer, 55, 21, 55, 32),
-                (Analyzer, 56, 27, 56, 43)
+                (Analyzer, 55, 22, 55, 28),
+                (Analyzer, 56, 28, 56, 36),
+                (Analyzer, 57, 9, 57, 15),
+                (Analyzer, 58, 9, 58, 17)
             ],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "conversion of a delegate to object"));
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "type object, Delegate or MulticastDelegate"));
     }
 }

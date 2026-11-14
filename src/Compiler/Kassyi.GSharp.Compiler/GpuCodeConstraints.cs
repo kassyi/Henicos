@@ -78,16 +78,12 @@ internal static class GpuCodeConstraints
         _ => false
     };
 
-    /// <summary>
-    /// Whether <paramref name="type"/> is <see cref="object"/> or a delegate base class, which is a heap object.
-    /// </summary>
-    public static bool IsHeapDelegateTarget(ITypeSymbol? type) =>
-        type is { SpecialType: SpecialType.System_Object or SpecialType.System_Delegate or
-            SpecialType.System_MulticastDelegate };
+    /// <summary>The GSH0003 text for the type object, Delegate or MulticastDelegate in a body.</summary>
+    public const string HeapObjectType =
+        "type object, Delegate or MulticastDelegate (a reference to a heap object, which device code cannot hold)";
 
-    /// <summary>The GSH0003 text for a delegate converted to <see cref="object"/> or <see cref="Delegate"/>.</summary>
-    public const string DelegateAsHeapObject =
-        "conversion of a delegate to object or Delegate (a delegate in device code is not a heap object)";
+    /// <summary>Whether <paramref name="type"/> is <see cref="object"/>, which device code cannot hold (GSH0003).</summary>
+    public static bool IsObject(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_Object };
 
     /// <summary>Whether <paramref name="type"/> is <see cref="string"/>, which device code cannot hold (GSH0002).</summary>
     public static bool IsString(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_String };
@@ -198,8 +194,8 @@ internal static class GpuCodeConstraints
 
     /// <summary>
     /// The GSH0003 text for <c>+</c>, <c>-</c>, <c>+=</c> or <c>-=</c> on delegates, which builds a multicast
-    /// delegate: a delegate holds one method in device code, and a list of methods of a length known only at run time
-    /// needs a heap.
+    /// delegate: device code has no list of targets that is built at run time, so only a combination whose targets
+    /// are known at compile time can run.
     /// </summary>
     public const string DelegateCombination =
         "delegate combination (+, -, +=, -=) is not supported in GPU code, because its targets are not known at " +

@@ -117,22 +117,24 @@ public abstract class YamlDialectBase : ITranspilerDialect
                 TypeKind: TypeKind.Delegate,
                 DelegateInvokeMethod: { } invoke
             } named ||
-            (named.ContainingNamespace.IsSystemNamespace() && named.Name is "Func" or "Action") ||
-            invoke.Parameters
-                .AsStackEnumerable()
-                .Any(static p => p.RefKind != RefKind.None))
+            (named.ContainingNamespace.IsSystemNamespace() && named.Name is "Func" or "Action"))
         {
             return false;
         }
 
+        // The signature of the device function that it holds: a ref, out or in parameter is a pointer, a ref result a
+        // reference (MethodSignatureTranspiler)
         context.Emitter.Writer.Append("std::function<");
+        context.Emitter.Writer.AppendIf(invoke.RefKind == RefKind.RefReadOnly, "const ");
         AppendType(ref context, invoke.ReturnType);
+        context.Emitter.Writer.AppendIf(invoke.RefKind is RefKind.Ref or RefKind.RefReadOnly, "&");
         using (context.Emitter.Writer.Parentheses())
         {
             for (var i = 0; i < invoke.Parameters.Length; i++)
             {
                 context.Emitter.Writer.AppendIf(i > 0, ", ");
                 AppendType(ref context, invoke.Parameters[i].Type);
+                context.Emitter.Writer.AppendIf(invoke.Parameters[i].RefKind != RefKind.None, "*");
             }
         }
 

@@ -45,10 +45,30 @@ public class MethodGroupCastDifferentialTests
         OracleIsLaunch = true,
     };
 
+    internal static readonly DifferentialCase s_byRefDelegate = new(
+        nameof(MethodGroupCastDifferentialKernels) + "." +
+        nameof(MethodGroupCastDifferentialKernels.ByRefDelegateKernel))
+    {
+        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Inputs = static (rng, rows) => new DiffBuffers()
+            .In("inputs", DiffValues.Int32(rng, rows))
+            .Out<int>("r", rows, OutputPolicy.Exact),
+        Launch = static (b, s) => MethodGroupCastDifferentialKernels.LaunchByRefDelegateKernel(
+            b.Get<int>("inputs"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        OracleIsLaunch = true,
+    };
+
     [SkippableFact]
     public void MethodGroupCast_DeviceFunction_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_methodGroupCast);
 
     [SkippableFact]
     public void UserDelegate_DeclaredType_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_userDelegate);
+
+    [SkippableFact]
+    public void ByRefDelegate_RefOutInParametersAndNull_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_byRefDelegate);
 }
