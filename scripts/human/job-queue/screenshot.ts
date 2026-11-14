@@ -260,6 +260,8 @@ export interface Screenshot {
   columns: number;
   rows: number;
   state: Partial<ViewState>;
+  /** The queue is paused (pause) in this sample. */
+  paused?: boolean;
 }
 
 export const Screenshots: Screenshot[] = [
@@ -268,6 +270,9 @@ export const Screenshots: Screenshot[] = [
   { file: "selected.svg", columns: 120, rows: 17, state: { selectedId: 812 } },
   { file: "help.svg", columns: 120, rows: 17, state: { help: 1 } },
   { file: "chats-hidden.svg", columns: 120, rows: 17, state: { chatsHidden: true } },
+  { file: "paused.svg", columns: 120, rows: 17, state: { flash: { kind: "pause", until: Now + 1000 } }, paused: true },
+  // just resumed: the play mark, and nothing of the pause in the header
+  { file: "resumed.svg", columns: 120, rows: 17, state: { flash: { kind: "resume", until: Now + 1000 } } },
 ];
 
 /** The time zone of the clock times on the screens, so that they do not follow the machine that draws them. */
@@ -279,9 +284,9 @@ export function writeScreenshots(dir: string): string[] {
   process.env.TZ = TimeZone;
   try {
     fs.mkdirSync(dir, { recursive: true });
-    return Screenshots.map(({ file, columns, rows, state }) => {
+    return Screenshots.map(({ file, columns, rows, state, paused }) => {
       const lines = renderScreen(
-        screenshotReply(),
+        paused ? { ...screenshotReply(), paused: true, pausedAt: Now - 4 * Minute } : screenshotReply(),
         { ...initialViewState(), ...state },
         { columns, rows, now: Now },
         true,
