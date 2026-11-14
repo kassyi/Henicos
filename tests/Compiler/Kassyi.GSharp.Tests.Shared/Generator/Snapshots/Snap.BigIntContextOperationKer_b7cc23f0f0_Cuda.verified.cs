@@ -138,7 +138,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(456,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(456,48)"")[__gsharp_id_2_i]&__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(457,48)"")[__gsharp_id_2_i];
+__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(474,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(474,48)"")[__gsharp_id_2_i]&__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(475,48)"")[__gsharp_id_2_i];
 }
 }
 }
@@ -152,7 +152,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(486,13)"")=~__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(486,49)"")[__gsharp_id_2_i];
+__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(504,13)"")=~__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(504,49)"")[__gsharp_id_2_i];
 }
 }
 }
@@ -166,7 +166,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(466,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(466,48)"")[__gsharp_id_2_i]|__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(467,48)"")[__gsharp_id_2_i];
+__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(484,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(484,48)"")[__gsharp_id_2_i]|__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(485,48)"")[__gsharp_id_2_i];
 }
 }
 }
@@ -180,14 +180,14 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(476,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(476,48)"")[__gsharp_id_2_i]^__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(477,48)"")[__gsharp_id_2_i];
+__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(494,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(494,48)"")[__gsharp_id_2_i]^__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(495,48)"")[__gsharp_id_2_i];
 }
 }
 }
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftLeft_o0(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_id_0_ctx, int __gsharp_id_1_wordShift, int __gsharp_id_2_bitShift){
-auto __gsharp_id_3_left = __gsharp_array_not_null(__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(382,20)"");
+auto __gsharp_id_3_left = __gsharp_array_not_null(__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(391,20)"");
 auto __gsharp_id_4_result = __gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer;
 if(__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__IsSameArray(__gsharp_id_3_left,__gsharp_id_4_result))
 {
@@ -211,7 +211,7 @@ __gsharp_id_4_result[__gsharp_id_5_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMat
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o0(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_id_0_ctx, int __gsharp_id_1_wordShift, int __gsharp_id_2_bitShift){
-auto __gsharp_id_3_left = __gsharp_array_not_null(__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(401,20)"");
+auto __gsharp_id_3_left = __gsharp_array_not_null(__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(419,20)"");
 auto __gsharp_id_4_result = __gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer;
 if(__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__IsSameArray(__gsharp_id_3_left,__gsharp_id_4_result))
 {

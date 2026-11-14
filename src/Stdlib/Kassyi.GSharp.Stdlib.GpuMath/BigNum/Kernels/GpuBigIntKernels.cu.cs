@@ -376,6 +376,15 @@ public static partial class GpuBigIntKernels
 
     #region MacroTranspiler & Device Helpers
 
+    /// <summary>
+    /// <c>ResultBuffer = LeftOperand &lt;&lt; (32 wordShift + bitShift)</c> on the <c>NumberOfWords</c> words of
+    /// <paramref name="ctx"/>, across the threads of the launch (a grid-stride loop).
+    /// </summary>
+    /// <remarks>
+    /// When <c>ResultBuffer</c> is the same array as <c>LeftOperand</c>, one thread of the grid shifts every word, and
+    /// the other threads return at once; no grid synchronization follows, so a kernel that reads the result in other
+    /// threads synchronizes itself, as after the grid-stride loop of distinct buffers.
+    /// </remarks>
     [GpuDeviceFunction]
     public static void ExecuteShiftLeft(GpuBigIntContext ctx, int wordShift, int bitShift)
     {
@@ -395,6 +404,15 @@ public static partial class GpuBigIntKernels
         });
     }
 
+    /// <summary>
+    /// <c>ResultBuffer = LeftOperand &gt;&gt; (32 wordShift + bitShift)</c> on the <c>NumberOfWords</c> words of
+    /// <paramref name="ctx"/>, across the threads of the launch (a grid-stride loop).
+    /// </summary>
+    /// <remarks>
+    /// When <c>ResultBuffer</c> is the same array as <c>LeftOperand</c>, one thread of the grid shifts every word, and
+    /// the other threads return at once; no grid synchronization follows, so a kernel that reads the result in other
+    /// threads synchronizes itself, as after the grid-stride loop of distinct buffers.
+    /// </remarks>
     [GpuDeviceFunction]
     public static void ExecuteShiftRight(GpuBigIntContext ctx, int wordShift, int bitShift)
     {
@@ -507,6 +525,12 @@ public static partial class GpuBigIntKernels
         }
     }
 
+    /// <summary>
+    /// <c>result = left &lt;&lt; shiftBits</c> on the <c>NumberOfWords</c> words of <paramref name="ctx"/>, the
+    /// operator of <see cref="GpuBigIntRef"/>. A negative <paramref name="shiftBits"/> shifts the other way, as for
+    /// <see cref="System.Numerics.BigInteger"/>; <paramref name="result"/> may be <paramref name="left"/>.
+    /// </summary>
+    /// <remarks>Each calling thread processes every word; the operator is meant for one thread per value.</remarks>
     [GpuDeviceFunction]
     public static void ExecuteShiftLeft(ref GpuBigIntContext ctx, uint[] result, uint[] left, int shiftBits)
     {
@@ -521,6 +545,12 @@ public static partial class GpuBigIntKernels
         ShiftWordsLeft(result, left, (int)(amount / 32), (int)(amount % 32), ctx.NumberOfWords);
     }
 
+    /// <summary>
+    /// <c>result = left &gt;&gt; shiftBits</c> on the <c>NumberOfWords</c> words of <paramref name="ctx"/>, the
+    /// operator of <see cref="GpuBigIntRef"/>. A negative <paramref name="shiftBits"/> shifts the other way, as for
+    /// <see cref="System.Numerics.BigInteger"/>; <paramref name="result"/> may be <paramref name="left"/>.
+    /// </summary>
+    /// <remarks>Each calling thread processes every word; the operator is meant for one thread per value.</remarks>
     [GpuDeviceFunction]
     public static void ExecuteShiftRight(ref GpuBigIntContext ctx, uint[] result, uint[] left, int shiftBits)
     {

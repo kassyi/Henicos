@@ -52,15 +52,19 @@ public class BigIntContextOperationTests : TranspilerTestBase
     }
 
     // The result buffer is the left operand: one thread of the grid shifts every word, so no thread reads a word
-    // another one already shifted; two blocks of two threads, so the grid-stride loop would have split the words.
+    // another one already shifted; two blocks of two threads, so the grid-stride loop would have split the words. No
+    // shift (0, 0), and shifts of all the words (4, 0) or more (5, 7), which leave zero.
     // mutant: GpuBigIntKernels.cu.cs ExecuteShiftLeft(GpuBigIntContext, ...) `if (IsSameArray(left, result))` ->
     // `if (false)` -> wrong words on the native CPU path (and a race on CUDA)
     // mutant: the same in ExecuteShiftRight
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 0)]
     [InlineData(0, 3)]
     [InlineData(1, 5)]
     [InlineData(2, 0)]
+    [InlineData(4, 0)]
+    [InlineData(5, 7)]
     public void Shifts_ResultIsTheLeftOperand_MatchBigIntegerShift(int wordShift, int bitShift)
     {
         var left = (uint[])s_left.Clone();
