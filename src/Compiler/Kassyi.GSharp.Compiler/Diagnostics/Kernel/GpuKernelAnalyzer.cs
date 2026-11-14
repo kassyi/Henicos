@@ -45,10 +45,10 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         walker.Visit(destructor);
     }
 
-    // A class or a record class, which the generator reopens; not a struct or a record struct
-    private static bool IsClassDeclaration(SyntaxNode? node) =>
-        node is ClassDeclarationSyntax ||
-        (node is RecordDeclarationSyntax record && !record.ClassOrStructKeyword.IsKind(SyntaxKind.StructKeyword));
+    // A class, struct or record: the generator reopens it with a partial declaration (the managed version of a device
+    // function is written there). An interface is not reopened.
+    private static bool IsReopenedDeclaration(SyntaxNode? node) =>
+        node is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax;
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
         ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)
@@ -65,10 +65,9 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // The generator adds members to the class that holds GPU code, so that class and every type enclosing it must be
-        // partial (#941). A struct that holds device functions is not reopened, so it is not reported; a record class
-        // is.
-        var reopened = IsClassDeclaration(methodDeclaration.Parent) ? methodDeclaration.Parent : null;
+        // The generator adds members to the type that holds GPU code (the managed version of a device function, the
+        // launch wrappers), so that type and every type enclosing it must be partial (#941, #1897)
+        var reopened = IsReopenedDeclaration(methodDeclaration.Parent) ? methodDeclaration.Parent : null;
         for (var parent = reopened; parent is TypeDeclarationSyntax typeDecl; parent = parent.Parent)
         {
             if (!typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword) && reportedTypes.TryAdd(typeDecl, 0))

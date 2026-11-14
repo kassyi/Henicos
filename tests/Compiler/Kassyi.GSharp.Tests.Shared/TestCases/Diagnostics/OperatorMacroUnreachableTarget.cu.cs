@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.TestCases.Diagnostics;
 public static partial class ReachHolder
 {
     // A private struct: no code outside ReachHolder can name it, and [UnsafeAccessorType] does not take value types
-    private struct Hidden
+    private partial struct Hidden
     {
         [GpuDeviceFunction]
         private static void Add(ref ReachValue result, ReachValue left, ReachValue right)
