@@ -92,9 +92,9 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(778697350u, "AdvancedMemor
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1104512916u, "AdvancedMemoryKernels.cs", 48, 30, "PointerComplexAssignmentKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(548807160u, "AdvancedMemoryKernels.cs", 48, 46, "PointerComplexAssignmentKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1785895568u, "AdvancedMemoryKernels.cs", 54, 17, "PointerComplexAssignmentKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1036256204u, "AdvancedMemoryKernels.cs", 64, 46, "ReadOnlyPinKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1719537909u, "AdvancedMemoryKernels.cs", 66, 13, "ReadOnlyPinKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(519650845u, "AdvancedMemoryKernels.cs", 67, 13, "ReadOnlyPinKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(171712764u, "AdvancedMemoryKernels.cs", 66, 46, "ReadOnlyPinKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(278506177u, "AdvancedMemoryKernels.cs", 68, 13, "ReadOnlyPinKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(381453289u, "AdvancedMemoryKernels.cs", 69, 13, "ReadOnlyPinKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -821,12 +821,15 @@ finally
 #pragma warning restore CS8500
 public const string ReadOnlyPinKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AdvancedMemoryKernels__ReadOnlyPinKernel(GSharpArray<const unsigned int> __gsharp_id_0_src, GSharpArray<const unsigned int> __gsharp_id_1_other, GSharpArray<unsigned int> __gsharp_id_2_dest, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-const unsigned int* __gsharp_id_3_pSrc = __gsharp_id_0_src;
-const unsigned int* __gsharp_id_4_pElement = &__gsharp_array_at(__gsharp_id_0_src, 1, 1036256204u);
-const unsigned int* __gsharp_id_5_pOther = __gsharp_id_1_other;
+auto __gsharp_id_3_alias = __gsharp_id_1_other;
+auto __gsharp_id_4_aliasOfAlias = __gsharp_id_3_alias;
+const unsigned int* __gsharp_id_5_pSrc = __gsharp_id_0_src;
+const unsigned int* __gsharp_id_6_pElement = &__gsharp_array_at(__gsharp_id_0_src, 1, 171712764u);
+const unsigned int* __gsharp_id_7_pOther = __gsharp_id_1_other;
+const unsigned int* __gsharp_id_8_pAlias = __gsharp_id_4_aliasOfAlias;
 {
-__gsharp_array_at(__gsharp_id_2_dest, 0, 1719537909u)=*__gsharp_id_3_pSrc+__gsharp_id_4_pElement[0];
-__gsharp_array_at(__gsharp_id_2_dest, 1, 519650845u)=(__gsharp_id_3_pSrc==__gsharp_id_5_pOther?1u:0u);
+__gsharp_array_at(__gsharp_id_2_dest, 0, 278506177u)=*__gsharp_id_5_pSrc+__gsharp_id_6_pElement[0]+__gsharp_id_8_pAlias[1];
+__gsharp_array_at(__gsharp_id_2_dest, 1, 381453289u)=(__gsharp_id_5_pSrc==__gsharp_id_7_pOther?1u:0u);
 }
 }
 ";
