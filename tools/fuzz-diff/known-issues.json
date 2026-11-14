@@ -42,14 +42,6 @@
       "avoidedShape": "Calling plain struct instance methods directly from kernels; computed readonly properties and [GpuDeviceFunction] helpers are used when avoided."
     },
     {
-      "issue": 1101,
-      "kind": "avoid",
-      "summary": "Null-coalescing assignment (??=) used as a value has type Nullable<T> in generated C++ and does not compile",
-      "profiles": ["C", "G"],
-      "paths": ["Native", "Cuda"],
-      "avoidedShape": "Null-coalescing assignment (a ??= b) used inside a value-consuming expression; only statement-level (a ??= b;) is emitted when avoided."
-    },
-    {
       "issue": 1102,
       "kind": "avoid",
       "summary": "Nested tuple deconstruction and a conditional expression on the right of a deconstruction fail with GSH0003",

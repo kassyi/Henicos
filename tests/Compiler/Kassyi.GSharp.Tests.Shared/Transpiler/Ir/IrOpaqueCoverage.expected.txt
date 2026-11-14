@@ -9,7 +9,7 @@ Invalid	Invalid	ObjectCreationExpression	11
 Invalid	Invalid	SimpleMemberAccessExpression	12
 Invalid	SimpleAssignment	SimpleAssignmentExpression	3
 UnsupportedOperation	Await	AwaitExpression	1
-UnsupportedOperation	CoalesceAssignment	CoalesceAssignmentExpression	8
+UnsupportedOperation	CoalesceAssignment	CoalesceAssignmentExpression	14
 UnsupportedOperation	CollectionExpression	CollectionExpression	16
 UnsupportedOperation	ConditionalAccess	ConditionalAccessExpression	5
 UnsupportedOperation	DeconstructionAssignment	SimpleAssignmentExpression	34
@@ -45,9 +45,9 @@ statement UnsupportedOperation	Labeled	LabeledStatement	19
 statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	55
 statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
-statement UnsupportedOperation	Loop	ForEachStatement	140
+statement UnsupportedOperation	Loop	ForEachStatement	143
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
-statement UnsupportedOperation	Loop	ForStatement	122
+statement UnsupportedOperation	Loop	ForStatement	124
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	5
 statement UnsupportedOperation	Switch	SwitchStatement	49
@@ -55,4 +55,4 @@ statement UnsupportedOperation	Try	TryStatement	3
 statement UnsupportedOperation	Using	UsingStatement	14
 statement UnsupportedOperation	UsingDeclaration	LocalDeclarationStatement	15
 statement UnsupportedOperation	YieldBreak	YieldBreakStatement	2
-statement UnsupportedOperation	YieldReturn	YieldReturnStatement	85
+statement UnsupportedOperation	YieldReturn	YieldReturnStatement	86
