@@ -148,6 +148,32 @@ function firstTextOf(file, pick) {
   return null;
 }
 
+/**
+ * The tags the IDE and Claude Code put around a prompt (the file the person has open, the selection, system reminders,
+ * command markers): not the person's words, so they never reach the stored prompts. A block is removed with its content.
+ */
+const PromptTagNames = [
+  'ide_opened_file',
+  'ide_selection',
+  'ide_diagnostics',
+  'system-reminder',
+  'user-prompt-submit-hook',
+  'command-name',
+  'command-message',
+  'command-args',
+  'local-command-stdout',
+  'local-command-stderr',
+  'local-command-caveat',
+];
+const PromptTagBlock = new RegExp(String.raw`<(${PromptTagNames.join('|')})(?:\s[^>]*)?>[\s\S]*?<\/\1>`, 'gi');
+// an opening tag whose closer never came (a cut prompt): the tag line goes, the rest stays
+const PromptTagOpen = new RegExp(String.raw`<\/?(?:${PromptTagNames.join('|')})(?:\s[^>]*)?>`, 'gi');
+
+/** The prompt of the person without the tags of PromptTagNames; blank lines left by them are collapsed. */
+function stripPromptTags(text) {
+  return String(text).replace(PromptTagBlock, '').replace(PromptTagOpen, '').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 /** A user record that the person did not type: a command, its output or caveat, a background task notification. */
 const NotPrompt = /^\s*(?:<(?:command-|local-command|task-notification)|Caveat:)/;
 
@@ -230,6 +256,7 @@ module.exports = {
   MaxQuestionLength,
   MaxFirstPromptLength,
   clip,
+  stripPromptTags,
   extractReply,
   extractQuestion,
   lastTextOf,
