@@ -11,8 +11,8 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 /// <summary>
 /// <c>[GpuReadOnly]</c> promises that no thread writes the array while the kernel runs, through any alias. The analyzer
 /// reports, at the write (GSH0118), each write it can see: of the array itself, of a span or array converted from it,
-/// of a struct field or a <c>ref</c> foreach variable that holds it, and through a method that writes its operand or its
-/// parameter. The reads of the same arrays are not reported. Each form has a kernel of its own in the test case, and a
+/// of a struct field or a <c>ref</c> foreach variable that holds it, and through a method that writes its operand or
+/// its parameter. The reads of the same arrays are not reported. Each form has a kernel of its own in the test case, and a
 /// range is asserted relative to the line that declares the kernel, so the kernels can move.
 /// </summary>
 [Category(TestCategory.Compiler)]

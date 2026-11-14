@@ -1,9 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.ReadOnlyArrays;
 
 /// <summary>
-/// Everything a variable that can hold an array is given in a method body (<see cref="AliasKey"/>): its initializer, the
-/// right side of each simple assignment, and the members of an object initializer. A variable that is also assigned
-/// compound-wise, passed by <c>ref</c> or <c>out</c>, or deconstructed into has a source that cannot be read, so it is
+/// Everything a variable that can hold an array is given in a method body (<see cref="AliasKey"/>): its initializer,
+/// the right side of each simple assignment, and the members of an object initializer. A variable that is also
+/// assigned compound-wise, passed by <c>ref</c> or <c>out</c>, or deconstructed into has a source that cannot be read, so it is
 /// left out. A struct that is assigned as a whole or passed by <c>ref</c> or <c>out</c> loses its fields the same way.
 /// </summary>
 internal sealed class AliasSources
