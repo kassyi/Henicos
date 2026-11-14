@@ -94,7 +94,7 @@ function rebind(
   server.log(`re-bind #${job.id} (${job.phase}) pid ${job.pid}: ${job.command}`);
   if (job.phase === "waiting") {
     job.lastPosition = -1;
-    send(socket, { type: "queued", id: job.id, ...server.outlook(job, scheduler.forecast()) });
+    send(socket, server.queuedMessage(job));
   } else if (plan.resendGrant) {
     send(socket, server.grantMessage(job));
   } else {
@@ -149,7 +149,7 @@ function request(connection: Connection, message: Incoming): void {
   );
   scheduler.add(job);
   // The id first, so that the caller can ask about its job (status <id>) whatever happens next; settle grants
-  send(socket, { type: "queued", id: job.id, ...server.outlook(job, scheduler.forecast()) });
+  send(socket, server.queuedMessage(job));
 }
 
 /** adopt: a running job re-registers after its connection dropped or the scheduler restarted. */
