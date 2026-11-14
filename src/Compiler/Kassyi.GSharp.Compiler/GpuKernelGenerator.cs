@@ -400,25 +400,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var kernelErrorSites = errorSites.Entries.AsEquatableArray();
             var heldRefLocalSites = HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel);
 
-            if (!CheckSuppressGs0001(methodDeclaration))
-            {
-                return new TranspiledKernelResult(
-                    header,
-                    host,
-                    cudaSource,
-                    cppSource,
-                    managedCSharpSource,
-                    ToIncludes(requiredIncludesCuda),
-                    ToIncludes(requiredIncludesCpp),
-                    "",
-                    structExports,
-                    kernelErrorSites,
-                    heldRefLocalSites
-                );
-            }
-
-            cudaSource = "// gsharp:suppress GS0001\n" + cudaSource;
-            cppSource = "// gsharp:suppress GS0001\n" + cppSource;
+            var spill = new KernelSpillScope(
+                GlobalCppNames.GetKernelName(methodSymbol),
+                CheckSuppressGs0001(methodDeclaration),
+                DeviceFunctionReach.GetReachedFunctionNames(methodDeclaration, context.SemanticModel.Compilation)
+            );
 
             return new TranspiledKernelResult(
                 header,
@@ -431,7 +417,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 "",
                 structExports,
                 kernelErrorSites,
-                heldRefLocalSites
+                heldRefLocalSites,
+                spill
             );
         }
         catch (Exception ex)
@@ -1016,6 +1003,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .AddTo(requiredIncludes);
         var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
             allKernelsSource.ToString());
+        if (isCuda)
+        {
+            var spillScopes = new List<KernelSpillScope>(kernelMethods.Length);
+            kernelMethods
+                .AsStackEnumerable()
+                .Select(static kernel => kernel.Spill)
+                .AddTo(spillScopes);
+            bodySource = SpillSuppressionPlan.FormatLine(SpillSuppressionPlan.Create(spillScopes)) + bodySource;
+        }
         AotArtifactWriter.Write(target, config, bodySource, context, imports.FindFullName, symbolSites.ToImmutable());
     }
 

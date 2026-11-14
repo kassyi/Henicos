@@ -33,6 +33,8 @@
     <!-- Shared with the build tasks, so nvcc and the target launch limits read GSharpTargetArchitectures alike. -->
     <Compile Include="..\..\Shared\Cuda\CudaArchitectureList.cs" Link="Cuda\CudaArchitectureList.cs" />
     <Compile Include="..\..\Shared\Cuda\NvccGencode.cs" Link="Cuda\NvccGencode.cs" />
+    <!-- Shared with the build tasks: the line that names the functions whose spills are not reported. -->
+    <Compile Include="..\..\Shared\Cuda\SpillSuppressionLine.cs" Link="Cuda\SpillSuppressionLine.cs" />
   </ItemGroup>
 
   <ItemGroup>

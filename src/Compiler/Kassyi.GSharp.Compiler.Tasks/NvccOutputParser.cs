@@ -101,8 +101,8 @@ public static class NvccOutputParser
             }
 
             var trimmed = line.AsSpan().Trim().ToString();
-            if (SpillSuppressionParser.IsFunctionSuppressed(trimmed, suppressedFunctions) ||
-                (!isWarningSpill && SpillSuppressionParser.IsFunctionSuppressed(functionContext, suppressedFunctions)))
+            if (SpillSuppression.IsSuppressed(trimmed, suppressedFunctions) ||
+                (!isWarningSpill && SpillSuppression.IsSuppressed(functionContext, suppressedFunctions)))
             {
                 continue;
             }
@@ -166,7 +166,7 @@ public static class NvccOutputParser
             // Stack size indeterminate warnings on functions with GS0001 suppression (intentional recursion tests).
             if (line.IndexOf("ptxas warning", StringComparison.OrdinalIgnoreCase) >= 0 &&
                 line.IndexOf("Stack size for entry function", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                SpillSuppressionParser.IsFunctionSuppressed(line, suppressedFunctions))
+                SpillSuppression.IsSuppressed(line, suppressedFunctions))
             {
                 continue;
             }
