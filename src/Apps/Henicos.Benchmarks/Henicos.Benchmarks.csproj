@@ -36,7 +36,9 @@
     <AdditionalFiles Include="ComputeBenchmarks\Native\native_benchmarks.yml" GSharpApi="true" />
   </ItemGroup>
 
-  <Target Name="CompileNativeBenchmarks" BeforeTargets="GSharpAddGeneratedItemsToOutputDirectory">
+  <!-- Not in a design-time build, as GSharpCompileCuda: GSharpAddGeneratedItemsToOutputDirectory runs there too -->
+  <Target Name="CompileNativeBenchmarks" BeforeTargets="GSharpAddGeneratedItemsToOutputDirectory"
+          Condition="'$(DesignTimeBuild)' != 'true'">
     <CompileCudaToFatbinTask CudaSources="@(NativeBenchmarkCudaSources)" CombinedFatbinName="native_benchmarks.gfatbin" OutputDirectory="$(IntermediateOutputPath)GSharpFatbins" TargetArchitectures="$(GSharpTargetArchitectures)">
       <Output TaskParameter="OutputFatbins" ItemName="_GSharpCompiledFatbins" />
       <Output TaskParameter="OutputFatbins" ItemName="_NativeBenchmarkFatbins" />
