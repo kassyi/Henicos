@@ -143,8 +143,7 @@ public sealed class MarshalingBoundaryDiagnosticsTests
             """;
 
         var run = await KernelDiagnostics.RunCompilationAsync(RoslynTestUtility.CreateCompilation(source), dialect);
-        var generated = string.Join("
-", run.Output.SyntaxTrees.Select(static t => t.ToString()));
+        var generated = string.Join('|', run.Output.SyntaxTrees.Select(static t => t.ToString()));
 
         Assert.DoesNotContain(run.Analyzer, static d => d.Id == GSharpDiagnostics.StructLayoutNotRepresentable.Id);
         Assert.DoesNotContain(run.Generator, static d => d.Severity == DiagnosticSeverity.Error);
