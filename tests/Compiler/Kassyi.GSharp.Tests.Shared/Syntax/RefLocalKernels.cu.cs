@@ -68,17 +68,18 @@ public static partial class RefLocalKernels
     public static void ForEachRefSpanKernel(int[] r)
     {
         int t = ThreadIndex.X;
-        foreach (ref int e in r.AsSpan(t, 1))
+        Span<int> mine = r.AsSpan(t, 1);
+        foreach (ref int e in mine)
         {
             e += 1;
         }
     }
 
-    // foreach (ref ...) over an array, with continue and break
+    // foreach (ref ...) over the span of an array, with continue and break
     [GpuKernel]
     public static void ForEachRefArrayKernel(int[] r)
     {
-        foreach (ref int e in r)
+        foreach (ref int e in r.AsSpan())
         {
             if (e == 3)
             {
