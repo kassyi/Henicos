@@ -149,7 +149,7 @@ internal static class GenericCopyPlanner
                 return false;
             }
 
-            var helper = new ConstrainedHelper(call.ClosedType, call.Member, IsVariable(callee.Expression));
+            var helper = new ConstrainedHelper(call.ClosedType, call.Method, IsVariable(callee.Expression));
             var position = IndexOf(helper);
             if (position < 0)
             {
