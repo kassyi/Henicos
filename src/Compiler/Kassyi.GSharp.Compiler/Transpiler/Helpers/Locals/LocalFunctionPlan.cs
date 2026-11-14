@@ -25,7 +25,9 @@ internal sealed class LocalFunctionPlan
         _recursive = recursive;
     }
 
-    /// <summary>The plan of <paramref name="statements"/>, or <see langword="null"/> when it declares no local function.</summary>
+    /// <summary>
+    /// The plan of <paramref name="statements"/>, or <see langword="null"/> when it declares no local function.
+    /// </summary>
     /// <param name="statements">The statement list.</param>
     /// <param name="model">The semantic model of the tree of the list.</param>
     public static LocalFunctionPlan? Create(SyntaxList<StatementSyntax> statements, SemanticModel model)
@@ -78,7 +80,9 @@ internal sealed class LocalFunctionPlan
     /// <summary>The indices of the local functions that the statement at <paramref name="index"/> uses.</summary>
     public IReadOnlyList<int> Uses(int index) => _uses[index];
 
-    /// <summary>The local function at <paramref name="index"/> and the ones that lead to each other with it, in order.</summary>
+    /// <summary>
+    /// The local function at <paramref name="index"/> and the ones that lead to each other with it, in order.
+    /// </summary>
     public IReadOnlyList<int> Group(int index) => _groups[index];
 
     /// <summary>Whether the local function at <paramref name="index"/> reaches itself.</summary>
