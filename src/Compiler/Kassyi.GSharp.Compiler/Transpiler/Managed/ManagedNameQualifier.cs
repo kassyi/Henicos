@@ -57,8 +57,7 @@ internal static class ManagedNameQualifier
     public static ExpressionSyntax? TryRewriteInvocation(InvocationExpressionSyntax node,
         CSharpSyntaxVisitor<SyntaxNode?> visitor, SemanticModel semanticModel)
     {
-        if (node.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" } &&
-            semanticModel.GetSymbol(node) is not IMethodSymbol &&
+        if (IsNameofOperator(node, semanticModel) &&
             semanticModel.GetSafeConstantValue(node) is { HasValue: true, Value: string value })
         {
             // "<value>"
@@ -101,6 +100,14 @@ internal static class ManagedNameQualifier
             arguments.WithArguments(arguments.Arguments.Insert(0, receiverArgument))
         ).WithTriviaFrom(node);
     }
+
+    /// <summary>
+    /// Whether <paramref name="node"/> is the <c>nameof</c> operator, not a call of a method that is named
+    /// <c>nameof</c> (legal C#, which binds to a method).
+    /// </summary>
+    public static bool IsNameofOperator(InvocationExpressionSyntax node, SemanticModel semanticModel) =>
+        node.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" } &&
+        semanticModel.GetSymbol(node) is not IMethodSymbol;
 
     /// <summary>
     /// The interpolation <paramref name="visited"/> with its expression in parentheses when a qualified name put
