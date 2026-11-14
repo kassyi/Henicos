@@ -232,4 +232,78 @@ public class ConstexprLiteralTests
 
         Assert.Throws<ArgumentOutOfRangeException>(() => ConstexprLiteral.Format(stringType, "abc"));
     }
+
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(SpecialType.System_Single, 'A', "65.0f", "65F")]
+    [InlineData(SpecialType.System_Double, 'A', "65.0", "65D")]
+    [InlineData(SpecialType.System_Single, 'a', "97.0f", "97F")]
+    [InlineData(SpecialType.System_Double, 'a', "97.0", "97D")]
+    [InlineData(SpecialType.System_Single, 'z', "122.0f", "122F")]
+    [InlineData(SpecialType.System_Double, 'z', "122.0", "122D")]
+    public void TryFormatConstant_CharConstantConvertedToFloatingPoint_FormatsExpectedLiterals(
+        SpecialType targetType,
+        char value,
+        string expectedCpp,
+        string expectedCSharp)
+    {
+        var type = s_compilation.GetSpecialType(targetType);
+
+        Assert.True(ConstexprLiteral.TryFormatConstant(type, value, out var literal));
+        Assert.Equal((expectedCpp, expectedCSharp), literal);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(SpecialType.System_Single, '\0', "0.0f", "0F")]
+    [InlineData(SpecialType.System_Double, '\0', "0.0", "0D")]
+    [InlineData(SpecialType.System_Single, '\uffff', "65535.0f", "65535F")]
+    [InlineData(SpecialType.System_Double, '\uffff', "65535.0", "65535D")]
+    public void TryFormatConstant_CharBoundaryValuesConvertedToFloatingPoint_FormatsExpectedLiterals(
+        SpecialType targetType,
+        char value,
+        string expectedCpp,
+        string expectedCSharp)
+    {
+        var type = s_compilation.GetSpecialType(targetType);
+
+        Assert.True(ConstexprLiteral.TryFormatConstant(type, value, out var literal));
+        Assert.Equal((expectedCpp, expectedCSharp), literal);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Generator_CharConstantImplicitlyConvertedToFloatAndDouble_GeneratesExpectedCodeWithoutError()
+    {
+        const string source = """
+            using System;
+            using Kassyi.GSharp.Core;
+
+            public static partial class CharConstKernels
+            {
+                private const char Letter = 'A';
+
+                [GpuKernel]
+                public static void CharConstToFloatKernel(float[] o, double[] d)
+                {
+                    o[0] = Letter;            // implicit char -> float
+                    d[0] = Letter;            // implicit char -> double
+                    o[1] = MathF.Sqrt('A');   // char argument -> float parameter
+                }
+            }
+            """;
+
+        foreach (var dialect in new[] { "Cpu", "Cuda" })
+        {
+            var (driver, _, diagnostics) = GeneratorTestRunner.RunGenerator(source, dialect);
+            Assert.Empty(diagnostics.Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+            var runResult = driver.GetRunResult();
+            var code = string.Join("\n", runResult.GeneratedTrees.Select(static t => t.GetText().ToString()));
+
+            Assert.Contains("65.0f", code, StringComparison.Ordinal);
+            Assert.Contains("65.0", code, StringComparison.Ordinal);
+            Assert.Contains("sqrtf(65.0f)", code, StringComparison.Ordinal);
+        }
+    }
 }
