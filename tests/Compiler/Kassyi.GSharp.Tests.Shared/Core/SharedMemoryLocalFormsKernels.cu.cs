@@ -4,9 +4,9 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 /// <summary>
-/// The forms of a <c>SharedMemory&lt;T&gt;</c> local that are not a direct <c>new</c> (#1085): a parenthesized creation,
-/// a copy of another local and the result of a device function. Each thread writes and reads its own element, so no
-/// barrier is needed and the kernels stay plain functions on the CPU paths.
+/// The forms of a <c>SharedMemory&lt;T&gt;</c> local that are not a direct <c>new</c> (#1085): a parenthesized
+/// creation, a copy of another local and the result of a device function. Each thread writes and reads its own
+/// element, so no barrier is needed and the kernels stay plain functions on the CPU paths.
 /// </summary>
 public static partial class SharedMemoryLocalFormsKernels
 {

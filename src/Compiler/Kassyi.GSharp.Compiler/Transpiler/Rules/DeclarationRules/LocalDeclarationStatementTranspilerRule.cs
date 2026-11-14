@@ -91,8 +91,8 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
     }
 
     // <T>* <name> = <initializer>;
-    private static void WriteSharedMemoryHandle(VariableDeclaratorSyntax declarator, EqualsValueClauseSyntax initializer,
-        ITypeSymbol elementType, ref TranspileContext context)
+    private static void WriteSharedMemoryHandle(VariableDeclaratorSyntax declarator,
+        EqualsValueClauseSyntax initializer, ITypeSymbol elementType, ref TranspileContext context)
     {
         context.Emitter.Dialect.AppendType(ref context, elementType);
         context.Emitter.Writer.Append("* ");

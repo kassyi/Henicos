@@ -290,7 +290,8 @@ internal static class MethodSignatureTranspiler
             }
 
             // A SharedMemory<T> is the pointer to its memory, as it is for a parameter and a local
-            if (returnType is INamedTypeSymbol { TypeArguments.Length: 1 } sharedMemory && sharedMemory.IsSharedMemoryType())
+            if (returnType is INamedTypeSymbol { TypeArguments.Length: 1 } sharedMemory &&
+                sharedMemory.IsSharedMemoryType())
             {
                 context.Emitter.Dialect.AppendType(ref context, sharedMemory.TypeArguments[0]);
                 context.Emitter.Writer.Append('*');

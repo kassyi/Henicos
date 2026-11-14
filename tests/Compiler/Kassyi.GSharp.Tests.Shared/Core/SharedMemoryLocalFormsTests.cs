@@ -6,9 +6,9 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 /// <summary>
-/// Runs <see cref="SharedMemoryLocalFormsKernels"/> on CUDA and on both CPU paths (#1085): a <c>SharedMemory&lt;T&gt;</c>
-/// local that is declared by a parenthesized creation, by a copy of another local or by the result of a device
-/// function is declared in the generated code like one declared by a direct <c>new</c>.
+/// Runs <see cref="SharedMemoryLocalFormsKernels"/> on CUDA and on both CPU paths (#1085): a
+/// <c>SharedMemory&lt;T&gt;</c> local that is declared by a parenthesized creation, by a copy of another local or by
+/// the result of a device function is declared in the generated code like one declared by a direct <c>new</c>.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]

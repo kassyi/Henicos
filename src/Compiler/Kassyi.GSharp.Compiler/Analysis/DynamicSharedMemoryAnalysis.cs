@@ -47,8 +47,8 @@ internal static class DynamicSharedMemoryAnalysis
 
     /// <summary>
     /// The creation that initializes a <c>SharedMemory&lt;T&gt;</c> local declarator, also when it is written in
-    /// parentheses; <see langword="null"/> for any other initializer (a copy of another local, the result of a call) and
-    /// for no initializer.
+    /// parentheses; <see langword="null"/> for any other initializer (a copy of another local, the result of a call)
+    /// and for no initializer.
     /// </summary>
     public static BaseObjectCreationExpressionSyntax? GetCreation(VariableDeclaratorSyntax declarator) =>
         declarator.Initializer is { } initializer
