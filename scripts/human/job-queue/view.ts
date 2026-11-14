@@ -6,35 +6,10 @@
 import type { StatusJob, StatusReply } from "./protocol.ts";
 import { type Style, ScreenLine, displayWidth, duration, fit } from "./screen-line.ts";
 import { type ChatView, type LegendEntry, chatCounts, chatLegend, chatLines, waitingChats } from "./view-chats.ts";
+import { FlashMs, overlayFlash } from "./view-flash.ts";
+import { type Prompt, type ViewState, initialViewState } from "./view-state.ts";
 
-export { type Style, ScreenLine, displayWidth, fit };
-
-/** What the person is typing: a confirmation, or a number for move / set-weight. */
-export type Prompt =
-  | { kind: "cancel"; id: number }
-  | { kind: "start"; id: number }
-  | { kind: "move"; id: number; digits: string }
-  | { kind: "weight"; id: number; digits: string };
-
-export interface ViewState {
-  /** The selected job; kept by id across refreshes. */
-  selectedId: number | null;
-  /** The first job line shown, when the jobs do not fit. */
-  offset: number;
-  prompt: Prompt | null;
-  /** The result of the last action, shown on the bottom line until `until`. */
-  message: { text: string; until: number; style: Style } | null;
-  /** The help page shown: 0 for none, else 1 to `helpPages`. */
-  help: number;
-  /** How many pages the help takes at the current width (set by renderScreen: 1 when both columns fit). */
-  helpPages: number;
-  /** The chat panel is hidden (key a). */
-  chatsHidden: boolean;
-}
-
-export function initialViewState(): ViewState {
-  return { selectedId: null, offset: 0, prompt: null, message: null, help: 0, helpPages: 2, chatsHidden: false };
-}
+export { type Style, ScreenLine, displayWidth, fit, FlashMs, type Prompt, type ViewState, initialViewState };
 
 export interface Screen {
   columns: number;
@@ -55,11 +30,14 @@ export interface ScreenJob extends StatusJob {
 /**
  * What a waiting job waits for, in words a person reads without the docs: "after #821" (its --after job), "GPU busy"
  * (another job has the GPU), "CPU full" (every slot in use), "mem full" (the memory pool of the test runs), or
- * "in line" (there is room, but an earlier job goes first).
+ * "in line" (there is room, but an earlier job goes first), "paused" (the queue is paused; start <id> still runs it).
  */
 function waitReason(job: StatusJob, reply: StatusReply): string {
   if (job.blockedBy != null) {
     return `after #${job.blockedBy}`;
+  }
+  if (reply.paused === true) {
+    return "paused";
   }
   if (job.gpuTurn) {
     return "GPU busy";
@@ -301,6 +279,9 @@ function headerLine(reply: StatusReply | null, jobs: ScreenJob[], columns: numbe
     return line.add("  no scheduler (idle)", "dim").padTo();
   }
   const slots = Math.min(Math.max(reply.capacity, 1), 10);
+  if (reply.paused === true) {
+    line.add("  || paused", "warn");
+  }
   line
     .add("  CPU ")
     .add(bar(reply.used, reply.capacity, slots), "run")
@@ -327,6 +308,7 @@ const HelpKeys: [string, string][] = [
   ["↑↓ j k", "select a job"],
   ["c", "cancel it (y/n)"],
   ["s", "start it now, over the pool (y/n)"],
+  ["Space", "pause / resume the queue"],
   ["m", "move it: f first, r reset,"],
   ["", "or an id + Enter (before that job)"],
   ["w", "its slots: a number + Enter"],
@@ -350,6 +332,7 @@ const HelpLegend: LegendEntry[] = [
   { sample: "CPU full", style: "warn", text: "every slot in use" },
   { sample: "mem full", style: "warn", text: "the memory pool is full" },
   { sample: "GPU busy", style: "warn", text: "another job has the GPU" },
+  { sample: "paused", style: "warn", text: "the queue is paused (Space)" },
   { sample: "in line", style: "warn", text: "an earlier job goes first" },
   { sample: "after #n", style: "warn", text: "until job n has ended" },
 ];
@@ -546,10 +529,11 @@ export function renderScreen(
   const help = helpLines(columns, chats);
   state.helpPages = Math.max(1, Math.ceil(help.length / listRows));
   const helpPage = Math.min(state.help, state.helpPages);
+  const area: { line: ScreenLine; selected: boolean }[] = [];
   if (helpPage > 0) {
     help
       .slice((helpPage - 1) * listRows, helpPage * listRows)
-      .forEach((line) => lines.push(line.padTo().render(color)));
+      .forEach((line) => area.push({ line: line.padTo(), selected: false }));
   } else {
     // Keep the selected job on screen; without one, keep the scroll position as far as the jobs still fill it
     const last = Math.max(0, jobs.length - listRows);
@@ -559,12 +543,17 @@ export function renderScreen(
         ? Math.min(Math.max(state.offset, 0), last)
         : Math.min(Math.max(state.offset, index - listRows + 1, 0), index, last);
     for (const job of jobs.slice(state.offset, state.offset + listRows)) {
-      lines.push(jobLine(job, job === selected, columns, idWidth, window, now).render(color, job === selected));
+      area.push({ line: jobLine(job, job === selected, columns, idWidth, window, now), selected: job === selected });
     }
   }
-  while (lines.length < rows - 2 - panel.length) {
-    lines.push(new ScreenLine(columns).padTo().render(color));
+  while (area.length < listRows) {
+    area.push({ line: new ScreenLine(columns).padTo(), selected: false });
   }
+  // The mark of Space floats over the middle of the job area (not over the help)
+  if (helpPage === 0) {
+    overlayFlash(area, state.flash, now, columns);
+  }
+  area.forEach(({ line, selected }) => lines.push(line.render(color, selected)));
   const hidden = helpPage > 0 ? 0 : jobs.length - Math.min(listRows, jobs.length);
   const chatNote =
     chats === null || waiting.length === 0
