@@ -124,6 +124,12 @@ namespace App
 
         public static T MaxValue<T>() where T : IMinMaxValue<T> => T.MaxValue;
 
+        // Operators on a constant that C# folds: the copy keeps the low bits of what C# computes in int, as the
+        // generic method does, and a plain cast of the folded value would not compile (CS0221)
+        public static T ShiftedMaxValue<T>() where T : IShiftOperators<T, int, T>, IMinMaxValue<T> => T.MaxValue << 1;
+
+        public static T NegatedMaxValue<T>() where T : IUnaryNegationOperators<T, T>, IMinMaxValue<T> => -T.MaxValue;
+
         public static T Pi<T>() where T : IFloatingPointConstants<T> => T.Pi;
 
         public static T Abs<T>(T a) where T : INumberBase<T> => T.Abs(a);
