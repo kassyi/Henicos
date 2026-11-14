@@ -7,6 +7,7 @@ import * as net from "node:net";
 import type { ChildProcess } from "node:child_process";
 import type { RunOptions } from "./client.ts";
 import { runBuildStep } from "./client-build-step.ts";
+import { isSelfConnection } from "./client-connect.ts";
 import { QueuedRun } from "./client-queued-run.ts";
 import { commandEnd, type RunHost } from "./client-run-host.ts";
 import { CancelledExitCode, JobVariable, ProtocolVersion } from "./constants.ts";
@@ -313,9 +314,27 @@ export async function checkBuildStep(assert: AssertModule): Promise<void> {
   }
 }
 
+/**
+ * A connection to itself (Linux picks the destination port as the local one while nothing listens there) is no
+ * scheduler; a connection to another port or another address is.
+ */
+function checkSelfConnection(assert: AssertModule): void {
+  const at = (localPort: number, remotePort: number, remoteAddress = "127.0.0.1") => ({
+    localAddress: "127.0.0.1",
+    localPort,
+    remoteAddress,
+    remotePort,
+  });
+  assert.strictEqual(isSelfConnection(at(47118, 47118)), true, "same address and port: itself");
+  assert.strictEqual(isSelfConnection(at(51234, 47117)), false, "another local port: a scheduler");
+  assert.strictEqual(isSelfConnection(at(47117, 47117, "127.0.0.2")), false, "another address: a scheduler");
+  assert.strictEqual(isSelfConnection({}), false, "a socket that never connected");
+}
+
 export const ClientChecks: Record<string, (assert: AssertModule) => Promise<void>> = {
   checkClientReconnect: (assert) => quietly(() => checkClientReconnect(assert)),
   checkCancelCrossesEnd: (assert) => quietly(() => checkCancelCrossesEnd(assert)),
   checkCommandEnd: async (assert) => checkCommandEnd(assert),
+  checkSelfConnection: async (assert) => checkSelfConnection(assert),
   checkBuildStep: (assert) => quietly(() => checkBuildStep(assert)),
 };
