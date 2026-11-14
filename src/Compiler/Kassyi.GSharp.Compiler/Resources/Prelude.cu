@@ -1234,6 +1234,11 @@ __device__ __forceinline__ void __gsharp_dsmem_init(TDsmem* s) {
 template <int Slot, typename TDsmem>
 __device__ __forceinline__ unsigned char* __gsharp_dsmem_place(TDsmem* s, unsigned long long bytes, unsigned int align) {
     static_assert(Slot >= 0 && Slot < TDsmem::Slots, "G#: shared memory declaration has no slot in this kernel");
+    // The count is widened through long long, so only a negative count arrives as 2^63 bytes or more; it fails before
+    // anything is placed, with the exception of the CPU paths (the record has no room for the count)
+    if (bytes >= 0x8000000000000000ull) {
+        __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "G#: the count of a shared memory declaration is negative");
+    }
     unsigned int offset = s->offset[Slot];
     if (offset == __GSHARP_DSMEM_UNSET) {
         offset = (s->cursor + align - 1) & ~(align - 1);
@@ -1245,8 +1250,7 @@ __device__ __forceinline__ unsigned char* __gsharp_dsmem_place(TDsmem* s, unsign
         __gsharp_trap(GSharpErrorCode::InvalidOperation, "G#: a shared memory declaration grew after a later declaration");
     }
     if (bytes > s->size[Slot]) {
-        // [WHY] bytes is checked alone first: a negative count arrives as at least 2^63 bytes, and adding the offset to
-        // it would wrap past 2^64 to a small end
+        // bytes is below 2^63 here and the offset below 2^32, so their sum cannot wrap
         unsigned long long limit = __gsharp_dynamic_smem_size();
         if (bytes > limit || (unsigned long long)offset + bytes > limit) {
             __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "G#: dynamic shared memory exceeds sharedMemBytes");

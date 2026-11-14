@@ -913,6 +913,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "SharedMemorySizeNegative",
+    "id": "GSH0117",
+    "title": "SharedMemory<T> count must not be negative",
+    "messageFormat": "SharedMemory<T> cannot have a negative count ({0})",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "ReadOnlyArrayWritten",
     "id": "GSH0118",
     "title": "A [GpuReadOnly] array is written",

@@ -62,6 +62,17 @@ public static partial class ReadOnlyArrayConversionKernels
         o[0] = implicitSpan[0] + castSpan[1] + (uint)castSpan.Length;
     }
 
+    // A read-only span over a [GpuReadOnly] array, pinned for a pointer
+    [GpuKernel]
+    public static unsafe void FixedSpanKernel([GpuReadOnly] uint[] r, uint[] o)
+    {
+        ReadOnlySpan<uint> s = r;
+        fixed (uint* p = s)
+        {
+            o[0] = p[1] + (uint)s.Length;
+        }
+    }
+
     [GpuDeviceFunction]
     private static uint Sum(uint[] a)
     {

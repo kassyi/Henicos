@@ -94,6 +94,20 @@ public class ReadOnlyArrayConversionTests : TranspilerTestBase
         Assert.Equal([12u], o);
     }
 
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FixedSpan_ReadOnlySpanOverReadOnlyArray_PinsTheElements(bool forceManaged)
+    {
+        uint[] o = [0u];
+        uint[] r = [4u, 5u, 6u];
+
+        Run(forceManaged, () => ReadOnlyArrayConversionKernels.LaunchFixedSpanKernel(r, o));
+
+        Assert.Equal([8u], o);
+    }
+
     private static ReadOnlyArrayHolder Holder() => new() { Fixed = [10u, 20u, 30u], Optional = [100u, 200u] };
 
     private void Run(bool forceManaged, Action launch)
