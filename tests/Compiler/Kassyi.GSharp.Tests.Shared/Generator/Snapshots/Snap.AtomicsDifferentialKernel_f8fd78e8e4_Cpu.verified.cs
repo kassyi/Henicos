@@ -1529,7 +1529,7 @@ __gsharp_ctx->__gsharp_id_9_sMin={ (int*)__gsharp_allocate_smem_static(0x83e0dd3
 __gsharp_ctx->__gsharp_id_10_sAnd={ (int*)__gsharp_allocate_smem_static(0x83e0de38fe1f1a17ull, (8) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_11_sXor={ (int*)__gsharp_allocate_smem_static(0x83e0db38fe1f14feull, (8) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_12_sCas={ (int*)__gsharp_allocate_smem_static(0x83e0dc38fe1f16b1ull, (4) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_13_sDyn={ (int*)__gsharp_allocate_smem_dynamic(0x83e0d938fe1f1198ull, (__gsharp_ctx->__gsharp_id_3_dynSize) * sizeof(int), alignof(int), ""AtomicsDifferentialKernels.cs(388,20)"") };
+__gsharp_ctx->__gsharp_id_13_sDyn={ (int*)__gsharp_allocate_smem_dynamic(0x83e0d938fe1f1198ull, (long long)(__gsharp_ctx->__gsharp_id_3_dynSize), sizeof(int), alignof(int), ""AtomicsDifferentialKernels.cs(388,20)"") };
 if(__gsharp_ctx->__gsharp_id_4_localTid<8)
 {
 __gsharp_ctx->__gsharp_id_7_sAdd[__gsharp_ctx->__gsharp_id_4_localTid]=100;
@@ -4297,7 +4297,7 @@ __gsharp_switch_1_state_0:
 __gsharp_ctx->__gsharp_id_6_localTid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_7_gid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_ctx->__gsharp_id_6_localTid);
 __gsharp_ctx->__gsharp_id_8_sStatic={ (float*)__gsharp_allocate_smem_static(0xc19130e0685e4806ull, (4) * sizeof(float), alignof(float)) };
-__gsharp_ctx->__gsharp_id_9_sDyn={ (float*)__gsharp_allocate_smem_dynamic(0xc19131e0685e49b9ull, (__gsharp_ctx->__gsharp_id_5_dynLen) * sizeof(float), alignof(float), ""AtomicsDifferentialKernels.cs(718,20)"") };
+__gsharp_ctx->__gsharp_id_9_sDyn={ (float*)__gsharp_allocate_smem_dynamic(0xc19131e0685e49b9ull, (long long)(__gsharp_ctx->__gsharp_id_5_dynLen), sizeof(float), alignof(float), ""AtomicsDifferentialKernels.cs(718,20)"") };
 if(__gsharp_ctx->__gsharp_id_6_localTid<4)
 {
 __gsharp_ctx->__gsharp_id_8_sStatic[__gsharp_ctx->__gsharp_id_6_localTid]=1.0f;
