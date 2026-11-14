@@ -421,6 +421,40 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         CppStringLiteral.Append(writer, msg);
     }
 
+    // , <start site>u[, <count site>u]: the error sites of the failed checks of a call (the messages name the parameter
+    // C# names); in a method without an error site table the messages themselves, which the mapper knows
+    private static void AppendRangeChecks(
+        SourceWriter writer,
+        InvocationExpressionSyntax node,
+        string startMessage,
+        string startKind,
+        string? countMessage,
+        string? countKind,
+        ref TranspileContext context)
+    {
+        var table = context.Emitter.ErrorSites;
+        var model = context.Query.SemanticModel;
+        var member = context.Emitter.CurrentMemberName ?? "";
+        writer.Append(", ");
+        if (table is null)
+        {
+            CppStringLiteral.Append(writer, startMessage);
+            if (countMessage is not null)
+            {
+                writer.Append(", ");
+                CppStringLiteral.Append(writer, countMessage);
+            }
+
+            return;
+        }
+
+        writer.Append($"{table.Register(node, model, member, startMessage, startKind)}u");
+        if (countMessage is not null)
+        {
+            writer.Append($", {table.Register(node, model, member, countMessage, countKind ?? "")}u");
+        }
+    }
+
     private static void WriteSliceOrSpan(
         string memberName,
         SliceErrorCode errorCode,
@@ -460,7 +494,14 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
             WriteOperand(operands, temps, 2, ref context);
             writer.Append(',');
             WriteOperand(operands, temps, 3, ref context);
-            AppendRangeMessage(writer, SliceErrorCode.ArgumentOutOfRange, node, ref context);
+            AppendRangeChecks(
+                writer,
+                node,
+                ArgumentExceptionMessages.FillStartIndex,
+                "Array.Fill.StartIndex",
+                ArgumentExceptionMessages.FillCount,
+                "Array.Fill.Count",
+                ref context);
         }
 
         writer.Append(".Fill");
@@ -523,7 +564,14 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
         {
             writer.Append("0,");
             WriteOperand(operands, temps, 2, ref context);
-            AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
+            AppendRangeChecks(
+                writer,
+                node,
+                ArgumentExceptionMessages.CopySource,
+                "Array.Copy.Source",
+                null,
+                null,
+                ref context);
         }
 
         writer.Append(".CopyTo");
@@ -535,7 +583,14 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
             {
                 writer.Append("0,");
                 WriteOperand(operands, temps, 2, ref context);
-                AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
+                AppendRangeChecks(
+                    writer,
+                    node,
+                    ArgumentExceptionMessages.CopyDestination,
+                    "Array.Copy.Destination",
+                    null,
+                    null,
+                    ref context);
             }
         }
     }
@@ -554,7 +609,14 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
             WriteOperand(operands, temps, 1, ref context);
             writer.Append(',');
             WriteOperand(operands, temps, 4, ref context);
-            AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
+            AppendRangeChecks(
+                writer,
+                node,
+                ArgumentExceptionMessages.CopySource,
+                "Array.Copy.Source",
+                null,
+                null,
+                ref context);
         }
 
         writer.Append(".CopyTo");
@@ -567,7 +629,14 @@ public sealed class SpanMemberTranspilerRule : IInvocationTranspilerRule
                 WriteOperand(operands, temps, 3, ref context);
                 writer.Append(',');
                 WriteOperand(operands, temps, 4, ref context);
-                AppendRangeMessage(writer, SliceErrorCode.Argument, node, ref context);
+                AppendRangeChecks(
+                    writer,
+                    node,
+                    ArgumentExceptionMessages.CopyDestination,
+                    "Array.Copy.Destination",
+                    null,
+                    null,
+                    ref context);
             }
         }
     }

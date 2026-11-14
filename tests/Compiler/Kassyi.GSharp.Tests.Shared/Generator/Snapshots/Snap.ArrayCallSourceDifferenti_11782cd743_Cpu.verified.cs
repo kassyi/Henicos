@@ -20,7 +20,7 @@ break;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_array_argument(__gsharp_id_0_x).AsSpan(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(137,40)"").Fill(5);
+__gsharp_array_argument(__gsharp_id_0_x).AsSpan(0,0, ""Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"", ""Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"").Fill(5);
 break;
 }
 case 2:
@@ -50,31 +50,31 @@ break;
 case 6:
 __gsharp_switch_1_state_6:
 {
-__gsharp_copy_arguments(__gsharp_id_0_x,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(142,39)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(142,39)""));
+__gsharp_copy_arguments(__gsharp_id_0_x,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
 break;
 }
 case 7:
 __gsharp_switch_1_state_7:
 {
-__gsharp_copy_arguments(__gsharp_id_0_x,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(143,44)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(143,44)""));
+__gsharp_copy_arguments(__gsharp_id_0_x,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
 break;
 }
 case 8:
 __gsharp_switch_1_state_8:
 {
-__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_0_x).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(144,37)"").CopyTo(__gsharp_id_0_x.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(144,37)""));
+__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_0_x).AsSpan<GSharpErrorCode::Argument>(0,0, ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_0_x.AsSpan<GSharpErrorCode::Argument>(0,0, ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
 break;
 }
 case 9:
 __gsharp_switch_1_state_9:
 {
-__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_0_x).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(145,42)"").CopyTo(__gsharp_id_0_x.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(145,42)""));
+__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_0_x).AsSpan<GSharpErrorCode::Argument>(0,0, ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_0_x.AsSpan<GSharpErrorCode::Argument>(0,0, ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
 break;
 }
 case 10:
 __gsharp_switch_1_state_10:
 {
-__gsharp_array_argument(__gsharp_id_0_x).AsSpan(1,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(146,42)"").Fill(5);
+__gsharp_array_argument(__gsharp_id_0_x).AsSpan(1,0, ""Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"", ""Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"").Fill(5);
 break;
 }
 case 11:
@@ -86,7 +86,7 @@ break;
 case 12:
 __gsharp_switch_1_state_12:
 {
-__gsharp_copy_arguments(__gsharp_id_0_x,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(1,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(148,46)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(148,46)""));
+__gsharp_copy_arguments(__gsharp_id_0_x,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(1,0, ""Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')""));
 break;
 }
 }
@@ -118,23 +118,65 @@ public partial class ArrayCallSourceDifferentialKernels
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1748497527u, "ArrayCallSourceDifferentialKernels.cs", 31, 9, "FieldArrayCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1552895594u, "ArrayCallSourceDifferentialKernels.cs", 35, 40, "FieldArrayCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1414985525u, "ArrayCallSourceDifferentialKernels.cs", 35, 40, "FieldArrayCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1760760803u, "ArrayCallSourceDifferentialKernels.cs", 40, 39, "FieldArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1143740690u, "ArrayCallSourceDifferentialKernels.cs", 40, 39, "FieldArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(201168739u, "ArrayCallSourceDifferentialKernels.cs", 41, 44, "FieldArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1076884370u, "ArrayCallSourceDifferentialKernels.cs", 41, 44, "FieldArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(508107927u, "ArrayCallSourceDifferentialKernels.cs", 42, 37, "FieldArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1393056174u, "ArrayCallSourceDifferentialKernels.cs", 42, 37, "FieldArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1655755919u, "ArrayCallSourceDifferentialKernels.cs", 43, 42, "FieldArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1326663958u, "ArrayCallSourceDifferentialKernels.cs", 43, 42, "FieldArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1715234930u, "ArrayCallSourceDifferentialKernels.cs", 44, 42, "FieldArrayCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(275165085u, "ArrayCallSourceDifferentialKernels.cs", 44, 42, "FieldArrayCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1329767007u, "ArrayCallSourceDifferentialKernels.cs", 46, 46, "FieldArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1670186630u, "ArrayCallSourceDifferentialKernels.cs", 46, 46, "FieldArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(7237173u, "ArrayCallSourceDifferentialKernels.cs", 49, 9, "FieldArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2035876955u, "ArrayCallSourceDifferentialKernels.cs", 60, 9, "ElementArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1049329345u, "ArrayCallSourceDifferentialKernels.cs", 63, 46, "ElementArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(342260577u, "ArrayCallSourceDifferentialKernels.cs", 64, 51, "ElementArrayCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(528103517u, "ArrayCallSourceDifferentialKernels.cs", 64, 40, "ElementArrayCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(590145036u, "ArrayCallSourceDifferentialKernels.cs", 64, 40, "ElementArrayCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1411295518u, "ArrayCallSourceDifferentialKernels.cs", 65, 48, "ElementArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(593730529u, "ArrayCallSourceDifferentialKernels.cs", 66, 53, "ElementArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(548011077u, "ArrayCallSourceDifferentialKernels.cs", 67, 52, "ElementArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2065272845u, "ArrayCallSourceDifferentialKernels.cs", 68, 57, "ElementArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(711161933u, "ArrayCallSourceDifferentialKernels.cs", 69, 50, "ElementArrayCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(640636787u, "ArrayCallSourceDifferentialKernels.cs", 69, 39, "ElementArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1303689730u, "ArrayCallSourceDifferentialKernels.cs", 69, 39, "ElementArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2101303117u, "ArrayCallSourceDifferentialKernels.cs", 70, 55, "ElementArrayCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(624255663u, "ArrayCallSourceDifferentialKernels.cs", 70, 44, "ElementArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1469339574u, "ArrayCallSourceDifferentialKernels.cs", 70, 44, "ElementArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(728711789u, "ArrayCallSourceDifferentialKernels.cs", 71, 51, "ElementArrayCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(828253227u, "ArrayCallSourceDifferentialKernels.cs", 71, 37, "ElementArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(222870922u, "ArrayCallSourceDifferentialKernels.cs", 71, 37, "ElementArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(179134736u, "ArrayCallSourceDifferentialKernels.cs", 72, 59, "ElementArrayCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1552011251u, "ArrayCallSourceDifferentialKernels.cs", 72, 42, "ElementArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(620647298u, "ArrayCallSourceDifferentialKernels.cs", 72, 42, "ElementArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1085260837u, "ArrayCallSourceDifferentialKernels.cs", 73, 53, "ElementArrayCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1362174465u, "ArrayCallSourceDifferentialKernels.cs", 73, 42, "ElementArrayCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1294194512u, "ArrayCallSourceDifferentialKernels.cs", 73, 42, "ElementArrayCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1792018189u, "ArrayCallSourceDifferentialKernels.cs", 74, 55, "ElementArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(430038325u, "ArrayCallSourceDifferentialKernels.cs", 75, 57, "ElementArrayCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1374485514u, "ArrayCallSourceDifferentialKernels.cs", 75, 46, "ElementArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(201008613u, "ArrayCallSourceDifferentialKernels.cs", 75, 46, "ElementArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(284378289u, "ArrayCallSourceDifferentialKernels.cs", 78, 9, "ElementArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(655973093u, "ArrayCallSourceDifferentialKernels.cs", 89, 9, "LocalArrayCallKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1506713671u, "ArrayCallSourceDifferentialKernels.cs", 101, 40, "LocalArrayCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1798783138u, "ArrayCallSourceDifferentialKernels.cs", 101, 40, "LocalArrayCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1055107476u, "ArrayCallSourceDifferentialKernels.cs", 106, 39, "LocalArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1700761763u, "ArrayCallSourceDifferentialKernels.cs", 106, 39, "LocalArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1351091296u, "ArrayCallSourceDifferentialKernels.cs", 107, 44, "LocalArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(542772119u, "ArrayCallSourceDifferentialKernels.cs", 107, 44, "LocalArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(76262644u, "ArrayCallSourceDifferentialKernels.cs", 108, 37, "LocalArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1305776515u, "ArrayCallSourceDifferentialKernels.cs", 108, 37, "LocalArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1167672012u, "ArrayCallSourceDifferentialKernels.cs", 109, 42, "LocalArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1266530539u, "ArrayCallSourceDifferentialKernels.cs", 109, 42, "LocalArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1941699539u, "ArrayCallSourceDifferentialKernels.cs", 110, 42, "LocalArrayCallKernel", "Index was out of range. Must be non-negative and less than or equal to the size of the collection. (Parameter 'startIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1630033790u, "ArrayCallSourceDifferentialKernels.cs", 110, 42, "LocalArrayCallKernel", "Count must be positive and count must refer to a location within the string/array/collection. (Parameter 'count')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(280954180u, "ArrayCallSourceDifferentialKernels.cs", 112, 46, "LocalArrayCallKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1883131059u, "ArrayCallSourceDifferentialKernels.cs", 112, 46, "LocalArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(514213743u, "ArrayCallSourceDifferentialKernels.cs", 115, 9, "LocalArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(267692291u, "ArrayCallSourceDifferentialKernels.cs", 126, 9, "ParameterArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(997671583u, "ArrayCallSourceDifferentialKernels.cs", 127, 34, "ParameterArrayCallKernel", "G#: a null array is passed where it is not nullable"),
@@ -242,7 +284,7 @@ break;
 case 1:
 __gsharp_switch_2_state_1:
 {
-__gsharp_array_argument(__gsharp_id_0_h.__gsharp_mb_Data).AsSpan(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(35,40)"").Fill(5);
+__gsharp_array_argument(__gsharp_id_0_h.__gsharp_mb_Data).AsSpan(0,0, 1552895594u, 1414985525u).Fill(5);
 break;
 }
 case 2:
@@ -272,31 +314,31 @@ break;
 case 6:
 __gsharp_switch_2_state_6:
 {
-__gsharp_copy_arguments(__gsharp_id_0_h.__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(40,39)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(40,39)""));
+__gsharp_copy_arguments(__gsharp_id_0_h.__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, 1760760803u).CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, 1143740690u));
 break;
 }
 case 7:
 __gsharp_switch_2_state_7:
 {
-__gsharp_copy_arguments(__gsharp_id_0_h.__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(41,44)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(41,44)""));
+__gsharp_copy_arguments(__gsharp_id_0_h.__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, 201168739u).CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, 1076884370u));
 break;
 }
 case 8:
 __gsharp_switch_2_state_8:
 {
-__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_0_h.__gsharp_mb_Data).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(42,37)"").CopyTo(__gsharp_id_0_h.__gsharp_mb_Data.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(42,37)""));
+__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_0_h.__gsharp_mb_Data).AsSpan<GSharpErrorCode::Argument>(0,0, 508107927u).CopyTo(__gsharp_id_0_h.__gsharp_mb_Data.AsSpan<GSharpErrorCode::Argument>(0,0, 1393056174u));
 break;
 }
 case 9:
 __gsharp_switch_2_state_9:
 {
-__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_0_h.__gsharp_mb_Data).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(43,42)"").CopyTo(__gsharp_id_0_h.__gsharp_mb_Data.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(43,42)""));
+__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_0_h.__gsharp_mb_Data).AsSpan<GSharpErrorCode::Argument>(0,0, 1655755919u).CopyTo(__gsharp_id_0_h.__gsharp_mb_Data.AsSpan<GSharpErrorCode::Argument>(0,0, 1326663958u));
 break;
 }
 case 10:
 __gsharp_switch_2_state_10:
 {
-__gsharp_array_argument(__gsharp_id_0_h.__gsharp_mb_Data).AsSpan(1,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(44,42)"").Fill(5);
+__gsharp_array_argument(__gsharp_id_0_h.__gsharp_mb_Data).AsSpan(1,0, 1715234930u, 275165085u).Fill(5);
 break;
 }
 case 11:
@@ -308,7 +350,7 @@ break;
 case 12:
 __gsharp_switch_2_state_12:
 {
-__gsharp_copy_arguments(__gsharp_id_0_h.__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(1,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(46,46)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(46,46)""));
+__gsharp_copy_arguments(__gsharp_id_0_h.__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(1,0, 1329767007u).CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, 1670186630u));
 break;
 }
 }
@@ -673,7 +715,7 @@ break;
 case 1:
 __gsharp_switch_2_state_1:
 {
-__gsharp_array_argument(__gsharp_array_at(__gsharp_id_0_hs, 0, 342260577u).__gsharp_mb_Data).AsSpan(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(64,40)"").Fill(5);
+__gsharp_array_argument(__gsharp_array_at(__gsharp_id_0_hs, 0, 342260577u).__gsharp_mb_Data).AsSpan(0,0, 528103517u, 590145036u).Fill(5);
 break;
 }
 case 2:
@@ -703,31 +745,31 @@ break;
 case 6:
 __gsharp_switch_2_state_6:
 {
-__gsharp_copy_arguments(__gsharp_array_at(__gsharp_id_0_hs, 0, 711161933u).__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(69,39)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(69,39)""));
+__gsharp_copy_arguments(__gsharp_array_at(__gsharp_id_0_hs, 0, 711161933u).__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, 640636787u).CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, 1303689730u));
 break;
 }
 case 7:
 __gsharp_switch_2_state_7:
 {
-__gsharp_copy_arguments(__gsharp_array_at(__gsharp_id_0_hs, 0, 2101303117u).__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(70,44)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(70,44)""));
+__gsharp_copy_arguments(__gsharp_array_at(__gsharp_id_0_hs, 0, 2101303117u).__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, 624255663u).CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, 1469339574u));
 break;
 }
 case 8:
 __gsharp_switch_2_state_8:
 {
-__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_array_at(__gsharp_id_0_hs, 0, 728711789u).__gsharp_mb_Data).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(71,37)"").CopyTo(__gsharp_array_at(__gsharp_id_0_hs, 0, 728711789u).__gsharp_mb_Data.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(71,37)""));
+__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_array_at(__gsharp_id_0_hs, 0, 728711789u).__gsharp_mb_Data).AsSpan<GSharpErrorCode::Argument>(0,0, 828253227u).CopyTo(__gsharp_array_at(__gsharp_id_0_hs, 0, 728711789u).__gsharp_mb_Data.AsSpan<GSharpErrorCode::Argument>(0,0, 222870922u));
 break;
 }
 case 9:
 __gsharp_switch_2_state_9:
 {
-__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_array_at(__gsharp_id_0_hs, 0, 179134736u).__gsharp_mb_Data).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(72,42)"").CopyTo(__gsharp_array_at(__gsharp_id_0_hs, 0, 179134736u).__gsharp_mb_Data.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(72,42)""));
+__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_array_at(__gsharp_id_0_hs, 0, 179134736u).__gsharp_mb_Data).AsSpan<GSharpErrorCode::Argument>(0,0, 1552011251u).CopyTo(__gsharp_array_at(__gsharp_id_0_hs, 0, 179134736u).__gsharp_mb_Data.AsSpan<GSharpErrorCode::Argument>(0,0, 620647298u));
 break;
 }
 case 10:
 __gsharp_switch_2_state_10:
 {
-__gsharp_array_argument(__gsharp_array_at(__gsharp_id_0_hs, 0, 1085260837u).__gsharp_mb_Data).AsSpan(1,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(73,42)"").Fill(5);
+__gsharp_array_argument(__gsharp_array_at(__gsharp_id_0_hs, 0, 1085260837u).__gsharp_mb_Data).AsSpan(1,0, 1362174465u, 1294194512u).Fill(5);
 break;
 }
 case 11:
@@ -739,7 +781,7 @@ break;
 case 12:
 __gsharp_switch_2_state_12:
 {
-__gsharp_copy_arguments(__gsharp_array_at(__gsharp_id_0_hs, 0, 430038325u).__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(1,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(75,46)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(75,46)""));
+__gsharp_copy_arguments(__gsharp_array_at(__gsharp_id_0_hs, 0, 430038325u).__gsharp_mb_Data,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(1,0, 1374485514u).CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, 201008613u));
 break;
 }
 }
@@ -1107,7 +1149,7 @@ break;
 case 1:
 __gsharp_switch_2_state_1:
 {
-__gsharp_array_argument(__gsharp_id_3_local).AsSpan(0,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(101,40)"").Fill(5);
+__gsharp_array_argument(__gsharp_id_3_local).AsSpan(0,0, 1506713671u, 1798783138u).Fill(5);
 break;
 }
 case 2:
@@ -1137,31 +1179,31 @@ break;
 case 6:
 __gsharp_switch_2_state_6:
 {
-__gsharp_copy_arguments(__gsharp_id_3_local,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(106,39)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(106,39)""));
+__gsharp_copy_arguments(__gsharp_id_3_local,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, 1055107476u).CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, 1700761763u));
 break;
 }
 case 7:
 __gsharp_switch_2_state_7:
 {
-__gsharp_copy_arguments(__gsharp_id_3_local,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(107,44)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(107,44)""));
+__gsharp_copy_arguments(__gsharp_id_3_local,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(0,0, 1351091296u).CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, 542772119u));
 break;
 }
 case 8:
 __gsharp_switch_2_state_8:
 {
-__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_3_local).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(108,37)"").CopyTo(__gsharp_id_3_local.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(108,37)""));
+__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_3_local).AsSpan<GSharpErrorCode::Argument>(0,0, 76262644u).CopyTo(__gsharp_id_3_local.AsSpan<GSharpErrorCode::Argument>(0,0, 1305776515u));
 break;
 }
 case 9:
 __gsharp_switch_2_state_9:
 {
-__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_3_local).AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(109,42)"").CopyTo(__gsharp_id_3_local.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(109,42)""));
+__gsharp_copy_arguments(__gsharp_id_2_o,__gsharp_id_3_local).AsSpan<GSharpErrorCode::Argument>(0,0, 1167672012u).CopyTo(__gsharp_id_3_local.AsSpan<GSharpErrorCode::Argument>(0,0, 1266530539u));
 break;
 }
 case 10:
 __gsharp_switch_2_state_10:
 {
-__gsharp_array_argument(__gsharp_id_3_local).AsSpan(1,0, ""G#: index was out of range at ArrayCallSourceDifferentialKernels.cs(110,42)"").Fill(5);
+__gsharp_array_argument(__gsharp_id_3_local).AsSpan(1,0, 1941699539u, 1630033790u).Fill(5);
 break;
 }
 case 11:
@@ -1173,7 +1215,7 @@ break;
 case 12:
 __gsharp_switch_2_state_12:
 {
-__gsharp_copy_arguments(__gsharp_id_3_local,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(1,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(112,46)"").CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, ""G#: offset and length were out of bounds for the array at ArrayCallSourceDifferentialKernels.cs(112,46)""));
+__gsharp_copy_arguments(__gsharp_id_3_local,__gsharp_id_2_o).AsSpan<GSharpErrorCode::Argument>(1,0, 280954180u).CopyTo(__gsharp_id_2_o.AsSpan<GSharpErrorCode::Argument>(0,0, 1883131059u));
 break;
 }
 }

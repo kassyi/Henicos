@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Kassyi.GSharp.Compiler.ErrorSites;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Naming;
 using Kassyi.GSharp.Runtime.Aot;
@@ -69,6 +70,74 @@ public sealed class DeviceErrorChannelTests
         Assert.Equal("(7,3,1)", ex.Data["GSharp.ThreadIndex"]);
         Assert.Equal("(2,4,1)", ex.Data["GSharp.BlockIndex"]);
         Assert.Equal(nameof(CUresult.CudaErrorIllegalInstruction), ex.Data["GSharp.CudaError"]);
+    }
+
+    [Theory]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(GSharpErrorCode.ArgumentNull, typeof(ArgumentNullException), "Value cannot be null.", "array")]
+    [InlineData(GSharpErrorCode.Argument, typeof(ArgumentException), "Destination is too short.", "destination")]
+    [InlineData(GSharpErrorCode.ArgumentOutOfRange, typeof(ArgumentOutOfRangeException), "Count is out.", "count")]
+    public void ErrorMapper_ArgumentErrorNamingAParameter_SetsParamNameOnceInTheMessage(
+        GSharpErrorCode code,
+        Type expectedExceptionType,
+        string text,
+        string parameter)
+    {
+        var moduleId = GSharpErrorMapper.RegisterErrorSites(
+            $"test-module-param-{code}",
+            [new GSharpErrorSite(2u, "MyKernels.cu.cs", 7, 3, "MyKernel", $"{text} (Parameter '{parameter}')")]);
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)code | GSharpErrorMapper.CompletionBit,
+            SiteId = 2u,
+            ModuleId = moduleId,
+        };
+
+        var ex = Assert.IsAssignableFrom<ArgumentException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+        Assert.IsType(expectedExceptionType, ex);
+        Assert.Equal(parameter, ex.ParamName);
+        Assert.StartsWith($"{text} in MyKernel at MyKernels.cu.cs(7,3)", ex.Message);
+        Assert.EndsWith($"(Parameter '{parameter}')", ex.Message);
+        Assert.Equal(
+            ex.Message.IndexOf("(Parameter '", StringComparison.Ordinal),
+            ex.Message.LastIndexOf("(Parameter '", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void ErrorMapper_EveryArgumentExceptionMessageOfTheCompiler_IsAKnownBuiltinMessage()
+    {
+        foreach (var message in ArgumentExceptionMessages.All)
+        {
+            var slot = new GSharpDeviceErrorSlot
+            {
+                Code = (uint)GSharpErrorCode.ArgumentOutOfRange | GSharpErrorMapper.CompletionBit,
+                SiteId = GSharpErrorMapper.ComputeBuiltinMessageId(message),
+            };
+
+            var ex = Assert.IsType<ArgumentOutOfRangeException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+            Assert.NotNull(ex.ParamName);
+            Assert.Contains(ex.ParamName, message);
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void ErrorMapper_ArgumentErrorWithoutAParameter_HasNoParamName()
+    {
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)GSharpErrorCode.ArgumentOutOfRange | GSharpErrorMapper.CompletionBit,
+        };
+
+        var ex = Assert.IsType<ArgumentOutOfRangeException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+        Assert.Null(ex.ParamName);
     }
 
     [Fact]

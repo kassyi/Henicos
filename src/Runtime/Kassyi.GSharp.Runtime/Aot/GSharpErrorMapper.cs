@@ -50,7 +50,7 @@ public static class GSharpErrorMapper
 
         // An ArraySegment<T> or ImmutableArray<T> without an array, and a null CopyTo destination
         // (__gsharp_view_message of the CUDA prelude); a null array passed to Array.Fill, Clear, Reverse or Copy
-        // (__gsharp_array_argument, __gsharp_copy_arguments)
+        // (__gsharp_array_argument, __gsharp_copy_arguments); Span.CopyTo into a shorter span
         foreach (var message in (ReadOnlySpan<string>)
                  [
                      "The underlying array is null.",
@@ -58,6 +58,23 @@ public static class GSharpErrorMapper
                      "Value cannot be null. (Parameter 'destinationArray')",
                      "Value cannot be null. (Parameter 'sourceArray')",
                      "Value cannot be null. (Parameter 'array')",
+                     "Destination is too short. (Parameter 'destination')",
+                     // The argument errors of Array.Fill, Array.Copy and ElementAt in a device function, which has no
+                     // error site table (ArgumentExceptionMessages of the compiler repeats these texts)
+                     "Index was out of range. Must be non-negative and less than or equal to the size of the " +
+                     "collection. " +
+                     "(Parameter 'startIndex')",
+                     "Count must be positive and count must refer to a location within the " +
+                     "string/array/collection. " +
+                     "(Parameter 'count')",
+                     "Source array was not long enough. Check the source index, length, and the array's lower " +
+                     "bounds. " +
+                     "(Parameter 'sourceArray')",
+                     "Destination array was not long enough. Check the destination index, length, and the array's " +
+                     "lower bounds. " +
+                     "(Parameter 'destinationArray')",
+                     "Index was out of range. Must be non-negative and less than the size of the collection. " +
+                     "(Parameter 'index')",
                  ])
         {
             dict[ComputeBuiltinMessageId(message)] = message;
@@ -311,13 +328,14 @@ public static class GSharpErrorMapper
     {
         GSharpErrorSite? site = TryGetSite(location.SiteId, location.ModuleId, out var found) ? found : null;
         var baseMessage = ResolveBaseMessage(code, location.SiteId, explicitMessage, site);
+        var paramName = innerException is null ? SplitParameterName(code, ref baseMessage) : null;
         var (tx, ty, tz) = UnpackThreadIndex(location.ThreadLinear);
         var threadCoord = $"({tx},{ty},{tz})";
         var blockCoord = $"({location.BlockCoord.X},{location.BlockCoord.Y},{location.BlockCoord.Z})";
-        var rawMessage = preserveRawMessageWhenNoSite ? explicitMessage : null;
+        var rawMessage = preserveRawMessageWhenNoSite ? (paramName is null ? explicitMessage : baseMessage) : null;
         var message = FormatMessage(baseMessage, site, threadCoord, blockCoord, rawMessage);
 
-        var exception = InstantiateException(code, message, innerException);
+        var exception = InstantiateException(code, message, paramName, innerException);
         PopulateExceptionData(exception, code, threadCoord, blockCoord, site);
         return exception;
     }
@@ -396,21 +414,55 @@ public static class GSharpErrorMapper
         }
     }
 
-    private static Exception InstantiateException(GSharpErrorCode code, string message, Exception? innerException) =>
+    // The message of an argument error ends with the name of the parameter as .NET words it, "(Parameter 'x')": the
+    // check writes it into its message, so that it reaches the exception through every path (the error record has no
+    // field for it). The exception takes the name as ParamName, and its Message appends the same words again
+    private static string? SplitParameterName(GSharpErrorCode code, ref string message)
+    {
+        if (code is not (GSharpErrorCode.Argument or GSharpErrorCode.ArgumentNull or GSharpErrorCode.ArgumentOutOfRange)
+            || !message.EndsWith("')", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        const string Marker = " (Parameter '";
+        var start = message.LastIndexOf(Marker, StringComparison.Ordinal);
+        if (start < 0)
+        {
+            return null;
+        }
+
+        var nameStart = start + Marker.Length;
+        var name = message[nameStart..^2];
+        message = message[..start];
+        return name;
+    }
+
+    private static Exception InstantiateException(
+        GSharpErrorCode code,
+        string message,
+        string? paramName,
+        Exception? innerException) =>
         code switch
         {
             GSharpErrorCode.NotSupported => new NotSupportedException(message, innerException),
             GSharpErrorCode.InvalidOperation => new InvalidOperationException(message, innerException),
             GSharpErrorCode.IndexOutOfRange => new IndexOutOfRangeException(message, innerException),
-            GSharpErrorCode.ArgumentOutOfRange => new ArgumentOutOfRangeException(message, innerException),
-            GSharpErrorCode.Argument => new ArgumentException(message, innerException),
+            GSharpErrorCode.ArgumentOutOfRange => paramName is null
+                ? new ArgumentOutOfRangeException(message, innerException)
+                : new ArgumentOutOfRangeException(paramName, message),
+            GSharpErrorCode.Argument => paramName is null
+                ? new ArgumentException(message, innerException)
+                : new ArgumentException(message, paramName),
             GSharpErrorCode.NullReference => new NullReferenceException(message, innerException),
             GSharpErrorCode.DivideByZero => new DivideByZeroException(message, innerException),
             GSharpErrorCode.Overflow => new OverflowException(message, innerException),
             GSharpErrorCode.DataRace => new InvalidOperationException(message, innerException),
             GSharpErrorCode.SwitchExpression =>
                 new System.Runtime.CompilerServices.SwitchExpressionException(message, innerException),
-            GSharpErrorCode.ArgumentNull => new ArgumentNullException(message, innerException),
+            GSharpErrorCode.ArgumentNull => paramName is null
+                ? new ArgumentNullException(message, innerException)
+                : new ArgumentNullException(paramName, message),
             _ => new InvalidOperationException(message, innerException)
         };
 }

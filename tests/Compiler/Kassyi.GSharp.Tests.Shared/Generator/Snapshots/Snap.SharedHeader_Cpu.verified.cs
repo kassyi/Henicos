@@ -187,10 +187,26 @@ __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<E
 return GSharpArray<T>(data + start, length - start);
 }
 template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
-inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr) const {
-if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
-static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr, const char* countMessage = nullptr) const {
+if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
 __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+}
+if (static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+__gsharp_trap(ErrorCode, countMessage != nullptr ? countMessage : message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+}
+return GSharpArray<T>(data + start, count);
+}
+// The same with error sites (ErrorSiteTable) that carry the message and the parameter name C# gives each failure: a
+// start outside the array reports startSite, a count past its end countSite (startSite when countSite is 0)
+template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+inline GSharpArray<T> Slice(int start, int count, uint32_t startSite, uint32_t countSite = 0u) const {
+if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
+__gsharp_trap(ErrorCode, startSite);
+return GSharpArray<T>();
+}
+if (static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+__gsharp_trap(ErrorCode, countSite != 0u ? countSite : startSite);
+return GSharpArray<T>();
 }
 return GSharpArray<T>(data + start, count);
 }
@@ -235,7 +251,7 @@ return true;
 template <typename U>
 inline void CopyTo(GSharpArray<U> destination) const {
 if (!TryCopyTo(destination)) {
-__gsharp_trap(GSharpErrorCode::Argument, ""Destination is too short."");
+__gsharp_trap(GSharpErrorCode::Argument, ""Destination is too short. (Parameter 'destination')"");
 }
 }
 // Slice and CopyTo of an ArraySegment<T> or ImmutableArray<T> (ArrayViewMethods.GetChecks): a default value has no
@@ -267,13 +283,22 @@ if (IfDestinationNull != GSharpErrorCode::None && destination.data == nullptr) {
 __gsharp_trap(IfDestinationNull, __gsharp_view_message<IfDestinationNull>());
 return;
 }
+if (IfDestinationNull == GSharpErrorCode::ArgumentNull) {
+// The destination is an array, which C# copies into through Array.Copy and names destinationArray
+if (!TryCopyTo(destination)) {
+__gsharp_trap(GSharpErrorCode::Argument, ""Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"");
+}
+return;
+}
 CopyTo(destination);
 }
 inline GSharpArray<T> AsSpan() const { return *this; }
 template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
 inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
 template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
-inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
+inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr, const char* countMessage = nullptr) const { return Slice<ErrorCode>(start, count, message, countMessage); }
+template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+inline GSharpArray<T> AsSpan(int start, int count, uint32_t startSite, uint32_t countSite = 0u) const { return Slice<ErrorCode>(start, count, startSite, countSite); }
 inline bool IsEmpty() const { return length <= 0; }
 
 // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
@@ -3022,7 +3047,7 @@ count++;
 }
 }
 if (site_id != 0) __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, site_id);
-else __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, ""Index was out of range."");
+else __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, ""Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')"");
 return decltype(source.Current())();
 }
 
