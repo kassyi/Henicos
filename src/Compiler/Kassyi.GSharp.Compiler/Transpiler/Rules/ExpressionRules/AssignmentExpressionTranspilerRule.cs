@@ -65,7 +65,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        NullRepresentation.AppendCoalesceAssignment(node.Left, node.Right, ref context);
+        NullRepresentation.AppendCoalesceAssignment(node, ref context);
     }
 
     // x = y, in the C# order when the operands interfere
@@ -106,7 +106,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
                        operation.Syntax.RawKind == node.RawKind
             ? operation
             : null;
-        var compoundOperator = CompoundOperator.ForAssignment(node, compound);
+        var compoundOperator = CompoundOperator.ForAssignment(node, compound, ref context);
 
         // C++ has no >>>=; the integer types are handled here (nint and nuint are not)
         if (node.IsKind(SyntaxKind.UnsignedRightShiftAssignmentExpression) && compoundOperator?.Helper == null &&
@@ -128,19 +128,20 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        AppendCompoundInPlace(node, compound, compoundOperator?.Helper, compoundOperator?.ShiftMask ?? 0,
-            ref context);
+        AppendCompoundInPlace(node, compound, compoundOperator, ref context);
     }
 
     // <helper>(...) for int and long arithmetic, <left> <<= / >>= <masked count> for a shift, else <left> op= <right>
     private static void AppendCompoundInPlace(AssignmentExpressionSyntax node, ICompoundAssignmentOperation? compound,
-        string? helper, int shiftMask, ref TranspileContext context)
+        CompoundOperator? compoundOperator, ref TranspileContext context)
     {
-        if (compound != null && helper != null)
+        if (compound != null && compoundOperator is { Helper: { } helper, Site: var site })
         {
-            IntegerSemanticsEmitter.AppendCompound(compound, node, helper, ref context);
+            IntegerSemanticsEmitter.AppendCompound(compound, node, helper, site, ref context);
             return;
         }
+
+        var shiftMask = compoundOperator?.ShiftMask ?? 0;
 
         context.Visitor.Visit(node.Left);
         if (shiftMask != 0)
