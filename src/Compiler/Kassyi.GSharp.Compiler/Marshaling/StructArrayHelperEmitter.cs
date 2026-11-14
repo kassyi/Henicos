@@ -114,6 +114,112 @@ internal static class StructArrayHelperEmitter
         }
     }
 
+    /// <summary>The runtime type that the launcher passes to <c>AliasHeldArrays_</c>.</summary>
+    internal const string HeldArraysType = "global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays";
+
+    // The AliasHeldArrays_ parameter that collects the arrays
+    internal const string HeldParameter = "held";
+
+    // public static void AliasHeldArrays_<key>(ref <S> host, HostAliasHeldArrays held)
+    // { <host mirror binding>; if (host.<array> != null) { held.Add(host.<array>, <alignment>, 0, <converted>);
+    //   [for (int i = 0; i < host.<array>.Length; i++) AliasHeldArrays_<E>(ref host.<array>[i], held);] }
+    //   AliasHeldArrays_<nested>(ref host.<struct>, held); ... }
+    // [WHY] A Span<T> argument does not name the array it slices, so a launch that has such an argument beside a struct
+    // argument compares the address ranges of the arrays that the struct holds with the ranges of its other arguments
+    // (HostAliasHeldArrays), as C# sees one memory in an array field and a slice of the same array (#1849). Only a
+    // struct that holds arrays gets the method.
+    internal static void WriteAliasHeldArraysMethod(SourceWriter writer, INamedTypeSymbol s,
+        StructLayoutInfo structLayout, ITranspilerDialect dialect, IAssemblySymbol launcherAssembly)
+    {
+        if (!TransferClassifier.TryFindArrayField(s, out _))
+        {
+            return;
+        }
+
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
+        writer.Append("public static void ");
+        writer.AppendAliasHeldArraysMethodName(s);
+        using (writer.Parentheses())
+        {
+            writer.Append("ref ");
+            writer.AppendFullyQualifiedCsharpName(s);
+            writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}" : " host");
+            writer.Append($", {HeldArraysType} {HeldParameter}");
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            StructBlockCopyEmitter.WriteHostMirrorBinding(writer, s, hasMirror);
+            foreach (var member in StructAbiMembers.Get(s))
+            {
+                WriteAliasHeldArraysMember(writer, member, dialect);
+            }
+        }
+
+        writer.AppendLine();
+    }
+
+    private static void WriteAliasHeldArraysMember(SourceWriter writer, StructAbiMember member,
+        ITranspilerDialect dialect)
+    {
+        // GSH0078 reports the member; a fixed buffer holds only primitives
+        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
+            member.Kind == StructAbiMemberKind.FixedBuffer ||
+            !HoldsComparableArrays(member.Type))
+        {
+            return;
+        }
+
+        if (member.Kind == StructAbiMemberKind.InlineArrayElement)
+        {
+            // host[k] is the element of the inline array, whatever the field's accessibility
+            writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
+            using (writer.Scope())
+            {
+                WriteAliasHeldArraysValue(writer, "host[k]", member.Type, dialect);
+            }
+
+            return;
+        }
+
+        WriteAliasHeldArraysValue(writer, $"host.{member.Name.ToCSharpIdentifier()}", member.Type, dialect);
+    }
+
+    // AliasHeldArrays_<S>(ref <value>, held);   for a struct that holds arrays
+    // if (<value> != null) { held.Add(<value>, <alignment>, 0, <converted>);
+    //   [for (int i = 0; i < <value>.Length; i++) { AliasHeldArrays_<E>(ref <value>[i], held); }] }   for a T[]
+    private static void WriteAliasHeldArraysValue(SourceWriter writer, string value, ITypeSymbol type,
+        ITranspilerDialect dialect)
+    {
+        if (type is not IArrayTypeSymbol arrayType)
+        {
+            writer.AppendAliasHeldArraysMethodName(type);
+            writer.AppendLine($"(ref {value}, {HeldParameter});");
+            return;
+        }
+
+        var element = arrayType.ElementType;
+        var alignment = element.IsReferenceType ? 0 : TypeLayoutCalculator.GetDeviceLayout(element, dialect).Alignment;
+        var converted = KernelParameterShape.IsConverted(element, dialect) ? "true" : "false";
+        writer.AppendLine($"if ({value} != null)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{HeldParameter}.Add({value}, {alignment}, 0, {converted});");
+            if (!HoldsComparableArrays(element))
+            {
+                return;
+            }
+
+            writer.AppendLine($"for (int i = 0; i < {value}.Length; i++)");
+            using (writer.Scope())
+            {
+                writer.AppendAliasHeldArraysMethodName(element);
+                writer.AppendLine($"(ref {value}[i], {HeldParameter});");
+            }
+        }
+    }
+
     // An array, or a user struct with an array field at any depth (TransferClassifier.TryFindArrayField)
     internal static bool HoldsArrays(ITypeSymbol type) =>
         type.IsArrayLikeType() ||

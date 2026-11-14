@@ -28,6 +28,12 @@ internal static class AotHostNames
     /// </summary>
     public const string HoldsArrayMethodPrefix = "HoldsArray_";
 
+    /// <summary>
+    /// The prefix of the methods that add the arrays a host struct holds in its fields, at any depth, to the arrays
+    /// that the launcher compares by address with its other arguments.
+    /// </summary>
+    public const string AliasHeldArraysMethodPrefix = "AliasHeldArrays_";
+
     private const string ContextSuffix = "Context";
 
     /// <summary>
@@ -139,6 +145,14 @@ internal static class AotHostNames
         return ref writer;
     }
 
+    /// <summary>Appends <c>AliasHeldArrays_{key}</c>.</summary>
+    public static ref readonly SourceWriter AppendAliasHeldArraysMethodName(this in SourceWriter writer,
+        ISymbol symbol)
+    {
+        writer.Append(AliasHeldArraysMethodPrefix).AppendMarshalTypeKey(symbol);
+        return ref writer;
+    }
+
     /// <summary>Appends <c>AotContexts.Marshal_{key}</c> (qualified by <paramref name="kernelClass"/> when given), the way a kernel wrapper calls it.</summary>
     public static ref readonly SourceWriter AppendQualifiedMarshalMethodName(this in SourceWriter writer, ISymbol symbol,
         INamedTypeSymbol? kernelClass)
@@ -160,6 +174,17 @@ internal static class AotHostNames
     {
         using var writer = new SourceWriter();
         AppendAotContextsQualifier(writer, kernelClass).AppendCopyArraysMethodName(symbol);
+        return writer.ToString();
+    }
+
+    /// <summary>
+    /// Gets <c>AotContexts.AliasHeldArrays_{key}</c> (qualified by <paramref name="kernelClass"/> when given), the way
+    /// a kernel wrapper calls it.
+    /// </summary>
+    public static string GetQualifiedAliasHeldArraysMethodName(ISymbol symbol, INamedTypeSymbol? kernelClass)
+    {
+        using var writer = new SourceWriter();
+        AppendAotContextsQualifier(writer, kernelClass).AppendAliasHeldArraysMethodName(symbol);
         return writer.ToString();
     }
 

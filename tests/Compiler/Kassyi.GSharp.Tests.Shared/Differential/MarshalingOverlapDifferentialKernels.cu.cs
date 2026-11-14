@@ -324,4 +324,44 @@ public static partial class MarshalingOverlapDifferentialKernels
             observed[1] = first.Y;
         }
     }
+
+    // --- An array that a struct argument holds, and a slice of the same array ---
+    [GpuKernel]
+    public static void FieldAndSliceKernel(DiffDeepBag bag, Span<int> slice, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            bag.Data[1] += 10;
+            observed[0] = slice[0];
+            slice[1] += 100;
+            observed[1] = bag.Data[2];
+        }
+    }
+
+    // The struct is an element of an array argument
+    [GpuKernel]
+    public static void ElementFieldAndSliceKernel(DiffDeepBag[] bags, Span<int> slice, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            bags[0].Data[1] += 10;
+            observed[0] = slice[0];
+            slice[1] += 100;
+            observed[1] = bags[0].Data[2];
+        }
+    }
+
+    // The struct is passed by ref, and the slice is a read-only one
+    [GpuKernel]
+    public static void RefFieldAndReadOnlySliceKernel(
+        ref DiffDeepBag bag,
+        ReadOnlySpan<int> slice,
+        [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            bag.Data[1] += 10;
+            observed[0] = slice[0];
+        }
+    }
 }

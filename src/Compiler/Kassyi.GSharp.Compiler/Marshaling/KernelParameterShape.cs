@@ -96,6 +96,14 @@ internal readonly record struct KernelParameterShape
     /// </summary>
     public string? CpuHoldsArrayMethodName { get; init; }
 
+    /// <summary>
+    /// <c>AotContexts.AliasHeldArrays_{key}</c> of a user struct with <see cref="HasArrayFields"/>, or of the element
+    /// of an array-like parameter whose element is such a struct, otherwise <see langword="null"/>: the method that
+    /// adds the arrays that the argument (or any of its elements) holds in its fields to the launcher's comparison by
+    /// address.
+    /// </summary>
+    public string? HeldArraysMethodName { get; init; }
+
     /// <summary>How the parameter crosses to the CUDA device.</summary>
     public ParameterTransfer Cuda { get; init; }
 
@@ -266,6 +274,9 @@ internal readonly record struct KernelParameterShape
                 CpuHoldsArrayMethodName = hasArrayFields
                     ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
                     : null,
+                HeldArraysMethodName = hasArrayFields
+                    ? AotHostNames.GetQualifiedAliasHeldArraysMethodName(marshaledType, kernelClass)
+                    : null,
                 Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda, kernelClass),
                 Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu, kernelClass)
             };
@@ -285,6 +296,9 @@ internal readonly record struct KernelParameterShape
                 IsShadowStructBuffer = IsShadowStructElement(elementType),
                 CpuHoldsArrayMethodName = cpu.ConvertedElementHasArrayFields
                     ? AotHostNames.GetQualifiedHoldsArrayMethodName(elementType, kernelClass)
+                    : null,
+                HeldArraysMethodName = cpu.ConvertedElementHasArrayFields
+                    ? AotHostNames.GetQualifiedAliasHeldArraysMethodName(elementType, kernelClass)
                     : null,
                 Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda, kernelClass),
                 Cpu = cpu

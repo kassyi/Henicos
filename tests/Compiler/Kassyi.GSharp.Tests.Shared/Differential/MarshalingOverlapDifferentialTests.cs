@@ -659,4 +659,74 @@ public sealed class MarshalingOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void InHolders_TwoFieldsOfAnInElementShareOneArray_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_twoInFields);
+
+    // The array that the struct holds is the array that the span slices: one memory, as in C#
+    internal static readonly DifferentialCase s_fieldAndSlice = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.FieldAndSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var bag = new DiffDeepBag { Data = backing, Tag = 1 };
+            MarshalingOverlapDifferentialKernels.LaunchFieldAndSliceKernel(
+                bag, backing.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_elementFieldAndSlice = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.ElementFieldAndSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            DiffDeepBag[] bags = [new DiffDeepBag { Data = backing, Tag = 1 }];
+            MarshalingOverlapDifferentialKernels.LaunchElementFieldAndSliceKernel(
+                bags, backing.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_refFieldAndReadOnlySlice = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.RefFieldAndReadOnlySliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact)
+            .Out<int>("observed", 1, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            var bag = new DiffDeepBag { Data = backing, Tag = 1 };
+            MarshalingOverlapDifferentialKernels.LaunchRefFieldAndReadOnlySliceKernel(
+                ref bag, backing.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_StructFieldArrayAndASliceOfIt_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_fieldAndSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_ElementFieldArrayAndASliceOfIt_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_elementFieldAndSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_RefStructFieldArrayAndAReadOnlySliceOfIt_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_refFieldAndReadOnlySlice);
 }
