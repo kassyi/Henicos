@@ -4,6 +4,29 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class AdvancedMemoryTests : TranspilerTestBase
 {
+    // fixed on a [GpuReadOnly] array, directly or through var locals, declares a pointer to const elements; before, the
+    // pointer was declared without const and the generated C++ did not compile
+    // mutant: VariableDeclarationTranspilerRule.cs PinsReadOnlyArray returning false -> the test project does not build
+    // mutant: HoldsReadOnlyArray without the ILocalSymbol case -> the test project does not build (pAlias)
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(true, 1u)]
+    [InlineData(false, 0u)]
+    public void ReadOnlyPin_PinnedReadOnlyArrays_ReadAndCompareTheirAddresses(bool sameArray, uint expectedSame)
+    {
+        uint[] src = [7, 5];
+        uint[] other = sameArray ? src : [7, 5];
+        uint[] dest = [0, 0];
+
+        AdvancedMemoryKernels.LaunchReadOnlyPinKernel(src, other, dest);
+
+        // 7 + 5 + other[1]
+        Assert.Equal(17u, dest[0]);
+        Assert.Equal(expectedSame, dest[1]);
+    }
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void PointerIncrement_SequentialArray_CopiesElementsToDestination()
