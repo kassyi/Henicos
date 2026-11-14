@@ -376,24 +376,94 @@ public static partial class GpuBigIntKernels
 
     #region MacroTranspiler & Device Helpers
 
+    /// <summary>
+    /// <c>ResultBuffer = LeftOperand &lt;&lt; (32 wordShift + bitShift)</c> on the <c>NumberOfWords</c> words of
+    /// <paramref name="ctx"/>, across the threads of the launch (a grid-stride loop).
+    /// </summary>
+    /// <remarks>
+    /// When <c>ResultBuffer</c> is the same array as <c>LeftOperand</c>, one thread of the grid shifts every word, and
+    /// the other threads return at once; no grid synchronization follows, so a kernel that reads the result in other
+    /// threads synchronizes itself, as after the grid-stride loop of distinct buffers.
+    /// </remarks>
     [GpuDeviceFunction]
     public static void ExecuteShiftLeft(GpuBigIntContext ctx, int wordShift, int bitShift)
     {
         var left = Gpu.NotNull(ctx.Operands.LeftOperand);
+        var result = ctx.Operands.ResultBuffer;
+        if (IsSameArray(left, result))
+        {
+            // The result is the operand: the threads of the grid-stride loop would read words that other threads
+            // already shifted, so one thread of the grid shifts every word, downward
+            Gpu.SingleThread(() => ShiftWordsLeft(result, left, wordShift, bitShift, ctx.NumberOfWords));
+            return;
+        }
+
         Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
-            ctx.Operands.ResultBuffer[i] = ShiftedLeftWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
+            result[i] = ShiftedLeftWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
         });
     }
 
+    /// <summary>
+    /// <c>ResultBuffer = LeftOperand &gt;&gt; (32 wordShift + bitShift)</c> on the <c>NumberOfWords</c> words of
+    /// <paramref name="ctx"/>, across the threads of the launch (a grid-stride loop).
+    /// </summary>
+    /// <remarks>
+    /// When <c>ResultBuffer</c> is the same array as <c>LeftOperand</c>, one thread of the grid shifts every word, and
+    /// the other threads return at once; no grid synchronization follows, so a kernel that reads the result in other
+    /// threads synchronizes itself, as after the grid-stride loop of distinct buffers.
+    /// </remarks>
     [GpuDeviceFunction]
     public static void ExecuteShiftRight(GpuBigIntContext ctx, int wordShift, int bitShift)
     {
         var left = Gpu.NotNull(ctx.Operands.LeftOperand);
+        var result = ctx.Operands.ResultBuffer;
+        if (IsSameArray(left, result))
+        {
+            // As for the left shift: one thread of the grid shifts every word, upward
+            Gpu.SingleThread(() => ShiftWordsRight(result, left, wordShift, bitShift, ctx.NumberOfWords));
+            return;
+        }
+
         Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
-            ctx.Operands.ResultBuffer[i] = ShiftedRightWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
+            result[i] = ShiftedRightWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
         });
+    }
+
+    // Whether a and b are the same array (two null or two empty arrays count as the same, which shifts nothing)
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe bool IsSameArray([GpuReadOnly] uint[] a, [GpuReadOnly] uint[] b)
+    {
+        fixed (uint* pa = a, pb = b)
+        {
+            return pa == pb;
+        }
+    }
+
+    // result = left << (32 wordShift + bitShift) on numWords words, by one thread. Downward: word i reads words
+    // i - wordShift and the one below, so when result is left every word read is one not yet written
+    [GpuDeviceFunction]
+    private static void ShiftWordsLeft(uint[] result, [GpuReadOnly] uint[] left, int wordShift, int bitShift,
+        int numWords)
+    {
+        for (int i = numWords - 1; i >= 0; i--)
+        {
+            result[i] = ShiftedLeftWord(left, i, wordShift, bitShift, numWords);
+        }
+    }
+
+    // result = left >> (32 wordShift + bitShift) on numWords words, by one thread. Upward: word i reads words
+    // i + wordShift and the one above, so when result is left every word read is one not yet written
+    [GpuDeviceFunction]
+    private static void ShiftWordsRight(uint[] result, [GpuReadOnly] uint[] left, int wordShift, int bitShift,
+        int numWords)
+    {
+        for (int i = 0; i < numWords; i++)
+        {
+            result[i] = ShiftedRightWord(left, i, wordShift, bitShift, numWords);
+        }
     }
 
     [GpuDeviceFunction]
@@ -455,26 +525,44 @@ public static partial class GpuBigIntKernels
         }
     }
 
+    /// <summary>
+    /// <c>result = left &lt;&lt; shiftBits</c> on the <c>NumberOfWords</c> words of <paramref name="ctx"/>, the
+    /// operator of <see cref="GpuBigIntRef"/>. A negative <paramref name="shiftBits"/> shifts the other way, as for
+    /// <see cref="System.Numerics.BigInteger"/>; <paramref name="result"/> may be <paramref name="left"/>.
+    /// </summary>
+    /// <remarks>Each calling thread processes every word; the operator is meant for one thread per value.</remarks>
     [GpuDeviceFunction]
     public static void ExecuteShiftLeft(ref GpuBigIntContext ctx, uint[] result, uint[] left, int shiftBits)
     {
-        var wordShift = shiftBits / 32;
-        var bitShift = shiftBits % 32;
-        for (int i = 0; i < ctx.NumberOfWords; i++)
+        // x << -n is x >> n, as for BigInteger; the amount is widened so that -int.MinValue is 2^31
+        long amount = shiftBits;
+        if (amount < 0)
         {
-            result[i] = ShiftedLeftWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
+            ShiftWordsRight(result, left, (int)(-amount / 32), (int)(-amount % 32), ctx.NumberOfWords);
+            return;
         }
+
+        ShiftWordsLeft(result, left, (int)(amount / 32), (int)(amount % 32), ctx.NumberOfWords);
     }
 
+    /// <summary>
+    /// <c>result = left &gt;&gt; shiftBits</c> on the <c>NumberOfWords</c> words of <paramref name="ctx"/>, the
+    /// operator of <see cref="GpuBigIntRef"/>. A negative <paramref name="shiftBits"/> shifts the other way, as for
+    /// <see cref="System.Numerics.BigInteger"/>; <paramref name="result"/> may be <paramref name="left"/>.
+    /// </summary>
+    /// <remarks>Each calling thread processes every word; the operator is meant for one thread per value.</remarks>
     [GpuDeviceFunction]
     public static void ExecuteShiftRight(ref GpuBigIntContext ctx, uint[] result, uint[] left, int shiftBits)
     {
-        var wordShift = shiftBits / 32;
-        var bitShift = shiftBits % 32;
-        for (int i = 0; i < ctx.NumberOfWords; i++)
+        // x >> -n is x << n, as for BigInteger
+        long amount = shiftBits;
+        if (amount < 0)
         {
-            result[i] = ShiftedRightWord(left, i, wordShift, bitShift, ctx.NumberOfWords);
+            ShiftWordsLeft(result, left, (int)(-amount / 32), (int)(-amount % 32), ctx.NumberOfWords);
+            return;
         }
+
+        ShiftWordsRight(result, left, (int)(amount / 32), (int)(amount % 32), ctx.NumberOfWords);
     }
 
     [GpuDeviceFunction]

@@ -19,4 +19,16 @@ public static partial class BigIntRefOperatorKernels
         left = x << 3;
         right = x >> 3;
     }
+
+    // x = x << s and x = x >> s with the result on the operand's own words
+    [GpuKernel]
+    public static void InPlaceShiftKernel(uint[] shiftedLeft, uint[] shiftedRight, int numberOfWords, int shiftBits)
+    {
+        GpuBigIntContext ctx = default;
+        ctx.NumberOfWords = numberOfWords;
+        GpuBigIntRef left = shiftedLeft;
+        GpuBigIntRef right = shiftedRight;
+        left = left << shiftBits;
+        right = right >> shiftBits;
+    }
 }
