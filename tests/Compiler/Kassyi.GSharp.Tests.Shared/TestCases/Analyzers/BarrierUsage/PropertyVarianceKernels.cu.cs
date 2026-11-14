@@ -301,4 +301,109 @@ public static partial class PropertyVarianceKernels
         Gpu.SyncThreads();
         result[ThreadIndex.X] = 1;
     }
+
+    public struct Steps
+    {
+        public int V;
+
+        public static Steps operator ++(Steps a)
+        {
+            var next = a;
+            next.V = ThreadIndex.X;
+            return next;
+        }
+
+        public static Steps operator +(Steps a, int b)
+        {
+            var next = a;
+            next.V = ThreadIndex.X + b;
+            return next;
+        }
+
+        public static Steps operator -(Steps a, int b)
+        {
+            var next = a;
+            next.V = a.V - b;
+            return next;
+        }
+    }
+
+    public struct Plain
+    {
+        public int V;
+
+        public Plain(int x)
+        {
+            V = x;
+        }
+
+        public static int operator +(Plain a, int b) => a.V + b;
+
+        public static implicit operator int(Plain a) => a.V;
+    }
+
+    // A user-defined increment that stores the lane
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void IncrementOperatorKernel(int[] result)
+    {
+        var steps = default(Steps);
+        steps++;
+        if (steps.V < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    // A compound assignment through a user-defined operator that stores the lane
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void CompoundOperatorKernel(int[] result)
+    {
+        var steps = default(Steps);
+        steps += 1;
+        if (steps.V < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    // Not reported: a user-defined operator whose operands and result are uniform
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void UniformOperatorKernel(int[] result, int n)
+    {
+        var steps = default(Steps);
+        steps.V = n;
+        steps = steps - 1;
+        if (steps.V < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
+
+    // Not reported: a constructor, an operator and a conversion of a struct that read uniform values only
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void UniformConstructorKernel(int[] result, int n)
+    {
+        var plain = new Plain(n);
+        int converted = plain;
+        if (plain.V < 2 || plain + 1 < 2 || converted < 2)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        result[ThreadIndex.X] = 1;
+    }
 }
