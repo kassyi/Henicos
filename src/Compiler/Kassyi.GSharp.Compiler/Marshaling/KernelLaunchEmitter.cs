@@ -298,12 +298,12 @@ internal static class KernelLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                $"ref {shape.Identifier}, ref {native}, {DeviceArraysFor(shape)}, hStream");
+                $"{shape.RefArgument}, ref {native}, {DeviceArraysFor(shape)}, hStream");
         }
 
         writer.AppendLine(";");
 
-        if (shape.RefKind is RefKind.Ref or RefKind.Out)
+        if (shape.IsByRef)
         {
             var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
             var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
@@ -312,7 +312,7 @@ internal static class KernelLaunchEmitter
             using (WriteGroupMemberBranch(writer, plan, paramIndex))
             {
                 WriteDeviceAllocation(writer, device, size);
-                if (shape.RefKind == RefKind.Ref)
+                if (shape.RefKind != RefKind.Out)
                 {
                     writer.AppendLine("// Fast zero-allocation copy to device");
                     var source = $"({IntPtrType})(&{native})";
@@ -642,7 +642,7 @@ internal static class KernelLaunchEmitter
         {
             WriteDeviceAllocation(writer, device, size);
 
-            if (shape.RefKind == RefKind.Ref)
+            if (shape.RefKind != RefKind.Out)
             {
                 writer.AppendLine("// Fast zero-allocation copy to device");
                 writer.AppendLine($"fixed ({shape.TypeName}* {pinnedTemp} = &{shape.Identifier})");
@@ -699,7 +699,8 @@ internal static class KernelLaunchEmitter
         bool isDevicePtr)
     {
         var shape = plan.Parameters[paramIndex];
-        if (IsPassedThrough(shape, isDevicePtr))
+        // An in parameter is read by the kernel and never copied back
+        if (IsPassedThrough(shape, isDevicePtr) || shape.IsInReference)
         {
             return;
         }
@@ -741,7 +742,7 @@ internal static class KernelLaunchEmitter
             writer.Append(shape.UnmarshalMethodName);
             using (writer.Parentheses())
             {
-                writer.Append($"ref {shape.Identifier}, ref {native}, hStream");
+                writer.Append($"{shape.RefArgument}, ref {native}, hStream");
             }
 
             writer.AppendLine(";");

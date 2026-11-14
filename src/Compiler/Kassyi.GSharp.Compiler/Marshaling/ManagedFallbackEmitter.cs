@@ -467,10 +467,12 @@ internal static class ManagedFallbackEmitter
         writer.Append($"{kernel.StateMachineName}(");
         foreach (var p in kernel.Parameters)
         {
+            // An in parameter that the kernel receives by address stays the caller's variable
             writer.Append(p.RefKind switch
             {
                 RefKind.Ref or RefKind.Out => "ref ",
                 RefKind.RefReadOnlyParameter => "in ",
+                _ when p.IsInReference => "in ",
                 _ => string.Empty
             });
             writer.Append(p.Identifier);

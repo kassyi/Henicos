@@ -255,8 +255,9 @@ internal static class CpuHostLaunchEmitter
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal }:
-                writer.AppendLine(
-                    $"{marshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)}, hStream);");
+                var nativeShadow = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
+                var allocated = KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape);
+                writer.AppendLine($"{marshal}({shape.RefArgument}, ref {nativeShadow}, {allocated}, hStream);");
                 break;
             case { IsCpuConvertedArray: true } when sharing.HasShadowSource(index):
                 var sharedShadow = KernelHostNames.GetLocal(LauncherLocal.SharedShadow, shape);
@@ -325,13 +326,13 @@ internal static class CpuHostLaunchEmitter
     {
         var shape = sharing.Parameters[index];
         var member = AliasGroupEmitter.CpuBufferPointer(sharing.Aliases, index);
-        var unmarshals = shape.IsCpuConvertedStruct ||
+        var unmarshals = (shape.IsCpuConvertedStruct && !shape.IsInReference) ||
             shape is { IsCpuConvertedArray: true, IsCopiedOut: true, IsReadOnlyContainer: false };
         writer.AppendLineIf(member is not null && unmarshals, $"if (!({member?.Member}))");
         using var notMember = member is not null && unmarshals ? writer.Scope() : default;
         switch (shape)
         {
-            case { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal }:
+            case { IsCpuConvertedStruct: true, IsInReference: false, UnmarshalMethodName: { } unmarshal }:
                 var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
                 writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {native}, hStream);");
                 break;

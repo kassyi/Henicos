@@ -132,6 +132,51 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool IsArrayLikeType(this ITypeSymbol? type) => type.TryGetArrayLikeElementType(out _);
 
+    /// <summary>
+    /// Whether <paramref name="parameter"/> is an <c>in</c> or <c>ref readonly</c> parameter of a kernel that the
+    /// kernel receives by address: the kernel also has a <c>ref</c> or <c>out</c> parameter whose memory the caller may
+    /// pass the same variable, or a field of it, or a variable that holds it as a field (the types are the same, or one
+    /// is a field of the other, at any depth), and a write through it must show through the <c>in</c> parameter as in
+    /// C#. Any other <c>in</c> parameter of a kernel is a value.
+    /// </summary>
+    public static bool IsKernelInPassedByAddress(this IParameterSymbol parameter) =>
+        parameter is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter, ContainingSymbol: IMethodSymbol kernel } &&
+        kernel.HasAttribute(KnownAttributes.GpuKernel) &&
+        !parameter.Type.IsArrayLikeType() &&
+        !parameter.Type.IsRefLikeType &&
+        kernel.Parameters
+            .AsStackEnumerable()
+            .Any(parameter.Type, static (other, type) =>
+                other.RefKind is RefKind.Ref or RefKind.Out && MayShareMemory(other.Type, type)
+            );
+
+    // The same type, or one that holds the other as a field, directly or through the fields of its fields
+    private static bool MayShareMemory(ITypeSymbol first, ITypeSymbol second) =>
+        SymbolEqualityComparer.Default.Equals(first, second) ||
+        HoldsAsField(first, second, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)) ||
+        HoldsAsField(second, first, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default));
+
+    // A struct is a value that holds its instance fields, so a field of a field type is memory inside it, at any depth.
+    // No struct holds itself, but a primitive type declares a field of its own type (and a type with an error may be
+    // cyclic), so each struct is entered once
+    private static bool HoldsAsField(ITypeSymbol holder, ITypeSymbol field, HashSet<ITypeSymbol> entered)
+    {
+        if (holder is not INamedTypeSymbol { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None } named ||
+            !entered.Add(holder))
+        {
+            return false;
+        }
+
+        return named.GetMembers()
+            .AsStackEnumerable()
+            .OfType<IFieldSymbol>()
+            .Any((field, entered), static (member, state) =>
+                !member.IsStatic && !member.IsConst &&
+                (SymbolEqualityComparer.Default.Equals(member.Type, state.field) ||
+                    HoldsAsField(member.Type, state.field, state.entered))
+            );
+    }
+
     /// <summary>T of <see cref="Nullable{T}"/>, or <paramref name="type"/> itself.</summary>
     public static ITypeSymbol UnwrapNullable(this ITypeSymbol type) =>
         type is INamedTypeSymbol

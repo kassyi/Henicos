@@ -17,7 +17,7 @@ internal enum LauncherKind
 }
 
 /// <summary>One parameter of a generated launcher (<see cref="LauncherSignatures.GetParameter"/>).</summary>
-/// <param name="Modifier"><c>ref</c>, <c>out</c> or empty.</param>
+/// <param name="Modifier"><c>ref</c>, <c>out</c>, <c>in</c> or empty.</param>
 /// <param name="TypeName">The type as the launcher writes it.</param>
 /// <param name="SignatureTypeName">
 /// The type as C# compares the signatures of two methods, spelled as <c>GetFullyQualifiedCsharpName</c> spells the
@@ -117,6 +117,8 @@ internal static class LauncherSignatures
                 {
                     RefKind.Ref => "ref",
                     RefKind.Out => "out",
+                    // An in parameter that the kernel receives by address is the caller's variable, as a ref one is
+                    _ when shape.IsInReference => "in",
                     _ => string.Empty
                 };
                 var signature = modifier.Length > 0 ? "ref " + shape.TypeName : shape.TypeName;
