@@ -55,4 +55,18 @@ public static partial class AdvancedMemoryKernels
             }
         }
     }
+
+    // A [GpuReadOnly] array is const on the device: the pointers that pin it, one of its elements, or a var local that
+    // holds it, point at const elements; comparing them tells whether two arrays are the same
+    [GpuKernel]
+    public static unsafe void ReadOnlyPinKernel([GpuReadOnly] uint[] src, [GpuReadOnly] uint[] other, uint[] dest)
+    {
+        var alias = other;
+        var aliasOfAlias = alias;
+        fixed (uint* pSrc = src, pElement = &src[1], pOther = other, pAlias = aliasOfAlias)
+        {
+            dest[0] = *pSrc + pElement[0] + pAlias[1];
+            dest[1] = pSrc == pOther ? 1u : 0u;
+        }
+    }
 }
