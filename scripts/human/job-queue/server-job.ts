@@ -28,6 +28,8 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   cwd: string;
   /** The round-robin key: the root of the job's worktree, resolved once by its client (or its cwd). */
   worktree: string;
+  /** The agent chat that queued it (JobRequest.session), kept for the chat panel; absent when none was sent. */
+  session?: string;
   command: string;
   keepIfFailed: boolean;
   lastPosition: number;
@@ -49,6 +51,7 @@ export function describeJob(job: ServerJob): JobView {
     orphan: job.connection === null,
     cwd: job.cwd,
     worktree: job.worktree,
+    session: job.session,
     command: job.command,
     queuedAt: job.queuedAt,
     grantedAt: job.grantedAt || null,

@@ -55,6 +55,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1512644670u, "HarnessProbe
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(378584567u, "HarnessProbeKernels.cs", 72, 16, "RacingWriteThenThrowKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(738188883u, "HarnessProbeKernels.cs", 72, 20, "RacingWriteThenThrowKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(910911358u, "HarnessProbeKernels.cs", 81, 9, "TwoExceptionTypesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2139397874u, "HarnessProbeKernels.cs", 81, 16, "TwoExceptionTypesKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(36120871u, "HarnessProbeKernels.cs", 81, 16, "TwoExceptionTypesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(639279347u, "HarnessProbeKernels.cs", 81, 20, "TwoExceptionTypesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(107687319u, "HarnessProbeKernels.cs", 81, 30, "TwoExceptionTypesKernel", "G#: a null array is read"),
@@ -635,7 +636,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_blockId = __gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)blockIdx.y,(int)gridDim.x));
-int __gsharp_id_4_threadInBlock = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int)threadIdx.y,(int)blockDim.x));
+int __gsharp_id_4_threadInBlock = __gsharp_add_i32((int)threadIdx.x,(int)threadIdx.y*(int)blockDim.x);
 int __gsharp_id_5_t = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_mul_i32(__gsharp_id_3_blockId,(int)blockDim.x),(int)blockDim.y),__gsharp_id_4_threadInBlock);
 if(__gsharp_id_5_t>=__gsharp_array_ref(__gsharp_id_0_a, 2030681053u).length)
 {
@@ -1474,7 +1475,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_t = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_2_t, 910911358u)=__gsharp_array_at(__gsharp_id_0_idx, __gsharp_array_at(__gsharp_id_0_idx, __gsharp_id_2_t, 639279347u), 36120871u)/__gsharp_array_at(__gsharp_id_0_idx, __gsharp_id_2_t, 107687319u);
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_2_t, 910911358u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_idx, __gsharp_array_at(__gsharp_id_0_idx, __gsharp_id_2_t, 639279347u), 36120871u),__gsharp_array_at(__gsharp_id_0_idx, __gsharp_id_2_t, 107687319u),2139397874u);
 __gsharp_state=-1;
 return;
 }
@@ -1577,7 +1578,7 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 int t = global::Kassyi.GSharp.Core.ThreadIndex.X;
-r[t] = idx[idx[t]] / idx[t];
+r[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(idx[idx[t]], idx[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
