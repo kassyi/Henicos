@@ -92,7 +92,7 @@ internal readonly struct LaunchAliasPlan
     public static LaunchAliasPlan ForCpu(in ArraySharingPlan sharing)
     {
         var parameters = sharing.Parameters;
-        if (!HasPartialCandidate(parameters, heldCounts: false))
+        if (!HasPartialCandidate(parameters, heldCounts: true))
         {
             return default;
         }
@@ -109,7 +109,8 @@ internal readonly struct LaunchAliasPlan
 
             var readOnly = shape.IsArray && (sharing.NeedsKernelCopy(i) || shape.IsReadOnlyContainer);
             var spanView = shape.Container is ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan;
-            copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i));
+            copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i)) ||
+                shape.HeldArraysMethodName is not null;
             builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly, spanView));
         }
 
@@ -205,7 +206,7 @@ internal readonly struct LaunchAliasPlan
 
         public LaunchAliasPlan ToPlan() =>
             new(_candidates.ToImmutable(), _traits.ToImmutable(), _ranges.ToImmutable(), _conversions.ToImmutable(),
-                dialect.IsCuda ? GetHeldSources(parameters) : default);
+                GetHeldSources(parameters));
 
         private AliasElement GetElement(in KernelParameterShape shape)
         {

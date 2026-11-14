@@ -373,14 +373,14 @@ public static partial class MarshalingOverlapDifferentialKernels
 
     // Both arguments are [In]: the CPU gives each a copy, which must be one copy of the one array
     [GpuKernel]
-    public static void InFieldAndInSliceKernel([In] DiffDeepBag bag, [In] Span<int> slice, [Out] int[] observed)
+    public static void InFieldAndInSliceKernel([In] DiffDeepBag[] bags, [In] Span<int> slice, [Out] int[] observed)
     {
         if (ThreadIndex.X == 0)
         {
-            bag.Data[1] += 10;
+            bags[0].Data[1] += 10;
             observed[0] = slice[0];
             slice[1] += 100;
-            observed[1] = bag.Data[2];
+            observed[1] = bags[0].Data[2];
         }
     }
 

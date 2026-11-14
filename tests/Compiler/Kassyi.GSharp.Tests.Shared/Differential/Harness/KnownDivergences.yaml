@@ -196,3 +196,11 @@
       columns: [select_neg_eval_count, where_neg_eval_count]
 
 
+
+- issue: 1858
+  title: "[Bug]: Overlapping launch arguments that need unaligned or host-layout device access still throw NotSupportedException on CUDA"
+  entries:
+    # A slice of an array that a struct argument holds, whose elements the launcher converts, beside that struct
+    - case: MarshalingAliasingDifferentialKernels.ConvertedFieldAndSliceKernel
+      paths: [Cuda]
+      columns: [$exception]

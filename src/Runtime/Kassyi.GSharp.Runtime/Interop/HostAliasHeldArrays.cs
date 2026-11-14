@@ -28,13 +28,25 @@ public sealed class HostAliasHeldArrays
 
     private readonly List<Array> _arrays = [];
     private readonly List<(nint Length, nint HostSize, nint DeviceSize, nint Alignment, int Conversion)> _layouts = [];
+    private readonly List<bool> _copiesBack = [];
+    private readonly List<CopySharer> _sharers = [];
     private readonly List<GCHandle> _pins = [];
     private readonly List<string> _convertedTypes = [];
     private nint[]? _combined;
+
+    // Gives the held array the copy of its group, typed by the array's element type
+    private delegate void CopySharer(HostAliasGroups groups, int member, ReadOnlySpan<nint> ranges,
+        HostArrayCopies copies, Array array);
     private nint[] _heldRanges = [];
 
     /// <summary>The number of arrays held.</summary>
     public int Count => _arrays.Count;
+
+    /// <summary>
+    /// Whether the argument whose arrays are being added copies them back to the caller. An array that two arguments
+    /// hold is copied back when either does.
+    /// </summary>
+    public bool CopiesBack { get; set; }
 
     /// <summary>
     /// Adds an array that a struct argument holds. A null or empty array, an array that was added already (two fields
@@ -52,10 +64,11 @@ public sealed class HostAliasHeldArrays
             return;
         }
 
-        foreach (var held in _arrays)
+        for (var i = 0; i < _arrays.Count; i++)
         {
-            if (ReferenceEquals(held, array))
+            if (ReferenceEquals(_arrays[i], array))
             {
+                _copiesBack[i] |= CopiesBack;
                 return;
             }
         }
@@ -76,6 +89,16 @@ public sealed class HostAliasHeldArrays
         }
 
         _arrays.Add(array);
+        _copiesBack.Add(CopiesBack);
+        _sharers.Add(static (groups, member, ranges, copies, held) =>
+        {
+            // A copy that starts at the array and covers it is the array's copy; a group of writers has none
+            if (HostAliasCopies.TryGetHostCopy<T>(groups, member, ranges, out var copy, out var start) &&
+                start == 0 && copy.Length == held.Length)
+            {
+                copies.Share(held, copy);
+            }
+        });
         _layouts.Add(((nint)array.Length * hostSize, hostSize, deviceSize == 0 ? hostSize : deviceSize,
             deviceAlignment, key));
     }
@@ -119,7 +142,8 @@ public sealed class HostAliasHeldArrays
     }
 
     /// <summary>
-    /// The traits of the arguments followed by those of the held arrays (copied in, copied back, whole).
+    /// The traits of the arguments followed by those of the held arrays (copied in, copied back when an argument that
+    /// holds it does, whole).
     /// </summary>
     /// <param name="traits">The traits of the arguments.</param>
     public byte[] Combine(byte[] traits)
@@ -131,11 +155,12 @@ public sealed class HostAliasHeldArrays
 
         var combined = new byte[traits.Length + _arrays.Count];
         traits.CopyTo(combined, 0);
-        Array.Fill(
-            combined,
-            (byte)(HostAliasGroups.CopiesIn | HostAliasGroups.CopiesBack | HostAliasGroups.WholeArray),
-            traits.Length,
-            _arrays.Count);
+        for (var i = 0; i < _arrays.Count; i++)
+        {
+            var back = _copiesBack[i] ? HostAliasGroups.CopiesBack : 0;
+            combined[traits.Length + i] = (byte)(HostAliasGroups.CopiesIn | back | HostAliasGroups.WholeArray);
+        }
+
         return combined;
     }
 
@@ -182,6 +207,28 @@ public sealed class HostAliasHeldArrays
         }
     }
 
+    /// <summary>
+    /// CPU: gives each held array that is a member of a group of [In] arguments the copy of its group in
+    /// <paramref name="copies"/>, so that the copies of the struct arguments that hold the array take it.
+    /// </summary>
+    /// <param name="groups">The groups of the launch.</param>
+    /// <param name="first">The number of arguments, which is the member number of the first held array.</param>
+    /// <param name="ranges">The combined range list, pinned.</param>
+    /// <param name="copies">The launch's table of copies.</param>
+    public void ShareCopies(HostAliasGroups groups, int first, ReadOnlySpan<nint> ranges, HostArrayCopies copies)
+    {
+        for (var i = 0; i < _arrays.Count; i++)
+        {
+            if (groups.IsMember(first + i))
+            {
+                _sharers[i](groups, first + i, ranges, copies, _arrays[i]);
+            }
+        }
+    }
+
+    // A launch that failed before Free leaves its pins to the finalizer
+    ~HostAliasHeldArrays() => Free();
+
     /// <summary>Unpins the arrays and forgets them.</summary>
     public void Free()
     {
@@ -193,6 +240,8 @@ public sealed class HostAliasHeldArrays
         _pins.Clear();
         _arrays.Clear();
         _layouts.Clear();
+        _copiesBack.Clear();
+        _sharers.Clear();
         _heldRanges = [];
         _combined = null;
     }

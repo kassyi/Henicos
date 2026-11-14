@@ -44,6 +44,8 @@ internal static class CpuHostLaunchEmitter
                 CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);
             }
 
+            AliasGroupEmitter.WriteCpuHeldRelease(writer, sharing.Aliases);
+
             WriteDllPath(writer, moduleName);
             ManagedFallbackEmitter.WriteManagedExecutionFallback(writer, kernel.Host);
 

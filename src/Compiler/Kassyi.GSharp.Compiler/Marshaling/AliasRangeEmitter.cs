@@ -15,6 +15,7 @@ internal static class AliasRangeEmitter
 
     private const string PinsType = "global::Kassyi.GSharp.Runtime.Interop.HostAliasPins";
     private const string Held = GSharpInternalNames.Launcher.AliasHeld;
+    private const string IntPtrType = HostTypeNames.IntPtr;
     private const string Ranges = GSharpInternalNames.Launcher.AliasRanges;
     private const int RangeFields = 6;
 
@@ -36,11 +37,11 @@ internal static class AliasRangeEmitter
 
         writer.AppendLine(")");
         var scope = writer.Scope();
-        writer.AppendLine($"nint* {Ranges} = stackalloc nint[{ranges.Length * RangeFields}];");
+        writer.AppendLine($"{IntPtrType}* {Ranges} = stackalloc {IntPtrType}[{ranges.Length * RangeFields}];");
         for (var k = 0; k < ranges.Length; k++)
         {
             var at = k * RangeFields;
-            writer.AppendLine($"{Ranges}[{at}] = (nint){ranges[k].Pinned};");
+            writer.AppendLine($"{Ranges}[{at}] = ({IntPtrType}){ranges[k].Pinned};");
             writer.AppendLine($"{Ranges}[{at + 1}] = {ranges[k].ByteLength};");
             writer.AppendLine($"{Ranges}[{at + 2}] = sizeof({ranges[k].ElementType});");
             writer.AppendLine($"{Ranges}[{at + 3}] = sizeof({ranges[k].DeviceElementType});");
@@ -86,7 +87,7 @@ internal static class AliasRangeEmitter
 
     /// <summary>The range list as the span that the <c>HostAliasGroups</c> methods take.</summary>
     public static string RangesSpan(ImmutableArray<AliasRange> ranges) =>
-        $"new global::System.ReadOnlySpan<nint>({Ranges}, {ranges.Length * RangeFields})";
+        $"new global::System.ReadOnlySpan<{IntPtrType}>({Ranges}, {ranges.Length * RangeFields})";
 
     /// <summary>
     /// The range list, followed by the entries of the held arrays when the launch compares them

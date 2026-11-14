@@ -747,9 +747,9 @@ public sealed class MarshalingOverlapDifferentialTests
         Launch = static (b, s) =>
         {
             int[] backing = b.Get<int>("backing");
-            var bag = new DiffDeepBag { Data = backing, Tag = 1 };
+            DiffDeepBag[] bags = [new DiffDeepBag { Data = backing, Tag = 1 }];
             MarshalingOverlapDifferentialKernels.LaunchInFieldAndInSliceKernel(
-                bag, backing.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                bags, backing.AsSpan(1, 2), b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
         },
     };
 
