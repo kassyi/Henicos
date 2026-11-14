@@ -54,7 +54,8 @@ public class ModPowCpuFallbackTests
     public void ModPow_CpuFallbackZeroModulus_ThrowsDivideByZero(int words)
     {
         // A zero modulus throws DivideByZeroException, as on the GPU paths and in BigInteger.ModPow
-        // mutant: CSharpCpuBigIntProvider.cs ModPow `Read(modulus...)` -> `Read(modulus...) + 1` -> no exception
+        // mutant: GpuBigIntDivRem.ModPow.cs `if (GpuKernelLoader.IsCpuFallbackMode)` -> `if (false)` -> CudaException
+        // for 64 words (the 4-word path checks the modulus before its first launch)
         Assert.Throws<DivideByZeroException>(() => RunModPow(words, 3, 3, 0));
     }
 
