@@ -81,7 +81,7 @@ internal sealed class UniformityValues(UniformityRecorder recorder)
             _captureAliases.Add((graph, id), aliases);
         }
 
-        if (!aliases.Contains(symbol, SymbolEqualityComparer.Default))
+        if (!aliases.AsStackEnumerable().Any(symbol, static (alias, target) => alias.IsEqualTo(target)))
         {
             aliases.Add(symbol);
         }
