@@ -55,6 +55,9 @@ The line of the declaration, filled in by the compiler. Do not pass it.
 The method of the declaration, filled in by the compiler. Do not pass it.
 
 > [!NOTE]
+> A `SharedMemory<T>` needs an element count. The parameterless constructor is obsolete as an error, so `new SharedMemory<int>()` and the target-typed `new()` are compile errors (CS0619); calling it anyway throws `InvalidOperationException`. `default` cannot be blocked by the language: `SharedMemory<int> s = default;` and `default(SharedMemory<int>)` are reported as [GSH0003](../diagnostics/GSH0003.md), because shared memory has no size until it is declared with a count.
+
+> [!NOTE]
 > More constructors, `SharedMemory(int size, ulong siteKey)` and the ones that also take the place of a dynamic declaration, are hidden from IntelliSense. The G# compiler uses them in the code it generates for managed execution; do not call them directly.
 
 ## Item[int]
