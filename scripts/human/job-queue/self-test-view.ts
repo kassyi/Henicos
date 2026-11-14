@@ -351,7 +351,7 @@ function checkHelp(): void {
   assert.match(first[11] ?? "", /── help 1\/\d, \? next/);
   const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false));
   assert.ok(
-    last.some((line) => /#n +a job of its worktree/.test(line)),
+    last.some((line) => /#n +a job it queued/.test(line)),
     "the last page ends the legend",
   );
   const colored = helpLines(100).map((line) => line.render(true));

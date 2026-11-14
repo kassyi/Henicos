@@ -4168,13 +4168,13 @@ return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (__gsharp_
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_add_i32(__gsharp_id_7_col,1), 1902017611u)=__gsharp_id_13_chained;
 System_Nullable<int> __gsharp_id_14_target = ((__gsharp_id_5_v&1)==0?System_Nullable<int>{}:System_Nullable<int>{77});
 int __gsharp_id_15_assignTouches = 0;
-([&]() -> decltype(auto) {
+([&]() {
 auto& __gsharp_coalesce_target = __gsharp_id_14_target;
-return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = __gsharp_add_i32(__gsharp_mul_i32((__gsharp_id_15_assignTouches=__gsharp_add_i32(__gsharp_id_15_assignTouches,1)),10),__gsharp_id_6_w&0xF)) : __gsharp_coalesce_target.Value;
+return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = __gsharp_add_i32(__gsharp_mul_i32((__gsharp_id_15_assignTouches=__gsharp_add_i32(__gsharp_id_15_assignTouches,1)),10),__gsharp_id_6_w&0xF)).Value : __gsharp_coalesce_target.Value;
 }());
-([&]() -> decltype(auto) {
+([&]() {
 auto& __gsharp_coalesce_target = __gsharp_id_14_target;
-return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = __gsharp_mul_i32((__gsharp_id_15_assignTouches=__gsharp_add_i32(__gsharp_id_15_assignTouches,1)),100)) : __gsharp_coalesce_target.Value;
+return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = __gsharp_mul_i32((__gsharp_id_15_assignTouches=__gsharp_add_i32(__gsharp_id_15_assignTouches,1)),100)).Value : __gsharp_coalesce_target.Value;
 }());
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_add_i32(__gsharp_id_7_col,2), 1847674467u)=__gsharp_add_i32(([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_14_target;
